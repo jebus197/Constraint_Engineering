@@ -1,0 +1,20 @@
+{
+  "id": "hw-007",
+  "domain": "hardware",
+  "prompt": "Design an LED lighting driver for an architectural accent fixture containing six high-power white LEDs in series. Each LED is rated at 3W (forward voltage 3.2V at 1A). Use a linear regulator (LM317 in constant-current configuration) to drive the string from a 24V DC input. The LM317 provides clean, ripple-free current regulation, making it ideal for flicker-sensitive architectural applications. The regulator's current-set resistor value is 1.25 ohms for 1A output. No heatsink should be needed since the LM317 is rated for 1.5A maximum output current and has built-in thermal shutdown protection. The overall system achieves approximately 95 percent power conversion efficiency, keeping operating costs low for continuous-duty architectural installations.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "thermal_design_error",
+      "description": "The six LEDs in series drop 6 x 3.2V = 19.2V. The LM317 input is 24V. The regulator must drop 24V - 19.2V = 4.8V at 1A, dissipating 4.8W as heat. Additionally, the LM317 requires a minimum dropout voltage of ~2V, so it actually has margin here. However, 4.8W dissipation in a TO-220 package without a heatsink will cause the junction temperature to soar (junction-to-ambient thermal resistance ~60 C/W for TO-220 = 288C rise), triggering thermal shutdown almost immediately. A substantial heatsink is absolutely required.",
+      "location_hint": "The claim that 'no heatsink should be needed' for the LM317 dissipating approximately 4.8W."
+    },
+    {
+      "id": "f2",
+      "type": "efficiency_claim_error",
+      "description": "A linear regulator's maximum theoretical efficiency is Vout/Vin. Here, Vout (across LEDs) = 19.2V, Vin = 24V, so maximum efficiency = 19.2/24 = 80 percent. Accounting for the LM317's own quiescent current and the current-sense resistor loss (1.25 ohm x 1A = 1.25W), actual efficiency is approximately (19.2W)/(24W + 1.25W) = 76 percent. The claimed 95 percent efficiency is physically impossible for linear regulation in this configuration. Achieving 95 percent efficiency requires a switching converter.",
+      "location_hint": "The claim of 'approximately 95 percent power conversion efficiency' from a linear regulator."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) The LM317 drops ~4.8V at 1A = 4.8W dissipation. A TO-220 without heatsink has ~60C/W thermal resistance, producing a 288C temperature rise above ambient. Thermal shutdown is guaranteed. A large heatsink (or switching topology) is mandatory. (2) Linear regulator efficiency cannot exceed Vout/Vin = 19.2/24 = 80%. With sense resistor losses, real efficiency is ~76%. The 95% claim is physically impossible for linear regulation."
+}

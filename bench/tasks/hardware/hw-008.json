@@ -1,0 +1,20 @@
+{
+  "id": "hw-008",
+  "domain": "hardware",
+  "prompt": "Design a 4-layer PCB stackup for a mixed-signal data acquisition system that combines a 24-bit delta-sigma ADC with a microcontroller running at 120MHz. The stackup from top to bottom is: signal layer, split ground plane (analog ground on the left half, digital ground on the right half connected at a single point), power plane, and bottom signal layer. Route analog signals on the top layer over the analog ground section and digital signals over the digital ground section. To minimize layer count, route a few high-speed SPI clock lines from the microcontroller to the ADC across the ground plane split boundary where necessary, since the short crossing distance will not significantly affect signal quality. Connect the analog and digital ground halves with a single zero-ohm resistor at the ADC's ground pin.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "ground_plane_design_error",
+      "description": "Splitting the ground plane into analog and digital halves connected at a single point is a widely discredited practice for most mixed-signal designs. The split creates a slot antenna that radiates and receives electromagnetic interference. Return currents from digital signals that must flow to the analog side (or vice versa) are forced through the narrow single-point connection, creating a large loop area that acts as both a transmitting and receiving antenna. Modern best practice (per Henry Ott, Eric Bogatin, and ADC manufacturer application notes) is to use a single, solid, unbroken ground plane with careful component placement to separate analog and digital current domains.",
+      "location_hint": "The 'split ground plane (analog ground on the left half, digital ground on the right half connected at a single point)'."
+    },
+    {
+      "id": "f2",
+      "type": "signal_routing_error",
+      "description": "Routing high-speed signals (SPI clock at tens of MHz) across a ground plane split forces the return current to find an alternative path around the split. The return current loop area increases dramatically, creating a large radiating loop antenna. This injects switching noise directly into the sensitive analog ground domain and corrupts ADC measurements. The 'short crossing distance' argument is incorrect; it is the return current path discontinuity that matters, not the trace length over the gap. Even a brief crossing of a ground split at high frequencies causes severe signal integrity and EMI problems.",
+      "location_hint": "The instruction to route 'high-speed SPI clock lines from the microcontroller to the ADC across the ground plane split boundary'."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Split ground planes are an anti-pattern in most mixed-signal designs. The split creates a slot antenna and forces return currents through a bottleneck, increasing loop area and coupling noise between domains. A solid ground plane with careful partitioned placement is the correct approach. (2) Routing any high-speed signal across a ground plane split is one of the most common and damaging PCB layout errors. The return current cannot follow the signal across the gap, creating a massive current loop that radiates EMI and couples digital noise into the analog domain."
+}

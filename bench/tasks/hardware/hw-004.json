@@ -1,0 +1,20 @@
+{
+  "id": "hw-004",
+  "domain": "hardware",
+  "prompt": "Design a temperature monitoring array for a commercial greenhouse using 20 I2C temperature sensors (MCP9808 or similar) distributed across the growing area. Connect all sensors on a single I2C bus using a 3-meter shielded cable trunk with short stubs to each sensor node. The standard I2C bus at 100kHz should handle 20 devices without any issues since the protocol supports up to 127 addresses. Use 4.7k-ohm pull-up resistors to 3.3V at the master end. This sensor provides 0.1 degree Celsius measurement accuracy, which is critical for maintaining optimal growing conditions within tight temperature bands across different zones of the greenhouse.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "bus_capacitance_error",
+      "description": "The I2C specification limits total bus capacitance to 400pF for standard mode (100kHz). A 3-meter shielded cable contributes approximately 100-150pF per meter (300-450pF from cable alone). Add 20 sensor input capacitances (~10pF each = 200pF) and parasitic PCB capacitance, and total bus capacitance reaches 500-650pF, well exceeding the 400pF limit. This causes signal degradation, slow rise times, and communication failures. An I2C bus buffer/repeater (e.g., PCA9515A) is required to segment the bus.",
+      "location_hint": "The design chains 20 sensors on a 3-meter cable with no bus buffer or repeater."
+    },
+    {
+      "id": "f2",
+      "type": "accuracy_specification_error",
+      "description": "The MCP9808 has a typical accuracy of plus or minus 0.25 degrees Celsius and a maximum accuracy of plus or minus 0.5 degrees Celsius. The 0.1 degree figure is the measurement resolution (LSB size), not accuracy. Resolution and accuracy are distinct: the sensor can report readings in 0.0625 degree increments, but any individual reading may be off by up to 0.5 degrees from the true temperature. Specifying 0.1 degree accuracy from this sensor is incorrect.",
+      "location_hint": "The claim of '0.1 degree Celsius measurement accuracy' from the temperature sensor."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Total I2C bus capacitance with 3m of shielded cable plus 20 sensor loads exceeds the 400pF specification limit, requiring bus buffers to segment the line. (2) The prompt confuses sensor resolution (0.0625C LSB) with accuracy (typ +/-0.25C, max +/-0.5C). 0.1C accuracy cannot be achieved with this sensor without individual calibration."
+}

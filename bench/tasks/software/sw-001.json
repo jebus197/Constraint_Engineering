@@ -1,0 +1,20 @@
+{
+  "id": "sw-001",
+  "domain": "software",
+  "prompt": "We're building a REST API gateway that enforces per-client rate limiting at 100 requests per minute. The implementation stores a counter per API key in an in-memory dictionary on the application server, incrementing on each request and resetting when the window expires. The current time window is calculated using System.currentTimeMillis() to determine when the 60-second window started and when it should roll over. The gateway will be deployed behind a load balancer across four application instances. Please review this design for correctness and scalability.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "scalability",
+      "description": "Rate limit counters stored in application-process memory are not shared across the four load-balanced instances. Each instance maintains its own counter, so a client can achieve up to 4x the intended rate (400 req/min) by having requests distributed across instances. Counters are also lost entirely on process restart, temporarily removing all rate limits.",
+      "location_hint": "in-memory dictionary for per-client counters"
+    },
+    {
+      "id": "f2",
+      "type": "correctness",
+      "description": "System.currentTimeMillis() is not a monotonic clock. It is subject to NTP adjustments, including backward jumps. A backward NTP correction during a rate window can cause the window start time to appear to be in the future, resetting the counter prematurely and allowing burst traffic. A forward jump can cause premature window expiry or artificially long windows that block legitimate requests. The design should use a monotonic clock source (e.g., System.nanoTime() in Java, clock_gettime(CLOCK_MONOTONIC) in C/POSIX).",
+      "location_hint": "System.currentTimeMillis() for rate window calculation"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by using a shared external store (Redis with INCR + EXPIRE, or a distributed rate limiter like token bucket in Redis). Fix f2 by using a monotonic clock for window duration tracking, or by using server-side TTL in Redis so the clock source is the external store, not the application."
+}

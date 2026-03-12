@@ -1,0 +1,20 @@
+{
+  "id": "sw-005",
+  "domain": "software",
+  "prompt": "We're migrating a monolithic e-commerce application to microservices. The order placement flow spans 5 services: Inventory, Payment, Shipping, Notification, and Order. To maintain data consistency, we implement a two-phase commit (2PC) protocol coordinated by the Order service. Each service has 99.9% individual availability. The architecture document states that the system achieves 99.99% availability and that the saga pattern we're considering as an alternative would provide the same ACID guarantees as 2PC but with better performance. Please evaluate the consistency and availability claims.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "availability",
+      "description": "Compound availability of 5 services at 99.9% each in a 2PC (all-must-succeed) configuration is 0.999^5 = 99.5%, not 99.99%. This means approximately 43.8 hours of downtime per year, not the 52.6 minutes implied by 99.99%. Two-phase commit requires all participants to be available for the transaction to succeed — if any single service is down, the entire distributed transaction fails. The claimed 99.99% availability is arithmetically impossible with the given per-service availability and a synchronous all-participant protocol.",
+      "location_hint": "99.99% availability claim with 5 services at 99.9% each"
+    },
+    {
+      "id": "f2",
+      "type": "semantics",
+      "description": "The saga pattern does not provide ACID guarantees. Sagas provide eventual consistency through a sequence of local transactions with compensating actions for rollback. They sacrifice isolation (intermediate states are visible to other transactions) and atomicity (partial completion is possible during the compensation window). The tradeoff of sagas is better availability and performance in exchange for weaker consistency guarantees compared to 2PC. Claiming that sagas provide ACID is incorrect — they provide ACD at best (atomicity through compensation, consistency and durability locally) but explicitly lack isolation.",
+      "location_hint": "claim that saga pattern provides ACID guarantees"
+    }
+  ],
+  "ground_truth_notes": "For f1, either accept the ~99.5% compound availability, improve individual service availability, reduce the number of synchronous participants, or move to an asynchronous pattern (sagas) that doesn't require all services to be simultaneously available. For f2, document that sagas provide eventual consistency with compensating transactions, and design the system to tolerate intermediate inconsistency — e.g., showing 'order pending' states, using idempotent compensations, and handling the case where compensation itself fails."
+}

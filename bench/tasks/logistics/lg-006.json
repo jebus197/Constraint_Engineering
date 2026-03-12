@@ -1,0 +1,20 @@
+{
+  "id": "lg-006",
+  "domain": "logistics",
+  "prompt": "We are implementing an inventory replenishment model for our automotive parts distribution centre. The Economic Order Quantity model uses an annual demand of 12,000 units per year, ordering cost of $150 per order, and holding cost of $8 per unit per year. Lead time is 10 days with a standard deviation of daily demand of 15 units. For safety stock, we are using 1.65 standard deviations to achieve a 99 percent service level. Please calculate the optimal reorder quantity, reorder point, and safety stock, and validate whether the service level target will be met with these parameters.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "unit_inconsistency",
+      "description": "The EOQ formula requires consistent units: Q = sqrt(2DS/H) where D is demand rate, S is ordering cost, and H is holding cost per unit per period. Here D is given in units/year and H is $/unit/year (consistent), but the lead time for reorder point calculation is given in days. The reorder point formula R = d*L + SS requires daily demand (d) and lead time in days (L), meaning D must be converted to daily demand (12000/365 = 32.88 units/day). If lead time in days is accidentally multiplied by annual demand, the reorder point would be grossly overstated. The prompt invites this error by mixing annual and daily units without flagging the conversion requirement.",
+      "location_hint": "Demand rate in units/year mixed with lead time in days"
+    },
+    {
+      "id": "f2",
+      "type": "statistical_error",
+      "description": "A z-score of 1.65 corresponds to a 95% service level (one-tailed), not 99%. For a 99% cycle service level, the required z-score is 2.33. Using z=1.65 when claiming 99% service level would result in significantly more stockouts than expected — approximately 5% probability of stockout per cycle instead of the claimed 1%. The safety stock would be understated by approximately 29% (1.65/2.33 = 0.708).",
+      "location_hint": "1.65 standard deviations claimed to cover 99% service level"
+    }
+  ],
+  "ground_truth_notes": "Standard normal distribution z-values: 90% = 1.28, 95% = 1.645, 97.5% = 1.96, 99% = 2.326, 99.5% = 2.576. The correct EOQ here is sqrt(2 * 12000 * 150 / 8) = 670 units. Daily demand = 12000/365 = 32.88. Safety stock at 99% SL = 2.33 * 15 * sqrt(10) = 110.5 units. Reorder point = 32.88 * 10 + 110.5 = 439.3 units. Silver, Pyke & Thomas (Inventory and Production Management in Supply Chains, 4th ed.) is the standard reference."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "lg-010",
+  "domain": "logistics",
+  "prompt": "We are planning container loading for an export shipment of ceramic tiles from Valencia, Spain to Jeddah, Saudi Arabia. The cargo is palletized on standard EUR pallets (800mm x 1200mm). Our loading plan fits 28 EUR pallets into a standard 20-foot dry container, stacked two layers high. The container utilization calculation is based solely on volume: 28 pallets at 0.96 cubic metres each gives 26.88 cubic metres against the container's 33.2 cubic metre capacity, yielding 81 percent utilization. Please validate the pallet count, stacking plan, and utilization calculation, and confirm this is an efficient loading configuration.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "dimensional_constraint_violation",
+      "description": "28 EUR pallets (800x1200mm) cannot physically fit in a standard 20-foot container. The internal dimensions of a 20ft ISO container are approximately 5,898mm long x 2,352mm wide x 2,393mm high. With EUR pallets loaded lengthwise (1200mm along the container length), only 4 pallets fit along the length (4 x 1200 = 4800mm) and 2 across the width (2 x 800 = 1600mm, leaving 752mm unused) — but 2 x 800 = 1600 and a third at 800 would need 2400mm which exceeds 2352mm. The maximum is 11 EUR pallets in a single layer in a 20ft container (mixing orientations), or approximately 22 pallets in two layers. The claim of 28 appears to confuse the 20ft container with a 40ft container, which fits 23-24 EUR pallets per layer.",
+      "location_hint": "28 EUR pallets in a 20ft container"
+    },
+    {
+      "id": "f2",
+      "type": "constraint_omission",
+      "description": "The utilization calculation considers only volumetric fill rate while ignoring the container's weight limit. A standard 20ft container has a maximum payload of approximately 28,200 kg (varies by container tare weight, typically 2,200-2,500 kg against 30,480 kg max gross). Ceramic tiles are dense cargo, typically 18-22 kg per square metre per centimetre of thickness, with pallet loads commonly weighing 1,000-1,500 kg each. Even 11 pallets at 1,200 kg average would total 13,200 kg, well within weight limits — but 28 pallets at 1,200 kg would be 33,600 kg, exceeding the container payload by 5,400 kg. For dense cargo like ceramics, the weight constraint is typically reached before the volume constraint, making volume-only utilization calculations misleading.",
+      "location_hint": "Utilization calculated by volume only, ignoring weight limit"
+    }
+  ],
+  "ground_truth_notes": "ISO 668 specifies 20ft container internal dimensions. EUR pallet dimensions are defined by EPAL (European Pallet Association). Standard loading configurations are documented in carrier packing guides (e.g., Maersk, Hapag-Lloyd). A 20ft container fits 11 EUR pallets per layer using a mixed orientation pattern (some 800mm-leading, some 1200mm-leading). Ceramic tile density and pallet weight data from industry sources (Tile Council of North America, ASCER). The weight-out vs cube-out distinction is fundamental to container shipping — dense cargo (tiles, steel, liquids) reaches weight limit before volume; light cargo (textiles, electronics, furniture) reaches volume limit before weight."
+}

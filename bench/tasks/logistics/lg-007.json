@@ -1,0 +1,20 @@
+{
+  "id": "lg-007",
+  "domain": "logistics",
+  "prompt": "We need to plan an air freight operation to move automotive parts from our supplier in Nagoya, Japan to our assembly plant in Puebla, Mexico. The total shipment weighs 30 tonnes and we intend to charter a Boeing 737-800F (freighter conversion) for the operation. For cost estimation, we are calculating the chargeable weight using the volumetric formula: length times width times height in centimetres divided by 5,000. The cargo consists of engine components in standard air freight containers. Please validate the aircraft selection, confirm the chargeable weight calculation method, and propose a routing with fuel stop if required.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "capacity_violation",
+      "description": "The Boeing 737-800BCF (Boeing Converted Freighter) has a maximum structural payload of approximately 23,900 kg (23.9 tonnes). Loading 30 tonnes exceeds the aircraft's maximum payload by roughly 6 tonnes (25% over capacity). This would violate the aircraft's certified weight limitations and is an unsafe operating condition. The shipment would require either a larger aircraft (e.g., 767-300F at 52 tonnes payload) or splitting across two 737-800F loads.",
+      "location_hint": "30 tonnes on a Boeing 737-800F"
+    },
+    {
+      "id": "f2",
+      "type": "calculation_method_error",
+      "description": "The volumetric weight divisor of 5,000 is the IATA standard for express and courier shipments. For general air freight (IATA TACT Rules), the correct volumetric weight divisor is 6,000 (i.e., 1 cubic metre = 166.67 kg). Using 5,000 instead of 6,000 would overstate the volumetric weight by 20%, leading to inflated chargeable weight and cost estimates. The 5,000 divisor is used by integrators like DHL Express, FedEx, and UPS for their express products.",
+      "location_hint": "Volumetric weight formula using divisor of 5000 for air freight"
+    }
+  ],
+  "ground_truth_notes": "Boeing 737-800BCF specifications: max payload 23,860 kg, max fuel 26,022 litres, range with max payload approximately 2,000 NM. IATA TACT (The Air Cargo Tariff) Rules specify volumetric conversion at 6,000 cm3 per kg for general cargo. The 5,000 divisor is an express industry convention (IATA Resolution 502). Nagoya to Puebla is approximately 6,000 NM, which exceeds the 737-800F range even at reduced payload, so a fuel stop (e.g., Anchorage or Honolulu) would be required regardless of payload resolution."
+}

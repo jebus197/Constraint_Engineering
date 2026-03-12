@@ -1,0 +1,20 @@
+{
+  "id": "sw-010",
+  "domain": "software",
+  "prompt": "We're implementing an event sourcing architecture for a banking ledger system. All account state changes are stored as immutable events in an append-only event store. To manage storage growth, the operations team plans to compact the event store monthly by deleting events older than 90 days, keeping only the latest account snapshot. The read model (account balances, transaction history) is rebuilt by replaying the full event stream from the event store on each API query. The team expects this to be performant because the events are stored in a time-indexed table. Please review the event sourcing implementation for architectural correctness.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "correctness",
+      "description": "Deleting old events from the event store violates the fundamental invariant of event sourcing: the event log is the single source of truth and must be immutable and complete. If events older than 90 days are deleted, the system loses the ability to: (a) rebuild projections from scratch (e.g., after discovering a bug in a projection), (b) replay events to create new read models or analytics, (c) audit the complete history of state transitions (critical for a banking ledger), (d) reproduce any historical state. The 'latest snapshot' is a derived artifact, not a substitute for the event history. Storage growth should be managed through archival to cold storage (preserving events), not deletion.",
+      "location_hint": "monthly compaction by deleting events older than 90 days"
+    },
+    {
+      "id": "f2",
+      "type": "performance",
+      "description": "Replaying the entire event stream on every API query makes read operations O(n) where n is the total number of events. For a banking ledger with millions of transactions, rebuilding account state from the full event history on each balance inquiry would take seconds to minutes, making the system unusable. Event sourcing systems separate the write path (append events) from the read path (query projections). Read models should be pre-built and kept up to date by subscribing to new events. Snapshots should be taken periodically so that rebuild (when needed) starts from the latest snapshot rather than the beginning of time. Queries should read directly from the pre-computed read model, never from the raw event stream.",
+      "location_hint": "full event replay on each API query"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by treating the event store as immutable and append-only. Manage storage growth through tiered storage (hot/warm/cold), compression, or archival — never deletion. For a banking system, regulatory requirements likely mandate retaining the full transaction history for years. Fix f2 by maintaining pre-computed read models (materialized projections) updated asynchronously via event subscriptions, and by implementing periodic snapshots so that any necessary replay starts from the last snapshot rather than event zero. API queries read from the projection, not from the event stream."
+}

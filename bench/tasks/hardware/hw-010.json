@@ -1,0 +1,20 @@
+{
+  "id": "hw-010",
+  "domain": "hardware",
+  "prompt": "Design a Qi-compatible wireless charging receiver for a rugged industrial handheld device. The device has a 15mm thick aluminum housing for IP68 ingress protection and shock resistance. The Qi receiver coil mounts on the inner surface of the rear aluminum panel, receiving power through the metal case from a standard Qi transmitter pad. The receiver operates at the Qi standard resonant frequency of 6.78MHz for efficient power transfer. Use a standard Qi receiver IC (e.g., BQ51013B) with an LC resonant tank tuned to 6.78MHz. The coil inductance is 24 microhenry and the resonant capacitor is 82 nanofarad, providing a clean resonance at the operating frequency for maximum coupling efficiency. Target received power is 5W to charge an internal 3.7V lithium polymer battery.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "electromagnetic_shielding_error",
+      "description": "Aluminum is an excellent electrical conductor. A 15mm aluminum panel acts as a near-perfect electromagnetic shield at Qi operating frequencies (100-205kHz for Qi BPP, or 6.78MHz for AirFuel/Rezence). Eddy currents induced in the aluminum case oppose the changing magnetic field from the transmitter, effectively blocking magnetic coupling and absorbing transmitted energy as heat in the aluminum. Wireless power transfer through a 15mm aluminum enclosure is physically impossible without a window or ferrite flux guide. Practical solutions include a non-metallic window in the case, a recessed charging port, or direct contact pogo pins.",
+      "location_hint": "The design of 'receiving power through the metal case' where the case is '15mm thick aluminum housing'."
+    },
+    {
+      "id": "f2",
+      "type": "resonant_frequency_error",
+      "description": "The specified LC values (L = 24 microhenry, C = 82 nanofarad) produce a resonant frequency of f = 1 / (2 * pi * sqrt(L * C)) = 1 / (2 * pi * sqrt(24e-6 * 82e-9)) = 1 / (2 * pi * sqrt(1.968e-12)) = 1 / (2 * pi * 1.403e-6) = 113.4 kHz. This is nowhere near the claimed 6.78MHz. To resonate at 6.78MHz with a 24 microhenry inductor would require C = 1/(4 * pi^2 * f^2 * L) = 1/(4 * pi^2 * (6.78e6)^2 * 24e-6) = approximately 81.5 femtofarad, not 82 nanofarad. The actual resonant frequency of ~113kHz falls within the standard Qi BPP operating band (87-205kHz), not the 6.78MHz claimed.",
+      "location_hint": "The claim that '24 microhenry and 82 nanofarad' provide 'resonance at' '6.78MHz'. The actual resonant frequency of these components is approximately 113kHz."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Qi wireless charging cannot work through a 15mm aluminum enclosure. Eddy currents in the conductive metal block the alternating magnetic field and convert transmitted energy to heat. A non-metallic window or alternative charging method is required. (2) The LC tank (24uH, 82nF) resonates at ~113kHz, not 6.78MHz. The claimed frequency is off by a factor of ~60x. These component values actually match standard Qi BPP frequencies (~100-200kHz), contradicting the stated 6.78MHz operating frequency."
+}

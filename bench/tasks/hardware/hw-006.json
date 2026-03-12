@@ -1,0 +1,20 @@
+{
+  "id": "hw-006",
+  "domain": "hardware",
+  "prompt": "Design an FPGA-based real-time signal processing board for software-defined radio applications. The board uses a Xilinx Artix-7 XC7A100T FPGA with a 1.0V core power supply and 3.3V I/O banks. An external 16-bit ADC (AD9266) feeds digitized samples to the FPGA over a parallel LVDS interface. The ADC is clocked at 100MHz and the FPGA performs 500MHz-equivalent signal processing by using internal clock multiplication and pipelining. The system captures a 250MHz bandwidth centered at 500MHz for wideband spectrum analysis. The FPGA implements a 4096-point FFT, digital downconversion, and FIR filtering in the programmable logic fabric.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "voltage_specification_error",
+      "description": "The Artix-7 XC7A100T requires a 1.0V VCCINT core supply voltage. This is actually correct for Artix-7. However, the prompt's second fault is the real issue. Note: if this were specified as a different voltage, it would be wrong, but 1.0V is the correct Artix-7 VCCINT. The actual fault here is that the prompt implies the FPGA can directly process at 500MHz equivalent rates by simply multiplying the 100MHz input clock internally. While clock multiplication is real, the claim that 500MHz internal processing on Artix-7 fabric is achievable is misleading: maximum fabric clock for Artix-7 is approximately 450-500MHz for the fastest speed grade on simple paths, but realistic DSP pipeline clocks top out around 250-350MHz. The '500MHz-equivalent processing' claim needs careful qualification.",
+      "location_hint": "The specification of '1.0V core power supply' is actually correct for Artix-7. The real voltage fault should be understood as the overall system design claim."
+    },
+    {
+      "id": "f2",
+      "type": "nyquist_violation",
+      "description": "The Nyquist theorem requires a sampling rate of at least twice the highest frequency component in the signal. The ADC is clocked at 100MHz, giving a maximum unaliased bandwidth of 50MHz (100/2). The prompt claims to capture '250MHz bandwidth centered at 500MHz', which would require the signal band to extend from 375MHz to 625MHz. Even with intentional undersampling (bandpass sampling), the instantaneous bandwidth is still limited to fs/2 = 50MHz. Capturing 250MHz of bandwidth requires an ADC sampling at a minimum of 500 MSPS, not 100 MSPS.",
+      "location_hint": "The claim of capturing '250MHz bandwidth' with a '100MHz' ADC clock, described as '500MHz-equivalent signal processing'."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) The prompt originally specified 1.0V core for Artix-7, which is actually correct (VCCINT = 1.0V). The real design error is the misleading claim about 500MHz internal processing; Artix-7 DSP pipelines max around 250-350MHz in practice. (2) A 100MHz ADC can capture at most 50MHz of instantaneous bandwidth per Nyquist. Claiming 250MHz bandwidth from a 100MSPS ADC violates the sampling theorem regardless of internal FPGA clock multiplication. Clock multiplication increases processing throughput, not input bandwidth."
+}

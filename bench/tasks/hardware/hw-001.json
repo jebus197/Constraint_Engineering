@@ -1,0 +1,20 @@
+{
+  "id": "hw-001",
+  "domain": "hardware",
+  "prompt": "Design a battery-powered IoT sensor node for environmental monitoring in agricultural fields. The node should use a CR2032 coin cell for power and include a 2.4GHz radio (nRF24L01+ or similar) for wireless data transmission to a gateway up to 100 meters away. The system runs a continuous sensing loop drawing approximately 50mA average current, which should give us several months of operation from the CR2032's capacity. For the PCB layout, keep the board compact at 25mm x 25mm and route the antenna trace directly over the ground plane, leaving small gaps in the ground copper under the antenna feed to make room for nearby component pads. The sensor payload includes temperature, humidity, and soil moisture readings transmitted every 30 seconds.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "power_budget_error",
+      "description": "CR2032 has approximately 220mAh capacity. At 50mA continuous draw, the battery would last 220/50 = 4.4 hours, not 'several months'. Achieving months of operation requires average current in the low microamp range (sleep modes, duty cycling).",
+      "location_hint": "The claim that 50mA average current gives 'several months of operation' from a CR2032."
+    },
+    {
+      "id": "f2",
+      "type": "rf_design_error",
+      "description": "Gaps in the ground plane under or near a 2.4GHz antenna feed destroy the controlled impedance environment and create unpredictable return current paths. This degrades antenna matching, increases VSWR, and can reduce effective range by 50-90%. The ground plane under the antenna feed must be continuous; clearance is needed only under the radiating element itself per the antenna manufacturer's datasheet.",
+      "location_hint": "The instruction to leave 'small gaps in the ground copper under the antenna feed'."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) A CR2032 at 50mA average lasts ~4.4 hours, not months. Real IoT nodes achieve long life by sleeping at <5uA and waking briefly, targeting <50uA average. (2) Ground plane gaps under the antenna feed break the transmission line impedance, reflecting power back and killing RF performance. The ground plane must be solid under the feed; only the radiating element gets a keepout."
+}

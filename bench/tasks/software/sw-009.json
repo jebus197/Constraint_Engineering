@@ -1,0 +1,20 @@
+{
+  "id": "sw-009",
+  "domain": "software",
+  "prompt": "We're designing a caching layer for a high-traffic product catalog API serving 20,000 requests per second. The design uses a cache-aside (lazy-loading) pattern: on cache miss, the application queries the database, populates the cache, and returns the result. Cache entries expire via TTL set to 60 seconds. The system runs 4 application servers, each with a local in-memory cache and a shared Redis cluster. The architecture document states that the TTL-based expiration provides cache coherence across nodes. Please review the caching strategy for correctness under high load.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "reliability",
+      "description": "The cache-aside pattern as described has no protection against cache stampede (thundering herd). When a popular cache entry expires, all concurrent requests for that key simultaneously experience a cache miss and all query the database in parallel. At 20,000 requests per second, a single popular key expiring can generate hundreds or thousands of simultaneous identical database queries within milliseconds, overwhelming the database. Mitigations include: (a) probabilistic early expiration (each request has a small random chance of refreshing the cache before TTL), (b) locking/coalescing (only one request fetches from DB, others wait for the cache to be populated), (c) background refresh (a separate process refreshes cache entries before they expire).",
+      "location_hint": "cache-aside pattern with no stampede protection"
+    },
+    {
+      "id": "f2",
+      "type": "correctness",
+      "description": "TTL-based expiration does not provide cache coherence. Coherence means all nodes see the same value for a given key at any point in time. With a 60-second TTL, after a database write, some cache nodes may still serve the old value for up to 60 seconds while others have already expired and fetched the new value. This is eventual consistency with a bounded staleness window, not coherence. True cache coherence requires active invalidation: when data changes in the database, all cache entries for the affected keys must be explicitly invalidated or updated (e.g., via publish/subscribe invalidation, write-through caching, or CDC-based cache invalidation).",
+      "location_hint": "claim that TTL provides cache coherence"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by implementing cache stampede protection: use a distributed lock (e.g., Redis SETNX) so only one request populates the cache on miss while others wait, or use probabilistic early expiration (XFetch algorithm), or use a background refresh process for hot keys. Fix f2 by implementing active cache invalidation on writes (publish invalidation events via Redis Pub/Sub or a message broker) and documenting the consistency model honestly — if TTL is the only mechanism, the guarantee is 'stale for up to TTL seconds after a write', not coherence."
+}

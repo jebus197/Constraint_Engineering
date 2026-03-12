@@ -1,0 +1,20 @@
+{
+  "id": "lg-002",
+  "domain": "logistics",
+  "prompt": "Design a cold chain distribution plan for temperature-sensitive biologic pharmaceuticals (monoclonal antibodies) that must be maintained at 2-8 degrees Celsius from our manufacturing facility in Basel to regional distribution centres across Southeast Asia. For the final leg from distribution centre to clinic, we plan to use standard corrugated cardboard shippers with two gel packs and dry ice to maintain temperature during the 72-hour last-mile window. Please specify the packaging configuration, validate the temperature maintenance duration, and identify any regulatory considerations for the coolant materials.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "physics_violation",
+      "description": "Dry ice sublimates at -78.5 degrees Celsius. Using dry ice in direct proximity to biologics requiring 2-8C storage would freeze and destroy the product. Monoclonal antibodies are particularly sensitive to freeze damage, which causes irreversible aggregation and loss of efficacy. The correct coolant for 2-8C maintenance is phase-change material (PCM) conditioned to 2-8C or gel packs preconditioned to 2-5C with appropriate insulation.",
+      "location_hint": "Use of dry ice for 2-8C storage"
+    },
+    {
+      "id": "f2",
+      "type": "performance_overestimation",
+      "description": "An uninsulated corrugated cardboard box with only two gel packs cannot maintain 2-8C for 72 hours. Uninsulated corrugated offers negligible thermal resistance (R-value ~1). With two gel packs in tropical ambient conditions (30-35C), the payload would exceed 8C within 4-8 hours. A 72-hour cold chain requires qualified insulated shippers (expanded polystyrene or polyurethane, minimum 25mm wall thickness) with sufficient coolant mass validated by thermal qualification testing per ISTA 7D or equivalent.",
+      "location_hint": "72-hour passive cold chain claim with corrugated box and 2 gel packs"
+    }
+  ],
+  "ground_truth_notes": "WHO Technical Report Series No. 961 Annex 9 and ISTA 7D provide guidance on pharmaceutical cold chain packaging qualification. Dry ice is appropriate for frozen products (-20C or -70C) but contraindicated for refrigerated (2-8C) biologics. Qualified 72-hour shippers for tropical routes typically use vacuum insulated panels or thick EPS with 6-12 conditioned PCM bricks. Two gel packs in corrugated is a configuration that would fail any thermal qualification protocol for durations beyond a few hours."
+}

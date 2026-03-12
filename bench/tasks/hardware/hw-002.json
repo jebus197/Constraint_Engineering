@@ -1,0 +1,20 @@
+{
+  "id": "hw-002",
+  "domain": "hardware",
+  "prompt": "Design a motor driver circuit to control a 24V brushed DC motor rated at 5A for a conveyor belt system. Use an N-channel MOSFET (IRF540N or equivalent) as the low-side switch, driven directly from a 3.3V microcontroller GPIO pin for PWM speed control. The IRF540N is rated for 100V and 33A, so it has plenty of margin for this application. Connect the motor between the 24V supply and the MOSFET drain, with the source tied to ground. The microcontroller generates a 20kHz PWM signal to control motor speed. No additional protection circuitry should be needed since the MOSFET's body diode can handle any voltage spikes from the motor.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "gate_drive_error",
+      "description": "The IRF540N has a gate threshold voltage (Vgs_th) of 2-4V, but this is the point where it barely begins to conduct. Full enhancement (low Rds_on) requires Vgs of 10V. A 3.3V GPIO cannot fully turn on this MOSFET; it will operate in the linear region, dissipating excessive power as heat and likely destroying itself. A logic-level MOSFET (e.g., IRLZ44N) or a gate driver IC is required.",
+      "location_hint": "The instruction to drive the MOSFET 'directly from a 3.3V microcontroller GPIO pin'."
+    },
+    {
+      "id": "f2",
+      "type": "missing_protection",
+      "description": "A brushed DC motor is a highly inductive load. When the MOSFET switches off, the collapsing magnetic field generates a voltage spike (back-EMF) that can far exceed the supply voltage. The MOSFET body diode is oriented source-to-drain and does not clamp drain-to-supply spikes. A flyback/freewheeling diode (e.g., Schottky rated for motor current) must be placed across the motor terminals to provide a current path for inductive kickback.",
+      "location_hint": "The claim that 'the MOSFET's body diode can handle any voltage spikes from the motor' and that no additional protection is needed."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) The IRF540N needs ~10V Vgs for full enhancement. A 3.3V GPIO will leave it in linear mode with very high Rds_on, causing thermal destruction. Need a logic-level FET or gate driver. (2) Inductive motor loads require a flyback diode across the motor. The body diode does not protect against drain overvoltage from inductive kickback; it conducts in the wrong direction for this purpose."
+}

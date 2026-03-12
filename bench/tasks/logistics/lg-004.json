@@ -1,0 +1,20 @@
+{
+  "id": "lg-004",
+  "domain": "logistics",
+  "prompt": "We are modelling a last-mile parcel delivery operation for a suburban residential area outside Atlanta, Georgia. Each driver operates a standard cargo van on an 8-hour shift. Our routing algorithm assumes a constant average speed of 30 mph including all stop time and projects that each driver can complete 60 residential deliveries per shift. The delivery density is approximately 4 stops per square mile. Please validate these throughput and speed assumptions and recommend whether we need to adjust our fleet size for the projected 1,200 daily deliveries.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "throughput_overestimation",
+      "description": "60 deliveries per driver in an 8-hour shift is unrealistic for suburban residential delivery. This allows only 8 minutes per stop cycle including driving between stops, finding the address, parking, walking to the door, scanning, obtaining signature or leaving package, and returning to the van. Industry benchmarks for suburban residential delivery are 20-25 stops per hour for dense urban and 15-20 for suburban, yielding 120-200 stops per full shift for experienced drivers in dense areas. At 4 stops per square mile (low suburban density), 25-35 deliveries per 8-hour shift is realistic.",
+      "location_hint": "60 deliveries per driver per 8-hour shift"
+    },
+    {
+      "id": "f2",
+      "type": "parameter_overestimation",
+      "description": "A constant 30 mph average speed including stop time is unrealistic for last-mile delivery. The average speed must account for time at zero mph during each delivery stop (typically 2-5 minutes per stop for residential), traffic, turns, parking manoeuvres, and navigating residential streets. Empirical data from last-mile operations shows effective average speeds of 12-15 mph when stop time is included. Even the driving-only segments average 20-25 mph in suburban areas due to speed limits and turns.",
+      "location_hint": "Constant 30 mph average speed including stops"
+    }
+  ],
+  "ground_truth_notes": "UPS, FedEx, and Amazon DSP operational data suggests 150-200 stops per shift in dense urban areas with very short walk distances, dropping to 80-120 in standard suburban and 25-50 in rural. At 4 stops per square mile, inter-stop distance averages approximately 0.5 miles, and the service area is roughly 15 square miles for 60 stops. Effective speed including dwell time is well-documented at 12-18 mph across multiple last-mile studies (Figliozzi 2020, Boysen et al. 2021)."
+}

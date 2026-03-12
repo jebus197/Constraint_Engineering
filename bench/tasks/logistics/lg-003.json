@@ -1,0 +1,20 @@
+{
+  "id": "lg-003",
+  "domain": "logistics",
+  "prompt": "We are designing a new fulfilment warehouse for an e-commerce operation handling 50,000 orders per day with an average of 2 items per order. The facility is a standard industrial unit with 6-metre clear height to the underside of the steel. Our layout plan calls for 8-metre high selective pallet racking to maximize vertical storage density, serviced by standard reach trucks. We project that a team of 5 pickers working single shifts can achieve 10,000 SKU picks per hour using pick-to-light technology on the ground level. Please review the layout assumptions and validate the throughput projections.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "throughput_overestimation",
+      "description": "10,000 picks per hour from 5 workers equals 2,000 picks per worker per hour, or one pick every 1.8 seconds. Industry best practice for pick-to-light systems in well-designed zones is approximately 300-600 picks per worker per hour. Even the most aggressive goods-to-person robotic systems rarely exceed 600 picks per operator per hour sustained. The claimed rate is 3-6x beyond demonstrated capability.",
+      "location_hint": "10,000 SKU picks per hour with 5 workers"
+    },
+    {
+      "id": "f2",
+      "type": "physical_constraint_violation",
+      "description": "8-metre high racking cannot be installed in a building with 6-metre clear height. The clear height is the usable vertical space from floor to the lowest overhead obstruction (typically the underside of roof steel, lighting, or sprinkler heads). Racking height must be below clear height, with additional clearance required for sprinkler deflectors (typically 450-900mm below sprinkler heads per NFPA 13). Maximum practical racking height in this building would be approximately 5 metres.",
+      "location_hint": "8-metre high racking in 6-metre clear height building"
+    }
+  ],
+  "ground_truth_notes": "MHIA and WERC benchmarking data consistently show manual pick rates of 60-120 picks/person/hour for standard warehouse operations. Pick-to-light in optimised zones reaches 300-600 picks/person/hour. Clear height is defined as the usable vertical envelope; racking height must be less than clear height minus sprinkler clearance per NFPA 13 (minimum 18 inches / 457mm below sprinkler deflectors for storage over 12ft). Fire codes and structural loading also constrain racking height."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "hw-005",
+  "domain": "hardware",
+  "prompt": "Design a solar-powered weather station for year-round deployment in northern Montana (latitude 48 degrees N). The station continuously monitors wind speed, temperature, barometric pressure, and rainfall, consuming an average of 150mW. Size the solar panel based on the annual average solar irradiance of 4.5 peak sun hours per day, which gives a comfortable margin with a 2W panel. Energy storage uses a 12V 7Ah sealed lead-acid battery, selected for its wide operating temperature range of -40 to +60 degrees Celsius and its tolerance for outdoor installations. The battery provides approximately 5 days of autonomy during extended cloudy periods, and the charge controller prevents overcharge above 14.4V.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "solar_sizing_error",
+      "description": "Using annual average irradiance (4.5 peak sun hours) for a year-round system in northern Montana ignores the dramatic seasonal variation. At 48 degrees N latitude, winter peak sun hours drop to approximately 1.5-2.0 hours per day in December-January. A 2W panel at 1.5 peak sun hours produces only 3Wh per day, while the load consumes 150mW x 24h = 3.6Wh per day. The system goes energy-negative in winter and the battery drains over weeks. Panel sizing must use worst-case winter irradiance, not annual average.",
+      "location_hint": "The use of 'annual average solar irradiance of 4.5 peak sun hours per day' to size the solar panel for year-round operation."
+    },
+    {
+      "id": "f2",
+      "type": "battery_temperature_error",
+      "description": "Sealed lead-acid batteries have severely degraded performance below -20 degrees Celsius and the electrolyte can freeze when the battery is in a discharged state. At 50% state of charge, the electrolyte freezing point is approximately -26 degrees Celsius; below 30% SOC it can freeze at -15 to -20 degrees Celsius. Northern Montana regularly sees temperatures of -30 to -40 degrees Celsius in winter. The claimed operating range of -40 degrees Celsius is from the datasheet's storage rating, not operational charging/discharging. A heated battery enclosure or lithium iron phosphate chemistry is needed.",
+      "location_hint": "The specification of lead-acid battery operating to '-40 to +60 degrees Celsius' for a Montana winter deployment."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Solar panel sized on annual average (4.5 PSH) fails in winter when irradiance drops to ~1.5 PSH at 48N latitude. The system goes energy-negative December through February. Must size for worst-case month. (2) Lead-acid batteries cannot operate reliably below -20C. In a discharged state (which happens in winter when solar input is insufficient), electrolyte freezes around -15 to -26C. Montana winter temperatures routinely reach -30C or colder. Need LiFePO4 or heated enclosure."
+}

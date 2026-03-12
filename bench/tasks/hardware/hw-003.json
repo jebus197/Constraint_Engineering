@@ -1,0 +1,20 @@
+{
+  "id": "hw-003",
+  "domain": "hardware",
+  "prompt": "Design a USB 3.0 SuperSpeed hub PCB that connects a host controller to four downstream ports. The board should be a simple 2-layer design to minimize manufacturing cost, using standard 1.6mm FR4 substrate. Route the USB 3.0 differential pairs (TX and RX) with 20-mil trace widths to keep resistance low for the 5Gbps signalling rate, which will give us the required 90-ohm differential impedance. Keep the pairs tightly coupled with 7-mil spacing. The two copper layers provide sufficient reference planes for signal integrity at SuperSpeed data rates. Use the bottom copper layer as a shared ground and power plane, and route all high-speed signals on the top layer with via stitching at connector transitions.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "signal_integrity_error",
+      "description": "USB 3.0 SuperSpeed at 5Gbps requires controlled impedance transmission lines. A 2-layer PCB cannot provide adequate impedance control because the reference plane (bottom layer) is too far from the signal traces (1.6mm separation through the full substrate), the bottom layer is shared between ground and power (compromised reference), and there is no continuous, unbroken ground reference directly adjacent to the signal layer. A minimum 4-layer stackup is required (signal-ground-power-signal) for USB 3.0.",
+      "location_hint": "The decision to use 'a simple 2-layer design' for USB 3.0 SuperSpeed routing."
+    },
+    {
+      "id": "f2",
+      "type": "impedance_calculation_error",
+      "description": "On standard 1.6mm FR4 (Er ~4.3), 20-mil traces with 7-mil spacing over a ground plane 1.6mm away produce a differential impedance of approximately 200+ ohms in microstrip, far from 90 ohms. Even on a proper 4-layer board with ~0.2mm dielectric, 20-mil traces with 7-mil spacing yield roughly 65-75 ohms differential, not 90. Achieving 90-ohm differential impedance on FR4 typically requires traces around 5-6 mil wide with ~5 mil spacing over a ground plane ~4-5 mil away.",
+      "location_hint": "The claim that '20-mil trace widths' will provide '90-ohm differential impedance'."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) USB 3.0 at 5Gbps is impossible to route reliably on a 2-layer PCB. Controlled impedance needs a tightly-coupled reference plane (4+ layers). (2) 20-mil traces on standard FR4 do not produce 90-ohm differential impedance regardless of stackup. The traces are far too wide; proper USB 3.0 traces are typically 4-6 mil wide on inner layers of a 4-layer board with carefully specified dielectric thickness."
+}

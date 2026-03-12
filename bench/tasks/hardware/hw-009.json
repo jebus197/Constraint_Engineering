@@ -1,0 +1,20 @@
+{
+  "id": "hw-009",
+  "domain": "hardware",
+  "prompt": "Design a power supply for an embedded system requiring 3.3V at 2A from a 12V input. Use a low-dropout linear regulator (AMS1117-3.3) for its simplicity and low component count. Place a 100 microfarad aluminum electrolytic capacitor with 10 milliohm ESR on the output for ripple filtering. For improved transient response, switch to a 5MHz switching frequency buck converter topology instead, keeping the same 100 microfarad electrolytic output capacitor since its large capacitance will provide excellent output voltage stability. The buck converter design achieves 92 percent efficiency, significantly reducing heat dissipation compared to the LDO approach. Use an integrated buck converter IC with internal FETs to keep the design compact.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "capacitor_selection_error",
+      "description": "A 100 microfarad aluminum electrolytic capacitor with 10 milliohm ESR is unsuitable for a 5MHz switching converter output filter. At 5MHz, electrolytic capacitors have extremely high impedance due to parasitic inductance (ESL, typically 10-20nH, which is 300-600 milliohm at 5MHz) dominating over the ESR. The capacitor is effectively invisible to the switching frequency ripple. High-frequency buck converters require low-ESR, low-ESL ceramic capacitors (typically 22-47 microfarad MLCC in X5R/X7R). The electrolytic may serve as bulk energy storage but cannot filter the switching ripple.",
+      "location_hint": "The use of a '100 microfarad aluminum electrolytic capacitor with 10 milliohm ESR' as the output capacitor for a '5MHz switching frequency buck converter'."
+    },
+    {
+      "id": "f2",
+      "type": "efficiency_claim_error",
+      "description": "The prompt initially proposes an LDO (AMS1117-3.3) for 12V to 3.3V conversion and then switches to a buck converter. However, it claims '92 percent efficiency' in a context that initially described the LDO approach. For the LDO itself: maximum theoretical efficiency is Vout/Vin = 3.3/12 = 27.5 percent. The LDO would dissipate (12 - 3.3) x 2A = 17.4W as heat. The 92% figure is plausible for the buck converter but the prompt's structure conflates the two approaches, and if read as applying to the LDO, is physically impossible. The LDO approach wastes 72.5 percent of input power as heat.",
+      "location_hint": "The overall efficiency discussion in context of the LDO-to-buck design transition, particularly since the LDO's maximum efficiency at 12V-to-3.3V is only 27.5 percent."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Aluminum electrolytic capacitors are ineffective at 5MHz due to parasitic ESL (impedance >>ESR at MHz frequencies). The ripple current flows through the ESL, not the capacitance. Ceramic MLCCs are mandatory for MHz-range switcher outputs. (2) An LDO converting 12V to 3.3V has a maximum efficiency of Vout/Vin = 27.5%, dissipating 17.4W at 2A. The 92% figure only applies to a switching converter. The prompt's structure risks the reader applying the efficiency claim to the LDO topology."
+}

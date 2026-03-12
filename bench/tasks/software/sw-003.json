@@ -1,0 +1,20 @@
+{
+  "id": "sw-003",
+  "domain": "software",
+  "prompt": "We've designed an in-process message queue for a Java application that decouples producers from consumers. Messages are stored in a HashMap<String, Message> keyed by message ID. A thread pool of 8 consumer threads pulls messages from the map, processes them, and removes them upon completion. If processing fails, the message is left in the map for retry. The design document states that this provides exactly-once message delivery semantics since each message ID is unique and the map ensures no duplicates. Please review the concurrency model and delivery guarantees.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "concurrency",
+      "description": "java.util.HashMap is not thread-safe. Concurrent read and write operations from 8 consumer threads and producer threads will cause data races. Specifically: (1) concurrent structural modifications (put/remove during iteration or rehash) can cause infinite loops in the hash chain traversal, hanging consumer threads permanently; (2) lost updates when two threads modify the map simultaneously without synchronization; (3) partially visible state where one thread sees a half-constructed entry written by another. The fix is to use ConcurrentHashMap, or to synchronize all access, or to use a proper concurrent queue (e.g., ConcurrentLinkedQueue or LinkedBlockingQueue).",
+      "location_hint": "HashMap<String, Message> with multi-threaded consumers"
+    },
+    {
+      "id": "f2",
+      "type": "semantics",
+      "description": "The described retry mechanism (leaving failed messages in the map for re-processing) implements at-least-once delivery, not exactly-once. If a consumer reads a message, begins processing, and fails after performing a side effect (e.g., writing to a database), the message remains in the map and will be reprocessed, causing the side effect to occur again. Exactly-once delivery requires idempotent consumers or a transactional outbox pattern. The unique message ID prevents duplicate insertion but does not prevent duplicate processing.",
+      "location_hint": "documentation claiming exactly-once delivery"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by replacing HashMap with ConcurrentHashMap or, better, using a BlockingQueue for the producer-consumer pattern. Fix f2 by either (a) documenting the actual guarantee as at-least-once and requiring consumers to be idempotent, or (b) implementing exactly-once via a transactional outbox where message acknowledgment and side effects are committed atomically."
+}

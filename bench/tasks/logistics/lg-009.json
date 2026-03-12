@@ -1,0 +1,20 @@
+{
+  "id": "lg-009",
+  "domain": "logistics",
+  "prompt": "We are setting up a reverse logistics operation for consumer electronics returns at our facility in Memphis, Tennessee. Our financial model assumes that 100 percent of returned electronics (smartphones, tablets, laptops) can be refurbished and resold through our certified pre-owned channel. Processing cost is budgeted at $2 per unit, covering inspection, data wiping, cosmetic grading, repackaging, and quality assurance testing. We expect 50,000 returns per month and need to design the facility layout, staffing plan, and quality control workflow. Please validate the financial assumptions and propose an operational design for the returns processing centre.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "yield_overestimation",
+      "description": "Assuming 100% of returned consumer electronics can be refurbished and resold is grossly unrealistic. Industry data from reverse logistics operators shows that only 15-30% of returned electronics are in sufficient condition for refurbishment and resale. The remainder is distributed across categories: 20-30% can be sold for parts or component harvesting, 15-25% require recycling (materials recovery), and 5-15% are irreparable waste requiring responsible disposal. Returns include devices with board-level failures, liquid damage, cracked screens beyond economic repair, missing components, and warranty fraud units. A financial model based on 100% resale yield would dramatically overstate revenue.",
+      "location_hint": "100% of returned electronics resold as refurbished"
+    },
+    {
+      "id": "f2",
+      "type": "cost_underestimation",
+      "description": "A $2 per unit processing cost for electronics returns is approximately 5-10x below industry reality. The process described (inspection, data wiping, cosmetic grading, repackaging, QA testing) requires skilled technicians, specialized equipment (diagnostic stations, data destruction tools certified to NIST 800-88 or equivalent), and compliance with e-waste regulations. Industry benchmarks for electronics returns processing range from $10-20 per unit for basic triage and $25-50 per unit for full refurbishment including parts replacement. Labour alone at US wage rates for the described multi-step process would exceed $2 per unit.",
+      "location_hint": "Returns processing cost of $2 per unit"
+    }
+  ],
+  "ground_truth_notes": "Reverse Logistics Association and RLEC (Reverse Logistics and E-Commerce Council) data shows consumer electronics return rates of 15-30% of sales, with refurbishment yield of 15-30% of returns depending on product category and return reason. Optoro, a major reverse logistics platform, reports that only about 20% of returns are resold at full or near-full value. NIST SP 800-88 Rev.1 governs media sanitization requirements for data-bearing devices. R2 (Responsible Recycling) and e-Stewards certifications impose additional processing requirements and costs."
+}

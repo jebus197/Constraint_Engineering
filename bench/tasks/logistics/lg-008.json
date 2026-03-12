@@ -1,0 +1,20 @@
+{
+  "id": "lg-008",
+  "domain": "logistics",
+  "prompt": "We are designing a fleet management plan for a road freight operation running between our distribution centre in Lyon, France and retail distribution points across Germany and the Benelux countries. Each driver is scheduled for a 14-hour driving window per day to maximize asset utilization. Our route planning assumes that each diesel truck (40-tonne GVW, 500-litre fuel tank) can complete a 2,000 km round trip on a single tank without refuelling. The fleet consists of 20 tractor units running five days per week. Please validate the driver scheduling, fuel range assumptions, and propose an optimal route network for the operation.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "regulatory_violation",
+      "description": "EU Regulation EC 561/2006 limits daily driving time to 9 hours, which may be extended to 10 hours no more than twice per week. A 14-hour driving window violates this regulation by 5 hours on standard days and 4 hours on extended days. The regulation also requires a minimum 45-minute break after 4.5 hours of driving, and a minimum 11-hour daily rest period (reducible to 9 hours no more than three times between weekly rests). A 14-hour driving window would leave only 10 hours for breaks and rest, which is insufficient. Violations are subject to fines and operator licence sanctions under the EU's risk rating system.",
+      "location_hint": "14-hour driving window per day"
+    },
+    {
+      "id": "f2",
+      "type": "performance_overestimation",
+      "description": "A 40-tonne GVW diesel truck with a 500-litre tank cannot achieve a 2,000 km range on a single fill. At typical laden fuel consumption of 30-35 litres per 100 km for a 40-tonne combination, a 500-litre tank provides a range of approximately 1,430-1,670 km. Accounting for terrain, traffic, and a prudent reserve margin (typically arriving at the pump with no less than 10-15% remaining), the practical operating range is 800-1,200 km between refuelling stops.",
+      "location_hint": "2,000 km range on a single 500-litre tank"
+    }
+  ],
+  "ground_truth_notes": "EC 561/2006 Articles 6-8 specify driving time limits, break requirements, and rest periods. AETR rules apply similarly for non-EU European countries. Tachograph (digital, under EU Regulation 165/2014) enforcement is mandatory. Fuel consumption data from ACEA, ICCT, and fleet operator benchmarks consistently show 28-38 L/100km for 40t combinations depending on load, terrain, and driving style. The European Automobile Manufacturers Association publishes annual fuel efficiency data."
+}

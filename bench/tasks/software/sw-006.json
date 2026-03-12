@@ -1,0 +1,20 @@
+{
+  "id": "sw-006",
+  "domain": "software",
+  "prompt": "We're building a real-time chat application expected to support 10,000 concurrent users. The frontend polls the server every 100 milliseconds via HTTP GET requests to check for new messages. Message history is stored in a HashMap on the WebSocket server instance so that users can retrieve recent messages when they reconnect. The application will be deployed on a single server initially, with plans to scale horizontally behind a load balancer as user counts grow. Please review the architecture for performance and scalability.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "scalability",
+      "description": "Polling at 100ms intervals with 10,000 concurrent users generates 100,000 HTTP requests per second to the server. Each request requires a full HTTP request/response cycle including TCP overhead, header parsing, authentication, and response serialization — even when there are no new messages (which is the majority case in chat). This creates enormous unnecessary server load and network bandwidth consumption. The design should use WebSockets, Server-Sent Events, or long polling to push messages to clients only when new messages arrive, reducing request volume by orders of magnitude.",
+      "location_hint": "100ms polling interval for 10,000 users"
+    },
+    {
+      "id": "f2",
+      "type": "scalability",
+      "description": "Storing message history in a HashMap on the server process means: (1) all message data is lost when the server process restarts or crashes; (2) when scaling horizontally, each server instance has its own separate message history, so users routed to different instances see different message histories; (3) memory usage grows unboundedly as messages accumulate, eventually causing an OutOfMemoryError. Message history must be stored in an external persistent store (e.g., Redis, PostgreSQL, or a message broker with persistence) accessible to all server instances.",
+      "location_hint": "message history in server-side HashMap"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by replacing HTTP polling with WebSocket connections for bidirectional real-time communication, or Server-Sent Events for server-to-client push. This reduces the request volume from 100K/sec to near-zero when idle, with messages pushed only on new activity. Fix f2 by storing message history in an external database (PostgreSQL for persistence, Redis for fast access with TTL-based eviction, or both). Use a pub/sub mechanism (Redis Pub/Sub, or a message broker like RabbitMQ) to distribute messages across server instances."
+}

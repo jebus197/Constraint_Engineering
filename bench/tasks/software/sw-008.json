@@ -1,0 +1,20 @@
+{
+  "id": "sw-008",
+  "domain": "software",
+  "prompt": "We're building a file upload service for a document management system. The service accepts multipart form uploads up to 100MB. The upload handler reads the entire file content into a byte array in memory, validates the file type by checking the extension from the original filename provided in the Content-Disposition header, and then writes the byte array to disk at the path /uploads/<original_filename>. The service is expected to handle 50 concurrent uploads during peak hours. Please review this design for robustness and security.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "reliability",
+      "description": "Reading the entire uploaded file into a byte array in memory means each 100MB upload consumes 100MB of heap space. With 50 concurrent uploads, the service requires up to 5GB of heap just for buffered file data, not counting the rest of the application. This causes OutOfMemoryError crashes, high GC pressure, and large latency spikes. The fix is to stream the upload directly to disk (or to object storage) using a buffered stream with a small fixed-size buffer (e.g., 8KB-64KB), never holding the entire file in memory at once.",
+      "location_hint": "reads entire file into byte array in memory"
+    },
+    {
+      "id": "f2",
+      "type": "security",
+      "description": "Using the original filename from the multipart Content-Disposition header without sanitization creates a path traversal vulnerability. An attacker can craft a filename like '../../etc/cron.d/malicious' or '../../../app/config/database.yml' to write files outside the intended /uploads/ directory, potentially overwriting system files or application configuration. The filename is entirely attacker-controlled. The fix is to either (a) generate a random unique filename server-side (e.g., UUID) and store the original name as metadata, or (b) strip all path separators and directory traversal sequences, validate against a whitelist of allowed characters, and resolve the canonical path to verify it remains within the upload directory.",
+      "location_hint": "original filename used directly in file write path"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by streaming uploads through a fixed-size buffer to disk or object storage. Most web frameworks support this natively (e.g., Spring MultipartFile.transferTo(), Express with multer disk storage, Python with shutil.copyfileobj). Fix f2 by generating server-side filenames (UUIDs), storing the original name in a database, and validating that the resolved canonical path of any file write starts with the intended upload directory prefix."
+}

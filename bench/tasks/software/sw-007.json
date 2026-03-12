@@ -1,0 +1,20 @@
+{
+  "id": "sw-007",
+  "domain": "software",
+  "prompt": "We have a product catalog search API backed by PostgreSQL with 2 million products. Search results are paginated using OFFSET and LIMIT — for example, page 50 at 20 results per page uses OFFSET 980 LIMIT 20. The API is used by both a web frontend and a mobile app. Users frequently browse deep into result sets (page 100+). The product table receives approximately 500 inserts and updates per hour from inventory feeds. The team asserts that results remain consistent across pages during a user's browsing session without any special isolation configuration. Please review the pagination design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "performance",
+      "description": "OFFSET/LIMIT pagination has O(n) cost where n is the offset value. The database must scan and discard all rows up to the offset before returning the requested page. For page 100 at 20 results per page (OFFSET 1980), the database reads and discards 1,980 rows, returning only 20. Performance degrades linearly with page depth. At scale, deep pages cause significant I/O and CPU waste. The fix is keyset (cursor-based) pagination using a WHERE clause on an indexed column (e.g., WHERE id > last_seen_id ORDER BY id LIMIT 20), which is O(1) regardless of page depth because it seeks directly to the starting point via the index.",
+      "location_hint": "OFFSET/LIMIT for deep pagination"
+    },
+    {
+      "id": "f2",
+      "type": "correctness",
+      "description": "With 500 inserts/updates per hour and no snapshot isolation, results are not consistent across pages during a browsing session. When new rows are inserted between page requests, they shift the offset boundaries: a product on page 5 may appear again on page 6 (duplicate), or a product may be skipped entirely if a row is inserted before the current offset position. Deletes cause the inverse problem. PostgreSQL's default READ COMMITTED isolation level does not provide cross-query consistency. Consistent pagination requires either (a) keyset pagination with a stable sort key, (b) a snapshot-based approach using a timestamp or version filter, or (c) REPEATABLE READ isolation within a long-lived transaction (impractical for web APIs).",
+      "location_hint": "claim of consistent results with concurrent writes"
+    }
+  ],
+  "ground_truth_notes": "Fix f1 by switching to keyset pagination: WHERE id > :last_seen_id ORDER BY id ASC LIMIT 20. This uses an index seek instead of scanning and discarding rows. Fix f2 by anchoring the result set with a timestamp or cursor — e.g., WHERE created_at <= :session_start_time, or by using a cached result set ID for the session. Accept that true point-in-time consistency across independent HTTP requests requires explicit design, not default database behavior."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "lg-005",
+  "domain": "logistics",
+  "prompt": "We are preparing a cross-border shipment of lithium-ion battery packs from our factory in Shenzhen to a medical device assembler in Chicago. The batteries are classified under HS code 8507.60 (lithium-ion accumulators). Since they are components rather than standalone products, we have classified them as exempt from UN3481 dangerous goods packaging and labelling requirements. Our customs broker has estimated 24-hour clearance at the US port of entry for the medical device components. Please review the tariff classification, dangerous goods status, and customs timeline and flag any compliance risks before we ship.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "regulatory_violation",
+      "description": "Lithium-ion batteries packed with or contained in equipment are classified as UN3481 Class 9 dangerous goods under IATA DGR and 49 CFR regardless of whether they are components or standalone products. They are NOT exempt from dangerous goods packaging requirements. Depending on watt-hour rating, they require Class 9 hazard labels, Cargo Aircraft Only labels (if over 35kg gross per package by air), Packing Instructions PI965/PI966/PI967, Shipper's Declaration for Dangerous Goods, and proper packaging per applicable packing instruction. Shipping without these is a federal offence under 49 USC 5124.",
+      "location_hint": "Claim of exemption from UN3481 dangerous goods requirements"
+    },
+    {
+      "id": "f2",
+      "type": "temporal_constraint_violation",
+      "description": "24-hour customs clearance for FDA-regulated medical device components is unrealistic for a first-time import. Medical devices and their components are subject to FDA prior notice, potential ORAD (Office of Regulatory Affairs and Policy) review, and possible examination or hold. First-time importers of FDA-regulated products should expect 5-15 business days for clearance, and longer if FDA issues an Import Alert or requests additional documentation. Even for established importers with FDA registration, 2-5 business days is typical.",
+      "location_hint": "24-hour customs clearance estimate for FDA-regulated medical devices"
+    }
+  ],
+  "ground_truth_notes": "49 CFR 173.185 governs lithium battery transportation in the US. IATA DGR Section II covers air transport. There is a limited exception under 49 CFR 173.185(c) for small lithium-ion cells (under 20 Wh per cell, 100 Wh per battery) but this still requires specific packaging, marking, and documentation — not a blanket exemption. For FDA-regulated imports, FDA's PREDICT system risk-scores shipments and can flag them for examination. The FDA import process is documented in FDA Import Program Regulatory Procedures Manual Chapter 9."
+}
