@@ -76,6 +76,20 @@ Corroboration — the degree to which a claim has survived falsification — is 
 
 > **C(n) = 1 − (1 − p)ⁿ**
 
+**Interpretation.** Consider inspecting a structure for a defect. Each inspection has some probability *p* of detecting the defect if it exists. If the defect is subtle, *p* is small. If it is obvious, *p* is large. But *p* is never 1 (100%), because no single inspection is perfect.
+
+After one inspection, the probability of having detected the defect is *p*. Suppose *p* = 0.3 (30%) — a 30% detection probability per inspection.
+
+If the first inspection fails to detect it, a second inspection is performed. The probability of two consecutive failures is 0.7 × 0.7 = 0.49 (49%). The probability of detection after two inspections is therefore 1 − 0.49 = 0.51 (51%). Improved, but not certain.
+
+After three inspections: 1 − 0.343 = 0.657 (65.7%). After five: 1 − 0.168 = 0.832 (83.2%). After ten: 1 − 0.028 = 0.972 (97.2%).
+
+Two properties are immediately visible. First, the value approaches 1 (100%) asymptotically but never reaches it. Complete certainty that no defect exists is not available. This is Popper's central observation: corroboration accumulates; proof does not arrive. Second, each additional inspection yields less marginal gain than the previous one. The gain from one to two inspections is 21 percentage points. The gain from nine to ten is less than 3. This is the diminishing returns property that determines the stopping criterion.
+
+The critical insight follows directly. If the inspector is incapable of detecting the defect — if *p* = 0 (0%) — the formula yields 1 − 1ⁿ = 0 (0%), regardless of *n*. A thousand inspections produce no corroboration. This is the GIGO problem (Garbage In, Garbage Out) expressed in a single equation: a model that cannot genuinely reason adversarially gains nothing from performing the structural motions of a P-Pass. The structure is present. The substance is absent.
+
+The inverse is equally significant: when *p* is high — a capable model with genuine adversarial reasoning — even a small number of passes produces substantial corroboration. The methodology's value scales with the capability of the system performing it.
+
 This has four properties that correspond directly to the methodology:
 
 1. **C(0) = 0.** No falsification attempts, no corroboration. An untested claim has no earned trust.
