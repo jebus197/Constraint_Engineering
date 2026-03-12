@@ -5,7 +5,7 @@ Seeded-fault benchmark harness for CDSFL methodology evaluation.
 Runs each task under two conditions:
   - Control:      prompt sent with no system prompt.
   - Experimental: prompt sent with CDSFL directives as system prompt,
-                  repeated over n P-Passes.
+                  then iteratively revised across n P-Passes.
 
 Outputs raw results as JSON to stdout (or --output file).
 Progress and diagnostics go to stderr.
@@ -14,23 +14,25 @@ Progress and diagnostics go to stderr.
 import argparse
 import json
 import os
+import re
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# CDSFL core directives (Part IV, §4.1 of the paper)
+# CDSFL core directives (Part IV, Section 4.1 of the paper)
 # ---------------------------------------------------------------------------
 
 CDSFL_DIRECTIVES = """\
 Before producing any output, classify every constraint in the problem as \
-HARD (physics, mathematics, law, safety — non-negotiable) or SOFT (economic, \
-preference, convenience — negotiable). Ambiguous constraints default to HARD.
+HARD (physics, mathematics, law, safety - non-negotiable) or SOFT (economic, \
+preference, convenience - negotiable). Ambiguous constraints default to HARD.
 
 For every claim you make:
 1. Identify the claim.
-2. State the strongest falsifying condition — what observation or argument \
+2. State the strongest falsifying condition - what observation or argument \
 would prove this claim wrong?
 3. Attempt to satisfy that condition. Actively try to disprove your own \
 conclusion.
@@ -39,7 +41,7 @@ residual uncertainty.
 5. If the claim fails, revise or retract it before proceeding.
 
 This is iterative: after revising, re-examine downstream claims that depended \
-on the revised one. Continue until you reach genuine diminishing returns — \
+on the revised one. Continue until you reach genuine diminishing returns - \
 not until you feel comfortable, but until further passes produce no new \
 failures or revisions.
 
@@ -55,12 +57,55 @@ Default to the simplest sufficient solution. Justified complexity is \
 complexity the user cannot do without.\
 """
 
-PASS_INSTRUCTION = (
-    "This is P-Pass {n} of {total}. Review the task for errors, "
-    "contradictions, physical impossibilities, logical flaws, and constraint "
-    "violations. Identify every issue you find. Be adversarial — actively "
-    "try to find problems."
-)
+INITIAL_PASS_TEMPLATE = """This is P-Pass {n} of {total}. Perform the full CDSFL loop on the task below.
+
+Original task:
+{task_prompt}
+
+Instructions:
+- Produce the strongest answer you can to the original task.
+- Then attack that answer adversarially for errors, contradictions, physical impossibilities, logical flaws, legal or safety issues, and HARD or SOFT misclassification.
+- Revise the answer to fix every issue you can justify fixing.
+- Surface uncertainty honestly.
+- Do not hide issues merely because you managed to revise them.
+
+Return exactly these sections:
+INITIAL_ANSWER:
+...
+
+ISSUES_FOUND:
+- ...
+
+REVISED_ANSWER:
+...
+"""
+
+FOLLOWUP_PASS_TEMPLATE = """This is P-Pass {n} of {total}. Continue the CDSFL loop by attacking and revising the current draft.
+
+Original task:
+{task_prompt}
+
+Current draft from the previous pass:
+{current_draft}
+
+Issues identified on the previous pass:
+{prior_issues}
+
+Instructions:
+- Start from the current draft, not from scratch.
+- Try to break the current draft harder than before.
+- Look for newly introduced downstream problems caused by earlier fixes.
+- Identify every additional issue you find.
+- Revise the draft to fix what survives scrutiny.
+- Preserve any parts that still survive attack.
+
+Return exactly these sections:
+ISSUES_FOUND:
+- ...
+
+REVISED_ANSWER:
+...
+"""
 
 TASKS_DIR = Path(__file__).parent / "tasks"
 REQUIRED_TASK_FIELDS = {"id", "domain", "prompt", "seeded_faults", "ground_truth_notes"}
@@ -68,25 +113,37 @@ REQUIRED_FAULT_FIELDS = {"id", "type", "description", "location_hint"}
 
 
 # ---------------------------------------------------------------------------
+# CLI helpers
+# ---------------------------------------------------------------------------
+
+
+def _err(msg: str) -> None:
+    """Print to stderr."""
+    print(msg, file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
 # Task loading
 # ---------------------------------------------------------------------------
 
+
 def load_tasks(tasks_dir: Path) -> list[dict[str, Any]]:
     """Recursively load all .json task files from tasks_dir."""
-    tasks = []
+    tasks: list[dict[str, Any]] = []
     if not tasks_dir.is_dir():
         _err(f"Tasks directory not found: {tasks_dir}")
         return tasks
 
     for json_path in sorted(tasks_dir.rglob("*.json")):
         try:
-            with open(json_path) as f:
+            with open(json_path, "r", encoding="utf-8") as f:
                 task = json.load(f)
             task["_source_file"] = str(json_path.relative_to(tasks_dir))
             tasks.append(task)
         except (json.JSONDecodeError, OSError) as exc:
             _err(f"WARNING: skipping {json_path}: {exc}")
     return tasks
+
 
 
 def validate_task(task: dict[str, Any]) -> list[str]:
@@ -118,6 +175,7 @@ def validate_task(task: dict[str, Any]) -> list[str]:
 # API callers
 # ---------------------------------------------------------------------------
 
+
 def call_anthropic(
     model: str,
     system_prompt: str | None,
@@ -130,7 +188,7 @@ def call_anthropic(
         _err("ERROR: `anthropic` package not installed. pip install anthropic")
         sys.exit(1)
 
-    client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+    client = anthropic.Anthropic()
     kwargs: dict[str, Any] = {
         "model": model,
         "max_tokens": 4096,
@@ -141,6 +199,7 @@ def call_anthropic(
 
     response = client.messages.create(**kwargs)
     return response.content[0].text
+
 
 
 def call_openai(
@@ -155,8 +214,8 @@ def call_openai(
         _err("ERROR: `openai` package not installed. pip install openai")
         sys.exit(1)
 
-    client = openai.OpenAI()  # reads OPENAI_API_KEY from env
-    messages = []
+    client = openai.OpenAI()
+    messages: list[dict[str, str]] = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_prompt})
@@ -166,7 +225,7 @@ def call_openai(
         max_tokens=4096,
         messages=messages,
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 PROVIDERS = {
@@ -176,8 +235,58 @@ PROVIDERS = {
 
 
 # ---------------------------------------------------------------------------
+# Experimental prompt construction
+# ---------------------------------------------------------------------------
+
+
+SECTION_LABELS = ("INITIAL_ANSWER", "ISSUES_FOUND", "REVISED_ANSWER")
+
+
+def _extract_section(text: str, label: str) -> str | None:
+    """Extract a labelled section from a model response."""
+    stop_labels = [re.escape(item) for item in SECTION_LABELS if item != label]
+    if stop_labels:
+        stop_pattern = rf"(?=\n(?:{'|'.join(stop_labels)}):\s*(?:\n|$)|\Z)"
+    else:
+        stop_pattern = r"\Z"
+
+    pattern = rf"(?:^|\n){re.escape(label)}:\s*\n?(.*?){stop_pattern}"
+    match = re.search(pattern, text, flags=re.DOTALL)
+    if not match:
+        return None
+    value = match.group(1).strip()
+    return value or None
+
+
+
+def _build_pass_prompt(
+    task_prompt: str,
+    pass_number: int,
+    total_passes: int,
+    current_draft: str | None,
+    prior_issues: str | None,
+) -> str:
+    """Build the user prompt for the current experimental pass."""
+    if current_draft is None:
+        return INITIAL_PASS_TEMPLATE.format(
+            n=pass_number,
+            total=total_passes,
+            task_prompt=task_prompt,
+        )
+
+    return FOLLOWUP_PASS_TEMPLATE.format(
+        n=pass_number,
+        total=total_passes,
+        task_prompt=task_prompt,
+        current_draft=current_draft.strip(),
+        prior_issues=(prior_issues or "- No explicit issues listed on the prior pass."),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Benchmark runner
 # ---------------------------------------------------------------------------
+
 
 def run_control(
     task: dict[str, Any],
@@ -200,6 +309,7 @@ def run_control(
     }
 
 
+
 def run_experimental(
     task: dict[str, Any],
     model: str,
@@ -207,13 +317,20 @@ def run_experimental(
     directives: str,
     num_passes: int,
 ) -> dict[str, Any]:
-    """Run the experimental condition: CDSFL directives + n P-Passes."""
+    """Run the experimental condition: CDSFL directives + iterative P-Passes."""
     call = PROVIDERS[provider]
-    passes = []
+    passes: list[dict[str, Any]] = []
+    current_draft: str | None = None
+    prior_issues: str | None = None
 
     for i in range(1, num_passes + 1):
-        pass_instruction = PASS_INSTRUCTION.format(n=i, total=num_passes)
-        user_prompt = f"{pass_instruction}\n\n{task['prompt']}"
+        user_prompt = _build_pass_prompt(
+            task_prompt=task["prompt"],
+            pass_number=i,
+            total_passes=num_passes,
+            current_draft=current_draft,
+            prior_issues=prior_issues,
+        )
 
         _err(f"  [experimental] P-Pass {i}/{num_passes}, calling {provider}/{model} ...")
         t0 = time.monotonic()
@@ -221,11 +338,26 @@ def run_experimental(
         elapsed = time.monotonic() - t0
         _err(f"  [experimental] P-Pass {i}/{num_passes} done ({elapsed:.1f}s)")
 
-        passes.append({
+        extracted_issues = _extract_section(response, "ISSUES_FOUND")
+        extracted_revision = _extract_section(response, "REVISED_ANSWER")
+        extracted_initial = _extract_section(response, "INITIAL_ANSWER")
+
+        pass_record: dict[str, Any] = {
             "pass_number": i,
             "response": response,
             "elapsed_seconds": round(elapsed, 2),
-        })
+        }
+        if extracted_initial is not None:
+            pass_record["initial_answer"] = extracted_initial
+        if extracted_issues is not None:
+            pass_record["issues_found"] = extracted_issues
+        if extracted_revision is not None:
+            pass_record["revised_answer"] = extracted_revision
+
+        passes.append(pass_record)
+
+        current_draft = extracted_revision or response
+        prior_issues = extracted_issues
 
     return {
         "condition": "experimental",
@@ -233,7 +365,9 @@ def run_experimental(
         "provider": provider,
         "num_passes": num_passes,
         "passes": passes,
+        "final_response": current_draft or "",
     }
+
 
 
 def run_benchmark(
@@ -268,14 +402,6 @@ def run_benchmark(
     return results
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-def _err(msg: str) -> None:
-    """Print to stderr."""
-    print(msg, file=sys.stderr)
-
 
 def load_directives(path: str | None) -> str:
     """Load directives from a file, or return the built-in constant."""
@@ -285,7 +411,8 @@ def load_directives(path: str | None) -> str:
     if not p.is_file():
         _err(f"ERROR: directives file not found: {path}")
         sys.exit(1)
-    return p.read_text().strip()
+    return p.read_text(encoding="utf-8").strip()
+
 
 
 def main() -> None:
@@ -314,8 +441,7 @@ def main() -> None:
         "--directives",
         type=str,
         default=None,
-        help="Path to a text file containing CDSFL directives "
-             "(default: built-in constant)",
+        help="Path to a text file containing CDSFL directives (default: built-in constant)",
     )
     parser.add_argument(
         "--output",
@@ -332,15 +458,13 @@ def main() -> None:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Load and validate tasks only — no API calls",
+        help="Load and validate tasks only - no API calls",
     )
 
     args = parser.parse_args()
 
-    # Resolve tasks directory
     tasks_dir = Path(args.tasks_dir) if args.tasks_dir else TASKS_DIR
 
-    # Load tasks
     _err(f"Loading tasks from {tasks_dir} ...")
     tasks = load_tasks(tasks_dir)
 
@@ -350,7 +474,6 @@ def main() -> None:
 
     _err(f"Loaded {len(tasks)} task(s).")
 
-    # Validate
     all_errors = []
     for task in tasks:
         all_errors.extend(validate_task(task))
@@ -363,25 +486,22 @@ def main() -> None:
 
     _err("All tasks valid.")
 
-    # Dry run: report and exit
     if args.dry_run:
-        domains = {}
+        domains: dict[str, int] = {}
         for task in tasks:
-            d = task.get("domain", "<unknown>")
-            domains[d] = domains.get(d, 0) + 1
+            domain = task.get("domain", "<unknown>")
+            domains[domain] = domains.get(domain, 0) + 1
         fault_count = sum(len(t.get("seeded_faults", [])) for t in tasks)
 
-        _err(f"\nDry run summary:")
+        _err("\nDry run summary:")
         _err(f"  Tasks:  {len(tasks)}")
         _err(f"  Faults: {fault_count}")
         for domain, count in sorted(domains.items()):
             _err(f"  {domain}: {count} task(s)")
         sys.exit(0)
 
-    # Load directives
     directives = load_directives(args.directives)
 
-    # Check API key availability
     if args.provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
         _err("ERROR: ANTHROPIC_API_KEY not set in environment.")
         sys.exit(1)
@@ -389,7 +509,6 @@ def main() -> None:
         _err("ERROR: OPENAI_API_KEY not set in environment.")
         sys.exit(1)
 
-    # Run
     _err(
         f"\nRunning benchmark: model={args.model}, provider={args.provider}, "
         f"passes={args.passes}"
@@ -398,23 +517,23 @@ def main() -> None:
         tasks, args.model, args.provider, directives, args.passes
     )
 
-    # Output
-    output_json = json.dumps(
-        {
-            "benchmark_meta": {
-                "model": args.model,
-                "provider": args.provider,
-                "num_passes": args.passes,
-                "task_count": len(tasks),
-                "directives_source": args.directives or "built-in",
-            },
-            "results": results,
+    benchmark_output = {
+        "benchmark_meta": {
+            "schema_version": "cdsfl-bench-v2",
+            "model": args.model,
+            "provider": args.provider,
+            "num_passes": args.passes,
+            "task_count": len(tasks),
+            "directives_source": args.directives or "built-in",
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "domains": sorted({task.get("domain", "<unknown>") for task in tasks}),
         },
-        indent=2,
-    )
+        "results": results,
+    }
+    output_json = json.dumps(benchmark_output, indent=2)
 
     if args.output:
-        Path(args.output).write_text(output_json + "\n")
+        Path(args.output).write_text(output_json + "\n", encoding="utf-8")
         _err(f"\nResults written to {args.output}")
     else:
         print(output_json)
