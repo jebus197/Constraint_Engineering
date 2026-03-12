@@ -184,15 +184,15 @@ Three tiers of review operate within the methodology:
 
 | Tier | Mode | Who | When |
 |---|---|---|---|
-| **0** | Expert operator in the loop | The practitioner running the session | Default. Every task. The standard CDSFL workflow described above. |
-| **1** | Independent expert review | A domain expert not involved in the session | Escalated. Safety-critical domains, weak-model outputs, or when the operator lacks confidence in the domain. |
-| **2** | Research validation | Blind external evaluators | Methodology validation. Testing whether CDSFL outperforms unguided use. The testbench protocol in [bench/](bench/). |
+| **1** | Primary expert operator | The practitioner running the session | Default. Every task. The standard CDSFL workflow described above. |
+| **2** | Secondary "confer" review | A second human with enough separation to challenge the primary operator's framing | Standard escalation. Ambiguous outputs, unresolved internal tension, moderately consequential decisions, or when the primary operator suspects hidden breakout. |
+| **3** | Formal independent review | A domain expert with no prior involvement, or blind external evaluators | High-assurance. Safety-critical domains, weak-model outputs, publication-grade claims, or methodology validation (the testbench protocol in [bench/](bench/)). |
 
-Tier 0 is the production schema. The operator's domain knowledge, constraint definitions, and iterative judgement constitute a genuine external check on the model's reasoning — external because the human operates outside the model's reasoning process, not because they are independent of the problem. Most engineering work operates entirely at Tier 0.
+**Tier 1** is the production schema. The operator's domain knowledge, constraint definitions, and iterative judgement constitute a genuine external check on the model's reasoning — external because the human operates outside the model's reasoning process, not because they are independent of the problem. Most engineering work operates entirely at Tier 1.
 
-Tier 1 is triggered by context: the domain is safety-critical (medical, structural, legal), the model being used is below frontier capability, or the operator recognises they are at the boundary of their own expertise. The methodology does not prescribe when to escalate — the operator's judgement determines this, informed by the epistemic flags the model surfaces.
+**Tier 2** fills the operational gap between primary operator sign-off and full independent review. The second reviewer does not need to be an external peer-review body — they need to be a more senior, more specialised, or simply separate human intelligence with enough distance to challenge the first operator's framing. This is the standard escalation path: low-friction, fast enough for daily use, and materially stronger than single-operator review. Without this middle tier, the jump from "operator approves" to "full independent review" is too blunt for real engineering deployment.
 
-Tier 2 exists solely for validating the methodology itself and is not part of normal use.
+**Tier 3** is triggered when consequences of error are materially high: safety-critical decisions, weak-model outputs requiring independent verification, publication-grade claims, or methodology validation itself. Tier 2 is not a substitute for Tier 3 when Tier 3 is genuinely required — the distinction preserves practicality without blurring epistemic standards.
 
 ---
 
