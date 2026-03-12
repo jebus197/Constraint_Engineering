@@ -85,7 +85,7 @@ The inverse is equally significant: when *p* is high — a capable model with ge
 This has four properties that correspond directly to the methodology:
 
 1. **C(0) = 0.** No falsification attempts, no corroboration. An untested claim has no earned trust.
-2. **C(n) → 1 as n → ∞, but never reaches 1.** You can approach certainty but never arrive at it. This is Popper's central insight: corroboration accumulates asymptotically. Proof is not available. This is why a P-Pass result is described as "survives" — never "proven."
+2. **C(n) → 1 as n → ∞, but never reaches 1.** You can approach certainty but never arrive at it. Proof is not available. This is why a P-Pass result is described as "survives" — never "proven."
 3. **Diminishing returns.** Each additional pass yields less incremental corroboration than the last. The marginal gain of the tenth pass is smaller than the marginal gain of the second. This corresponds to the stopping criterion: "continue until diminishing returns."
 4. **When p ≈ 0, C(n) ≈ 0 regardless of n.** A model incapable of genuine adversarial reasoning (p close to zero) gains nothing from repeated passes. One hundred empty passes produce the same corroboration as zero passes. This is the quality defence problem (Part IV) stated in a single equation: the P-Pass is only as good as the model performing it.
 
@@ -408,9 +408,7 @@ What is not captured: sub-token attention patterns and implicit contextual weigh
 
 The methodology is model-agnostic by design. This means it is also model-quality-agnostic. A less capable system can produce text that looks like rigorous falsification — syntactically correct P-Pass structure, plausible constraint classifications, convincing epistemic flags — without any genuine adversarial reasoning behind it. The first draft and the final draft are the same thing wearing different clothes.
 
-The persistence layer makes this worse, not better. If a low-quality model captures reasoning checkpoints that are actually just plausible-sounding text, the persistence layer stores them faithfully. The verification chain proves the record is untampered — it says nothing about whether the content was worth recording.
-
-Returning to the formal model from Section 2.1: when a model lacks genuine adversarial reasoning capability, its detection probability *p* approaches zero. The corroboration formula C(n) = 1 − (1 − p)ⁿ then gives C(n) ≈ 0 regardless of how many passes are performed. One hundred empty passes produce the same corroboration as zero passes. The structure of the P-Pass is present; the substance is absent.
+The formal model (Section 2.1, property 4) already establishes that when detection probability *p* approaches zero, no number of passes produces corroboration. The persistence layer makes this worse, not better: it faithfully stores reasoning checkpoints that are actually just plausible-sounding text. The verification chain proves the record is untampered — it says nothing about whether the content was worth recording.
 
 ### What the Verification Chain Proves and Does Not Prove
 
