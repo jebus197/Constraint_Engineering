@@ -89,6 +89,16 @@ This has four properties that correspond directly to the methodology:
 - **Variable p.** Detection probability varies by domain, claim complexity, model capability, and the specific falsification strategy used. It is not a single fixed number. The formula illustrates the dynamic; it does not parameterise a specific instance.
 - **Non-continuous scope.** The suitability gate and constraint classification are categorical decisions (run the loop / don't run the loop; HARD / SOFT), not continuous variables. They sit outside the formula's domain.
 
+**Falsifiability of the model itself:**
+
+The formula above assumes that flaws are binary (present or absent), detection is probabilistic with a scalar probability *p*, and repeated passes are the mechanism through which corroboration accumulates. Each of these assumptions could be wrong:
+
+- *p* may not be scalar. Detection probability may vary systematically by flaw type, producing a vector of detection probabilities with permanent blind spots for certain categories of error. A model that detects logical inconsistencies at *p* = 0.7 and unit-of-measure errors at *p* = 0.05 is not well described by a single *p*.
+- Flaws may not be binary. Some claims degrade continuously rather than failing discretely. The binary flaw model may not capture partial correctness or context-dependent validity.
+- The geometric survival model may be the wrong model entirely. Applying reliability mathematics to LLM self-falsification is an analogy, not a derivation from first principles. The dynamics of adversarial self-testing in a language model may be better described by a framework that does not yet exist — one that accounts for correlated failure modes, attention-dependent reasoning depth, or epistemic structures that have no counterpart in component reliability theory.
+
+The formula is presented because it captures the observed dynamics accurately enough to be useful, and because it is testable. But it is an illustrative model, not a theoretical claim. If a better model is proposed that predicts P-Pass outcomes more accurately, this one should be replaced. The methodology does not depend on this specific equation — it depends on the principle that corroboration is earned through survived falsification. The equation is one way to express that principle. It may not be the best way.
+
 Despite these simplifications, the formula captures the essential insight: corroboration is earned through survived falsification, accumulates with diminishing returns, asymptotically approaches but never reaches certainty, and is zero when the testing mechanism lacks genuine capability.
 
 ### 3. Constraint Classification
@@ -429,6 +439,7 @@ This document practises what it describes. Every claim made here is presented as
 - The claim that manual constraint bounding improves outcomes is testable by comparing operator-bounded sessions against unbounded sessions on equivalent tasks.
 - The claim that the quality defence makes low-quality reasoning harder to sustain is testable by deploying the methodology across agents of varying capability and measuring cross-verification outcomes.
 - The formal corroboration model C(n) = 1 − (1 − p)ⁿ is testable by measuring actual detection rates across multiple passes on seeded-fault benchmarks.
+- The corroboration model itself — the application of geometric survival mathematics to LLM self-falsification — may be the wrong model entirely. If a fundamentally different framework predicts P-Pass outcomes more accurately, this one should be replaced. The methodology's validity does not depend on this specific equation.
 
 If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
 
