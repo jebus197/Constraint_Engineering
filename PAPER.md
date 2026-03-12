@@ -8,7 +8,7 @@
 
 ## Abstract
 
-Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical third-party validation has not yet been conducted; a reproducible evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
+Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical third-party validation has not yet been conducted; a reproducible evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
 
 ---
 
@@ -91,7 +91,7 @@ This has four properties that correspond directly to the methodology:
 
 **Boundary conditions the model does not capture:**
 
-- **Independence.** The formula assumes each pass is independent. In practice, P-Pass iterations are informed by prior iterations — you fix what broke and test the fix. Successive passes are therefore *not* independent; they are adaptive. This means the formula is a lower bound on corroboration for well-executed iterative passes, since adaptive testing is more efficient than random independent testing.
+- **Independence.** The formula assumes each pass is independent. In practice, P-Pass iterations are informed by prior iterations — you fix what broke and test the fix. Successive passes are therefore *not* independent; they are adaptive. This means the relationship between the formula and actual corroboration in adaptive passes is not straightforward. Adaptive testing can be more efficient than random independent testing (the formula underestimates), but it can also create tunnel vision where fixing one flaw introduces blind spots for others (the formula overestimates). The formula captures the dynamic; it does not bound it in either direction.
 - **Variable p.** Detection probability varies by domain, claim complexity, model capability, and the specific falsification strategy used. It is not a single fixed number. The formula illustrates the dynamic; it does not parameterise a specific instance.
 - **Non-continuous scope.** The suitability gate and constraint classification are categorical decisions (run the loop / don't run the loop; HARD / SOFT), not continuous variables. They sit outside the formula's domain.
 
@@ -106,6 +106,48 @@ The formula above assumes that flaws are binary (present or absent), detection i
 The formula is presented because it captures the observed dynamics accurately enough to be useful, and because it is testable. But it is an illustrative model, not a theoretical claim. If a better model is proposed that predicts P-Pass outcomes more accurately, this one should be replaced. The methodology does not depend on this specific equation — it depends on the principle that corroboration is earned through survived falsification. The equation is one way to express that principle. It may not be the best way.
 
 Despite these simplifications, the formula captures the essential insight: corroboration is earned through survived falsification, accumulates with diminishing returns, asymptotically approaches but never reaches certainty, and is zero when the testing mechanism lacks genuine capability.
+
+#### 2.2 Structured Operational Model
+
+The simple model C(n) treats detection probability as a scalar *p*. In practice, detection probability varies by flaw class — a model that catches logical inconsistencies at *p* = 0.7 may catch unit-of-measure errors at *p* = 0.05. The structured model extends C(n) to account for this.
+
+**Multi-class detection formula:**
+
+> **F_n = Σ_k w_k · [1 − Π_i (1 − d_i · p_ik)]**
+
+Where:
+- K = set of flaw classes (logical, arithmetic, physical, procedural, etc.)
+- w_k = weight of flaw class k (sums to 1; reflects consequence severity)
+- p_ik = raw detection probability of pass i for flaw class k
+- d_i = diversity discount for pass i (accounts for correlation between passes)
+
+**Diversity discount rubric** (d_i values):
+
+| Pass type | d_i | Rationale |
+|---|---|---|
+| Same-model self-recheck (no new context) | 0.2 | Highly correlated — same blind spots |
+| Same-model with reframed prompt | 0.5 | Partial decorrelation via different attack angle |
+| Different model, same family | 0.7 | Moderate decorrelation — different training but similar architecture |
+| Practitioner/operator domain review | 0.8 | External to model reasoning, correlated with problem framing |
+| Different model, different family | 0.9 | Low correlation — genuinely independent failure modes |
+| Independent domain expert review (no prior involvement) | 1.0 | Fully independent — the gold standard |
+
+**Note on the practitioner row:** The standard CDSFL workflow described in Part III — the operator constrains the model, reviews output, judges against domain knowledge, iterates — operates at *d_i* ≈ 0.8. The practitioner is genuinely external to the model's reasoning (not correlated with its failure modes), but not independent of the problem framing (they defined the constraints). This correctly places solo-practitioner CDSFL between AI-only falsification and fully independent peer review.
+
+**Reduction property:** When all p_ik = p (uniform detection), all d_i = 1 (fully independent passes), and K = 1 (single flaw class), F_n reduces to C(n) = 1 − (1−p)ⁿ. The simple model is a special case of the structured model.
+
+**Anchor state A** — separating internal falsification from external validation:
+
+| State | Meaning |
+|---|---|
+| A0 | No external contact. Internal P-Pass only. All corroboration is self-assessed. |
+| A1 | Cross-agent verification. Another AI system has independently tested the claim. |
+| A2 | Human expert review. A domain expert has evaluated the claim against ground truth. |
+| A3 | Independent replication. The claim has been reproduced by an independent party. |
+
+The simple model C(n) operates entirely within A0. The structured model F_n can operate across anchor states when different passes involve different agents or human reviewers (reflected in d_i values). Movement from A0 toward A3 represents increasing epistemic confidence — not because the mathematics changes, but because the independence assumption becomes progressively more justified.
+
+**Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
 
 ### 3. Constraint Classification
 
@@ -164,6 +206,26 @@ The directives in Part II instruct the AI to falsify its own output, classify co
 Manual constraint bounding introduces an external check — a human intelligence operating outside the model's reasoning process, with domain knowledge the model may lack, and with the ability to recognise failure modes the model cannot introspect on. The methodology is not self-executing. It is a protocol for human-AI collaboration in which the human provides the constraints and the AI provides the throughput.
 
 This is a learned skill. It requires the operator to understand the problem domain well enough to identify which constraints are HARD, where the boundaries of the problem space lie, and what breakout looks like in context. It is not a passive role. The operator is not a supervisor reviewing output after the fact — they are an active participant shaping the reasoning space in real time.
+
+### Review Tiers
+
+A common misreading of the methodology is that "expert review" means independent external review on every task. It does not. The human operator described above — the practitioner who defines constraints, judges outputs against domain knowledge, and iterates — *is* the expert review layer for daily use. Independent external review is an escalation tier, not the default operating mode.
+
+Three tiers of review operate within the methodology:
+
+| Tier | Mode | Who | When |
+|---|---|---|---|
+| **0** | Expert operator in the loop | The practitioner running the session | Default. Every task. The standard CDSFL workflow described above. |
+| **1** | Independent expert review | A domain expert not involved in the session | Escalated. Safety-critical domains, weak-model outputs, or when the operator lacks confidence in the domain. |
+| **2** | Research validation | Blind external evaluators | Methodology validation. Testing whether CDSFL outperforms unguided use. The testbench protocol in [bench/](bench/). |
+
+Tier 0 is the production schema. The operator's domain knowledge, constraint definitions, and iterative judgement constitute a genuine external check on the model's reasoning — external because the human operates outside the model's reasoning process, not because they are independent of the problem. Most engineering work operates entirely at Tier 0.
+
+Tier 1 is triggered by context: the domain is safety-critical (medical, structural, legal), the model being used is below frontier capability, or the operator recognises they are at the boundary of their own expertise. The methodology does not prescribe when to escalate — the operator's judgement determines this, informed by the epistemic flags the model surfaces.
+
+Tier 2 exists solely for validating the methodology itself and is not part of normal use.
+
+The structured operational model (Section 2.2) quantifies this hierarchy through the diversity discount *d_i*: Tier 0 operates at *d_i* ≈ 0.8 (practitioner review — external to the model's reasoning but correlated with the problem framing), Tier 1 at *d_i* = 1.0 (fully independent expert), and Tier 2 at *d_i* = 1.0 with blind evaluation protocol.
 
 ---
 
@@ -434,6 +496,8 @@ The gap between stated confidence and demonstrated confidence cannot be closed b
 
 The implementation of this protocol is provided in [`bench/`](bench/).
 
+**Validation gap note:** The test design above describes blind domain-expert evaluation. The testbench implementation in `bench/` uses automated keyword matching for seeded-fault detection, which is a weaker form of evaluation. Automated scoring may produce false negatives (faults detected but scored as missed) and false positives (non-faults matching keywords). Manual review of a sample is recommended. The testbench demonstrates that the evaluation protocol is mechanically executable; it does not claim equivalence with expert review.
+
 **Estimated cost:** approximately $0.66 at representative frontier model pricing. Well within the budget of any individual researcher.
 
 **Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks in three specific domains. Equivalence across model classes, stability across all domains, and persistence across full session lengths without re-assertion are second-phase research questions.
@@ -450,8 +514,6 @@ Each of the following projects was built using this methodology. They are linked
 |---|---|---|
 | **Project Genesis** | Trust-mediated labour market for mixed human-AI populations. Constitutional engineering, governance as falsifiable code, Popperian design methodology applied to social architecture. | [Project_Genesis](https://github.com/jebus197/Project_Genesis) |
 | **Open Brain** | Persistent, cross-agent, cross-session verified memory for AI systems. The persistence and verification layer described in Part V of this document. | [OpenBrain](https://github.com/jebus197/OpenBrain) |
-| **Aegis** | Threat modelling and security architecture. | [Aeigis](https://github.com/jebus197/Aeigis) |
-
 ---
 
 ## Invitation to Falsify
