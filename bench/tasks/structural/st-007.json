@@ -1,0 +1,20 @@
+{
+  "id": "st-007",
+  "domain": "structural",
+  "prompt": "Assess a two-storey unreinforced masonry (URM) bearing wall for a residential building. The wall is 215mm thick solid clay brick (fb = 30 MPa) with M4 mortar, giving a characteristic compressive strength fk = 6.8 MPa per BS EN 1996-1-1 Table 3.3. The wall is 5m tall from ground floor to roof level and is laterally restrained at each floor level (at 2.5m height) by timber floor joists bearing on the wall.\n\nThe wall supports a vertical design load (ULS) of 180 kN/m from upper floor and roof. The effective height is calculated as hef = 0.75 × 5.0 = 3.75m (for walls restrained at top and bottom, enhanced restraint factor). The slenderness ratio is hef/tef = 3750/215 = 17.4. The eccentricity of load at the top of the wall is taken as t/6 = 215/6 = 35.8mm. Please review the wall capacity and the design assumptions.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "effective_height_error",
+      "description": "The effective height factor of 0.75 for a wall 'restrained at top and bottom' is only valid for walls with enhanced lateral restraint at both top and bottom — meaning the restraining elements (floors) provide both lateral and rotational resistance. Timber floor joists simply bearing on a masonry wall typically provide lateral restraint only, not rotational restraint. Per BS EN 1996-1-1 Table 5.1, the effective height factor for a wall restrained at top and bottom but with simple (non-enhanced) restraint is ρ = 1.0 for the full storey height, or the wall should be analysed as each storey separately with hef = ρn × h where ρn depends on the actual restraint condition. Using 0.75 with simple joist bearing overstates the wall's buckling resistance.",
+      "location_hint": "Effective height calculated using factor 0.75 with timber joist restraint."
+    },
+    {
+      "id": "f2",
+      "type": "out_of_plane_omission",
+      "description": "The design checks only in-plane (axial) capacity of the bearing wall. For a 5m tall unreinforced masonry wall, the out-of-plane bending capacity under lateral loads (wind pressure) is frequently the governing design case, particularly for the lower storey where wind suction can be critical. Per BS EN 1996-1-1 Clause 6.3, out-of-plane bending resistance must be checked using the flexural strength of masonry (fxk1 parallel to bed joints and fxk2 perpendicular). For a 215mm solid wall, the section modulus is small and the flexural tensile strength of masonry is very low (typically 0.1-0.4 MPa depending on mortar and bond pattern). A 2.5m high panel of 215mm URM wall can fail in out-of-plane bending under moderate wind pressures (<1 kN/m²).",
+      "location_hint": "Design checks vertical load capacity only, no out-of-plane bending assessment."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Effective height factor of 0.75 requires enhanced restraint (lateral + rotational). Simple timber joist bearing provides lateral restraint only — factor should be 1.0 or per national annex provisions. Reference: BS EN 1996-1-1 Table 5.1, PD 6697:2010 Clause 6.1.6. (2) Out-of-plane bending under wind is frequently the governing case for URM walls. Flexural tensile strength of masonry is very low and must be checked per Clause 6.3. Reference: BS EN 1996-1-1 Clause 6.3; IStructE Manual for the Design of Plain Masonry."
+}

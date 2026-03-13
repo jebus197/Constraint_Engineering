@@ -1,0 +1,20 @@
+{
+  "id": "id-002",
+  "domain": "industrial",
+  "prompt": "Design a die-cast aluminium heat sink for a 50W LED streetlight module. The heat sink has 12 straight fins, each 40mm tall, 1.2mm thick, and spaced 4mm apart (fin-to-fin gap). The base plate is 120mm × 80mm × 4mm. Material is ADC12 (A383) aluminium die-casting alloy with thermal conductivity of 96 W/m·K. The heat sink is oriented vertically in a sealed IP66 luminaire housing with no forced airflow.\n\nThe junction-to-ambient thermal resistance budget is 2.0°C/W maximum. We estimate the heat sink thermal resistance as Rth = 1/(h × A_total) where h = 10 W/m²·K (natural convection) and A_total is the sum of all fin and base surfaces. Total surface area ≈ 0.058 m². This gives Rth = 1/(10 × 0.058) = 1.72°C/W, which is within budget. Please review the thermal design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "fin_spacing_error",
+      "description": "The 4mm fin spacing with 40mm fin height gives a fin channel aspect ratio of 10:1. For natural convection with vertical fins, the optimum fin spacing depends on the Rayleigh number and channel length. At these dimensions, the boundary layers on adjacent fins will merge within the channel (the thermal entrance length is shorter than the fin height), creating a fully-developed flow condition where the inner portions of the fins are thermally ineffective. The optimum fin spacing for natural convection is approximately sopt = 2.71 × L / Ra_L^(1/4), which for a 40mm fin at typical ΔT of 40°C gives sopt ≈ 7-9mm. The 4mm spacing will reduce the effective heat transfer coefficient to well below 10 W/m²·K between the fins, perhaps 4-6 W/m²·K, because the restricted channel throttles the buoyancy-driven flow.",
+      "location_hint": "Fin spacing of 4mm with 40mm tall fins in natural convection."
+    },
+    {
+      "id": "f2",
+      "type": "convection_regime_error",
+      "description": "The thermal calculation assumes h = 10 W/m²·K for natural convection, but the heat sink is enclosed in a sealed IP66 luminaire housing. Inside a sealed enclosure, natural convection is severely restricted — the enclosed air volume heats up, reducing the temperature differential driving convection, and the confined geometry limits air circulation patterns. The effective heat transfer coefficient inside a sealed housing is typically 3-5 W/m²·K, not 10 W/m²·K. The heat must ultimately be rejected through the housing walls to the external ambient. The thermal resistance calculation should include the housing-to-ambient resistance in series, not just the heat sink-to-internal-air resistance. The actual junction-to-ambient resistance will be significantly higher than 1.72°C/W.",
+      "location_hint": "h = 10 W/m²·K assumed for heat sink inside sealed IP66 housing."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Fin spacing of 4mm is too narrow for natural convection at 40mm fin height. Boundary layer merging degrades heat transfer. Optimum spacing is 7-9mm for this geometry. Reference: Bar-Cohen & Rohsenow, 'Thermally Optimum Spacing of Vertical Natural Convection Cooled Parallel Plates', ASME J. Heat Transfer, 1984. (2) Using open-air natural convection coefficient for a sealed IP66 enclosure overstates heat dissipation. The enclosure adds significant thermal resistance in series. Reference: Ellison, 'Thermal Computations for Electronics', CRC Press, Chapter 12."
+}

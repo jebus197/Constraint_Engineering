@@ -1,0 +1,20 @@
+{
+  "id": "st-006",
+  "domain": "structural",
+  "prompt": "Design a post-tensioned concrete bridge girder for a single-span road bridge of 25m. The girder is a precast I-section, 1200mm deep, with a bottom flange width of 600mm. The prestressing consists of 3 tendons, each containing 12 No. 15.2mm diameter 7-wire strands (fpk = 1860 MPa), stressed to 0.75fpk = 1395 MPa. Concrete grade is C50/60.\n\nThe total initial prestress force per tendon is calculated as P0 = 12 × 140 × 1395 = 2,343.6 kN (strand area 140 mm² per strand). Total prestress = 3 × 2343.6 = 7,030.8 kN. We estimate total long-term prestress losses at 10% of the initial force, giving an effective prestress of 0.90 × 7030.8 = 6,327.7 kN. The tendons have a parabolic profile with maximum eccentricity of 450mm at midspan. Please review the prestress design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "prestress_loss_error",
+      "description": "Total long-term prestress losses of 10% significantly underestimates actual losses for a post-tensioned bridge girder. Prestress losses include: (1) immediate losses — elastic shortening (2-6%), friction along tendon profile (5-15% for a 25m span depending on curvature), anchorage set/draw-in (3-8mm, significant for shorter tendons); (2) time-dependent losses — concrete creep (5-10%), concrete shrinkage (3-7%), steel relaxation (3-8%). For a typical post-tensioned bridge girder, total losses are commonly 20-35% of the initial prestress force. The 10% estimate is approximately half the realistic minimum and will result in the girder being under-prestressed, leading to cracking under service loads and potentially inadequate ultimate capacity.",
+      "location_hint": "Total long-term prestress losses estimated at 10%."
+    },
+    {
+      "id": "f2",
+      "type": "shear_capacity_omission",
+      "description": "The design focuses on flexural prestress but completely omits the critical check of shear capacity at the support regions. For prestressed bridge girders, the shear capacity near supports requires specific attention per BS EN 1992-1-1 Clause 6.2.2 and 6.2.3 because: (1) the tendons' parabolic profile means they are near the centroid at the supports, providing minimal vertical component of prestress force to resist shear; (2) the web thickness of an I-section is typically the governing dimension for shear; (3) the principal tensile stress at the centroidal axis must be checked against the cracking limit. For a 25m span bridge girder carrying highway loading, shear at the supports is frequently the governing design case, not midspan flexure. This omission is a fundamental gap in the design.",
+      "location_hint": "Design covers only flexural prestress with no mention of shear capacity at supports."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Total prestress losses of 10% are roughly half the realistic minimum (20-35%). Individual loss components (friction, elastic shortening, creep, shrinkage, relaxation) must be calculated per EN 1992-1-1 Clause 5.10.5 and 5.10.6. Reference: PCI Design Handbook, Chapter 4; Concrete Society TR72. (2) Shear capacity at supports is critical for prestressed I-girders and is frequently the governing design case. The parabolic tendon profile provides minimal vertical prestress component at supports. Reference: BS EN 1992-1-1 Clause 6.2; BS EN 1992-2 (bridge-specific provisions)."
+}

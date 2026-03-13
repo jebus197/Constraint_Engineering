@@ -1,0 +1,20 @@
+{
+  "id": "st-001",
+  "domain": "structural",
+  "prompt": "Design a simply supported steel floor beam for a commercial office building. The beam spans 8 metres and supports a tributary width of 3 metres. The floor carries a dead load of 3.5 kN/m² (including self-weight of slab and finishes) and an imposed load of 2.5 kN/m² (office occupancy, BS EN 1991-1-1 Category B). The beam is laterally restrained by the floor slab along its full length.\n\nWe have selected a UB 305×127×37 (S355 steel, plastic section modulus Wpl,y = 472 cm³). The design check uses the ultimate limit state load combination 1.35Gk + 1.5Qk. The maximum bending moment is calculated as wL²/8. The deflection check uses the characteristic (unfactored) imposed load only, with a limit of span/360 for the total deflection.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "moment_capacity_error",
+      "description": "The UB 305×127×37 has Wpl,y = 472 cm³. The design moment resistance is Mc,Rd = Wpl,y × fy / γM0 = 472 × 355 / 1.0 = 167,560 N·m = 167.6 kN·m. The design load w = (1.35 × 3.5 + 1.5 × 2.5) × 3 = (4.725 + 3.75) × 3 = 25.425 kN/m. Design moment MEd = 25.425 × 8² / 8 = 203.4 kN·m. Since MEd (203.4) > Mc,Rd (167.6), the beam FAILS the bending check by approximately 21%. A larger section is required (e.g., UB 356×127×39 or UB 305×165×46). The prompt presents the 305×127×37 as adequate without performing this check.",
+      "location_hint": "Selection of UB 305×127×37 for the given span and loading."
+    },
+    {
+      "id": "f2",
+      "type": "deflection_limit_error",
+      "description": "The deflection limit of span/360 applies to the imposed (variable) load only to limit perceptible movement and cracking of finishes — this is correct per BS EN 1993-1-1 NA.2.23. However, checking only the imposed load deflection ignores the total deflection check. BS EN 1993-1-1 also requires a check on appearance/function under the quasi-permanent combination (all dead load + ψ2 × imposed load, where ψ2 = 0.3 for offices), with a typical limit of span/250 for total deflection. Omitting this check could miss a deflection problem under sustained loading, particularly for longer spans where dead load dominates.",
+      "location_hint": "Deflection check using imposed load only with span/360 limit, omitting total deflection check."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Design moment (203.4 kN·m) exceeds the plastic moment resistance of UB 305×127×37 (167.6 kN·m) by 21%. Reference: BS EN 1993-1-1 Clause 6.2.5, steel section properties per Tata Steel Blue Book. (2) Total deflection under quasi-permanent loads must also be checked against span/250 per BS EN 1993-1-1 NA.2.23 and SCI P360 guidance. Checking only imposed load deflection is incomplete."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "id-005",
+  "domain": "industrial",
+  "prompt": "Design a CNC-machined aluminium manifold block for a hydraulic system operating at 210 bar (21 MPa). The block is 6061-T6 aluminium (σy = 276 MPa, σu = 310 MPa). Internal passages are gun-drilled 8mm diameter holes with cross-drilled intersections sealed by steel plugs with O-rings. The minimum wall thickness between adjacent passages and between passages and external surfaces is 3mm.\n\nThe hoop stress in the wall around each passage is calculated using the thin-wall pressure vessel formula: σ = P × d / (2t) = 21 × 8 / (2 × 3) = 28 MPa. With a safety factor of 4 on yield: allowable stress = 276/4 = 69 MPa. Since 28 MPa < 69 MPa, the wall thickness is adequate. The O-ring grooves are machined to standard AS568 dimensions. Cross-drilled holes are deburred by hand. Please review the manifold design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "stress_analysis_error",
+      "description": "The thin-wall pressure vessel formula (σ = Pd/2t) is inappropriate for this geometry. The formula is valid only when the diameter-to-thickness ratio d/t > 10 (some references use d/t > 20). Here, d/t = 8/3 = 2.67, making this a thick-wall cylinder problem. The correct analysis uses Lamé's equations for thick-walled cylinders: σ_hoop_max = P × (r_o² + r_i²) / (r_o² - r_i²) where r_i = 4mm and r_o = 7mm. This gives σ_hoop = 21 × (49 + 16) / (49 - 16) = 21 × 65/33 = 41.4 MPa at the inner surface — nearly 50% higher than the thin-wall estimate. Furthermore, at cross-drilled intersections, the stress concentration factor is typically 2.5-3.5 (depending on intersection geometry), raising the peak stress to 100-145 MPa. This is above the allowable 69 MPa and makes the design inadequate at the intersections.",
+      "location_hint": "Thin-wall formula σ = Pd/2t used for passage with d/t = 2.67."
+    },
+    {
+      "id": "f2",
+      "type": "material_compatibility_error",
+      "description": "Using 6061-T6 aluminium for a 210 bar hydraulic manifold raises a significant concern about stress corrosion cracking (SCC) in the presence of hydraulic fluid. 6061-T6 is susceptible to SCC in certain environments, particularly when sustained tensile stresses act on short-transverse grain boundaries (which occurs at cross-drilled intersections where residual machining stresses exist). While 6061-T6 is generally considered to have moderate SCC resistance compared to 2xxx and 7xxx series alloys, the combination of high sustained stress at passage intersections, residual machining stresses, and long-term exposure to hydraulic fluid (which may contain moisture and additives) creates an SCC risk. Industry practice for high-pressure hydraulic manifolds typically uses 2024-T351 (with appropriate corrosion protection), 7075-T73 (overaged for SCC resistance), or more commonly steel or ductile iron for pressures above 200 bar. The choice of 6061-T6 at 210 bar warrants explicit SCC assessment per ASTM G47 or equivalent.",
+      "location_hint": "6061-T6 aluminium specified for 210 bar hydraulic manifold with cross-drilled intersections."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Thin-wall formula is invalid for d/t = 2.67. Lamé thick-wall equations give ~50% higher hoop stress, and cross-drill intersections add stress concentration factors of 2.5-3.5×, likely exceeding the allowable stress. Reference: Shigley's Mechanical Engineering Design, 11th ed., Chapter 3 (Thick Cylinders); ASME BPVC Section VIII Div.2. (2) 6061-T6 at 210 bar with cross-drilled intersections creates SCC risk from sustained tensile stress and hydraulic fluid exposure. Steel or overaged 7xxx alloys are preferred above 200 bar. Reference: ASM Handbook Vol. 13C, Corrosion of Aluminium Alloys; NACE MR0175/ISO 15156."
+}

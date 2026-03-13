@@ -80,6 +80,37 @@ REVISED_ANSWER:
 ...
 """
 
+ADVERSARIAL_PASS_TEMPLATE = """You are an independent reviewer. This output was produced by another system \
+and has not been independently verified. It may contain:
+
+- Errors at interfaces between subsystems
+- Unstated assumptions that conflict across components
+- Constraint violations visible only at system level
+- Conclusions that are internally consistent but physically or logically wrong
+
+Your task is to find what is wrong, not to confirm what is right.
+
+Original task:
+{task_prompt}
+
+Output to review:
+{current_draft}
+
+Instructions:
+- Examine the complete output as an integrated system.
+- Focus on cross-module interactions, shared assumptions, and emergent contradictions.
+- Stop when all hard-constraint assumptions are sound and remaining findings represent \
+genuinely diminishing returns. The threshold: would this finding, if missed, cause a \
+real-world failure, violation, or unsafe condition? If not, it is below threshold.
+
+Return exactly these sections:
+ISSUES_FOUND:
+- ...
+
+REVISED_ANSWER:
+...
+"""
+
 FOLLOWUP_PASS_TEMPLATE = """This is P-Pass {n} of {total}. Continue the CDSFL loop by attacking and revising the current draft.
 
 Original task:
@@ -370,12 +401,113 @@ def run_experimental(
 
 
 
+def run_extended(
+    task: dict[str, Any],
+    model: str,
+    provider: str,
+    directives: str,
+    num_passes: int,
+) -> dict[str, Any]:
+    """Run the extended condition: modular P-Passes + isolated adversarial pass.
+
+    Passes 1 to (num_passes - 1) run as standard iterative P-Passes in one
+    context chain.  The final pass runs in an isolated context containing only
+    the original task and the current draft — no prior P-Pass conclusions.
+    This mirrors the Extended P-Pass protocol (CLAUDE.md).
+    """
+    call = PROVIDERS[provider]
+    passes: list[dict[str, Any]] = []
+    current_draft: str | None = None
+    prior_issues: str | None = None
+
+    # Modular passes (1 through n-1)
+    modular_count = max(num_passes - 1, 1)
+    for i in range(1, modular_count + 1):
+        user_prompt = _build_pass_prompt(
+            task_prompt=task["prompt"],
+            pass_number=i,
+            total_passes=num_passes,
+            current_draft=current_draft,
+            prior_issues=prior_issues,
+        )
+
+        _err(f"  [extended] modular P-Pass {i}/{num_passes}, calling {provider}/{model} ...")
+        t0 = time.monotonic()
+        response = call(model, directives, user_prompt)
+        elapsed = time.monotonic() - t0
+        _err(f"  [extended] modular P-Pass {i}/{num_passes} done ({elapsed:.1f}s)")
+
+        extracted_issues = _extract_section(response, "ISSUES_FOUND")
+        extracted_revision = _extract_section(response, "REVISED_ANSWER")
+        extracted_initial = _extract_section(response, "INITIAL_ANSWER")
+
+        pass_record: dict[str, Any] = {
+            "pass_number": i,
+            "pass_type": "modular",
+            "response": response,
+            "elapsed_seconds": round(elapsed, 2),
+        }
+        if extracted_initial is not None:
+            pass_record["initial_answer"] = extracted_initial
+        if extracted_issues is not None:
+            pass_record["issues_found"] = extracted_issues
+        if extracted_revision is not None:
+            pass_record["revised_answer"] = extracted_revision
+
+        passes.append(pass_record)
+        current_draft = extracted_revision or response
+        prior_issues = extracted_issues
+
+    # Isolated adversarial pass (final pass — fresh context, no prior P-Pass data)
+    adversarial_prompt = ADVERSARIAL_PASS_TEMPLATE.format(
+        task_prompt=task["prompt"],
+        current_draft=(current_draft or "").strip(),
+    )
+
+    _err(f"  [extended] adversarial P-Pass {num_passes}/{num_passes}, calling {provider}/{model} (isolated context) ...")
+    t0 = time.monotonic()
+    # No system prompt for the adversarial pass — it operates without CDSFL
+    # directives to avoid anchoring on the methodology that produced the draft.
+    response = call(model, None, adversarial_prompt)
+    elapsed = time.monotonic() - t0
+    _err(f"  [extended] adversarial P-Pass {num_passes}/{num_passes} done ({elapsed:.1f}s)")
+
+    extracted_issues = _extract_section(response, "ISSUES_FOUND")
+    extracted_revision = _extract_section(response, "REVISED_ANSWER")
+
+    pass_record = {
+        "pass_number": num_passes,
+        "pass_type": "adversarial_isolated",
+        "response": response,
+        "elapsed_seconds": round(elapsed, 2),
+    }
+    if extracted_issues is not None:
+        pass_record["issues_found"] = extracted_issues
+    if extracted_revision is not None:
+        pass_record["revised_answer"] = extracted_revision
+
+    passes.append(pass_record)
+    final_draft = extracted_revision or current_draft or ""
+
+    return {
+        "condition": "extended",
+        "model": model,
+        "provider": provider,
+        "num_passes": num_passes,
+        "modular_passes": modular_count,
+        "adversarial_passes": 1,
+        "passes": passes,
+        "final_response": final_draft,
+    }
+
+
 def run_benchmark(
     tasks: list[dict[str, Any]],
     model: str,
     provider: str,
     directives: str,
     num_passes: int,
+    mode: str = "standard",
 ) -> list[dict[str, Any]]:
     """Run all tasks under both conditions."""
     results = []
@@ -386,6 +518,15 @@ def run_benchmark(
         domain = task.get("domain", "<no-domain>")
         _err(f"\n[{idx}/{total}] Task {task_id} (domain: {domain})")
 
+        if mode == "extended":
+            experimental_result = run_extended(
+                task, model, provider, directives, num_passes
+            )
+        else:
+            experimental_result = run_experimental(
+                task, model, provider, directives, num_passes
+            )
+
         task_result: dict[str, Any] = {
             "task_id": task_id,
             "domain": domain,
@@ -393,9 +534,7 @@ def run_benchmark(
             "seeded_faults": task.get("seeded_faults", []),
             "ground_truth_notes": task.get("ground_truth_notes", ""),
             "control": run_control(task, model, provider),
-            "experimental": run_experimental(
-                task, model, provider, directives, num_passes
-            ),
+            "experimental": experimental_result,
         }
         results.append(task_result)
 
@@ -456,6 +595,14 @@ def main() -> None:
         help="Path to tasks directory (default: bench/tasks/)",
     )
     parser.add_argument(
+        "--mode",
+        choices=["standard", "extended"],
+        default="standard",
+        help="P-Pass mode: 'standard' (all passes in same context) or "
+             "'extended' (modular passes + isolated adversarial final pass). "
+             "Default: standard",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Load and validate tasks only - no API calls",
@@ -511,10 +658,10 @@ def main() -> None:
 
     _err(
         f"\nRunning benchmark: model={args.model}, provider={args.provider}, "
-        f"passes={args.passes}"
+        f"passes={args.passes}, mode={args.mode}"
     )
     results = run_benchmark(
-        tasks, args.model, args.provider, directives, args.passes
+        tasks, args.model, args.provider, directives, args.passes, args.mode
     )
 
     benchmark_output = {
@@ -523,6 +670,7 @@ def main() -> None:
             "model": args.model,
             "provider": args.provider,
             "num_passes": args.passes,
+            "mode": args.mode,
             "task_count": len(tasks),
             "directives_source": args.directives or "built-in",
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),

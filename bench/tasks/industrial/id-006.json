@@ -1,0 +1,20 @@
+{
+  "id": "id-006",
+  "domain": "industrial",
+  "prompt": "Design a snap-fit latch for a consumer electronics enclosure. The enclosure is injection-moulded polycarbonate (PC, Makrolon 2805). The cantilever snap-fit beam is 15mm long, 5mm wide, and 1.5mm thick, with an undercut (hook depth) of 1.2mm. The beam deflects to allow assembly and then locks behind a mating lip.\n\nThe maximum strain during deflection is calculated as ε = 1.5 × y × t / L² = 1.5 × 1.2 × 1.5 / 15² = 0.012 = 1.2%. Polycarbonate has an allowable strain for snap-fits of 2% (single-use) or 1.2% (multiple-use). Since this is an enclosure opened for battery replacement, we classify it as single-use and the 1.2% strain is within the 2% limit. The insertion force is estimated at 15 N. Please review the snap-fit design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "use_classification_error",
+      "description": "An enclosure opened for battery replacement is NOT a single-use snap-fit — it is a multiple-use (repeated assembly/disassembly) application. A battery compartment may be opened hundreds of times over the product's lifetime. The allowable strain limit for polycarbonate snap-fits under repeated use is 1.2% (some references cite 1.0% for high cycle count), and the calculated strain is exactly 1.2% — right at the boundary. With manufacturing tolerances on beam thickness and undercut depth, a proportion of production parts will exceed 1.2% strain, leading to progressive stress whitening, yielding, and eventual fracture of the snap-fit latch. The design should target a maximum strain of 0.8-1.0% to provide margin for manufacturing variation and material property scatter.",
+      "location_hint": "Battery replacement enclosure classified as single-use snap-fit, using 2% strain limit."
+    },
+    {
+      "id": "f2",
+      "type": "environmental_stress_cracking_error",
+      "description": "Polycarbonate is highly susceptible to environmental stress cracking (ESC) from common chemicals including hand oils/sebum, cleaning agents (particularly those containing ammonia or isopropanol), and many adhesives. A snap-fit latch on a consumer electronics enclosure will be repeatedly contacted by human hands (transferring skin oils and perspiration) and may be exposed to cleaning products. Under the combination of the 1.2% strain at the snap-fit root and exposure to these agents, polycarbonate will undergo ESC at stresses well below its dry mechanical limits — the critical strain for ESC in PC can be as low as 0.3-0.5% depending on the chemical agent. This is a well-documented failure mode in PC consumer products. The design must either: (a) use a PC/ABS blend which has much better ESC resistance, (b) reduce the strain significantly, or (c) redesign the snap geometry to avoid sustained strain at the hook engagement point.",
+      "location_hint": "Polycarbonate snap-fit on consumer electronics enclosure handled by users."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Battery replacement enclosure is multiple-use, not single-use. The calculated strain of 1.2% is at the limit for repeated use with no manufacturing margin. Reference: BASF Snap-Fit Design Guide; Bayer MaterialScience Snap-Fit Joints for Plastics (now Covestro). (2) Polycarbonate is highly susceptible to environmental stress cracking from skin oils and cleaning agents, with critical ESC strain as low as 0.3-0.5%. This is a well-known failure mode in consumer PC products. Reference: Wright, 'Failure of Plastics and Rubber Products', Rapra Technology, Chapter 9; Covestro Makrolon Chemical Resistance Guide."
+}

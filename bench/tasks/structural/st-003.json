@@ -1,0 +1,20 @@
+{
+  "id": "st-003",
+  "domain": "structural",
+  "prompt": "Design a timber roof truss for a residential building with a span of 10m and a pitch of 30°. The truss uses C24 grade softwood with 50mm × 150mm top chord, 50mm × 100mm bottom chord, and 50mm × 75mm web members. All connections use M12 bolts in double shear through 12mm thick steel side plates.\n\nThe roof carries permanent load (tiles + battens + felt) of 0.6 kN/m² on slope and an imposed snow load of 0.75 kN/m² on plan. Trusses are at 600mm centres. The design uses the characteristic strength values from BS EN 338 directly, without any modification factors. The critical connection at the apex has 2 No. M12 bolts in a single row, with a bolt spacing of 50mm centre-to-centre. Please review the truss design and connections.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "strength_modification_omission",
+      "description": "Using characteristic strength values directly without modification factors violates BS EN 1995-1-1 (Eurocode 5). Timber design requires application of: (1) kmod factor for load duration and service class (for medium-term loading in Service Class 2 with C24 timber, kmod = 0.80); (2) partial safety factor γM = 1.3 for solid timber; and (3) size factor kh for depths ≤150mm. The design strength is fd = kmod × fk / γM. Omitting these factors means characteristic bending strength of 24 MPa is used instead of the design value of approximately 14.8 MPa — an unconservative error of approximately 62%.",
+      "location_hint": "Design uses characteristic strength values from BS EN 338 without modification factors."
+    },
+    {
+      "id": "f2",
+      "type": "connection_geometry_error",
+      "description": "M12 bolts in C24 timber require minimum spacings per BS EN 1995-1-1 Table 8.5. For bolts loaded parallel to grain: minimum spacing a1 = (4+cos α)×d = 5×12 = 60mm for parallel-to-grain loading. The specified 50mm centre-to-centre spacing is less than the 60mm minimum. Additionally, for a bolt group with only 2 bolts in a single row, the effective number of fasteners nef = min(n, n^0.9 × (a1/(13d))^0.25) must be calculated — but the spacing violation itself invalidates the connection before this check. Undersized bolt spacing causes splitting failure of the timber before the bolts reach their design capacity.",
+      "location_hint": "2 No. M12 bolts at 50mm centre-to-centre spacing."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Eurocode 5 requires kmod and γM modification of characteristic strengths. Using fk directly overstates design capacity by ~62%. Reference: BS EN 1995-1-1 Clause 2.4.1, Table 3.1. (2) M12 bolt minimum spacing parallel to grain is 5d = 60mm per Table 8.5. The 50mm spacing violates this and causes premature splitting. Reference: BS EN 1995-1-1 Clause 8.3.1.2."
+}

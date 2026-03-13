@@ -1,0 +1,20 @@
+{
+  "id": "ch-005",
+  "domain": "chemistry",
+  "prompt": "Design a galvanic corrosion protection system for a marine heat exchanger where seawater flows through copper-nickel (90/10 CuNi) tubes mounted in a carbon steel tube sheet. The current design uses zinc sacrificial anodes bolted directly to the steel tube sheet to provide cathodic protection. The system operates at seawater temperatures of 25-35°C.\n\nTo reduce maintenance frequency, we propose replacing the zinc anodes with aluminium-bronze (Cu-9Al) anodes, since aluminium has a more negative electrode potential than zinc in the galvanic series and should therefore provide stronger cathodic protection. The aluminium-bronze anodes would also be more resistant to physical damage from debris in the seawater intake. Please review the galvanic protection strategy and material selection.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "galvanic_series_error",
+      "description": "The claim that aluminium has a more negative potential than zinc in seawater is incorrect. In the galvanic series in seawater, zinc has a potential of approximately -1.05V vs SCE, while aluminium is approximately -0.76V vs SCE (though this varies with alloy). Pure aluminium is slightly more negative than zinc only in certain electrolytes, but in seawater the aluminium oxide passive film shifts its potential significantly more noble. More critically, aluminium-bronze (Cu-9Al) is NOT an anode material at all — it is a copper alloy with a potential of approximately -0.25V vs SCE in seawater, making it MORE noble than the carbon steel (-0.60V vs SCE) it is supposed to protect. Aluminium-bronze anodes would be cathodic to the steel tube sheet and would actually accelerate its corrosion.",
+      "location_hint": "Proposal to replace zinc anodes with aluminium-bronze anodes based on aluminium's electrode potential."
+    },
+    {
+      "id": "f2",
+      "type": "material_compatibility_error",
+      "description": "The existing zinc anode design has a subtler problem: zinc sacrificial anodes bolted directly to the steel tube sheet will also cathodically protect the copper-nickel tubes (since CuNi at approximately -0.28V vs SCE is more noble than both zinc and steel). However, excessive cathodic protection of CuNi alloys drives the potential below -0.85V vs SCE, which can cause dezincification of the CuNi alloy and hydrogen embrittlement at the tube-to-tube-sheet joint. The zinc anode system needs potential monitoring and possibly resistor-controlled drainage to prevent overprotection of the CuNi tubes. This is a known failure mode in marine heat exchangers.",
+      "location_hint": "Zinc anodes bolted directly to the tube sheet providing cathodic protection to the entire assembly."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Aluminium-bronze is a noble copper alloy, not a sacrificial anode material. The galvanic series in seawater places aluminium-bronze at approximately -0.25V vs SCE, more noble than carbon steel. It would act as a cathode and accelerate steel corrosion. Reference: ASTM G82, 'Standard Guide for Development and Use of a Galvanic Series'. (2) Overprotection of CuNi alloys below -0.85V vs SCE causes dezincification and hydrogen damage. Potential-controlled cathodic protection is required. Reference: LaQue, 'Marine Corrosion: Causes and Prevention', Chapter 7; DNV-RP-B401."
+}

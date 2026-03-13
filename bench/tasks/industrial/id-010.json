@@ -1,0 +1,20 @@
+{
+  "id": "id-010",
+  "domain": "industrial",
+  "prompt": "Design a 3D-printed (FDM) jig for holding cylindrical workpieces during a CNC milling operation. The jig is printed in PLA (polylactic acid) on a desktop FDM printer with 0.2mm layer height and 40% infill. The jig has a V-groove cradle that holds a 30mm diameter aluminium rod while a 6mm end mill machines a flat on the rod. The clamping force is provided by two M5 bolts threaded directly into the PLA body.\n\nThe milling parameters are: spindle speed 6000 rpm, feed rate 500 mm/min, depth of cut 1mm, width of cut 6mm. The estimated cutting force is Fc = kc × ap × ae × f / (1000 × z) where kc ≈ 800 N/mm² for aluminium, giving approximately 40 N tangential cutting force. The jig is designed to withstand 100 N clamping force per bolt. Please review the jig design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "material_property_error",
+      "description": "PLA is a poor choice for a machining jig due to its low heat deflection temperature (HDT) of approximately 50-55°C. During CNC milling, heat is generated from: (a) the cutting process itself, which transfers heat through the workpiece and into the jig; (b) friction between the workpiece and jig under clamping load; and (c) coolant temperature (if flood coolant is used) or ambient temperature rise in the machine enclosure. PLA softens and creeps above 50°C, leading to dimensional instability of the jig, loss of clamping force, and potential workpiece movement during machining. PETG (HDT ~75°C) or ABS (HDT ~95°C) are minimum alternatives for light-duty machining jigs. For sustained use, nylon (PA6/PA12, HDT ~100-180°C depending on glass-fill) or polycarbonate (HDT ~130°C) should be used. Better still, machining jigs should be printed from glass-filled nylon or carbon-fibre-filled PETG for dimensional stability under load.",
+      "location_hint": "PLA used for CNC machining jig."
+    },
+    {
+      "id": "f2",
+      "type": "thread_strength_error",
+      "description": "Threading M5 bolts directly into FDM-printed PLA is mechanically unreliable. FDM parts have strongly anisotropic properties — the interlayer bond strength is typically 30-60% of the in-plane strength. Threads tapped or printed into PLA rely on these weak interlayer bonds to resist pull-out forces. The thread stripping strength of PLA is approximately 10-15 MPa (compared to 60-100 MPa for aluminium), meaning M5 threads in PLA with a typical 5mm engagement depth will strip at approximately 120-180 N — barely above the 100 N design clamping force, with no safety margin. Under cyclic loading from the milling vibration, the threads will progressively degrade. The standard solution for threaded connections in FDM parts is to use brass heat-set threaded inserts, which provide metal threads bonded into the plastic and can sustain 500-1000 N pull-out force in PLA.",
+      "location_hint": "M5 bolts threaded directly into PLA body at 100 N clamping force."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) PLA has HDT of ~50-55°C, unsuitable for machining jig where cutting heat will soften the material. PETG, ABS, or nylon required. Reference: MatWeb PLA material data; CNC Kitchen PLA mechanical testing; Stratasys FDM material guidelines. (2) M5 threads directly in PLA will strip at ~120-180 N with no margin over the 100 N design load. Brass heat-set threaded inserts are required. Reference: CNC Kitchen thread pull-out testing (FDM); Ruthex heat-set insert design guide; Formlabs 'Tapping Threads in 3D Printed Parts' application guide."
+}

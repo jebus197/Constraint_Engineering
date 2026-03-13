@@ -1,0 +1,20 @@
+{
+  "id": "id-001",
+  "domain": "industrial",
+  "prompt": "Design a plastic enclosure for an outdoor IoT weather station using injection-moulded ABS (acrylonitrile butadiene styrene). The enclosure is 150mm × 100mm × 60mm with 2mm uniform wall thickness. It must survive continuous outdoor exposure in southern Europe (UV index up to 10, temperature range -10°C to +55°C). The enclosure halves are joined with four M3 brass heat-set threaded inserts in the ABS bosses, torqued to 0.8 N·m.\n\nThe boss outer diameter is 6mm (twice the insert OD of 3mm) with a wall thickness of 1.5mm. Draft angle on external walls is 0.5°. The gate location is a single edge gate on the long side. We specify a surface finish of SPI A-1 (mirror polish) on the external face for aesthetic appeal. Please review the enclosure design for manufacturability and service life.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "material_degradation_error",
+      "description": "ABS has very poor UV resistance. Unmodified ABS exposed to UV degrades rapidly — the butadiene rubber phase undergoes photo-oxidation, causing yellowing, chalking, and embrittlement within 6-12 months of outdoor exposure. For continuous outdoor use in southern Europe (high UV index), ABS is unsuitable without significant UV stabilisation. ASA (acrylonitrile styrene acrylate) replaces the UV-sensitive butadiene with an acrylic rubber and is the standard material for outdoor applications. Alternatively, PC/ASA blends or UV-stabilised polycarbonate are used. Specifying unmodified ABS for this application will result in field failures within the first year.",
+      "location_hint": "Material specified as ABS for outdoor enclosure exposed to UV index up to 10."
+    },
+    {
+      "id": "f2",
+      "type": "draft_angle_error",
+      "description": "A draft angle of 0.5° combined with an SPI A-1 mirror polish finish is contradictory and will cause mould release problems. Mirror-polished surfaces create a vacuum effect and high surface adhesion between the part and the mould cavity. The general rule is that textured or polished surfaces require additional draft: SPI A-1/A-2 finishes typically require a minimum of 1.5-2° draft per side to release cleanly. At 0.5° draft with a mirror finish, the part will stick in the cavity, causing ejection marks, surface scuffs, or part deformation during demoulding. Industry guidance (e.g., Protolabs, Xcentric Mold) specifies 1° draft per 0.001 inch (25µm) of texture depth as a minimum, with polished surfaces needing more draft than textured ones due to suction effects.",
+      "location_hint": "Draft angle 0.5° with SPI A-1 mirror polish on external face."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) ABS degrades rapidly under UV exposure due to butadiene rubber phase photo-oxidation. ASA is the standard outdoor alternative. Reference: BASF Ultraform/Luran Design Guide; Wypych, 'Handbook of UV Degradation and Stabilization', 2nd ed. (2) Mirror polish (SPI A-1) requires minimum 1.5-2° draft for clean ejection. 0.5° is insufficient and will cause surface defects. Reference: Protolabs DFM Guidelines; Rosato, 'Injection Molding Handbook', 3rd ed., Chapter 7."
+}

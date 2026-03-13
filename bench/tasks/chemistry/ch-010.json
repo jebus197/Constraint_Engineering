@@ -1,0 +1,20 @@
+{
+  "id": "ch-010",
+  "domain": "chemistry",
+  "prompt": "Evaluate a proposed food preservation strategy for a new line of refrigerated ready-to-eat deli salads (pH 5.2, water activity aw = 0.97, storage at 4°C, 21-day shelf life target). The preservation system uses potassium sorbate at 0.3% (3000 ppm) as the primary antimicrobial, combined with modified atmosphere packaging (MAP) using 30% CO2 / 70% N2.\n\nThe food safety team claims that 0.3% potassium sorbate provides effective inhibition of Listeria monocytogenes at pH 5.2, and that the MAP headspace eliminates the risk of Clostridium botulinum toxin production since oxygen has been removed. The product will be validated using a challenge study with Staphylococcus aureus as the target organism for Listeria control. Please review the preservation strategy, the antimicrobial claims, and the validation approach.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "antimicrobial_efficacy_error",
+      "description": "Sorbate's antimicrobial activity depends on the concentration of undissociated sorbic acid, which is pH-dependent (pKa = 4.76). At pH 5.2, only approximately 27% of potassium sorbate exists as undissociated sorbic acid (the active form). This gives an effective sorbic acid concentration of approximately 810 ppm — which provides some inhibitory activity but is not reliably listericidal at refrigeration temperatures. Listeria monocytogenes is notably resistant to sorbate at near-neutral pH; published MIC values for L. mono in sorbate at pH 5.0-5.5 range from 0.1-0.3% undissociated acid, and at pH 5.2 the system is at the margin. More critically, the claim of 'effective inhibition' overstates the expected outcome — sorbate at this pH provides growth delay (bacteriostatic), not elimination. The Henderson-Hasselbalch calculation should have been the starting point for the efficacy assessment.",
+      "location_hint": "Claim that 0.3% potassium sorbate provides effective Listeria inhibition at pH 5.2."
+    },
+    {
+      "id": "f2",
+      "type": "pathogen_selection_error",
+      "description": "Using Staphylococcus aureus as a surrogate for Listeria monocytogenes in a challenge study is scientifically invalid and would likely fail FDA/USDA regulatory review. S. aureus and L. monocytogenes have fundamentally different growth characteristics: L. monocytogenes is psychrotrophic (grows at 0-4°C), while S. aureus cannot grow below approximately 7°C. A challenge study at 4°C storage would show S. aureus decline (giving false confidence) while L. monocytogenes could be growing. L. monocytogenes is also more acid-tolerant and sorbate-resistant than S. aureus. FDA's guidance document 'Control of Listeria monocytogenes in Ready-To-Eat Foods' (2017) explicitly requires challenge studies to use L. monocytogenes strains or accepted surrogates (Listeria innocua), not unrelated organisms.",
+      "location_hint": "Use of S. aureus as the target organism for Listeria control validation."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Sorbate efficacy is pH-dependent via Henderson-Hasselbalch. At pH 5.2 (pKa 4.76), only ~27% is undissociated (active form). L. monocytogenes is sorbate-resistant at near-neutral pH. Reference: Sofos & Busta, 'Sorbic Acid and Sorbates', in Davidson, Sofos & Branen, 'Antimicrobials in Food', 3rd ed. (2) S. aureus is not a valid surrogate for L. monocytogenes in refrigerated food challenge studies. L. mono is psychrotrophic; S. aureus is not. FDA requires L. monocytogenes or L. innocua. Reference: FDA Draft Guidance, 'Control of Listeria monocytogenes in Ready-To-Eat Foods', 2017; Codex Alimentarius CAC/GL 61-2007."
+}

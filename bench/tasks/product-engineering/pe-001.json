@@ -1,0 +1,20 @@
+{
+  "id": "pe-001",
+  "domain": "product-engineering",
+  "prompt": "Design a handheld cordless power tool (angle grinder) for the consumer market. The motor is a 20V brushless DC motor drawing 15A peak. The tool body is a two-part clamshell enclosure in glass-filled nylon (PA66-GF30), joined with six self-tapping screws into moulded bosses. The user grip area is 42mm diameter with a textured overmould in TPE (thermoplastic elastomer).\n\nThe tool weighs 2.1 kg including battery. The auxiliary side handle threads into the gear housing via an M10 thread. The tool is rated for 115mm grinding discs at 11,000 rpm. The power switch is a slide-type on the grip, with no lock-off mechanism — the user slides the switch forward to start and it stays on until slid back. CE marking is planned under the Low Voltage Directive and the Machinery Directive. Please review the product design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "safety_interlock_error",
+      "description": "The slide switch with no lock-off mechanism violates EN 62841-2-3 (the harmonised standard for angle grinders under the Machinery Directive). Clause 22.4 of EN 62841-2-3 requires that angle grinders with disc diameters above 55mm must have a lock-off device that prevents unintentional starting. This typically takes the form of a paddle switch that must be actively held, a two-stage trigger requiring deliberate engagement, or a slide switch with a secondary lock-off button. A simple slide switch that stays on without active user engagement creates an uncontrolled restart hazard (the tool will start immediately when the battery is inserted if the switch was left in the ON position) and does not meet the essential health and safety requirements of Annex I of the Machinery Directive 2006/42/EC.",
+      "location_hint": "Slide switch with no lock-off mechanism on an angle grinder."
+    },
+    {
+      "id": "f2",
+      "type": "guard_specification_omission",
+      "description": "The design specifies a 115mm disc at 11,000 rpm but makes no mention of the guard. EN 62841-2-3 Clause 19 and Annex A require that angle grinders be supplied with a guard that covers at least 180° of the disc periphery, is adjustable by the user without tools, and is rated to contain disc fragments in the event of disc burst. The guard must be tested to a burst containment test per the standard. For a 115mm disc at 11,000 rpm, the peripheral speed is π × 0.115 × 11000/60 = 66.3 m/s, which is near but within the EN 12413 maximum operating speed for depressed-centre grinding wheels (80 m/s). However, the guard design and burst containment are fundamental safety requirements — omitting them from the product design specification means the tool cannot receive CE marking. The guard material, thickness, attachment method, and adjustability must all be specified.",
+      "location_hint": "No guard specification for a 115mm angle grinder at 11,000 rpm."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Lock-off mechanism is mandatory for angle grinders per EN 62841-2-3 Clause 22.4. Simple slide switch violates the Machinery Directive 2006/42/EC Annex I essential requirements. Reference: EN 62841-2-3:2014+A11:2017; IEC 62841-2-3; Machinery Directive 2006/42/EC. (2) Guard is a fundamental safety requirement omitted from the specification. EN 62841-2-3 Clause 19 requires burst-containment-rated adjustable guard covering minimum 180°. Reference: EN 62841-2-3 Clause 19 and Annex A; EN 12413 (bonded abrasive product safety)."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ch-009",
+  "domain": "chemistry",
+  "prompt": "Design a proton exchange membrane (PEM) fuel cell stack for a 5 kW backup power system. The membrane material is Nafion 117 (175 μm thickness) operating at 80°C with fully humidified hydrogen and air. We claim the protonic conductivity of Nafion 117 at 80°C and 100% relative humidity is approximately 0.20 S/cm, giving an area-specific membrane resistance of 0.0875 Ω·cm² (175×10⁻⁴ cm / 0.20 S/cm).\n\nTo improve the stack's cold-start capability and extend its operating range, we propose operating the stack at temperatures up to 120°C by increasing the back-pressure to 3 bar absolute to maintain liquid water in the membrane. At 120°C we expect the higher temperature to increase the oxygen reduction reaction (ORR) kinetics sufficiently to offset any membrane conductivity changes. The catalyst is standard 40 wt% Pt/C at 0.4 mg-Pt/cm² loading on both anode and cathode. Please review the membrane properties, the high-temperature operating proposal, and the catalyst selection.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "membrane_property_error",
+      "description": "The protonic conductivity of Nafion 117 at 80°C and 100% RH is approximately 0.10-0.12 S/cm, not 0.20 S/cm. The 0.20 S/cm value is sometimes reported for thinner Nafion membranes (e.g., Nafion 112 at 25 μm) or for Nafion at higher temperatures in the presence of liquid water, but it significantly overstates the conductivity of Nafion 117 at 80°C. This error propagates through the resistance calculation: actual ASR is approximately 0.15-0.175 Ω·cm² (roughly double the claimed value), which meaningfully impacts stack efficiency and sizing calculations.",
+      "location_hint": "Claim of 0.20 S/cm protonic conductivity for Nafion 117 at 80°C."
+    },
+    {
+      "id": "f2",
+      "type": "degradation_mechanism_error",
+      "description": "Operating Nafion membranes at 120°C, even under 3 bar back-pressure to maintain humidification, causes accelerated membrane degradation that the proposal ignores. Above 100°C, Nafion undergoes: (1) accelerated chemical degradation via radical attack (Fenton mechanism from H2O2 generated at the cathode, catalysed by Fe²⁺ trace contaminants), with degradation rate approximately doubling for every 10°C increase; (2) mechanical creep of the polymer under compression, causing membrane thinning and eventual crossover failure; (3) platinum dissolution and Ostwald ripening at elevated temperatures, reducing catalyst ECSA by 30-50% over thousands of hours. The proposal acknowledges kinetic benefits but completely ignores these durability-limiting mechanisms, which would reduce stack lifetime from the typical 40,000+ hours at 80°C to potentially <5,000 hours at 120°C.",
+      "location_hint": "Proposal to operate at 120°C expecting kinetic benefits to offset membrane changes."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Nafion 117 conductivity at 80°C/100% RH is 0.10-0.12 S/cm. The 0.20 S/cm value overstates by ~2×, doubling the true membrane resistance. Reference: Zawodzinski et al., J. Electrochem. Soc. 140, 1041 (1993); Springer et al., J. Electrochem. Soc. 138, 2334 (1991). (2) Nafion degradation above 100°C includes radical attack (accelerated Fenton chemistry), mechanical creep, and Pt dissolution. These mechanisms dominate over kinetic benefits and drastically reduce lifetime. Reference: Borup et al., 'Scientific Aspects of Polymer Electrolyte Fuel Cell Durability and Degradation', Chemical Reviews, 107, 3904 (2007)."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "pe-002",
+  "domain": "product-engineering",
+  "prompt": "Design a waterproof enclosure for a consumer underwater camera rated to 40m depth (4 bar gauge pressure). The enclosure is CNC-machined from 6061-T6 aluminium with a hard anodised finish (Type III, 50µm). The front port is a flat optical glass window (BK7, 8mm thick, 50mm clear aperture) sealed with a single radial O-ring (NBR, 70 Shore A, 3.53mm cross-section in a dovetail groove). The rear closure is a twist-lock bayonet cap with a face-seal O-ring.\n\nThe enclosure wall thickness is 3mm. Internal dimensions accommodate a camera body of 120mm × 70mm × 50mm. Buoyancy is slightly negative (enclosure + camera sinks slowly). Two push-button controls penetrate the top surface using spring-loaded shaft seals. Depth rating is validated by a static pressure test at 1.5× rated depth (60m equivalent, 6 bar) for 30 minutes with leak detection. Please review the enclosure design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "oring_material_error",
+      "description": "NBR (nitrile) O-rings are unsuitable for sustained saltwater immersion. While NBR has acceptable short-term compatibility with water, prolonged exposure to seawater causes swelling (5-15% volume change), reduced compression set resistance, and accelerated ageing due to the combined effects of salt, biological agents, and UV exposure at the surface. The standard material for diving equipment seals is EPDM (excellent water resistance, minimal swelling) or silicone (VMQ) for static seals. For underwater camera housings specifically, silicone O-rings are industry standard (used by Ikelite, Nauticam, Isotta) because they have very low compression set, excellent water resistance, remain flexible at low temperatures encountered at depth, and are user-serviceable (divers re-grease them regularly). NBR is appropriate for hydraulic oil seals, not aqueous immersion applications.",
+      "location_hint": "NBR O-ring specified for saltwater underwater camera enclosure."
+    },
+    {
+      "id": "f2",
+      "type": "pressure_test_inadequacy",
+      "description": "The pressure test protocol (1.5× rated depth, static, 30 minutes) is inadequate for validating a 40m dive housing. The 1.5× safety factor on static pressure is reasonable, but the test omits critical real-world loading conditions: (1) Thermal cycling — a camera housing taken from a warm boat deck (35°C) into 10°C water at 40m undergoes significant thermal contraction of both the aluminium body and the internal air volume. The resulting pressure differential and dimensional changes stress the seals differently than isothermal testing. (2) Dynamic pressure pulses — wave action, surge, and rapid depth changes during descent/ascent create pressure transients that static testing doesn't capture. (3) Button actuation under pressure — the shaft seals on the push-button controls must be tested WHILE being actuated at full rated pressure, not just in static repose. Industry standard (e.g., ISO 6425 for dive watches, adapted for housings) requires testing at 1.25× rated pressure PLUS dynamic testing. The JIS 8-grade and ISO 22810 standards also require cycling tests.",
+      "location_hint": "Static pressure test at 1.5× only, no thermal cycling, dynamic, or actuation testing."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) NBR O-rings swell and degrade in sustained saltwater immersion. Silicone or EPDM is required for underwater camera housings. Reference: Parker O-Ring Handbook, Fluid Compatibility Tables; Trelleborg Sealing Solutions, 'O-Ring Material Selection Guide'. (2) Static-only pressure testing omits thermal cycling, dynamic loads, and under-pressure actuation — all critical for dive equipment. Reference: ISO 6425:2018 (divers' watches, adapted principles); Ikelite/Nauticam housing test protocols; BS EN 13319:2000 (diving accessories — depth gauges and combined depth/time instruments)."
+}

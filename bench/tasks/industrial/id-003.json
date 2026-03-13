@@ -1,0 +1,20 @@
+{
+  "id": "id-003",
+  "domain": "industrial",
+  "prompt": "Design a tolerance stack-up for a linear bearing assembly. A steel shaft (nominal diameter 20mm) runs in two sintered bronze bushings pressed into an aluminium housing. The assembly must maintain a running clearance of 0.020-0.060mm between shaft and bushing bore at 20°C.\n\nThe shaft is ground to 20.000mm +0.000/-0.013mm (h7). The bushing bore after pressing is 20.040mm ±0.010mm. The tolerance stack gives: minimum clearance = 20.030 - 20.000 = 0.030mm, maximum clearance = 20.050 - 19.987 = 0.063mm. Both are within the 0.020-0.060mm specification. The assembly operates in an environment ranging from -20°C to +80°C. Housing material is aluminium alloy 6061-T6. Please review the tolerance analysis.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "thermal_expansion_error",
+      "description": "The tolerance analysis is performed only at 20°C and ignores differential thermal expansion. The three materials have significantly different coefficients of thermal expansion: steel shaft α ≈ 11 × 10⁻⁶/°C, bronze bushing α ≈ 18 × 10⁻⁶/°C, aluminium housing α ≈ 23.6 × 10⁻⁶/°C. Over a 100°C temperature range (-20°C to +80°C), the aluminium housing expands much more than the steel shaft. At +80°C (ΔT = +60°C): housing bore grows by 23.6 × 10⁻⁶ × 20 × 60 ≈ 0.028mm, bushing grows with housing (constrained), shaft grows by 11 × 10⁻⁶ × 20 × 60 ≈ 0.013mm. Net clearance increase ≈ 0.015mm. At -20°C (ΔT = -40°C): clearance decreases by ~0.010mm. The minimum clearance at -20°C could fall below 0.020mm (0.030 - 0.010 = 0.020mm, borderline), and maximum clearance at +80°C exceeds 0.060mm (0.063 + 0.015 = 0.078mm). The specification is violated at both temperature extremes.",
+      "location_hint": "Tolerance analysis at 20°C only, despite -20°C to +80°C operating range."
+    },
+    {
+      "id": "f2",
+      "type": "press_fit_interference_error",
+      "description": "The bushing bore dimension of 20.040mm ±0.010mm is specified as the 'after pressing' dimension, but this is not how bushing press-fits work. When a bronze bushing is pressed into an aluminium housing, the bushing bore contracts due to the interference fit. The amount of bore closure depends on the wall thickness ratio and the interference. For typical sintered bronze bushings with a wall thickness of 2-3mm, bore closure is approximately 70-80% of the diametral interference. If the bushing-to-housing interference is sized per standard practice (e.g., 0.02-0.05mm), the bore closure could be 0.015-0.040mm. The design must either: (a) specify the bushing bore dimension BEFORE pressing and account for bore closure in the tolerance stack, or (b) specify that the bushing bore is reamed/sized AFTER pressing, which adds a manufacturing operation. Simply stating the post-press bore dimension without addressing how it is achieved or controlled is a gap in the tolerance analysis.",
+      "location_hint": "Bushing bore dimension 20.040mm ±0.010mm stated as after-pressing value."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Differential thermal expansion between steel, bronze, and aluminium changes the running clearance significantly over the -20°C to +80°C range. The 20°C-only tolerance stack violates clearance limits at temperature extremes. Reference: Shigley's Mechanical Engineering Design, 11th ed., Chapter 7; ASME Y14.5 Dimensioning and Tolerancing. (2) Press-fitting a bushing into a housing causes bore closure that must be accounted for. The post-press bore dimension requires either a pre-press tolerance with closure calculation or a post-press sizing operation. Reference: Oberg et al., 'Machinery's Handbook', 31st ed., Press Fit section; SKF bearing mounting guidelines."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "xd-001",
+  "domain": "cross-domain",
+  "prompt": "A power electronics engineer is designing a forced-air cooled half-bridge inverter module for a 3-phase motor drive rated at 10 kW continuous. The module uses two IGBT half-bridge legs, each containing two IGBTs (rated 600 V, 50 A) and antiparallel diodes mounted on a common aluminium heatsink.\n\nThe thermal stack is: junction to case (R_jc = 0.45 K/W per IGBT), case to heatsink via thermal interface material (R_cs = 0.15 K/W), and heatsink to ambient (R_sa = 0.8 K/W for the whole heatsink). Ambient temperature is 45 degC. Total switching and conduction losses per IGBT are calculated as 28 W at full load.\n\nThe engineer calculates the junction temperature as: T_j = T_amb + P_total * (R_jc + R_cs + R_sa) = 45 + 28 * (0.45 + 0.15 + 0.8) = 45 + 39.2 = 84.2 degC, and concludes that since the datasheet maximum T_j is 150 degC, the design has 65.8 degC margin and is safe for continuous operation without derating.\n\nThe heatsink is specified with fins optimised for natural convection, and a 12 V axial fan (80 mm, 35 CFM) is added to provide the forced-air cooling that achieves R_sa = 0.8 K/W. The fan is powered from the same DC bus via a linear regulator.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "thermal_electrical_interface",
+      "description": "The thermal resistance calculation treats R_sa as shared by a single IGBT, but four IGBTs dissipate onto the same heatsink. The correct calculation must sum all four IGBT power dissipations through R_sa: T_heatsink = T_amb + (4 * 28) * 0.8 = 45 + 89.6 = 134.6 degC, then T_j = T_heatsink + 28 * (0.45 + 0.15) = 134.6 + 16.8 = 151.4 degC, which exceeds the 150 degC absolute maximum. The interface fault is that the engineer failed to account for mutual thermal coupling of multiple power devices on a shared heatsink, treating the thermal problem as single-device when the electrical topology requires four devices.",
+      "location_hint": "Junction temperature calculation using R_sa as if only one device contributes heat to the heatsink"
+    },
+    {
+      "id": "f2",
+      "type": "electrical_derating_omission",
+      "description": "Even if the thermal calculation were corrected with a larger heatsink, the conclusion that margin to 150 degC means safe continuous operation ignores IGBT derating. Semiconductor datasheets specify maximum continuous current at 25 degC case temperature; at elevated T_j the safe operating area shrinks. For typical IGBTs, continuous current derates linearly from 100% at T_c = 25 degC to approximately 50-60% at T_c = 100 degC. At the calculated T_j, the 50 A rating is already derated, meaning the device may not safely carry the current that produces the assumed 28 W losses. This creates a circular dependency: losses depend on current, current limit depends on temperature, temperature depends on losses.",
+      "location_hint": "Conclusion that design is safe based solely on T_j below absolute maximum without consulting SOA derating curves"
+    }
+  ],
+  "ground_truth_notes": "Thermal principles: Thermal resistance networks for multiple heat sources on a shared sink must sum all power contributions through the shared resistance (Fourier's law, thermal superposition). R_sa is a property of the heatsink assembly, not per-device. Electrical principles: IGBT SOA derating per IEC 60747-9; absolute maximum T_j is a survival limit, not an operating limit. Continuous operation requires consulting the SOA curve at the actual junction temperature. The interface fault (f1) is specifically at the thermal-electrical boundary: the electrical topology (4 IGBTs) determines the thermal load, but the thermal calculation ignored the topology."
+}

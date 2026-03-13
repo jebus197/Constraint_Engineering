@@ -1,25 +1,65 @@
 # Constraint Engineering
 
-**Constraint-Driven Synthesis and Falsification (CDSFL)** — a methodology for AI-augmented engineering that couples generation with iterative adversarial self-testing.
+**Constraint-Driven Synthesis and Falsification (CDSFL)** — a methodology for making AI-assisted engineering work reliable.
 
-LLMs produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. CDSFL addresses this by treating generation and falsification as a single coupled mechanism: the model generates using associative reasoning, then subjects every non-trivial output to iterative adversarial self-testing (the P-Pass) before presenting it. The user only sees what survived being broken.
+## What This Is
 
-For the formal white paper with extended mathematical framework, see **[PAPER.md](PAPER.md)**.
+Large Language Models are powerful engineering assistants. They can design circuits, size structural members, specify chemical processes, draft governance frameworks, and write production code — often faster than a human working alone. They are also capable of being confidently, catastrophically wrong. A model will violate Kirchhoff's laws, undersize a beam, specify a toxic byproduct, or contradict its own prior reasoning, all with perfect confidence and impeccable formatting. The user, unless they are already an expert in the specific domain, has no reliable way to distinguish the good output from the bad.
+
+This is not a training data problem that will be solved by the next model release. It is a structural property of how these systems generate text: by predicting what comes next, not by verifying whether what came before was correct. Helpfulness and agreeableness are stronger training signals than accuracy. The result is systematic overconfidence.
+
+This repository describes a methodology that addresses this problem. The core idea is not new. It is ninety years old.
+
+### The Philosophical Foundation
+
+In 1934, the philosopher Karl Popper proposed that scientific knowledge advances not by confirming hypotheses, but by attempting to *refute* them. Confirmation is easy — you can find supporting evidence for almost anything if you look selectively. Refutation is hard, because it requires actively trying to destroy your own best idea. But a theory that survives sustained, genuine attempts at refutation has earned something valuable: **corroboration**. Not proof — Popper was explicit that proof is never available — but a degree of trust proportional to the severity of the tests it has withstood.
+
+This principle maps directly onto the problem with AI-assisted engineering. When a model generates an engineering claim, the natural question is "does this look right?" The Popperian question is different: "can I break it?" If you try to break it and fail, you have learned something. If you try to break it and succeed, you have learned something more valuable. Either way, the output improves.
+
+### The P-Pass: Adversarial Self-Testing
+
+The central mechanism of this methodology is the **P-Pass** — short for Popperian falsification pass. It works as follows:
+
+1. The model generates a solution to an engineering problem.
+2. Instead of presenting it immediately, the model turns adversarial against its own output. It constructs scenarios designed to break the solution, checks edge cases, examines assumptions from the perspective of an opponent.
+3. What breaks gets fixed. The fix gets attacked in turn.
+4. This iterative loop continues until the solution survives — or until the defined scope of the problem is reached.
+
+The user only sees what survived being broken. The intermediate failures, the fixes, and the adversarial attacks are internal to the process. The output is not the model's first draft — it is what remained after the model tried and failed to destroy its own work.
+
+A single P-Pass is useful. Multiple passes compound: each successive attempt at refutation that the output survives increases corroboration according to a geometric model described formally in Part II (Section 2.1). Five passes is the empirically observed optimum — the point beyond which additional passes yield diminishing returns for most engineering tasks.
+
+For multi-module projects (three or more distinct components with independent constraint sets), the methodology extends to the **Extended P-Pass**: four modular passes, each scoped to one component, followed by one isolated adversarial pass run in a fresh context with no access to prior analysis — eliminating the confirmation bias that accumulates when the same system reviews its own reviews.
+
+### Beyond the P-Pass
+
+The P-Pass alone is necessary but not sufficient. CDSFL adds three additional layers:
+
+- **Constraint classification.** Every constraint is classified as HARD (physics, mathematics, law, safety — non-negotiable) or SOFT (preference, convenience — negotiable). This prevents the model from silently trading a safety requirement against a preference to produce a more satisfying answer.
+- **Epistemic marking.** Claims that depend on present-day state (market availability, current regulations, technology versions) are flagged inline as `[VERIFY:current]`. Untested inferences are flagged as `[SPECULATIVE]`. The user knows exactly which parts of the output require their own verification.
+- **Persistence.** Reasoning, decisions, and falsification results survive between sessions through a verified memory architecture, so lessons learned are not lost when the conversation ends.
+
+For the formal white paper with mathematical framework and extended analysis, see **[PAPER.md](PAPER.md)**.
 
 ---
 
 ## Run the Testbench
 
-The empirical validation protocol described in the paper is implemented as a reproducible benchmark in **[bench/](bench/)**. It tests whether methodology-prompted output contains fewer critical errors than unguided output across 30 seeded-fault tasks in three domains.
+The empirical validation protocol described in the paper is implemented as a reproducible benchmark in **[bench/](bench/)**. It tests whether methodology-prompted output contains fewer critical errors than unguided output across 90 seeded-fault tasks in nine domains.
 
 ```bash
 cd bench
 pip install -r requirements.txt
 python3 run_benchmark.py --dry-run    # validate tasks, no API calls
 python3 run_benchmark.py              # full run (requires API keys)
+python3 run_benchmark.py --mode extended  # Extended P-Pass (under development)
 python3 evaluate.py results.json      # score and fit corroboration curve
 python3 report.py evaluation.json     # summary table and CSV
 ```
+
+## Example Configuration
+
+An example `CLAUDE.md` configuration file implementing the CDSFL methodology is provided in **[examples/CLAUDE.md.example](examples/CLAUDE.md.example)**. This is a working configuration derived from production use — place it at `~/.claude/CLAUDE.md` (global) or in your project root (project-specific) to apply the methodology directives to Claude Code sessions. The configuration is technology-agnostic and can be adapted for any LLM that supports system prompts.
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "id": "pe-004",
+  "domain": "product-engineering",
+  "prompt": "Design a folding mechanism for a portable workbench. The workbench top is 1000mm × 600mm, made from 18mm birch plywood. Four folding steel legs (25mm × 25mm × 1.6mm square tube, S235) fold flat against the underside of the top for transport. Each leg is 750mm long and pivots on a single M8 shoulder bolt acting as a hinge pin. A spring-loaded over-centre toggle latch locks each leg in the deployed (vertical) position.\n\nThe workbench must support a static load of 200 kg distributed across the top. Each leg therefore carries approximately 50 kg (490 N). The toggle latch is positioned 100mm below the hinge point and must resist a lateral force of 50 N to prevent accidental fold. The hinge pin bears on a single-thickness tab (1.6mm) welded to the leg tube. Please review the mechanism design and structural adequacy.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "hinge_bearing_stress_error",
+      "description": "The hinge pin (M8 shoulder bolt) bears on a single 1.6mm thick tab welded to the leg tube. The bearing stress at the hinge under full load is σ_bearing = F / (d × t) = 490 / (8 × 1.6) = 38.3 MPa per leg under static load. This appears adequate against the yield strength of S235 steel (235 MPa). However, the critical failure mode is not bearing stress — it is the tear-out (shear-out) of the tab. The distance from the bolt centre to the edge of the tab determines the tear-out resistance. For a welded tab on a 25mm square tube, the available edge distance is typically 8-12mm. Tear-out stress = F / (2 × e × t) where e is the edge distance. With e = 10mm: τ = 490 / (2 × 10 × 1.6) = 15.3 MPa — adequate statically. But the real problem is that a workbench is subject to dynamic and impact loading (hammering, dropping heavy objects), and a single 1.6mm tab with a punched or drilled hole is a fatigue-critical detail. The welded joint at the tab root is a Category 36 fatigue detail per BS EN 1993-1-9, severely limiting the fatigue life under repeated loading.",
+      "location_hint": "Single M8 hinge pin bearing on a single 1.6mm thick welded tab."
+    },
+    {
+      "id": "f2",
+      "type": "stability_analysis_omission",
+      "description": "The design assumes each leg carries 50 kg (490 N) vertically, but omits any analysis of lateral stability. A folding-leg workbench with pivot hinges at the top and no cross-bracing between legs is inherently unstable laterally — a horizontal force (pushing a workpiece sideways, leaning on the bench edge, or wind if used outdoors) creates a moment about the hinge line that the toggle latch must resist entirely. The toggle latch is specified to resist only 50 N lateral force, but a person leaning on one edge of a 600mm-wide bench at 100 kg body weight creates a lateral force component of approximately 200-300 N at the leg base (depending on lean angle). Furthermore, with four independently-hinged legs and no diagonal bracing or stretcher bars connecting opposite legs, the structure has a racking (parallelogram) mode that the toggle latches are not designed to resist. Portable workbenches require either cross-bracing, a scissor mechanism, or a frame that triangulates the structure against racking.",
+      "location_hint": "Four independently folding legs with toggle latches, no lateral bracing analysis."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Single 1.6mm welded tab is a fatigue-critical detail under the dynamic loading expected on a workbench. Weld toe is a Category 36 detail per EN 1993-1-9, limiting life under impact/cyclic loads. Reference: BS EN 1993-1-9:2005 Table 8.1; Shigley's Mechanical Engineering Design, fatigue of welded connections. (2) No lateral stability or racking analysis. Four independent pivot-leg benches without cross-bracing are inherently racking-unstable. Toggle latches sized for 50 N cannot resist realistic lateral loads. Reference: Dieter, 'Engineering Design', 5th ed.; furniture stability analysis per BS EN 1730:2012 (tables — strength, durability and safety)."
+}

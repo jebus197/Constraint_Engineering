@@ -1,0 +1,20 @@
+{
+  "id": "pe-007",
+  "domain": "product-engineering",
+  "prompt": "Design a linear actuator for an adjustable standing desk. The actuator uses a single-start ACME trapezoidal lead screw (Tr16×4, 16mm diameter, 4mm pitch/lead) driven by a 24V DC geared motor (50 rpm output, 2 N·m stall torque). The lead screw is 500mm long, running in a bronze nut (CuSn8) without lubrication to keep the desk surface clean. The desk top weighs 40 kg and must lift at a minimum speed of 25 mm/s.\n\nThe lifting force is F = Weight × g = 40 × 9.81 = 392 N. The torque required to lift the load is T = F × L / (2π × η) where L = 4mm (lead) and η = 0.40 (estimated efficiency for ACME thread). T = 392 × 0.004 / (2π × 0.40) = 0.624 N·m. Since the motor provides 2 N·m, there is ample torque margin. Linear speed = rpm × lead = 50 × 4 = 200 mm/min = 3.33 mm/s. This is below the 25 mm/s target, so we will specify a faster motor. Please review the actuator design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "self_locking_safety_error",
+      "description": "The design uses an ACME trapezoidal thread with 4mm lead on 16mm diameter. The lead angle is λ = atan(L / (π × d)) = atan(4 / (π × 16)) = atan(0.0796) = 4.55°. For an ACME thread with a 14.5° half-angle and coefficient of friction µ ≈ 0.10-0.15 (bronze on steel, dry), the self-locking condition requires tan(λ) < µ / cos(α). With µ = 0.12 and α = 14.5°: µ/cos(α) = 0.12/0.966 = 0.124. tan(4.55°) = 0.0796. Since 0.0796 < 0.124, the screw IS self-locking — but barely. The margin is thin. The critical issue is that the design specifies 'without lubrication' but bronze on steel without lubrication will gall and seize. If any lubrication is added later (e.g., during maintenance), µ drops to 0.05-0.08, and self-locking is lost: the desk will back-drive and drop under load. A standing desk actuator MUST be self-locking under all foreseeable conditions including contamination with cleaning products or accidental lubrication. A worm gear drive or a brake mechanism is required for safety-critical self-locking.",
+      "location_hint": "ACME lead screw self-locking margin depends on dry friction that may change."
+    },
+    {
+      "id": "f2",
+      "type": "wear_life_error",
+      "description": "Running a bronze nut (CuSn8) on a steel lead screw without lubrication will result in rapid wear and short service life. The PV (pressure-velocity) product for the nut is the critical wear parameter. Bearing pressure P = F / (projected area of engaged threads). For a Tr16×4 nut with approximately 4 full thread engagements: projected area ≈ 4 × 16 × 2 (thread depth) = 128 mm². P = 392 / 128 = 3.06 MPa. The sliding velocity at the pitch circle during operation at 50 rpm: V = π × 16 × 50 / (60 × 1000) = 0.042 m/s. PV = 3.06 × 0.042 = 0.129 MPa·m/s. The PV limit for unlubricated CuSn8 bronze is approximately 0.10-0.15 MPa·m/s (depending on surface finish). This is borderline at best, and at the higher motor speed needed to achieve 25 mm/s (which requires ~375 rpm), the velocity and PV product will increase proportionally, well exceeding the unlubricated PV limit. The nut will wear rapidly, developing backlash and eventually failing. Self-lubricating materials (PTFE-filled bronze or polymer nuts like Igus iglide) are required for dry-running lead screws.",
+      "location_hint": "Bronze nut without lubrication on lead screw at borderline PV product."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Self-locking margin is thin and depends on maintaining dry friction. Any lubrication (accidental or maintenance) eliminates self-locking, creating a drop hazard. Standing desk actuators require positive locking (brake or worm gear). Reference: Shigley's Mechanical Engineering Design, Power Screws chapter; EN 527-2 (office furniture — safety requirements for desks). (2) Unlubricated bronze on steel exceeds PV limits, especially at the higher speed needed to meet the 25 mm/s target. Self-lubricating materials required. Reference: Oberg et al., 'Machinery's Handbook', Bearing Materials; Igus lead screw technology application guide."
+}

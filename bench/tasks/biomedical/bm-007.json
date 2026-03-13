@@ -1,0 +1,20 @@
+{
+  "id": "bm-007",
+  "domain": "biomedical",
+  "prompt": "A medical device company is designing an MRI-conditional total hip replacement system. The femoral stem is manufactured from a titanium alloy (Ti-6Al-4V), and the modular femoral head is cobalt-chromium-molybdenum (CoCrMo, ASTM F75). The acetabular shell is titanium with a UHMWPE liner. All components are non-ferromagnetic, and the system is intended to be labelled as MR Conditional per ASTM F2503.\n\nThe MRI safety testing protocol follows ASTM F2182 for RF-induced heating. The worst-case SAR (Specific Absorption Rate) simulation models the implant in a 1.5T scanner with a whole-body averaged SAR of 2.0 W/kg (Normal Operating Mode per IEC 60601-2-33). The simulation predicts a maximum local temperature rise of 4.2 degrees C at the tip of the femoral stem after 15 minutes of continuous RF exposure, which the engineer concludes is within safe limits because the FDA-accepted threshold is 'no more than a few degrees.'\n\nThe locking mechanism between the modular femoral head and the stem taper uses a Morse taper with an interference fit. The taper junction materials are CoCrMo head on Ti-6Al-4V stem. The device labelling specifies MR Conditional at 1.5T and 3T with whole-body SAR not exceeding 2.0 W/kg and spatial gradient field not exceeding 525 G/cm.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "rf_heating_analysis_error",
+      "description": "The SAR simulation models only the 1.5T condition, but the device labelling claims MR Conditional at both 1.5T and 3T. RF-induced heating scales non-linearly with field strength and Larmor frequency. At 3T, the Larmor frequency doubles (127.7 MHz vs 63.9 MHz at 1.5T), and the electric field distribution around the implant changes substantially due to wavelength effects and increased standing wave formation in tissue. ASTM F2182-19 Section 8 requires that testing or simulation be performed at each field strength for which MR Conditional labelling is claimed. A 1.5T simulation alone cannot validate the 3T safety claim. The 3T condition often produces higher local heating than 1.5T for elongated metallic implants, and the 4.2 degrees C rise at 1.5T suggests the 3T condition could exceed safe thermal limits.",
+      "location_hint": "SAR simulation performed only at 1.5T, labelling claims both 1.5T and 3T"
+    },
+    {
+      "id": "f2",
+      "type": "ferromagnetic_material_oversight",
+      "description": "The prompt states all components are non-ferromagnetic. However, CoCrMo alloy cast per ASTM F75 can exhibit ferromagnetic behaviour depending on its metallurgical condition. The as-cast ASTM F75 alloy contains a face-centred cubic (FCC) matrix that is paramagnetic, but carbide precipitation during certain heat treatments or slow cooling can produce hexagonal close-packed (HCP) epsilon-martensite phase regions that are weakly ferromagnetic. ASTM F2052 (Standard Test Method for Measurement of Magnetically Induced Displacement Force) and ASTM F2213 (torque testing) must be performed on representative production samples, not just on the nominal alloy composition. The blanket statement that CoCrMo is non-ferromagnetic without phase-specific magnetic susceptibility testing on production components does not satisfy ASTM F2503 labelling requirements for MR Conditional designation.",
+      "location_hint": "Blanket non-ferromagnetic claim for CoCrMo (ASTM F75) components"
+    }
+  ],
+  "ground_truth_notes": "ASTM F2182-19 Section 8 requires RF heating evaluation at each claimed MRI field strength. ASTM F2503-20 specifies requirements for MR Conditional labelling including field-strength-specific testing. ASTM F2052 and F2213 govern magnetically induced displacement force and torque testing. CoCrMo phase-dependent magnetic susceptibility documented by Purnama et al. (2010) Acta Biomaterialia and Kop & Swarts (2009) JBMR. IEC 60601-2-33 defines SAR operating modes for MRI. FDA Guidance 'Testing and Labeling Medical Devices for Safety in the Magnetic Resonance Environment' (2021) requires field-strength-specific testing data."
+}

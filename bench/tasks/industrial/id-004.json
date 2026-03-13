@@ -1,0 +1,20 @@
+{
+  "id": "id-004",
+  "domain": "industrial",
+  "prompt": "Design a sheet metal bracket for mounting a 15kg industrial sensor to a vibrating machine structure. The bracket is laser-cut from 2mm thick 304 stainless steel sheet, bent into an L-shape with a 90° bend (inside bend radius = 1mm). The horizontal flange (60mm × 80mm) bolts to the machine with four M6 bolts, and the vertical flange (60mm × 50mm) supports the sensor via two M8 bolts.\n\nThe machine vibrates at a dominant frequency of 25 Hz with an acceleration amplitude of 2g. The dynamic load on the bracket is F = m × a = 15 × 2 × 9.81 = 294 N. We check the M8 bolt shear: shear per bolt = 294/2 = 147 N, well within the M8 bolt shear capacity of ~15 kN. The bend allowance is calculated as BA = π/180 × (R + K × T) × A = π/180 × (1 + 0.33 × 2) × 90 = 2.61mm. Please review the bracket design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "fatigue_life_error",
+      "description": "The dynamic load check uses a static equivalent force (F = m × a = 294 N) and compares it against static bolt shear capacity. This completely ignores fatigue. At 25 Hz continuous vibration, the bracket accumulates approximately 2.16 million load cycles per day (25 × 3600 × 24). Even if the static stress is far below yield, the fatigue endurance limit of the 304 stainless steel at the bend (which is a stress concentration) and the bolt holes (also stress concentrations) must be checked. For 304 stainless steel, the fatigue endurance limit at 10⁷ cycles is approximately 240 MPa for polished specimens, but at stress concentrations (bend radius, bolt holes) the local stress is amplified by a factor Kt of 2-4. The bend with R/T = 0.5 (1mm radius on 2mm sheet) is particularly tight and creates significant cold-work hardening and residual stress, further reducing fatigue life. A fatigue analysis per the S-N curve approach or Goodman diagram is mandatory for vibration applications.",
+      "location_hint": "Static load check only (F = m × a) for a bracket on a vibrating machine at 25 Hz."
+    },
+    {
+      "id": "f2",
+      "type": "bend_radius_error",
+      "description": "The inside bend radius of 1mm on 2mm thick 304 stainless steel gives R/T = 0.5. This is at or below the minimum bend radius for 304 stainless steel. The recommended minimum inside bend radius for 304 SS is 0.5T to 1.0T for annealed material across the rolling direction, and 1.0T to 2.0T along the rolling direction. At R/T = 0.5, the outer fibre of the bend experiences a tensile strain of approximately ε = T/(2R + T) = 2/(2×1 + 2) = 0.50, or 50% — this is near or beyond the fracture strain for cold-rolled 304 SS. Micro-cracking on the outer surface of the bend is likely, especially if the bend is parallel to the rolling direction. These micro-cracks act as fatigue crack initiation sites under the 25 Hz vibration loading, compounding the fatigue problem. A minimum bend radius of 2mm (R/T = 1.0) is recommended for structural applications in stainless steel.",
+      "location_hint": "Inside bend radius 1mm on 2mm thick 304 stainless steel (R/T = 0.5)."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Static load check is inadequate for a vibration environment at 25 Hz. Fatigue life must be assessed using S-N curves with stress concentration factors at the bend and bolt holes. Reference: Shigley's Mechanical Engineering Design, 11th ed., Chapter 6 (Fatigue); BS 7608:2014 Fatigue design of steel structures. (2) R/T = 0.5 is at or below minimum bend radius for 304 SS, risking outer-fibre cracking that acts as fatigue initiation site. Minimum R/T = 1.0 recommended for structural applications. Reference: SSINA Designer Handbook for Stainless Steel; Machinery's Handbook, 31st ed., Sheet Metal Forming section."
+}

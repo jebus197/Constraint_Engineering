@@ -1,0 +1,20 @@
+{
+  "id": "pe-003",
+  "domain": "product-engineering",
+  "prompt": "Design a spring-loaded latch mechanism for a toolbox lid. The latch uses a compression spring (music wire, ASTM A228) to hold a zinc die-cast latch lever against a striker plate. The spring is 15mm free length, 8mm OD, with 1mm wire diameter. The spring operates between 10mm (lid closed, spring compressed 5mm) and 13mm (lid opening, spring compressed 2mm).\n\nSpring rate k = Gd⁴/(8D³Na) where G = 81.7 GPa (music wire), d = 1mm, D = 7mm (mean coil diameter), Na = 6 active coils. This gives k = 81700 × 1⁴ / (8 × 7³ × 6) = 81700 / 16464 = 4.96 N/mm. Force at closed position (5mm compression) = 24.8 N. Force at opening (2mm compression) = 9.9 N. The spring must survive 50,000 cycles (estimated 10 years of daily use). Maximum shear stress at solid height τ = 8FD/(πd³) = 8 × 24.8 × 7 / (π × 1³) = 442 MPa. Music wire at 1mm diameter has an ultimate tensile strength of approximately 2210 MPa, so the shear stress is well within limits. Please review the spring design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "stress_correction_omission",
+      "description": "The shear stress formula τ = 8FD/(πd³) calculates the nominal torsional shear stress but omits the Wahl correction factor, which accounts for the curvature of the wire and the direct shear component. The Wahl factor Kw = (4C - 1)/(4C - 4) + 0.615/C, where C = D/d = 7/1 = 7. This gives Kw = (28 - 1)/(28 - 4) + 0.615/7 = 27/24 + 0.088 = 1.125 + 0.088 = 1.213. The corrected stress is τ_corrected = Kw × 442 = 536 MPa. While this is still below the ultimate tensile strength, the relevant comparison for fatigue life is against the endurance limit in shear, not the UTS. For music wire at 10⁵ cycles, the allowable shear stress is approximately 40-45% of UTS = 885-995 MPa, so the spring passes — but the uncorrected stress underestimates the actual peak stress by 21%, which could be non-conservative in a more marginal design.",
+      "location_hint": "Shear stress calculated without Wahl correction factor."
+    },
+    {
+      "id": "f2",
+      "type": "fatigue_assessment_error",
+      "description": "The fatigue assessment compares maximum shear stress against ultimate tensile strength, which is fundamentally wrong for spring fatigue design. Spring fatigue life depends on the stress RANGE (τ_max - τ_min), not the absolute stress level. The spring operates between 2mm and 5mm compression, giving τ_min = 9.9 × 8 × 7 / (π × 1) × Kw ≈ 214 MPa and τ_max ≈ 536 MPa (with Wahl correction). The stress range is Δτ ≈ 322 MPa. For 50,000 cycles, this stress range must be compared against the modified Goodman diagram for music wire, plotting mean stress vs alternating stress. The mean stress is (536 + 214)/2 = 375 MPa and the alternating stress is (536 - 214)/2 = 161 MPa. At this stress ratio and cycle count, the spring should survive, but the methodology of comparing peak stress to UTS provides no information about fatigue life whatsoever. Reference: SMI (Spring Manufacturers Institute) Handbook for fatigue life calculation methodology.",
+      "location_hint": "Spring fatigue life assessed by comparing max shear stress to UTS."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Wahl correction factor must be applied to account for wire curvature stress concentration. Omitting it underestimates peak stress by ~21% for C = 7. Reference: Shigley's Mechanical Engineering Design, 11th ed., Chapter 10; SMI 'Encyclopedia of Spring Design'. (2) Fatigue life must be assessed using stress range and the modified Goodman diagram, not by comparing peak stress to UTS. The stress range between compressed and relaxed positions determines fatigue life. Reference: SMI Handbook of Spring Design; Wahl, 'Mechanical Springs', 2nd ed."
+}

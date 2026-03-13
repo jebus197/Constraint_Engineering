@@ -1,0 +1,20 @@
+{
+  "id": "pe-008",
+  "domain": "product-engineering",
+  "prompt": "Design a silicone rubber keypad for a ruggedised handheld device (IP67 rated). The keypad has 20 keys arranged in a 4×5 grid. Each key is a moulded silicone dome (compression-moulded LSR, 50 Shore A) with a conductive carbon pill on the underside that contacts gold-plated PCB pads to complete a circuit. The silicone mat seals the PCB from water ingress and is clamped between the front housing and a plastic bezel with a continuous compression seal around the perimeter.\n\nThe key travel is 1.5mm with a tactile snap ratio of 40% (the force drops to 60% of peak after snap-through). The peak actuation force is 3.5 N per key. The dome wall thickness is 0.4mm. The device will be used in temperatures from -30°C to +60°C. The carbon pills are 5mm diameter and 0.3mm thick, bonded to the silicone during moulding. The PCB contact pads are 4mm diameter with 0.1mm gold plating over electroless nickel. Please review the keypad design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "contact_resistance_error",
+      "description": "The gold plating thickness of 0.1mm (100µm) is specified as if it were a structural dimension, but this is approximately 50-100 times thicker than standard gold plating for contact applications. Electroplated gold for switch contacts is typically 0.5-1.25µm (per MIL-G-45204 Type II, Grade A-C) and rarely exceeds 2.5µm. At 100µm, this is no longer plating — it would require thick gold deposition methods, at enormous cost (gold at ~$80/g, 100µm over a 4mm diameter pad = approximately 0.025 cm³ = 0.48g per pad, × 20 pads = $770 in gold alone). The likely intent was 0.1µm (0.1 micron), but this would be too thin for a ruggedised contact application — 0.1µm gold flash wears through rapidly under the mechanical wiping action of the carbon pill, exposing the nickel underlayer which oxidises and increases contact resistance. The minimum for reliable switching contacts per IPC-4552 is 0.05µm over nickel, but ruggedised applications typically specify 0.75-1.25µm.",
+      "location_hint": "0.1mm gold plating specified on PCB contact pads."
+    },
+    {
+      "id": "f2",
+      "type": "low_temperature_performance_error",
+      "description": "At -30°C, the silicone rubber dome characteristics change significantly. While LSR silicone maintains flexibility down to approximately -40°C to -55°C (depending on grade), the stiffness increases substantially at low temperatures. The Shore A hardness of silicone increases by approximately 5-15 points at -30°C compared to room temperature. For a 50 Shore A silicone at room temperature, the effective hardness at -30°C may be 60-65 Shore A. This has a direct and significant effect on keypad feel: the peak actuation force increases (potentially to 5-6 N), the snap ratio decreases (less tactile feedback), and the key travel may be reduced. More critically, the carbon pill adhesion to the silicone is a potential failure point — the differential thermal contraction between the carbon composite pill and the silicone substrate (silicone α ≈ 300 × 10⁻⁶/°C, carbon composite α ≈ 5-10 × 10⁻⁶/°C) over a ΔT of 80°C from moulding temperature creates significant interfacial shear stress that can cause pill delamination, resulting in intermittent or open-circuit key failures.",
+      "location_hint": "50 Shore A silicone keypad specified for -30°C operation."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) 0.1mm gold plating is 50-100× thicker than standard, likely a unit error (should be 0.1µm or ~1µm). At 0.1µm the plating is too thin for ruggedised contacts. Standard is 0.75-1.25µm per IPC-4552 for reliable switching. Reference: IPC-4552 (ENIG specification); MIL-G-45204 (gold electroplate); IPC-2221 (generic PCB design). (2) Silicone stiffens at -30°C (hardness increases 5-15 Shore A points), degrading tactile feel. Carbon pill-to-silicone bond is stressed by differential thermal contraction (CTE mismatch ~290 × 10⁻⁶/°C), risking delamination. Reference: Dow Corning (now Dow) LSR material data sheets; Shin-Etsu silicone design guide."
+}

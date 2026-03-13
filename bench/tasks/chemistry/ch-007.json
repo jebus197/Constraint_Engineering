@@ -1,0 +1,20 @@
+{
+  "id": "ch-007",
+  "domain": "chemistry",
+  "prompt": "Formulate a non-aqueous electrolyte for a lithium-ion battery using lithium hexafluorophosphate (LiPF6) as the salt. The electrolyte composition is 1.2M LiPF6 in a binary solvent of ethylene carbonate (EC) and propylene carbonate (PC) at 1:1 volume ratio. This cell will use a graphite anode and LiCoO2 cathode, operating between 3.0V and 4.2V.\n\nThe EC/PC solvent system is chosen because PC has a low melting point (-49°C), enabling operation down to -40°C, while EC provides good ionic conductivity. We have tested the electrolyte conductivity at 25°C and measured 10.5 mS/cm, which we consider adequate. The upper voltage limit of 4.2V is within the electrochemical stability window of the carbonate solvents, which we claim extends to approximately 5.0V vs Li/Li+. Please review the electrolyte formulation and its compatibility with the electrode materials.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "electrode_compatibility_error",
+      "description": "Propylene carbonate co-intercalates with lithium ions into graphite anodes, causing exfoliation and destruction of the graphite structure during the first charge cycle. This is a well-established and critical incompatibility in lithium-ion battery chemistry. PC-based electrolytes can only be used with non-graphitisable (hard) carbon anodes or with graphite anodes if the PC content is very low (<20%) and offset by high EC content with effective SEI-forming additives (like vinylene carbonate). The 1:1 EC/PC ratio with a graphite anode will result in catastrophic first-cycle capacity loss and cell failure.",
+      "location_hint": "1:1 EC/PC solvent ratio used with a graphite anode."
+    },
+    {
+      "id": "f2",
+      "type": "electrochemical_stability_error",
+      "description": "The claim that carbonate solvents have an electrochemical stability window extending to 5.0V vs Li/Li+ is misleading. While the oxidative decomposition potential of pure EC/PC measured on inert electrodes (Pt, glassy carbon) is approximately 4.5-5.0V vs Li/Li+, on actual cathode surfaces (LiCoO2, LiMn2O4) catalytic decomposition begins at significantly lower potentials — around 4.3-4.5V vs Li/Li+. At 4.2V cell voltage (which corresponds to approximately 4.2V vs Li/Li+ at the cathode), the system is near the practical stability limit. The stated 5.0V stability window creates false confidence for potential future use at higher voltages and misrepresents the actual margin.",
+      "location_hint": "Claim that electrochemical stability window extends to approximately 5.0V vs Li/Li+."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) PC co-intercalation into graphite is a fundamental incompatibility discovered in early Li-ion research. Fong et al., J. Electrochem. Soc. 137, 2009 (1990). EC forms a stable SEI on graphite; PC does not. The 1:1 EC/PC ratio will destroy the graphite anode. (2) Practical oxidative stability of carbonates on oxide cathode surfaces is 4.3-4.5V vs Li/Li+, not 5.0V. The higher value applies only to inert electrode measurements. Reference: Xu, 'Nonaqueous Liquid Electrolytes for Lithium-Based Rechargeable Batteries', Chemical Reviews, 104, 4303 (2004)."
+}

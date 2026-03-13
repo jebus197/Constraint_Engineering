@@ -1,0 +1,20 @@
+{
+  "id": "pe-005",
+  "domain": "product-engineering",
+  "prompt": "Design a thermoelectric (Peltier) cooler for a portable insulin storage case. The case must maintain an internal temperature of 2-8°C when the ambient temperature is up to 40°C. The insulated case volume is 1.5 litres with 20mm thick expanded polystyrene (EPS) insulation (λ = 0.035 W/m·K). A single-stage TEC module (TEC1-12706: 40mm × 40mm, 6A max, Qmax = 50W at ΔT = 0°C) is powered by a 12V, 6A DC supply via a car cigarette lighter adapter.\n\nThe TEC is run at full power (6A, 12V = 72W input). The cold side is bonded to an aluminium cold plate inside the case with thermal paste. The hot side has a small 40mm × 40mm aluminium heat sink with a 25mm fan. At full power, the TEC should pump Qmax = 50W of heat from the cold side. The required cooling load is estimated at 5W (heat leak through insulation plus opening the case 3-4 times daily). Since 50W >> 5W, the system has ample margin. Please review the thermal design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "tec_performance_curve_error",
+      "description": "The claim that Qmax = 50W at the operating condition is wrong. The 50W Qmax specification for TEC1-12706 is at ΔT = 0°C (no temperature difference across the module). As ΔT increases, the cooling capacity Qc decreases dramatically due to Fourier heat back-conduction through the thermoelectric elements. At the required ΔT of 32-38°C (cold side 2-8°C, hot side 40°C ambient PLUS hot-side thermal resistance), the available cooling capacity drops to approximately 10-20W depending on the actual hot-side temperature. Furthermore, running the TEC at maximum current (Imax) does NOT maximise COP or cooling capacity at high ΔT — the I²R Joule heating in the elements at maximum current actually reduces net cooling at high ΔT. The optimal current for maximum Qc at ΔT = 35°C is typically 60-70% of Imax. At full current, the TEC may actually produce less net cooling than at a reduced current.",
+      "location_hint": "Qmax = 50W assumed at operating ΔT of 32-38°C."
+    },
+    {
+      "id": "f2",
+      "type": "hot_side_thermal_management_error",
+      "description": "The hot-side heat sink is a 40mm × 40mm aluminium block with a 25mm fan. This is grossly undersized. The hot side must reject both the pumped heat (Qc) AND the input electrical power (Pin). At 72W electrical input and even 15W cooling capacity, the hot side must dissipate Qc + Pin = 15 + 72 = 87W. A 40mm × 40mm heat sink with a 25mm fan has a typical thermal resistance of 3-5°C/W. At 87W, this gives a hot-side temperature rise of 260-435°C above ambient — physically absurd and confirming the heat sink is catastrophically undersized. The hot-side temperature directly determines the achievable cold-side temperature: every degree the hot side rises above ambient adds directly to the required ΔT. In practice, the hot side will thermally run away — the TEC pumps heat onto an inadequate sink, the hot-side temperature rises, which increases ΔT, which reduces Qc, which means the cold side can't reach target temperature. The hot side needs a heat sink with thermal resistance below 0.5°C/W, requiring at minimum a 100mm × 100mm finned heat sink with a 60-80mm fan.",
+      "location_hint": "40mm × 40mm heat sink with 25mm fan for hot side rejecting 87W."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) TEC Qmax = 50W is at ΔT = 0°C only. At operating ΔT of 32-38°C, cooling capacity drops to 10-20W. Running at Imax worsens performance at high ΔT due to I²R heating. Reference: Rowe, 'CRC Handbook of Thermoelectrics'; Ferrotec TEC performance curves and application notes. (2) 40mm heat sink is catastrophically undersized for 87W hot-side dissipation. Thermal resistance of ~4°C/W gives absurd temperature rise. Thermal runaway is inevitable. Reference: Wakefield-Vette heat sink selection guide; Marlow Industries TEC application note AN-1001."
+}

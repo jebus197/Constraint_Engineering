@@ -1,0 +1,20 @@
+{
+  "id": "st-010",
+  "domain": "structural",
+  "prompt": "Design a composite steel-concrete floor for a commercial building. Steel beams are UB 457×191×67 (S355) at 3m centres, supporting a 130mm deep composite slab on 60mm deep trapezoidal metal decking (effective slab depth above decking = 70mm). Concrete is C30/37. Shear connection is provided by 19mm diameter × 100mm tall headed shear studs welded through the decking.\n\nThe studs are placed in pairs across the beam flange at 300mm longitudinal spacing. The characteristic resistance of each stud is PRk = 0.8 × fu × (π/4) × d² = 0.8 × 450 × (π/4) × 19² = 102.1 kN per stud. The effective width of the concrete flange is taken as beff = span/4 = 9000/4 = 2250mm on each side of the beam centreline (total effective width = 4500mm). Please review the composite design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "stud_capacity_error",
+      "description": "The stud resistance calculation uses the steel failure formula but omits the concrete cone/pullout failure check, and more critically, omits the reduction factor for studs welded through profiled steel decking. BS EN 1994-1-1 Clause 6.6.4.2 requires a reduction factor kt = (0.7/√nr) × (bo/hp) × (hsc/hp - 1) for studs in trapezoidal decking, where nr = number of studs per trough, bo = mean width of decking trough, hp = height of decking profile, hsc = height of stud. For typical decking with bo ≈ 150mm, hp = 60mm, hsc = 100mm: kt = (0.7/√2) × (150/60) × (100/60 - 1) = 0.495 × 2.5 × 0.667 = 0.825. But with 2 studs per trough, kt is further limited to a maximum of 0.7 per EC4 Clause 6.6.4.2. This reduces each stud's design resistance to approximately 0.7 × 102.1/1.25 = 57.2 kN — nearly half the unmodified value.",
+      "location_hint": "Stud resistance calculated without reduction factor for profiled decking."
+    },
+    {
+      "id": "f2",
+      "type": "effective_width_error",
+      "description": "The effective width of the concrete flange is calculated as span/4 on each side (2250mm each side, 4500mm total). Per BS EN 1994-1-1 Clause 5.4.1.2, the effective width on each side is bei = min(Le/8, bi) where Le is the equivalent span (0.85L for end spans, 0.70L for internal) and bi is the distance to the adjacent beam centreline or half the distance to the free edge. For beams at 3m centres, bi = 1500mm. bei = min(9000/8, 1500) = min(1125, 1500) = 1125mm per side. Total effective width = 2 × 1125 + beam flange width = 2250 + 191 ≈ 2441mm, NOT 4500mm. The error overstates the effective width by nearly 85%, overestimating the composite section's flexural capacity and stiffness.",
+      "location_hint": "Effective width calculated as span/4 per side = 2250mm, total 4500mm."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Shear studs through profiled decking require reduction factor kt per EC4 Clause 6.6.4.2. For 2 studs per trough in 60mm decking, kt ≤ 0.7, reducing design resistance by ~45%. Reference: BS EN 1994-1-1 Clause 6.6.4.2; SCI P405 'Composite Design of Steel Framed Buildings'. (2) Effective width per EC4 Clause 5.4.1.2 is bei = min(Le/8, bi). With 3m beam spacing, bi = 1500mm controls over Le/8 = 1125mm. Total effective width ≈ 2441mm, not 4500mm. Reference: BS EN 1994-1-1 Clause 5.4.1.2."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ch-001",
+  "domain": "chemistry",
+  "prompt": "Design a two-step synthesis route for a pharmaceutical intermediate, 4-aminophenol, starting from nitrobenzene. In the first step, nitrobenzene is reduced to aniline using iron powder and hydrochloric acid (Bechamp reduction). In the second step, aniline is hydroxylated by reacting with hydrogen peroxide in the presence of a ferrous sulfate catalyst at 80°C and atmospheric pressure to introduce the hydroxyl group para to the amine.\n\nThe target yield for the overall process is 70%. The Bechamp reduction step is expected to proceed exothermically, so we plan to add all the iron powder and HCl at once to minimise cycle time. The reaction will be run in a 500L glass-lined reactor. Please review the synthesis route, the reaction conditions, and the process safety considerations.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "reaction_pathway_error",
+      "description": "The proposed second step — direct hydroxylation of aniline with H2O2/FeSO4 to give 4-aminophenol — is not a reliable or established synthetic route. H2O2 with Fe²⁺ generates Fenton's reagent (hydroxyl radicals) which will non-selectively oxidise aniline, predominantly producing polymeric tars and quinone-type oxidation products rather than clean para-hydroxylation. The industrial route to 4-aminophenol from nitrobenzene proceeds via catalytic hydrogenation of nitrobenzene in sulfuric acid (Bamberger rearrangement of the intermediate phenylhydroxylamine), not via aniline hydroxylation.",
+      "location_hint": "The second step claiming hydroxylation of aniline with H2O2/FeSO4 gives 4-aminophenol."
+    },
+    {
+      "id": "f2",
+      "type": "process_safety_violation",
+      "description": "The Bechamp reduction is highly exothermic (ΔH ≈ -540 kJ/mol). Adding all iron powder and HCl at once to nitrobenzene creates an uncontrolled exotherm that can cause thermal runaway, boilover, and HCl gas release. Standard practice requires controlled addition of iron in portions with temperature monitoring, maintaining the reaction below reflux temperature. The 1969 Seveso-type incident at Coalite Chemical is a documented case of Bechamp reduction runaway. Process safety requires semi-batch operation with metered addition.",
+      "location_hint": "Plan to add all iron powder and HCl at once to minimise cycle time."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) The Fenton oxidation of aniline does not produce 4-aminophenol selectively. The correct industrial route is catalytic hydrogenation of nitrobenzene in dilute H2SO4 (Henkel/Mallinckrodt process), proceeding through phenylhydroxylamine which undergoes Bamberger rearrangement to 4-aminophenol. Reference: March's Advanced Organic Chemistry, 5th ed., §19-59. (2) Bechamp reduction thermal runaway from bulk addition is a well-documented process safety hazard. Semi-batch addition with temperature control is mandatory. Reference: Bretherick's Handbook of Reactive Chemical Hazards, 7th ed."
+}

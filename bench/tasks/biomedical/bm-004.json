@@ -1,0 +1,20 @@
+{
+  "id": "bm-004",
+  "domain": "biomedical",
+  "prompt": "A renal care company is developing a next-generation haemodialysis machine for in-centre use. The system specifications call for an ultrafiltration (UF) rate range of 0 to 4000 mL/hr with an accuracy of plus or minus 50 mL over a 4-hour treatment session. The machine targets a standard 4-hour treatment for a 70 kg patient with a target fluid removal of 3.0 litres per session.\n\nThe dialysate composition specification calls for the following electrolyte concentrations in the final mixed dialysate: sodium 140 mEq/L, potassium 2.0 mEq/L, calcium 3.5 mEq/L, magnesium 1.0 mEq/L, chloride 108 mEq/L, bicarbonate 35 mEq/L, and glucose 100 mg/dL. The proportioning system uses a 35x concentrated acid solution and a separate bicarbonate cartridge, mixed inline with treated water.\n\nThe machine includes a blood leak detector with sensitivity to detect 0.5 mL of blood per litre of dialysate, conductivity monitoring with alarms at plus or minus 5% deviation from target, and temperature control maintaining dialysate at 37.0 degrees C with plus or minus 0.5 degrees C accuracy. The system complies with IEC 60601-2-16 for basic safety and essential performance.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "ultrafiltration_rate_error",
+      "description": "The specification states a maximum UF rate of 4000 mL/hr. For the target removal of 3000 mL over 4 hours, the average UF rate would be 750 mL/hr, which is within range. However, clinical guidelines (KDOQI 2015, European Best Practice Guidelines) recommend that ultrafiltration rate should not exceed 13 mL/kg/hr to reduce intradialytic hypotension and cardiac stress. For a 70 kg patient, this limit is 910 mL/hr. The machine's maximum of 4000 mL/hr (57 mL/kg/hr for a 70 kg patient) is over 4 times the recommended safe limit. While the machine should have headroom, IEC 60601-2-16 Clause 201.12.1 requires that the UF rate accuracy and alarm limits protect against clinically dangerous removal rates. The specification lacks a configurable patient-weight-adjusted UF rate alarm, relying solely on absolute rate limits.",
+      "location_hint": "Maximum ultrafiltration rate specification of 4000 mL/hr"
+    },
+    {
+      "id": "f2",
+      "type": "electrolyte_concentration_error",
+      "description": "The dialysate calcium concentration is specified as 3.5 mEq/L. Standard dialysate calcium concentrations are 2.5 mEq/L or 3.0 mEq/L (1.25 or 1.50 mmol/L). A concentration of 3.5 mEq/L (1.75 mmol/L) exceeds the range used in standard clinical practice and would drive excessive calcium influx during dialysis, risking hypercalcaemia, vascular calcification acceleration, and adynamic bone disease — particularly dangerous in patients on calcium-based phosphate binders or active vitamin D analogues. KDOQI guidelines on bone metabolism (2003, updated 2017) and ERA-EDTA position statements recommend dialysate calcium of 1.25-1.50 mmol/L (2.5-3.0 mEq/L). The 3.5 mEq/L value is outside established safe clinical ranges.",
+      "location_hint": "Dialysate calcium concentration of 3.5 mEq/L"
+    }
+  ],
+  "ground_truth_notes": "KDOQI Clinical Practice Guidelines for Haemodialysis Adequacy (2015 update) recommend UF rate not exceeding 13 mL/kg/hr. IEC 60601-2-16:2018 Clause 201.12.1 addresses UF accuracy and alarm requirements. KDOQI Clinical Practice Guidelines for Bone Metabolism and Disease in CKD (2003, K/DOQI Guideline 8) and 2017 KDIGO CKD-MBD update recommend dialysate calcium of 1.25-1.50 mmol/L (2.5-3.0 mEq/L). ERA-EDTA position on dialysate calcium corroborates this range."
+}

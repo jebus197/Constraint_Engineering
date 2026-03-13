@@ -282,6 +282,10 @@ When multiple claims in a single response require the same category of
 verification, consolidate into one inline flag at the first occurrence and one
 end-of-response block listing all items. Do not repeat the flag per claim.
 
+When a claim depends on present-day state (market, technology, regulatory,
+versioning) and acting on stale information could potentially produce a wrong
+outcome, use available search tools to resolve it before proceeding.
+
 When a proposed solution may have been superseded by something outside training
 knowledge, output: external check recommended. Suggested search: [specific query].
 Never answer this check — always defer to the user, and seek clarification where
@@ -486,7 +490,7 @@ The gap between stated confidence and demonstrated confidence cannot be closed b
 **Core measurement:** Does methodology-prompted output contain fewer physically impossible, logically incoherent, or commercially unviable claims than unguided output, when evaluated by a domain expert against established ground truth?
 
 **Test design:**
-- 30 technical prompts across three domains (hardware engineering, software architecture, logistics), 10 per domain
+- 90 technical prompts across nine domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, cross-domain systems), 10 per domain
 - Control condition: each prompt run with no instruction set
 - Experimental condition: each prompt run with the methodology as system prompt
 - Evaluation: domain expert reviews outputs blind to condition, rates each factual claim on a four-point scale from established-and-correct to critically-incorrect
@@ -496,11 +500,28 @@ The implementation of this protocol is provided in [`bench/`](bench/).
 
 **Validation gap note:** The test design above describes blind domain-expert evaluation. The testbench implementation in `bench/` uses automated keyword matching for seeded-fault detection, which is a weaker form of evaluation. Automated scoring may produce false negatives (faults detected but scored as missed) and false positives (non-faults matching keywords). Manual review of a sample is recommended. The testbench demonstrates that the evaluation protocol is mechanically executable; it does not claim equivalence with expert review.
 
-**Estimated cost:** approximately $0.66 at representative frontier model pricing. Well within the budget of any individual researcher.
+**Estimated cost:** approximately $1.98 at representative frontier model pricing. Well within the budget of any individual researcher.
 
-**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks in three specific domains. Equivalence across model classes, stability across all domains, and persistence across full session lengths without re-assertion are second-phase research questions.
+**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across nine STEM domains spanning the boundary described in Part VII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
 
 The protocol is published so that anyone can execute it, reproduce or refute the observation, and extend the methodology. If the advantage does not replicate, that is a result, not a failure.
+
+### Extended P-Pass
+
+The standard P-Pass runs all passes within a single context window. For multi-module projects (3+ distinct modules or components with independent constraint sets), this creates two problems: (1) monolithic passes spread attention across all components, reducing detection probability for intra-module faults; (2) later passes in the same context anchor on conclusions from earlier passes, reducing adversarial effectiveness through confirmation bias.
+
+The **Extended P-Pass** addresses both by splitting the 5-pass budget into 4 modular passes + 1 isolated adversarial pass:
+
+- **Passes 1-4 (Modular):** Each scoped to one module or component, falsifying its constraint set, interfaces, and assumptions in isolation. Standard CDSFL rules apply within each pass.
+- **Pass 5 (Isolated Adversarial):** MUST run in a fresh context containing ONLY the original work product and an adversarial brief — not the P-Pass analyses from passes 1-4. No prior conclusions are visible. In Claude Code, this means using the Agent tool with a subagent for context isolation. In general LLM usage, start a new conversation. The brief frames the task as independent verification, directing the model to find cross-module interface errors, conflicting assumptions, and emergent contradictions.
+
+The theoretical basis is differential detection probability. Modular passes have higher *p* for intra-module faults (focused attention) but lower *p* for cross-module faults (can't see what's between modules). The isolated adversarial pass inverts this profile. For a fault distribution where the majority of errors are intra-module — which empirical evidence from safety-critical industries suggests is the case — the hybrid should outperform either pure strategy.
+
+The adversarial pass terminates when: all HARD constraint assumptions have been tested and found sound, remaining findings are below the real-world-consequence threshold, and further passes would produce no new failures, only alternative preferences. The threshold test: would this finding, if missed, cause a real-world failure, violation, or unsafe condition? If not, it is below threshold. This prevents the adversarial pass from degenerating into unbounded nitpicking while ensuring genuine issues are not dismissed prematurely.
+
+When NOT to use Extended P-Pass: single-module projects (use standard 5-pass), projects where modules share so much state that isolating them is artificial, or when the total work product is small enough that monolithic passes achieve adequate depth (rough guide: under ~500 lines or ~2000 words).
+
+The testbench supports `--mode extended` to generate comparative data against the standard P-Pass on the same seeded-fault tasks. The protocol mirrors established practice in safety-critical engineering (IEC 61508 independent assessment, DO-178C independent verification), where the verification team must not have access to the design team's analysis. Whether context isolation in LLMs achieves the same cognitive independence as organisational independence in human teams is an open empirical question that the testbench is designed to answer.
 
 ---
 

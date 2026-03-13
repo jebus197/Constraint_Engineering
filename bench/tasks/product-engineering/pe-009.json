@@ -1,0 +1,20 @@
+{
+  "id": "pe-009",
+  "domain": "product-engineering",
+  "prompt": "Design a portable camping stove burner head for use with butane/propane mix canisters (EN 417 threaded valve). The burner head is die-cast in zinc alloy (Zamak 3). The burner has 24 flame ports arranged in a ring, each 1.2mm diameter. The stove is rated at 2.2 kW thermal output. The pot support arms are integral to the zinc casting and fold for transport.\n\nThe gas jet orifice is 0.65mm diameter, calibrated for a supply pressure of 28 mbar (regulated). The mixing tube length is 80mm with a 12mm diameter venturi throat, providing primary air entrainment of approximately 50% of stoichiometric requirement — the remaining air is supplied as secondary air around the flame ports. The stove is intended for use at altitudes up to 4000m. Testing will be performed per EN 521 (LPG portable appliance standard). Please review the burner design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "material_temperature_error",
+      "description": "Zamak 3 (zinc alloy) has a melting point of approximately 380-390°C and begins to creep and lose structural integrity above 100°C. The sustained service temperature limit for Zamak 3 is typically cited as 80-100°C for structural applications. A camping stove burner head operates in direct proximity to flame temperatures of 1900-2000°C (butane/propane premixed flame). While the bulk of the burner head will not reach flame temperature due to convective cooling by incoming gas/air mixture, localised temperatures at the flame port rims and the top surface regularly reach 300-500°C during normal operation and significantly higher during flame-back or wind-blown flame conditions. At these temperatures, Zamak 3 will soften, creep, and deform — the flame ports will enlarge, altering the flame pattern and potentially creating a dangerous large flame. Burner heads for gas stoves are manufactured from brass (CuZn39Pb3), aluminium alloys (for some lightweight backpacking stoves with appropriate thermal management), stainless steel, or cast iron — never zinc alloy.",
+      "location_hint": "Burner head die-cast in Zamak 3 zinc alloy."
+    },
+    {
+      "id": "f2",
+      "type": "altitude_performance_error",
+      "description": "The burner is designed for use at altitudes up to 4000m, but the air entrainment and flame stability calculations are implicitly based on sea-level conditions. At 4000m, atmospheric pressure drops to approximately 616 mbar (62% of sea level) and air density decreases proportionally. The venturi injector entrains air by momentum transfer from the gas jet — the mass of air entrained is proportional to air density. At 4000m, primary air entrainment drops to approximately 62% of the sea-level value. Since the design already provides only 50% of stoichiometric air as primary air at sea level, at 4000m this drops to approximately 31% of stoichiometric — well below the minimum for stable premixed combustion (typically 40-45% primary aeration minimum for butane). The flame will become increasingly yellow and sooty, CO production will rise significantly (incomplete combustion), and flame lift-off or extinction becomes likely, especially in the wind conditions common at altitude. EN 521 Clause 6.4 requires combustion performance testing at the rated altitude range.",
+      "location_hint": "50% primary aeration designed for sea level, rated for use at 4000m."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Zamak 3 zinc alloy has a service temperature limit of ~100°C and melts at ~385°C. Burner head flame port rims reach 300-500°C during normal operation. Zinc alloy is structurally unsuitable. Brass or stainless steel required. Reference: NADCA Product Specification Standards for Die Castings; International Zinc Association material data. (2) Primary air entrainment drops proportionally with air density at altitude. At 4000m (62% sea-level density), 50% sea-level aeration drops to ~31% stoichiometric, below the combustion stability threshold. Reference: EN 521:2006 Clause 6.4; Jones, 'Gas Appliance Technology', Chapter 7."
+}

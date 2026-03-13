@@ -1,0 +1,20 @@
+{
+  "id": "ch-003",
+  "domain": "chemistry",
+  "prompt": "Design an electroplating bath for depositing a bright nickel coating on steel automotive trim parts. The bath composition is: nickel sulfate (NiSO4·6H2O) 300 g/L, nickel chloride (NiCl2·6H2O) 45 g/L, boric acid (H3BO3) 40 g/L. Operating conditions: pH 2.0, temperature 55°C, current density 5 A/dm². The target coating thickness is 25 μm with a Vickers hardness of 300-400 HV for wear resistance.\n\nTo improve the throwing power into recessed areas of the trim parts, we plan to increase the boric acid concentration to 80 g/L. The parts will be racked on copper bus bars with steel hooks, and the anode material will be electrolytic nickel rounds in titanium baskets. Please review the bath chemistry, operating parameters, and process design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "pH_specification_error",
+      "description": "A pH of 2.0 is far too acidic for a Watts-type nickel plating bath. Standard Watts nickel operates at pH 3.5-4.5. At pH 2.0, hydrogen evolution becomes excessive (reducing cathode efficiency to below 50%), the deposit becomes highly stressed and brittle, boric acid buffering capacity is overwhelmed, and nickel hydroxide precipitation on pH adjustment will be violent. The low pH also accelerates dissolution of steel substrates before plating begins. This is a fundamental chemistry error — the hydrogen ion concentration at pH 2.0 is over 30× higher than at pH 3.5.",
+      "location_hint": "Operating pH specified as 2.0."
+    },
+    {
+      "id": "f2",
+      "type": "solubility_error",
+      "description": "Boric acid has a solubility limit of approximately 47 g/L at 20°C and about 60 g/L at 55°C. Increasing the concentration to 80 g/L exceeds the solubility at operating temperature and will crystallise at any temperature below approximately 75°C. This means boric acid crystals will precipitate on parts during plating (causing rough deposits), accumulate in filters, and crystallise in any cooler zones of the bath. The proposed increase to 80 g/L is physically impossible to maintain in solution at 55°C. Additionally, boric acid concentration has minimal effect on throwing power — cathode efficiency (affected by additives and current density distribution) is the primary factor.",
+      "location_hint": "Plan to increase boric acid to 80 g/L to improve throwing power."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Watts nickel bath pH must be 3.5-4.5. pH 2.0 causes excessive hydrogen evolution, poor deposit quality, and substrate attack. Reference: Schlesinger & Paunovic, 'Modern Electroplating', 5th ed., Chapter 3. (2) Boric acid solubility at 55°C is approximately 60 g/L (CRC Handbook of Chemistry and Physics). 80 g/L is supersaturated and will crystallise. Boric acid serves as a pH buffer, not a throwing power agent. Reference: Dennis & Such, 'Nickel and Chromium Plating', 3rd ed."
+}

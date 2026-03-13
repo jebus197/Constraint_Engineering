@@ -1,0 +1,20 @@
+{
+  "id": "st-004",
+  "domain": "structural",
+  "prompt": "Design a gravity retaining wall to support a 3m height of retained soil. The wall is reinforced concrete with a 400mm thick stem and a 3.5m wide × 500mm deep base slab. The retained soil is medium-dense sand with an angle of internal friction φ' = 30° and unit weight γ = 18 kN/m³. The water table is well below the base.\n\nThe active earth pressure coefficient is calculated using Rankine theory as Ka = (1 - sin φ')/(1 + sin φ') = (1 - 0.5)/(1 + 0.5) = 0.333. The horizontal active pressure at the base of the wall is σh = Ka × γ × H = 0.333 × 18 × 3 = 18 kN/m². The total active thrust is Pa = 0.5 × Ka × γ × H² = 0.5 × 0.333 × 18 × 9 = 27 kN/m. Sliding stability is checked using a friction coefficient μ = tan φ' = 0.577, requiring the weight of wall plus soil on the base to provide a restoring force of at least 27/0.577 = 46.8 kN/m. Please review the stability analysis.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "earth_pressure_error",
+      "description": "The Rankine active pressure calculation assumes a smooth vertical wall face and horizontal retained surface, which is acceptable here. However, the critical error is using the stem height (3m) as H in the pressure calculation instead of the total height from formation level to the top of the retained soil. With a 500mm deep base slab, the total height for earth pressure calculation should include the depth from the base of the heel to the top of the retained fill. If the base is at formation level, the earth pressure should be calculated over H = 3.0 + depth of soil above heel. More fundamentally, for a cantilever retaining wall (which this is — the stem cantilevers from the base), the earth pressure should be calculated on a virtual back extending from the heel edge, not on the stem face. This gives a larger height and different pressure distribution.",
+      "location_hint": "Earth pressure calculated using H = 3m (stem height only)."
+    },
+    {
+      "id": "f2",
+      "type": "sliding_stability_error",
+      "description": "The sliding check uses μ = tan φ' = tan 30° = 0.577 as the friction coefficient at the base. This is incorrect for two reasons: (1) The friction at the base-soil interface is limited to tan δ where δ is the interface friction angle, typically δ = (2/3)φ' for cast-in-situ concrete on sand = 20°, giving μ = tan 20° = 0.364, not 0.577. Using full soil friction angle assumes the failure plane is within the soil, but the weakest plane is typically the concrete-soil interface. (2) The required factor of safety against sliding is typically 1.5 (or partial factors per EC7), not 1.0. The check requires the restoring force to be at least 1.5 × driving force. Both errors make the sliding check unconservative.",
+      "location_hint": "Sliding check using μ = tan φ' = 0.577 without safety factor."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) For cantilever retaining walls, earth pressure is calculated on the virtual back from heel edge to ground surface, not on the stem face. The stem height underestimates the effective pressure height. Reference: BS EN 1997-1 (Eurocode 7), Clause 9.5; Craig's Soil Mechanics, 8th ed., Chapter 6. (2) Base friction should use interface friction δ = (2/3)φ' (for concrete on sand), not full φ'. Required FoS against sliding is 1.5. Reference: EC7 Clause 2.4.7.1; BS 8002:2015."
+}

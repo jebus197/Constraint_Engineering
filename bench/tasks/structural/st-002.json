@@ -1,0 +1,20 @@
+{
+  "id": "st-002",
+  "domain": "structural",
+  "prompt": "Design a reinforced concrete column for a 6-storey building. The column is 400mm × 400mm and 4.5m tall between floor slabs. It carries an axial design load of 2800 kN (ULS). The column is braced (non-sway frame) and has fixed-pinned end conditions. Concrete is C30/37, reinforcement is B500B.\n\nThe design uses 8 No. H25 bars (As = 3927 mm², giving a reinforcement ratio of 2.45%). The slenderness ratio is calculated as λ = L0/i where L0 is the effective length (taken as 0.7 × 4500 = 3150mm for fixed-pinned) and i = h/√12 = 400/3.46 = 115.6mm, giving λ = 3150/115.6 = 27.2. Since this is below 30, the column is classified as short and second-order effects are ignored. Please review the column design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "slenderness_classification_error",
+      "description": "The slenderness limit for classifying a column as 'short' (ignoring second-order effects) in Eurocode 2 is not a fixed value of 30. BS EN 1992-1-1 Clause 5.8.3.1 defines the limiting slenderness λlim = 20·A·B·C/√n, where A, B, C depend on creep, reinforcement ratio, and end moment ratio, and n is the relative normal force (n = NEd/(Ac·fcd)). For this column: n = 2800000/(400²×20) = 0.875. Even with favourable values (A=0.7, B=1.1, C=1.7), λlim = 20×0.7×1.1×1.7/√0.875 ≈ 28.0. The calculated λ = 27.2 is only marginally below this, and with more realistic creep coefficients (A < 0.7), the column may actually require second-order analysis. Using a simplified threshold of 30 is non-conservative and does not follow Eurocode methodology.",
+      "location_hint": "Classification as short column using fixed slenderness limit of 30."
+    },
+    {
+      "id": "f2",
+      "type": "reinforcement_ratio_error",
+      "description": "The reinforcement ratio is calculated as As/Ac = 3927/(400×400) = 2.45%. While this is within the Eurocode 2 limits (0.2% minimum to 4% maximum per Clause 9.5.2), the check omits a critical requirement: at laps, the reinforcement ratio including lap lengths must not exceed 8% (Clause 9.5.2(3)). With 8 No. H25 bars, if all bars are lapped at the same level (common in column construction), the lap zone has 16 bars giving an effective ratio of 4.9%. This is within the 8% limit. However, the more significant omission is the minimum eccentricity: BS EN 1992-1-1 Clause 6.1(4) requires a minimum eccentricity of max(h/30, 20mm) = max(13.3, 20) = 20mm. This means the column must be designed for MEd,min = NEd × e0 = 2800 × 0.020 = 56 kN·m even under 'pure' axial load. This bending moment is not considered in the design check.",
+      "location_hint": "Column designed for pure axial load of 2800 kN without minimum eccentricity."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Eurocode 2 slenderness limit is not a fixed 30 — it is calculated per Clause 5.8.3.1 as λlim = 20·A·B·C/√n, dependent on relative axial force and creep. The column is borderline and may require second-order analysis. (2) Minimum eccentricity of max(h/30, 20mm) is mandatory per EC2 Clause 6.1(4). Even 'axially loaded' columns must be designed for MEd,min = NEd × e0 = 56 kN·m. Reference: BS EN 1992-1-1:2004+A1:2014."
+}

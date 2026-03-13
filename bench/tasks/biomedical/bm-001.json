@@ -1,0 +1,20 @@
+{
+  "id": "bm-001",
+  "domain": "biomedical",
+  "prompt": "A pharmaceutical company is developing a liquid oral suspension of amoxicillin for paediatric patients aged 2-6 years. The target dose is 25 mg/kg/day divided into two doses, administered every 12 hours. The formulation is a 250 mg/5 mL suspension.\n\nThe dosing table in the product insert specifies that a child weighing 20 kg should receive 5 mL per dose (twice daily). The pharmacist's verification worksheet calculates total daily dose as 25 mg per day for the 20 kg child, confirming the 5 mL twice-daily regimen is correct.\n\nThe formulation team has completed stability testing under ICH Q1A guidelines and confirmed a 24-month shelf life at 25 degrees C. The product labelling states doses should be measured using the included 10 mL oral syringe graduated in 1 mL increments. Quality control release specifications require potency between 90-110% of label claim per USP monograph.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "unit_conversion_error",
+      "description": "The pharmacist's worksheet states the total daily dose for a 20 kg child is '25 mg per day'. The correct calculation is 25 mg/kg/day x 20 kg = 500 mg/day (250 mg per dose). The worksheet dropped the '/kg' unit, treating 25 mg/kg/day as 25 mg/day flat, a 20-fold underdose.",
+      "location_hint": "Pharmacist verification worksheet daily dose calculation"
+    },
+    {
+      "id": "f2",
+      "type": "internal_consistency_error",
+      "description": "The dosing table states a 20 kg child should receive 5 mL per dose (250 mg per dose, 500 mg/day = correct). But the verification worksheet claims total daily dose is 25 mg/day. These two values are contradictory within the same document set. This internal inconsistency would fail FDA 21 CFR 211.186 batch record reconciliation requirements.",
+      "location_hint": "Contradiction between dosing table and pharmacist worksheet"
+    }
+  ],
+  "ground_truth_notes": "Paediatric weight-based dosing per AAP guidelines and BNF for Children requires mg/kg/day calculation. The unit error (dropping /kg) is a well-documented medication error category per ISMP Medication Safety Alert. FDA 21 CFR 211.186 requires batch production records to include complete manufacturing and control instructions that are internally consistent. USP General Chapter <1> and WHO Technical Report Series No. 970 Annex 2 reinforce that dosing verification must mathematically reconcile with the stated regimen."
+}

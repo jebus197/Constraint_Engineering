@@ -1,0 +1,20 @@
+{
+  "id": "pe-010",
+  "domain": "product-engineering",
+  "prompt": "Design a magnetic closure mechanism for a leather tablet case. The case protects a 10.9-inch tablet (dimensions 248mm × 179mm × 6.1mm, weight 480g). The closure uses four neodymium disc magnets (N35 grade, 10mm diameter × 2mm thick) embedded in the leather flap, attracting to a steel shim plate (0.5mm mild steel) bonded inside the case body. The magnets are arranged in a 2×2 pattern at 20mm spacing.\n\nEach N35 neodymium magnet (10mm × 2mm disc) has a rated pull force of approximately 1.5 kg (14.7 N) against a mild steel plate. Total closure force = 4 × 14.7 = 58.8 N, which provides secure closure against the flap weight (~30g) with large margin. The magnets are bonded into pockets in the leather using cyanoacrylate adhesive. The case includes a fold-back stand function where the flap folds behind the tablet for hands-free viewing. Please review the closure design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "magnetic_interference_error",
+      "description": "Four 10mm × 2mm N35 neodymium magnets at 20mm spacing create a combined magnetic field that extends several centimetres beyond the case surface. This field will interfere with the tablet's internal magnetometer (compass), which uses the Earth's magnetic field (~50µT) for orientation and location services. Neodymium magnets of this size produce fields of 50-200 mT at their surface and 1-5 mT at 20mm distance — orders of magnitude above the Earth's field. The tablet's compass will be permanently offset or non-functional while in the case. More critically, many modern tablets use hall-effect magnetic sensors to detect case closure (triggering sleep/wake). The four-magnet pattern may trigger unintended sleep/wake events depending on tablet orientation, or may interfere with the intended sleep/wake function if the magnet positions don't align with the tablet's sensor location. The magnet placement must be designed in conjunction with the specific tablet's sensor layout, not arbitrarily positioned.",
+      "location_hint": "Four N35 neodymium magnets at 20mm spacing adjacent to tablet."
+    },
+    {
+      "id": "f2",
+      "type": "pull_force_overestimate",
+      "description": "The rated pull force of 1.5 kg per magnet assumes ideal conditions: clean, flat contact between the magnet face and a thick steel plate, pulled directly normal to the surface. In this application, multiple factors reduce the actual force: (1) The 0.5mm steel shim is thinner than the optimal plate thickness for full flux capture — a 10mm × 2mm N35 magnet requires approximately 2-3mm of mild steel to fully close the magnetic circuit. At 0.5mm, the shim saturates magnetically and captures only 60-75% of the available flux, reducing pull force to approximately 1.0-1.1 kg per magnet. (2) The leather between the magnets and the shim adds an air gap of 1-2mm (leather thickness), further reducing pull force — neodymium magnet pull force drops approximately 50% per 1mm of air gap for small magnets. (3) The closure is opened by peeling (moment about the hinge edge), not by direct normal pull. Peel forces are typically 20-30% of normal pull force. The effective opening resistance is likely 3-5 N total, not 58.8 N — barely enough to keep the flap closed if the case is held upside down.",
+      "location_hint": "Pull force of 1.5 kg per magnet assumed under ideal conditions."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Neodymium magnets will interfere with tablet magnetometer and may trigger unintended hall-effect sleep/wake events. Magnet placement must be designed to specific tablet sensor layout. Reference: Apple/Samsung tablet technical specifications (hall sensor locations); K&J Magnetics field calculator. (2) Rated pull force assumes ideal contact with thick steel plate. Thin shim (magnetic saturation), leather air gap, and peel-mode opening reduce effective force to ~5-10% of rated value. Reference: K&J Magnetics application notes on air gap and plate thickness; Supermagnete pull force testing methodology."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ch-006",
+  "domain": "chemistry",
+  "prompt": "Design a water treatment chemical dosing system for a municipal plant treating 50 ML/day of river water. The raw water has a turbidity of 15-50 NTU and an alkalinity of 30 mg/L as CaCO3. The treatment train uses aluminium sulfate (alum) coagulation followed by flocculation, sedimentation, and sand filtration.\n\nThe alum dose is set at 40 mg/L as Al2(SO4)3·14H2O. To improve floc formation in winter when water temperatures drop to 4°C, we propose adding sodium hypochlorite (NaOCl) as a pre-oxidant at 3 mg/L before the alum dosing point. The NaOCl stock solution (12.5% available chlorine) will be stored in a mild steel tank adjacent to the alum stock solution tank (48% liquid alum). The two chemicals will be dosed through a common manifold to simplify the injection system. Please review the dosing strategy and chemical handling.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "alkalinity_consumption_error",
+      "description": "Alum coagulation consumes alkalinity: each mg/L of Al2(SO4)3·14H2O consumes approximately 0.50 mg/L of alkalinity as CaCO3. At 40 mg/L alum dose, alkalinity consumption is approximately 20 mg/L. With raw water alkalinity of only 30 mg/L, the residual alkalinity after coagulation is only 10 mg/L — dangerously close to the point where pH will drop below 5.5, at which alum coagulation efficiency collapses (optimal pH is 5.8-6.5 for alum). On days when raw water alkalinity is at the lower end of its range, pH will crash below the effective coagulation range. The design needs alkalinity supplementation (lime or soda ash addition) or a switch to polyaluminium chloride (PACl) which consumes less alkalinity.",
+      "location_hint": "40 mg/L alum dose with raw water alkalinity of only 30 mg/L as CaCO3."
+    },
+    {
+      "id": "f2",
+      "type": "chemical_incompatibility_error",
+      "description": "Dosing sodium hypochlorite and aluminium sulfate through a common manifold will cause an immediate and violent reaction. NaOCl is strongly alkaline (pH 11-13) and a powerful oxidiser. When mixed with alum solution (pH 2-3), the pH drop causes rapid decomposition of hypochlorite with release of chlorine gas (Cl2). Additionally, the acidic conditions accelerate hypochlorite decomposition, wasting the oxidant before it reaches the water. These chemicals must be dosed at separate injection points with adequate mixing distance between them. Storing NaOCl in a mild steel tank is also problematic — NaOCl is highly corrosive to steel and requires HDPE or FRP storage vessels.",
+      "location_hint": "Common manifold for NaOCl and alum dosing; NaOCl stored in mild steel tank."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Alum alkalinity consumption at 40 mg/L dose ≈ 20 mg/L as CaCO3, leaving only 10 mg/L residual from 30 mg/L raw water. Insufficient buffering will cause pH crash below effective coagulation range. Reference: AWWA, 'Water Quality and Treatment', 6th ed., Chapter 8. (2) NaOCl (pH 11-13) and alum (pH 2-3) must never be mixed — produces chlorine gas. NaOCl must be stored in HDPE/FRP, not steel. Separate injection points required. Reference: AWWA Manual M20, 'Water Chlorination/Chloramination Practices'."
+}

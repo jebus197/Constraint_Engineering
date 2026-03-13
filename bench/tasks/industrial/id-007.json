@@ -1,0 +1,20 @@
+{
+  "id": "id-007",
+  "domain": "industrial",
+  "prompt": "Design a gear pair for a small industrial gearbox. The driver is a 20-tooth spur gear meshing with a 60-tooth driven gear (3:1 ratio). Module is 3mm, pressure angle 20°, face width 25mm. Material is case-hardened 20MnCr5 steel (surface hardness 58-62 HRC, core hardness 32-38 HRC). The input speed is 1450 rpm with a transmitted torque of 80 N·m.\n\nThe tangential force is Ft = 2T / d₁ = 2 × 80000 / 60 = 2667 N (pitch diameter d₁ = m × z₁ = 3 × 20 = 60mm). The Lewis bending stress at the tooth root is σ = Ft / (b × m × Y) = 2667 / (25 × 3 × 0.322) = 110 MPa, where Y = 0.322 is the Lewis form factor for 20 teeth. The allowable bending stress for case-hardened steel is approximately 400 MPa, giving a safety factor of 3.6. Contact (Hertzian) stress is not checked as the gears are case-hardened. Please review the gear design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "contact_stress_omission",
+      "description": "The statement that 'contact (Hertzian) stress is not checked as the gears are case-hardened' is a fundamental error. Case hardening does not eliminate the need for contact stress (pitting) analysis — it is precisely the reason contact stress analysis matters. The thin hardened case (typically 0.5-1.5mm for module 3 gears) must withstand the Hertzian contact pressure without subsurface fatigue cracking (pitting). If the contact stress exceeds the surface endurance limit, the hardened case will spall and pit regardless of its hardness. Per ISO 6336-2 / AGMA 2101, the contact stress σH = ZH × ZE × Zε × √(Ft × KA × Kv × KHβ × KHα / (b × d₁ × u/(u+1))) must be calculated and compared against the allowable contact stress σHP. For case-hardened gears, the allowable contact stress is high (~1500 MPa) but the actual contact stress can also be high, especially with narrow face width and small diameter. This check is always required.",
+      "location_hint": "Contact stress not checked because gears are case-hardened."
+    },
+    {
+      "id": "f2",
+      "type": "dynamic_factor_omission",
+      "description": "The Lewis bending stress calculation uses only the static tangential force without any application or dynamic load factors. Per ISO 6336-1 and AGMA 2101, the effective tooth load must include: KA (application factor, typically 1.0-2.5 depending on the driven machine), Kv (dynamic factor, accounting for gear quality grade and pitch line velocity — at 1450 rpm on a 60mm pitch diameter, the pitch line velocity is π × 0.06 × 1450/60 = 4.56 m/s, giving Kv ≈ 1.1-1.3 for ISO quality 6-8 gears), KFβ (face load distribution factor, 1.0-1.5 depending on alignment), and KFα (transverse load distribution factor). The cumulative effect of these factors typically multiplies the effective load by 1.5-3.0×, reducing the apparent safety factor of 3.6 to potentially 1.2-2.4. This could be inadequate depending on the application.",
+      "location_hint": "Bending stress calculated without application factor, dynamic factor, or load distribution factors."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Contact stress (pitting resistance) must always be checked for case-hardened gears — hardening does not eliminate subsurface fatigue. Reference: ISO 6336-2:2019; AGMA 2101-D04; Dudley's Gear Handbook, 2nd ed., Chapter 12. (2) Gear tooth loads must include KA, Kv, KHβ/KFβ, and KHα/KFα factors per ISO 6336. Omitting these factors overstates the safety factor by a factor of 1.5-3×. Reference: ISO 6336-1:2019 Clause 6; AGMA 2001-D04."
+}

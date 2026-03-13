@@ -1,0 +1,20 @@
+{
+  "id": "ch-002",
+  "domain": "chemistry",
+  "prompt": "We are scaling up a catalytic hydrogenation process for converting soybean oil to partially hydrogenated fat for food applications. The reactor uses a nickel-on-silica catalyst at 180°C and 3 bar hydrogen pressure. We have noticed that after approximately 20 batch cycles, catalyst activity drops significantly. Analysis shows the oil feedstock contains approximately 5 ppm sulfur compounds from the crude degumming process. We believe this is within acceptable limits since nickel catalysts are generally robust to trace impurities.\n\nAdditionally, we plan to use the same reactor for hydrogenating a batch of castor oil (containing ricinoleic acid, a hydroxylated C18 fatty acid) next week using identical conditions. The product specification requires an iodine value below 5. Please review the catalyst deactivation issue and the proposed castor oil hydrogenation.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "catalyst_poisoning_error",
+      "description": "Nickel catalysts are highly susceptible to sulfur poisoning. Even 1-2 ppm sulfur in the feed causes progressive irreversible poisoning by forming nickel sulfide on active sites. At 5 ppm sulfur, significant catalyst deactivation after 20 cycles is entirely expected and will worsen. The claim that nickel catalysts are 'generally robust to trace impurities' is incorrect for sulfur specifically. Feedstock sulfur must be reduced to <0.5 ppm (typically by adsorption on activated clay or zinc oxide guard bed) or the catalyst must be changed to a sulfur-tolerant alternative (e.g., palladium).",
+      "location_hint": "Claim that 5 ppm sulfur is within acceptable limits for nickel catalyst."
+    },
+    {
+      "id": "f2",
+      "type": "reaction_condition_error",
+      "description": "Castor oil hydrogenation under standard soybean oil conditions (180°C, 3 bar H2) will produce 12-hydroxystearic acid as the primary product, but the hydroxyl group on ricinoleic acid undergoes dehydration at temperatures above 200°C, and even at 180°C with prolonged reaction times, significant dehydration can occur. More critically, the ricinoleic acid hydroxyl group can cause catalyst fouling through polymerisation at elevated temperatures. Industrial castor oil hydrogenation typically uses lower temperatures (140-160°C) with higher hydrogen pressures (10-15 bar) and specific nickel catalyst formulations optimised for hydroxylated substrates. Using 'identical conditions' ignores the fundamentally different substrate chemistry.",
+      "location_hint": "Plan to hydrogenate castor oil using identical conditions to soybean oil."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Sulfur is a severe and irreversible poison for nickel hydrogenation catalysts. The threshold for acceptable sulfur in feed is typically <0.5 ppm. Reference: Bartholomew, 'Mechanisms of catalyst deactivation', Applied Catalysis A, 2001. The 5 ppm level explains the observed deactivation. (2) Castor oil (ricinoleic acid) contains a hydroxyl group that fundamentally changes the hydrogenation chemistry compared to standard triglycerides. Higher pressures, lower temperatures, and different catalyst formulations are required. Reference: Gunstone, 'The Chemistry of Oils and Fats', Chapter 8."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "bm-005",
+  "domain": "biomedical",
+  "prompt": "A robotics company is designing a surgical robot arm for minimally invasive laparoscopic procedures. The end-effector joint uses a titanium alloy (Ti-6Al-4V) pivot pin, 4 mm in diameter, that actuates the grasping jaws. The design life requirement is 500,000 actuation cycles, corresponding to approximately 5 years of clinical use at an estimated 100,000 cycles per year.\n\nThe mechanical engineer has performed a fatigue analysis using the S-N curve for Ti-6Al-4V wrought bar stock, determining that at the peak operating stress of 300 MPa (alternating), the pin has an endurance limit of 510 MPa, giving a safety factor of 1.7. The analysis concludes the pin will survive indefinitely under the specified loading. The pin surface finish is as-machined (Ra 1.6 micrometres) with no additional surface treatment.\n\nThe instrument is classified as a reusable surgical device requiring steam sterilisation (autoclaving) between uses. The sterilisation validation follows ISO 17665-1, with a standard 134 degrees C, 18-minute prevacuum cycle. The device labelling states the instrument is reusable with no specified maximum number of reprocessing cycles. The materials and design have been evaluated for biocompatibility per ISO 10993-1 for surface-contacting devices with limited exposure duration (less than 24 hours).",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "fatigue_life_miscalculation",
+      "description": "The fatigue analysis uses S-N data for wrought bar stock without applying derating factors for the actual component conditions. The as-machined surface finish (Ra 1.6 um) introduces a surface finish factor (Kf) of approximately 0.75-0.85 for titanium alloys. Additionally, the analysis neglects the effect of repeated autoclaving at 134 degrees C on fatigue properties. Ti-6Al-4V undergoes surface oxidation and potential hydrogen embrittlement from repeated steam exposure, which can reduce fatigue endurance by 15-30% over hundreds of cycles. Applying conservative derating (surface finish Kf=0.80, reliability factor Kr=0.90, environment factor=0.80), the effective endurance limit drops to approximately 510 x 0.80 x 0.90 x 0.80 = 294 MPa, which is below the 300 MPa operating stress. The component would fail before its design life. Per ASTM E466 and Shigley's Mechanical Engineering Design (Chapter 6), these correction factors are standard practice for fatigue analysis of real components.",
+      "location_hint": "Fatigue analysis using unmodified bar stock S-N data"
+    },
+    {
+      "id": "f2",
+      "type": "reprocessing_cycle_limit_omission",
+      "description": "The device labelling states the instrument is reusable with no maximum number of reprocessing cycles. FDA guidance 'Reprocessing Medical Devices in Health Care Settings' (2015) and ISO 17664-1:2021 require that reusable device manufacturers validate and specify the maximum number of reprocessing cycles the device can withstand while maintaining safety and performance. Repeated autoclaving causes cumulative material degradation (oxidation, hydrogen uptake, surface embrittlement in titanium), wear on mechanical joints, and potential degradation of surface coatings or markings. The omission of a validated reprocessing cycle limit violates both FDA expectations under 21 CFR 820.30(g) design validation and ISO 17664-1 Clause 5.1.3.",
+      "location_hint": "Device labelling with no maximum reprocessing cycle count"
+    }
+  ],
+  "ground_truth_notes": "Fatigue derating factors per Shigley's Mechanical Engineering Design (11th ed., Budynas & Nisbett), Chapter 6 (Marin modification factors). Ti-6Al-4V hydrogen embrittlement under steam sterilisation per Rodrigues et al. (2009) Journal of Biomedical Materials Research. FDA guidance 'Reprocessing Medical Devices in Health Care Settings: Validation Methods and Labeling' (2015). ISO 17664-1:2021 Clause 5.1.3 requires validated maximum reprocessing cycle count. ASTM E466 standard practice for conducting force-controlled constant amplitude axial fatigue tests."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "xd-002",
+  "domain": "cross-domain",
+  "prompt": "A structural engineer is specifying reinforced concrete for a marine jetty in a tidal splash zone (XS3 exposure class per EN 206). The concrete mix uses CEM I 42.5N Portland cement at 350 kg/m3, water-cement ratio 0.45, and 20 mm maximum aggregate size. The 28-day compressive strength target is C40/50.\n\nThe reinforcement design uses B500B steel bars with 40 mm nominal cover to all exposed faces. The engineer has calculated the chloride ingress profile using Fick's second law of diffusion with a surface chloride concentration C_s = 3.0% by weight of cement and an apparent diffusion coefficient D_app = 2.0 x 10^-12 m2/s, derived from laboratory tests on water-saturated specimens at 20 degC.\n\nBased on this diffusion model, the engineer predicts that the chloride concentration at the reinforcement depth (40 mm) will not reach the corrosion initiation threshold of 0.4% by weight of cement for 75 years, meeting the 50-year design life with margin. The engineer specifies no additional corrosion protection measures (no stainless steel, no coatings, no cathodic protection) based on this analysis.\n\nThe structural design assumes the full cross-section contributes to load-carrying capacity throughout the 50-year design life, with no allowance for section loss due to corrosion.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "chemical_structural_interface",
+      "description": "The diffusion coefficient D_app = 2.0 x 10^-12 m2/s was measured on water-saturated specimens at constant 20 degC. In a real tidal splash zone (XS3), the concrete undergoes wet-dry cycling which accelerates chloride transport by capillary absorption (sorptivity), not just diffusion. Effective transport rates in splash zones are typically 5-10x higher than pure diffusion models predict. Additionally, the CEM I cement has no supplementary cementitious materials (fly ash, GGBS) that would bind chlorides and reduce free chloride concentration. The interface fault is that a laboratory chemistry measurement (diffusion under idealised conditions) was applied directly to a structural durability prediction without accounting for the actual transport mechanism in the exposure environment. The chemical behaviour of chloride transport in cyclic wetting invalidates the structural durability assumption.",
+      "location_hint": "Use of laboratory-derived D_app from saturated specimens for a splash zone where capillary absorption dominates"
+    },
+    {
+      "id": "f2",
+      "type": "structural_cover_specification",
+      "description": "The 40 mm cover is below the minimum required by EN 1992-1-1 (Eurocode 2) for XS3 exposure class, which specifies a minimum cover c_min,dur = 45 mm for a 50-year design life with structural class S4, plus a construction tolerance delta_c_dev = 10 mm, giving nominal cover = 55 mm. The specified 40 mm nominal cover means the minimum cover after tolerance could be as low as 30 mm, dramatically reducing time to corrosion initiation even under correct diffusion modelling. This is a single-domain structural specification error that compounds the interface fault.",
+      "location_hint": "Nominal cover of 40 mm specified for XS3 exposure class"
+    }
+  ],
+  "ground_truth_notes": "Chemical principles: Chloride transport in concrete involves multiple mechanisms -- ionic diffusion (Fick's law), capillary absorption (sorptivity), wick action, and convection. In splash zones, capillary absorption dominates and transport rates are 5-10x higher than diffusion alone (Concrete Society TR61, fib Model Code 2010 ch. 5.1). CEM I without SCMs provides no chloride binding capacity. Structural principles: EN 1992-1-1 Table 4.4N specifies c_min,dur = 45 mm for XS3/S4/50yr. BS 8500-1 Table A.5 confirms. The interface fault (f1) is at the chemistry-structure boundary: the chemical transport mechanism in the real environment invalidates the structural durability prediction derived from idealised laboratory conditions."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "bm-002",
+  "domain": "biomedical",
+  "prompt": "A medical device company is designing an implantable cardiac pacemaker lead for long-term use (projected 10+ year implant life). The lead body is constructed from a silicone rubber insulation over a coiled conductor. The conductor alloy selected is MP35N (35% Co, 35% Ni, 20% Cr, 10% Mo), chosen for its excellent fatigue resistance and conductivity.\n\nThe design team has evaluated biocompatibility per ISO 10993-1 and determined that because MP35N has a long clinical history in pacemaker leads, no additional cytotoxicity or sensitisation testing is required for this new design. The sterilisation validation plan specifies ethylene oxide (EtO) sterilisation with a standard aeration cycle of 8 hours at 50 degrees C, which the team states is sufficient to reduce EtO residuals below ISO 10993-7 limits for a permanent implant.\n\nThe lead tip electrode uses a steroid-eluting porous platinum-iridium design to reduce post-implant inflammation. Electrical impedance targets are 400-1200 ohms at implant, with chronic threshold targets below 1.5V at 0.4ms pulse width. The connector pin conforms to IS-1 standard (ISO 5841-3) for compatibility with existing pulse generators.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "biocompatibility_assumption_error",
+      "description": "The team assumes MP35N requires no sensitisation testing because of historical use. However, ISO 10993-1:2018 requires biological evaluation based on the specific device configuration, manufacturing process, and patient contact duration — not solely on material history. MP35N contains 35% nickel, and nickel is the most common contact allergen (affecting 10-20% of the general population). A new lead design with different geometry, surface finish, or manufacturing residuals could present different leachable profiles. The blanket exemption from sensitisation testing based on material pedigree alone does not satisfy ISO 10993-1 Clause 4.4.",
+      "location_hint": "Biocompatibility evaluation rationale for MP35N"
+    },
+    {
+      "id": "f2",
+      "type": "sterilisation_process_error",
+      "description": "The EtO aeration cycle of 8 hours at 50 degrees C is specified as sufficient for a permanent implant. ISO 10993-7:2008 (Table 1) sets the allowable limit for EtO residuals in permanent contact devices at 0.5 mg for a device with a surface area contact. Standard 8-hour aeration is typically validated for devices with simpler geometries. Pacemaker leads have complex luminal spaces, coiled conductors, and silicone rubber (which absorbs and slowly releases EtO). Silicone is well-documented to require extended aeration (often 48-168 hours) to achieve residual limits for permanent implants. An 8-hour cycle without device-specific validation data is insufficient evidence of compliance.",
+      "location_hint": "EtO sterilisation aeration cycle duration"
+    }
+  ],
+  "ground_truth_notes": "ISO 10993-1:2018 Clause 4.4 requires device-specific biological evaluation regardless of material history. ISO 10993-7:2008 Table 1 specifies EtO residual limits for permanent implants. AAMI TIR16 provides guidance on EtO residual testing for devices with complex geometries. Silicone rubber's well-known EtO absorption behaviour is documented in sterilisation science literature (Mendes et al., 2007) and FDA guidance on EtO sterilisation. Nickel sensitisation prevalence data per European Nickel Directive and NIAID contact dermatitis epidemiology."
+}

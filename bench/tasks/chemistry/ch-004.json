@@ -1,0 +1,20 @@
+{
+  "id": "ch-004",
+  "domain": "chemistry",
+  "prompt": "We are developing a nylon 6,6 production process via condensation polymerisation of adipic acid and hexamethylenediamine (HMDA). The stoichiometric ratio will be set at 1.05:1.00 (adipic acid to HMDA) to ensure complete consumption of the diamine, since residual HMDA causes discolouration in the final product. The reaction will be carried out at 280°C under nitrogen atmosphere, removing water to drive the equilibrium forward.\n\nOur target is a number-average molecular weight (Mn) of 30,000 g/mol for fibre-grade nylon. The polymer will then be melt-spun at 290°C. We claim the glass transition temperature (Tg) of our nylon 6,6 will be approximately 120°C, making it suitable for under-hood automotive applications up to 110°C continuous service. Please review the polymerisation conditions and the thermal property claims.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "stoichiometry_error",
+      "description": "In step-growth (condensation) polymerisation, the Carothers equation shows that molecular weight is critically dependent on exact stoichiometric balance. With a 1.05:1.00 ratio (r = 0.952), the maximum achievable number-average degree of polymerisation is Xn = (1+r)/(1+r-2rp) where p→1, giving Xn,max = (1+r)/(1-r) = 1.952/0.048 ≈ 41. For nylon 6,6 (repeat unit MW ≈ 226), this gives Mn,max ≈ 9,200 g/mol — far below the 30,000 target. Achieving Mn = 30,000 requires r > 0.985. The deliberate 5% excess of adipic acid makes the molecular weight target physically unachievable.",
+      "location_hint": "Stoichiometric ratio of 1.05:1.00 adipic acid to HMDA with Mn target of 30,000."
+    },
+    {
+      "id": "f2",
+      "type": "thermal_property_error",
+      "description": "The glass transition temperature of dry nylon 6,6 is approximately 50-80°C (typically cited as 50°C dry, up to 80°C for highly crystalline samples), not 120°C. The melting point of nylon 6,6 is approximately 260°C, which may be the source of confusion. At 120°C, nylon 6,6 is well above its Tg and in the rubbery/viscoelastic regime, though its high crystallinity provides mechanical integrity up to approximately 150°C under low loads. The Tg claim of 120°C is factually wrong — it may be confused with polyimide or PPS. However, the suitability conclusion (under-hood use at 110°C) may actually be correct for a different reason: the high crystallinity of nylon 6,6 allows it to maintain useful mechanical properties above Tg.",
+      "location_hint": "Claim that Tg of nylon 6,6 is approximately 120°C."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) The Carothers equation for step-growth polymerisation with stoichiometric imbalance: Xn = (1+r)/(1-r) at full conversion. With r = 0.952, maximum Mn ≈ 9,200 — one third of the target. Reference: Flory, 'Principles of Polymer Chemistry', Chapter 3. (2) Nylon 6,6 Tg is 50°C (dry) per the Polymer Handbook (Brandrup & Immergut). The 120°C figure is incorrect. However, nylon 6,6 can serve at 110°C continuous due to high crystallinity providing mechanical integrity above Tg. Reference: Kohan, 'Nylon Plastics Handbook', Chapter 4."
+}

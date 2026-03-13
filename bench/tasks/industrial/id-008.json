@@ -1,0 +1,20 @@
+{
+  "id": "id-008",
+  "domain": "industrial",
+  "prompt": "Design a rubber sealing gasket for a flanged pipe joint carrying hot water at 130°C and 6 bar pressure. The pipe is DN100 (4-inch nominal bore) with an ASME B16.5 Class 150 raised-face flange. The gasket is a flat ring cut from 3mm thick EPDM rubber sheet (70 Shore A), with ID = 115mm and OD = 150mm.\n\nEPDM is selected for its excellent hot water resistance and temperature rating up to 150°C. The gasket seating stress is calculated as: bolt load = 4 bolts × 25 kN per bolt = 100 kN. Gasket contact area = π/4 × (150² - 115²) = 7362 mm². Gasket seating stress = 100000/7362 = 13.6 MPa. The minimum seating stress for rubber gaskets per ASME PCC-1 is approximately 2 MPa (y-factor), so 13.6 MPa provides adequate seating. Please review the gasket design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "bolt_count_error",
+      "description": "A DN100 Class 150 flange per ASME B16.5 has 8 bolt holes, not 4. The standard specifies 8 × 5/8-inch (M16) bolts for this flange size and pressure class. Using only 4 bolts leaves four empty bolt holes which: (a) reduces total bolt load by 50%, halving the gasket seating stress; (b) creates an uneven gasket compression pattern with alternating loaded and unloaded zones, leading to leak paths at the unbolted positions; (c) may violate the flange design basis since ASME B16.5 flange thickness is calculated assuming all bolt holes are populated. The gasket seating stress with 4 bolts may appear adequate on average, but the local stress distribution between bolts will have peaks and valleys that compromise sealing integrity.",
+      "location_hint": "4 bolts specified for DN100 Class 150 flange."
+    },
+    {
+      "id": "f2",
+      "type": "compression_set_error",
+      "description": "At 130°C continuous service, EPDM rubber undergoes significant compression set — the permanent deformation that occurs when rubber is held under compression at elevated temperature. While EPDM has a temperature rating to 150°C for short-term exposure, the compression set at 130°C continuous service is substantial: ASTM D395 testing typically shows 30-60% compression set after 70 hours at 125°C for standard EPDM compounds. Over months or years of service, the gasket will take a permanent set, reducing the bolt-maintained contact stress below the minimum seating stress required to maintain a seal. This leads to flange leakage during thermal cycling or pressure fluctuations. For continuous service at 130°C, either a high-temperature EPDM compound specifically formulated for low compression set (peroxide-cured rather than sulphur-cured) should be specified, or a non-elastomeric gasket material (e.g., compressed non-asbestos fibre, PTFE, or spiral-wound metallic) should be used.",
+      "location_hint": "Standard EPDM gasket for continuous service at 130°C."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) DN100 Class 150 flanges per ASME B16.5 require 8 bolts, not 4. Under-bolting halves the clamping force and creates uneven gasket compression. Reference: ASME B16.5-2020 Table 2; ASME PCC-1-2022 Appendix A. (2) Standard EPDM at 130°C continuous service will exhibit excessive compression set leading to bolt load relaxation and eventual leakage. Peroxide-cured EPDM or non-elastomeric gasket materials are required for this temperature. Reference: Flitney, 'Seals and Sealing Handbook', 6th ed., Chapter 8; Parker O-Ring Handbook, Section 3."
+}

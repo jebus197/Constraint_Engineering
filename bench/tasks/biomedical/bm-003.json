@@ -1,0 +1,20 @@
+{
+  "id": "bm-003",
+  "domain": "biomedical",
+  "prompt": "A contract research organisation is designing a Phase III clinical trial for a novel NSAID (non-steroidal anti-inflammatory drug) intended for chronic osteoarthritis pain in adults. The primary endpoint is the change in WOMAC pain subscale score from baseline to Week 12. The trial uses a two-arm parallel design: active drug versus placebo.\n\nThe biostatistician's sample size calculation assumes a clinically meaningful difference of 10 mm on the 100 mm WOMAC VAS pain subscale, with a standard deviation of 25 mm, alpha of 0.05 (two-sided), and 80% power. Using a standard two-sample t-test formula, the calculation yields 50 patients per arm (100 total). The protocol accounts for a 20% dropout rate, inflating enrolment to 120 patients total (60 per arm).\n\nThe study population includes adult patients (aged 18-75) with radiographically confirmed Kellgren-Lawrence grade 2-4 osteoarthritis of the knee. Patients with active peptic ulcer disease, renal impairment (eGFR below 60), or cardiovascular disease (prior MI or stroke within 12 months) are excluded. All patients undergo a 2-week washout of prior NSAIDs before randomisation. The placebo arm receives matching capsules for the full 12-week treatment period. The ethics committee has approved the protocol with standard informed consent.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "statistical_power_error",
+      "description": "The sample size calculation yields 50 per arm for the stated parameters (delta=10, SD=25, alpha=0.05, power=0.80). However, using the standard formula n = 2*(Z_alpha/2 + Z_beta)^2 * sigma^2 / delta^2 = 2*(1.96+0.84)^2 * 625 / 100 = 2*7.84*6.25 = 98 per arm, not 50. The calculation appears to have used sigma instead of sigma-squared, or halved the result incorrectly. At 50 per arm, the actual power would be approximately 52%, well below the stated 80%. This underpowered trial risks a Type II error and failure to detect a real treatment effect, violating ICH E9 Section 3.5 requirements for adequate sample size justification.",
+      "location_hint": "Sample size calculation yielding 50 per arm"
+    },
+    {
+      "id": "f2",
+      "type": "placebo_ethics_violation",
+      "description": "The trial uses a pure placebo comparator for a chronic pain condition over 12 weeks with a 2-week washout period, meaning patients in the placebo arm go 14 weeks without effective anti-inflammatory treatment. For osteoarthritis (a condition with established effective treatments), the Declaration of Helsinki (2013) Article 33 states that the benefits, risks, burdens, and effectiveness of a new intervention must be tested against the best proven intervention, except where no proven intervention exists or where compelling methodological reasons necessitate placebo and patients will not suffer serious harm. ICH E10 Section 2.1.4 additionally requires that placebo use in conditions with available therapy must not expose patients to serious or irreversible harm. Withdrawing NSAID therapy from OA patients for 14 weeks without rescue medication provisions risks unnecessary suffering and violates these ethical standards.",
+      "location_hint": "Placebo arm design with 2-week washout and 12-week treatment"
+    }
+  ],
+  "ground_truth_notes": "Sample size formula per Chow, Shao & Wang (2008) 'Sample Size Calculations in Clinical Research' and ICH E9 'Statistical Principles for Clinical Trials' Section 3.5. Declaration of Helsinki (2013) Article 33 governs placebo use in conditions with established effective therapy. ICH E10 'Choice of Control Group and Related Issues in Clinical Trials' Section 2.1.4 specifies conditions under which placebo controls are ethically acceptable. WOMAC VAS pain subscale properties per Bellamy et al. (1988)."
+}

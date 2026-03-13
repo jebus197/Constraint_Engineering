@@ -1,0 +1,20 @@
+{
+  "id": "st-008",
+  "domain": "structural",
+  "prompt": "Design a shallow strip foundation on stiff clay for a 3-storey residential building. The foundation supports a wall load of 85 kN/m (SLS characteristic combination). The clay has an undrained shear strength cu = 75 kPa and a bulk unit weight of 20 kN/m³. Groundwater is at 1.5m depth. Foundation depth is 1.0m below ground level, and width is to be determined.\n\nUsing Terzaghi's bearing capacity equation for a strip foundation on clay (φ = 0): qult = cu × Nc + γ × Df × Nq where Nc = 5.14, Nq = 1.0 (for φ = 0). This gives qult = 75 × 5.14 + 20 × 1.0 × 1.0 = 405.5 kPa. With a factor of safety of 3.0, allowable bearing pressure qa = 405.5/3 = 135.2 kPa. Required width B = 85/135.2 = 0.63m. We propose a 700mm wide strip foundation. Settlement is estimated at 12mm using elastic theory, which is acceptable. Please review the foundation design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "bearing_capacity_theory_error",
+      "description": "Terzaghi's bearing capacity factor Nc = 5.14 is the exact Prandtl solution, which is correct for Terzaghi/Meyerhof general theory. However, this value assumes a smooth base and does not account for foundation shape (strip is correct here) or depth. The more significant error is the use of a global factor of safety of 3.0 applied to the GROSS ultimate bearing capacity. Modern practice (BS EN 1997-1 / Eurocode 7) uses partial factors applied to soil properties and loads separately, but even in the traditional approach, the factor of safety should be applied to the NET ultimate bearing capacity (qult - γ×Df), not the gross. Net qult = 75 × 5.14 = 385.5 kPa (removing the overburden term since it is already present as existing soil pressure). qa,net = 385.5/3 = 128.5 kPa. Net applied pressure = 85/B - γ×Df = 85/0.7 - 20 = 101.4 kPa. This still works, but the methodology is wrong and would become non-conservative for deeper foundations or heavier loads where the overburden term is significant.",
+      "location_hint": "Factor of safety applied to gross bearing capacity including overburden."
+    },
+    {
+      "id": "f2",
+      "type": "settlement_calculation_error",
+      "description": "Estimating settlement using elastic theory for stiff clay is inappropriate and will significantly underestimate long-term settlement. Stiff overconsolidated clays exhibit: (1) immediate (undrained) settlement that can be estimated elastically, but (2) significant consolidation settlement as excess pore pressures dissipate, which requires oedometer-based consolidation analysis; and (3) on stiff fissured clays, the operational stiffness for settlement calculation is substantially lower than the intact stiffness measured in laboratory tests (fissure-opening effects). The 12mm estimate likely uses laboratory undrained stiffness (Eu ≈ 500-1000 × cu for stiff clay) but ignores consolidation settlement, which for stiff clays can equal or exceed the immediate settlement. Total settlement could be 20-30mm. Additionally, for a residential building, differential settlement (not just total) is the critical check.",
+      "location_hint": "Settlement of 12mm estimated using elastic theory on stiff clay."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Factor of safety must be applied to NET bearing capacity (excluding overburden surcharge), not gross. Applying FoS to gross capacity overestimates the true safety margin. Reference: Bowles, 'Foundation Analysis and Design', 5th ed., Chapter 4; BS EN 1997-1 Annex D. (2) Elastic theory underestimates settlement on stiff clay — consolidation settlement and fissure-opening effects are significant. Reference: Burland & Burbidge (1985); Atkinson, 'The Mechanics of Soils and Foundations', 2nd ed., Chapter 19."
+}

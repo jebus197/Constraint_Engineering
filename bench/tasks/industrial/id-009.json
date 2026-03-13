@@ -1,0 +1,20 @@
+{
+  "id": "id-009",
+  "domain": "industrial",
+  "prompt": "Design a surface treatment specification for a mild steel (S235JR) structural component that will be powder-coated for outdoor use in an industrial coastal environment (ISO 9223 corrosivity category C5-M). The component has laser-cut edges, welded joints, and drilled bolt holes.\n\nThe surface preparation consists of degreasing with solvent wipe followed by a phosphate conversion coating (iron phosphate). The powder coat is a single layer of polyester powder at 60-80µm dry film thickness (DFT), oven-cured at 200°C for 10 minutes. The target service life is 15 years to first maintenance. Please review the coating specification.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "surface_preparation_error",
+      "description": "For a C5-M (marine industrial) corrosive environment with a 15-year target life, iron phosphate conversion coating over solvent-wiped mild steel is grossly inadequate surface preparation. ISO 12944-4 and ISO 8501-1 require abrasive blast cleaning to a minimum of Sa 2½ (near-white metal) for high-durability coating systems in C5 environments. Iron phosphate is a lightweight conversion coating suitable for mild interior environments (C1-C2) where the powder coat provides the primary barrier. In C5-M, the surface preparation must remove all mill scale (which is cathodic to steel and drives galvanic corrosion at scale/steel interfaces), create a suitable surface profile for mechanical adhesion (Rz 50-85µm), and provide a conversion coating with real corrosion inhibition — typically zinc phosphate or chromate pretreatment after blast cleaning. Solvent wiping alone does not remove mill scale, rust, or create a surface profile.",
+      "location_hint": "Solvent wipe + iron phosphate preparation for C5-M coastal environment."
+    },
+    {
+      "id": "f2",
+      "type": "coating_system_error",
+      "description": "A single coat of polyester powder at 60-80µm DFT cannot achieve a 15-year service life in C5-M. ISO 12944-5 Table B.3 specifies minimum coating system requirements by corrosivity category and target durability. For C5-M with 'high' durability (>15 years), the standard requires a multi-coat system with a minimum total DFT of 320µm for organic coatings, typically comprising zinc-rich epoxy primer (60µm), epoxy intermediate coat (100-150µm), and polyurethane or polyester topcoat (60-80µm). Alternatively, a duplex system of hot-dip galvanising (minimum 85µm per ISO 1461) plus powder coat is effective. A single 60-80µm polyester coat provides no sacrificial corrosion protection at cut edges, bolt holes, or damage points — once the barrier is breached (impact, UV degradation, or edge recession), corrosion progresses uninhibited under the film. Polyester powder also has moderate UV resistance compared to fluoropolymer (PVDF) or polyurethane coatings.",
+      "location_hint": "Single coat polyester powder 60-80µm for 15-year life in C5-M environment."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Iron phosphate over solvent wipe is inadequate for C5-M. Blast cleaning to Sa 2½ minimum is required, with zinc phosphate or equivalent conversion coating. Reference: ISO 12944-4:2017; ISO 8501-1:2007; SSPC-SP10. (2) Single-coat polyester at 60-80µm cannot achieve 15-year durability in C5-M. Multi-coat system (320µm minimum) or duplex galvanise + paint is required. Reference: ISO 12944-5:2019 Table B.3; Hempel/Jotun coating specification guides for C5-M environments."
+}

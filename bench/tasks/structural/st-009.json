@@ -1,0 +1,20 @@
+{
+  "id": "st-009",
+  "domain": "structural",
+  "prompt": "Design a fillet welded connection between a steel beam (IPE 300, S275) and a column flange (HEB 260, S275). The beam transfers a design shear force of 250 kN and a design bending moment of 120 kN·m to the column. The connection uses 8mm fillet welds along both sides of the beam web, over the full web depth of 248mm (between root fillets). The beam flanges are not connected — only the web is welded to the column flange.\n\nThe weld capacity is calculated using the simplified method: the throat area of each weld run is a × L = 0.707 × 8 × 248 = 1402 mm² per side, total throat area = 2804 mm². For S275 steel with E42 electrodes (fu = 420 MPa), the weld design resistance per unit length is fw,Rd = fu/(√3 × βw × γM2) = 420/(1.732 × 0.85 × 1.25) = 228.4 N/mm². Please review the connection design.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "weld_capacity_error",
+      "description": "The weld throat dimension uses a = 0.707 × 8 = 5.66mm, which is the standard relationship for equal-leg fillet welds. This is correct. However, the capacity check only considers direct shear on the weld group. With a moment of 120 kN·m transferred through a web-only connection, the weld group must resist combined shear AND bending. The web welds form a rectangular weld group where bending produces a stress distribution varying linearly from the neutral axis. The combined stress at the extreme fibres is τ = √(τshear² + τbending²) where τshear = V/(2×a×L) and τbending = M×y/Iw. For M = 120 kN·m on a weld group with height 248mm: τbending = 120×10⁶ × 124 / (2 × 5.66 × 248³/12) = very high. The simplified shear-only check ignores the dominant stress component.",
+      "location_hint": "Weld capacity calculated for shear only, ignoring moment transfer through the web welds."
+    },
+    {
+      "id": "f2",
+      "type": "lamellar_tearing_risk",
+      "description": "Welding the beam web directly onto the column flange with 8mm fillet welds introduces a significant risk of lamellar tearing in the column flange. The beam moment and shear create through-thickness tensile stresses in the column flange material (perpendicular to the rolling direction). Lamellar tearing occurs when these through-thickness stresses exceed the weak short-transverse ductility of rolled steel sections. For HEB 260 with standard S275 steel (not Z-quality), the through-thickness properties are not guaranteed. BS EN 1993-1-10 and BS EN 10164 address this: for full-strength moment connections welded to column flanges, Z-quality steel with guaranteed through-thickness ductility (Z25 or Z35 grade per EN 10164) should be specified. This is particularly critical for thick flanges loaded in the through-thickness direction.",
+      "location_hint": "Beam web welded directly to HEB 260 column flange with moment transfer."
+    }
+  ],
+  "ground_truth_notes": "Two faults: (1) Web-only weld group must be checked for combined shear and bending, not shear alone. The moment component typically dominates and the resultant stress at extreme fibres can be 2-3× the shear-only stress. Reference: BS EN 1993-1-8 Clause 4.5.3; SCI P398 'Joints in Steel Construction: Moment-Resisting Joints'. (2) Through-thickness loading of column flanges risks lamellar tearing. Z-quality steel per BS EN 10164 should be specified. Reference: BS EN 1993-1-10 Clause 2.4; TWI lamellar tearing guidance."
+}
