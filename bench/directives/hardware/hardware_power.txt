@@ -1,0 +1,85 @@
+DOMAIN: Hardware Engineering — Power Electronics
+VERSION: 1.0
+DATE: 2026-03-14
+APPLICABLE STANDARDS: IEC 62368-1 (AV/ICT safety), IEC 60664-1 (insulation coordination), CISPR 32 (EMC)
+COMPONENT REFS: IRFP4568 (PD-97750), IKW40N120H3 IGBT (Infineon datasheet), TO-247 package thermal data
+
+[HARD constraints — non-negotiable]
+
+Thermal design — junction temperature must remain below absolute maximum:
+  T_j = T_a + P_diss * (R_theta_jc + R_theta_cs + R_theta_sa)
+  where R_theta_jc = junction-to-case (datasheet), R_theta_cs = case-to-sink (interface material),
+  R_theta_sa = sink-to-ambient (heatsink specification).
+  T_j,max is absolute maximum rated (e.g., 175C for SiC MOSFETs, 150C for Si MOSFETs).
+  Design target: T_j < T_j,max - 25C margin at worst-case ambient.
+
+Multiple devices on shared heatsink — thermal superposition:
+  T_j,n = T_a + P_n * (R_theta_jc,n + R_theta_cs,n) + R_theta_sa * sum(P_1..P_N)
+  Each device sees its own jc+cs path PLUS the shared heatsink loaded by ALL devices.
+  Thermal coupling between devices adds cross-heating (model with thermal resistance matrix
+  if devices are within 2x their footprint spacing on the heatsink).
+
+MOSFET and IGBT Safe Operating Area (SOA) must not be exceeded at any operating point.
+  SOA boundaries: max V_DS (or V_CE), max I_D (or I_C), max power hyperbola, secondary
+  breakdown limit (bipolar/IGBT), thermal limit for pulse duration.
+  Derate with temperature: R_DS(on) increases ~0.4%/C for Si MOSFETs (positive tempco).
+
+Switching losses per transition:
+  P_sw = 0.5 * V_DS * I_D * (t_on + t_off) * f_sw
+  where t_on, t_off from datasheet at specified gate resistance and V_GS.
+  Total switching loss scales linearly with frequency — primary efficiency limiter at f_sw > 100kHz.
+  Include reverse recovery loss of body diode or freewheeling diode:
+  P_rr = 0.5 * Q_rr * V_DS * f_sw
+
+Conduction losses:
+  MOSFETs: P_cond = I_rms^2 * R_DS(on) at operating T_j (use hot R_DS(on), not 25C value).
+  IGBTs: P_cond = V_CE(sat) * I_C_avg + r_CE * I_C_rms^2 (linearised model from datasheet curves).
+  For MOSFETs, R_DS(on) at 125C is typically 1.5-2x the 25C value.
+
+Snubber circuits required when switching inductive loads to limit dV/dt:
+  dV/dt < device dV/dt rating (typ. 5-50 V/ns depending on device).
+  RC snubber: C_snub >= I_peak * dt / dV_max, R_snub ~ sqrt(L_stray / C_snub).
+  Snubber dissipation: P_snub = 0.5 * C_snub * V_peak^2 * f_sw.
+  Voltage overshoot without snubber: V_spike = L_stray * dI/dt (can exceed V_DS,max).
+
+Creepage and clearance distances for mains-connected circuits:
+  Per IEC 62368-1 / IEC 60664-1, at 240Vrms working voltage, pollution degree 2:
+  Basic insulation: clearance >= 2.5mm, creepage >= 3.2mm (material group IIIb).
+  Reinforced insulation: double the basic values.
+  PCB slot widths count toward clearance only if >= 1mm wide.
+
+Conducted EMC emissions must comply with applicable standard:
+  CISPR 32 Class B (consumer/residential): 150kHz-30MHz, quasi-peak limits.
+  Common-mode choke + X/Y capacitors at mains input are baseline requirements.
+  Switching frequency and harmonics must fall below limit line.
+  Y-capacitor value limited by earth leakage current: I_leak = V_mains * 2*pi*f * C_Y < 3.5mA.
+
+[SOFT constraints — negotiable]
+
+Prefer integrated gate drivers for low/medium power (<1kW) — reduces component count, improves timing.
+Prefer SMD packages for production (reflow-compatible); TO-247/TO-220 acceptable for high-power.
+Target efficiency > 90% at rated load (achievable for most topologies above 50W).
+Prefer synchronous rectification over Schottky diodes above 5A output (lower conduction loss).
+Minimise loop area of high dI/dt paths (gate drive loop, power switching loop) for EMI.
+
+[Verification procedures]
+
+Calculate total power dissipation at worst-case operating point (max load, max ambient, max V_in):
+  P_total = P_cond + P_sw + P_gate + P_quiescent
+Verify heatsink thermal resistance is adequate for both steady-state AND transient conditions.
+  Transient thermal impedance (Z_theta_jc vs pulse duration) from datasheet for pulsed loads.
+Check gate drive voltage against MOSFET V_GS(th) specification:
+  V_GS_drive >= V_GS(th,max) + 2V for full enhancement (typically 10-12V for standard MOSFETs).
+  V_GS_drive <= V_GS,max (absolute maximum, typically +/-20V).
+Simulate inductive switching transients: verify voltage overshoot stays within V_DS,max.
+  Include parasitic inductance of PCB layout (estimate 1nH per mm of trace for power loop).
+Measure conducted emissions at prototype stage — pre-compliance scan before formal lab test.
+Verify thermal performance with IR camera or thermocouples at worst-case operating point.
+
+[Limitations]
+
+Does not cover high-voltage DC applications (>1kV — different insulation coordination, partial discharge).
+Does not cover battery management systems (BMS) — cell balancing, SoC estimation, safety cutoffs.
+Does not cover wireless power transfer (resonant coupling, Qi/AirFuel standards).
+Does not cover grid-tied inverters (anti-islanding, grid code compliance, power quality standards).
+Does not cover GaN/SiC-specific gate drive requirements (different threshold, dV/dt sensitivity).

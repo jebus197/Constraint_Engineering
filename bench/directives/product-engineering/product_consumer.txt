@@ -1,0 +1,60 @@
+DIRECTIVE: Consumer Products — CE/UL Compliance
+DOMAIN: Product Engineering
+SCOPE: Consumer electronics and electrical products for EU and North American markets
+STANDARDS: LVD 2014/35/EU, EMC 2014/30/EU, RoHS 2011/65/EU, REACH EC 1907/2006,
+           IEC 62368-1, UN 38.3, IEC 62133-2, IEC 60529
+
+[HARD constraints — non-negotiable]
+1. CE marking mandatory for EU market: product must comply with ALL applicable directives
+   (LVD 2014/35/EU, EMC 2014/30/EU, RoHS 2011/65/EU, WEEE, RED 2014/53/EU if wireless).
+   Missing a single applicable directive invalidates the CE mark entirely.
+2. UL/CSA listing required for North American market — product must be tested and certified
+   by an NRTL (Nationally Recognized Testing Lab) to the applicable standard.
+3. RoHS compliance in homogeneous materials:
+   Pb <= 1000 ppm, Cd <= 100 ppm, Hg <= 1000 ppm, Cr(VI) <= 1000 ppm,
+   PBB <= 1000 ppm, PBDE <= 1000 ppm.
+   Four phthalates (DEHP, BBP, DBP, DIBP) each <= 1000 ppm per 2015/863/EU amendment.
+4. REACH: any SVHC present at > 0.1% w/w in any article must be declared to ECHA
+   and communicated down the supply chain. Candidate list updates biannually.
+5. IEC 62368-1 replaces IEC 60065 and IEC 60950-1 for audio/video/IT equipment safety.
+   Hazard-based safety engineering: classify energy sources (ES1/ES2/ES3), apply safeguards.
+6. Drop test per IEC 60068-2-31 or product-specific standard: product must survive specified
+   drop height onto specified surface without creating a safety hazard.
+7. Battery safety: UN 38.3 transport testing mandatory for all lithium cells and batteries
+   (8 tests: altitude, thermal, shock, short circuit, impact, overcharge, forced discharge,
+   external fire). IEC 62133-2 for lithium battery safety in the finished product.
+8. Product labelling: manufacturer name and registered address, CE mark (min 5 mm height,
+   correct proportions per EU regulation), power ratings, safety warnings in official
+   language(s) of each target market.
+9. Declaration of Conformity (DoC) must exist per product type — a legal document signed by
+   the manufacturer or authorised representative, listing all applicable directives and
+   harmonised standards applied. Must be available to market surveillance authorities on request.
+10. EMC: product must not cause electromagnetic interference exceeding limits (emissions)
+    and must operate correctly in the presence of expected interference (immunity).
+    Radiated emissions limits per CISPR 32: Class B (residential) tighter than Class A.
+
+[SOFT constraints — negotiable]
+1. Prefer IP54 minimum for outdoor/wet-environment products (IEC 60529).
+2. Design for disassembly in anticipation of EU ESPR requirements.
+3. Target product design lifetime >= 1.5x warranty period.
+4. Prefer recyclable or mono-material packaging for EPR obligations.
+5. Prefer third-party verified recycled content declarations for plastics.
+
+[Verification procedures]
+1. Confirm all applicable directives identified for every target market —
+   missed directives are the most common compliance failure.
+2. Verify material declarations (RoHS/REACH) from all suppliers.
+   Self-declarations alone insufficient for high-risk materials — request third-party reports.
+3. Check test reports cover actual mass-production configuration, not prototype.
+4. Confirm labelling per market: language, symbols, font size, durability over product life.
+5. Verify DoC lists correct edition of each harmonised standard —
+   citing a withdrawn standard invalidates the presumption of conformity.
+6. Confirm EMC test setup matches intended installation conditions
+   (cable lengths, peripheral configuration, operating mode).
+
+[Limitations]
+1. Does not cover toys (EN 71), cosmetics, or food-contact materials.
+2. Does not cover machinery (2006/42/EC) or PPE (EU 2016/425).
+3. Does not cover medical devices (MDR 2017/745) or IVDs (IVDR 2017/746).
+4. Does not address requirements outside EU and North America (CCC, BIS, KC, PSE, etc.).
+5. REACH candidate list and RoHS exemptions are time-dependent.

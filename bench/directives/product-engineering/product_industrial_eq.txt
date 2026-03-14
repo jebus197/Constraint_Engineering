@@ -1,0 +1,59 @@
+DIRECTIVE: Industrial Equipment
+DOMAIN: Product Engineering
+SCOPE: Industrial machinery and equipment for EU and US markets
+STANDARDS: Machinery Directive 2006/42/EC, ISO 12100, ISO 13849-1,
+           ISO 13850, ISO 14119, ISO 13857, 2003/10/EC, ANSI/NFPA 79
+
+[HARD constraints — non-negotiable]
+1. Machinery Directive 2006/42/EC (EU) or OSHA 29 CFR 1910 Subpart O (US):
+   documented risk assessment mandatory before design finalisation.
+   The risk assessment drives the design — not the reverse.
+2. ISO 12100 risk reduction hierarchy is binding in sequence:
+   (a) inherently safe design measures,
+   (b) safeguarding and complementary protective measures,
+   (c) information for use (warnings, instructions).
+   You cannot substitute warnings for guards where guarding is achievable.
+3. Emergency stop per ISO 13850: Category 0 (uncontrolled) or Category 1 (controlled).
+   Must be directly hardwired to power contactors — must NOT depend on software,
+   PLC logic, or network communication.
+4. Guard interlocking per ISO 14119: safety-rated switches (not standard limit switches),
+   monitored by safety relay or safety PLC (not standard PLC),
+   designed to resist defeat (coded actuators, concealed mounting).
+5. Safety distances per ISO 13857: reaching over/through protective structures.
+   Values are tabulated — interpolation between table entries is not permitted.
+   guard_height + safety_distance must prevent access to danger zone.
+6. Noise: declare L_pA and L_WA. Exposure limits per 2003/10/EC:
+   L_EX,8h = 80 dB(A) lower, 85 dB(A) upper, 87 dB(A) limit (at ear with HPD).
+7. Functional safety per ISO 13849-1:
+   PL_r = f(severity S, frequency F, possibility of avoidance P).
+   Achieved PL >= PL_r, verified by calculation: PL = f(MTTFd, DCavg, CCF, category).
+   CCF scored against checklist (>= 65 points required).
+8. CE Declaration of Conformity: signed by an authorised natural person.
+9. Technical file retained 10 years after last unit manufactured.
+10. Electrical equipment per EN 60204-1 (EU) or NFPA 79 (US):
+    main disconnect, overcurrent protection, grounding, control circuit protection.
+
+[SOFT constraints — negotiable]
+1. Prefer ISO 14001 certified suppliers — increasingly required by end customers.
+2. Design for maintainability: common fasteners, accessible service points,
+   LOTO points clearly identified and documented.
+3. Target MTBF consistent with production schedule — do not conflate with design life.
+4. Prefer modular design for partial line upgrades.
+
+[Verification procedures]
+1. Risk assessment must cover all lifecycle phases: transport, installation,
+   commissioning, all operating modes, maintenance, cleaning, decommissioning.
+2. Verify PL calculation per safety function: MTTFd from manufacturer data,
+   DCavg reflects implemented diagnostics, CCF documented, category matches circuit.
+3. Confirm guard dimensions meet ISO 13857 reach distances for applicable body part.
+4. Noise declaration based on measured data per ISO 3744 or 3746 — not estimated.
+5. Verify e-stop circuit independence from control system —
+   trace hardwired path from button to power contactors.
+6. Confirm all safety devices are listed/certified to applicable standards.
+
+[Limitations]
+1. Does not cover ATEX equipment (Directive 2014/34/EU).
+2. Does not cover pressure equipment (PED 2014/68/EU).
+3. Does not cover lifting equipment (Machinery Directive Annex IV, EN 13155/14492).
+4. Does not cover process safety instrumented systems (IEC 61511 / IEC 61508).
+5. Does not cover robot integration (ISO 10218-1/2, ISO/TS 15066).

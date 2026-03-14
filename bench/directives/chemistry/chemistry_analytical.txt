@@ -1,0 +1,60 @@
+DOMAIN: Chemistry — Analytical Method Validation
+CODES: ICH Q2(R2) (Analytical Validation), USP <1225>, USP <621> (Chromatography),
+       Ph. Eur. 2.2.46, 21 CFR Part 11 / Annex 11 (Data Integrity)
+VERSION: 1.0
+SCOPE: HPLC and UV-Vis methods for pharmaceutical release and stability testing,
+       small-molecule analytes, GMP-validated methods
+
+[HARD constraints — non-negotiable]
+
+Method validation per ICH Q2(R2) must demonstrate: accuracy, precision
+  (repeatability + intermediate), specificity, linearity, range, LOD, LOQ.
+  Robustness evaluated during development; validated if critical.
+Linearity: R^2 >= 0.999 across validated range (typically 80-120% nominal for
+  assay, LOQ-120% of spec limit for impurities). y-intercept bias <= 2% of
+  target response.
+System suitability per USP <621>:
+  Precision: RSD of >= 5 replicate injections <= 2.0% (area).
+  Tailing factor: T = W_0.05 / (2 * f) <= 2.0.
+  Resolution: R_s = 2 * (t_R2 - t_R1) / (W_1 + W_2) >= 2.0.
+  Theoretical plates: N = 16 * (t_R / W)^2, typically N >= 2000.
+Detection and quantitation limits:
+  LOD = 3.3 * sigma / S; LOQ = 10 * sigma / S
+  where sigma = SD of response (blank or regression residual), S = calibration
+  slope. LOQ verified by accuracy (80-120% recovery) and precision (RSD <= 10%).
+Mass balance in forced degradation:
+  assay + degradation products + residual >= 95% of initial material.
+  Target 5-20% degradation per stress condition (acid, base, oxidative,
+  thermal, photolytic per ICH Q1B). Over-degradation obscures the profile.
+Reference standard purity characterised by independent absolute method
+  (DSC, qNMR, or mass balance). Purity factor applied to all calculations:
+  True_conc = weighed_conc * (purity / 100).
+Beer-Lambert law: A = epsilon * l * c. Linear range valid only in dilute
+  solution. Deviations expected above A ~ 1.5 (stray light) and below
+  A ~ 0.1 (noise-dominated). Verify linearity experimentally.
+Data integrity: ALCOA+ principles. Electronic records per 21 CFR Part 11 /
+  Annex 11. Audit trail enabled and reviewed; no data deletion permitted.
+
+[SOFT constraints — negotiable]
+
+Prefer validated pharmacopoeial methods (USP, EP, JP) where available.
+Prefer HPLC over GC for non-volatile analytes (no derivatisation needed).
+Target run time < 15 min for routine release testing. UHPLC acceptable.
+Prefer gradient for impurity methods, isocratic for simple assay.
+
+[Verification procedures]
+
+Confirm calibration range brackets all expected sample concentrations —
+  no extrapolation beyond validated range permitted.
+Verify forced degradation blanks (stressed matrix without analyte) to
+  exclude artefact peaks from the degradation profile.
+Confirm sample preparation does not introduce bias: test filter adsorption,
+  extraction recovery, solution stability over the analytical window.
+Verify intermediate precision: different analyst, day, instrument where
+  possible. RSD <= 2.0% (assay), <= 10% (at LOQ).
+
+[Limitations]
+
+Does not cover LC-MS/MS (distinct selectivity/matrix effect requirements).
+Does not cover qNMR, biological assays (ELISA, cell-based), or ICP-MS/OES.
+Does not cover environmental analysis (EPA methods) or dissolution (USP <711>).

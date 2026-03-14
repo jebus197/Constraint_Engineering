@@ -1,0 +1,48 @@
+Domain: Distributed Systems
+Version: 1.0
+Date: 2026-03-14
+References: Brewer (2000) CAP theorem, Lamport (1978) clocks, Raft/Paxos consensus literature
+
+[HARD constraints — non-negotiable]
+1. CAP theorem: a distributed system cannot simultaneously guarantee Consistency,
+   Availability, and Partition tolerance. Must choose CP or AP per data path.
+2. Network partitions WILL occur in any multi-node deployment. Designs that treat
+   partitions as edge cases are incorrect by construction.
+3. Clock synchronisation: NTP accuracy is typically +/-1-10ms WAN, +/-0.5ms LAN.
+   System.currentTimeMillis() / gettimeofday() are NOT monotonic (NTP step/slew).
+   Use monotonic clocks for elapsed time: clock_gettime(CLOCK_MONOTONIC),
+   System.nanoTime(), or equivalent. Wall clocks are for human display only.
+4. Distributed rate limiting: per-instance counters do NOT enforce global limits.
+   With N instances each configured at limit L, actual throughput ceiling = N * L.
+   Global enforcement requires a shared counter (Redis, token bucket service, etc.).
+5. Idempotency required for any operation subject to retry. A network timeout does
+   NOT imply the operation failed — it may have succeeded. All mutating endpoints
+   must accept and deduplicate on an idempotency key.
+6. Consensus requires strict majority quorum: >N/2 nodes must agree. A 3-node
+   cluster tolerates 1 failure. A 5-node cluster tolerates 2. Even-numbered
+   clusters provide no additional fault tolerance over N-1 nodes.
+7. Replication lag: reads from replicas may return stale data. The consistency
+   model (strong, eventual, causal, read-your-writes) must be specified per
+   operation, not assumed.
+8. Two Generals Problem: no protocol can guarantee agreement over an unreliable
+   channel in finite messages. At-least-once + idempotency is the practical floor.
+
+[SOFT constraints — negotiable]
+- Prefer eventual consistency where business logic permits (reduces latency, improves availability).
+- Prefer circuit breakers (Hystrix pattern) over unbounded retries to prevent cascade failure.
+- Target p99 latency, not mean — mean hides tail latency that causes user-visible failures.
+- Prefer explicit timeout budgets per call chain (deadline propagation) over per-hop timeouts.
+
+[Verification procedures]
+- Confirm every network call has an explicit timeout (no default infinity).
+- Verify idempotency keys exist on all mutating operations; test with duplicate delivery.
+- Check rate limits are enforced globally: spin up N instances and verify aggregate throughput.
+- Confirm failure modes are handled explicitly — catch-and-log-only is NOT handling.
+- Inject network partitions (Jepsen-style) and verify system behaviour matches stated consistency model.
+- Verify clock usage: grep for wall-clock calls in latency/ordering code paths.
+
+[Limitations]
+- Does not cover blockchain/consensus protocol design.
+- Does not cover hard real-time distributed systems (bounded deadlines).
+- Does not cover embedded distributed systems or mesh networks.
+- Does not cover formal verification of distributed algorithms (TLA+, Coq).

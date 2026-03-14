@@ -1,0 +1,55 @@
+Domain: Maritime Shipping and Container Logistics
+Version: 1.0
+Date: 2026-03-14
+References: SOLAS (VGM amendment 2016), IMDG Code, CSS Code, ISM Code, Suez Canal Authority regulations
+
+[HARD constraints — non-negotiable]
+1. Vessel draft must not exceed channel, port, or berth limits at any point in the
+   rotation. Key constraints: Suez Canal max 16.0m (varies by beam — SCA tables),
+   Panama Canal Neopanamax locks 15.2m TFW, Singapore Strait ~21m, Malacca Strait
+   ~20.5m. Draft changes with fuel consumption, ballast, and cargo operations.
+2. Container weight limits per ISO 668/ISO 1496-1: 20ft and 40ft standard max gross
+   mass = 30,480 kg. Individual bay stack weight limits per vessel's bay plan and
+   Classification Society approval — exceeding stack weight risks structural failure.
+3. IMO Dangerous Goods (IMDG Code): the segregation table (Chapter 7.2) governs
+   which hazmat classes may share container, hold, or on-deck positions. Violations
+   are criminal offences in most jurisdictions. Stowage category must match.
+4. SOLAS VGM (Verified Gross Mass): since 1 July 2016, every packed container must
+   have a verified gross mass before vessel loading. Bill of Lading must accurately
+   state cargo weight. Non-compliance = container refused for loading.
+5. Transit time realism: Suez Canal transit ~12-16 hours (not days). Shanghai to
+   Rotterdam via Suez ~25-30 sailing days at 14-16 knots (not 14 days). Cape of
+   Good Hope adds ~8-10 days. Any model using unrealistic transit times is wrong.
+6. Bunker fuel consumption scales approximately with v^3 (cubic law from hull
+   resistance physics). Slow steaming from 24kn to 18kn reduces consumption by
+   ~58% per day (though voyage duration increases). Optimum speed balances fuel
+   cost against time cost and charter rate.
+7. Demurrage/despatch: laytime calculation method must be specified in the charter
+   party. SHINC (Sundays and Holidays Included), SHEX (Sundays and Holidays
+   Excluded), WWD (Weather Working Days) yield materially different results.
+   Demurrage accrues from laytime expiry at the contractual daily rate.
+8. Cargo securing per CSS Code: lashing forces must exceed calculated forces from
+   ship motion accelerations (roll, pitch, heave). Under-secured cargo = structural
+   damage, loss of life, or loss of vessel.
+
+[SOFT constraints — negotiable]
+- Prefer FCL over LCL for high-value cargo (reduces handling, damage, and pilferage risk).
+- Prefer direct service over transhipment where schedule permits (each tranship adds 1-3 days + handling risk).
+- Target 2-day port buffer for weather delays and congestion at major hub ports.
+- Prefer slot booking with schedule reliability data (carrier OTDP benchmarks).
+
+[Verification procedures]
+- Verify vessel draft against ALL ports and channels in the rotation, not just origin/destination.
+  Account for intermediate bunkering, ballast changes, and tidal windows.
+- Check that transit time estimates use realistic service speed (12-18 knots), not maximum speed.
+- Confirm IMDG segregation compliance for every DG container pair in the stowage plan.
+- Verify container stack weights do not exceed limits for the specific bay and tier position.
+- Check that VGM documentation is complete before cut-off.
+- Validate ETA calculations include canal waiting time (Suez convoy scheduling, Panama slot booking).
+
+[Limitations]
+- Does not cover tanker operations (VLCC, chemical, LNG/LPG carriers).
+- Does not cover dry bulk cargo (grain trimming, ore density, liquefaction risk).
+- Does not cover passenger vessel regulations (SOLAS Chapter II-1 subdivision).
+- Does not cover inland waterway transport or short-sea shipping.
+- Does not cover naval architecture or vessel design.

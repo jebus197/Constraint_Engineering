@@ -1,0 +1,59 @@
+DIRECTIVE: Software-Hardware Interface
+DOMAIN: Cross-Domain (Embedded Software + Digital Hardware)
+SCOPE: Register-level and peripheral interface between software and hardware in embedded systems
+STANDARDS: ARM AMBA/AHB/APB, I2C (NXP UM10204), SPI (de facto standard),
+           JEDEC memory standards, MISRA C:2012, ISO/IEC 9899:2018
+
+[HARD constraints — non-negotiable]
+1. Hardware register access: must use volatile-qualified pointers (C/C++) or
+   equivalent (Rust: read_volatile/write_volatile). Without volatile, compiler
+   may cache, reorder, or eliminate accesses. Correctness, not style.
+2. Bit-field struct layout is implementation-defined (ISO/IEC 9899:2018 s6.7.2.1):
+   bit ordering, padding, alignment vary by compiler and architecture.
+   Use explicit shift/mask: REG = (REG & ~(MASK << SHIFT)) | ((value & MASK) << SHIFT).
+3. Endianness: byte order must match between processor and peripheral at every interface.
+   If mismatched, explicit byte-swap required.
+   Common failure: network data (big-endian) on little-endian ARM without ntohl/ntohs.
+4. DMA coherency: DMA bypasses CPU cache. Flush before DMA write (mem->periph),
+   invalidate before read (periph->mem). Without HW coherency = silent corruption.
+5. Clock domain crossing: signals between clock domains must be synchronised.
+   Single-bit: double flip-flop synchroniser (2 destination-clock cycles latency).
+   Multi-bit: async FIFO with Gray-coded pointers, or handshake protocol.
+   Synchronising individual bits of a multi-bit bus causes data incoherency.
+6. I2C bus capacitance: <= 400 pF (standard 100 kHz), <= 550 pF (fast 400 kHz).
+   Each device + connector + trace contributes. Exceeding = rise-time/NAK failures.
+7. SPI mode: CPOL and CPHA must match between master and each slave.
+   4 modes (0-3), only one correct per device (see datasheet timing diagram).
+   Wrong mode causes bit-shifted data — deterministic but non-obvious failure.
+8. Interrupt source clearing: hardware interrupt flag must be cleared in ISR
+   before return. If source remains asserted, interrupt re-fires immediately,
+   creating infinite loop. Some peripherals clear-on-read; others require write-to-clear.
+9. Stack overflow in ISR context: nested interrupts compound stack usage.
+   Worst-case stack depth must be statically analysed — overflow is unrecoverable.
+
+[SOFT constraints — negotiable]
+1. Prefer HAL to isolate application code from registers — portability + testability.
+2. Prefer DMA over polled I/O above ~1 Mbit/s sustained throughput.
+3. Document all register addresses and bit positions with named constants.
+   Prefer auto-generated headers from SVD/IP-XACT where available.
+4. Prefer hardware flow control (RTS/CTS) for UART above 115200 baud.
+5. Prefer watchdog timer (hardware, not software) for fault recovery in unattended systems.
+
+[Verification procedures]
+1. Static analysis: verify all register accesses use volatile/MMIO-safe accessors.
+2. Verify endianness handling at every external interface:
+   network, flash, inter-processor, debug/trace.
+3. Confirm DMA buffers in non-cacheable regions or bracketed by cache maintenance.
+   Check alignment to cache line size (typically 32 or 64 bytes).
+4. Check SPI CPOL/CPHA against each slave datasheet.
+   Oscilloscope capture recommended — wrong mode produces valid-looking bad data.
+5. Review all ISRs: source cleared, execution time bounded, shared data synchronised
+   (volatile + interrupt-disable or atomic operations).
+6. Verify worst-case stack covers main + ISR + nested ISR depths with margin.
+
+[Limitations]
+1. Does not cover FPGA/ASIC RTL design (timing closure, synthesis, formal verification).
+2. Does not cover high-speed serial protocols (PCIe, USB 3.x, Ethernet PHY).
+3. Does not cover wireless protocol stacks (BLE, WiFi, LoRa).
+4. Does not cover secure boot, root-of-trust, or TEE (TrustZone, SGX).
+5. MISRA C:2012 and CERT C cover broader embedded coding — this is HW interface only.

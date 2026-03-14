@@ -1,0 +1,52 @@
+DOMAIN: Chemistry — Process Chemistry / Scale-Up
+CODES: ATEX 2014/34/EU, DSEAR 2002, ASME BPV VIII, PED 2014/68/EU, DIERS
+VERSION: 1.0
+SCOPE: Batch/semi-batch organic synthesis, 1 L to 10 m3, non-cryogenic (>-78C),
+       non-polymerisation, conventional solvents
+
+[HARD constraints — non-negotiable]
+
+Exothermic reactions require semi-batch operation with metered addition.
+  Bulk-addition removes dose control — the sole safeguard against runaway.
+Heat removal must exceed heat generation at maximum rate:
+  Q_removal = U * A * dT_lm >= Q_rxn,max = r_max * (-dH_rxn) * V
+  U = overall HTC (W/m2K), A = wetted jacket area, dT_lm = log-mean delta-T.
+Adiabatic temperature rise per exothermic step:
+  dT_ad = (-dH_rxn * C_0) / (rho * C_p)
+  dT_ad > 50 K = high hazard (Stoessel criticality >= 3); requires independent
+  secondary protection (bursting disc, quench system).
+Scale-up of mixing — geometric similarity does NOT preserve mixing regime:
+  Re = (N * D^2 * rho) / mu; constant tip speed gives decreasing Re/V.
+  Constant P/V = N_p * rho * N^3 * D^5 / V gives different blend times.
+  Mixing-sensitive reactions require CFD or empirical correlation at each scale.
+Gas evolution rate must not exceed condenser/scrubber capacity:
+  V_gas(STP) = n_gas * R * T / P. Vent sizing per DIERS two-phase methodology.
+Solvent flash point vs process temperature: >= 10C margin (T_proc < T_flash - 10),
+  or inert atmosphere mandatory (N2 blanket, O2 < 5 vol%). Ref: NFPA 30.
+ATEX/DSEAR zone classification mandatory for flammable solvents (FP < 60C).
+  Equipment must carry Ex rating for the classified zone (0, 1, or 2).
+MAWP of reactor must exceed maximum expected pressure including runaway:
+  P_max,runaway <= MAWP / 1.5. If exceeded, relief sizing per API 520/521.
+Solvent-material compatibility: HCl corrodes SS; HF attacks glass lining;
+  strong bases degrade borosilicate. Ref: DECHEMA corrosion tables.
+
+[SOFT constraints — negotiable]
+
+Prefer continuous flow for highly exothermic reactions (dT_ad > 100 K).
+Prefer aqueous or bio-derived solvents where performance allows.
+Minimise isolation steps (filtration, drying) — yield loss + exposure risk.
+Target E-factor < 25 (fine chemicals), < 100 (pharma) per Sheldon.
+
+[Verification procedures]
+
+Calculate dT_ad for every exothermic step; flag any > 50 K.
+Verify heat transfer area sufficient at scale — recalculate U with fouling.
+Check vent sizing for worst-case gas evolution (DIERS two-phase flow).
+Confirm solvent-material compatibility vs pH, temperature, halide content.
+Verify mixing: blend time < 5% of reaction half-life for kinetic control.
+
+[Limitations]
+
+Does not cover polymerisation (distinct runaway kinetics, viscosity effects).
+Does not cover biotransformations, photochemistry, or electrochemistry.
+Does not cover cryogenic reactions below -78C or supercritical fluid processes.

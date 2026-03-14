@@ -1,0 +1,60 @@
+DIRECTIVE: Mechanical-Electrical Interface
+DOMAIN: Cross-Domain (Mechanical + Electrical/Electronic)
+SCOPE: Physical integration of electronic assemblies — connectors, cabling, enclosures, EMI
+STANDARDS: IEC 60529, IEC 60068-2 series, ASTM B488, IPC-TM-650,
+           MIL-STD-810, IEC 61000-5-7, CISPR 32
+
+[HARD constraints — non-negotiable]
+1. Connector mating force must not exceed PCB retention strength (TH/SMT/press-fit).
+   Exceeding causes pad lift, via fracture, or delamination.
+   Verify: connector datasheet vs IPC-TM-650 2.4.21 pad pull strength.
+2. Cable bend radius: minimum per cable specification.
+   Dynamic (repeated flex): >= 4x outer diameter.
+   Coaxial: 6-10x outer diameter. Single flex-to-install: >= 1x.
+   Violating bend radius damages conductors/shielding — intermittent field failures.
+3. Vibration: PCB f_n must not coincide with excitation frequencies.
+   Rectangular plate: f_n = (pi/2)*sqrt(D/(rho*h*a^4)), D = E*h^3/(12*(1-nu^2)).
+   If f_n in excitation band: stiffen or damp. FEA for complex geometries.
+4. Connector contact wear: gold plating thickness determines rated mating cycles.
+   Per ASTM B488 Type I (hard gold, >= 99.7% Au with Co/Ni hardener):
+   0.2 um ~ 50 cycles, 0.8 um ~ 500 cycles, 1.27 um ~ 1000+ cycles.
+   Insufficient plating causes contact resistance increase and intermittent connections.
+5. IP rating per IEC 60529: IP65 = dust-tight + jet, IP67 = dust-tight + immersion.
+   Gasket compression 20-30% (solid) / 40-60% (foam). Surface Ra <= 1.6 um for seals.
+6. Thermal expansion mismatch:
+   delta_epsilon = (alpha_1 - alpha_2) * delta_T
+   CTE of FR4: 14-18 ppm/C in-plane, 40-70 ppm/C z-axis.
+   Alumina ceramic: 6-7 ppm/C. Silicon die: 2.6 ppm/C.
+   Mismatch stresses solder joints — fatigue life per Coffin-Manson (see thermal directive).
+7. EMI shielding: SE(dB) = 20*log10(E_i/E_t). Max aperture <= lambda/20.
+   At 1 GHz: 15 mm max. At 10 GHz: 1.5 mm. Small holes leak less than one large hole.
+8. Strain relief at cable entry: cable secured so no flexing at solder/crimp/IDC joint.
+   Must withstand rated pull force without loading termination.
+9. Creepage and clearance per IEC 60664-1: minimum distances determined by
+   working voltage, pollution degree, material group. Insufficient = arc/tracking risk.
+
+[SOFT constraints — negotiable]
+1. Prefer keyed/polarised connectors to prevent mis-mating.
+   Colour-coding and labelling are supplementary, not primary, anti-error measures.
+2. Prefer board-to-board connectors over wire harnesses where volume permits.
+3. Cable routing: clearance from moving parts >= cable OD + displacement + tolerance.
+4. Prefer captive fasteners for field-serviceable enclosures.
+5. Prefer conformal coating (IPC-CC-830) in humid/contaminated environments.
+
+[Verification procedures]
+1. Check connector retention vs mating force and cable pull (axial + lateral).
+2. Verify thermal expansion for full operating range — worst-case CTE values.
+   Particular attention to large BGA/ceramic where DNP amplifies strain.
+3. Confirm IP rating test covers actual installation orientation —
+   water ingress is direction-dependent under IEC 60529.
+4. Check vibration analysis covers installed environment profile.
+   Confirm PCB f_n does not coincide with dominant excitation frequencies.
+5. Verify EMI: max aperture vs lambda/20 at highest frequency.
+   Check gasket-sealed joints maintain conductivity across seam.
+
+[Limitations]
+1. Does not cover high-voltage connectors (> 1 kV) — arc-flash requirements apply.
+2. Does not cover fibre optic interfaces — different rules and cleanliness requirements.
+3. Does not cover fluid/pneumatic connections to electronic assemblies.
+4. Does not cover MEMS packaging — different scale and failure modes.
+5. MIL/aerospace (MIL-DTL-38999, MIL-STD-810) impose additional requirements.

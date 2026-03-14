@@ -1,0 +1,85 @@
+DOMAIN: Structural Engineering — Bridge Design
+CODES: BS EN 1991-2 (Traffic loads), BS EN 1992-2 (Concrete bridges),
+       BS EN 1993-2 (Steel bridges), BS EN 1993-1-9 (Fatigue),
+       BS EN 1991-1-5 (Thermal), CD 350 (DMRB geometric design)
+VERSION: 1.0
+SCOPE: Highway bridges (road traffic), steel/composite/concrete, single and
+       multi-span, non-seismic regions, spans up to ~60m
+
+[HARD constraints — non-negotiable]
+
+Load Model 1 (LM1) per BS EN 1991-2, Table 4.2:
+  Lane 1: tandem axle = 2 x 300 kN (alpha_Q1 = 1.0), UDL = 9.0 kN/m^2
+  Lane 2: tandem axle = 2 x 200 kN, UDL = 2.5 kN/m^2
+  Lane 3: tandem axle = 2 x 100 kN, UDL = 2.5 kN/m^2
+  Remaining area: UDL = 2.5 kN/m^2, no tandem.
+  Tandem axle spacing = 1.2m, wheel contact = 0.4m x 0.4m.
+
+Dynamic amplification: included within LM1 characteristic values (no separate
+  DAF for LM1). For LM2 (single axle = 400 kN), DAF is also included.
+  Braking/acceleration: F_braking = 0.6 * alpha_Q1 * 2*Q_1k + 0.1 * alpha_q1 *
+  q_1k * w_1 * L, bounded 180 kN <= F <= 900 kN.
+
+Fatigue verification mandatory for steel and composite bridges:
+  BS EN 1993-1-9, detail categories (e.g. Category 71 for fillet welds,
+  Category 160 for base metal). Fatigue strength at 2*10^6 cycles:
+  Delta_sigma_R = Delta_sigma_C * (2*10^6 / N)^(1/m), m=3 for N<=5*10^6.
+  Damage equivalent factor lambda per BS EN 1993-2, Annex A.
+
+Durability — exposure class per BS EN 1992-1-1, Table 4.1:
+  XD3 (cyclic wet/dry with de-icing salts) typical for UK highway bridges.
+  XC3/XC4 for sheltered/exposed concrete surfaces.
+  Minimum cover: c_min = c_min,b + c_min,dur + Delta_c_dur.
+  Typical: 45mm (XD3 with C40/50, 100-year design life per BS EN 1992-2 NA).
+
+Thermal actions (BS EN 1991-1-5):
+  Bearing design must accommodate expansion: Delta_L = alpha_T * Delta_T * L
+  alpha_T = 12 x 10^-6 /degC (steel), 10 x 10^-6 /degC (concrete).
+  Uniform temperature range: T_max - T_min from isotherm maps (UK NA).
+  Differential temperature: nonlinear profiles per BS EN 1991-1-5, 6.1.4.
+
+Deck drainage: crossfall >= 1:40 (2.5%). Longitudinal gradient >= 0.5% at sag
+  points. Drainage capacity for 1-in-5-year storm (or per client requirement).
+
+Parapet containment level per CD 377 (DMRB):
+  N1 (low containment): minor roads, low speed.
+  N2 (normal): standard highways.
+  H2/H4a (high): motorways, high-speed dual carriageways.
+  Parapet must be crash-tested to the specified level — analysis alone is
+  insufficient. Anchorage must resist the test load without structural failure.
+
+[SOFT constraints — negotiable]
+
+Aesthetic considerations: depth-to-span ratio, parapet transparency, pier shape.
+Construction method: precast segmental vs cast-in-situ vs steel-concrete composite.
+  Choice affects temporary works, programme, and traffic management.
+Maintenance access: inspection walkways, bearing replacement clearance, painting
+  access for steel. Prefer weathering steel (Corten) to reduce repainting needs.
+Joint minimisation: integral bridges eliminate expansion joints where feasible
+  (typically spans < 60m, skew < 30 degrees).
+
+[Verification procedures]
+
+Load combination completeness: check all groups (gr1a through gr5) including
+  thermal + traffic, wind + traffic, accidental (vehicle impact on piers).
+Fatigue life: verify that cumulative damage D = SUM(n_i / N_i) <= 1.0 under
+  Fatigue Load Model 3 (or 4 for refined analysis), using detail categories
+  appropriate to actual weld/connection details — not parent metal defaults.
+Bearing travel: confirm specified bearing movement range >= alpha_T * Delta_T * L
+  plus construction tolerance. Check rotational capacity at bearings.
+Parapet certification: confirm parapet system holds valid crash test certificate
+  to the required containment level. Anchorage forces from test report, not
+  from simplified analysis.
+Reinforcement detailing: verify cover, spacing, lap lengths, and anchorage
+  against exposure class and specified design life (typically 120 years).
+
+[Limitations]
+
+Does not cover cable-stayed or suspension bridges (different load paths,
+  cable fatigue, wind-induced oscillation — specialist analysis required).
+Does not cover moveable bridges (bascule, swing, lift).
+Not applicable to rail bridges — different load models (LM71, SW/0, SW/2
+  per BS EN 1991-2, 6.3) and dynamic factors.
+Does not address seismic design (BS EN 1998-2 required separately).
+Does not cover substructure/foundation design beyond bearing reactions.
+Does not address assessment of existing bridges (CS 454, BD 21/01).

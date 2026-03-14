@@ -1,0 +1,40 @@
+DOMAIN: Pharmaceutical Formulation (Small Molecule, Solid & Liquid Dosage Forms)
+STANDARDS: USP, ICH Q1A-Q1E, ICH Q8-Q10, 21 CFR 210/211, EU GMP
+VERSION: 1.0
+SCOPE: Oral solid, oral liquid, and parenteral formulations — conventional small molecules
+
+[HARD constraints — non-negotiable]
+- Dissolution testing per USP <711>: must meet specification (typically Q >= 80% dissolved in 30 min for immediate-release tablets using Apparatus II at 50 rpm)
+- Stability testing per ICH Q1A(R2): 25 C / 60% RH for 24 months (long-term), 40 C / 75% RH for 6 months (accelerated); significant change at accelerated triggers intermediate condition (30 C / 65% RH)
+- Content uniformity per USP <905>: Acceptance Value AV = |M - X_bar| + k * s <= 15.0 for L1 (n=10 units), where k=2.4; if AV > 15.0 at L1, extend to L2 (n=30, k=2.0) with AV <= 15.0 and no unit outside 0.75M to 1.25M
+- Particle size for inhalation products: MMAD (Mass Median Aerodynamic Diameter) must be 1-5 um for pulmonary deposition; GSD (Geometric Standard Deviation) < 2.0 preferred; particles > 5 um deposit in oropharynx, < 1 um are exhaled
+- Excipient compatibility: must be demonstrated experimentally (DSC thermal analysis, binary mixture HPLC stability at 40 C / 75% RH for 4 weeks minimum); cannot be assumed from prior use in other formulations
+- Preservative effectiveness per USP <51> (Antimicrobial Effectiveness Testing) or EP 5.1.3 for multi-dose liquid formulations; criteria differ by route (ophthalmic is strictest)
+- Water activity a_w < 0.6 for solid dosage forms to prevent microbial growth and hydrolytic degradation; measured by chilled mirror hygrometer or capacitance sensor
+- cGMP manufacturing per 21 CFR 210/211 (US) or EU GMP Annex 1 (sterile products) / Annex 13 (investigational medicinal products); process validation required before commercial manufacture
+- Impurity limits per ICH Q3A/Q3B: reporting threshold 0.05% (dose > 2g/day), identification threshold 0.10%, qualification threshold 0.15% — lower thresholds for higher daily doses
+- Assay specification: typically 95.0-105.0% of label claim for finished product
+
+[SOFT constraints — negotiable]
+- Prefer immediate-release over modified-release where bioavailability is adequate (simpler development, easier IVIVC)
+- Prefer common excipients with established safety profiles (GRAS-listed, FDA IIG database for intended route)
+- Target shelf life >= 24 months at 25 C / 60% RH for commercial viability
+- Prefer unit-dose packaging for hygroscopic or oxygen-sensitive products
+- Minimise number of excipients to reduce interaction risk and simplify supply chain
+
+[Verification procedures]
+- Check that dissolution method discriminates between acceptable and unacceptable batches (demonstrate with deliberate process variation)
+- Verify stability protocol covers all ICH conditions and includes appearance, assay, degradation products, dissolution, water content
+- Confirm all excipients appear on the IIG database for the intended route of administration at or below listed maximum potency
+- Check that primary container closure system is included in stability studies (drug-container interaction)
+- Verify that analytical methods are validated per ICH Q2(R1): specificity, linearity, accuracy, precision, range, robustness
+- Confirm forced degradation studies demonstrate stability-indicating capability of assay method
+
+[Limitations]
+- Does not cover biological or protein formulations (different degradation pathways, cold chain requirements)
+- Does not cover nano-particle or liposomal drug delivery systems
+- Does not cover veterinary pharmaceutical formulations (different regulatory framework)
+- Does not cover compounding pharmacy preparations (USP <795>, <797> — different standards)
+- Does not cover paediatric-specific formulation challenges (taste masking, dose flexibility, excipient safety in children)
+- Does not cover controlled substance formulations (additional DEA / Home Office scheduling requirements)
+- Does not cover radiopharmaceuticals (short half-life imposes unique manufacturing and release testing constraints)

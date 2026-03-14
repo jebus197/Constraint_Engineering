@@ -1,0 +1,54 @@
+DOMAIN: Chemistry — Pharmaceutical Synthesis
+CODES: ICH Q7 (GMP), ICH M7 (Mutagenic Impurities), ICH Q3C (Residual Solvents),
+       ICH Q3D (Elemental Impurities), ICH Q11 (Drug Substance), ICH Q1A (Stability)
+VERSION: 1.0
+SCOPE: Small-molecule API synthesis, clinical and commercial scale, oral solid
+       dosage, non-biological, non-radiolabelled
+
+[HARD constraints — non-negotiable]
+
+ICH Q7 GMP mandatory from regulatory starting material onward: batch records,
+  in-process controls, equipment qualification, validated cleaning.
+Genotoxic impurity control per ICH M7 (R2):
+  TTC default = 1.5 ug/day. API limit (ppm) = TTC / max_daily_dose (g/day).
+  Class 1 (known mutagen/carcinogen): compound-specific limit required.
+  Purge factor arguments accepted if scientifically justified.
+Residual solvent limits per ICH Q3C (R8):
+  Class 1 prohibited: benzene <= 2 ppm, CCl4 <= 4 ppm, 1,2-DCE <= 5 ppm.
+  Class 2 limited: DCM <= 600 ppm, MeOH <= 3000 ppm, toluene <= 890 ppm,
+  DMF <= 880 ppm. Class 3: <= 5000 ppm, no individual justification needed.
+Chiral purity: if stereogenic centre present and single-enantiomer API:
+  ee = |[R] - [S]| / ([R] + [S]) * 100%, specification typically >= 99.0% ee.
+  Chiral HPLC/SFC required; optical rotation alone insufficient for release.
+Polymorphic form control: crystal form specified, controlled, monitored.
+  XRPD as primary ID; DSC/TGA for thermal characterisation. Drying, milling,
+  storage must not induce uncontrolled form conversion.
+Starting material per ICH Q11: adequate structural complexity, well-defined
+  quality attributes. Multi-supplier sourcing requires equivalence data.
+Elemental impurity limits per ICH Q3D (R2), oral PDE:
+  Pd <= 10 ug/day, Pt <= 10 ug/day, Ni <= 20 ug/day, Cu <= 300 ug/day.
+  Pd from catalytic hydrogenation: scavenger or crystallisation purge required.
+Stability per ICH Q1A (R2): 25C/60%RH long-term, 40C/75%RH accelerated.
+  6 months accelerated data minimum for clinical supply.
+
+[SOFT constraints — negotiable]
+
+Prefer catalytic over stoichiometric reagents:
+  atom economy AE = MW_product / SUM(MW_reactants) * 100%.
+Prefer crystallisation over chromatography at commercial scale.
+Target PMI < 50 kg/kg: PMI = total_mass_inputs / mass_product.
+Prefer convergent over linear synthesis (fewer LLS steps, higher yield).
+
+[Verification procedures]
+
+Check each step has documented precedent at proposed scale or 1/10th scale.
+Verify all intermediates have purity specs with validated analytical methods.
+Map every ICH M7 alerting structure; document purge or control strategy.
+Check patent freedom to operate for key transformations and catalysts.
+Verify final API crystallisation reliably delivers target polymorph.
+
+[Limitations]
+
+Does not cover biological/biosimilar manufacturing (ICH Q5 series).
+Does not cover ADC chemistry, radiopharmaceuticals, or controlled substances.
+Does not cover drug product formulation or continuous manufacturing regulation.

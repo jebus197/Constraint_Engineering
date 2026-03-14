@@ -1,0 +1,40 @@
+DOMAIN: Medical Device Design & Manufacturing
+STANDARDS: ISO 13485, ISO 14971, IEC 60601-1, IEC 62304, ISO 10993 series
+VERSION: 1.0
+SCOPE: Active and non-active medical devices, Classes I-III (EU MDR / FDA)
+
+[HARD constraints — non-negotiable]
+- ISO 13485 QMS mandatory for medical device manufacturing; no device may be placed on market without conforming quality system
+- Risk management per ISO 14971: hazard analysis, risk estimation (severity * probability), risk evaluation against acceptability criteria; risk management file must be maintained throughout device lifecycle
+- Biocompatibility testing per ISO 10993 series before any patient-contacting material is approved; test selection based on contact type (surface, external communicating, implant) and duration (<24h, 24h-30d, >30d)
+- IEC 60601-1 electrical safety: patient leakage current <= 10 uA (Type BF applied part), <= 50 uA (Type B applied part); earth leakage current <= 5 mA normal condition
+- Classification determines regulatory pathway: Class I (self-declaration), Class II (510(k) / CE marking), Class III (PMA / CE with notified body audit)
+- Essential Performance: identify functions whose failure could cause unacceptable risk; these must be verified under normal AND single fault conditions
+- Sterilisation validation: SAL (Sterility Assurance Level) = 10^-6 for implantable devices; SAL = 10^-3 acceptable only for reusable devices with validated reprocessing
+- Software lifecycle per IEC 62304; software safety class (A, B, C) determines documentation and testing rigour; Class C requires unit testing, integration testing, and architectural documentation
+- Electromagnetic compatibility per IEC 60601-1-2: immunity test levels are HIGHER than commercial/industrial (e.g., 3 V/m radiated immunity for life-supporting vs 1 V/m commercial); device must maintain Essential Performance during EMC exposure
+- Usability engineering per IEC 62366-1: use-related risk analysis required; critical tasks must be validated with representative users
+
+[SOFT constraints — negotiable]
+- Prefer well-characterised materials with existing biocompatibility data (reduces testing burden and timeline)
+- Prefer established sterilisation methods (EO, gamma irradiation, steam autoclave) over novel methods
+- Design for single-use where cross-contamination risk exists (avoids reprocessing validation)
+- Prefer modular architecture to isolate safety-critical subsystems from non-critical functions
+- Target device lifetime validation at 1.5x claimed service life
+
+[Verification procedures]
+- Confirm device classification is correct for intended use and jurisdiction (EU MDR Annex VIII / FDA 21 CFR 860)
+- Verify all patient-contacting materials have ISO 10993 test reports matching contact type and duration
+- Check that risk management file is complete: all identified hazards have risk estimation, evaluation, and mitigation; residual risk is acceptable per defined criteria
+- Verify software safety classification matches clinical risk of device function
+- Confirm Essential Performance list is traceable to risk analysis (every Essential Performance item linked to a hazard)
+- Validate sterilisation process parameters against ISO 11135 (EO), ISO 11137 (radiation), or ISO 17665 (steam)
+- Verify design verification and validation test protocols cover all design inputs
+
+[Limitations]
+- Does not cover in vitro diagnostic devices (IVDR / 21 CFR 809 — separate regulatory framework)
+- Does not cover combination products (drug-device, biologic-device — additional regulatory requirements)
+- Does not cover AI/ML-based SaMD (Software as Medical Device) — FDA predetermined change control plan guidance still evolving
+- Does not cover implantable active devices with specific standards (e.g., cardiac pacemakers — ISO 14708 series)
+- Does not cover custom-made devices or devices for clinical investigation only
+- Regulatory pathways described are US FDA and EU MDR; other jurisdictions (Japan PMDA, China NMPA) have differing requirements

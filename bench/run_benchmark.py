@@ -508,6 +508,9 @@ def run_benchmark(
     directives: str,
     num_passes: int,
     mode: str = "standard",
+    domain_directives_dir: Path | None = None,
+    condition: str = "universal-only",
+    variant: str | None = None,
 ) -> list[dict[str, Any]]:
     """Run all tasks under both conditions."""
     results = []
@@ -518,13 +521,26 @@ def run_benchmark(
         domain = task.get("domain", "<no-domain>")
         _err(f"\n[{idx}/{total}] Task {task_id} (domain: {domain})")
 
+        # Compose directives for this task's domain
+        domain_specific = None
+        if domain_directives_dir and condition != "universal-only":
+            domain_specific = load_domain_directives(
+                domain_directives_dir, domain, variant
+            )
+            if domain_specific:
+                _err(f"  [directives] loaded domain-specific directives for {domain}")
+            else:
+                _err(f"  [directives] no domain-specific directives found for {domain}")
+
+        task_directives = compose_directives(directives, domain_specific, condition)
+
         if mode == "extended":
             experimental_result = run_extended(
-                task, model, provider, directives, num_passes
+                task, model, provider, task_directives, num_passes
             )
         else:
             experimental_result = run_experimental(
-                task, model, provider, directives, num_passes
+                task, model, provider, task_directives, num_passes
             )
 
         task_result: dict[str, Any] = {
@@ -551,6 +567,55 @@ def load_directives(path: str | None) -> str:
         _err(f"ERROR: directives file not found: {path}")
         sys.exit(1)
     return p.read_text(encoding="utf-8").strip()
+
+
+def load_domain_directives(
+    directives_dir: Path, domain: str, variant: str | None = None
+) -> str | None:
+    """Load domain-specific directives for a given domain.
+
+    If *variant* is given, load that specific file (e.g. 'building' loads
+    structural_building.txt from the domain folder).  Otherwise, load the
+    first available .txt file alphabetically.
+
+    Returns None if no matching file exists.
+    """
+    domain_dir = directives_dir / domain
+    if not domain_dir.is_dir():
+        return None
+
+    if variant:
+        # Try exact match first, then prefix match
+        for txt_file in sorted(domain_dir.glob("*.txt")):
+            stem = txt_file.stem  # e.g. "structural_building"
+            if variant == stem or stem.endswith(f"_{variant}"):
+                return txt_file.read_text(encoding="utf-8").strip()
+        return None
+
+    # Default: first available .txt file
+    txt_files = sorted(domain_dir.glob("*.txt"))
+    if txt_files:
+        return txt_files[0].read_text(encoding="utf-8").strip()
+    return None
+
+
+def compose_directives(
+    universal: str,
+    domain_specific: str | None,
+    condition: str,
+) -> str:
+    """Compose the system prompt from universal and domain-specific directives.
+
+    Conditions:
+      - universal-only:  universal directives only (default)
+      - universal+domain: universal + domain-specific layered
+      - domain-only:     domain-specific only (for ablation studies)
+    """
+    if condition == "domain-only":
+        return domain_specific or universal  # fall back if no domain file
+    if condition == "universal+domain" and domain_specific:
+        return universal + "\n\n" + domain_specific
+    return universal  # universal-only or no domain file available
 
 
 
@@ -603,6 +668,29 @@ def main() -> None:
              "Default: standard",
     )
     parser.add_argument(
+        "--domain-directives",
+        type=str,
+        default=None,
+        help="Path to domain directives directory (e.g. bench/directives/). "
+             "Each subdirectory contains domain-specific directive files.",
+    )
+    parser.add_argument(
+        "--condition",
+        choices=["universal-only", "universal+domain", "domain-only"],
+        default="universal-only",
+        help="Directive condition: 'universal-only' (default), "
+             "'universal+domain' (layers domain-specific on top of universal), "
+             "or 'domain-only' (domain-specific only, for ablation studies).",
+    )
+    parser.add_argument(
+        "--variant",
+        type=str,
+        default=None,
+        help="Select a specific variant within each domain (e.g. 'building' "
+             "selects structural_building.txt). If omitted, uses the first "
+             "available variant alphabetically.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Load and validate tasks only - no API calls",
@@ -633,6 +721,8 @@ def main() -> None:
 
     _err("All tasks valid.")
 
+    domain_directives_dir = Path(args.domain_directives) if args.domain_directives else None
+
     if args.dry_run:
         domains: dict[str, int] = {}
         for task in tasks:
@@ -641,10 +731,22 @@ def main() -> None:
         fault_count = sum(len(t.get("seeded_faults", [])) for t in tasks)
 
         _err("\nDry run summary:")
-        _err(f"  Tasks:  {len(tasks)}")
-        _err(f"  Faults: {fault_count}")
-        for domain, count in sorted(domains.items()):
-            _err(f"  {domain}: {count} task(s)")
+        _err(f"  Tasks:     {len(tasks)}")
+        _err(f"  Faults:    {fault_count}")
+        _err(f"  Mode:      {args.mode}")
+        _err(f"  Condition: {args.condition}")
+        if domain_directives_dir:
+            _err(f"  Domain directives: {domain_directives_dir}")
+            for domain_name in sorted(domains.keys()):
+                dd = load_domain_directives(
+                    domain_directives_dir, domain_name, args.variant
+                )
+                status = f"loaded ({len(dd)} chars)" if dd else "not found"
+                _err(f"    {domain_name}: {status}")
+        if args.variant:
+            _err(f"  Variant:   {args.variant}")
+        for domain_name, count in sorted(domains.items()):
+            _err(f"  {domain_name}: {count} task(s)")
         sys.exit(0)
 
     directives = load_directives(args.directives)
@@ -658,24 +760,34 @@ def main() -> None:
 
     _err(
         f"\nRunning benchmark: model={args.model}, provider={args.provider}, "
-        f"passes={args.passes}, mode={args.mode}"
+        f"passes={args.passes}, mode={args.mode}, condition={args.condition}"
     )
     results = run_benchmark(
-        tasks, args.model, args.provider, directives, args.passes, args.mode
+        tasks, args.model, args.provider, directives, args.passes, args.mode,
+        domain_directives_dir=domain_directives_dir,
+        condition=args.condition,
+        variant=args.variant,
     )
 
+    meta: dict[str, Any] = {
+        "schema_version": "cdsfl-bench-v2",
+        "model": args.model,
+        "provider": args.provider,
+        "num_passes": args.passes,
+        "mode": args.mode,
+        "directive_condition": args.condition,
+        "task_count": len(tasks),
+        "directives_source": args.directives or "built-in",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "domains": sorted({task.get("domain", "<unknown>") for task in tasks}),
+    }
+    if args.domain_directives:
+        meta["domain_directives_source"] = args.domain_directives
+    if args.variant:
+        meta["variant"] = args.variant
+
     benchmark_output = {
-        "benchmark_meta": {
-            "schema_version": "cdsfl-bench-v2",
-            "model": args.model,
-            "provider": args.provider,
-            "num_passes": args.passes,
-            "mode": args.mode,
-            "task_count": len(tasks),
-            "directives_source": args.directives or "built-in",
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "domains": sorted({task.get("domain", "<unknown>") for task in tasks}),
-        },
+        "benchmark_meta": meta,
         "results": results,
     }
     output_json = json.dumps(benchmark_output, indent=2)

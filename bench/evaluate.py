@@ -189,8 +189,10 @@ def _compute_detection_metrics(records: list[dict[str, Any]], n_passes: int) -> 
             "total_faults": 0,
             "control_hits": 0,
             "experimental_hits": 0,
+            "final_only_hits": 0,
             "control_detection_rate": 0.0,
             "experimental_detection_rate": 0.0,
+            "final_only_detection_rate": 0.0,
             "control_critical_misses": 0,
             "experimental_critical_misses": 0,
             "per_pass": empty_per_pass,
@@ -200,6 +202,9 @@ def _compute_detection_metrics(records: list[dict[str, Any]], n_passes: int) -> 
 
     control_hits = sum(1 for record in records if record["control_detected"])
     experimental_hits = sum(1 for record in records if record["experimental_detected"])
+    final_only_hits = sum(
+        1 for record in records if record.get("experimental_final_only_detected", False)
+    )
 
     detected_by_pass: dict[int, int] = defaultdict(int)
     for record in records:
@@ -228,8 +233,10 @@ def _compute_detection_metrics(records: list[dict[str, Any]], n_passes: int) -> 
         "total_faults": total_faults,
         "control_hits": control_hits,
         "experimental_hits": experimental_hits,
+        "final_only_hits": final_only_hits,
         "control_detection_rate": round(control_hits / total_faults, 6),
         "experimental_detection_rate": round(experimental_hits / total_faults, 6),
+        "final_only_detection_rate": round(final_only_hits / total_faults, 6),
         "control_critical_misses": total_faults - control_hits,
         "experimental_critical_misses": total_faults - experimental_hits,
         "per_pass": per_pass,
@@ -288,6 +295,9 @@ def score_results(
             fp_totals["experimental"] += experimental_fp
             domain_fp_totals[domain]["experimental"] += experimental_fp
 
+        # Get the final response for final-output-only scoring
+        final_response = task.get("experimental", {}).get("final_response", "")
+
         for fault in faults:
             record = {
                 "task_id": task_id,
@@ -297,6 +307,9 @@ def score_results(
                 "control_detected": fault_detected(control_response, fault),
                 "experimental_detected_on_pass": None,
                 "experimental_detected": False,
+                "experimental_final_only_detected": fault_detected(
+                    final_response, fault
+                ),
             }
 
             for p in passes:
@@ -328,6 +341,10 @@ def score_results(
                 "false_positives": domain_fp_totals[domain]["experimental"],
                 "total_faults": metrics["total_faults"],
             },
+            "experimental_final_only": {
+                "detection_rate": metrics["final_only_detection_rate"],
+                "total_faults": metrics["total_faults"],
+            },
             "per_pass": metrics["per_pass"],
             "corroboration_fit": metrics["curve_fit"],
             "false_positive_detail": {
@@ -350,7 +367,7 @@ def score_results(
             },
         }
 
-    metadata = {
+    metadata: dict[str, Any] = {
         "schema_version": "cdsfl-eval-v2",
         "model": raw_meta.get("model"),
         "provider": raw_meta.get("provider"),
@@ -359,8 +376,13 @@ def score_results(
         "domains": raw_meta.get("domains") or sorted(per_domain.keys()),
         "passes": raw_meta.get("num_passes", max_passes),
         "directives_source": raw_meta.get("directives_source"),
+        "directive_condition": raw_meta.get("directive_condition", "universal-only"),
         "total_faults": overall["total_faults"],
     }
+    if raw_meta.get("domain_directives_source"):
+        metadata["domain_directives_source"] = raw_meta["domain_directives_source"]
+    if raw_meta.get("variant"):
+        metadata["variant"] = raw_meta["variant"]
 
     summary = {
         "control": {
@@ -373,6 +395,10 @@ def score_results(
             "detection_rate": overall["experimental_detection_rate"],
             "critical_misses": overall["experimental_critical_misses"],
             "false_positives": fp_totals["experimental"],
+            "total_faults": overall["total_faults"],
+        },
+        "experimental_final_only": {
+            "detection_rate": overall["final_only_detection_rate"],
             "total_faults": overall["total_faults"],
         },
     }
@@ -395,8 +421,13 @@ def score_results(
     control_vs_experimental = {
         "control_detection_rate": overall["control_detection_rate"],
         "experimental_detection_rate": overall["experimental_detection_rate"],
+        "final_only_detection_rate": overall["final_only_detection_rate"],
         "detection_rate_lift": round(
             overall["experimental_detection_rate"] - overall["control_detection_rate"],
+            6,
+        ),
+        "final_only_lift": round(
+            overall["final_only_detection_rate"] - overall["control_detection_rate"],
             6,
         ),
         "critical_miss_delta": (

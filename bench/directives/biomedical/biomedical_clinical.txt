@@ -1,0 +1,40 @@
+DOMAIN: Clinical Trial Design (Phase II/III Confirmatory Trials)
+STANDARDS: ICH E6(R2) GCP, ICH E9, ICH E10, Declaration of Helsinki (2013), 21 CFR 312, EU CTR 536/2014
+VERSION: 1.0
+SCOPE: Randomised controlled trials for drug/biologic efficacy and safety — Phase II and III
+
+[HARD constraints — non-negotiable]
+- ICH GCP E6(R2) compliance mandatory for all clinical trials involving human subjects; non-compliance invalidates data for regulatory submission
+- Sample size must be pre-specified: n = (z_alpha/2 + z_beta)^2 * 2 * sigma^2 / delta^2 for two-group continuous endpoint; n = (z_alpha/2 + z_beta)^2 * (p1(1-p1) + p2(1-p2)) / (p1 - p2)^2 for proportions; post-hoc adjustment of sample size without pre-specified adaptive rules is not acceptable
+- Type I error alpha = 0.05 (two-sided) is regulatory default unless scientifically justified; multiplicity adjustment mandatory for co-primary endpoints (Bonferroni, Holm, Hochberg, or gatekeeping procedure); fixed-sequence testing must pre-specify hierarchy
+- Randomisation must be computer-generated (not manual or quasi-random); stratified by key prognostic factors (typically site, disease severity, prior treatment); block size should not be disclosed to investigators
+- Blinding: double-blind preferred and expected for confirmatory trials; open-label requires justification AND prospective bias mitigation (blinded endpoint adjudication committee, central reading)
+- ITT (Intention-To-Treat) analysis is primary per ICH E9; all randomised subjects analysed in assigned group regardless of compliance; per-protocol analysis is supportive and sensitivity only
+- Informed consent per Declaration of Helsinki Article 26: must be obtained BEFORE any study-specific procedure; must be documented; must include right to withdraw without penalty
+- DSMB (Data Safety Monitoring Board) required for trials with mortality or serious morbidity endpoints; charter must pre-specify stopping rules (O'Brien-Fleming, Lan-DeMets alpha-spending preferred)
+- AE/SAE reporting: SAE report to sponsor within 24 hours of investigator awareness; SUSAR to regulatory authorities within 7 calendar days (fatal/life-threatening) or 15 calendar days (non-fatal)
+- Control group selection per ICH E10: placebo control acceptable only when no proven effective treatment exists OR when withholding treatment poses no serious harm; active control otherwise
+
+[SOFT constraints — negotiable]
+- Prefer adaptive designs (sample size re-estimation, response-adaptive randomisation) where ethically appropriate and pre-specified
+- Prefer electronic data capture (EDC) over paper CRFs for data quality, audit trail, and query management
+- Target dropout rate < 20% to preserve statistical power; build in 10-20% sample size inflation to account for attrition
+- Prefer centralised statistical monitoring over traditional on-site SDV for efficiency (risk-based monitoring per ICH E6 R2 Addendum)
+- Prefer patient-reported outcomes (PROs) as secondary endpoints where disease impacts quality of life
+
+[Verification procedures]
+- Confirm sample size calculation matches stated primary endpoint, clinically meaningful difference (delta), expected variability (sigma), and power (1-beta, typically 0.80 or 0.90)
+- Verify randomisation procedure accounts for stratification factors; confirm allocation concealment mechanism
+- Check that SAP (Statistical Analysis Plan) is finalised and signed BEFORE database lock; all endpoints must have pre-specified definitions and analysis methods
+- Confirm all endpoints have objective, reproducible definitions — not post-hoc or data-driven
+- Verify that interim analysis alpha-spending is accounted for in final analysis significance threshold
+- Check that missing data handling strategy is pre-specified (MMRM, multiple imputation, tipping point sensitivity analysis)
+- Confirm DSMB charter includes membership, meeting schedule, stopping boundaries, and communication procedures
+
+[Limitations]
+- Does not cover first-in-human (FIH) dose escalation designs (3+3, CRM, BOIN — different framework)
+- Does not cover paediatric-specific trial requirements (PIP/PSP, extrapolation, age-appropriate formulations)
+- Does not cover vaccine efficacy trials (different endpoint structure, challenge studies, correlates of protection)
+- Does not cover decentralised / virtual trial methodology (remote consent, wearable endpoints, direct-to-patient drug shipment)
+- Does not cover real-world evidence (RWE) or observational study design (different causal inference framework)
+- Does not cover basket, umbrella, or platform trial designs (master protocol framework — distinct statistical considerations)

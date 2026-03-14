@@ -110,6 +110,14 @@ def print_header(meta: dict[str, Any] | None) -> None:
         parts.append(f"Passes: {meta['passes']}")
     if parts:
         print(f"  {' | '.join(parts)}")
+    condition = meta.get("directive_condition")
+    if condition and condition != "universal-only":
+        cond_line = f"  Directive condition: {condition}"
+        if meta.get("variant"):
+            cond_line += f" (variant: {meta['variant']})"
+        if meta.get("domain_directives_source"):
+            cond_line += f" from {meta['domain_directives_source']}"
+        print(cond_line)
     if meta.get("domains"):
         print(f"  Domains: {', '.join(meta['domains'])}")
     print()
@@ -210,6 +218,65 @@ def print_pass_table(per_pass: list[dict[str, Any]]) -> None:
 
 
 
+def print_detection_comparison(summary: dict[str, Any], per_domain: dict[str, Any]) -> None:
+    """Print cumulative vs final-output-only detection comparison."""
+    final_only = summary.get("experimental_final_only")
+    if not final_only:
+        return
+
+    print("--- Cumulative vs Final-Output Detection ---")
+    print()
+
+    headers = ["Metric", "Control", "Cumulative", "Final Only"]
+    widths = [18, 12, 14, 14]
+
+    print(_row(headers, widths))
+    print(_rule(widths))
+
+    control_rate = summary.get("control", {}).get("detection_rate", 0.0)
+    cumulative_rate = summary.get("experimental", {}).get("detection_rate", 0.0)
+    final_rate = final_only.get("detection_rate", 0.0)
+
+    cells = [
+        "Overall",
+        _fmt_pct(control_rate),
+        _fmt_pct(cumulative_rate),
+        _fmt_pct(final_rate),
+    ]
+    print(_row(cells, widths))
+    print(_rule(widths, char=".", joint="+"))
+
+    for domain in sorted(per_domain.keys()):
+        payload = per_domain[domain]
+        d_control = payload.get("control", {}).get("detection_rate", 0.0)
+        d_cumulative = payload.get("experimental", {}).get("detection_rate", 0.0)
+        d_final = payload.get("experimental_final_only", {}).get("detection_rate", 0.0)
+        cells = [
+            domain,
+            _fmt_pct(d_control),
+            _fmt_pct(d_cumulative),
+            _fmt_pct(d_final),
+        ]
+        print(_row(cells, widths))
+
+    print()
+    gap = cumulative_rate - final_rate
+    if gap > 0.001:
+        print(
+            f"  Note: cumulative rate exceeds final-output rate by "
+            f"{gap * 100:.1f}pp. This gap indicates faults mentioned "
+            f"during intermediate passes but absent from the final answer."
+        )
+    elif gap < -0.001:
+        print(
+            f"  Note: final-output rate exceeds cumulative rate by "
+            f"{abs(gap) * 100:.1f}pp (unexpected — review scoring logic)."
+        )
+    else:
+        print("  Note: cumulative and final-output rates are equal.")
+    print()
+
+
 def print_corroboration(fit: dict[str, Any]) -> None:
     fit = _normalise_fit(fit)
     if not fit:
@@ -278,6 +345,7 @@ def write_csv(data: dict[str, Any], path: str) -> None:
         "false_positives",
         "estimated_p",
         "r_squared",
+        "final_only_detection_rate",
     ])
 
     summary = data.get("summary", {})
@@ -293,6 +361,22 @@ def write_csv(data: dict[str, Any], path: str) -> None:
             section.get("false_positives", ""),
             "",
             "",
+            "",
+        ])
+    # Final-only summary row
+    final_only = summary.get("experimental_final_only", {})
+    if final_only:
+        rows.append([
+            "summary",
+            "experimental_final_only",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            final_only.get("detection_rate", ""),
         ])
 
     per_domain = data.get("per_domain", {})
@@ -310,6 +394,22 @@ def write_csv(data: dict[str, Any], path: str) -> None:
                 section.get("false_positives", ""),
                 "",
                 "",
+                "",
+            ])
+        # Final-only per-domain row
+        domain_final = payload.get("experimental_final_only", {})
+        if domain_final:
+            rows.append([
+                "per_domain",
+                "experimental_final_only",
+                domain,
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                domain_final.get("detection_rate", ""),
             ])
 
     for entry in data.get("per_pass", []):
@@ -319,6 +419,7 @@ def write_csv(data: dict[str, Any], path: str) -> None:
             "",
             entry.get("pass", ""),
             entry.get("cumulative_detection_rate", ""),
+            "",
             "",
             "",
             "",
@@ -337,6 +438,7 @@ def write_csv(data: dict[str, Any], path: str) -> None:
             "",
             fit.get("estimated_p", ""),
             fit.get("r_squared", ""),
+            "",
         ])
 
     out = Path(path)
@@ -395,6 +497,9 @@ def main() -> None:
 
     if data.get("per_pass"):
         print_pass_table(data["per_pass"])
+
+    if data.get("summary", {}).get("experimental_final_only"):
+        print_detection_comparison(data["summary"], data.get("per_domain", {}))
 
     if data.get("corroboration_fit"):
         print_corroboration(data["corroboration_fit"])

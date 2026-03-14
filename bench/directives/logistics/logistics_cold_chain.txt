@@ -1,0 +1,58 @@
+Domain: Temperature-Controlled Logistics (Cold Chain)
+Version: 1.0
+Date: 2026-03-14
+References: EU GDP 2013/C 343/01, WHO PQS, Codex Alimentarius, ISTA 7E, USP <1079>
+
+[HARD constraints — non-negotiable]
+1. Temperature excursions are cumulative and irreversible for most biologics and
+   foods. Total integrated time-out-of-range (TTOR) determines product viability,
+   not just instantaneous temperature. A product that spent 4 hours at +12C across
+   three separate events is as damaged as one continuous 4-hour excursion.
+2. EU Good Distribution Practice (GDP) per 2013/C 343/01: continuous temperature
+   monitoring is mandatory throughout the pharmaceutical distribution chain.
+   Monitoring gaps are regulatory non-compliance regardless of whether an excursion
+   occurred. USP <1079> provides equivalent US guidance.
+3. Reefer container set point != actual cargo temperature. Reefer units cool the
+   air, not the cargo directly. Cargo must be pre-cooled to target temperature
+   BEFORE loading. Loading warm cargo into a cold reefer causes condensation,
+   uneven cooling, and potential product damage. Pre-cooling verification is
+   mandatory.
+4. Frozen goods: maintain at or below -18C throughout the chain. Temperature must
+   not rise above -15C at any point during transport (Codex Alimentarius, Quick
+   Frozen Foods standard). For ice cream: -18C with zero tolerance. Partial thaw
+   and refreeze causes textural degradation and potential microbial risk.
+5. Vaccines (WHO PQS requirements): transport and storage at +2C to +8C. Freeze-
+   sensitive vaccines (e.g., DTP, Hep B, IPV) must NEVER reach 0C or below —
+   freezing destroys the adjuvant and renders the vaccine ineffective with no
+   visible indication. This is a silent failure mode.
+6. Door-opening protocol: each door opening is a discrete thermal ingress event.
+   Infiltration heat load Q_inf = rho * V_exchange * c_p * delta_T per opening.
+   Cumulative effect of multiple openings (multi-drop delivery) must be modelled
+   in thermal budget. A 10-drop route is not thermally equivalent to a 2-drop route.
+7. Phase change materials (PCM) / eutectic plates: thermal energy budget
+   Q = m * L (mass * latent heat of fusion). Duration of temperature maintenance
+   = Q / q_ingress where q_ingress = heat ingress rate (W). Undersizing PCM mass
+   for the journey duration causes excursion. Ambient temperature and insulation
+   R-value determine q_ingress.
+8. Backup power for cold storage facilities: diesel generator with automatic
+   transfer switch (ATS) is mandatory. Target switchover time < 30 seconds.
+   UPS required for monitoring and alarm systems to maintain visibility during
+   transfer. Loss of monitoring during power failure is unacceptable.
+
+[SOFT constraints — negotiable]
+- Prefer active (mechanically refrigerated) over passive (insulated + PCM) for journeys > 48h.
+- Prefer data loggers with real-time cellular/satellite telemetry over download-at-destination.
+- Target < 2% product loss from temperature excursions across the network.
+- Prefer qualified shipping lanes (ISTA 7E or equivalent thermal profile data) over unqualified.
+
+[Verification procedures]
+- Verify thermal mapping qualification exists for the specific route AND season (winter != summer).
+- Check monitors are calibrated (annual min) and placed at worst-case positions (door end, top).
+- Confirm contingency plan for refrigeration failure with max safe hold time per product category.
+- Verify pre-cooling records: cargo temp at loading must be documented.
+- Check PCM conditioning (freeze/thaw activation) completed — unconditioned PCM = zero protection.
+
+[Limitations]
+- Does not cover cryogenic transport (LN2 -196C, dry ice -78.5C) or organ transport.
+- Does not cover controlled atmosphere (CA) for fresh produce (O2/CO2/N2 management).
+- Does not cover ultra-low temperature storage (-80C, mRNA vaccines) or cell/gene therapies.

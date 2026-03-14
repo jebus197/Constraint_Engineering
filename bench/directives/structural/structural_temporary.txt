@@ -1,0 +1,94 @@
+DOMAIN: Structural Engineering — Temporary Works
+CODES: BS 5975 (Code of practice for temporary works), BS EN 12811 (Scaffolding),
+       BS EN 12812 (Falsework), BS EN 12813 (Load-bearing towers),
+       BS EN 1991-1-4 (Wind), CIRIA C660 (Formwork pressure)
+VERSION: 1.0
+SCOPE: Falsework, formwork, scaffolding, propping, temporary foundations.
+       Conventional building and civil works, non-marine.
+
+[HARD constraints — non-negotiable]
+
+Partial safety factors DIFFER from permanent works (BS 5975, Table 1):
+  gamma_f (loads): 1.35 (dead), 1.50 (imposed/construction), 1.50 (wind).
+  gamma_m (materials): 1.0 (steel to BS EN 1993), but 1.25 for reused/
+  ungraded timber. For proprietary systems, use manufacturer's stated capacity
+  with appropriate gamma — never exceed catalogue rated load.
+
+Design life: typically <= 2 years. This affects:
+  Wind return period: 2-year NOT 50-year (V_2yr approx 0.78 * V_50yr per
+  BS EN 1991-1-4, Note to 4.2). Still non-trivial — a common error is
+  ignoring wind entirely on scaffolding and falsework.
+  Material degradation: negligible for steel, but check timber moisture content
+  and corrosion on reused components.
+
+Wind loading on scaffolding/falsework (BS EN 12811-1, BS EN 1991-1-4):
+  Sheeted scaffold: C_f * q_p(z) * A_ref — wind force can govern design.
+  Open scaffold: force coefficients per BS EN 12811-1, Annex A.
+  Site-specific wind speed: V_b = V_b,map * c_dir * c_season * c_alt.
+  CRITICAL: wind on partially completed structures often exceeds wind on the
+  finished structure (no cladding to share load, incomplete bracing).
+
+Wet concrete pressure on formwork (CIRIA C660 / BS EN 12812):
+  Hydrostatic: p = rho * g * h, where rho_concrete = 2400 kg/m^3 (reinforced),
+  giving p = 23.5 kN/m^3 * h (depth in metres). For deep pours (walls/columns),
+  p_max depends on pour rate R, concrete temperature T, and cement type.
+  CIRIA C660 formula: p_max = rho*g*(C_1*sqrt(R) + C_2*K*sqrt(H) - C_1*sqrt(R))
+  Simplified conservative: assume full hydrostatic up to 25 kN/m^3 * h.
+  NEVER assume concrete is self-supporting before initial set.
+
+Propping loads — construction sequence (BS 5975, Clause 15):
+  Slab propping must account for the load of freshly poured concrete above
+  PLUS construction live loads BEFORE the supporting structure has reached
+  design strength. Backpropping through multiple floors:
+  F_prop = w_slab * A_trib * n_levels_supported (worst case).
+  Common failure: assuming the slab below can carry the load of the slab
+  above when the lower slab is only 7 days old (approx 65-75% of f_ck,28).
+
+Ground bearing under temporary foundations / sole plates:
+  Bearing pressure: sigma = F / A_sole <= q_a (allowable bearing capacity).
+  q_a must be verified for ACTUAL ground conditions — not assumed.
+  Sole plate size: A_sole >= F / q_a. Timber sole plates: check bending
+  capacity of the plate itself (simply supported or cantilevered from prop).
+
+Scaffold tie spacing (BS EN 12811 / NASC TG20 Compliance Sheet):
+  Maximum tie pattern depends on scaffold configuration, cladding, height.
+  TG20 standard solutions: typically 2.4m x 4.0m or 2.4m x 2.0m pattern.
+  Every lift must be tied at the prescribed pattern — missing ties is a
+  common cause of scaffold collapse. Ties must resist tension AND compression.
+
+[SOFT constraints — negotiable]
+
+Reusability of components: prefer standard proprietary systems (Peri, Doka,
+  SGB, Layher) over bespoke fabrications — easier inspection, known capacity.
+Speed of erection and striking: influences programme but not safety.
+Minimise crane lifts: modular pre-assembly reduces crane dependency.
+Access and working platforms: minimum 600mm clear width (BS EN 12811).
+
+[Verification procedures]
+
+Construction load analysis: verify that the temporary works design accounts
+  for the full construction load sequence — not just the permanent state.
+  Worst case is often mid-pour or mid-erection, not the completed state.
+Ground conditions: verify bearing capacity under sole plates by inspection
+  (as minimum) or testing. Pad foundations on made ground or soft clay need
+  specific geotechnical input. Record actual ground vs assumed ground.
+Strike times: confirm that concrete has reached adequate strength before
+  striking formwork or removing props. Typically >= 70% of f_ck,28 for
+  soffit formwork, >= 100% before full design load applied.
+  Maturity testing or cube results — do not rely on age alone in cold weather.
+Wind assumptions: check assumed wind speed against Met Office data for the
+  site and season. Two-year return period is appropriate for design life
+  <= 2 years but must use correct seasonal factor (winter exposure is worse).
+Temporary works coordinator: BS 5975 requires a named TWC on every project.
+  Design check category (1, 2, or 3) determines level of independent review.
+
+[Limitations]
+
+Does not cover deep excavation support (sheet piles, secant piles, diaphragm
+  walls — requires specialist geotechnical design to BS EN 1997 / CIRIA C760).
+Does not cover marine temporary works (cofferdams, jack-up barges).
+Does not address demolition temporary works (temporary stability during
+  sequential demolition — requires specialist methodology to BS 6187).
+Does not cover specialist access systems (mast climbers, suspended platforms,
+  rope access) — separate regulations and competence requirements.
+Does not address temporary traffic management structures or signs.

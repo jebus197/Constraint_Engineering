@@ -1,0 +1,68 @@
+DOMAIN: Hardware Engineering — IoT / Embedded Systems
+VERSION: 1.0
+DATE: 2026-03-14
+APPLICABLE STANDARDS: IEC 60730 (automatic controls), IEC 62368-1 (AV/ICT safety)
+COMPONENT REFS: CR2032 (Energizer datasheet EN-0085), STM32L4 (DS11451), nRF52840 (PS v1.1)
+
+[HARD constraints — non-negotiable]
+
+Battery life calculation must use weighted duty cycle average, not nominal current:
+  t_life = C_battery / I_avg
+  I_avg = (I_active * t_active + I_sleep * t_sleep) / (t_active + t_sleep)
+  where t_active + t_sleep = T_cycle (one complete duty period)
+
+CR2032 coin cell: C_nominal ~ 220mAh at 0.2mA continuous draw (Energizer datasheet).
+  Max recommended pulse current <= 15mA (datasheet limit, not theoretical).
+  Capacity derates ~40% at -20C. Self-discharge ~1%/year at 25C.
+  Internal resistance rises sharply below 2.0V — voltage collapse, not linear decay.
+
+MCU V_DD operating range must overlap battery voltage across full discharge curve.
+  CR2032 delivers 3.0V nominal, end-of-life cutoff ~2.0V.
+  If MCU minimum V_DD = 1.8V, margin exists. If minimum = 2.4V, brown-out risk below 2.5V.
+
+ADC reference voltage stability constrains measurement precision:
+  Effective resolution (bits) = log2(V_ref / V_noise)
+  Rule: dV_ref / V_ref < 1 / 2^(N_effective + 1) for N_effective usable bits.
+  Internal V_ref drift: check datasheet tempco (typ. 30-100 ppm/C for on-chip references).
+
+Decoupling: 100nF MLCC within 5mm of every IC power pin (mandatory).
+  Add 10uF bulk per power rail. Place closest to pin, ground via adjacent.
+  MLCC voltage derating: Class II (X5R/X7R) capacitance drops 20-50% at rated DC bias.
+
+Crystal oscillator load capacitance matching:
+  C_L = (C1 * C2) / (C1 + C2) + C_stray
+  C_stray typically 2-5pF (PCB trace + pad capacitance).
+  Mismatch pulls frequency: df/f ~ (C_L_actual - C_L_spec) * motional_param.
+  32.768kHz crystals: C_L mismatch of 1pF causes ~10-30ppm frequency error.
+
+Watchdog timer mandatory for unattended/remote operation.
+  WDT timeout must exceed worst-case legitimate processing loop.
+  Independent WDT clock source required (not derived from main oscillator).
+
+[SOFT constraints — negotiable]
+
+Prefer components rated -40C to +85C (industrial range) for outdoor/uncontrolled environments.
+Minimise BOM count — fewer unique parts reduces procurement risk and assembly cost.
+Prefer single-supply designs over split-rail (reduces regulator count, simplifies layout).
+Target sleep current < 1uA where architecture permits (achievable on STM32L4, nRF52).
+Prefer LDO over switching regulator when dropout margin allows and load < 50mA (lower noise, fewer passives).
+
+[Verification procedures]
+
+Calculate battery life from measured duty cycle profile (not datasheet typical values).
+  Use worst-case I_active and realistic t_active (include protocol overhead for BLE/LoRa).
+Verify LDO/regulator dropout voltage vs minimum battery voltage at end-of-life.
+  V_battery_min - V_dropout > V_out_required (with margin >= 100mV).
+Confirm brown-out detection (BOD/BOR) threshold is set above MCU minimum V_DD.
+Check ADC sample rate vs Nyquist criterion: f_sample >= 2 * f_signal_max.
+  For sensor bandwidth B, anti-alias filter cutoff at f_sample / 2.
+Measure actual sleep current on prototype — datasheet values assume ideal conditions.
+Verify crystal start-up time meets system requirements (32.768kHz crystals: 0.5-2s typical).
+
+[Limitations]
+
+Does not cover FPGA-based embedded designs (different power/configuration constraints).
+Does not cover high-speed digital interfaces (>100MHz — requires controlled impedance, see hardware_rf.txt).
+Does not cover motor control (PWM, H-bridge, back-EMF — different failure modes).
+Does not cover safety-critical applications requiring IEC 61508 / ISO 26262 compliance.
+Does not cover energy harvesting power sources (solar, piezo, thermoelectric).

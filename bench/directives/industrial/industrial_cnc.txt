@@ -1,0 +1,39 @@
+DOMAIN: CNC Machining (Milling and Turning)
+STANDARDS: ISO 286 (tolerances), ISO 1302 (surface finish), ISO 230 (machine tool testing), tool manufacturer datasheets
+VERSION: 1.0
+SCOPE: 3-axis milling and 2-axis turning of metals — conventional subtractive machining with carbide tooling
+
+[HARD constraints — non-negotiable]
+- Cutting speed: v_c = pi * D * n / 1000 (m/min), where D = tool/workpiece diameter (mm), n = spindle speed (rpm); must be within tool manufacturer's recommended range for the work material; typical carbide ranges: aluminium 200-600 m/min, mild steel 150-250 m/min, stainless 304 80-140 m/min, titanium Ti-6Al-4V 40-70 m/min
+- Feed per tooth f_z (mm/tooth) must stay within manufacturer's range; exceeding maximum causes premature tool failure via edge chipping; too low causes rubbing, work hardening (especially austenitic stainless, Inconel), and accelerated flank wear
+- Minimum chip thickness: h_min ~ 0.25-0.33 * r_edge (cutting edge radius) for carbide tools; below this threshold, ploughing occurs instead of cutting — generates heat without material removal; typically h_min > 0.01 mm for standard carbide inserts
+- Tool deflection (end mill as cantilever): delta = (F * L^3) / (3 * E * I), where I = pi * d^4 / 64 for solid round tool; deflection must be < 1/3 of part tolerance; E_carbide ~ 580 GPa, E_HSS ~ 210 GPa
+- Specific cutting force k_c (N/mm^2) determines cutting forces: F_c = k_c * a_p * f_z * z; typical k_c values: aluminium 700-900, mild steel 1800-2200, stainless 304 2400-2800, titanium 1400-1800; actual k_c varies with chip thickness (k_c = k_c1.1 * h^(-m_c) per Kienzle model)
+- Surface finish (turning): R_a ~ f^2 / (32 * r_epsilon), where f = feed per revolution (mm/rev), r_epsilon = tool nose radius (mm); specified R_a constrains maximum permissible feed rate; R_a 1.6 um with r_epsilon 0.8 mm requires f <= 0.20 mm/rev
+- Workholding force must exceed cutting forces with safety factor >= 2.0; for chuck work: F_grip * mu >= F_c * SF, where mu = friction coefficient (0.1-0.3 depending on jaw type and surface)
+- Machine tool rigidity limits depth of cut for thin-walled parts; wall deflection under cutting force must be < tolerance; critical for aerospace parts with wall thickness < 2 mm (use backing supports, reduced a_p, increased number of passes)
+
+[SOFT constraints — negotiable]
+- Prefer climb (down) milling over conventional (up) milling: better surface finish, lower cutting forces, improved tool life (chip starts thick, exits thin — avoids rubbing at entry)
+- Prefer standard catalogue tooling over specials (shorter lead time, lower cost, established cutting data)
+- Minimise number of setups to reduce cumulative positioning error and setup time; 3-axis parts ideally 1-2 setups
+- Prefer coated carbide inserts (TiAlN, AlCrN) for steel and stainless; uncoated or DLC-coated for aluminium (prevents built-up edge)
+- Use high-pressure coolant (70+ bar) for deep hole drilling and difficult-to-machine materials (titanium, Inconel)
+
+[Verification procedures]
+- Verify all cutting parameters are within tool manufacturer's published data for the specific work material and operation
+- Calculate tool deflection for longest unsupported tool length at maximum radial engagement; confirm delta < tolerance/3
+- Check workholding force adequacy against maximum cutting forces, including safety factor; verify no part movement during interrupted cuts (e.g., keyway milling)
+- Confirm post-processor output matches programmed feeds and speeds (machine-specific G-code verification)
+- Validate that thermal expansion is accounted for in tight-tolerance work (steel grows ~12 um/m per degree C; aluminium ~23 um/m per degree C)
+- Check tool life expectations against batch size; plan tool change points to avoid mid-feature tool failure
+
+[Limitations]
+- Does not cover 4-axis or 5-axis simultaneous machining (different toolpath strategies, RTCP/TCP compensation)
+- Does not cover EDM (wire or sinker) — different material removal mechanism (no cutting forces)
+- Does not cover grinding, honing, or lapping (different surface generation physics)
+- Does not cover additive or hybrid (additive + subtractive) manufacturing
+- Does not cover Swiss-type (sliding headstock) turning for small-diameter long parts
+- Does not cover high-speed machining (HSM) strategies where spindle dynamics and toolpath continuity dominate
+- Does not cover cryogenic machining or minimum quantity lubrication (MQL) — different thermal management assumptions
+- Does not cover non-metallic machining (composites, ceramics, plastics — different failure modes and tool geometries)

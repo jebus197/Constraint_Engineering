@@ -1,0 +1,40 @@
+DOMAIN: Welded Steel Fabrication (Arc Welding Processes)
+STANDARDS: ISO 15614, ISO 9606, ISO 5817, ISO 3834, AWS D1.1, BS EN 1011, ASME IX
+VERSION: 1.0
+SCOPE: Carbon and low-alloy steel, manual and mechanised arc welding (MMA/SMAW, MIG/MAG/GMAW, TIG/GTAW, SAW)
+
+[HARD constraints — non-negotiable]
+- Weld Procedure Specification (WPS) must be qualified by testing per ISO 15614-1 or ASME IX Section IX before production welding; qualification range (essential variables) defines permitted deviations from the pWPS
+- Welder qualification per ISO 9606-1 or ASME IX: welder must hold valid qualification for the specific joint type (butt/fillet), welding position (PA/PB/PC/PD/PE/PF/PG per ISO 6947), material group, and thickness range; revalidation required per code interval (typically 2-3 years or continuous log of work)
+- Preheat temperature per BS EN 1011-2 (method B) or AWS D1.1 Annex H: depends on carbon equivalent CE_IIW = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15, combined thickness, hydrogen content of consumable, and heat input; CE > 0.45 and thickness > 25 mm typically requires preheat >= 100-150 C
+- Interpass temperature: must not exceed maximum specified in WPS (typically 250 C for structural steel, 150 C for quenched and tempered steels); exceeding interpass temperature degrades HAZ toughness
+- PWHT (Post Weld Heat Treatment): mandatory when code requires it — typically for combined thickness > 25-50 mm (code-dependent), CE > 0.45, or when design specifies stress-relief; carbon steel PWHT typically 580-620 C, hold time 1 hour per 25 mm thickness minimum
+- Weld quality acceptance criteria per ISO 5817 (quality levels B, C, D) or AWS D1.1: level must be specified in design documentation; Level B (stringent) typical for fatigue-loaded structures and pressure vessels; acceptance criteria cover porosity, undercut, lack of fusion, crack (never acceptable at any level)
+- NDT requirements: code and quality level determine minimum inspection extent; 100% visual inspection (VT) per ISO 17637 mandatory for all welds; radiographic (RT per ISO 17636) or ultrasonic (UT per ISO 17640) for butt welds at 10-100% depending on quality level and consequence of failure
+- HAZ hardness: must not exceed limits specified by code — typically <= 350 HV10 for structural steel per ISO 15614-1; hardness > 350 HV indicates risk of hydrogen-induced cold cracking; controlled by preheat, heat input, and PWHT
+- Heat input: Q = (U * I * 60) / (v * 1000) (kJ/mm), where U = voltage, I = current, v = travel speed (mm/min); must be within WPS range; thermal efficiency factor k applies (MMA k=0.8, MIG/MAG k=0.8, TIG k=0.6, SAW k=1.0)
+- Hydrogen control: low-hydrogen consumables (H5 or H10 designation per ISO 2560) mandatory for CE > 0.40 or thickness > 25 mm; electrodes must be stored per manufacturer's instructions (typically 150 C holding oven after opening); re-drying per code if exposed
+
+[SOFT constraints — negotiable]
+- Prefer fillet welds over full-penetration butt welds where design strength is adequate (lower preparation cost, easier execution, less distortion)
+- Prefer mechanised or robotic welding for long straight seams and repetitive joints (improved consistency, reduced human factor variation)
+- Minimise number of weld passes for thin material (< 6 mm) to reduce distortion and total heat input
+- Prefer balanced welding sequence (alternating sides, backstep technique) to control distortion; pre-set or allowance where distortion is predictable
+- Prefer consumables matched to parent material strength grade; overmatching weld metal for butt joints, matching or undermatching acceptable for fillet welds in some codes
+
+[Verification procedures]
+- Check that carbon equivalent CE justifies the specified preheat temperature using the applicable standard's method (EN 1011-2 nomograms or AWS D1.1 tables)
+- Verify WPS qualification record (WPQR/PQR) covers all joint configurations, material groups, and thickness ranges present in the fabrication design
+- Confirm NDT plan meets code-required inspection extent and methods for the specified quality level
+- Check that distortion allowance is included in fit-up tolerances and assembly sequence
+- Verify consumable storage conditions and traceability (batch certificates, hydrogen designation, shelf-life compliance)
+- Confirm all welders on the project hold valid qualifications covering the range of work assigned to them
+
+[Limitations]
+- Does not cover welding of aluminium alloys (different shielding requirements, no preheat CE model, different filler selection)
+- Does not cover titanium or nickel alloy welding (inert gas trailing shields, different metallurgy)
+- Does not cover underwater or hyperbaric welding
+- Does not cover electron beam, laser beam, or friction stir welding (different heat source physics)
+- Does not cover plastic welding (hot plate, ultrasonic, vibration, laser)
+- Does not cover brazing, soldering, or adhesive bonding (different joint mechanisms)
+- Does not cover stainless steel welding (sensitisation, ferrite control, different CE models)

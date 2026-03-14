@@ -1,0 +1,60 @@
+DIRECTIVE: Thermal-Electrical Interface
+DOMAIN: Cross-Domain (Thermal + Electrical/Electronic)
+SCOPE: Thermal management of power-dissipating electronic components on PCBs and heatsinks
+STANDARDS: IPC-2152, IPC-SM-785, JEDEC JESD51 series, MIL-HDBK-217
+
+[HARD constraints — non-negotiable]
+1. Thermal resistance network: T_j = T_a + SUM(P_i * R_theta(i)).
+   Cumulative through ALL resistances (jc, cs, sa). None may be omitted.
+2. Multiple sources on shared heatsink — thermal superposition:
+   T_j(k) = T_a + P_k*R_theta(jc_k) + P_k*R_theta(cs_k) + SUM(P_i)*R_theta(sa)
+   Every device contributes to heatsink rise. Ignoring neighbours underestimates T_j.
+3. Electrical derating with temperature:
+   MOSFET R_DS(on) increases ~0.4%/C (positive temperature coefficient).
+   IGBT V_CE(sat) has positive temp coefficient above crossover point.
+   Electrolytic capacitor ESR increases and ripple current derates with temperature.
+   Follow manufacturer derating curves — not nominal values.
+4. Thermal runaway condition:
+   dP_diss/dT > dP_cooling/dT
+   If dissipation increases faster with temperature than cooling removes,
+   system is thermally unstable. Evaluate at worst-case operating point.
+5. Thermal time constants: tau = R_theta * C_th.
+   Steady-state R_theta alone is insufficient for pulsed loads.
+   Use Cauer or Foster RC network for transient impedance Z_theta(t).
+   Datasheet Z_theta(t) is typically single-pulse — duty cycle correction required.
+6. FR4 is a thermal insulator: k_FR4 ~ 0.3 W/(m*K) through-plane.
+   Copper planes and thermal vias are the primary vertical heat paths.
+   1 oz (35 um) copper plane: ~50-70 C/W per cm^2 — insufficient alone above ~1W.
+7. Solder joint thermal fatigue (Coffin-Manson):
+   N_f proportional to (delta_epsilon)^(-n), n ~ 2-3 for SnAgCu.
+   Strain driven by CTE mismatch and delta_T.
+   Larger components (greater DNP) experience greater strain per cycle.
+8. Component reliability vs temperature (Arrhenius):
+   AF = exp[(Ea/k) * (1/T_use - 1/T_test)], Ea ~ 0.7 eV typical.
+   Failure rate approximately doubles every 10-15 C increase in T_j.
+
+[SOFT constraints — negotiable]
+1. Prefer thermal via arrays under power devices:
+   0.3 mm drill, 1.0 mm pitch, filled/capped if soldered above.
+   Reduces through-board R_theta by 3-5x vs bare FR4.
+2. Prefer aluminium-core or IMS PCBs for LED and power applications.
+3. Target T_j,max - T_j,operating >= 25 C margin for manufacturing and ageing.
+4. Prefer exposed-pad packages (QFN, PowerPAD) over leaded (SOIC, QFP) above 0.5W.
+5. Prefer TIM with bulk conductivity >= 1 W/(m*K) and controlled bond-line thickness.
+
+[Verification procedures]
+1. Calculate T_j for each power device at worst-case ambient AND full load.
+   Use worst-case R_theta values (not typical).
+2. Verify derating at calculated T_j, not nominal ambient.
+   This is circular: P depends on T, T depends on P. Iterate or solve simultaneously.
+3. Check thermal coupling between adjacent devices on shared substrates.
+4. Confirm transient Z_theta(t) adequate for pulsed profiles — duty cycle corrected.
+5. Solder fatigue life (Coffin-Manson or Engelmaier model) must exceed
+   required product lifetime with safety factor >= 2.
+
+[Limitations]
+1. Does not cover liquid cooling (cold plates, microchannels, pumped loops).
+2. Does not cover phase-change cooling (heat pipes, vapour chambers).
+3. Does not cover RF power amplifier thermal management.
+4. Does not cover cryogenic electronics or superconducting systems.
+5. CFD/FEA is verification, not substitute for analytical bounds.

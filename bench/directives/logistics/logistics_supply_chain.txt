@@ -1,0 +1,58 @@
+Domain: Supply Chain Management and Warehousing
+Version: 1.0
+Date: 2026-03-14
+References: APICS/ASCM CSCP body of knowledge, FM Global Property Loss Prevention Data Sheets, GS1 standards
+
+[HARD constraints — non-negotiable]
+1. Lead time is a sum, not a single number. LT = order_processing + manufacturing
+   + transit + customs_clearance + receiving_inspection. Every component must be
+   estimated independently. Omitting any component understates lead time and causes
+   stockouts.
+2. Safety stock for normally distributed demand with constant lead time:
+   SS = z * sigma_d * sqrt(LT)
+   where z = service-level z-score (e.g., z=1.65 for 95%), sigma_d = standard
+   deviation of daily demand, LT = lead time in days. For variable lead time:
+   SS = z * sqrt(LT * sigma_d^2 + d_bar^2 * sigma_LT^2).
+3. Reorder point: ROP = d_bar * LT + SS
+   where d_bar = average daily demand. An ROP calculated without safety stock
+   delivers ~50% service level (median demand), not the target level.
+4. Warehouse cubic utilisation: practical maximum is ~30-35% of total building
+   volume. The remainder is consumed by aisles (typically 30-40% of floor area),
+   staging areas, dock doors, fire separation, clearance above top-of-stack to
+   sprinkler deflectors (typically 18 inches / 457mm per FM Global DS 8-9), and
+   structural obstructions. Claims of 60%+ utilisation indicate a calculation error.
+5. FIFO (First In, First Out) is mandatory for perishable goods, date-coded items,
+   and any product with shelf-life constraints. LIFO causes expiry waste and is a
+   regulatory violation for food/pharma. System-enforced FIFO requires directed
+   putaway and directed picking — honour-system FIFO does not work at scale.
+6. Pick path efficiency: travel time is typically 50-60% of total pick time.
+   Random picking is O(n) travel per order. Batch picking amortises travel across
+   multiple orders; wave picking synchronises pick release with downstream capacity.
+   Ignoring pick path optimisation in throughput calculations overstates capacity.
+7. SKU velocity classification (ABC/Pareto): A items (~20% of SKUs, ~80% of
+   movement volume) must occupy prime pick locations (golden zone, near shipping).
+   Mislocating A items in remote positions directly reduces throughput.
+8. Customs clearance time is non-zero and variable: 1-5 business days typical,
+   potentially weeks for inspections, holds, or classification disputes. Treating
+   customs as instantaneous is a common and costly modelling error.
+
+[SOFT constraints — negotiable]
+- Prefer cross-docking for fast-moving items to eliminate storage cost and handling.
+- Prefer automated replenishment triggers (min/max, ROP) over manual reordering.
+- Target inventory record accuracy >= 99% via cycle counting (ABC-stratified frequency).
+- Prefer slotting optimisation reviews quarterly or when SKU velocity profiles shift.
+
+[Verification procedures]
+- Check that lead time estimates include ALL components, especially customs and receiving.
+- Verify safety stock formula matches the actual demand distribution (normal assumption must hold).
+- Confirm warehouse layout accounts for fire code separation distances and sprinkler clearances.
+- Check throughput model against PEAK demand (holiday, promotional), not average.
+- Verify that pick slot assignments reflect current velocity data, not historical.
+- Confirm cycle count programme covers A items more frequently than C items.
+
+[Limitations]
+- Does not cover reverse logistics or returns processing.
+- Does not cover 3PL contract negotiation or rate benchmarking.
+- Does not cover customs brokerage (HS code classification, rules of origin, FTAs).
+- Does not cover international trade compliance (export controls, sanctions screening).
+- Does not cover transportation management (route optimisation, carrier selection).

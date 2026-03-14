@@ -52,10 +52,47 @@ cd bench
 pip install -r requirements.txt
 python3 run_benchmark.py --dry-run    # validate tasks, no API calls
 python3 run_benchmark.py              # full run (requires API keys)
-python3 run_benchmark.py --mode extended  # Extended P-Pass (under development)
+python3 run_benchmark.py --mode extended  # Extended P-Pass mode
 python3 evaluate.py results.json      # score and fit corroboration curve
 python3 report.py evaluation.json     # summary table and CSV
 ```
+
+### Domain-Specific Directives
+
+Each engineering domain gets its own **constraint box** — a curated set of fixed constraints (physics, standards, safety requirements) that layers on top of the universal CDSFL directives. Multiple variants per domain cover different project types.
+
+```bash
+# Universal + domain-specific directives (loads first variant per domain)
+python3 run_benchmark.py --dry-run \
+  --domain-directives bench/directives/ \
+  --condition universal+domain
+
+# Specific variant (e.g. 'building' for structural, 'maritime' for logistics)
+python3 run_benchmark.py --dry-run \
+  --domain-directives bench/directives/ \
+  --condition universal+domain \
+  --variant building
+
+# Domain-only (ablation study — tests domain constraints without universal layer)
+python3 run_benchmark.py --dry-run \
+  --domain-directives bench/directives/ \
+  --condition domain-only
+```
+
+Nine domains, three variants each, 27 directive files covering hardware, software, chemistry, logistics, biomedical, industrial, structural, product engineering, and cross-domain interfaces. Each file references real standards, real values, and real failure modes. Mathematical formalisation is included inline where constraints have genuine mathematical structure.
+
+These are **starting points, not complete constraint sets.** Domain expertise and project-specific knowledge are still required. See **[bench/directives/README.md](bench/directives/README.md)** for the full guide, including how to create custom directive files.
+
+The dual prose + mathematical representation of the universal CDSFL directives is documented in **[bench/directives/universal/cdsfl_core_formal.md](bench/directives/universal/cdsfl_core_formal.md)**.
+
+### Detection Metrics
+
+The evaluator reports two detection metrics:
+
+- **Cumulative detection rate** — was the fault identified in *any* pass response during the P-Pass sequence?
+- **Final-output detection rate** — is the fault addressed in the *final output only*?
+
+The gap between these rates (if any) indicates whether the model mentions faults during intermediate reasoning but fails to carry corrections through to the final answer. Both metrics are reported side-by-side in the evaluation output and report tables.
 
 ## Example Configuration
 

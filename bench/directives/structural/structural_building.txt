@@ -1,0 +1,76 @@
+DOMAIN: Structural Engineering — Building Design
+CODES: BS EN 1993-1-1 (Steel), BS EN 1992-1-1 (Concrete), BS EN 1990 (Basis),
+       BS EN 1991-1-1 (Actions), AISC 360 (US steel alternative)
+VERSION: 1.0
+SCOPE: Multi-storey steel/concrete buildings up to ~10 storeys, conventional
+       framing, non-seismic regions
+
+[HARD constraints — non-negotiable]
+
+ULS load combination (Eurocode, Eq. 6.10):
+  F_d = 1.35 * G_k + 1.5 * Q_k,1 + SUM(1.5 * psi_0,i * Q_k,i)
+  AISC LRFD alternative: F_d = 1.2 * D + 1.6 * L + 0.5 * (L_r or S or R)
+  Both expressions are non-negotiable — code selection determines which applies.
+
+Moment capacity (steel, Class 1 or 2 sections):
+  M_Ed <= M_c,Rd = W_pl,y * f_y / gamma_M0
+  where gamma_M0 = 1.00 (BS EN 1993-1-1, 6.2.5). Class 3: use W_el,y.
+
+Shear capacity (steel, unstiffened web):
+  V_Ed <= V_c,Rd = A_v * (f_y / sqrt(3)) / gamma_M0
+  where A_v = A - 2*b*t_f + (t_w + 2*r)*t_f for rolled I/H sections.
+
+Combined bending + shear: if V_Ed > 0.5 * V_c,Rd, reduce moment capacity
+  by factor (1 - rho), where rho = (2*V_Ed/V_pl,Rd - 1)^2.
+
+Deflection limits (SLS, BS EN 1993-1-1, NA.2.23):
+  Total: delta <= L / 250
+  Beams supporting brittle finishes (glazing, plaster): delta <= L / 360
+  Imposed load only (variable action): delta <= L / 360
+
+Column buckling (BS EN 1993-1-1, 6.3.1):
+  N_Ed <= N_b,Rd = chi * A * f_y / gamma_M1
+  chi = 1 / (Phi + sqrt(Phi^2 - lambda_bar^2)), chi <= 1.0
+  Phi = 0.5 * (1 + alpha*(lambda_bar - 0.2) + lambda_bar^2)
+  alpha from buckling curve (a0=0.13, a=0.21, b=0.34, c=0.49, d=0.76).
+
+Lateral stability: complete load path from point of application to foundations.
+  Every floor must be braced or have rigid frame action in two orthogonal directions.
+
+Fire resistance rating must match building use classification (Approved Doc B
+  or BS EN 1991-1-2). Minimum 30 min (houses) to 120 min (high-risk occupancy).
+
+Steel yield strength must match specified grade:
+  S235: f_y = 235 MPa (t <= 16mm), S275: f_y = 275 MPa, S355: f_y = 355 MPa.
+  Reduce f_y for thickness > 16mm per BS EN 10025 Table 7.
+
+Connection capacity >= member capacity for ductile design (capacity design).
+  Bolt shear: F_v,Rd = alpha_v * f_ub * A_s / gamma_M2 (gamma_M2 = 1.25).
+
+[SOFT constraints — negotiable]
+
+Prefer standardised rolled sections (UB, UC, UBP catalogues) over fabricated.
+Minimise distinct section sizes on a project — aids procurement and reduces error.
+Design connections considering construction sequence and erection tolerances.
+Rationalise column grid to suit typical spans (6m-9m steel, 5m-8m RC).
+
+[Verification procedures]
+
+Self-weight consistency: verify that the self-weight used in analysis matches
+  the sections selected (iterate if section sizes change significantly).
+Load path completeness: trace every load from application to foundation —
+  gravity, lateral (wind/notional), and torsional (asymmetric plans).
+Connection assumptions: pinned connections in analysis must be detailed as pins;
+  moment connections must have stiffness compatible with analysis model.
+Check both ULS and SLS: a design that passes strength may fail deflection,
+  and vice versa. Natural frequency check if span > ~10m (f >= 4 Hz typical).
+
+[Limitations]
+
+Does not cover seismic design (BS EN 1998 / ASCE 7 required separately).
+Does not cover soil-structure interaction or foundation design.
+Not applicable to specialist structures: long-span (>30m), high-rise (>10
+  storeys), tension structures, shell structures.
+Does not cover non-standard materials (aluminium, stainless steel, timber).
+Does not address progressive collapse or disproportionate collapse beyond
+  basic tie-force requirements.

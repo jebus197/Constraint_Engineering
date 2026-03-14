@@ -1,0 +1,75 @@
+DOMAIN: Hardware Engineering — RF and High-Speed PCB Design
+VERSION: 1.0
+DATE: 2026-03-14
+APPLICABLE STANDARDS: ETSI EN 300 328 (2.4GHz), FCC Part 15, IEC 61000-4-2 (ESD)
+COMPONENT REFS: SMA connectors (MIL-STD-348), FR-4 laminate (IPC-4101/21), Rogers RO4003C
+
+[HARD constraints — non-negotiable]
+
+Impedance matching for maximum power transfer: Z_source = Z_load* (conjugate match).
+  Mismatch causes reflected power. Reflection coefficient:
+  Gamma = (Z_L - Z_0) / (Z_L + Z_0)
+  Return loss: RL = -20 * log10(|Gamma|)
+  Target RL > 10dB (Gamma < 0.316, <10% reflected power) across operating bandwidth.
+
+Microstrip transmission line impedance (approximate, FR-4):
+  Z_0 = (87 / sqrt(Er_eff + 1.41)) * ln(5.98 * h / (0.8 * w + t))
+  where h = dielectric height, w = trace width, t = copper thickness, Er_eff ~ function of Er and w/h.
+  Er for FR-4 ~ 4.2-4.6 at 1GHz (frequency-dependent; rises at low freq, drops at high).
+  50-ohm trace on standard 1.6mm FR-4 (0.2mm prepreg to ground): w ~ 0.3mm.
+
+Ground plane continuity is mandatory under all RF traces and antenna feed lines.
+  Any slot or gap in the ground plane forces return current to detour — creates a slot antenna.
+  Ground plane cuts increase loop area, radiate, and destroy impedance control.
+
+Quarter-wave matching transformer:
+  Z_match = sqrt(Z_1 * Z_2)
+  Physical length = lambda / 4 at centre frequency.
+  lambda = c / (f * sqrt(Er_eff)) for microstrip (velocity factor ~ 0.55-0.65 on FR-4).
+  Bandwidth limited: usable over ~10-15% fractional bandwidth for VSWR < 2:1.
+
+Friis transmission equation (free-space link budget):
+  P_r(dBm) = P_t(dBm) + G_t(dBi) + G_r(dBi) - FSPL(dB)
+  FSPL = 20*log10(4*pi*d/lambda) = 20*log10(d) + 20*log10(f) - 147.55 (d in m, f in Hz)
+  Add fade margin (6-20dB depending on environment), cable/connector losses, and body loss for wearables.
+
+Via transitions in RF paths require ground stitching vias within lambda/20 spacing.
+  Without stitching, signal via excites parallel-plate waveguide mode between layers.
+  At 2.4GHz in FR-4: lambda ~ 70mm, so stitching vias within 3.5mm of signal via.
+
+ESD protection on all external-facing RF ports per IEC 61000-4-2:
+  Contact discharge: +/-4kV (Level 2 minimum), +/-8kV (Level 4 for consumer).
+  ESD diode capacitance must be low enough to not detune the RF path (<0.5pF at 2.4GHz).
+
+Antenna keep-out zone: no copper pour (ground or signal) within manufacturer-specified
+  clearance area. Typical for chip antennas: 5-10mm clear on radiating edge.
+
+[SOFT constraints — negotiable]
+
+Prefer 4-layer stack-up for RF: signal / ground / power / signal.
+  Dedicated ground plane on layer 2 gives controlled impedance for top-layer RF.
+Minimise via count in RF signal path (each via adds ~0.1-0.5nH inductance).
+Maintain physical separation between RF section and high-speed digital (>10mm or ground moat).
+Route RF traces on outer layers where possible (inner microstrip has less predictable Er_eff).
+Prefer 50-ohm system impedance (industry standard, widest component availability).
+
+[Verification procedures]
+
+Calculate controlled impedance using PCB stack-up tool (e.g., Saturn PCB, Polar Si9000)
+  before layout — verify that manufacturer can hold tolerance (typically +/-10% on Z_0).
+Measure antenna return loss (S11) with VNA across full operating band.
+  S11 < -10dB required. S11 < -6dB is marginal (25% reflected power).
+Calculate complete link budget end-to-end: transmit power + antenna gains - path loss
+  - cable losses - fade margin >= receiver sensitivity.
+Verify PCB manufacturer minimum trace/space capability vs required RF trace geometry.
+Check that component land patterns match manufacturer-recommended footprints
+  (RF passives are sensitive to pad geometry — parasitic L and C shift tuning).
+Perform pre-compliance radiated emissions scan before formal testing (CISPR 32 / FCC Part 15).
+
+[Limitations]
+
+Does not cover millimetre-wave design (>30GHz — substrate losses, waveguide transitions dominate).
+Does not cover waveguide or cavity filter design (different electromagnetic regime).
+Does not cover active phased arrays or beamforming (complex feed networks, calibration).
+Does not cover high-power RF (>1W — thermal management, PA linearity, regulatory limits differ).
+Does not cover coexistence analysis for multi-radio platforms (Wi-Fi + BLE + cellular).

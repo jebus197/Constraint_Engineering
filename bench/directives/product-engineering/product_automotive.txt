@@ -1,0 +1,59 @@
+DIRECTIVE: Automotive Components
+DOMAIN: Product Engineering
+SCOPE: Tier 1/2/3 supplier components for passenger vehicle integration
+STANDARDS: IATF 16949, AIAG PPAP 4th ed., AIAG-VDA FMEA Handbook,
+           AEC-Q100/Q200, ISO 16750, FMVSS 302, IMDS
+
+[HARD constraints — non-negotiable]
+1. IATF 16949 quality management system certification required for all automotive
+   supply chain participants. ISO 9001 alone is not accepted by OEMs.
+2. PPAP submission and customer approval required before mass production.
+   18 elements including: design records, DFMEA, process flow diagram, PFMEA,
+   control plan, MSA studies, dimensional results, material/performance test results,
+   initial process study (Cpk >= 1.67 for special characteristics),
+   qualified lab documentation, sample parts, master sample, PSW.
+3. FMEA required per AIAG-VDA methodology: both DFMEA and PFMEA.
+   Action Priority (AP) replaces RPN. AP = High: mandatory action with documented
+   completion. AP = Medium: action with justified timeline. AP = Low: review required.
+4. Material specification per OEM standard (VW TL, BMW GS, GM GMW, Ford WSS-M).
+   Generic material grades ("ABS", "PA66") not acceptable without OEM qualification.
+5. Environmental testing: temperature cycling per AEC-Q100 Grade 1 (-40 to +125 C)
+   for electronics. Location-dependent ranges:
+   Under-hood: -40 to +125 C. Cabin: -40 to +85 C. Trunk: -40 to +85 C.
+6. Vibration testing: random profiles per OEM spec or ISO 16750-3. All resonance
+   frequencies must be identified and addressed. Resonance amplification can exceed 10x.
+7. Flammability: FMVSS 302 (or ISO 3795) for interior trim materials.
+   Burn rate must not exceed 102 mm/min, or material must be self-extinguishing.
+8. IMDS: full material composition declaration mandatory for all components.
+   No "trade secret" blanket exemptions for restricted substances.
+9. Change management: any change to material, process, sub-supplier, or manufacturing
+   location requires customer notification and re-PPAP.
+   Unapproved changes are a containment-level quality escape.
+10. Traceability: safety-critical and special-characteristic parts must be traceable
+    to raw material lot. Traceability records retained per OEM requirement (typically 15 years).
+
+[SOFT constraints — negotiable]
+1. Prefer DFMA principles — reduce part count, minimise tool changes on assembly line.
+2. Prefer standard fasteners to minimise tool count at OEM assembly stations.
+3. Target 15-year / 200,000 km design life for structural and safety-relevant components.
+4. Prefer suppliers with VDA 6.3 process audit scores >= 90% (grade A).
+5. Prefer single-source avoidance — dual-source strategy for critical components.
+
+[Verification procedures]
+1. Check component temperature rating covers worst-case vehicle installation location.
+   Engine bay is most severe; do not assume cabin conditions near the firewall.
+2. Verify all materials declared in IMDS with complete substance data —
+   incomplete entries block OEM release.
+3. Confirm vibration testing covers correct axis orientation and frequency range
+   for actual installation location and mounting method.
+4. Check PPAP documentation complete for all special characteristics (CC/SC)
+   on control plan and drawing.
+5. Verify Cpk meets OEM requirement (typically >= 1.67 special, >= 1.33 standard).
+6. Confirm DFMEA and PFMEA reflect current design/process revision.
+
+[Limitations]
+1. Does not cover powertrain (engine, transmission, exhaust) — additional durability applies.
+2. Does not cover EV battery systems (UN ECE R100, UL 2580) or HV components (>60V DC).
+3. Does not cover ADAS/autonomous driving (ISO 26262 ASIL classification).
+4. Does not cover exterior lighting (ECE R48 series) or glazing (ECE R43).
+5. OEM-specific CSR requirements vary significantly and override generic standards.

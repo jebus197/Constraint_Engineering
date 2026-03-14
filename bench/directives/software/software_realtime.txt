@@ -1,0 +1,57 @@
+Domain: Real-Time and Embedded Software
+Version: 1.0
+Date: 2026-03-14
+References: Liu & Layland (1973) RMS, SHA (1990) priority ceiling, DO-178C, IEC 61508, MISRA C
+
+[HARD constraints — non-negotiable]
+1. Hard real-time: a deadline miss IS a system failure. The worst-case execution
+   time (WCET) for every task must be bounded and analytically provable, not just
+   empirically measured. W_i = C_i + sum of preemptions from higher-priority tasks.
+2. Rate Monotonic Scheduling (RMS) utilisation bound for n periodic tasks:
+   U = sum(C_i / T_i) <= n * (2^(1/n) - 1), where C_i = WCET, T_i = period.
+   This converges to ln(2) ~ 0.693 as n -> infinity. Exceeding this bound does
+   NOT guarantee failure but means schedulability is no longer proven by RMS alone.
+3. Priority inversion: uncontrolled priority inversion is prohibited in safety-
+   critical paths. Must use either Priority Inheritance Protocol (PIP) or
+   Priority Ceiling Protocol (PCP). PCP is preferred — prevents deadlock and
+   bounds blocking to at most one lower-priority critical section.
+4. Dynamic memory allocation (malloc/free, new/delete) is prohibited on hard
+   real-time execution paths. Heap allocation has non-deterministic latency
+   (fragmentation, coalescing). All memory must be statically allocated or
+   pool-allocated with bounded worst-case allocation time.
+5. Stack overflow: statically analyse maximum stack depth for each task, including
+   ISR nesting. Allocate stack size = analysed maximum + margin (typically 20-50%).
+   Recursive functions are prohibited unless bounded and provably terminating.
+6. Interrupt latency budget: ISR must complete within a specified time ceiling.
+   Heavy processing must be deferred to task level (bottom-half, deferred procedure
+   call, or equivalent). ISR duration directly impacts all lower-priority latencies.
+7. Shared data: all data accessed from multiple execution contexts (ISR + task,
+   task + task) must be protected by atomic operations, mutexes with priority
+   protocol, or interrupt disabling with bounded duration. Unprotected shared
+   state is a race condition regardless of observed behaviour.
+8. Watchdog timer: must be independent of the main processor (external WDT
+   preferred). Software-only watchdogs fail to detect the failures they exist for.
+
+[SOFT constraints — negotiable]
+- Prefer static allocation over pool allocation; prefer pool over general heap.
+- Prefer cyclic executive for simple systems (< 5 tasks) — deterministic, no scheduler overhead.
+- Target CPU utilisation < 70% to leave headroom for future task additions and WCET margin.
+- Prefer time-triggered architecture over event-triggered for safety-critical systems.
+
+[Verification procedures]
+- Measure WCET empirically (instrumented runs under load) AND analytically (static analysis
+  tool: aiT, Bound-T, or manual path analysis). Neither alone is sufficient.
+- Verify no unbounded loops or recursion exists in any real-time execution path.
+- Document synchronisation mechanism for every shared variable; review for completeness.
+- Confirm interrupt priority assignments do not create transitive priority inversion.
+- Run stack analysis tools (e.g., GCC -fstack-usage, static analyser) and verify against
+  allocated stack sizes.
+- Test watchdog recovery: force a task overrun and verify the system resets correctly.
+
+[Limitations]
+- Does not cover RTOS kernel design or scheduler implementation.
+- Does not cover safety certification processes (DO-178C for avionics, IEC 61508 SIL
+  for industrial, ISO 26262 ASIL for automotive) — these require process evidence
+  beyond code correctness.
+- Does not cover multi-core real-time (AMP/SMP partitioning, cache interference).
+- Does not cover AUTOSAR or ARINC 653 architecture specifics.

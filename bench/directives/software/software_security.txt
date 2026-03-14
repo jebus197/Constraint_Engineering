@@ -1,0 +1,50 @@
+Domain: Security-Critical Software
+Version: 1.0
+Date: 2026-03-14
+References: OWASP Top 10 (2021), NIST SP 800-63B, RFC 6749 (OAuth 2.0), RFC 8446 (TLS 1.3)
+
+[HARD constraints — non-negotiable]
+1. OWASP Top 10 (2021) mitigations mandatory for all web-facing applications.
+   Injection, Broken Auth, Sensitive Data Exposure, XXE, Broken Access Control,
+   Security Misconfiguration, XSS, Insecure Deserialisation, Vulnerable Components,
+   Insufficient Logging.
+2. SQL injection: use parameterised queries or prepared statements exclusively.
+   String concatenation for SQL construction is prohibited regardless of prior
+   sanitisation — sanitisation is defence-in-depth, not primary defence.
+3. XSS: context-aware output encoding is mandatory. HTML entity encoding,
+   JavaScript encoding, URL encoding, and CSS encoding are NOT interchangeable.
+   Wrong context = ineffective defence. Use a templating engine with auto-escaping.
+4. Password storage: bcrypt (cost >= 10), scrypt (N >= 2^15), or Argon2id
+   (m >= 64MB, t >= 3). NEVER MD5, SHA-1, SHA-256 alone, or any fast hash.
+   Fast hash + salt is still insufficient — the defence is computational cost.
+5. Session tokens: minimum 128 bits from a CSPRNG. Flags: HttpOnly (prevents JS
+   access), Secure (HTTPS only), SameSite=Lax minimum (CSRF mitigation).
+6. TLS 1.2 minimum for data in transit. TLS 1.3 preferred. SSLv3, TLS 1.0, TLS 1.1
+   are prohibited. Cipher suites must exclude RC4, 3DES, CBC-mode (BEAST/POODLE).
+7. Secrets (API keys, credentials, tokens) must NEVER appear in source code, version
+   control history, logs, error messages, or client-facing responses.
+8. CORS: Access-Control-Allow-Origin: * is prohibited on any endpoint that accepts
+   credentials (cookies, Authorization header). Origin must be explicitly allowlisted.
+9. Cryptographic randomness: use /dev/urandom, SecureRandom, or OS CSPRNG.
+   Math.random(), rand(), random.random() are NOT cryptographically secure.
+
+[SOFT constraints — negotiable]
+- Prefer allowlist over denylist for input validation (denylist = infinite attack surface).
+- Prefer short-lived tokens (< 15min) + refresh over long-lived sessions.
+- Implement rate limiting on authentication endpoints (mitigates credential stuffing).
+- Prefer Content-Security-Policy headers to restrict resource loading origins.
+
+[Verification procedures]
+- Scan source and git history for hardcoded secrets (truffleHog, git-secrets, or equivalent).
+- Verify all SQL construction uses parameterised queries — no string formatting with user input.
+- Test TLS configuration with SSLLabs (grade A minimum) or testssl.sh.
+- Confirm error responses to clients contain no stack traces, internal paths, or version numbers.
+- Verify session token entropy: sample tokens, check length >= 22 base64 chars (128 bits).
+- Check CORS headers on authenticated endpoints — test with forged Origin header.
+
+[Limitations]
+- Does not cover cryptographic protocol design or key management (HSM, KMS).
+- Does not cover formal security proofs or verified cryptography.
+- Does not cover compliance frameworks (PCI-DSS, SOC 2, HIPAA, FedRAMP) — these
+  require specialist auditors and controls beyond code-level security.
+- Does not cover supply-chain attacks (dependency poisoning, build system compromise).
