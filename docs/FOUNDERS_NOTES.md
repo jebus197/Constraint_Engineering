@@ -59,25 +59,23 @@ empty.
    (constraint classification, hypothesis testing via falsification,
    corroboration, fixed-point termination, proportionality). Boundary: does
    not capture paradigm shifts (Kuhn) or Bayesian updating as primary
-   mechanism. Holds.
+   mechanism.
 
 2. **Expert dependency** — CDSFL is a force multiplier, not a force generator.
    Additionally: the framework reveals competence or its absence (the
    constraint box is a competence test disguised as a configuration step).
-   Holds.
 
 3. **Platform/model/domain agnosticism** — no counterexample found. The
    framework governs process, not capability. A more capable system runs
    better passes but the structure is unchanged. Falsifiable prediction: if
    unstructured reasoning consistently outperforms CDSFL-structured reasoning
-   across domains, the framework is refuted. Holds.
+   across domains, the framework is refuted.
 
 4. **Self-bootstrapping** — distinguished from circular reasoning by external
    validation at each iteration. Consistent with foundational work in logic
-   (Godel), computation (Turing), and science itself. Holds.
+   (Gödel), computation (Turing), and science itself.
 
 5. **Selection pressure** — mechanism sound (variation, fitness function,
    selection, heritability all present). Conditional on adoption threshold.
-   Goodhart's Law risk acknowledged but mitigated by generative nature of
-   falsification (harder to game than knowledge-retrieval benchmarks). Holds
-   with caveat.
+   Goodhart's Law risk mitigated by the generative nature of falsification,
+   which is harder to game than knowledge-retrieval benchmarks.

@@ -562,6 +562,17 @@ Each of the following projects was built using this methodology. They are linked
 
 ---
 
+## Documentation
+
+| Document | Audience | What it covers |
+|---|---|---|
+| [Extended Rationale](docs/EXTENDED_RATIONALE.md) | General | Why this methodology exists and what it means for AI-assisted STEM work |
+| [White Paper](PAPER.md) | Technical | Formal methodology, mathematical models, empirical validation framework |
+| [Founder's Notes](docs/FOUNDERS_NOTES.md) | General | Design intent, philosophical framing, falsification claims tested |
+| [Domain Directives](bench/directives/README.md) | Practitioners | Domain-specific constraint boxes for the testbench |
+
+---
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
