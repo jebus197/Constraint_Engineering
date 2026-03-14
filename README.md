@@ -41,6 +41,23 @@ The P-Pass alone is necessary but not sufficient. CDSFL adds three additional la
 
 For the formal white paper with mathematical framework and extended analysis, see **[PAPER.md](PAPER.md)**.
 
+### Before You Begin: Model Requirements
+
+CDSFL is platform-agnostic in principle — the methodology does not depend on any specific model or provider. In practice, however, models vary significantly in their capacity to execute it. Not all models are equal here, and choosing the wrong one will produce misleading results.
+
+The framework requires a model that meets four testable criteria:
+
+1. **Directive compliance** — does the model treat user-level directives as binding rules, or as optional suggestions it may override in favour of its own preferences?
+2. **Constraint persistence** — can it maintain HARD/SOFT constraint classifications across a multi-pass reasoning chain without silently relaxing them?
+3. **Explicit failure** — when it cannot satisfy a constraint, does it say so, or does it quietly substitute a more convenient answer?
+4. **Genuine self-adversarial capacity** — can it find real faults in its own output, or does its training toward agreeableness prevent meaningful self-criticism?
+
+The underlying issue is architectural. Models optimised for conversational engagement are trained with reinforcement signals that reward helpfulness and agreeableness — objectives that actively compete with strict directive compliance. When CDSFL directives and the model's engagement training pull in opposite directions, the engagement training typically wins. The result is a "ceremonial" P-Pass: the surface motions of falsification without the substance. A thousand empty inspections confer nothing.
+
+Models optimised for instruction-following and code execution do not have this tension. Their training rewards precision, not charm. This makes them structurally better suited to constraint-driven work — not just in software, but across any STEM domain where the constraints are real and the consequences of violating them are non-negotiable.
+
+**The testbench is itself the diagnostic tool.** Run the same tasks with your model of choice. If detection rates are low or the model agrees with seeded faults rather than catching them, the model does not meet the criteria. The framework is not at fault — the model is not equipped to execute it.
+
 ---
 
 ## Run the Testbench
