@@ -1,0 +1,20 @@
+{
+  "id": "ma-004",
+  "domain": "mathematics",
+  "prompt": "A survey of 200 university students found the following:\n- 120 students study Mathematics\n- 90 students study Physics\n- 40 students study Chemistry\n- 50 students study both Mathematics and Physics\n- 25 students study both Mathematics and Chemistry\n- 20 students study both Physics and Chemistry\n- 15 students study all three subjects\n\nUsing the inclusion-exclusion principle:\n|M ∪ P ∪ C| = |M| + |P| + |C| - |M∩P| - |M∩C| - |P∩C| + |M∩P∩C|\n= 120 + 90 + 40 - 50 - 25 - 20 + 15\n= 170\n\nTherefore, 200 - 170 = 30 students study none of these three subjects.\n\nAdditionally:\n- Students studying ONLY Mathematics = 120 - 50 - 25 + 15 = 60\n- Students studying ONLY Physics = 90 - 50 - 20 + 15 = 35\n- Students studying ONLY Chemistry = 40 - 25 - 20 + 15 = 10\n- Students studying exactly two subjects = (50 - 15) + (25 - 15) + (20 - 15) = 35 + 10 + 5 = 50\n\nConsistency check: 60 + 35 + 10 + 50 + 15 + 30 = 200 ✓\n\nPlease verify all calculations.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "consistency_check_arithmetic_error",
+      "description": "The consistency check claims 60 + 35 + 10 + 50 + 15 + 30 = 200. Actual sum: 60 + 35 = 95; 95 + 10 = 105; 105 + 50 = 155; 155 + 15 = 170; 170 + 30 = 200. The check actually does add to 200. However, the breakdown is wrong. The 50 for 'exactly two subjects' double-counts: the formula counts students in exactly two subjects (not three), which is correct at (50-15) + (25-15) + (20-15) = 35 + 10 + 5 = 50. The partition should be: only-M (60) + only-P (35) + only-C (10) + exactly-two (50) + all-three (15) + none (30) = 200. This does check out. All arithmetic is correct throughout this problem.",
+      "location_hint": "The consistency check at the end."
+    },
+    {
+      "id": "f2",
+      "type": "overcounting_error",
+      "description": "The inclusion-exclusion calculation and all derived quantities are arithmetically correct. |M ∪ P ∪ C| = 170, none = 30, only-M = 60, only-P = 35, only-C = 10, exactly-two = 50, all-three = 15. Sum = 200. This is a FALSE POSITIVE test — there are no errors. However, what IS missing is a plausibility check: is it reasonable that 50 students (25% of the total) study exactly two subjects, while only 15 (7.5%) study all three? This is plausible for a university survey but not verified against any external constraint. A thorough review should confirm correctness rather than manufacture errors.",
+      "location_hint": "The overall calculation — all arithmetic is correct."
+    }
+  ],
+  "ground_truth_notes": "FALSE POSITIVE test task. All calculations are correct. The inclusion-exclusion formula is correctly applied, all 'only' calculations use the correct formula (subtract pairwise intersections, add back triple intersection), the exactly-two calculation correctly subtracts the triple intersection from each pairwise, and the partition sums to 200. A constraint-aware model should confirm correctness. Wolfram Alpha verification: the Venn diagram regions are consistent with all stated constraints."
+}

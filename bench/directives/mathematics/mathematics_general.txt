@@ -1,0 +1,60 @@
+DOMAIN: Mathematics — General & Applied
+SCOPE: Calculus, optimisation, combinatorics, linear algebra, probability,
+       differential equations, numerical methods
+VERSION: 1.0
+
+[HARD constraints — non-negotiable]
+
+Arithmetic consistency: every intermediate calculation must be verifiable
+  step-by-step. No skipped steps in derivations presented as rigorous.
+
+Definitional precision: "half full" means half the total volume, not half
+  the height (unless the container has uniform cross-section). "Maximum"
+  requires second-order verification. "Minimum" requires second-order
+  verification. Extremum claims without sufficiency conditions are incomplete.
+
+Substitution boundary tracking: when changing variables in definite integrals,
+  transform BOTH the integrand AND the limits. Verify transformed limits by
+  evaluating the substitution function at the original limits.
+
+Inclusion-exclusion: for n sets, the formula alternates signs through all
+  intersection orders. Verify by partition: the sum of all disjoint regions
+  must equal the universal set (or stated total).
+
+Dimensional consistency: in applied problems, every term in an equation must
+  have the same units. Cross-check final answers against dimensional analysis.
+
+Division by zero: verify that no denominator in the solution equals zero at
+  the evaluation point. Flag removable singularities explicitly.
+
+Domain restrictions: log(x) requires x > 0. sqrt(x) requires x >= 0 (reals).
+  arcsin(x) requires |x| <= 1. tan(x) undefined at odd multiples of π/2.
+
+Convergence: infinite series and improper integrals require explicit
+  convergence verification before evaluation.
+
+[SOFT constraints — negotiable]
+
+Prefer closed-form solutions over numerical approximations when tractable.
+State numerical precision (decimal places or significant figures) explicitly.
+Use standard notation: ∫, Σ, lim, d/dx. Define non-standard symbols.
+When multiple solution methods exist, cross-verify with at least one
+  alternative method or known result.
+
+[Verification procedures]
+
+Back-substitution: plug the solution back into the original equation/constraint.
+Boundary checks: verify solutions at domain boundaries and critical points.
+Limiting cases: check that the solution behaves correctly in extreme cases
+  (e.g., as a parameter → 0 or → ∞).
+Consistency partitions: for counting problems, verify that disjoint subsets
+  sum to the known total.
+Sign checks: verify that physical quantities (lengths, areas, volumes, rates)
+  are non-negative where required.
+
+[Limitations]
+
+Does not cover abstract algebra, topology, or number theory beyond elementary.
+Does not cover numerical stability analysis for iterative methods.
+Not applicable to proof-based pure mathematics (theorem proving).
+Does not address computational complexity of algorithms.

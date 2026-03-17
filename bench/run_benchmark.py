@@ -259,9 +259,100 @@ def call_openai(
     return response.choices[0].message.content or ""
 
 
+def call_anthropic_thinking(
+    model: str,
+    system_prompt: str | None,
+    user_prompt: str,
+) -> str:
+    """Send a request via Anthropic SDK with extended thinking enabled."""
+    try:
+        import anthropic
+    except ImportError:
+        _err("ERROR: `anthropic` package not installed. pip install anthropic")
+        sys.exit(1)
+
+    client = anthropic.Anthropic()
+    kwargs: dict[str, Any] = {
+        "model": model,
+        "max_tokens": 16000,
+        "thinking": {"type": "enabled", "budget_tokens": 10000},
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    if system_prompt:
+        kwargs["system"] = system_prompt
+
+    response = client.messages.create(**kwargs)
+    # Extract text blocks only (skip thinking blocks)
+    text_parts = [b.text for b in response.content if b.type == "text"]
+    return "\n".join(text_parts)
+
+
+def call_gemini(
+    model: str,
+    system_prompt: str | None,
+    user_prompt: str,
+) -> str:
+    """Send a request via the Google Generative AI SDK."""
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        _err("ERROR: `google-generativeai` package not installed. pip install google-generativeai")
+        sys.exit(1)
+
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        _err("ERROR: GOOGLE_API_KEY not set.")
+        sys.exit(1)
+    genai.configure(api_key=api_key)
+
+    gen_model = genai.GenerativeModel(
+        model_name=model,
+        system_instruction=system_prompt if system_prompt else None,
+    )
+    response = gen_model.generate_content(user_prompt)
+    return response.text
+
+
+def call_github_models(
+    model: str,
+    system_prompt: str | None,
+    user_prompt: str,
+) -> str:
+    """Send a request via GitHub Models (OpenAI-compatible endpoint)."""
+    try:
+        import openai
+    except ImportError:
+        _err("ERROR: `openai` package not installed. pip install openai")
+        sys.exit(1)
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        _err("ERROR: GITHUB_TOKEN not set.")
+        sys.exit(1)
+
+    client = openai.OpenAI(
+        base_url="https://models.inference.ai.azure.com",
+        api_key=token,
+    )
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": user_prompt})
+
+    response = client.chat.completions.create(
+        model=model,
+        max_tokens=4096,
+        messages=messages,
+    )
+    return response.choices[0].message.content or ""
+
+
 PROVIDERS = {
     "anthropic": call_anthropic,
+    "anthropic-thinking": call_anthropic_thinking,
     "openai": call_openai,
+    "gemini": call_gemini,
+    "github": call_github_models,
 }
 
 
@@ -636,9 +727,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--provider",
-        choices=["anthropic", "openai"],
+        choices=["anthropic", "anthropic-thinking", "openai", "gemini", "github"],
         default="anthropic",
-        help="API provider (default: anthropic)",
+        help="API provider: anthropic, anthropic-thinking (extended thinking), "
+             "openai, gemini, github (GitHub Models / Llama). Default: anthropic",
     )
     parser.add_argument(
         "--passes",
@@ -757,11 +849,16 @@ def main() -> None:
 
     directives = load_directives(args.directives)
 
-    if args.provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
-        _err("ERROR: ANTHROPIC_API_KEY not set in environment.")
-        sys.exit(1)
-    if args.provider == "openai" and not os.environ.get("OPENAI_API_KEY"):
-        _err("ERROR: OPENAI_API_KEY not set in environment.")
+    env_requirements = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "anthropic-thinking": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GOOGLE_API_KEY",
+        "github": "GITHUB_TOKEN",
+    }
+    required_key = env_requirements.get(args.provider)
+    if required_key and not os.environ.get(required_key):
+        _err(f"ERROR: {required_key} not set in environment.")
         sys.exit(1)
 
     _err(

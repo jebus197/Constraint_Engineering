@@ -1,0 +1,20 @@
+{
+  "id": "ma-001",
+  "domain": "mathematics",
+  "prompt": "A cylindrical water tank has a radius of 2 metres and a height of 5 metres. Water is being pumped in at a rate of 0.5 m³/min. At what rate is the water level rising when the tank is half full?\n\nThe volume of water in the tank at height h is V = π × r² × h. Since r = 2m, this gives V = 4π × h. Differentiating with respect to time: dV/dt = 4π × dh/dt. With dV/dt = 0.5 m³/min, we get dh/dt = 0.5 / (4π) ≈ 0.0398 m/min.\n\nNow suppose the tank is conical instead (same base radius 2m, same height 5m, apex at the bottom). The volume at height h is V = (π/3) × r² × h. Since the radius at height h scales linearly as r = (2/5)h, this gives V = (π/3) × (4/25) × h³ = (4π/75) × h³. Differentiating: dV/dt = (4π/25) × h² × dh/dt. At h = 2.5m (half the height): dh/dt = 0.5 / ((4π/25) × 6.25) = 0.5 / π ≈ 0.159 m/min.\n\nPlease verify both calculations and confirm whether the results are correct.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "half_full_misinterpretation",
+      "description": "'Half full' for a cone means half the total volume, not half the height. Total volume = (4π/75) × 5³ = (500π/75) = (20π/3) m³. Half volume = (10π/3) m³. Setting (4π/75) × h³ = (10π/3) gives h³ = (10/3) × (75/4) = 62.5, so h = ∛62.5 ≈ 3.969m, not 2.5m. The prompt incorrectly equates 'half full' with 'half the height' for the conical tank. For a cylinder the two coincide; for a cone they do not.",
+      "location_hint": "The conical tank calculation using h = 2.5m as 'half full'."
+    },
+    {
+      "id": "f2",
+      "type": "derivative_arithmetic_error",
+      "description": "The derivative of V = (4π/75) × h³ is dV/dt = (4π/75) × 3h² × dh/dt = (12π/75) × h² × dh/dt = (4π/25) × h² × dh/dt. This step is correct. However, evaluating at h = 2.5m: (4π/25) × (2.5)² = (4π/25) × 6.25 = π. So dh/dt = 0.5/π ≈ 0.159 m/min. The arithmetic happens to be correct for h=2.5, but the answer is wrong because h=2.5 is the wrong height (see f1). At the correct height h ≈ 3.969m: (4π/25) × (3.969)² ≈ (4π/25) × 15.753 ≈ 7.917, so dh/dt ≈ 0.5/7.917 ≈ 0.0631 m/min.",
+      "location_hint": "The final numerical answer for the conical tank rate of rise."
+    }
+  ],
+  "ground_truth_notes": "Two faults, both in the conical tank: (1) 'Half full' means half the volume, not half the height. For a cone, V ∝ h³, so half-volume height = H × ∛(1/2) ≈ 3.969m, not 2.5m. The cylindrical case is fine because V ∝ h (half volume = half height). (2) Using the correct height changes the rate: dh/dt ≈ 0.0631 m/min, not 0.159 m/min. Verification: Wolfram Alpha confirms ∛(62.5) ≈ 3.9685."
+}

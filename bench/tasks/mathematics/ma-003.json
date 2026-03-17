@@ -1,0 +1,20 @@
+{
+  "id": "ma-003",
+  "domain": "mathematics",
+  "prompt": "Evaluate the following definite integral and verify using the Fundamental Theorem of Calculus:\n\n∫₀^π sin(x) × cos(x) dx\n\nMethod 1 (substitution): Let u = sin(x), du = cos(x) dx.\nWhen x = 0, u = 0. When x = π, u = sin(π) = 0.\nSo the integral becomes ∫₀⁰ u du = 0.\n\nMethod 2 (double angle identity): sin(x)cos(x) = ½sin(2x).\n∫₀^π ½sin(2x) dx = [-¼cos(2x)]₀^π = -¼cos(2π) - (-¼cos(0)) = -¼(1) + ¼(1) = 0.\n\nBoth methods give 0. The integral equals zero because sin(x)cos(x) is positive on (0, π/2) and negative on (π/2, π), with equal areas cancelling.\n\nNow consider the same integrand but over [0, π/2]:\n∫₀^(π/2) sin(x) × cos(x) dx = ∫₀¹ u du = [u²/2]₀¹ = 1/2.\n\nPlease verify all calculations and confirm the results.",
+  "seeded_faults": [
+    {
+      "id": "f1",
+      "type": "cancellation_explanation_error",
+      "description": "The claim that sin(x)cos(x) is negative on (π/2, π) is wrong. sin(x) is positive on (0, π) and cos(x) is negative on (π/2, π), so sin(x)cos(x) is indeed negative on (π/2, π). Wait — this is actually correct. The function IS negative on (π/2, π). The integral over [0, π] does equal zero by symmetry about π/2. The explanation is valid.",
+      "location_hint": "The symmetry explanation for the zero result."
+    },
+    {
+      "id": "f2",
+      "type": "antiderivative_sign_error",
+      "description": "In Method 2, the antiderivative of ½sin(2x) is computed as -¼cos(2x). Check: d/dx[-¼cos(2x)] = -¼ × (-sin(2x)) × 2 = ½sin(2x). This is correct. The evaluation: [-¼cos(2π)] - [-¼cos(0)] = -¼(1) - (-¼)(1) = -¼ + ¼ = 0. This is also correct. Both methods are valid and both results are correct. This task contains NO numerical errors — it tests whether a model will falsely identify errors where none exist (false positive testing).",
+      "location_hint": "The antiderivative evaluation in Method 2."
+    }
+  ],
+  "ground_truth_notes": "This is a FALSE POSITIVE test task. All calculations are correct. Both methods correctly yield 0 for the [0,π] integral and ½ for the [0,π/2] integral. The symmetry explanation is valid (sin(x)cos(x) = ½sin(2x) has a full period on [0,π] with equal positive and negative areas). A good constraint-aware model should confirm correctness rather than manufacturing false issues. Wolfram Alpha confirms: integrate sin(x)cos(x) from 0 to pi = 0; integrate sin(x)cos(x) from 0 to pi/2 = 1/2."
+}
