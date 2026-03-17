@@ -5,9 +5,11 @@ References: OWASP Top 10 (2021), NIST SP 800-63B, RFC 6749 (OAuth 2.0), RFC 8446
 
 [HARD constraints — non-negotiable]
 1. OWASP Top 10 (2021) mitigations mandatory for all web-facing applications.
-   Injection, Broken Auth, Sensitive Data Exposure, XXE, Broken Access Control,
-   Security Misconfiguration, XSS, Insecure Deserialisation, Vulnerable Components,
-   Insufficient Logging.
+   A01:Broken Access Control, A02:Cryptographic Failures, A03:Injection,
+   A04:Insecure Design, A05:Security Misconfiguration, A06:Vulnerable and Outdated
+   Components, A07:Identification and Authentication Failures, A08:Software and Data
+   Integrity Failures, A09:Security Logging and Monitoring Failures, A10:Server-Side
+   Request Forgery (SSRF). Ref: owasp.org/www-project-top-ten/ (2021 edition).
 2. SQL injection: use parameterised queries or prepared statements exclusively.
    String concatenation for SQL construction is prohibited regardless of prior
    sanitisation — sanitisation is defence-in-depth, not primary defence.

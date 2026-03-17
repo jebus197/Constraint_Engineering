@@ -36,8 +36,9 @@ mathematics take precedence, then legal and safety, then user-specified.
 
 **Formal:**
 ```
-Precedence relation ≻ on HARD constraint classes:
-  physics ≻ mathematics ≻ legal ≻ safety ≻ user-specified
+Precedence relation ≻ on HARD constraint classes (tiered):
+  {physics, mathematics} ≻ {legal, safety} ≻ user-specified
+  Within a tier, constraints are co-equal; conflicts resolved case-by-case.
 
 For constraints c_i, c_j ∈ C_H:
   if class(c_i) ≻ class(c_j), then c_i takes priority in resolution.

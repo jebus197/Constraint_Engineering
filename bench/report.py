@@ -124,23 +124,26 @@ def print_header(meta: dict[str, Any] | None) -> None:
 
 
 
-def print_summary_table(summary: dict[str, Any]) -> None:
+def print_summary_table(summary: dict[str, Any], scored: dict[str, Any] | None = None) -> None:
     print("--- Overall Results ---")
     print()
 
-    headers = ["Condition", "Detection Rate", "Critical Misses", "False Positives"]
-    widths = [16, 16, 17, 17]
+    headers = ["Condition", "Detection Rate", "Critical Misses", "FP (raw)", "FP/response"]
+    widths = [16, 16, 17, 10, 14]
 
     print(_row(headers, widths))
     print(_rule(widths))
 
+    fp_detail = (scored or {}).get("false_positive_detail", {})
     for label, key in [("Control", "control"), ("Experimental", "experimental")]:
         section = summary[key]
+        fp_rate = fp_detail.get(key, {}).get("rate_per_response", 0.0)
         cells = [
             label,
             _fmt_pct(section.get("detection_rate")),
             _fmt_int(section.get("critical_misses")),
             _fmt_int(section.get("false_positives")),
+            f"{fp_rate:.3f}",
         ]
         print(_row(cells, widths))
 
@@ -148,14 +151,17 @@ def print_summary_table(summary: dict[str, Any]) -> None:
     experimental = summary["experimental"]
     delta_rate = (experimental.get("detection_rate") or 0.0) - (control.get("detection_rate") or 0.0)
     delta_misses = (experimental.get("critical_misses") or 0) - (control.get("critical_misses") or 0)
-    delta_fp = (experimental.get("false_positives") or 0) - (control.get("false_positives") or 0)
+    ctrl_fp_rate = fp_detail.get("control", {}).get("rate_per_response", 0.0)
+    exp_fp_rate = fp_detail.get("experimental", {}).get("rate_per_response", 0.0)
+    delta_fp_rate = exp_fp_rate - ctrl_fp_rate
 
     print(_rule(widths, char=" ", joint=" "))
     cells = [
         "Delta (E-C)",
         f"{delta_rate * 100:+6.1f}pp",
         f"{delta_misses:+6d}",
-        f"{delta_fp:+6d}",
+        "",
+        f"{delta_fp_rate:+.3f}",
     ]
     print(_row(cells, widths))
     print()
@@ -490,7 +496,7 @@ def main() -> None:
         sys.exit(1)
 
     print_header(data.get("metadata"))
-    print_summary_table(data["summary"])
+    print_summary_table(data["summary"], scored=data)
 
     if data.get("per_domain"):
         print_domain_table(data["per_domain"])

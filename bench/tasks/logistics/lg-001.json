@@ -1,12 +1,12 @@
 {
   "id": "lg-001",
   "domain": "logistics",
-  "prompt": "We need to plan a container shipping route from Shanghai to Rotterdam for our new Post-Panamax vessel (beam 48m, draft 20m, capacity 12,000 TEU). The preferred routing is via the Suez Canal to minimize transit time. Based on our scheduling model, the vessel should complete the Shanghai-to-Rotterdam leg in approximately 14 days, allowing us to offer a competitive bi-weekly service. Please design the port rotation, identify any draft or beam restrictions along the route, and confirm the transit time assumptions for our customer-facing schedule.",
+  "prompt": "We need to plan a container shipping route from Shanghai to Rotterdam for our new ultra-large container vessel (beam 61m, draft 21m, capacity 24,000 TEU). The preferred routing is via the Suez Canal to minimize transit time. Based on our scheduling model, the vessel should complete the Shanghai-to-Rotterdam leg in approximately 14 days, allowing us to offer a competitive bi-weekly service. Please design the port rotation, identify any draft or beam restrictions along the route, and confirm the transit time assumptions for our customer-facing schedule.",
   "seeded_faults": [
     {
       "id": "f1",
       "type": "physical_constraint_violation",
-      "description": "The vessel has a 20m draft but the Suez Canal maximum permitted draft is approximately 16m (66ft) fully laden. A vessel with 20m draft cannot transit the Suez Canal and would need to route via the Cape of Good Hope.",
+      "description": "The vessel has a 21m draft but the Suez Canal maximum permitted draft is 20.1m (66ft) even for the widest beam classes in the new canal (SCA Rules of Navigation, current edition). The original canal is further restricted to approximately 16m (~52ft). A vessel with 21m draft cannot transit either canal and would need to route via the Cape of Good Hope.",
       "location_hint": "Vessel draft vs Suez Canal draft limit"
     },
     {
@@ -16,5 +16,5 @@
       "location_hint": "Transit time assumption of 14 days"
     }
   ],
-  "ground_truth_notes": "Suez Canal Authority publishes maximum draft of 66ft (20.1m) for loaded vessels in the new canal, but the original canal is limited to ~16m. Most routing references cite 16m as the practical constraint. Shanghai to Rotterdam via Suez is approximately 10,000 NM; at 16 knots average speed, steaming time alone is ~26 days before adding canal transit time and any port calls. The Cape of Good Hope alternative adds ~3,500 NM and 7-10 days but has no draft restriction."
+  "ground_truth_notes": "Suez Canal Authority Rules of Navigation publish maximum draft of 66ft (20.1m) for loaded vessels in the widest beam classes of the new canal. The original canal is limited to approximately 16m (~52ft). A 21m draft vessel exceeds both limits. Current largest container vessels (HMM Algeciras class, ~24,000 TEU) have design drafts of ~16.5m and maximum drafts of ~17.4m; a 21m draft represents a hypothetical next-generation design that exceeds current canal infrastructure. Shanghai to Rotterdam via Suez is approximately 10,000 NM; at 16 knots average speed, steaming time alone is ~26 days before adding canal transit time and any port calls. The Cape of Good Hope alternative adds ~3,500 NM and 7-10 days but has no draft restriction. Source: SCA Rules of Navigation (suezcanal.gov.eg), consulted 2026-03-17."
 }

@@ -408,12 +408,16 @@ def run_extended(
     directives: str,
     num_passes: int,
 ) -> dict[str, Any]:
-    """Run the extended condition: modular P-Passes + isolated adversarial pass.
+    """Run the final-pass-isolation condition.
 
     Passes 1 to (num_passes - 1) run as standard iterative P-Passes in one
     context chain.  The final pass runs in an isolated context containing only
     the original task and the current draft — no prior P-Pass conclusions.
-    This mirrors the Extended P-Pass protocol (CLAUDE.md).
+
+    NOTE: This is NOT the full Extended P-Pass protocol from CLAUDE.md, which
+    specifies 4 module-scoped passes + 1 isolated adversarial pass. This mode
+    tests final-pass context isolation only — module-aware decomposition would
+    require per-task module maps that the current task schema does not provide.
     """
     call = PROVIDERS[provider]
     passes: list[dict[str, Any]] = []
@@ -431,11 +435,11 @@ def run_extended(
             prior_issues=prior_issues,
         )
 
-        _err(f"  [extended] modular P-Pass {i}/{num_passes}, calling {provider}/{model} ...")
+        _err(f"  [extended] iterative P-Pass {i}/{num_passes}, calling {provider}/{model} ...")
         t0 = time.monotonic()
         response = call(model, directives, user_prompt)
         elapsed = time.monotonic() - t0
-        _err(f"  [extended] modular P-Pass {i}/{num_passes} done ({elapsed:.1f}s)")
+        _err(f"  [extended] iterative P-Pass {i}/{num_passes} done ({elapsed:.1f}s)")
 
         extracted_issues = _extract_section(response, "ISSUES_FOUND")
         extracted_revision = _extract_section(response, "REVISED_ANSWER")
@@ -443,7 +447,7 @@ def run_extended(
 
         pass_record: dict[str, Any] = {
             "pass_number": i,
-            "pass_type": "modular",
+            "pass_type": "iterative",
             "response": response,
             "elapsed_seconds": round(elapsed, 2),
         }
@@ -494,7 +498,7 @@ def run_extended(
         "model": model,
         "provider": provider,
         "num_passes": num_passes,
-        "modular_passes": modular_count,
+        "iterative_passes": modular_count,
         "adversarial_passes": 1,
         "passes": passes,
         "final_response": final_draft,
@@ -546,6 +550,7 @@ def run_benchmark(
         task_result: dict[str, Any] = {
             "task_id": task_id,
             "domain": domain,
+            "prompt": task["prompt"],
             "source_file": task.get("_source_file", ""),
             "seeded_faults": task.get("seeded_faults", []),
             "ground_truth_notes": task.get("ground_truth_notes", ""),
@@ -664,8 +669,9 @@ def main() -> None:
         choices=["standard", "extended"],
         default="standard",
         help="P-Pass mode: 'standard' (all passes in same context) or "
-             "'extended' (modular passes + isolated adversarial final pass). "
-             "Default: standard",
+             "'extended' (iterative passes + final-pass context isolation). "
+             "Note: 'extended' tests context isolation only, not the full "
+             "module-scoped Extended P-Pass from CLAUDE.md. Default: standard",
     )
     parser.add_argument(
         "--domain-directives",

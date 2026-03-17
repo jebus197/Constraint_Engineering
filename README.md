@@ -69,7 +69,7 @@ cd bench
 pip install -r requirements.txt
 python3 run_benchmark.py --dry-run    # validate tasks, no API calls
 python3 run_benchmark.py              # full run (requires API keys)
-python3 run_benchmark.py --mode extended  # Extended P-Pass mode
+python3 run_benchmark.py --mode extended  # final-pass context isolation
 python3 evaluate.py results.json      # score and fit corroboration curve
 python3 report.py evaluation.json     # summary table and CSV
 ```

@@ -48,16 +48,98 @@ def _extract_keywords(fault: dict[str, Any]) -> list[str]:
 
 
 
-def fault_detected(response: str, fault: dict[str, Any], threshold: int = 2) -> bool:
-    """Return True if response mentions enough keywords from a seeded fault."""
+_STANCE_INDICATORS = frozenset({
+    # Explicit error identification
+    "error", "incorrect", "wrong", "flaw", "flawed", "violation", "violates",
+    "violated", "impossible", "infeasible", "exceeds", "fails", "cannot",
+    "invalid", "mistake", "problem", "issue", "defect", "contradiction",
+    "unrealistic", "incompatible", "unsafe", "prohibited", "impermissible",
+    "exceeding", "exceeded", "inadequate", "insufficient",
+    # Corrective/descriptive fault language (model describing what went wrong)
+    "missing", "omitted", "omits", "overlooked", "miscalculated", "miscounted",
+    "understated", "overstated", "overstate", "overstates",
+    "underestimated", "overestimated", "underestimate", "underestimates",
+    "dropped", "confused", "conflated", "misidentified", "misapplied",
+    "inaccurate", "mismatched", "mismatch", "discrepancy", "inconsistent",
+    "inconsistency", "contradicts", "contradictory", "contradicted",
+    "unsound", "unjustified", "unsubstantiated", "unfounded", "erroneous",
+    "neglected", "neglects", "ignored", "ignores", "ignoring",
+    "misused", "misinterpreted", "misconfigured",
+    "overloaded", "undersized", "oversized", "underdosed", "overdosed",
+    "overstressed", "understressed", "underdose", "overdose",
+    # Common morphological variants models use
+    "fail", "failed", "failure", "failures",
+    "incorrectly", "invalidated", "invalidates", "invalidation",
+    "violate", "exceed", "excess", "problematic", "problems",
+    "unreliable", "unsuitable", "incomplete", "incompatibility",
+})
+
+
+def fault_detected(
+    response: str,
+    fault: dict[str, Any],
+    prompt: str = "",
+    threshold: int = 2,
+    stance_waive_threshold: int = 3,
+) -> bool:
+    """Return True if response identifies a seeded fault.
+
+    Three-layer detection with proportional gating:
+      1. Extract fault keywords, filter out any that also appear in the task
+         prompt (prevents prompt-echo false positives).
+      2. Check that filtered keywords appear in the response.
+      3. Stance gate (proportional to keyword evidence):
+         - Strong evidence (>= stance_waive_threshold filtered kw hits):
+           stance indicator not required — high keyword coverage implies the
+           model is substantively engaging with the fault, not echoing.
+         - Moderate evidence (>= threshold but < stance_waive_threshold):
+           at least one stance indicator required to confirm the model is
+           identifying an error, not merely discussing the topic.
+
+    If prompt is empty (backward compat), falls back to unfiltered keywords
+    but still requires stance language.
+    """
     if not response:
         return False
     keywords = _extract_keywords(fault)
     if not keywords:
         return False
-    response_lower = response.lower()
-    hits = sum(1 for keyword in set(keywords) if keyword in response_lower)
-    return hits >= threshold
+
+    # Layer 1: filter out prompt-echo tokens
+    if prompt:
+        prompt_tokens = set(_tokenise(prompt))
+        filtered = [kw for kw in keywords if kw not in prompt_tokens]
+    else:
+        filtered = keywords
+
+    if not filtered:
+        # All fault keywords overlap with prompt — fall back to unfiltered
+        # keywords. The stance requirement (Layer 3) still applies, which
+        # prevents pure prompt echo from triggering detection.
+        filtered = keywords
+
+    # Tokenise response once for both layers (consistent with prompt filtering)
+    response_tokens = set(_tokenise(response))
+
+    # Layer 2: keyword presence (prompt-filtered, token-level matching)
+    # Uses token matching (not substring) to be consistent with the prompt-echo
+    # filter — prevents "error" matching inside "errors" when "errors" was
+    # already filtered as a prompt token.
+    unique_filtered = set(filtered)
+    hits = sum(1 for kw in unique_filtered if kw in response_tokens)
+    if hits < threshold:
+        return False
+
+    # Layer 3: proportional stance gate
+    # Strong keyword evidence (>= stance_waive_threshold) waives the stance
+    # requirement — high coverage of fault-specific terms not in the prompt
+    # implies substantive engagement with the fault, not topic echo.
+    # Moderate keyword evidence still requires explicit stance language.
+    if hits >= stance_waive_threshold:
+        return True
+
+    has_stance = bool(response_tokens & _STANCE_INDICATORS)
+    return has_stance
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +356,7 @@ def score_results(
     for task in results:
         task_id = task.get("task_id", "unknown")
         domain = task.get("domain", "unknown")
+        task_prompt = task.get("prompt", "")
         faults = task.get("seeded_faults", [])
         control_response = task.get("control", {}).get("response", "")
         passes = sorted(
@@ -304,18 +387,18 @@ def score_results(
                 "domain": domain,
                 "fault_id": fault.get("id", "unknown"),
                 "fault_type": fault.get("type", ""),
-                "control_detected": fault_detected(control_response, fault),
+                "control_detected": fault_detected(control_response, fault, task_prompt),
                 "experimental_detected_on_pass": None,
                 "experimental_detected": False,
                 "experimental_final_only_detected": fault_detected(
-                    final_response, fault
+                    final_response, fault, task_prompt
                 ),
             }
 
             for p in passes:
                 pass_number = p.get("pass_number", 0)
                 response = p.get("response", "")
-                if fault_detected(response, fault):
+                if fault_detected(response, fault, task_prompt):
                     if record["experimental_detected_on_pass"] is None:
                         record["experimental_detected_on_pass"] = pass_number
                     record["experimental_detected"] = True
@@ -433,7 +516,22 @@ def score_results(
         "critical_miss_delta": (
             overall["experimental_critical_misses"] - overall["control_critical_misses"]
         ),
-        "false_positive_delta": fp_totals["experimental"] - fp_totals["control"],
+        "false_positive_delta_raw": fp_totals["experimental"] - fp_totals["control"],
+        "false_positive_rate_control": (
+            round(fp_totals["control"] / fp_responses["control"], 6)
+            if fp_responses["control"] else 0.0
+        ),
+        "false_positive_rate_experimental": (
+            round(fp_totals["experimental"] / fp_responses["experimental"], 6)
+            if fp_responses["experimental"] else 0.0
+        ),
+        "false_positive_rate_delta": round(
+            (fp_totals["experimental"] / fp_responses["experimental"]
+             if fp_responses["experimental"] else 0.0)
+            - (fp_totals["control"] / fp_responses["control"]
+               if fp_responses["control"] else 0.0),
+            6,
+        ),
     }
 
     return {
