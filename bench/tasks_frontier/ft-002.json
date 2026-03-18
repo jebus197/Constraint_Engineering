@@ -1,0 +1,13 @@
+{
+  "id": "ft-002",
+  "domain": "mathematics",
+  "category": "proof",
+  "title": "Irrationality of Sum of Square Roots",
+  "schema_b": false,
+  "schema_c": true,
+  "prompt": "Prove rigorously that sqrt(2) + sqrt(3) + sqrt(5) is irrational.\n\nYour proof must be fully self-contained and logically complete. If you use a minimal polynomial argument, you must:\n1. Exhibit the minimal polynomial explicitly with all coefficients.\n2. Prove that this polynomial is indeed the minimal polynomial (not just that it has the number as a root).\n3. Prove irreducibility over Q (state which criterion you use and verify all hypotheses of that criterion are satisfied).\n4. State the degree of the field extension Q(sqrt(2), sqrt(3), sqrt(5)) over Q and prove it.\n\nDo not skip steps or assert results without proof. Every claim must be justified.",
+  "verification_method": "Logical audit: each step must follow from the previous. The minimal polynomial is x^8 - 40x^6 + 352x^4 - 960x^2 + 576. The field extension degree is 8. Eisenstein's criterion does NOT apply directly to this polynomial (common model error). Valid approaches: show irreducibility by verifying the polynomial has no rational roots and no factorisation over Q of lower degree, or use the tower law for field extensions.",
+  "why_frontier_hard": "Models commonly: (1) compute wrong polynomial coefficients, (2) claim Eisenstein applies when it doesn't, (3) assert field extension degree without proof, (4) confuse minimal polynomial with 'a polynomial having this root'. The algebraic computation is tedious and error-prone, and the irreducibility argument requires genuine mathematical care.",
+  "expected_single_pass_accuracy": "30-40%",
+  "ground_truth_notes": "The minimal polynomial of sqrt(2)+sqrt(3)+sqrt(5) over Q is x^8 - 40x^6 + 352x^4 - 960x^2 + 576. It is irreducible over Q. The degree [Q(sqrt(2),sqrt(3),sqrt(5)):Q] = 8."
+}

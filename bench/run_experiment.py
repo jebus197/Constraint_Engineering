@@ -68,7 +68,7 @@ MODEL_CONFIGS: dict[str, dict[str, Any]] = {
     },
     "o3-mini": {
         "model": "o3-mini",
-        "provider": "openai",
+        "provider": "openai-reasoning",
         "description": "OpenAI o3-mini (reasoning)",
         "env_key": "OPENAI_API_KEY",
     },
@@ -85,10 +85,10 @@ MODEL_CONFIGS: dict[str, dict[str, Any]] = {
         "env_key": "GOOGLE_API_KEY",
     },
     "llama-3.3-70b": {
-        "model": "Meta-Llama-3.3-70B-Instruct",
-        "provider": "github",
-        "description": "Llama 3.3 70B (via GitHub Models)",
-        "env_key": "GITHUB_TOKEN",
+        "model": "llama-3.3-70b-versatile",
+        "provider": "groq",
+        "description": "Llama 3.3 70B (via Groq)",
+        "env_key": "GROQ_API_KEY",
     },
 }
 
