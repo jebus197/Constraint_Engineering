@@ -684,6 +684,129 @@ cannot replicate."
 
 ---
 
+## Part XII — Distributed Compute Coverage Model
+
+The distributed compute hypothesis — that heterogeneous adversarial review
+outperforms monoculture review — can be stated as a formal coverage model.
+This extends the corroboration model from Part III to multiple architectures,
+multiple defect classes, and inter-architecture correlation.
+
+### Definitions
+
+- **n** — number of distinct cognitive architectures
+- **K** — number of defect classes (logic, arithmetic, interface, physical, procedural, etc.)
+- **p_ik** — detection probability of architecture *i* for defect class *k*
+- **w_k** — consequence weight of defect class *k* (Σ w_k = 1)
+- **ρ** — inter-architecture correlation (0 = fully independent, 1 = identical)
+
+### Coverage Function
+
+**Multi-class form (general):**
+
+D(n) = Σ_{k=1}^{K} w_k · [1 − Π_{i=1}^{n} (1 − p_ik)]
+
+This says: total coverage is the weighted sum across defect classes of the
+probability that at least one architecture detects that class.
+
+**Simplified form (single-class, correlation-adjusted):**
+
+D(n) = 1 − Π_{i=1}^{n} [1 − p · (1−ρ)^{i−1}]
+
+Each successive architecture's effective detection rate decays by the
+correlation factor. The first architecture contributes its full capability;
+each subsequent one contributes only the portion that is genuinely independent
+of its predecessors.
+
+### Floor Condition
+
+D(1) = Σ_k w_k · p_{1k}
+
+The degenerate case: a single model in isolation. This is the baseline against
+which all multi-architecture configurations are measured.
+
+### Ceiling Condition
+
+D_max = lim_{n→∞} D(n) = Σ_k w_k · [1 − Π_{i=1}^{∞} (1 − p_ik)]
+
+Two ceilings exist:
+- **Theoretical ceiling:** D_max = 1 (every defect is detectable by some
+  architecture). This is the upper bound on what distributed compute could
+  achieve with unlimited architectural diversity.
+- **Practical ceiling:** D_max < 1, bounded by defect classes that no available
+  architecture can detect. This is the empirically discoverable limit for any
+  given set of architectures.
+
+### Marginal Gain
+
+Δ(n) = D(n+1) − D(n) = Σ_k w_k · [Π_{i=1}^{n} (1 − p_ik)] · p_{n+1,k}
+
+The marginal gain from adding architecture (n+1) is the probability that it
+catches defects that **all** prior architectures missed, weighted by defect
+class consequence. This is the key quantity for optimal stopping.
+
+### Optimal Stopping
+
+n* = min{n : Δ(n) < ε}
+
+where ε is the cost/benefit threshold — the point below which adding another
+architecture costs more than the coverage it provides. The value of ε is
+context-dependent: safety-critical domains demand smaller ε (more architectures);
+routine work tolerates larger ε (fewer architectures).
+
+### Key Properties
+
+1. **Diminishing returns.** Δ(n) is monotonically decreasing. Early
+   architectures add the most coverage; later ones contribute progressively less.
+
+2. **Heterogeneity premium.** Low ρ (genuinely different architectures) reaches
+   a higher ceiling than high ρ (similar architectures). At the limit, adding
+   copies of the same architecture (ρ→1) produces D(n) ≈ D(1) regardless of n.
+
+3. **Monoculture collapse.** When ρ = 1, the model degenerates: D(n) = D(1)
+   for all n. A room full of the same model, however capable, leaves its blind
+   spots permanently unexamined.
+
+4. **Orchestration as ρ-reducer.** The orchestration layer (coordinating agent
+   managing review flow, confer/escalation, convergence) does not appear in the
+   equation directly but affects the effective ρ. Good orchestration preserves
+   genuine independence between reviewers; poor orchestration allows convergence
+   toward consensus, raising effective ρ and reducing coverage.
+
+5. **Reduction property.** Under simplifying assumptions (K=1, all p_ik = p,
+   ρ = 0), the model reduces exactly to C(n) = 1 − (1−p)ⁿ from Part III.
+   The simple corroboration model is the degenerate case of the distributed
+   compute model. Verified computationally.
+
+### Empirical Predictions
+
+The model generates specific testable predictions:
+
+- **Three architectures (heterogeneous, ρ≈0.3) should outperform three copies
+  of any single architecture** on defect detection coverage. Example with
+  illustrative parameters: heterogeneous D(3) ≈ 0.825 vs monoculture
+  D(3) ≈ 0.755.
+- **The marginal gain curve should be measurably steeper for heterogeneous
+  topologies** than for monoculture.
+- **Optimal n* should be small** (typically 3–6 for moderate thresholds) because
+  the diminishing returns curve is steep.
+- **The CC/CX/Gemini review data already collected** (24 issues from CC/CX
+  rounds, 16 novel from Gemini) can be used to estimate ρ and p_ik values
+  for the actual architectures in use.
+
+### Binding Constraints and Status
+
+The model is an operational heuristic, not a derived theorem. Its parameters
+(p_ik, w_k, ρ) must be estimated empirically, not derived from first
+principles. The correlation structure ρ is particularly difficult — real
+architectures share training data and similar knowledge bases, making true
+independence hard to achieve and harder to measure.
+
+If the model fails to predict real review outcomes better than a simpler
+"more passes = better" heuristic, it should be replaced. The methodology's
+validity does not depend on this specific mathematical framework.
+
+---
+
 ## Invitation to Falsify
 
 This document practises what it describes. Every claim made here is presented as a falsifiable assertion:
@@ -699,6 +822,7 @@ This document practises what it describes. Every claim made here is presented as
 - The complexity threshold hypothesis — that methodology formalisation adds value only above a threshold correlated with constraint interaction density — is testable by comparing methodology contribution across task categories of varying complexity.
 - The schema competition principle — that competing methodology documents tested on the same benchmark will converge on better methodologies through selection pressure — is testable by running multiple schemas through the same harness and comparing outcomes.
 - The intelligence-agnostic expert role — that AI-provided domain expertise matches human-provided domain expertise in the HIL role — is testable by comparing conditions with human vs AI domain context on frontier-difficulty tasks.
+- The distributed compute coverage model — that heterogeneous architectures (low ρ) achieve higher defect detection coverage than monoculture (high ρ) — is testable by comparing coverage metrics from multi-architecture review against single-architecture review on identical tasks. The model's specific predictions (monoculture collapse, diminishing returns curve shape, optimal n*) are each independently falsifiable.
 
 If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
 
