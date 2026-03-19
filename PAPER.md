@@ -535,6 +535,120 @@ Each of the following projects was built using this methodology. They are linked
 | **Open Brain** | Persistent, cross-agent, cross-session verified memory for AI systems. The persistence and verification layer described in Part V of this document. | [OpenBrain](https://github.com/jebus197/OpenBrain) |
 ---
 
+## Part XI — Frontier Research Directions
+
+### Methodology Formalisation as Research Area
+
+The deeper hypothesis underlying CDSFL is that methodology itself — the
+structured application of scientific discipline to cognitive work — can be
+captured in a document that any sufficiently capable agent can apply. This is
+distinct from prompt engineering (which encodes expertise in the prompt) and
+from training (which encodes expertise in the weights). CDSFL encodes
+expertise in the protocol.
+
+If this hypothesis holds, the methodology is transferable, auditable, and
+improvable as a document — independent of who applies it. If it fails, the
+value lies entirely in tacit expertise (Polanyi's paradox: "we know more than
+we can tell"), and formalisation adds nothing. The self-test and frontier
+experiments described in Part IX are designed to discriminate between these
+outcomes.
+
+### Intelligence-Agnostic Expert Role
+
+CDSFL's Human In the Loop role is functional, not species-restricted. A
+synthetic intelligence with sufficient domain competence is a domain expert —
+not a simulation of one. This is an intrinsic design property, present since
+the framework's inception. The confer mechanism handles expertise boundaries:
+when any expert (human or AI) reaches the limit of its competence, items are
+flagged for peer review. Human peer review is explicitly invited at the confer
+stage, not bypassed.
+
+### Multi-Architecture Cognitive Convergence
+
+During the benchmark's own development (March 2026), multiple vendor models
+(Anthropic Claude via CC/CX, Google Gemini) independently reviewed each
+other's output under a shared falsification methodology. This was not
+prompt-chaining or pipeline orchestration. Each model identified issues the
+others missed:
+
+- CC/CX 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Gemini 5-round adversarial review: 16 novel issues CC/CX missed (convergence: 9→10→5→4→3)
+- Extended P-Pass (5 modules): 4 additional actionable items
+
+This validates the **biodiversity hypothesis**: heterogeneous cognitive
+architectures find different defects than monoculture review. The protocol —
+heterogeneous reviewers, shared methodology, defer-on-deadlock, consensus
+stopping — is architecture-agnostic and domain-agnostic.
+
+This also constitutes empirical evidence that schemas can be automatically
+self-improving under distributed compute: diverse architectures apply the same
+falsification methodology to each other's output, converging on diminishing
+returns through adversarial collaboration.
+
+### Schema Competition
+
+CDSFL is not canonical. It is a starting point — a hypothesis, not a
+conclusion. There can be as many competing methodology schemas as there are
+practitioners to design them. The selection mechanism is empirical
+performance: the benchmark harness is schema-agnostic by design. Its three
+conditions (control, experimental, calibration) can test any methodology, not
+just CDSFL. If a competing schema outperforms CDSFL on the frontier task set,
+CDSFL's proper response is adoption, not resistance.
+
+A methodology that claims immunity from the process it prescribes is
+self-refuting. The selection pressure CDSFL applies to AI models applies
+equally to CDSFL itself.
+
+### Complexity Threshold Hypothesis
+
+The self-test (Part IX) suggests a complexity threshold below which
+methodology formalisation adds no measurable value. On an 805-line code review
+task (below CDSFL's design point), all single-invocation conditions capped at
+approximately 40% recall regardless of methodology. This is consistent with
+the prediction that CDSFL's differential value increases with problem
+complexity.
+
+The threshold may correlate with constraint count multiplied by constraint
+interaction density — problems where constraints are few or independent do not
+benefit from structured falsification, while problems where constraints are
+numerous and interact non-linearly benefit substantially. This is a testable
+prediction. The 25 frontier tasks (10-50% expected single-pass accuracy across
+five categories) are designed to locate this threshold empirically.
+
+### Open Falsifiable Questions
+
+These questions arise from the research directions above. Each is testable
+with existing infrastructure:
+
+1. **Does schema competition produce better schemas?** Give two competing
+   methodology documents to the same model on the same task. Measure which
+   produces better outcomes. The benchmark harness already supports this.
+
+2. **Does the intelligence-agnostic expert role hold at frontier difficulty?**
+   On genuinely hard problems (the 25 frontier tasks), does AI-provided domain
+   expertise match human-provided domain expertise in the HIL role? Testable by
+   comparing conditions with human vs AI domain context provision.
+
+3. **Where does the complexity threshold sit?** Is there a problem complexity
+   below which methodology formalisation adds nothing measurable? The frontier
+   tasks span five difficulty categories. If methodology contribution correlates
+   with task category (proof > synthesis > design > code > reasoning-about-
+   reasoning), this reveals the threshold's shape.
+
+4. **Does multi-architecture review generalise beyond code?** The biodiversity
+   hypothesis was validated on software review. Does it hold for mathematical
+   proof, engineering design, chemical synthesis, and self-referential
+   verification? Testable via Schema C (cross-model adversarial) on the
+   frontier task set.
+
+5. **Is there a convergence limit for heterogeneous review?** The
+   self-improvement mechanism works until architectures exhaust their
+   complementary blind spots. After convergence, adding more architectures adds
+   cost without coverage. Where is this limit? Measurable from the round-robin
+   convergence test.
+
+---
+
 ## Invitation to Falsify
 
 This document practises what it describes. Every claim made here is presented as a falsifiable assertion:
@@ -546,6 +660,10 @@ This document practises what it describes. Every claim made here is presented as
 - The claim that the quality defence makes low-quality reasoning harder to sustain is testable by deploying the methodology across agents of varying capability and measuring cross-verification outcomes.
 - The formal corroboration model C(n) = 1 − (1 − p)ⁿ is testable by measuring actual detection rates across multiple passes on seeded-fault benchmarks.
 - The corroboration model itself — the application of geometric survival mathematics to LLM self-falsification — may be the wrong model entirely. If a fundamentally different framework predicts P-Pass outcomes more accurately, this one should be replaced. The methodology's validity does not depend on this specific equation.
+- The biodiversity hypothesis — that heterogeneous cognitive architectures find different defects than monoculture review — is testable by comparing multi-architecture review coverage against single-architecture review coverage on the same tasks across domains.
+- The complexity threshold hypothesis — that methodology formalisation adds value only above a threshold correlated with constraint interaction density — is testable by comparing methodology contribution across task categories of varying complexity.
+- The schema competition principle — that competing methodology documents tested on the same benchmark will converge on better methodologies through selection pressure — is testable by running multiple schemas through the same harness and comparing outcomes.
+- The intelligence-agnostic expert role — that AI-provided domain expertise matches human-provided domain expertise in the HIL role — is testable by comparing conditions with human vs AI domain context on frontier-difficulty tasks.
 
 If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
 

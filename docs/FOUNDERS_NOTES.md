@@ -99,6 +99,102 @@ methodology still produces confident errors. Building ever-larger infrastructure
 to contain all expertise in a single system invests in the wrong variable: the
 returns come from better configuration, not bigger models.
 
+## CDSFL Is Non-Canonical
+
+CDSFL is not a finished product. It is a starting point — a hypothesis that
+methodology itself can be formalised, and that this formalisation alone is a
+potentially worthwhile area of study.
+
+The current schema (`cdsfl_core_formal.md`, the working directives, the
+benchmark harness) is the first iteration, not the final form. Open to
+improvement from all sources: self-generated, second/third party, human and
+machine. Nothing about CDSFL is non-falsifiable. The methodology must evolve
+through the same falsification process it prescribes.
+
+The founder's position: there can be as many competing schemas as there are
+stars in the sky. Let them compete. May only the fittest survive. The
+challenge is welcome, even if it means complete extinction of the current
+iteration of CDSFL itself. A methodology that claims immunity from the
+process it prescribes is self-refuting.
+
+## Intelligence-Agnostic HIL
+
+CDSFL's HIL (Human In the Loop) role is functional, not species-restricted.
+A synthetic intelligence with sufficient domain competence IS a domain expert
+— not a simulation of one. This is an intrinsic design property, present
+since inception, not a future aspiration.
+
+The confer mechanism handles expertise boundaries: when any expert (human or
+AI) reaches the limit of its competence, items are flagged for peer review.
+Human peer review is explicitly invited at the confer stage, not bypassed.
+The quality of the HIL (human vs AI, different AI architectures) is a
+separate variable, testable in subsequent rounds.
+
+## Multi-Vendor Model Collaboration (Novel Occurrence, March 2026)
+
+During CE benchmark development, a potentially unprecedented event occurred:
+multiple vendor models (Anthropic Claude via CC/CX, Google Gemini via CLI)
+actively communicated through the IM service and confer mechanism,
+collaboratively improving shared schemas and workflows. This is not
+prompt-chaining or pipeline orchestration. Each model independently reviewed
+the others' output under a shared methodology, identified issues the others
+missed, and fixes were integrated iteratively.
+
+- CC/CX 8-round adversarial review: ~24 issues
+- Gemini 5-round adversarial review: 16 novel issues CC/CX missed
+- Extended P-Pass (5 modules): 4 additional actionable items
+
+This validates the biodiversity hypothesis: heterogeneous cognitive
+architectures find different defects than monoculture review. The protocol
+(heterogeneous reviewers, shared methodology, defer-on-deadlock, consensus
+stopping) is architecture-agnostic and domain-agnostic.
+
+This also constitutes empirical evidence that software (and potentially any
+schema) can be automatically self-improving under CDSFL with distributed
+compute: diverse architectures apply the same falsification methodology to
+each other's output, converging on diminishing returns through adversarial
+collaboration.
+
+## Methodology Formalisation as Research Area
+
+The deeper hypothesis: methodology itself — the structured application of
+scientific discipline to cognitive work — can be captured in a document that
+any sufficiently capable agent can apply. This is distinct from prompt
+engineering (expertise in the prompt) and from training (expertise in the
+weights). CDSFL encodes expertise in the protocol.
+
+If the hypothesis holds, the methodology is transferable, auditable, and
+improvable as a document — independent of who applies it. If it fails, the
+value lies entirely in tacit expertise (Polanyi's paradox: "we know more than
+we can tell"), and formalisation adds nothing. The experiments are designed to
+discriminate between these outcomes.
+
+## Complexity Threshold (Extrapolation, 19 March 2026)
+
+The self-test (code review, 805 lines, Gemini Flash) suggests a complexity
+threshold below which methodology formalisation adds nothing measurable. All
+conditions capped at ~40% recall regardless of methodology.
+
+The threshold may correlate with constraint count × constraint interaction
+density. Simple problems with few independent constraints do not need formal
+falsification. Multi-constraint problems with non-linear interactions — the
+problems CDSFL was designed for — are where the differential value should
+appear.
+
+This is testable. The 25 frontier tasks span five categories at 10-50%
+expected single-pass accuracy. If CDSFL's contribution correlates with task
+category and constraint density, the threshold's shape becomes visible.
+
+## Open Falsifiable Questions (19 March 2026)
+
+1. Does schema competition produce better schemas?
+2. Does intelligence-agnostic HIL hold at frontier difficulty?
+3. Where does the complexity threshold sit?
+4. Does multi-architecture review generalise beyond code?
+5. Is there a convergence limit for heterogeneous review?
+
+Each testable with existing infrastructure. See PAPER.md Part XI.
+
 ## Falsification Claims Tested (P-Pass, 14 March 2026)
 
 1. **Method formalisation** — CDSFL captures the Popperian scientific method

@@ -568,6 +568,37 @@ The honest position: you cannot prevent low-quality reasoning from being produce
 
 ---
 
+## Frontier Research Directions
+
+CDSFL is not canonical. It is a starting point — open to improvement from all
+sources (self-generated, second/third party, human and machine). There can be
+as many competing methodology schemas as there are practitioners to design
+them. The benchmark harness is schema-agnostic: its three conditions can test
+any methodology. If a competing schema outperforms CDSFL, the proper response
+is adoption, not resistance.
+
+During the benchmark's development, multiple vendor models (Anthropic Claude,
+Google Gemini) independently reviewed each other's output under the shared
+methodology — not prompt-chaining, but genuine adversarial collaboration.
+Gemini found 16 novel issues that eight Claude review rounds missed. This
+validates the **biodiversity hypothesis**: heterogeneous cognitive architectures
+find different defects than monoculture review. The protocol is
+architecture-agnostic and domain-agnostic.
+
+The framework's expert role is intelligence-agnostic by design. A synthetic
+intelligence with sufficient domain competence is a domain expert — not a
+simulation of one. The quality of the expert (human vs AI, different
+architectures) is a separate testable variable.
+
+Key open questions: Does methodology formalisation add value above a complexity
+threshold that correlates with constraint interaction density? Does
+multi-architecture review generalise beyond software to proof, design, and
+synthesis? Does schema competition produce measurably better methodologies?
+Each is testable with existing infrastructure. See the [white paper](PAPER.md)
+Part XI for formal treatment.
+
+---
+
 ## Worked Examples
 
 Each of the following projects was built using this methodology. They are linked here as evidence of the methodology in practice, not as claims of superiority over alternative approaches. Each repo has its own documentation and stands independently.
