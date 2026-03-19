@@ -165,14 +165,18 @@ prompt-chaining or pipeline orchestration. Each model independently reviewed
 the others' output under a shared methodology, identified issues the others
 missed, and fixes were integrated iteratively.
 
-- CC/CX 8-round adversarial review: ~24 issues
-- Gemini 5-round adversarial review: 16 novel issues CC/CX missed
+- CC/CX 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Gemini 5-round adversarial review: 16 novel issues CC/CX missed (convergence: 9→10→5→4→3)
 - Extended P-Pass (5 modules): 4 additional actionable items
+- All 13 code fixes + 4 EPP fixes implemented and committed (`afcc323`)
 
 This validates the biodiversity hypothesis: heterogeneous cognitive
-architectures find different defects than monoculture review. The protocol
-(heterogeneous reviewers, shared methodology, defer-on-deadlock, consensus
-stopping) is architecture-agnostic and domain-agnostic.
+architectures find different defects than monoculture review. The deeper
+insight is that epistemic diversity itself becomes compute — the disagreement
+between architectures is not noise to be resolved but the computation itself.
+The protocol (heterogeneous reviewers, shared methodology, confer-mediated
+adaptive termination, defer-on-deadlock, consensus stopping) is
+architecture-agnostic and domain-agnostic.
 
 This also constitutes empirical evidence that software (and potentially any
 schema) can be automatically self-improving under CDSFL with distributed

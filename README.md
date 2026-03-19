@@ -105,7 +105,7 @@ python3 run_benchmark.py --dry-run \
   --condition domain-only
 ```
 
-Nine domains, three variants each, 27 directive files covering hardware, software, chemistry, logistics, biomedical, industrial, structural, product engineering, and cross-domain interfaces. Each file references real standards, real values, and real failure modes. Mathematical formalisation is included inline where constraints have genuine mathematical structure.
+Ten domains — hardware, software, chemistry, logistics, biomedical, industrial, structural, product engineering, cross-domain interfaces, and mathematics — with up to three variants each, totalling 28 domain-specific directive files. Each file references real standards, real values, and real failure modes. Mathematical formalisation is included inline where constraints have genuine mathematical structure.
 
 These are **starting points, not complete constraint sets.** Domain expertise and project-specific knowledge are still required. See **[bench/directives/README.md](bench/directives/README.md)** for the full guide, including how to create custom directive files.
 
@@ -600,32 +600,54 @@ The honest position: you cannot prevent low-quality reasoning from being produce
 
 ## Frontier Research Directions
 
-CDSFL is not canonical. It is a starting point — open to improvement from all
-sources (self-generated, second/third party, human and machine). There can be
-as many competing methodology schemas as there are practitioners to design
-them. The benchmark harness is schema-agnostic: its three conditions can test
-any methodology. If a competing schema outperforms CDSFL, the proper response
-is adoption, not resistance.
+### The Non-Canonical Principle
 
-During the benchmark's development, multiple vendor models (Anthropic Claude,
-Google Gemini) independently reviewed each other's output under the shared
-methodology — not prompt-chaining, but genuine adversarial collaboration.
-Gemini found 16 novel issues that eight Claude review rounds missed. This
-validates the **biodiversity hypothesis**: heterogeneous cognitive architectures
-find different defects than monoculture review. The protocol is
-architecture-agnostic and domain-agnostic.
+CDSFL is not canonical. It is a starting point — open to improvement from all sources (self-generated, second/third party, human and machine). There can be as many competing methodology schemas as there are practitioners to design them. The benchmark harness is schema-agnostic: its three conditions can test any methodology. If a competing schema outperforms CDSFL, the proper response is adoption, not resistance.
 
-The framework's expert role is intelligence-agnostic by design. A synthetic
-intelligence with sufficient domain competence is a domain expert — not a
-simulation of one. The quality of the expert (human vs AI, different
-architectures) is a separate testable variable.
+This has a deeper consequence: it barely matters if CDSFL itself is wrong. What the project is building is a schema for testing schemas — CDSFL is the first specimen in a methodology laboratory. If CDSFL performs well on the benchmark, it is a useful schema worth iterating. If it performs poorly, the benchmark detected that, which means the testing infrastructure works — and the testing infrastructure is the actual contribution. If a competing schema outperforms CDSFL on the same harness, that is the system functioning exactly as designed. The laboratory is the contribution. The specimen is expendable.
 
-Key open questions: Does methodology formalisation add value above a complexity
-threshold that correlates with constraint interaction density? Does
-multi-architecture review generalise beyond software to proof, design, and
-synthesis? Does schema competition produce measurably better methodologies?
-Each is testable with existing infrastructure. See the [white paper](PAPER.md)
-Part XI for formal treatment.
+### Multi-Architecture Validation (Completed, March 2026)
+
+During the benchmark's development, three independent vendor models (Anthropic Claude via CC/CX, Google Gemini, OpenAI GPT) reviewed each other's output under the shared methodology — not prompt-chaining, but genuine adversarial collaboration:
+
+- CC/CX 8-round adversarial review: ~24 issues identified
+- Gemini 5-round adversarial review: 16 novel issues that all prior Claude rounds missed
+- Extended P-Pass (5 modules): 4 additional actionable items
+- All 13 code fixes and 4 EPP fixes implemented and committed
+
+This validates the **biodiversity hypothesis**: heterogeneous cognitive architectures find different defects than monoculture review. The deeper insight is that epistemic diversity itself becomes compute — the disagreement between architectures is not noise to be resolved but the computation itself. Eight rounds of the same architecture converge; a single round of a different architecture finds issues the first missed entirely. The protocol (heterogeneous reviewers, shared methodology, defer-on-deadlock, consensus stopping) is architecture-agnostic and domain-agnostic.
+
+### The Three-Condition Protocol
+
+The benchmark tests three conditions to isolate what matters:
+
+| Condition | What it does | What it tests |
+|---|---|---|
+| **Control** | Single-pass, bare prompt | Raw model capability baseline |
+| **CDSFL (Experimental)** | Iterative P-passes with full CDSFL directives, confer-mediated termination | The full methodology |
+| **Calibration Baseline** | Iterative P-passes with generic "be careful" directives, same confer termination | Whether specific CDSFL directives matter, or whether any structured iteration helps |
+
+Three comparisons, three questions: Control vs CDSFL asks whether the full methodology beats raw output. Calibration vs CDSFL asks whether the specific directives matter. Control vs Calibration asks whether structured iteration alone helps. The calibration baseline deliberately shares the confer mechanism with CDSFL — without shared iteration machinery, any comparison would conflate "better directives" with "different iteration count."
+
+### Intelligence-Agnostic Expert Role
+
+The framework's expert role is intelligence-agnostic by design. A synthetic intelligence with sufficient domain competence is a domain expert — not a simulation of one. The quality of the expert (human vs AI, different architectures) is a separate testable variable. The confer mechanism handles expertise boundaries: when any expert reaches the limit of its competence, items are flagged for peer review. Human peer review is explicitly invited at the confer stage, not bypassed.
+
+### The Discipline Stack
+
+An independent structural analysis (OpenAI GPT, March 2026) decomposed CDSFL into five distinct layers:
+
+1. **Universal reasoning discipline** — the P-Pass and constraint taxonomy
+2. **Domain-specific expert encodings** — the directive files and constraint boxes
+3. **Heterogeneous adversarial review topology** — the multi-architecture confer protocol
+4. **Benchmark harness** — schema-agnostic selection pressure between competing methodologies
+5. **Persistence and reputation layer** — verified records of what survives cross-verification
+
+Each layer constrains the others. The discipline without the bench is rhetoric. The bench without the discipline is measurement without a theory of what is being measured. The directives without the review topology are expert opinion without adversarial stress testing. Together they constitute something closer to an operating system for technical cognition than to a prompt template or a checklist.
+
+### Open Questions
+
+Key open questions: Does methodology formalisation add value above a complexity threshold that correlates with constraint interaction density? Does multi-architecture review generalise beyond software to proof, design, and synthesis? Does schema competition produce measurably better methodologies? Is there a convergence limit for heterogeneous review beyond which adding architectures adds cost without coverage? Each is testable with existing infrastructure. See the [white paper](PAPER.md) Part XI for formal treatment.
 
 ---
 
