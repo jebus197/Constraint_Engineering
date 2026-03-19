@@ -184,6 +184,16 @@ compute: diverse architectures apply the same falsification methodology to
 each other's output, converging on diminishing returns through adversarial
 collaboration.
 
+What deserves explicit statement is what the machines were actually refining.
+They were not only reviewing CDSFL-generated code or design output. They were
+iteratively improving the test procedures themselves: the benchmark harness,
+the three-condition experimental design, the schema-agnostic evaluation
+protocol, the confer mechanism, the convergence criteria. The instruments of
+measurement were the objects under distributed improvement. This is machines
+in a distributed compute environment actively collaborating to refine their
+own model-agnostic testing infrastructure — and doing so under the same
+falsification discipline that the infrastructure is designed to enforce.
+
 ## Methodology Formalisation as Research Area
 
 The deeper hypothesis: methodology itself — the structured application of
