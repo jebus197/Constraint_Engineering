@@ -1110,6 +1110,14 @@ def confer_diminishing_returns(
       - cli_failures: dict with 'cc_failed' and 'cx_failed' booleans
 
     INFRA_FAIL on either assessor defaults to CONTINUE (never consensus).
+
+    NOTE (P5 adversarial finding 4): These CLI calls consume tokens via the
+    CC/CX subscriptions but are NOT metered through the CostLedger. They are
+    infrastructure costs separate from the experiment's API budget. With
+    confer_after=3 and max_passes=5, up to 6 CLI calls per task-config pair
+    (2 per confer invocation × 3 invocations). Budget impact is negligible
+    relative to frontier model calls but should be accounted for in total
+    experiment cost reporting.
     """
     import subprocess as sp
 

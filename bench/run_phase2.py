@@ -544,9 +544,9 @@ def run_task_conditions(
         except Exception as e:
             _check_fatal_error(e)  # Fix 3: raise FatalAPIError if non-recoverable
             raise
-        # EPP M2 fix 4: include directive length in cost estimate
-        prompt_len = len(task["prompt"]) + len(directives)
-        cost = estimate_call_cost(provider, prompt_len, len(ctrl.get("response", "")))
+        # Control sends no system prompt — cost is just the task prompt
+        # (EPP M2 fix 4 erroneously included directives here)
+        cost = estimate_call_cost(provider, len(task["prompt"]), len(ctrl.get("response", "")))
         ledger.record(provider, config_name, cost)
         checkpoint.record(config_name, task_id, "control", ctrl)
         results["control"] = ctrl
@@ -752,7 +752,9 @@ def main() -> None:
         sys.exit(1)
 
     # EPP M3 fix 4: randomize task order to prevent systematic attrition bias.
-    # Fixed seed derived from manifest ensures reproducibility across resume.
+    # Fixed seed (constant, not manifest-derived) ensures same shuffle across
+    # resume and across configs. Different task subsets get different effective
+    # orderings because shuffle operates on different lists with the same RNG.
     # Without randomization, tasks processed late (alphabetically) are
     # disproportionately likely to be truncated by cost cap exhaustion.
     task_seed = int(hashlib.sha256("task_order".encode()).hexdigest()[:8], 16)
@@ -955,6 +957,12 @@ def main() -> None:
     # Fix 4: Schema C scoped — only run pairs where both models are
     # in the selected configs OR explicitly in CX_CONFIGS
     if not args.skip_schema_c and not args.pilot and not cost_cap_hit and ledger.check_cap():
+        # P5 adversarial finding 3: Schema C adversarial pass requires max_passes >= 5.
+        # At lower values the isolated adversarial (the defining feature of Schema C)
+        # is silently skipped. Warn but don't block — user may want partial Schema C.
+        if args.passes < 5:
+            _err(f"\n  WARNING: Schema C adversarial pass requires --passes >= 5 "
+                 f"(current: {args.passes}). The isolated adversarial pass will be skipped.")
         schema_c_tasks = [t for t in tasks if t.get("schema_c", False)]
         if schema_c_tasks:
             _err(f"\n{'='*60}")
