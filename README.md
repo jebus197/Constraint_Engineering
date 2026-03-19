@@ -117,6 +117,8 @@ An independent structural analysis (OpenAI GPT, March 2026) decomposed CDSFL int
 
 Each layer constrains the others. The discipline without the bench is rhetoric. The bench without the discipline is measurement without a theory of what is being measured. The directives without the review topology are expert opinion without adversarial stress testing. Together they constitute something closer to an operating system for technical cognition than to a prompt template or a checklist.
 
+For a general-audience discussion of these ideas and their implications, see the **[Extended Rationale](docs/EXTENDED_RATIONALE.md)**. For the design reasoning behind key decisions, see the **[Founder's Notes](docs/FOUNDERS_NOTES.md)**.
+
 ---
 
 ## Before You Begin: Model Requirements

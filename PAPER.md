@@ -901,3 +901,7 @@ If any of these claims do not survive external testing, the methodology is impro
 ---
 
 *Constraint-Driven Synthesis and Falsification Loop (CDSFL) v1.0. Derived by iterative Popperian falsification. March 2026.*
+
+---
+
+*For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For the project overview, see the [README](README.md).*

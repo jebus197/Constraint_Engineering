@@ -1,6 +1,6 @@
 # Founder's Notes on CDSFL
 
-*Preserved from CC/Founder discussion session, 14 March 2026.*
+*Preserved from CC/Founder discussion sessions, March 2026. For a general-audience companion, see the [Extended Rationale](EXTENDED_RATIONALE.md). For the formal methodology, see the [white paper](../PAPER.md). For the project overview, see the [README](../README.md).*
 
 ## What This Is
 
