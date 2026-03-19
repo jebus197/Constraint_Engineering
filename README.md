@@ -64,6 +64,8 @@ Models optimised for instruction-following and code execution do not have this t
 
 The empirical validation protocol described in the paper is implemented as a reproducible benchmark in **[bench/](bench/)**. It tests whether methodology-prompted output contains fewer critical errors than unguided output across 90 seeded-fault tasks in nine domains.
 
+> **Note:** The testbench tooling is under active development. The commands below describe the current entry points, but the orchestration layer is evolving as the experimental design matures (three-condition protocol with confer-mediated adaptive termination, multi-model configurations, cost ledger). See **[bench/EXPERIMENT_PLAN.md](bench/EXPERIMENT_PLAN.md)** and **[bench/EXPERIMENT_DESIGN_DECISIONS.md](bench/EXPERIMENT_DESIGN_DECISIONS.md)** for the current experimental protocol, which supersedes the simple invocations below for production experiment runs. The commands here remain valid for single-model exploratory runs and dry-run validation.
+
 ```bash
 cd bench
 pip install -r requirements.txt
@@ -72,6 +74,13 @@ python3 run_benchmark.py              # full run (requires API keys)
 python3 run_benchmark.py --mode extended  # final-pass context isolation
 python3 evaluate.py results.json      # score and fit corroboration curve
 python3 report.py evaluation.json     # summary table and CSV
+```
+
+For the full experimental protocol (three conditions, confer-mediated termination, multi-model):
+
+```bash
+python3 run_phase2.py --help          # Phase 2 orchestrator (confer-enabled)
+python3 run_experiment.py --help      # experiment runner
 ```
 
 ### Domain-Specific Directives
@@ -284,7 +293,28 @@ Three tiers of review operate within the methodology:
 
 **Tier 1** is the production schema. The operator's domain knowledge, constraint definitions, and iterative judgement constitute a genuine external check on the model's reasoning — external because the human operates outside the model's reasoning process, not because they are independent of the problem. Most engineering work operates entirely at Tier 1.
 
-**Tier 2** fills the operational gap between primary operator sign-off and full independent review. The second reviewer does not need to be an external peer-review body — they need to be a more senior, more specialised, or simply separate human intelligence with enough distance to challenge the first operator's framing. This is the standard escalation path: low-friction, fast enough for daily use, and materially stronger than single-operator review. Without this middle tier, the jump from "operator approves" to "full independent review" is too blunt for real engineering deployment.
+**Tier 2** fills the operational gap between primary operator sign-off and full independent review. The second reviewer does not need to be an external peer-review body — they need to be a more senior, more specialised, or simply separate intelligence with enough distance to challenge the first operator's framing. This is the standard escalation path: low-friction, fast enough for daily use, and materially stronger than single-operator review. Without this middle tier, the jump from "operator approves" to "full independent review" is too blunt for real engineering deployment.
+
+#### The Confer Protocol
+
+The Tier 2 "confer" review is not an informal second opinion. It is a structured protocol with specific mechanics:
+
+1. **Adaptive termination.** The confer stage governs when iterative review stops. After a defined number of passes (typically three), the reviewing agent assesses whether genuine diminishing returns have been reached. A second agent independently evaluates that assessment. This replaces fixed pass counts with intelligence-mediated termination — the review continues until two independent assessments agree that further passes are unlikely to find new failures, not when an arbitrary counter expires.
+
+2. **Agreement/disagreement branching.** When both reviewers agree that diminishing returns have been reached, the task advances. When they disagree, additional passes are run and the confer stage repeats. This branching logic means the review depth adapts to task difficulty: simple problems terminate early; genuinely complex problems receive more scrutiny without manual intervention.
+
+3. **Logged transcripts.** Every confer exchange is recorded alongside the review results. The reasoning behind termination decisions is preserved, not just the outcomes. This makes the review process auditable after the fact — a reader can determine not only what was found, but why the review stopped where it did.
+
+4. **Condition-neutral design.** The confer mechanism is deliberately shared across experimental conditions. This is a load-bearing design choice: without shared iteration machinery, any comparison between methodology conditions would conflate "better directives" with "different iteration count." The confer protocol isolates directive content as the variable by holding the termination mechanism constant.
+
+#### The Defer-on-Deadlock Principle
+
+When reviewers reach irreconcilable disagreement — where further passes produce the same opposing assessments rather than convergence — the protocol does not force false consensus. Items are explicitly deferred for human review, with the disagreement and both positions recorded. This is the `confer` / `defer` distinction:
+
+- **Confer**: reviewers assess and reach agreement (or run additional passes until they do).
+- **Defer**: reviewers cannot agree after exhausting the pass budget; the item is surfaced to a human decision-maker with full context rather than being resolved by fiat.
+
+The defer mechanism prevents two failure modes: premature closure (papering over genuine uncertainty to produce a clean result) and infinite regress (continuing to review when the disagreement is fundamental rather than resolvable by more data). Both failure modes are common in unstructured review processes. The explicit deferral, with logged reasoning, turns an unresolved disagreement from a hidden weakness into a visible research question.
 
 **Tier 3** is triggered when consequences of error are materially high: safety-critical decisions, weak-model outputs requiring independent verification, publication-grade claims, or methodology validation itself. Tier 2 is not a substitute for Tier 3 when Tier 3 is genuinely required — the distinction preserves practicality without blurring epistemic standards.
 
