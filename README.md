@@ -167,18 +167,6 @@ Use the benchmark to answer the only question that ultimately matters:
 
 **Does this procedure measurably improve technical work on the tasks you care about?**
 
-### Domain-specific directives
-
-Each engineering domain gets its own **constraint box** — a curated set of fixed constraints (physics, standards, safety requirements) that layers on top of the universal CDSFL directives. Multiple variants per domain cover different project types.
-
-Ten domains — hardware, software, chemistry, logistics, biomedical, industrial, structural, product engineering, cross-domain interfaces, and mathematics — with up to three variants each, totalling 28 domain-specific directive files. Each file references real standards, real values, and real failure modes.
-
-These are **starting points, not complete constraint sets.** Domain expertise and project-specific knowledge are still required. See **[bench/directives/README.md](bench/directives/README.md)** for the full guide, including how to create custom directive files.
-
-### Example configuration
-
-An example `CLAUDE.md` configuration file implementing the CDSFL methodology is provided in **[bench/directives/CLAUDE.md.example](bench/directives/CLAUDE.md.example)**. This is a working configuration derived from production use — place it at `~/.claude/CLAUDE.md` (global) or in your project root (project-specific) to apply the methodology directives to Claude Code sessions. The configuration is technology-agnostic and can be adapted for any LLM that supports system prompts.
-
 ## Known boundaries
 
 CDSFL has clear limits.
@@ -207,45 +195,10 @@ That includes engineering design, mathematics, scientific modelling, formal veri
 
 The deeper hypothesis is that parts of scientific and engineering method can be formalised into a portable, testable, auditable protocol — and that doing so may become a research area in its own right.
 
-## Open questions
-
-Does methodology formalisation add value above a complexity threshold that correlates with constraint interaction density? Does multi-architecture review generalise beyond software to proof, design, and synthesis? Does schema competition produce measurably better methodologies? Is there a convergence limit for heterogeneous review beyond which adding architectures adds cost without coverage? Each is testable with existing infrastructure. See the [white paper](PAPER.md) Part XI for formal treatment.
-
----
-
-## Worked examples
-
-Each of the following projects was built using this methodology. They are linked here as evidence of the methodology in practice, not as claims of superiority over alternative approaches. Each repo has its own documentation and stands independently.
-
-| Project | What it is | Repo |
-|---|---|---|
-| **Project Genesis** | Trust-mediated labour market for mixed human-AI populations. Constitutional engineering, governance as falsifiable code, Popperian design methodology applied to social architecture. | [Project_Genesis](https://github.com/jebus197/Project_Genesis) |
-| **Open Brain** | Persistent, cross-agent, cross-session verified memory for AI systems. The persistence and verification layer described in Part V of this document. | [OpenBrain](https://github.com/jebus197/OpenBrain) |
-
----
-
-## Documentation
-
-| Document | Audience | What it covers |
-|---|---|---|
-| [Extended Rationale](docs/EXTENDED_RATIONALE.md) | General | Why this methodology exists and what it means for AI-assisted STEM work |
-| [White Paper](PAPER.md) | Technical | Formal methodology, mathematical models, empirical validation framework |
-| [Founder's Notes](docs/FOUNDERS_NOTES.md) | General | Design intent, philosophical framing, falsification claims tested |
-| [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) | Technical | Extensions to core models: residual risk, class-specific diversity, parameter uncertainty |
-| [Domain Directives](bench/directives/README.md) | Practitioners | Domain-specific constraint boxes for the testbench |
-
----
-
-## License
-
-MIT. See [LICENSE](LICENSE).
-
----
-
-Every claim in this methodology is presented as a falsifiable assertion. If any claim does not survive external testing, the methodology is improved by the correction. See the full [Invitation to Falsify](PAPER.md#invitation-to-falsify) in the paper.
-
 ## One-sentence summary
 
 **CDSFL is a falsifiable methodology for forcing AI-assisted technical work into a more scientific discipline: generate, try to break, preserve what survives, and replace the method itself if a better one wins.**
+
+MIT licensed. See [LICENSE](LICENSE).
 
 *CDSFL v1.0. March 2026.*
