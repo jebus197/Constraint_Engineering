@@ -647,6 +647,65 @@ with existing infrastructure:
    cost without coverage. Where is this limit? Measurable from the round-robin
    convergence test.
 
+### Evolutionary Dynamics and the Abiogenesis Framing
+
+The properties enumerated above — blind variation, selection, inheritance with
+modification, mortality, population diversity, shared tool refinement, no
+designer — are individually well-understood. What deserves explicit statement
+is that they are present *simultaneously* in CDSFL's distributed compute model,
+and that their simultaneous presence constitutes the structural preconditions
+that theoretical biology, complexity science, and cultural evolution theory
+identify for emergent behaviour.
+
+CDSFL is best understood not as a fixed methodology but as a *starting condition*
+— the abiogenesis event in a methodology ecosystem. Its non-canonical principle
+mandates its own extinction under competitive pressure. This is not rhetorical
+modesty. It is the equivalent of mortality in biological evolution: without
+death, there is no selection; without selection, there is no improvement. A
+methodology that resists its own elimination is dogmatic, not evolutionary.
+
+The benchmark harness functions as the *environment* in which schemas compete.
+Like a biological environment, it is not static. As schemas become more robust,
+they exhaust a benchmark's ability to provide meaningful selection pressure,
+requiring escalation to more complex frontier environments. The current
+benchmark (90 domain tasks, 25 frontier tasks) is the primordial environment —
+sufficient to trigger the first self-sustaining falsification cycles, but not
+the final environment in which CDSFL's descendants will compete.
+
+Two categories of constraint govern this process differently. HARD constraints
+— physics, mathematics, logic, formal consistency — function as the *universal
+laws* of the methodology space. They do not change. A schema that "evolves" by
+violating logic is not improved; it is broken, and the P-Pass eliminates it.
+SOFT constraints — the specific benchmark tasks, the evaluation criteria, the
+operational context — function as the *local environment*, which shifts over
+time. This distinction between universal laws and local environment is what
+prevents the evolutionary process from decoupling from objective reality. Without
+the anchor of immutable HARD constraints, a co-evolving schema-benchmark system
+could lower its own fitness standards — the methodological equivalent of
+evolutionary stasis through environmental simplification.
+
+The shared tool refinement observed during multi-architecture review (schemas,
+benchmarks, and directives iteratively improved by CC, CX, and Gemini — none
+of whom created the tools alone) maps onto what Tomasello (1999) and Henrich
+(2015) identify as the mechanism for cumulative cultural evolution: diverse
+populations sharing, refining, and ratcheting tools, where improvements are
+preserved and no single agent could produce the full refinement in isolation.
+
+Whether these structural parallels are *homologous* (same underlying mechanism
+operating on a different substrate) or merely *analogous* (superficially similar,
+fundamentally different) is an open empirical question that the current evidence
+cannot resolve. The coverage model (Part XII) provides the mathematical framework
+within which this question can be investigated — specifically, whether the
+parameter space exhibits phase transitions where system behaviour changes
+qualitatively rather than quantitatively. The round-robin convergence test is
+designed to provide the first empirical data bearing on this question.
+
+The bounded convergence prediction (Part XII, diminishing returns) is itself
+noteworthy independent of the evolutionary parallel. If self-improving cognitive
+systems converge rather than explode, that is a data point against the
+intelligence explosion hypothesis (Good 1965, Bostrom 2014) — a contribution to
+the field of AI safety that does not depend on the stronger emergence claim.
+
 ### Protocol-Centric AI and the Discipline Stack
 
 An independent third-party assessment (OpenAI GPT, March 2026) produced a
@@ -823,6 +882,7 @@ This document practises what it describes. Every claim made here is presented as
 - The schema competition principle — that competing methodology documents tested on the same benchmark will converge on better methodologies through selection pressure — is testable by running multiple schemas through the same harness and comparing outcomes.
 - The intelligence-agnostic expert role — that AI-provided domain expertise matches human-provided domain expertise in the HIL role — is testable by comparing conditions with human vs AI domain context on frontier-difficulty tasks.
 - The distributed compute coverage model — that heterogeneous architectures (low ρ) achieve higher defect detection coverage than monoculture (high ρ) — is testable by comparing coverage metrics from multi-architecture review against single-architecture review on identical tasks. The model's specific predictions (monoculture collapse, diminishing returns curve shape, optimal n*) are each independently falsifiable.
+- The evolutionary dynamics claim — that CDSFL's distributed compute model exhibits structural preconditions for emergent behaviour (blind variation, selection, inheritance, mortality, population diversity, shared tool refinement) — is testable by determining whether the coverage model's parameter space exhibits phase transitions, whether the self-improvement loop exhibits autopoietic closure, and whether bounded convergence holds empirically. The claim that HARD constraints function as "universal laws" preventing decoupling from reality is testable by attempting to construct a co-evolving schema-benchmark system that lowers its own fitness standards despite HARD constraint enforcement.
 
 If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
 
