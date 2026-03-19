@@ -222,7 +222,7 @@ A common misreading of the methodology is that "review" means either trusting a 
 
 **Tier 0** is where most work begins. The model generates, attacks its own output, and iterates. This is genuine adversarial self-testing — the basic P-Pass applied by a single machine.
 
-**Tier 1** adds structural independence by introducing a second machine — ideally a different architecture. The adversarial cycle continues until both assessors agree that diminishing returns have been reached. This adaptive termination replaces fixed pass counts with intelligence-mediated stopping: simple problems terminate early, complex problems receive more scrutiny without manual intervention. Every exchange is logged, making termination decisions auditable after the fact.
+**Tier 1** adds structural independence by introducing two or more machines — the number and composition determined by the domain operator, ideally drawing on different architectures. The adversarial cycle continues until all assessors agree that diminishing returns have been reached. This adaptive termination replaces fixed pass counts with intelligence-mediated stopping: simple problems terminate early, complex problems receive more scrutiny without manual intervention. Every exchange is logged, making termination decisions auditable after the fact.
 
 **Tier 2** brings human domain expertise into the loop through the confer/defer protocol. The human expert reviews machine findings, confers (agrees and the task advances) or defers (flags items for further investigation or escalation to Tier 3). The human is not passively approving — they are applying domain knowledge that the machines may lack, and they are the authority that controls and adjudicates across all tiers.
 

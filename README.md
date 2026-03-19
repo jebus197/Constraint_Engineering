@@ -60,7 +60,7 @@ A common misreading of the methodology is that "review" means either trusting a 
 
 **Tier 0** is where most work begins. The model generates, attacks its own output, and iterates. This is genuine adversarial self-testing, not just re-running a prompt.
 
-**Tier 1** adds structural independence. A second machine — ideally a different architecture — reviews the first machine's output adversarially. The cycle continues until both assessors agree that diminishing returns have been reached. This is where the methodology's real epistemic work happens: different architectures find different defects. During the benchmark's development, eight rounds of the same architecture converged, while a single round of a different architecture found sixteen issues the first had missed entirely.
+**Tier 1** adds structural independence. Two or more machines — the number and composition determined by the domain operator — review each other's output adversarially. The cycle continues until all assessors agree that diminishing returns have been reached. This is where the methodology's real epistemic work happens: different architectures find different defects. During the benchmark's development, eight rounds of the same architecture converged, while a single round of a different architecture found sixteen issues the first had missed entirely.
 
 **Tier 2** brings human domain expertise into the loop. The confer/defer protocol governs this interaction: the human expert reviews machine findings, confers (agrees and the task advances) or defers (flags items for further investigation or escalation). The human is not passively approving — they are applying domain knowledge that the machines may lack.
 
