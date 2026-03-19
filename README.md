@@ -47,47 +47,32 @@ For the formal white paper with mathematical framework and extended analysis, se
 
 The P-Pass and constraint classification are the foundation. What follows is what distinguishes CDSFL from "just run the prompt multiple times."
 
-### The Confer Protocol
+### Review Tiers
 
-Review is not a single-operator activity. CDSFL defines three review tiers:
+A common misreading of the methodology is that "review" means either trusting a single model's output or escalating to full independent peer review. CDSFL defines four review tiers, each with a clear role and escalation path. All tiers are overseen by a human domain-level expert who controls and adjudicates the process.
 
 | Tier | Mode | Who | When |
 |---|---|---|---|
-| **1** | Primary expert operator | The practitioner running the session | Default. Every task. |
-| **2** | Secondary "confer" review | A second intelligence with enough separation to challenge the primary operator's framing | Standard escalation. Ambiguous outputs, unresolved tension, or suspected hidden breakout. |
-| **3** | Formal independent review | A domain expert with no prior involvement, or blind external evaluators | High-assurance. Safety-critical domains, publication-grade claims, or methodology validation. |
+| **0** | Individual P-pass | A single machine performing self-review | Default. Every task. The basic CDSFL workflow. |
+| **1** | Adversarial multi-machine P-pass | Two or more machines reviewing each other's output, continuing until diminishing returns are reached | Standard practice for non-trivial work. The iterative cycle terminates when additional passes cease to produce new findings. |
+| **2** | Confer/defer for domain expert | A single human domain expert reviews, with confer (agreement) or defer (escalation) | When machine review surfaces ambiguity, unresolved tension, or findings that require domain judgement. |
+| **3** | Confer/defer for external peer review | Third-party or external reviewers with no prior involvement | High-assurance. Safety-critical domains, publication-grade claims, or methodology validation. |
 
-Tier 2 — the confer stage — is where the methodology's real epistemic work happens. It is not an informal second opinion. It is a structured protocol:
+**Tier 0** is where most work begins. The model generates, attacks its own output, and iterates. This is genuine adversarial self-testing, not just re-running a prompt.
 
-- **Adaptive termination.** After a defined number of passes (typically three), the reviewing agent assesses whether genuine diminishing returns have been reached. A second agent independently evaluates that assessment. Review continues until two independent assessments agree, not when an arbitrary counter expires.
-- **Agreement/disagreement branching.** When both reviewers agree that diminishing returns have been reached, the task advances. When they disagree, additional passes are run and the confer stage repeats. Simple problems terminate early; complex problems receive more scrutiny without manual intervention.
-- **Logged transcripts.** Every confer exchange is recorded alongside results. The reasoning behind termination decisions is preserved, making the review process auditable after the fact.
+**Tier 1** adds structural independence. A second machine — ideally a different architecture — reviews the first machine's output adversarially. The cycle continues until both assessors agree that diminishing returns have been reached. This is where the methodology's real epistemic work happens: different architectures find different defects. During the benchmark's development, eight rounds of the same architecture converged, while a single round of a different architecture found sixteen issues the first had missed entirely.
 
-### The Defer-on-Deadlock Principle
+**Tier 2** brings human domain expertise into the loop. The confer/defer protocol governs this interaction: the human expert reviews machine findings, confers (agrees and the task advances) or defers (flags items for further investigation or escalation). The human is not passively approving — they are applying domain knowledge that the machines may lack.
 
-When reviewers reach irreconcilable disagreement — where further passes produce the same opposing assessments rather than convergence — the protocol does not force false consensus. Items are explicitly deferred for human review, with the disagreement and both positions recorded.
+**Tier 3** is triggered when consequences of error are materially high. External reviewers with no prior involvement provide the strongest independence guarantee. Tier 2 is not a substitute for Tier 3 when Tier 3 is genuinely required.
 
-- **Confer**: reviewers assess and reach agreement (or run additional passes until they do).
-- **Defer**: reviewers cannot agree after exhausting the pass budget; the item is surfaced to a human decision-maker with full context rather than being resolved by fiat.
-
-This prevents two failure modes: premature closure (papering over genuine uncertainty) and infinite regress (reviewing indefinitely when the disagreement is fundamental). The explicit deferral turns an unresolved disagreement from a hidden weakness into a visible research question.
+At every tier, the **defer-on-deadlock principle** applies: when reviewers reach irreconcilable disagreement, items are explicitly deferred with both positions recorded rather than forced to false consensus. An unresolved disagreement, surfaced with logged reasoning, is a visible research question — not a hidden weakness.
 
 ### The Non-Canonical Principle
 
-CDSFL is not canonical. It is a starting point — open to improvement from all sources (self-generated, second/third party, human and machine). There can be as many competing methodology schemas as there are practitioners to design them. The benchmark harness is schema-agnostic: its three conditions can test any methodology. If a competing schema outperforms CDSFL, the proper response is adoption, not resistance.
+CDSFL is not canonical. It is a starting point — open to improvement from all sources, human and machine alike. There can be as many competing methodology schemas as there are practitioners to design them. The benchmark harness is schema-agnostic: its three conditions can test any methodology. If a competing schema outperforms CDSFL, the proper response is adoption, not resistance.
 
-This has a deeper consequence: **it barely matters if CDSFL itself is wrong.** What the project is building is a schema for testing schemas — CDSFL is the first specimen in a methodology laboratory. If CDSFL performs well on the benchmark, it is a useful schema worth iterating. If it performs poorly, the benchmark detected that, which means the testing infrastructure works — and the testing infrastructure is the actual contribution. If a competing schema outperforms CDSFL on the same harness, that is the system functioning exactly as designed. The laboratory is the contribution. The specimen is expendable.
-
-### Multi-Architecture Validation
-
-During the benchmark's development, three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed each other's output under the shared methodology — not prompt-chaining, but genuine adversarial collaboration:
-
-- CC/CX 8-round adversarial review: ~24 issues identified
-- Gemini 5-round adversarial review: 16 novel issues that all prior Claude rounds missed
-- Extended P-Pass (5 modules): 4 additional actionable items
-- All 13 code fixes and 4 EPP fixes implemented and committed
-
-This validates the **biodiversity hypothesis**: heterogeneous cognitive architectures find different defects than monoculture review. The deeper insight is that epistemic diversity itself becomes compute — the disagreement between architectures is not noise to be resolved but the computation itself. Eight rounds of the same architecture converge; a single round of a different architecture finds issues the first missed entirely.
+This has a deeper consequence. What the project is building is not just a methodology but a framework for testing methodologies. CDSFL is the first schema to be tested in that framework. If it performs well, it is worth iterating. If it performs poorly, the framework detected that — which means the testing infrastructure works. If a competing schema outperforms CDSFL on the same harness, that is the system functioning exactly as designed. The testing infrastructure, not any particular schema, is the durable contribution.
 
 ### The Three-Condition Protocol
 
@@ -107,17 +92,9 @@ The framework's expert role is intelligence-agnostic by design. A synthetic inte
 
 ### The Discipline Stack
 
-An independent structural analysis (OpenAI GPT, March 2026) decomposed CDSFL into five distinct layers:
+An independent structural analysis (OpenAI GPT, March 2026) decomposed CDSFL into five distinct layers: universal reasoning discipline, domain-specific expert encodings, heterogeneous adversarial review topology, benchmark harness, and persistence/reputation layer. Each constrains the others. The discipline without the bench is rhetoric. The bench without the discipline is measurement without a theory of what is being measured. Together they constitute something closer to an operating system for technical cognition than to a prompt template or a checklist. The implications of this layered architecture — and what they suggest about the future of methodology as a discipline — are explored in the [white paper](PAPER.md) (Part XI) and the [Extended Rationale](docs/EXTENDED_RATIONALE.md).
 
-1. **Universal reasoning discipline** — the P-Pass and constraint taxonomy
-2. **Domain-specific expert encodings** — the directive files and constraint boxes
-3. **Heterogeneous adversarial review topology** — the multi-architecture confer protocol
-4. **Benchmark harness** — schema-agnostic selection pressure between competing methodologies
-5. **Persistence and reputation layer** — verified records of what survives cross-verification
-
-Each layer constrains the others. The discipline without the bench is rhetoric. The bench without the discipline is measurement without a theory of what is being measured. The directives without the review topology are expert opinion without adversarial stress testing. Together they constitute something closer to an operating system for technical cognition than to a prompt template or a checklist.
-
-For a general-audience discussion of these ideas and their implications, see the **[Extended Rationale](docs/EXTENDED_RATIONALE.md)**. For the design reasoning behind key decisions, see the **[Founder's Notes](docs/FOUNDERS_NOTES.md)**.
+For the design reasoning behind key decisions, see the **[Founder's Notes](docs/FOUNDERS_NOTES.md)**.
 
 ---
 
