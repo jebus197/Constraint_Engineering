@@ -195,6 +195,19 @@ category and constraint density, the threshold's shape becomes visible.
 
 Each testable with existing infrastructure. See PAPER.md Part XI.
 
+### Topology-Specific Questions (from GPT assessment, March 2026)
+
+These complement the five general questions above with more granular
+predictions about the three-model (CC/CX/Gemini) topology:
+
+6. Does the three-model topology outperform any monoculture or two-model subset?
+7. Does orchestration (CC coordinating) improve net defect discovery versus
+   un-orchestrated round-robin exchange?
+8. Which defect classes are found preferentially by which architecture?
+9. Where does the convergence limit sit for this exact heterogeneous set?
+10. Does schema evolution improve faster under this topology than under
+    single-model self-revision?
+
 ## External Third-Party Assessment (OpenAI GPT, March 2026)
 
 Independent assessment by OpenAI's GPT (unprompted deep read of the repo's
@@ -236,14 +249,75 @@ adversarial methodology stack, where heterogeneous models act as distributed
 falsifiers on shared schemas, and the schema itself is subject to the same
 evolutionary pressure."
 
+**Methodology engineering (not just formalisation).** GPT's deepest
+contribution was sharpening our "methodology formalisation as research area"
+into the stronger label: *methodology engineering* — a serious discipline
+for building, testing, iterating, and selecting procedural artefacts. The
+distinction matters: "formalisation" implies writing something down;
+"engineering" implies building, stress-testing, and iterating until it
+works or is replaced. CDSFL is attempting the latter.
+
+**Theological vs evolutionary.** "Most methodology writing in AI is
+effectively theological; this is trying to become evolutionary." Most AI
+methodology documents are prescriptive — do this because the author says
+so. CDSFL is competitive — do this because it outperforms alternatives on
+a shared benchmark, and replace it when it doesn't. The benchmark is what
+transforms methodology from prescription into selection.
+
+**Institutional structure imported into reasoning.** The mathematical
+layer (anchor states A0–A3, diversity discount, tiered review model) is
+not decorating a workflow with equations. It is attempting to quantify
+something most AI methodology ignores: epistemic strength is not just a
+property of content but of *who* reviewed it, *how correlated* they were,
+and *whether the review was socially independent or merely internally
+recycled*. This is importing the institutional structure of scientific
+peer review into reasoning itself.
+
+**Distributed-self-referential.** CDSFL is not merely self-referential
+(the method applied to itself). It is *distributed-self-referential*: the
+methodology is improved by a population of heterogeneous falsifiers
+operating on shared schemas. The distributed compute loop is not an
+add-on — it is the primary mechanism for methodology evolution.
+
+**Structured distributed epistemics.** The orchestration layer (CC
+coordinating CX and Gemini under shared CDSFL protocol) transforms mere
+reviewer diversity into structured distributed epistemics. Without
+orchestration, multi-model review collapses into noise, duplicated
+critique, or shallow consensus. With it, the architecture preserves
+methodological invariants across agents while extracting genuine
+adversarial diversity.
+
+**Recursive methodology-selection system.** The project's centre of
+gravity, stated as a clean loop:
+1. Encode a reasoning discipline
+2. Apply it to technical work
+3. Apply it to itself
+4. Compare schema variants on a common harness
+5. Use heterogeneous models as adversarial reviewers
+6. Preserve what survives
+
+This is the recursive structure that GPT initially missed and later
+identified as the project's actual core.
+
+**Two possible futures.** In the weaker future, CDSFL becomes a very good
+internal methodology for expert operators: valuable, transferable, but
+niche. Its output is vocabulary, discipline, and process. In the stronger
+future, it becomes the kernel of a new product category:
+expert-configured procedural wrappers around frontier models, backed by
+benchmarked domain configs, cross-model review topologies, and persistent
+provenance. That would be materially different from today's "prompt
+library" ecosystem. It would look more like auditable cognitive
+infrastructure.
+
 Notable: GPT initially missed the reflexive/self-improving nature entirely
 and framed the project as "lacking external validation." After being pushed
 back on, it corrected comprehensively. The corrections themselves are
 data — the framework's centre of gravity is not immediately obvious from
 a surface read, which is relevant to the adoption/accessibility question.
 
-The full assessment (10 pages) is preserved at:
+The full assessment (12 pages across two sessions) is preserved at:
 `/Users/georgejackson/Developer_Projects/AI Prompting Methodology.pdf`
+`/Users/georgejackson/Developer_Projects/Git Project Evaluation.pdf`
 
 ## Falsification Claims Tested (P-Pass, 14 March 2026)
 
