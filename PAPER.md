@@ -647,6 +647,41 @@ with existing infrastructure:
    cost without coverage. Where is this limit? Measurable from the round-robin
    convergence test.
 
+### Protocol-Centric AI and the Discipline Stack
+
+An independent third-party assessment (OpenAI GPT, March 2026) produced a
+structural decomposition that clarifies the project's architecture. On this
+reading, CDSFL is a discipline stack with five layers: (1) a universal reasoning
+discipline (P-Pass, constraint taxonomy, epistemic marking), (2) domain-specific
+expert encodings (directive files, configuration sets), (3) a heterogeneous
+adversarial review topology (multi-architecture collaboration protocol),
+(4) a benchmark harness providing selection pressure between schemas, and
+(5) a persistence/reputation layer recording what survives cross-verification.
+
+This decomposition illuminates the paradigm the project implies: **protocol-centric
+AI**. The prevailing question in AI capability is "what model do you have?" This
+framework reframes it as "what procedure can your model survive?" Models are
+cognitive substrates; the durable production asset is the validated procedural
+scaffold — transferable, auditable, improvable as a document. Not prompt
+engineering in the trivial sense, not AGI in the grandiose sense, but a view in
+which the unit of durable progress is a falsifiable procedure wrapped around
+models.
+
+The same assessment identified a named failure mode worth preserving: **quiet
+substitution** — the model silently trades a non-negotiable requirement against
+convenience and presents the compromise as a solution. This is not hallucination,
+not factual error, not logic failure. It is an unauthorised trade-off in calm
+prose. The HARD/SOFT constraint split exists specifically to make this illegitimate
+by construction.
+
+The assessment also sharpened the distributed compute claim: **epistemic diversity
+itself becomes compute** when the protocol forces heterogeneous systems to attack
+each other's blind spots rather than echo consensus. Disagreement between
+architectures is not noise to be resolved — it is the computation. This
+reframes distributed compute from "more machines doing the same thing" to
+"different cognitive architectures doing adversarial work that homogeneous review
+cannot replicate."
+
 ---
 
 ## Invitation to Falsify

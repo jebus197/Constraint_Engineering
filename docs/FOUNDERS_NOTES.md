@@ -195,6 +195,56 @@ category and constraint density, the threshold's shape becomes visible.
 
 Each testable with existing infrastructure. See PAPER.md Part XI.
 
+## External Third-Party Assessment (OpenAI GPT, March 2026)
+
+Independent assessment by OpenAI's GPT (unprompted deep read of the repo's
+documentation) produced several framings worth preserving:
+
+**Discipline stack.** GPT decomposed CDSFL as five layers: (1) universal
+reasoning discipline, (2) domain-specific expert encodings, (3) heterogeneous
+adversarial review topology, (4) benchmark harness as selection mechanism,
+(5) persistence/reputation layer. Each constrains the others.
+
+**Protocol-centric AI.** The paradigm shift is from "what model do you have?"
+to "what procedure can your model survive?" Models are cognitive substrates;
+the production asset is the validated procedural scaffold. This is crisper
+than our "methodology formalisation as research area" framing — same idea,
+sharper label.
+
+**Quiet substitution.** Named the failure mode the HARD/SOFT split prevents:
+the model silently trades a non-negotiable requirement against convenience
+and presents the compromise as a solution. Not hallucination, not logic
+error — an unauthorised trade-off in calm prose.
+
+**Epistemic diversity as compute.** "Epistemic diversity itself becomes
+compute when the protocol forces systems to attack each other's blind spots
+rather than merely echo consensus." Disagreement between architectures is
+not noise — it is the computation.
+
+**Constraint framing as competence test.** "If the human cannot bound the
+problem properly, the machine cannot reliably save them." The constraint box
+is a disguised competence test. Severe, but probably right.
+
+**Benchmark as hinge.** "Even if CDSFL itself were later outperformed, the
+harness would still matter because it turns 'reasoning methodology' into an
+experimentally contestable object." The bench is what elevates from rhetoric
+to science.
+
+**Corrected verdict (after initial misread):** "The repo's real significance
+is that it appears to already instantiate a self-improving, multivendor
+adversarial methodology stack, where heterogeneous models act as distributed
+falsifiers on shared schemas, and the schema itself is subject to the same
+evolutionary pressure."
+
+Notable: GPT initially missed the reflexive/self-improving nature entirely
+and framed the project as "lacking external validation." After being pushed
+back on, it corrected comprehensively. The corrections themselves are
+data — the framework's centre of gravity is not immediately obvious from
+a surface read, which is relevant to the adoption/accessibility question.
+
+The full assessment (10 pages) is preserved at:
+`/Users/georgejackson/Developer_Projects/AI Prompting Methodology.pdf`
+
 ## Falsification Claims Tested (P-Pass, 14 March 2026)
 
 1. **Method formalisation** — CDSFL captures the Popperian scientific method
