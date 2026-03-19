@@ -117,6 +117,31 @@ challenge is welcome, even if it means complete extinction of the current
 iteration of CDSFL itself. A methodology that claims immunity from the
 process it prescribes is self-refuting.
 
+## The Laboratory, Not the Specimen
+
+Under the non-canonical principle, it barely matters if CDSFL itself is
+wrong. Because what the project is actually building is a schema for
+testing schemas. CDSFL is an almost arbitrary starting point for that
+process.
+
+If CDSFL performs well on the benchmark: useful schema, keep iterating.
+If CDSFL performs poorly: the benchmark detected that, which means the
+testing infrastructure works — which is the actual contribution.
+If a competing schema outperforms CDSFL: that is the system functioning
+as designed. CDSFL's extinction IS the evidence that methodology
+engineering works.
+
+The benchmark harness, the three-condition experimental design, the
+schema-agnostic evaluation protocol, the convergence test — those are
+the durable assets. CDSFL is the first organism. The ecosystem is the
+point.
+
+This also clarifies why the non-canonical principle is not a caveat
+bolted on after the fact. It is load-bearing architecture. Without it,
+CDSFL is a methodology making claims about itself. With it, CDSFL is a
+test specimen in a methodology laboratory. The laboratory is the
+contribution. The specimen is expendable.
+
 ## Intelligence-Agnostic HIL
 
 CDSFL's HIL (Human In the Loop) role is functional, not species-restricted.

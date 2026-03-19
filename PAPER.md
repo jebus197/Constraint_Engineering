@@ -601,6 +601,16 @@ A methodology that claims immunity from the process it prescribes is
 self-refuting. The selection pressure CDSFL applies to AI models applies
 equally to CDSFL itself.
 
+This has a further consequence: it barely matters if CDSFL itself is wrong.
+What the project is building is a schema for testing schemas. CDSFL is the
+first specimen in a methodology laboratory. The benchmark harness, the
+schema-agnostic evaluation protocol, the three-condition experimental design,
+and the convergence test are the durable assets. If CDSFL performs well, it
+is a useful schema. If it performs poorly, the benchmark detected that, which
+means the testing infrastructure works. If a competing schema outperforms
+CDSFL, that is the system functioning as designed. The laboratory is the
+contribution. The specimen is expendable.
+
 ### Complexity Threshold Hypothesis
 
 The self-test (Part IX) suggests a complexity threshold below which
