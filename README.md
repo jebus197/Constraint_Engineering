@@ -617,6 +617,7 @@ Each of the following projects was built using this methodology. They are linked
 | [Extended Rationale](docs/EXTENDED_RATIONALE.md) | General | Why this methodology exists and what it means for AI-assisted STEM work |
 | [White Paper](PAPER.md) | Technical | Formal methodology, mathematical models, empirical validation framework |
 | [Founder's Notes](docs/FOUNDERS_NOTES.md) | General | Design intent, philosophical framing, falsification claims tested |
+| [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) | Technical | Extensions to core models: residual risk, class-specific diversity, parameter uncertainty |
 | [Domain Directives](bench/directives/README.md) | Practitioners | Domain-specific constraint boxes for the testbench |
 
 ---

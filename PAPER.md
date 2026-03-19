@@ -149,6 +149,8 @@ The simple model C(n) operates entirely within A0. The structured model F_n can 
 
 **Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
 
+**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined but not yet empirically calibrated. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) and become actionable when benchmark data is available to test whether they outpredict the simpler models.
+
 ### 3. Constraint Classification
 
 Before any synthesis, all constraints are classified:
