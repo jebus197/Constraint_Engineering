@@ -1,6 +1,6 @@
 # Founder's Notes on CDSFL
 
-*Preserved from CC/Founder discussion sessions, March 2026. For a general-audience companion, see the [Extended Rationale](EXTENDED_RATIONALE.md). For the formal methodology, see the [white paper](../PAPER.md). For the project overview, see the [README](../README.md).*
+*Preserved from Claude Code (Opus 4.6)/Founder discussion sessions, March 2026. For a general-audience companion, see the [Extended Rationale](EXTENDED_RATIONALE.md). For the formal methodology, see the [white paper](../PAPER.md). For the project overview, see the [README](../README.md).*
 
 ## What This Is
 
@@ -158,15 +158,15 @@ separate variable, testable in subsequent rounds.
 ## Multi-Vendor Model Collaboration (Novel Occurrence, March 2026)
 
 During CE benchmark development, a potentially unprecedented event occurred:
-multiple vendor models (Anthropic Claude via CC/CX, Google Gemini via CLI)
+multiple vendor models (Anthropic Claude via Claude Code running Opus 4.6, and Codex running GPT-5.3; Google Gemini via CLI)
 actively communicated through the IM service and confer mechanism,
 collaboratively improving shared schemas and workflows. This is not
 prompt-chaining or pipeline orchestration. Each model independently reviewed
 the others' output under a shared methodology, identified issues the others
 missed, and fixes were integrated iteratively.
 
-- CC/CX 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
-- Gemini 5-round adversarial review: 16 novel issues CC/CX missed (convergence: 9→10→5→4→3)
+- Claude Code/Codex 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Gemini 5-round adversarial review: 16 novel issues Claude Code/Codex missed (convergence: 9→10→5→4→3)
 - Extended P-Pass (5 modules): 4 additional actionable items
 - All 13 code fixes + 4 EPP fixes implemented and committed (`afcc323`)
 
@@ -256,10 +256,10 @@ Each testable with existing infrastructure. See PAPER.md Part XI.
 ### Topology-Specific Questions (from GPT assessment, March 2026)
 
 These complement the five general questions above with more granular
-predictions about the three-model (CC/CX/Gemini) topology:
+predictions about the three-model (Claude Code/Codex/Gemini) topology:
 
 6. Does the three-model topology outperform any monoculture or two-model subset?
-7. Does orchestration (CC coordinating) improve net defect discovery versus
+7. Does orchestration (Claude Code coordinating) improve net defect discovery versus
    un-orchestrated round-robin exchange?
 8. Which defect classes are found preferentially by which architecture?
 9. Where does the convergence limit sit for this exact heterogeneous set?
@@ -337,8 +337,8 @@ methodology is improved by a population of heterogeneous falsifiers
 operating on shared schemas. The distributed compute loop is not an
 add-on — it is the primary mechanism for methodology evolution.
 
-**Structured distributed epistemics.** The orchestration layer (CC
-coordinating CX and Gemini under shared CDSFL protocol) transforms mere
+**Structured distributed epistemics.** The orchestration layer (Claude Code
+coordinating Codex and Gemini under shared CDSFL protocol) transforms mere
 reviewer diversity into structured distributed epistemics. Without
 orchestration, multi-model review collapses into noise, duplicated
 critique, or shallow consensus. With it, the architecture preserves

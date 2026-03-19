@@ -571,13 +571,13 @@ stage, not bypassed.
 ### Multi-Architecture Cognitive Convergence
 
 During the benchmark's own development (March 2026), multiple vendor models
-(Anthropic Claude via CC/CX, Google Gemini) independently reviewed each
+(Anthropic Claude via Claude Code running Opus 4.6, and Codex running GPT-5.3; Google Gemini) independently reviewed each
 other's output under a shared falsification methodology. This was not
 prompt-chaining or pipeline orchestration. Each model identified issues the
 others missed:
 
-- CC/CX 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
-- Gemini 5-round adversarial review: 16 novel issues CC/CX missed (convergence: 9→10→5→4→3)
+- Claude Code/Codex 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Gemini 5-round adversarial review: 16 novel issues Claude Code/Codex missed (convergence: 9→10→5→4→3)
 - Extended P-Pass (5 modules): 4 additional actionable items
 
 This validates the **biodiversity hypothesis**: heterogeneous cognitive
@@ -700,7 +700,7 @@ could lower its own fitness standards — the methodological equivalent of
 evolutionary stasis through environmental simplification.
 
 The shared tool refinement observed during multi-architecture review (schemas,
-benchmarks, and directives iteratively improved by CC, CX, and Gemini — none
+benchmarks, and directives iteratively improved by Claude Code, Codex, and Gemini — none
 of whom created the tools alone) maps onto what Tomasello (1999) and Henrich
 (2015) identify as the mechanism for cumulative cultural evolution: diverse
 populations sharing, refining, and ratcheting tools, where improvements are
@@ -863,7 +863,7 @@ The model generates specific testable predictions:
   topologies** than for monoculture.
 - **Optimal n* should be small** (typically 3–6 for moderate thresholds) because
   the diminishing returns curve is steep.
-- **The CC/CX/Gemini review data already collected** (24 issues from CC/CX
+- **The Claude Code/Codex/Gemini review data already collected** (24 issues from Claude Code/Codex
   rounds, 16 novel from Gemini) can be used to estimate ρ and p_ik values
   for the actual architectures in use.
 
