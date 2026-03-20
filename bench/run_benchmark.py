@@ -394,40 +394,40 @@ def call_gemini(
     system_prompt: str | None,
     user_prompt: str,
 ) -> str:
-    """Send a request via the Google Generative AI SDK."""
+    """Send a request via the Google GenAI SDK (google-genai)."""
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types as genai_types
     except ImportError:
-        _err("ERROR: `google-generativeai` package not installed. pip install google-generativeai")
+        _err("ERROR: `google-genai` package not installed. pip install google-genai")
         sys.exit(1)
 
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         _err("ERROR: GOOGLE_API_KEY not set.")
         sys.exit(1)
-    genai.configure(api_key=api_key)
+
+    client = genai.Client(api_key=api_key)
 
     # Throttle handled externally by AdaptiveThrottle — do not double-sleep here
 
-    gen_config = genai.types.GenerationConfig(max_output_tokens=4096)
-    gen_model = genai.GenerativeModel(
-        model_name=model,
+    config = genai_types.GenerateContentConfig(
+        max_output_tokens=4096,
         system_instruction=system_prompt if system_prompt else None,
+        http_options=genai_types.HttpOptions(timeout=300_000),  # 5 min timeout (ms)
     )
-    response = gen_model.generate_content(
-        user_prompt,
-        generation_config=gen_config,
-        request_options={"timeout": 300},  # 5 min timeout
+    response = client.models.generate_content(
+        model=model,
+        contents=user_prompt,
+        config=config,
     )
-    # finish_reason 2 = SAFETY filter, 3 = RECITATION, 4 = OTHER
-    # Treat as non-retryable failures with an informative message
-    try:
+    # Check for refusal (safety filter, recitation, etc.)
+    if response.text is not None:
         return response.text
-    except ValueError:
-        reason = "unknown"
-        if response.candidates:
-            reason = str(response.candidates[0].finish_reason)
-        return f"[MODEL_REFUSED: finish_reason={reason}] Model declined to respond to this prompt."
+    reason = "unknown"
+    if response.candidates:
+        reason = str(response.candidates[0].finish_reason)
+    return f"[MODEL_REFUSED: finish_reason={reason}] Model declined to respond to this prompt."
 
 
 def call_groq(
