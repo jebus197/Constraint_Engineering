@@ -35,7 +35,7 @@ Adoption remains the biggest unknown. The framework comes with its own evidence 
 
 There are, as I see it, two possible futures. In the weaker one, CDSFL becomes a very good internal methodology for expert operators: valuable, transferable, but niche. Its output is vocabulary, discipline, and process. In the stronger one, it becomes the kernel of a new product category: expert-configured procedural wrappers around frontier models, backed by benchmarked domain configurations, cross-model review topologies, and persistent provenance. That would be materially different from today's "prompt library" ecosystem. It would look more like auditable cognitive infrastructure.
 
-One data point worth recording: during external assessment, a frontier model initially missed the reflexive and self-improving nature of the project entirely, framing it as "lacking external validation." After being challenged, it corrected comprehensively. The correction itself is data — the framework's centre of gravity is not immediately obvious from a surface read. That is relevant to the accessibility question and suggests the documentation needs to work harder to make the structural logic visible early.
+One lesson learned during development: the framework's centre of gravity is not immediately obvious from a surface read. Early drafts of the documentation buried the structural logic — the confer protocol, the recursive methodology-selection loop, the laboratory/specimen distinction — beneath layers of formal detail. That has since been corrected, but it remains a standing concern for outreach.
 
 ## Ecosystems of Experts
 

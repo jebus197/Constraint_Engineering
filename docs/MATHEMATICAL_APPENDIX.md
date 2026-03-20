@@ -223,7 +223,7 @@ This matches the white paper's stance: "if a better model is proposed that predi
 
 ## Attribution
 
-The residual risk model (§1), class-specific diversity discount (§2), parameter uncertainty treatment (§3), and severity-detectability separation (§4) were developed through independent third-party mathematical assessment (OpenAI GPT, March 2026) applied to the CDSFL white paper and extended rationale. The assessment validated the existing core models as "mathematically sound within their stated assumptions" and "substantially improved" relative to earlier formulations, while identifying these extensions as the "cleanest upgrade path" for the next empirical phase.
+The extensions in this appendix were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase.
 
 ---
 

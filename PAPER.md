@@ -725,9 +725,9 @@ the field of AI safety that does not depend on the stronger emergence claim.
 
 ### Protocol-Centric AI and the Discipline Stack
 
-An independent third-party assessment (OpenAI GPT, March 2026) produced a
-structural decomposition that clarifies the project's architecture. On this
-reading, CDSFL is a discipline stack with five layers: (1) a universal reasoning
+A structural decomposition that emerged during development clarifies the
+project's architecture. On this reading, CDSFL is a discipline stack with
+five layers: (1) a universal reasoning
 discipline (P-Pass, constraint taxonomy, epistemic marking), (2) domain-specific
 expert encodings (directive files, configuration sets), (3) a heterogeneous
 adversarial review topology (multi-architecture collaboration protocol),
