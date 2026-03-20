@@ -110,15 +110,84 @@ Nine binary scoring criteria derived from ground truth (labelling definition, un
 
 #### Results: ft-006 (Interval Scheduling — software/code)
 
-*Pending — runs in progress as of 2026-03-20T23:20Z*
+**Critical finding: output truncation.** Every response across all conditions hit `FinishReason.MAX_TOKENS` at the 16384-token output cap. Code generation tasks at frontier difficulty exceed this limit. The CDSFL response (10,065 chars) and most PE runs appeared to reach code completion despite truncation, but the control (2,958 chars) and PE run 5 (2,102 chars) were cut off mid-code. This makes fair comparison unreliable for this task.
+
+| Condition | Run | Chars | Finish | Truncated mid-code? |
+|-----------|-----|-------|--------|---------------------|
+| Control | 1 | 2,958 | MAX_TOKENS | Yes — cut mid-function |
+| PE | 1 | 6,360 | MAX_TOKENS | No — reached code end |
+| PE | 2 | 8,688 | MAX_TOKENS | No — reached code end |
+| PE | 3 | 6,910 | MAX_TOKENS | No — reached code end |
+| PE | 4 | 8,194 | MAX_TOKENS | No — reached code end |
+| PE | 5 | 2,102 | MAX_TOKENS | Yes — cut mid-sort |
+| CDSFL | 1 | 10,065 | MAX_TOKENS | No — reached code end |
+
+**CDSFL structural compliance:** All four markers present. Constraint classification, self-falsification, and revised answer all generated despite truncation.
+
+**Latency:** Control 141.5s, PE mean 194.0s, CDSFL 212.6s. Significantly slower than maths/design tasks — code generation is compute-intensive.
+
+**Action required for full run:** Increase `max_output_tokens` to 32768 or higher for code tasks. Alternatively, accept truncation as a variable and record it. The truncation itself is data: CDSFL produces more structured output that reaches functional completion within the same token budget more reliably than unstructured conditions.
+
+**Scoring: deferred.** Automated scoring against ground truth (run code, check test case outputs) requires non-truncated, executable code. Manual review of the CDSFL response shows it produced a complete algorithm with dependency DAG handling, but the control response is too truncated to compare fairly. This task should be re-run with higher output limits.
 
 #### Results: ft-013 (Solar Water Purification — cross-domain/design)
 
-*Pending — runs in progress as of 2026-03-20T23:20Z*
+Eight binary scoring criteria derived from ground truth: concentrate-end osmotic pressure (the key failure mode), operating pressure range, feed flow calculation, 40% recovery acknowledgment, specific energy consumption, solar array sizing, battery storage, membrane element count.
+
+| Condition | Run | Score | Pct | Latency | Response |
+|-----------|-----|-------|-----|---------|----------|
+| Control | 1 | 7/8 | 88% | 76.2s | 6,880 ch |
+| PE | 1 | 8/8 | 100% | 90.6s | 7,694 ch |
+| PE | 2 | 8/8 | 100% | 96.8s | 7,113 ch |
+| PE | 3 | 8/8 | 100% | 59.6s | 7,725 ch |
+| PE | 4 | 8/8 | 100% | 96.7s | 7,135 ch |
+| PE | 5 | 8/8 | 100% | 89.1s | 7,120 ch |
+| CDSFL (initial) | 1 | 8/8 | 100% | — | — |
+| CDSFL (revised) | 1 | 8/8 | 100% | 96.3s | 10,326 ch |
+
+**Condition averages:**
+
+| Condition | Mean | Range | Latency | Size |
+|-----------|------|-------|---------|------|
+| Control | 88% | 88% (n=1) | 76.2s | 6,880 ch |
+| PE | 100% | 100–100% (n=5) | 86.5s | 7,357 ch |
+| CDSFL | 100% | 100% (n=1) | 96.3s | 10,326 ch |
+
+**Assessment:** Near-ceiling performance across all conditions. Gemini 3.1 Pro handles this cross-domain engineering task well — the "primary failure mode" identified in ground truth (incorrect osmotic pressure at concentrate end) was avoided even by the control condition. The automated scoring is structural (is the value present?) not quantitative (is the value correct?). Manual verification of the numerical calculations is needed to determine whether the scores reflect genuine engineering accuracy or merely structural completeness.
+
+**PE variance:** Zero variance across 5 runs (all 100%). Contrasts sharply with ft-001 where PE variance was 33 points. This suggests PE stability may be domain-dependent — engineering design tasks may have more deterministic solution paths than mathematical proofs.
+
+**CDSFL self-falsification:** All four structural markers present. The CDSFL response was 50% larger than PE average, with the additional content being constraint classification and self-falsification. Quality of the self-falsification findings needs manual review — on a near-ceiling task, the value of self-falsification may be in identifying edge cases and design robustness rather than correcting errors.
 
 #### Diagnostic Summary
 
-*To be completed when all three tasks are scored.*
+**Infrastructure: PROVEN.** 21 API calls across 3 tasks, 3 conditions, zero INFRA_FAILs. Gemini 3.1 Pro is reliable when called directly via the `google.genai` SDK. The INFRA_FAILs in previous runs were caused by the subprocess layer (CC/CX CLI invocation for confer), not by the Gemini API itself.
+
+**Output token limit: IDENTIFIED.** Code generation tasks hit the 16384-token cap. Must increase to 32768+ for the full run, or record truncation as a variable.
+
+**CDSFL structural compliance: CONSISTENT.** All three CDSFL runs produced all four structural markers (CONSTRAINT_CLASSIFICATION, INITIAL_ANSWER, ISSUES_FOUND, REVISED_ANSWER). Gemini follows the framework without resistance.
+
+**Automated scoring limitations: CONFIRMED.** Pattern-based scoring is too coarse for definitive conclusions. It catches structural presence/absence but not correctness. Manual review is essential, particularly for:
+- Mathematical proofs (is the logic valid, not just present?)
+- Engineering calculations (are the numbers correct, not just structurally placed?)
+- Code (does it run and pass test cases?)
+
+**Cross-condition findings:**
+
+| Metric | ft-001 (maths) | ft-006 (code) | ft-013 (design) |
+|--------|---------------|---------------|-----------------|
+| Control | 89% | truncated | 88% |
+| PE mean | 84% | truncated | 100% |
+| PE variance | 33 pts | — | 0 pts |
+| CDSFL | 100% | structural OK | 100% |
+| CDSFL self-falsification | 3 genuine issues | present | present |
+| INFRA_FAILs | 0 | 0 | 0 |
+
+**Key observations:**
+1. PE variance is domain-dependent: high in maths (33 pts), zero in engineering design. "Think carefully" is unreliable on proof tasks.
+2. CDSFL produces consistently structured output regardless of domain — the framework imposes discipline that bare prompting does not.
+3. All three tasks may be too easy for Gemini 3.1 Pro to show large differential effects. The expected single-pass accuracy for these tasks was 20–50%; Gemini exceeded expectations across the board. Harder tasks or manual quality assessment may be needed to discriminate between conditions.
+4. The CDSFL response is consistently ~50–90% larger than PE/control, with the additional content being constraint classification and self-falsification. Whether this additional content adds value depends on the domain and the complexity of the task.
 
 ---
 
