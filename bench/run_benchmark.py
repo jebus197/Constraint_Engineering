@@ -188,6 +188,7 @@ def _call_with_retry(call_fn, *args, max_retries: int = 10, base_delay: float = 
         "504", "DeadlineExceeded", "503", "overloaded",
         "529", "InternalServerError",
         "timeout", "Timeout", "connection",
+        "GEMINI_FAILURE", "gemini_failure",
     ]
     for attempt in range(max_retries + 1):
         try:
@@ -389,12 +390,50 @@ def call_anthropic_thinking(
     return "\n".join(text_parts)
 
 
+def _truncate_prompt_for_gemini(system_prompt: str | None, user_prompt: str) -> tuple[str | None, str]:
+    """Progressively reduce prompt size for Gemini when it can't cope.
+
+    Strategy: trim the system prompt first (it's the directives — large but
+    less task-specific), then trim the user prompt's prior-pass chain (keeping
+    the original task and the most recent pass). Returns the trimmed pair.
+    """
+    # Step 1: halve system prompt if it's over 4k chars
+    if system_prompt and len(system_prompt) > 4000:
+        # Keep first 2000 (core directives) + last 1000 (closing instructions)
+        system_prompt = (
+            system_prompt[:2000]
+            + "\n\n[...directive content trimmed for context limits...]\n\n"
+            + system_prompt[-1000:]
+        )
+        _err(f"  [gemini-adapt] trimmed system prompt to {len(system_prompt)} chars")
+
+    # Step 2: if user prompt is very long (multi-pass chain), keep task + latest pass
+    if len(user_prompt) > 12000:
+        # Try to find pass boundaries and keep first + last
+        parts = user_prompt.split("---")
+        if len(parts) >= 3:
+            # Keep first part (original task) and last part (most recent pass)
+            user_prompt = (
+                parts[0]
+                + "\n---\n[...intermediate passes trimmed for context limits...]\n---\n"
+                + parts[-1]
+            )
+            _err(f"  [gemini-adapt] trimmed user prompt to {len(user_prompt)} chars")
+
+    return system_prompt, user_prompt
+
+
 def call_gemini(
     model: str,
     system_prompt: str | None,
     user_prompt: str,
 ) -> str:
-    """Send a request via the Google GenAI SDK (google-genai)."""
+    """Send a request via the Google GenAI SDK (google-genai).
+
+    Adapts to GEMINI_FAILURE / infrastructure errors by progressively
+    truncating prompts and retrying, per Google's own troubleshooting
+    guidance (simplify the prompt when the model can't process it).
+    """
     try:
         from google import genai
         from google.genai import types as genai_types
@@ -411,23 +450,52 @@ def call_gemini(
 
     # Throttle handled externally by AdaptiveThrottle — do not double-sleep here
 
-    config = genai_types.GenerateContentConfig(
-        max_output_tokens=4096,
-        system_instruction=system_prompt if system_prompt else None,
-        http_options=genai_types.HttpOptions(timeout=300_000),  # 5 min timeout (ms)
-    )
-    response = client.models.generate_content(
-        model=model,
-        contents=user_prompt,
-        config=config,
-    )
-    # Check for refusal (safety filter, recitation, etc.)
-    if response.text is not None:
-        return response.text
-    reason = "unknown"
-    if response.candidates:
-        reason = str(response.candidates[0].finish_reason)
-    return f"[MODEL_REFUSED: finish_reason={reason}] Model declined to respond to this prompt."
+    # Attempt with full prompt first, then adapt if Gemini can't cope
+    current_system = system_prompt
+    current_user = user_prompt
+    max_adapt_attempts = 3
+
+    for adapt_attempt in range(max_adapt_attempts):
+        try:
+            config = genai_types.GenerateContentConfig(
+                max_output_tokens=4096,
+                system_instruction=current_system if current_system else None,
+                http_options=genai_types.HttpOptions(timeout=300_000),  # 5 min
+            )
+            response = client.models.generate_content(
+                model=model,
+                contents=current_user,
+                config=config,
+            )
+            # Check for refusal (safety filter, recitation, etc.)
+            if response.text is not None:
+                if adapt_attempt > 0:
+                    _err(f"  [gemini-adapt] succeeded after {adapt_attempt} adaptation(s)")
+                return response.text
+            reason = "unknown"
+            if response.candidates:
+                reason = str(response.candidates[0].finish_reason)
+            return f"[MODEL_REFUSED: finish_reason={reason}] Model declined to respond to this prompt."
+
+        except Exception as exc:
+            exc_str = str(exc)
+            exc_lower = exc_str.lower()
+            # Identify Gemini infrastructure / prompt-too-large failures
+            is_gemini_infra = any(p in exc_lower for p in [
+                "gemini_failure", "internal", "500",
+                "resource_exhausted", "invalid_argument",
+                "request payload size exceeds", "token",
+            ])
+            if is_gemini_infra and adapt_attempt < max_adapt_attempts - 1:
+                _err(f"  [gemini-adapt] infrastructure error: {exc_str[:100]}")
+                _err(f"  [gemini-adapt] adapting prompt (attempt {adapt_attempt + 1}/{max_adapt_attempts - 1})")
+                current_system, current_user = _truncate_prompt_for_gemini(
+                    current_system, current_user,
+                )
+                time.sleep(5)  # brief pause before retry
+                continue
+            # Not adaptable or final attempt — re-raise for _call_with_retry
+            raise
 
 
 def call_groq(
