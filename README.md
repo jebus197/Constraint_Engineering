@@ -62,8 +62,8 @@ CDSFL does not assume every task should jump from one model directly to formal p
 
 - **Tier 0** — individual machine P-pass: a single machine performing adversarial self-review (default for every task)
 - **Tier 1** — adversarial multi-machine P-pass: two or more machines, the number and composition determined by the domain operator, reviewing each other's output until diminishing returns are reached
-- **Tier 2** — confer/defer for domain expert: a single human domain expert reviews machine findings, confers (agrees) or defers (escalates)
-- **Tier 3** — confer/defer for external peer review: third-party reviewers with no prior involvement, for high-assurance, safety-critical, or validation contexts
+- **Tier 2** — confer/defer for domain expert: a single human domain expert conducts their own independent falsification — using a formal method of their choosing — against the machine findings, then confers (agrees) or defers (escalates)
+- **Tier 3** — confer/defer for external peer review: third-party reviewers with no prior involvement conduct independent falsification, for high-assurance, safety-critical, or validation contexts
 
 When reviewers at any tier reach irreconcilable disagreement, items are explicitly deferred with both positions recorded rather than forced to false consensus.
 
@@ -110,7 +110,7 @@ CDSFL does **not** make novices into experts.
 
 It is a **force multiplier, not a force generator**.
 
-The human operator's role is to define the problem box, identify the relevant constraints, monitor for breakout, and escalate when the system reaches the edge of its competence. If the operator cannot bound the problem properly, the model cannot reliably save them.
+The human operator's role is to define the problem box, identify the relevant constraints, monitor for breakout, escalate when the system reaches the edge of its competence, and — at the review tiers — conduct their own independent falsification rather than passively approve machine output. If the operator cannot bound the problem properly, the model cannot reliably save them.
 
 This is not an afterthought. It is one of the methodology's central design choices.
 
