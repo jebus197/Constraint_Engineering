@@ -6,8 +6,6 @@
 
 CDSFL is an attempt to formalise the scientific method within an LLM context. In more direct terms: a general-purpose "science calculator" applicable across a wide range of domains.
 
-Several framings throughout these notes were refined during collaborative review with frontier AI systems from multiple vendors — an instance of the same adversarial collaboration the methodology prescribes. The ideas originated here; the sharpening was collaborative.
-
 ## What This Is Not
 
 - **Not a guarantee of better AI systems.** Success remains heavily dependent on the domain-level expert and their relative skill, capacity, and competence — all of which will invariably vary.
@@ -185,5 +183,7 @@ Questions 1–10 are testable with existing infrastructure. Question 11 requires
 
 
 ## Closing Reflection
+
+Some framings in these notes were sharpened during the multi-vendor collaborative review described above.
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
