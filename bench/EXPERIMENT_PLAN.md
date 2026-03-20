@@ -295,3 +295,109 @@ improvement. Necessary but insufficient — floor test only.
 
 Pattern: weaker models benefit more. Reasoning models benefit less.
 Phase 2 tests whether this pattern holds at the frontier.
+
+Note: Gemini Pro Phase 1 was initially reported as "incomplete — 504 errors"
+but the raw data (20/20 tasks, both conditions) was recovered and scored on
+2026-03-20. Both Gemini models hit 100% baseline detection (ceiling effect).
+
+
+PHASE 1 COMPLETE RESULTS TABLE
+-------------------------------
+
+  Config              Model ID                     Control   CE       Delta   FP(C→CE)
+  ------              --------                     -------   --       -----   --------
+  Sonnet 4            claude-sonnet-4-20250514     95.0%     100.0%   +5.0pp  45→321
+  Sonnet 4 thinking   claude-sonnet-4-20250514     97.5%     100.0%   +2.5pp  33→234
+  GPT-4o              gpt-4o                       90.0%     100.0%  +10.0pp   6→95
+  o3-mini             o3-mini                      95.0%     100.0%   +5.0pp  15→193
+  Llama 3.3 70B       llama-3.3-70b-versatile      87.5%     100.0%  +12.5pp  10→165
+  Gemini Flash        gemini-2.5-flash            100.0%     100.0%   +0.0pp  63→552
+  Gemini Pro          gemini-2.5-pro              100.0%     100.0%   +0.0pp  95→437
+
+Notes:
+  - All models achieve 100% detection under CE (ceiling effect — tasks too easy)
+  - False positive counts increase under CE due to multi-pass iteration
+  - Gemini models already at 100% baseline — no room for improvement
+  - Phase 1 confirms CE does not HURT; Phase 2 tests whether it HELPS at frontier
+
+
+ROUND-ROBIN DISTRIBUTED COMPUTE TEST
+-------------------------------------
+
+Sequenced AFTER the Phase 2 main run (steps 1-6 above). This is the full
+distributed compute test against the benchmark — not a convergence check.
+
+PURPOSE:
+  Validate the biodiversity hypothesis at scale on the frontier task set.
+  The three-architecture review (March 2026) found that heterogeneous
+  architectures discover different defects — 16 novel issues from Gemini
+  that 8 rounds of CC/CX missed. The round-robin tests whether this
+  generalises from code review to the full 25-task frontier set across
+  all five categories (proof, code, design, synthesis, self-referential).
+
+PROTOCOL:
+  Three architectures rotate as generator → falsifier → arbiter:
+
+  Round 1: CC generates (Schema A, passes 1-3) → Gemini falsifies → CX arbitrates
+  Round 2: Gemini generates → CX falsifies → CC arbitrates
+  Round 3: CX generates → CC falsifies → Gemini arbitrates
+
+  Each round:
+    1. Generator produces solution under full CE directives
+    2. Falsifier receives solution + adversarial brief (fresh context, no
+       access to generator's intermediate passes)
+    3. Falsifier runs independent P-passes against the solution
+    4. Arbiter receives both outputs, assesses convergence via confer protocol
+    5. If arbiter finds novel issues neither caught → additional pass
+    6. Confer-mediated termination (same protocol as Phase 2 main run)
+
+  Stopping condition:
+    All three architectures agree (via confer) that diminishing returns
+    have been reached on a given task. Irreconcilable disagreements are
+    deferred for human review with full reasoning logged.
+
+TASK SET:
+  Same 25 frontier tasks as Phase 2. Results directly comparable.
+  Schema C cross-model results (step 6) provide the two-model baseline;
+  the round-robin extends to three-model full rotation.
+
+MODELS:
+  CC:     Claude Opus 4.6 (via Claude Code CLI)
+  CX:     Codex 5.3 (via Codex exec)
+  Gemini: Gemini 3.1 Pro (via API, google-genai SDK)
+
+  Constraint: sequential execution (M1 Mac, 8GB). No parallel API calls.
+  Each round completes fully before the next begins.
+
+MEASUREMENT:
+  1. Per-round detection: what did each architecture find that others missed?
+  2. Convergence curves: per-task, per-category, per-architecture
+  3. Novel-issue rate: does the Nth architecture still find issues after N-1?
+  4. Category correlation: does biodiversity matter more for some task types?
+  5. Diminishing returns profile: where do complementary blind spots exhaust?
+  6. Cost efficiency: marginal cost per novel finding by round
+
+DATA RECORDING:
+  All results stored in bench/results/round_robin/:
+    - rr_round{N}_{task_id}_{role}.json — per-task, per-role output
+    - rr_confer_{task_id}.json — confer transcripts (all three assessments)
+    - rr_convergence.csv — per-task convergence metrics
+    - rr_summary.json — aggregate results across all rounds
+  IM service logs all confer exchanges (queryable via im_service.py).
+
+BUDGET:
+  Gemini API: within existing £10 cap (est. ~£3-5 for 25 tasks × 3 rounds)
+  CC/CX: CLI subscriptions, zero API cost
+  Total additional: ~$5-10 beyond Phase 2 main run
+
+SEQUENCING (within overall plan):
+  This is step 6.5 — after Schema C cross-model pairs (step 6), before
+  the Grandslam confer (step 7). The Grandslam then covers ALL results:
+  Phase 2 main run + Schema C + round-robin.
+
+  Updated sequence:
+    1-5. (unchanged)
+    6.   Schema C cross-model pairs on 10 tagged tasks
+    6.5  Round-robin distributed compute test (25 tasks × 3 rounds)
+    7.   Grandslam: CC/CX/Gemini full confer on ALL results via IM
+    8-10. (unchanged)
