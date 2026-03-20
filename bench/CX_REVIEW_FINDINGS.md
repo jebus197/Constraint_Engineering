@@ -173,10 +173,10 @@ All fixes were further P-passed by CC's own isolated adversarial subagents betwe
 
 | Tier | Description | Status |
 |------|-------------|--------|
-| **Tier 0: Self-review** | CC's own P-pass on all code and documentation | COMPLETE |
-| **Tier 1: Isolated adversarial** | Fresh CX instance with no prior exposure, adversarial brief | COMPLETE (4 rounds) |
-| **Tier 2: Confer review** | Review by a 3rd-party model/agent with domain expertise | NOT YET PERFORMED |
-| **Tier 3: Independent peer review** | External human domain experts (structural, chemical, maritime, etc.) | NOT YET PERFORMED |
+| **Tier 0: Machine self-review** | Claude Code (Claude Opus 4.6) P-pass on all code and documentation | COMPLETE |
+| **Tier 1: Multi-machine adversarial** | Two or more machines (operator-determined composition) reviewing adversarially until diminishing returns. Performed: Claude Code/Codex (OpenAI Codex 5.3) 8-round + Gemini 5-round + Extended P-Pass | COMPLETE |
+| **Tier 2: Domain expert confer/defer** | Single human domain expert reviews machine findings, confers or defers | NOT YET PERFORMED |
+| **Tier 3: External peer confer/defer** | Independent external reviewers with no prior involvement | NOT YET PERFORMED |
 
 ### Acknowledged limitations
 
@@ -192,7 +192,7 @@ All fixes were further P-passed by CC's own isolated adversarial subagents betwe
 
 6. **Wolfram ground truth verification planned but not yet executed.** Computational verification of seeded faults via Wolfram/Mathematica is planned as a parallel validation layer (Phase 0a and Phase 4). CX approved the methodology with conditions: run parallel to scoring (not feeding into detection), include explicit assumption metadata, and require human review for non-computational domains. This verification has not yet been performed.
 
-7. **Single-author task construction.** All 90 task files and 27 directive files were authored by CC. While CX sampled and adversarially reviewed a subset and found them "largely genuine engineering errors with useful educational value," systematic coverage review of all 180 seeded faults has not been performed.
+7. **Single-author task construction.** All 90 task files and 28 directive files were authored by Claude Code (Claude Opus 4.6). While CX sampled and adversarially reviewed a subset and found them "largely genuine engineering errors with useful educational value," systematic coverage review of all 180 seeded faults has not been performed.
 
 8. **No real model data yet.** The testbench has been mechanically validated (dry-run passes on 90 tasks / 180 faults) but never run against a real model. All detection metric calibration has been performed against synthetic probe strings, not actual model responses.
 

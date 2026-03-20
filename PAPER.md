@@ -149,7 +149,7 @@ The simple model C(n) operates entirely within A0. The structured model F_n can 
 
 **Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
 
-**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined but not yet empirically calibrated. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) and become actionable when benchmark data is available to test whether they outpredict the simpler models.
+**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
 
 ### 3. Constraint Classification
 
@@ -495,7 +495,7 @@ The gap between stated confidence and demonstrated confidence cannot be closed b
 **Core measurement:** Does methodology-prompted output contain fewer physically impossible, logically incoherent, or commercially unviable claims than unguided output, when evaluated by a domain expert against established ground truth?
 
 **Test design:**
-- 90 technical prompts across nine domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, cross-domain systems), 10 per domain
+- 90 technical prompts across ten domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, mathematics, cross-domain systems), 10 per domain
 - Control condition: each prompt run with no instruction set
 - Experimental condition: each prompt run with the methodology as system prompt
 - Evaluation: domain expert reviews outputs blind to condition, rates each factual claim on a four-point scale from established-and-correct to critically-incorrect
@@ -507,7 +507,9 @@ The implementation of this protocol is provided in [`bench/`](bench/).
 
 **Estimated cost:** approximately $1.98 at representative frontier model pricing. Well within the budget of any individual researcher.
 
-**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across nine STEM domains spanning the boundary described in Part VII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
+**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across ten STEM domains spanning the boundary described in Part VII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
+
+**Domain-alignment note:** All models in the current experimental infrastructure are coding-optimised systems accessed through coding-oriented interfaces. The benchmark tasks span ten engineering domains, but no model has been specifically tuned for any non-coding domain. The current tests measure whether CDSFL helps a generalist model perform across domains; they do not yet test whether CDSFL helps a domain-specialist excel within its area of optimisation — which is the prediction the Ecosystems of Experts thesis makes. The domain-specific directive files (constraint boxes) are a complementary layer to domain-specialist models, not a substitute; whether the combination outperforms either layer alone is itself a testable question, open until domain-specialist models of comparable quality become broadly available. See the [Founder's Notes](docs/FOUNDERS_NOTES.md) for the full discussion.
 
 The protocol is published so that anyone can execute it, reproduce or refute the observation, and extend the methodology. If the advantage does not replicate, that is a result, not a failure.
 
@@ -576,7 +578,7 @@ other's output under a shared falsification methodology. This was not
 prompt-chaining or pipeline orchestration. Each model identified issues the
 others missed:
 
-- Claude Code/Codex 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
+- Claude Code (Claude Opus 4.6)/Codex (OpenAI Codex 5.3) 8-round adversarial review: ~24 issues (convergence: 10→7→3→3→1→2→2→1)
 - Gemini 5-round adversarial review: 16 novel issues Claude Code/Codex missed (convergence: 9→10→5→4→3)
 - Extended P-Pass (5 modules): 4 additional actionable items
 
@@ -700,7 +702,7 @@ could lower its own fitness standards — the methodological equivalent of
 evolutionary stasis through environmental simplification.
 
 The shared tool refinement observed during multi-architecture review (schemas,
-benchmarks, and directives iteratively improved by Claude Code, Codex, and Gemini — none
+benchmarks, and directives iteratively improved by Claude Code (Claude Opus 4.6), Codex (OpenAI Codex 5.3), and Gemini — none
 of whom created the tools alone) maps onto what Tomasello (1999) and Henrich
 (2015) identify as the mechanism for cumulative cultural evolution: diverse
 populations sharing, refining, and ratcheting tools, where improvements are
@@ -863,7 +865,7 @@ The model generates specific testable predictions:
   topologies** than for monoculture.
 - **Optimal n* should be small** (typically 3–6 for moderate thresholds) because
   the diminishing returns curve is steep.
-- **The Claude Code/Codex/Gemini review data already collected** (24 issues from Claude Code/Codex
+- **The Claude Code (Claude Opus 4.6)/Codex (OpenAI Codex 5.3)/Gemini review data already collected** (24 issues from Claude Code/Codex
   rounds, 16 novel from Gemini) can be used to estimate ρ and p_ik values
   for the actual architectures in use.
 

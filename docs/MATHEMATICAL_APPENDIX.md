@@ -1,12 +1,12 @@
 # Mathematical Appendix: Extensions to the CDSFL Formal Model
 
-*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XII of the white paper. This appendix contains extensions that are mathematically well-defined but not yet empirically calibrated.*
+*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XII of the white paper. This appendix contains extensions that are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists for initial calibration; full calibration against frontier task data is in progress.*
 
 ---
 
 ## Status
 
-The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. The extensions here become actionable when empirical benchmark data is available to calibrate their additional parameters. Until then, they are stated precisely so they can be tested, and discarded if they do not improve prediction.
+The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. Benchmark data from the three-architecture adversarial review now provides a basis for initial calibration of these extensions. They are stated precisely so they can be tested, and discarded if they do not improve prediction.
 
 ---
 
@@ -192,9 +192,9 @@ This matches the white paper's stance: "if a better model is proposed that predi
 
 | Extension | Mathematical status | Empirical status | Action |
 |---|---|---|---|
-| R_n (residual risk) | Well-defined, reduction verified | No calibration data | State formula, calibrate when data available |
-| d_ik (class-specific diversity) | Well-defined, reduces to d_i | No per-class correlation data | Use scalar d_i as default, note extension |
-| Parameter uncertainty | Standard Bayesian treatment | Requires multiple benchmark runs | Point estimates for now, intervals later |
+| R_n (residual risk) | Well-defined, reduction verified | Three-architecture review data available for initial calibration | Calibrate against review convergence data |
+| d_ik (class-specific diversity) | Well-defined, reduces to d_i | Cross-architecture defect data available (Claude/Codex/Gemini) | Estimate per-class correlations from review data |
+| Parameter uncertainty | Standard Bayesian treatment | Initial data from completed review rounds | Point estimates first, intervals as data accumulates |
 | Severity separation | Well-defined, reduces to w_k model | Requires domain-specific severity data | Conflate for non-safety work, separate for safety-critical |
 
 ---
