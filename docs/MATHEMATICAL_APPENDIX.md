@@ -1,6 +1,6 @@
 # Mathematical Appendix: Extensions to the CDSFL Formal Model
 
-*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XII of the white paper. This appendix contains extensions that are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists for initial calibration; full calibration against frontier task data is in progress.*
+*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XIII of the white paper. This appendix contains extensions that are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists for initial calibration; full calibration against frontier task data is in progress.*
 
 ---
 
@@ -340,7 +340,7 @@ The system's predicted combined detection adjusts automatically. An overclaiming
 |---|---|---|
 | C(n) | Simple corroboration (baseline model) | White paper §2.1 |
 | F_n | Structured falsification coverage | White paper §2.2 |
-| D(n) | Distributed compute coverage | White paper Part XII |
+| D(n) | Distributed compute coverage | White paper Part XIII |
 | R_n | Residual risk after clean run | This appendix §1 |
 | L_n | Expected residual loss (severity-weighted) | This appendix §4 |
 | p_ik | Detection probability, pass i, flaw class k | White paper §2.2 |
@@ -352,17 +352,17 @@ The system's predicted combined detection adjusts automatically. An overclaiming
 | π_k | Prior flaw rate, flaw class k | This appendix §1 |
 | m_k | Miss probability, flaw class k | This appendix §1 |
 | A | Anchor state (A0–A3) | White paper §2.2 |
-| ρ | Inter-architecture correlation | White paper Part XII |
-| G_n | Combined machine-HIL detection | White paper §2.3, this appendix §6 |
+| ρ | Inter-architecture correlation | White paper Part XIII |
+| G_n | Combined machine-HIL detection | White paper §7.1, this appendix §6 |
 | C_M(k) | Machine cumulative detection for class k | This appendix §6 |
 | C_H(k) | HIL cumulative detection for class k | This appendix §6 |
-| ρ_MH | Cross-correlation (cognitive priming) | White paper §2.3, this appendix §6 |
-| E | HIL domain expertise level | White paper §2.3, this appendix §6 |
-| M | HIL methodology formality | White paper §2.3, this appendix §6 |
+| ρ_MH | Cross-correlation (cognitive priming) | White paper §7.1, this appendix §6 |
+| E | HIL domain expertise level | White paper §7.1, this appendix §6 |
+| M | HIL methodology formality | White paper §7.1, this appendix §6 |
 | α | Expertise floor coefficient | This appendix §6 |
-| λ_s | Domain variable sensitivity | White paper §2.3, this appendix §6 |
-| V_s | Domain-specific variable (pluggable) | White paper §2.3, this appendix §6 |
-| E*(t) | Bayesian posterior expertise estimate | White paper §2.3, this appendix §6 |
+| λ_s | Domain variable sensitivity | White paper §7.1, this appendix §6 |
+| V_s | Domain-specific variable (pluggable) | White paper §7.1, this appendix §6 |
+| E*(t) | Bayesian posterior expertise estimate | White paper §7.1, this appendix §6 |
 | κ | HIL calibration metric | This appendix §6 |
 
 ---

@@ -149,53 +149,9 @@ The simple model C(n) operates entirely within A0. The structured model F_n can 
 
 **Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
 
-**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, severity-detectability separation for safety-critical domains, and combined machine-HIL detection with self-correcting parameters (G_n). These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
+**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
 
-#### 2.3 Combined Detection Model (G_n)
-
-The structured model F_n quantifies machine passes. It does not quantify the human expert's contribution. In the four-tier review structure (Part III), the HIL at Tier 2 is not a passive reviewer — they run their own independent falsification passes using a formal method of their choosing (see Review Tiers). This independence is load-bearing: if the human merely reviews machine output after reading it, their cognitive framing becomes correlated with the machine's, and their incremental detection value collapses.
-
-The combined detection model brings the HIL inside the formula:
-
-> **G_n = Σ_k w_k · [1 − (1 − C_M(k)) · (1 − C_H(k) · (1 − ρ_MH))]**
-
-Where:
-- C_M(k) = 1 − Π_{i=1}^{n_M} (1 − d_{M,i} · p_{M,i,k}) — machine cumulative detection for flaw class k (this is F_n)
-- C_H(k) = 1 − Π_{j=1}^{n_H} (1 − d_{H,j} · p_{H,j,k}) — HIL cumulative detection for flaw class k
-- ρ_MH ∈ [0,1] — cross-correlation from cognitive priming (0 = fully independent, 1 = fully primed)
-
-**HIL detection probability** is parameterised by expertise and methodology formality:
-
-> **p_H = E · (α + (1−α) · M) · Π_s (1 + λ_s · V_s)**
-
-Where:
-- E ∈ [0,1] — domain expertise level
-- M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal method)
-- α ∈ (0,1) — floor coefficient (what expertise alone achieves without formal method)
-- λ_s — sensitivity to domain-specific variable s
-- V_s ∈ [-1,1] — domain-specific variable s (pluggable by the operator)
-
-The domain variables V_s are the extensible component. The domain operator determines which variables matter in their context — access to reference data, time pressure, regulatory familiarity, equipment availability — and estimates their magnitude. When no domain variables are specified (all V_s = 0), the formula reduces to the base case: expertise scaled by methodology formality.
-
-**Reduction properties:** G_n reduces to F_n when n_H = 0 (no human passes). It reduces to fully multiplicative independence when ρ_MH = 0. It reduces to machine-only detection when ρ_MH = 1 (the human adds nothing if fully primed). Under uniform assumptions (K=1, d=1, uniform p), it reduces to C(n). Every simpler model in this paper is a special case of G_n.
-
-**In plain terms:** G_n says that the combined system's detection is driven by three things, in order of importance. First, independence: the human must form their own analysis before seeing machine output, or their contribution collapses toward zero. Second, methodology: the same expert working with a formal method catches roughly two and a half times what they catch working informally — rigour is a procedure, not a personality trait. Third, expertise: necessary but not sufficient on its own. The formula also provides slots for domain-specific factors that the general model cannot anticipate — the domain operator fills these in based on their context. When no domain variables are specified, the formula simplifies to the base case. When the human adds nothing (either because they are absent, or because they are fully primed by machine output), G_n collapses back to the machine-only model F_n. Every simpler model in this paper nests cleanly inside G_n.
-
-**Self-correcting parameters:** E is initially self-declared by the HIL. Over repeated reviews where ground truth is eventually established (through union coverage across independent reviewers), the system accumulates empirical data on the HIL's actual detection rate. The claimed E is then compared against the Bayesian posterior:
-
-> **E*(t) = (a₀ + Σ catches) / (a₀ + b₀ + Σ trials)**
-
-G_n becomes G_n(t): the same formula, but with empirically grounded expertise rather than self-reported claims. The divergence between claimed E and posterior E*(t) is the calibration signal — it measures how accurately the HIL assesses their own capability.
-
-**Falsifiability:** G_n makes testable predictions beyond those of F_n. If methodology formality M does not measurably improve detection probability at constant expertise E, then M is not a meaningful variable and should be removed from the formula. If the priming correlation ρ_MH does not degrade human detection when the human has seen machine output, then active independence is unnecessary and passive review suffices. Both are empirically testable.
-
-**Future research directions:**
-
-1. *Posterior convergence rate:* Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed.
-2. *Asymmetric calibration:* Does penalising overconfidence (claiming higher E than observed) more heavily than underconfidence produce better system-level outcomes than symmetric calibration?
-3. *Calibration score publication effects:* Does publishing the calibration score change reviewer behaviour — and if so, does it produce honest self-assessment or strategic sandbagging?
-
-The full derivation, edge case analysis, and calibration framework are in the [Mathematical Appendix §6](docs/MATHEMATICAL_APPENDIX.md).
+A further extension — the combined machine-HIL detection model (G_n) — is presented separately in Part VII, after the reader has encountered the human role (Part III), the persistence and verification architecture (Part V), and the quality defence problem (Part VI). G_n resolves a gap that becomes apparent only once those sections have been read: how to quantify the human expert's contribution and couple it to the verification infrastructure.
 
 ### 3. Constraint Classification
 
@@ -494,7 +450,69 @@ The honest position: you cannot prevent low-quality reasoning from being produce
 
 ---
 
-## Part VII — Known Limitations
+## Part VII — Combined Detection: The Human Inside the Formula
+
+Parts III through VI establish three things in sequence. First, that the human expert is not a passive approver but an active falsifier who defines the problem, controls the review process, and conducts independent analysis (Part III). Second, that the verification chain can anchor any empirical signal — content hashes, hash chains, Merkle trees, on-chain transactions — making provenance and integrity deterministically checkable (Part V). Third, that the quality defence problem has no purely textual solution: you cannot distinguish genuine reasoning from performative reasoning using text alone, and the defence must therefore be architecturally distributed across attribution, cross-verification, and consequence tracking (Part VI).
+
+What has been missing until now is the mathematical coupling between these components. The structured model F_n (Section 2.2) quantifies machine passes in detail but treats the human expert as outside the formula — a qualitative checkpoint described in prose but absent from the mathematics. This is a gap with consequences. A framework that argues against passive acceptance of machine output, while providing no formal model of what active human participation contributes, is implicitly saying: trust the human because they are human. That is precisely the credentialist assumption the framework's own quality defence (Part VI) argues against.
+
+### 7.1 The Combined Detection Model (G_n)
+
+The combined detection model resolves this by bringing the human inside the same probabilistic framework as the machine:
+
+> **G_n = Σ_k w_k · [1 − (1 − C_M(k)) · (1 − C_H(k) · (1 − ρ_MH))]**
+
+Where:
+- C_M(k) = 1 − Π_{i=1}^{n_M} (1 − d_{M,i} · p_{M,i,k}) — machine cumulative detection for flaw class k (this is F_n)
+- C_H(k) = 1 − Π_{j=1}^{n_H} (1 − d_{H,j} · p_{H,j,k}) — HIL cumulative detection for flaw class k
+- ρ_MH ∈ [0,1] — cross-correlation from cognitive priming (0 = fully independent, 1 = fully primed)
+
+**HIL detection probability** is parameterised by expertise and methodology formality:
+
+> **p_H = E · (α + (1−α) · M) · Π_s (1 + λ_s · V_s)**
+
+Where:
+- E ∈ [0,1] — domain expertise level
+- M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal method)
+- α ∈ (0,1) — floor coefficient (what expertise alone achieves without formal method)
+- λ_s — sensitivity to domain-specific variable s
+- V_s ∈ [-1,1] — domain-specific variable s (pluggable by the operator)
+
+The domain variables V_s are the extensible component. The domain operator determines which variables matter in their context — access to reference data, time pressure, regulatory familiarity, equipment availability — and estimates their magnitude. When no domain variables are specified (all V_s = 0), the formula reduces to the base case: expertise scaled by methodology formality.
+
+**Reduction properties:** G_n reduces to F_n when n_H = 0 (no human passes). It reduces to fully multiplicative independence when ρ_MH = 0. It reduces to machine-only detection when ρ_MH = 1 (the human adds nothing if fully primed). Under uniform assumptions (K=1, d=1, uniform p), it reduces to C(n). Every simpler model in this paper is a special case of G_n.
+
+**In plain terms:** G_n says that the combined system's detection is driven by three things, in order of importance. First, independence: the human must form their own analysis before seeing machine output, or their contribution collapses toward zero. Second, methodology: the same expert working with a formal method catches roughly two and a half times what they catch working informally — rigour is a procedure, not a personality trait. Third, expertise: necessary but not sufficient on its own. The formula also provides slots for domain-specific factors that the general model cannot anticipate — the domain operator fills these in based on their context. When no domain variables are specified, the formula simplifies to the base case. When the human adds nothing (either because they are absent, or because they are fully primed by machine output), G_n collapses back to the machine-only model F_n. Every simpler model in this paper nests cleanly inside G_n.
+
+### 7.2 Self-Correcting Parameters and the Verification Chain
+
+E is initially self-declared by the HIL. Over repeated reviews where ground truth is eventually established (through union coverage across independent reviewers), the system accumulates empirical data on the HIL's actual detection rate. The claimed E is then compared against the Bayesian posterior:
+
+> **E*(t) = (a₀ + Σ catches) / (a₀ + b₀ + Σ trials)**
+
+G_n becomes G_n(t): the same formula, but with empirically grounded expertise rather than self-reported claims. The divergence between claimed E and posterior E*(t) is the calibration signal — it measures how accurately the HIL assesses their own capability.
+
+This is where G_n connects to the verification infrastructure described in Part V. The calibration signal — claimed expertise, observed detection rate, posterior convergence, calibration score — is empirical data with the same properties as any other record in the persistence layer. It can be content-hashed, chained, rolled into Merkle epochs, and anchored on-chain. A reviewer's calibration history becomes a cryptographically verifiable track record: not a reputation declared by the reviewer or assigned by an authority, but an empirical signal derived from their own performance, anchored against tampering, and independently auditable by any third party.
+
+This closes a loop that Parts V and VI left open. Part V established that the verification chain can anchor any record but said nothing about what signals are worth anchoring beyond reasoning checkpoints. Part VI established that quality defence requires attribution and reputation but provided no mechanism for generating reputation from empirical data. G_n's calibration signal provides exactly that mechanism: a quantitative measure of reviewer competence, derived from falsifiable predictions (claimed E) tested against observable outcomes (actual detection rate), secured by the same verification chain that anchors everything else in the framework.
+
+The practical consequence is that the verification chain does not merely record *what was reviewed* — it records *how well the reviewer performed*, in a form that is deterministically checkable and resistant to both inflation and tampering. An expert who consistently overclaims is statistically falsified not by administrative judgment but by their own anchored track record. An honest practitioner who accurately estimates their limits builds a verifiable history of calibration that no credential can substitute for and no institution can revoke.
+
+### 7.3 Falsifiability
+
+G_n makes testable predictions beyond those of F_n. If methodology formality M does not measurably improve detection probability at constant expertise E, then M is not a meaningful variable and should be removed from the formula. If the priming correlation ρ_MH does not degrade human detection when the human has seen machine output, then active independence is unnecessary and passive review suffices. Both are empirically testable.
+
+### 7.4 Future Research Directions
+
+1. *Posterior convergence rate:* Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed.
+2. *Asymmetric calibration:* Does penalising overconfidence (claiming higher E than observed) more heavily than underconfidence produce better system-level outcomes than symmetric calibration?
+3. *Calibration score publication effects:* Does publishing the calibration score change reviewer behaviour — and if so, does it produce honest self-assessment or strategic sandbagging?
+
+The full derivation, edge case analysis, and calibration framework are in the [Mathematical Appendix §6](docs/MATHEMATICAL_APPENDIX.md).
+
+---
+
+## Part VIII — Known Limitations
 
 1. **The ground truth problem.** The methodology forces explicit adversarial reasoning but cannot verify that reasoning against reality. A confident hallucination passes its own P-Pass because the model does not know it is wrong. The methodology reduces errors caused by insufficient reasoning; it cannot fix errors caused by incorrect training data.
 
@@ -516,7 +534,7 @@ The honest position: you cannot prevent low-quality reasoning from being produce
 
 ---
 
-## Part VIII — Related Work
+## Part IX — Related Work
 
 Several lines of research address overlapping concerns. None implements the full CDSFL methodology; each addresses a subset of the problem space.
 
@@ -534,7 +552,7 @@ No existing work combines all five components of CDSFL: generation-falsification
 
 ---
 
-## Part IX — Empirical Validation
+## Part X — Empirical Validation
 
 The gap between stated confidence and demonstrated confidence cannot be closed by further internal iteration. It requires external empirical data.
 
@@ -553,7 +571,7 @@ The implementation of this protocol is provided in [`bench/`](bench/).
 
 **Estimated cost:** approximately $1.98 at representative frontier model pricing. Well within the budget of any individual researcher.
 
-**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across ten STEM domains spanning the boundary described in Part VII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
+**Scope:** This test shows whether the methodology reduces critical errors in a frontier-class model on technical tasks across ten STEM domains spanning the boundary described in Part VIII. Equivalence across model classes, persistence across full session lengths without re-assertion, and stability across domains not yet represented remain second-phase research questions.
 
 **Domain-alignment note:** All models in the current experimental infrastructure are coding-optimised systems accessed through coding-oriented interfaces. The benchmark tasks span ten engineering domains, but no model has been specifically tuned for any non-coding domain. The current tests measure whether CDSFL helps a generalist model perform across domains; they do not yet test whether CDSFL helps a domain-specialist excel within its area of optimisation — which is the prediction the Ecosystems of Experts thesis makes. The domain-specific directive files (constraint boxes) are a complementary layer to domain-specialist models, not a substitute; whether the combination outperforms either layer alone is itself a testable question, open until domain-specialist models of comparable quality become broadly available. See the [Founder's Notes](docs/FOUNDERS_NOTES.md) for the full discussion.
 
@@ -578,7 +596,7 @@ The testbench supports `--mode extended` for comparative data against the standa
 
 ---
 
-## Part X — Worked Examples
+## Part XI — Worked Examples
 
 Each of the following projects was built using this methodology. They are linked here as evidence of the methodology in practice, not as claims of superiority over alternative approaches. Each repo has its own documentation and stands independently.
 
@@ -588,7 +606,7 @@ Each of the following projects was built using this methodology. They are linked
 | **Open Brain** | Persistent, cross-agent, cross-session verified memory for AI systems. The persistence and verification layer described in Part V of this document. | [OpenBrain](https://github.com/jebus197/OpenBrain) |
 ---
 
-## Part XI — Frontier Research Directions
+## Part XII — Frontier Research Directions
 
 ### Methodology Formalisation as Research Area
 
@@ -603,7 +621,7 @@ If this hypothesis holds, the methodology is transferable, auditable, and
 improvable as a document — independent of who applies it. If it fails, the
 value lies entirely in tacit expertise (Polanyi's paradox: "we know more than
 we can tell"), and formalisation adds nothing. The self-test and frontier
-experiments described in Part IX are designed to discriminate between these
+experiments described in Part X are designed to discriminate between these
 outcomes.
 
 ### Intelligence-Agnostic Expert Role
@@ -664,7 +682,7 @@ contribution. The specimen is expendable.
 
 ### Complexity Threshold Hypothesis
 
-The self-test (Part IX) suggests a complexity threshold below which
+The self-test (Part X) suggests a complexity threshold below which
 methodology formalisation adds no measurable value. On an 805-line code review
 task (below CDSFL's design point), all single-invocation conditions capped at
 approximately 40% recall regardless of methodology. This is consistent with
@@ -757,13 +775,13 @@ preserved and no single agent could produce the full refinement in isolation.
 Whether these structural parallels are *homologous* (same underlying mechanism
 operating on a different substrate) or merely *analogous* (superficially similar,
 fundamentally different) is an open empirical question that the current evidence
-cannot resolve. The coverage model (Part XII) provides the mathematical framework
+cannot resolve. The coverage model (Part XIII) provides the mathematical framework
 within which this question can be investigated — specifically, whether the
 parameter space exhibits phase transitions where system behaviour changes
 qualitatively rather than quantitatively. The round-robin convergence test is
 designed to provide the first empirical data bearing on this question.
 
-The bounded convergence prediction (Part XII, diminishing returns) is itself
+The bounded convergence prediction (Part XIII, diminishing returns) is itself
 noteworthy independent of the evolutionary parallel. If self-improving cognitive
 systems converge rather than explode, that is a data point against the
 intelligence explosion hypothesis (Good 1965, Bostrom 2014) — a contribution to
@@ -806,11 +824,11 @@ cannot replicate."
 
 ---
 
-## Part XII — Distributed Compute Coverage Model
+## Part XIII — Distributed Compute Coverage Model
 
 The distributed compute hypothesis — that heterogeneous adversarial review
 outperforms monoculture review — can be stated as a formal coverage model.
-This extends the corroboration model from Part III to multiple architectures,
+This extends the corroboration model from Part II to multiple architectures,
 multiple defect classes, and inter-architecture correlation.
 
 ### Definitions
@@ -933,7 +951,7 @@ validity does not depend on this specific mathematical framework.
 
 This document practises what it describes. Every claim made here is presented as a falsifiable assertion:
 
-- The claim that the generation-falsification coupling reduces errors is testable by the empirical validation protocol in Part IX.
+- The claim that the generation-falsification coupling reduces errors is testable by the empirical validation protocol in Part X.
 - The claim that constraint classification prevents implicit trade-offs is testable by adversarial prompt design.
 - The claim that the verification chain detects tampering is testable by attempting to tamper with verified records.
 - The claim that manual constraint bounding improves outcomes is testable by comparing operator-bounded sessions against unbounded sessions on equivalent tasks.
