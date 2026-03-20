@@ -123,7 +123,7 @@ The deeper hypothesis: methodology itself — the structured application of scie
 
 That framing — protocol-centric AI — may be the sharper label for what this project is actually attempting. "Methodology formalisation" describes the activity. "Methodology engineering" describes the discipline: building, stress-testing, iterating, and selecting procedural artefacts under empirical pressure. The distinction matters. Formalisation implies writing something down. Engineering implies building something that has to work, and replacing it when it doesn't.
 
-If the hypothesis holds, the methodology is transferable, auditable, and improvable as a document — independent of who applies it. If it fails, the value lies entirely in tacit expertise (Polanyi's paradox: "we know more than we can tell"), and formalisation adds nothing. The experiments are designed to discriminate between these outcomes.
+If the hypothesis holds, the methodology is transferable, auditable, and improvable as a document — independent of who applies it. If it fails, the value lies entirely in tacit expertise that cannot be externalised, and formalisation adds nothing. The experiments are designed to discriminate between these outcomes.
 
 One structural observation that emerged during review deserves mention. The mathematical layer — anchor states, diversity discounts, the tiered review model — is not decorating a workflow with equations. It is attempting to quantify something most AI methodology ignores: epistemic strength is not just a property of content but of who reviewed it, how correlated they were, and whether the review was socially independent or merely internally recycled. This is importing the institutional structure of scientific peer review into reasoning itself.
 
