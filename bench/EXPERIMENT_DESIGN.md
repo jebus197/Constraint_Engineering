@@ -150,9 +150,12 @@ The core model quantifies why this matters: if base detection probability p
 is low because the model lacks domain-specific optimisation, C(n) stays low
 regardless of pass count. CDSFL is a force multiplier, not a force generator.
 
-The domain-specific directive files (constraint boxes) provide prompt-level
-specialisation, which is a weaker form than weight-level tuning. Results
-should be interpreted with this constraint stated.
+The domain-specific directive files (constraint boxes) are not a workaround
+for the absence of domain-specialist models — they are a complementary
+layer. Prompt-level specialisation and weight-level specialisation are
+envisaged as stacking, not substituting. Whether the combination outperforms
+either layer alone is itself a testable question, open until both can be
+tested together. Results should be interpreted with this constraint stated.
 
 The paradigm-consistent test — domain-specialist models on matched domain
 tasks, with and without CDSFL — requires domain-specialist models at a
