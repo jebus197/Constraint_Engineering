@@ -137,6 +137,18 @@ The threshold may correlate with constraint count × constraint interaction dens
 
 This is testable. The 25 frontier tasks span five categories at 10-50% expected single-pass accuracy. If CDSFL's contribution correlates with task category and constraint density, the threshold's shape becomes visible.
 
+## The Specialist Gap (Observation, 20 March 2026)
+
+There is a limitation in the tests we have already conducted, and in those still upcoming, that is worth stating honestly. The benchmark tasks span ten engineering domains — hardware, chemistry, structural, biomedical, and so on — but every model running those tasks is a coding-optimised system accessed through a coding-oriented interface. The intent was partly to test for breakout performance beyond the model's home domain, and that remains a useful thing to measure. But it is not the same thing as testing the thesis.
+
+The Ecosystems of Experts argument says that intelligence in practice is domain-specific, and that the right architecture is bounded specialists operating under a shared protocol. If that is true, the paradigm-consistent test would not ask a coding-optimised model to catch chemistry errors. It would ask a chemistry-optimised model to catch chemistry errors, and then measure whether CDSFL improves that already-competent system's performance. The maths make this explicit: if base detection probability p is near zero because the model was never tuned for the domain, then C(n) = 1 − (1−p)^n stays near zero regardless of how many passes you run. CDSFL is a force multiplier. You cannot multiply from nothing.
+
+The current tests can show whether CDSFL helps a generalist reach beyond its optimisation domain. They cannot show whether CDSFL helps a specialist excel within it. That second question is the one the Ecosystems thesis actually predicts matters, and it cannot be answered until the AI field produces domain-specialist models at a quality and accessibility comparable to current generalist systems. That infrastructure does not exist yet — not just for this project, but in the field generally. The dominant trajectory is toward larger, more general models. Domain-specialist fine-tunes exist in a few areas (medical, legal, financial), but they are second-class citizens in the current landscape: smaller investment, less infrastructure, often built on top of the generalist architectures rather than as independent systems.
+
+The constraint boxes — the domain-specific directive files — are a partial workaround. They provide domain specialisation at the prompt level rather than the weight level. That is a weaker form of specialisation, and the results should be interpreted accordingly.
+
+This is not a flaw in the experimental design so much as a boundary on what the current AI ecosystem allows anyone to test. It requires different thinking about how AI systems are built and deployed — thinking that the field has not yet widely adopted. If and when domain-specialist models become broadly available, the full thesis becomes testable. Until then, the results apply to coding-optimised models operating across domains, and should be read with that constraint visible.
+
 ## Documentation Debt: The Confer Protocol (QC Observation, 19 March 2026)
 
 During a quality-control review of the README prior to the next round of testing, the founder observed that the public documentation significantly undersells the schema's sophistication. The README's Review Tiers section reduced the confer mechanism to a single table cell ("A second human with enough separation to challenge the primary operator's framing") when the actual protocol is a load-bearing architectural element: adaptive termination with intelligence-mediated assessment, agreement/disagreement branching, logged transcripts, condition-neutral design (shared across experimental conditions to isolate directive content as the variable), and explicit defer-on-deadlock for irreconcilable disagreements.
@@ -159,8 +171,9 @@ Lesson: documentation QC before empirical runs, not after. The public docs are t
 8. Which defect classes are found preferentially by which architecture?
 9. Where does the convergence limit sit for this exact heterogeneous set?
 10. Does schema evolution improve faster under this topology than under single-model self-revision?
+11. Does CDSFL + domain-specialist outperform CDSFL + generalist on matched domain tasks?
 
-Each testable with existing infrastructure. See [PAPER.md Part XI](../PAPER.md).
+Questions 1–10 are testable with existing infrastructure. Question 11 requires domain-specialist models that are not yet broadly available. See [PAPER.md Part XI](../PAPER.md).
 
 ## Falsification Claims Tested (P-Pass, 14 March 2026)
 

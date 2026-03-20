@@ -134,6 +134,33 @@ expected single-pass accuracy) are designed to locate this threshold.
   blind spots. After convergence, adding more architectures adds cost
   without coverage.
 
+### Domain-Alignment Limitation (2026-03-20)
+
+All models in the current experimental infrastructure are coding-optimised
+systems (Claude Opus 4.6, Codex 5.3, Gemini 3.1) accessed through
+coding-oriented interfaces. The benchmark tasks span ten engineering domains,
+but no model has been specifically tuned for any non-coding domain.
+
+This means the current tests measure whether CDSFL helps a generalist model
+perform across domains. They do not measure whether CDSFL helps a
+domain-specialist excel within its area of optimisation — which is the
+prediction the Ecosystems of Experts thesis actually makes.
+
+The core model quantifies why this matters: if base detection probability p
+is low because the model lacks domain-specific optimisation, C(n) stays low
+regardless of pass count. CDSFL is a force multiplier, not a force generator.
+
+The domain-specific directive files (constraint boxes) provide prompt-level
+specialisation, which is a weaker form than weight-level tuning. Results
+should be interpreted with this constraint stated.
+
+The paradigm-consistent test — domain-specialist models on matched domain
+tasks, with and without CDSFL — requires domain-specialist models at a
+quality and accessibility comparable to current generalist systems. That
+infrastructure does not yet exist in the broader AI field.
+
+All results from the current experimental rounds carry this caveat.
+
 ### Open Falsifiable Questions (from extrapolation, 2026-03-19)
 
 1. Does schema competition produce better schemas? Testable: two competing
