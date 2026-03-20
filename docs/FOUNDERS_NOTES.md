@@ -34,9 +34,6 @@ There is a deeper distinction here worth stating plainly. Most methodology writi
 Adoption remains the biggest unknown. The framework comes with its own evidence (the testbench produces measurable results), which reduces but does not eliminate the credentialing problem. The intersection of "can evaluate this work" and "will take it seriously from an unknown source" is small but not empty.
 
 There are, as I see it, two possible futures. In the weaker one, CDSFL becomes a very good internal methodology for expert operators: valuable, transferable, but niche. Its output is vocabulary, discipline, and process. In the stronger one, it becomes the kernel of a new product category: expert-configured procedural wrappers around frontier models, backed by benchmarked domain configurations, cross-model review topologies, and persistent provenance. That would be materially different from today's "prompt library" ecosystem. It would look more like auditable cognitive infrastructure.
-
-One lesson learned during development: the framework's centre of gravity is not immediately obvious from a surface read. Early drafts of the documentation buried the structural logic — the confer protocol, the recursive methodology-selection loop, the laboratory/specimen distinction — beneath layers of formal detail. That has since been corrected, but it remains a standing concern for outreach.
-
 ## Ecosystems of Experts
 
 Another conclusion I found myself arriving at gradually is that CDSFL seems to fit more naturally with the way competence actually exists in society than with some of the dominant framings that have shaped recent AI discussion.
@@ -146,16 +143,6 @@ The current tests can show whether CDSFL helps a generalist reach beyond its opt
 The constraint boxes — the domain-specific directive files — are not a workaround for the absence of domain-specialist models. They are a complementary layer: prompt-level specialisation that should, in principle, stack with weight-level specialisation. A domain-tuned model running under domain-specific constraints is the full architecture the Ecosystems thesis envisions. Whether that combination outperforms either layer alone is itself a testable question, and will remain open until both layers can be tested together.
 
 This is not a flaw in the experimental design so much as a boundary on what the current AI ecosystem allows anyone to test. It requires different thinking about how AI systems are built and deployed — thinking that the field has not yet widely adopted. If and when domain-specialist models become broadly available, the full thesis becomes testable. Until then, the results apply to coding-optimised models operating across domains, and should be read with that constraint visible.
-
-## Documentation Debt: The Confer Protocol (QC Observation, 19 March 2026)
-
-During a quality-control review of the README prior to the next round of testing, the founder observed that the public documentation significantly undersells the schema's sophistication. The README's Review Tiers section reduced the confer mechanism to a single table cell ("A second human with enough separation to challenge the primary operator's framing") when the actual protocol is a load-bearing architectural element: adaptive termination with intelligence-mediated assessment, agreement/disagreement branching, logged transcripts, condition-neutral design (shared across experimental conditions to isolate directive content as the variable), and explicit defer-on-deadlock for irreconcilable disagreements.
-
-The confer/defer distinction is the mechanism that distinguishes CDSFL's review process from "just run the prompt multiple times." A reader of the README alone would not have known this mechanism existed, let alone understood that it governs when and why review terminates.
-
-The testbench usage instructions were also identified as partially stale — they documented Phase 1 entry points (`run_benchmark.py`) but not the Phase 2 confer-enabled orchestrator (`run_phase2.py`, `run_experiment.py`). A staleness note has been added pending a full update after the current testing rounds complete.
-
-Lesson: documentation QC before empirical runs, not after. The public docs are the first thing an external reviewer reads. If they do not reflect the actual schema, the methodology looks simpler than it is — which is the opposite of the problem CDSFL is designed to solve.
 
 ## Open Falsifiable Questions (19 March 2026)
 
