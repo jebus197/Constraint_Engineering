@@ -196,6 +196,141 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | d_ik (class-specific diversity) | Well-defined, reduces to d_i | Cross-architecture defect data available (Claude/Codex/Gemini) | Estimate per-class correlations from review data |
 | Parameter uncertainty | Standard Bayesian treatment | Initial data from completed review rounds | Point estimates first, intervals as data accumulates |
 | Severity separation | Well-defined, reduces to w_k model | Requires domain-specific severity data | Conflate for non-safety work, separate for safety-critical |
+| G_n (combined detection) | Well-defined, all reductions verified | Numerical illustration computed; empirical calibration pending | Integrate into benchmark when HIL review data is collected |
+| κ (calibration metric) | Well-defined, asymmetric variant specified | Simulated convergence (~5 reviews); empirical confirmation pending | Deploy when repeated HIL reviews generate sufficient data |
+
+---
+
+## 6. Combined Machine-HIL Detection Model (G_n)
+
+### The Gap
+
+The structured model F_n quantifies cumulative detection across machine passes. The four-tier review structure (white paper Part III) specifies that the HIL at Tier 2 runs their own independent falsification — not a passive review. But F_n treats the HIL as just another row in the diversity discount table, indistinguishable from any other pass type. This undersells the active HIL and fails to capture three variables that materially affect combined detection: the cross-correlation between human and machine reasoning, the formality of the human's methodology, and the extensibility of detection probability through domain-specific factors.
+
+### Combined Detection Formula
+
+> **G_n = Σ_{k=1}^{K} w_k · [1 − (1 − C_M(k)) · (1 − C_H(k) · (1 − ρ_MH))]**
+
+Where:
+- C_M(k) = 1 − Π_{i=1}^{n_M} (1 − d_{M,i} · p_{M,i,k}) — machine cumulative detection (= F_n)
+- C_H(k) = 1 − Π_{j=1}^{n_H} (1 − d_{H,j} · p_{H,j,k}) — HIL cumulative detection
+- ρ_MH ∈ [0,1] — cognitive priming correlation
+
+The formula models two independent detection streams (machine and human) whose combined coverage is degraded by the priming correlation ρ_MH. When the human has seen the machine's output before forming their own analysis, ρ_MH > 0 and the human's effective contribution is reduced. At ρ_MH = 1, the human adds nothing — their reasoning is fully absorbed into the machine's framing.
+
+### HIL Detection Probability
+
+The HIL's per-pass detection probability is parameterised as:
+
+> **p_{H,j,k} = f_k(E, M) · Π_s (1 + λ_s · V_s)**
+
+> **f_k(E, M) = E · (α + (1−α) · M)**
+
+Where:
+- E ∈ [0,1] — domain expertise level
+- M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal)
+- α ∈ (0,1) — floor coefficient (expertise alone, without formal method)
+- λ_s — sensitivity coefficient for domain variable s
+- V_s ∈ [-1,1] — domain-specific variable s (pluggable by operator)
+
+The base function f_k(E, M) captures two empirical observations: expertise is necessary but not sufficient (the floor is α·E without formal method), and methodology is a multiplier on expertise, not an independent contributor (M without E produces nothing). The product term Π_s(1 + λ_s · V_s) allows domain operators to extend detection probability with context-specific factors. When V_s = 0 for all s, the formula reduces to the base case.
+
+### Reduction Properties
+
+| Condition | G_n reduces to | Interpretation |
+|---|---|---|
+| n_H = 0 | F_n | No human passes — machine-only structured model |
+| ρ_MH = 0 | 1 − (1−C_M)(1−C_H) | Full independence — multiplicative gain |
+| ρ_MH = 1 | F_n | Fully primed — human adds nothing |
+| K=1, d=1, uniform p | C(n) | Simple corroboration model |
+| M = 0 | p_H = α·E | Expertise floor — reduced detection |
+| All V_s = 0 | p_H = f(E,M) | Base case — no domain modifiers |
+
+Every simpler model in the white paper and this appendix is a special case of G_n.
+
+### Numerical Illustration
+
+Representative parameters: 3 machine passes (p_M = 0.3, d_M = 0.7), 2 human passes (E = 0.85, M = 0.9, α = 0.4, d_H = 0.9):
+
+| Scenario | Detection |
+|---|---|
+| Machine only (C_M) | 0.507 |
+| Human only (C_H) | 0.698 |
+| Combined, ρ = 0 (fully independent) | 0.961 |
+| Combined, ρ = 0.3 (mild priming) | 0.851 |
+| Combined, ρ = 0.6 (significant priming) | 0.748 |
+| Combined, ρ = 1.0 (fully correlated) | 0.507 |
+
+The methodology formality gap at constant expertise E = 0.85:
+
+| M (formality) | p_H | Ratio vs informal |
+|---|---|---|
+| 0.0 (informal) | 0.34 | 1.0× |
+| 0.5 (semi-formal) | 0.60 | 1.75× |
+| 1.0 (fully formal) | 0.85 | 2.5× |
+
+### Self-Correcting Parameters: Bayesian Calibration
+
+E is initially self-declared. Over repeated reviews, the system accumulates empirical data on actual detection performance. The posterior expertise estimate replaces the self-declared value:
+
+> **E*(t) = (a₀ + Σ catches) / (a₀ + b₀ + Σ trials)**
+
+This is a standard Beta-Binomial update with weak prior Beta(a₀, b₀). With a₀ = b₀ = 2 (weak, open-minded prior):
+
+| Reviews completed | Posterior E* (true rate 0.55, claimed 0.80) | 95% CI | Claimed E outside CI? |
+|---|---|---|---|
+| 1 | 0.357 | [0.14, 0.61] | No (wide CI) |
+| 3 | 0.588 | [0.42, 0.75] | Yes |
+| 5 | 0.593 | [0.46, 0.72] | Yes |
+| 10 | 0.625 | [0.53, 0.72] | Yes |
+| 20 | 0.627 | [0.56, 0.69] | Yes |
+
+By approximately five reviews, an overclaimed E is statistically falsifiable.
+
+### HIL Calibration Metric (κ)
+
+The divergence between claimed and observed performance is the calibration signal:
+
+> **κ = 1 − |E_claimed − E*(t)|**
+
+For asymmetric calibration (penalising overconfidence more than underconfidence):
+
+> **κ_asym = 1 − β · max(0, E_claimed − E*(t)) − max(0, E*(t) − E_claimed)**
+
+Where β > 1 penalises overconfidence. With β = 1.5:
+
+| Scenario | E_claimed | E*(t) | κ (symmetric) | κ (asymmetric, β=1.5) |
+|---|---|---|---|---|
+| Well-calibrated expert | 0.75 | 0.72 | 0.97 | 0.955 |
+| Overconfident (dangerous) | 0.85 | 0.40 | 0.55 | 0.325 |
+| Underconfident (cautious) | 0.40 | 0.70 | 0.70 | 0.70 |
+| Honest novice | 0.30 | 0.25 | 0.95 | 0.925 |
+| Bluffer | 0.90 | 0.15 | 0.25 | −0.125 |
+
+The bluffer scores negative under asymmetric calibration. The honest novice scores almost as well as the well-calibrated expert. The metric rewards self-knowledge, not raw ability.
+
+### Feedback into G_n
+
+The self-correcting parameter transforms G_n into G_n(t):
+
+> Replace E_claimed with E*(t) in the p_H calculation
+
+The system's predicted combined detection adjusts automatically. An overclaiming expert (E_claimed = 0.80, E*(t) = 0.627) inflates predicted G_n by approximately 5.7 percentage points. That gap is the cost of taking the expert's word for it.
+
+### Future Research Directions
+
+1. **Posterior convergence rate:** Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed across different domains and task complexities.
+2. **Asymmetric calibration outcomes:** Does penalising overconfidence more heavily than underconfidence (β > 1) produce better system-level detection than symmetric calibration (β = 1)? Testable by comparing aggregate detection rates under both regimes.
+3. **Calibration score publication effects:** Does publishing the calibration score change reviewer behaviour? Specifically: does it produce honest self-assessment (the intended outcome) or strategic sandbagging (claiming low E to appear well-calibrated when overperforming)? This is a behavioural question, not a mathematical one, but it affects whether the metric is deployable.
+
+### Relationship to Other Extensions
+
+| Extension | Relationship to G_n |
+|---|---|
+| R_n (residual risk) | Applies directly: replace F_n with G_n in the R_n formula for combined residual risk |
+| d_ik (class-specific diversity) | Compatible: d_{H,j} can be extended to d_{H,j,k} within C_H(k) |
+| Parameter uncertainty | E*(t) with credible intervals IS the parameter uncertainty treatment for the HIL component |
+| L_n (severity-weighted loss) | Applies directly: G_n per-class detection feeds into L_n |
 
 ---
 
@@ -218,6 +353,17 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | m_k | Miss probability, flaw class k | This appendix §1 |
 | A | Anchor state (A0–A3) | White paper §2.2 |
 | ρ | Inter-architecture correlation | White paper Part XII |
+| G_n | Combined machine-HIL detection | White paper §2.3, this appendix §6 |
+| C_M(k) | Machine cumulative detection for class k | This appendix §6 |
+| C_H(k) | HIL cumulative detection for class k | This appendix §6 |
+| ρ_MH | Cross-correlation (cognitive priming) | White paper §2.3, this appendix §6 |
+| E | HIL domain expertise level | White paper §2.3, this appendix §6 |
+| M | HIL methodology formality | White paper §2.3, this appendix §6 |
+| α | Expertise floor coefficient | This appendix §6 |
+| λ_s | Domain variable sensitivity | White paper §2.3, this appendix §6 |
+| V_s | Domain-specific variable (pluggable) | White paper §2.3, this appendix §6 |
+| E*(t) | Bayesian posterior expertise estimate | White paper §2.3, this appendix §6 |
+| κ | HIL calibration metric | This appendix §6 |
 
 ---
 

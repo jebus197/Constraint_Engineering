@@ -144,6 +144,20 @@ The constraint boxes — the domain-specific directive files — are not a worka
 
 This is not a flaw in the experimental design so much as a boundary on what the current AI ecosystem allows anyone to test. It requires different thinking about how AI systems are built and deployed — thinking that the field has not yet widely adopted. If and when domain-specialist models become broadly available, the full thesis becomes testable. Until then, the results apply to coding-optimised models operating across domains, and should be read with that constraint visible.
 
+## Calibration as Filter (Observation, 20 March 2026)
+
+For all its formal machinery, CDSFL's earlier treatment of the human expert was still essentially handwavy. "The domain expert runs independent falsification" is a statement of intent, not a mechanism. It still reduces to "trust me, I'm a scientist." I have met enough poor scientists to know that this is not good enough.
+
+The combined detection formula (G_n, see [PAPER.md §2.3](../PAPER.md) and [MATHEMATICAL_APPENDIX.md §6](MATHEMATICAL_APPENDIX.md)) closes this gap. The human expert is no longer outside the mathematics — they are inside it, with quantifiable detection parameters: expertise, methodology formality, and domain-specific variables they must specify themselves. The formula demands self-quantification. To use it, you must honestly assess what you know, how rigorously you apply it, and what factors in your domain affect your judgment.
+
+A competent practitioner can do this. Someone who cannot characterise their own detection capability — who cannot estimate what they are likely to catch and what they are likely to miss — probably cannot function as an effective domain expert in this context. The formula does not exclude anyone administratively. It weeds out incompetence structurally, through the requirement for self-knowledge that bluffing cannot satisfy.
+
+The self-correcting parameter makes this concrete. E starts as a self-declaration. Over repeated reviews, the system accumulates empirical data on what the expert actually catches. The Bayesian posterior converges on their true detection rate within approximately five reviews. An expert who claims E=0.8 and performs at E=0.4 is statistically falsified. The mismatch is data, not opinion.
+
+This is the point where CDSFL connects naturally to Genesis. The calibration signal — the divergence between claimed and observed expertise — feeds directly into Genesis's trust score system. Cryptographically recorded, on-chain anchored where stakes warrant it. A reviewer whose self-assessment consistently diverges from their empirical performance sees their trust score adjust accordingly. Not as punishment, but as calibration. The system learns what their assessments are actually worth.
+
+The credential question dissolves entirely. The formula does not ask where you studied, what title you hold, or who endorses you. It asks: can you characterise your own capability honestly, and does your track record bear it out? A self-taught domain expert who honestly estimates E=0.6 and consistently delivers it will outscore a credentialed professor who claims E=0.95 and delivers 0.4.
+
 ## Open Falsifiable Questions (19 March 2026)
 
 1. Does schema competition produce better schemas?
@@ -157,8 +171,11 @@ This is not a flaw in the experimental design so much as a boundary on what the 
 9. Where does the convergence limit sit for this exact heterogeneous set?
 10. Does schema evolution improve faster under this topology than under single-model self-revision?
 11. Does CDSFL + domain-specialist outperform CDSFL + generalist on matched domain tasks?
+12. Does the Bayesian posterior on HIL expertise E converge at the rate the Beta-Binomial model predicts across different domains and task complexities?
+13. Does asymmetric calibration (penalising overconfidence more heavily) produce better system-level detection than symmetric calibration?
+14. Does publishing the calibration score produce honest self-assessment or strategic sandbagging?
 
-Questions 1–10 are testable with existing infrastructure. Question 11 requires domain-specialist models that are not yet broadly available. See [PAPER.md Part XI](../PAPER.md).
+Questions 1–10 are testable with existing infrastructure. Question 11 requires domain-specialist models that are not yet broadly available (see [PAPER.md Part XI](../PAPER.md)). Questions 12–14 require repeated HIL reviews generating sufficient empirical data for calibration — testable once the framework is deployed with real domain experts (see [PAPER.md §2.3](../PAPER.md) and [MATHEMATICAL_APPENDIX.md §6](MATHEMATICAL_APPENDIX.md)).
 
 ## Falsification Claims Tested (P-Pass, 14 March 2026)
 

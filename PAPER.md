@@ -149,7 +149,51 @@ The simple model C(n) operates entirely within A0. The structured model F_n can 
 
 **Falsifiability:** The structured model makes testable predictions. If diversity discounts are meaningful, then F_n with calibrated d_i values should predict empirical detection rates more accurately than C(n) with a single fitted p. This can be tested by running the testbench with multiple models and comparing curve fits. If d_i values do not improve prediction accuracy, the structured model adds complexity without substance and should be discarded in favour of the simpler C(n).
 
-**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, and severity-detectability separation for safety-critical domains. These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
+**Extensions:** The structured model extends naturally in several directions: residual risk estimation (Bayesian posterior on remaining flaws given a clean run), class-specific diversity discounts (d_ik replacing scalar d_i), parameter uncertainty treatment, severity-detectability separation for safety-critical domains, and combined machine-HIL detection with self-correcting parameters (G_n). These extensions are mathematically well-defined. Benchmark data from the three-architecture review (March 2026) now exists to begin calibration; whether the extensions outpredict the simpler models remains an open empirical question. They are detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md).
+
+#### 2.3 Combined Detection Model (G_n)
+
+The structured model F_n quantifies machine passes. It does not quantify the human expert's contribution. In the four-tier review structure (Part III), the HIL at Tier 2 is not a passive reviewer — they run their own independent falsification passes using a formal method of their choosing (see Review Tiers). This independence is load-bearing: if the human merely reviews machine output after reading it, their cognitive framing becomes correlated with the machine's, and their incremental detection value collapses.
+
+The combined detection model brings the HIL inside the formula:
+
+> **G_n = Σ_k w_k · [1 − (1 − C_M(k)) · (1 − C_H(k) · (1 − ρ_MH))]**
+
+Where:
+- C_M(k) = 1 − Π_{i=1}^{n_M} (1 − d_{M,i} · p_{M,i,k}) — machine cumulative detection for flaw class k (this is F_n)
+- C_H(k) = 1 − Π_{j=1}^{n_H} (1 − d_{H,j} · p_{H,j,k}) — HIL cumulative detection for flaw class k
+- ρ_MH ∈ [0,1] — cross-correlation from cognitive priming (0 = fully independent, 1 = fully primed)
+
+**HIL detection probability** is parameterised by expertise and methodology formality:
+
+> **p_H = E · (α + (1−α) · M) · Π_s (1 + λ_s · V_s)**
+
+Where:
+- E ∈ [0,1] — domain expertise level
+- M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal method)
+- α ∈ (0,1) — floor coefficient (what expertise alone achieves without formal method)
+- λ_s — sensitivity to domain-specific variable s
+- V_s ∈ [-1,1] — domain-specific variable s (pluggable by the operator)
+
+The domain variables V_s are the extensible component. The domain operator determines which variables matter in their context — access to reference data, time pressure, regulatory familiarity, equipment availability — and estimates their magnitude. When no domain variables are specified (all V_s = 0), the formula reduces to the base case: expertise scaled by methodology formality.
+
+**Reduction properties:** G_n reduces to F_n when n_H = 0 (no human passes). It reduces to fully multiplicative independence when ρ_MH = 0. It reduces to machine-only detection when ρ_MH = 1 (the human adds nothing if fully primed). Under uniform assumptions (K=1, d=1, uniform p), it reduces to C(n). Every simpler model in this paper is a special case of G_n.
+
+**Self-correcting parameters:** E is initially self-declared by the HIL. Over repeated reviews where ground truth is eventually established (through union coverage across independent reviewers), the system accumulates empirical data on the HIL's actual detection rate. The claimed E is then compared against the Bayesian posterior:
+
+> **E*(t) = (a₀ + Σ catches) / (a₀ + b₀ + Σ trials)**
+
+G_n becomes G_n(t): the same formula, but with empirically grounded expertise rather than self-reported claims. The divergence between claimed E and posterior E*(t) is the calibration signal — it measures how accurately the HIL assesses their own capability.
+
+**Falsifiability:** G_n makes testable predictions beyond those of F_n. If methodology formality M does not measurably improve detection probability at constant expertise E, then M is not a meaningful variable and should be removed from the formula. If the priming correlation ρ_MH does not degrade human detection when the human has seen machine output, then active independence is unnecessary and passive review suffices. Both are empirically testable.
+
+**Future research directions:**
+
+1. *Posterior convergence rate:* Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed.
+2. *Asymmetric calibration:* Does penalising overconfidence (claiming higher E than observed) more heavily than underconfidence produce better system-level outcomes than symmetric calibration?
+3. *Calibration score publication effects:* Does publishing the calibration score change reviewer behaviour — and if so, does it produce honest self-assessment or strategic sandbagging?
+
+The full derivation, edge case analysis, and calibration framework are in the [Mathematical Appendix §6](docs/MATHEMATICAL_APPENDIX.md).
 
 ### 3. Constraint Classification
 
@@ -230,7 +274,7 @@ A common misreading of the methodology is that "review" means either trusting a 
 
 At every tier, the **defer-on-deadlock principle** applies: when reviewers (machine or human) reach irreconcilable disagreement — where further passes produce the same opposing assessments rather than convergence — items are explicitly deferred with the disagreement and both positions recorded. This prevents premature closure (papering over genuine uncertainty) and infinite regress (continuing to review when the disagreement is fundamental). An unresolved disagreement, surfaced with logged reasoning, is a visible research question rather than a hidden weakness.
 
-The structured operational model (Section 2.2) quantifies this hierarchy through the diversity discount *d_i*: Tier 0 operates at *d_i* ≈ 0.5–0.7 (same model, correlated passes), Tier 1 at *d_i* ≈ 0.8–0.9 (different architecture, partially independent), Tier 2 at *d_i* ≈ 0.85–0.95 (human expert, external to the model's reasoning but correlated with problem framing), and Tier 3 at *d_i* = 1.0 (fully independent expert or blind evaluation protocol).
+The structured operational model (Section 2.2) quantifies this hierarchy through the diversity discount *d_i*: Tier 0 operates at *d_i* ≈ 0.5–0.7 (same model, correlated passes), Tier 1 at *d_i* ≈ 0.8–0.9 (different architecture, partially independent), Tier 2 at *d_i* ≈ 0.85–0.95 (human expert, external to the model's reasoning but correlated with problem framing), and Tier 3 at *d_i* = 1.0 (fully independent expert or blind evaluation protocol). The combined detection model G_n (Section 2.3) extends this further by modelling the HIL's own independent falsification passes as a separate detection stream, parameterised by expertise and methodology formality, with an explicit cross-correlation term that quantifies the cost of passive review versus active independent analysis.
 
 ---
 
