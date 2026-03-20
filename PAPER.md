@@ -973,4 +973,4 @@ If any of these claims do not survive external testing, the methodology is impro
 
 ---
 
-*For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For the project overview, see the [README](README.md).*
+*For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](docs/EXPERIMENTAL_RESULTS.md). For the project overview, see the [README](README.md).*

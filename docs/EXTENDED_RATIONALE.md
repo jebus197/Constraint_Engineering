@@ -100,4 +100,4 @@ None of this makes the method established. Its own documents concede that the gr
 
 ---
 
-*For the technical specification, see the [README](../README.md). For the formal methodology, see the [white paper](../PAPER.md). For the design reasoning behind key decisions, see the [Founder's Notes](FOUNDERS_NOTES.md). For the empirical testbench, see [bench/](../bench/).*
+*For the technical specification, see the [README](../README.md). For the formal methodology, see the [white paper](../PAPER.md). For the design reasoning behind key decisions, see the [Founder's Notes](FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](EXPERIMENTAL_RESULTS.md). For the empirical testbench, see [bench/](../bench/).*

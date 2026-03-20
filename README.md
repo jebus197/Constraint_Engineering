@@ -149,6 +149,7 @@ That moves the focus away from "which single model is best?" and toward "what pr
 - **[`docs/EXTENDED_RATIONALE.md`](docs/EXTENDED_RATIONALE.md)** — general-audience companion and broader scientific framing
 - **[`docs/MATHEMATICAL_APPENDIX.md`](docs/MATHEMATICAL_APPENDIX.md)** — mathematical extensions and calibration path
 - **[`docs/FOUNDERS_NOTES.md`](docs/FOUNDERS_NOTES.md)** — design intent, programme logic, and open questions
+- **[`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md)** — empirical results, including null findings and failures
 - **`bench/`** — benchmark harness, evaluation pipeline, and experiment design
 - **`bench/directives/`** — domain-specific constraint configurations
 
