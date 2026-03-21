@@ -170,11 +170,22 @@ REVISED_ANSWER:
 ...
 """
 
+class _GeminiAdaptExhausted(Exception):
+    """Raised when call_gemini exhausts all prompt adaptation attempts.
+
+    CX recommendation 3: this prevents _call_with_retry from re-wrapping
+    Gemini's internal adapt loop, which previously multiplied calls up to ~33.
+    """
+    pass
+
+
 def _call_with_retry(call_fn, *args, max_retries: int = 10, base_delay: float = 8.0, **kwargs) -> str:
     """Wrap an API call with exponential backoff retry for transient errors.
 
     Fix 3 (CX remediation): fatal errors (insufficient_quota, auth, invalid_request)
     are raised immediately without retry.
+    CX recommendation 3: _GeminiAdaptExhausted is also fatal — never retry after
+    Gemini's internal adaptation loop has already exhausted its attempts.
     """
     # Fatal patterns — never retry these
     _FATAL_PATTERNS = [
@@ -193,6 +204,9 @@ def _call_with_retry(call_fn, *args, max_retries: int = 10, base_delay: float = 
     for attempt in range(max_retries + 1):
         try:
             return call_fn(*args, **kwargs)
+        except _GeminiAdaptExhausted:
+            # CX rec 3: Gemini's internal adapt loop exhausted — do not retry
+            raise
         except Exception as exc:
             exc_str = str(exc).lower()
             # Check fatal first — never retry
@@ -210,6 +224,19 @@ def _call_with_retry(call_fn, *args, max_retries: int = 10, base_delay: float = 
                 continue
             raise
 
+
+# CX recommendation 4: configurable token limits per provider.
+# Code tasks need higher limits to avoid truncation (ft-006 hit 16384 cap).
+DEFAULT_MAX_OUTPUT_TOKENS: dict[str, int] = {
+    "anthropic": 4096,
+    "anthropic-thinking": 16000,
+    "openai": 4096,
+    "openai-reasoning": 16000,
+    "gemini": 32768,       # CX rec 4: raised from 16384
+    "groq": 4096,
+    "github": 4096,
+    "codex": 4096,
+}
 
 TASKS_DIR = Path(__file__).parent / "tasks"
 REQUIRED_TASK_FIELDS = {"id", "domain", "prompt", "seeded_faults", "ground_truth_notes"}
@@ -446,7 +473,12 @@ def call_gemini(
         _err("ERROR: GOOGLE_API_KEY not set.")
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        api_key=api_key,
+        http_options=genai_types.HttpOptions(
+            timeout=300_000,  # 5 min
+        ),
+    )
 
     # Throttle handled externally by AdaptiveThrottle — do not double-sleep here
 
@@ -458,9 +490,8 @@ def call_gemini(
     for adapt_attempt in range(max_adapt_attempts):
         try:
             config = genai_types.GenerateContentConfig(
-                max_output_tokens=4096,
+                max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS.get("gemini", 32768),
                 system_instruction=current_system if current_system else None,
-                http_options=genai_types.HttpOptions(timeout=300_000),  # 5 min
             )
             response = client.models.generate_content(
                 model=model,
@@ -494,7 +525,12 @@ def call_gemini(
                 )
                 time.sleep(5)  # brief pause before retry
                 continue
-            # Not adaptable or final attempt — re-raise for _call_with_retry
+            # Not adaptable or final attempt — raise as exhausted to prevent
+            # _call_with_retry from re-wrapping (CX recommendation 3)
+            if adapt_attempt >= max_adapt_attempts - 1:
+                raise _GeminiAdaptExhausted(
+                    f"Gemini adaptation exhausted after {max_adapt_attempts} attempts: {exc_str[:200]}"
+                )
             raise
 
 
@@ -575,6 +611,8 @@ def call_codex(
 
     Uses the default gpt-5.3-codex model. The --skip-git-repo-check flag
     avoids requiring a git repo. Output captured via -o tempfile.
+
+    CX recommendation 1: prefer explicit --output-last-message and --cd flags.
     """
     import subprocess as _sp
     import tempfile
@@ -590,11 +628,15 @@ def call_codex(
     ) as f:
         output_path = f.name
 
+    proj_dir = str(Path.home() / "Developer_Projects" / "Constraint_Engineering")
+
     try:
         result = _sp.run(
             [
                 "codex", "exec",
                 "--skip-git-repo-check",
+                "--output-last-message",
+                "--cd", proj_dir,
                 "-o", output_path,
                 "-",
             ],
@@ -1217,11 +1259,14 @@ def confer_diminishing_returns(
     try:
         cc_result = sp.run(
             ["claude", "-p", "--no-session-persistence", "--tools", "", cc_prompt],
-            capture_output=True, text=True, timeout=120, cwd=proj_dir,
+            capture_output=True, text=True, timeout=300, cwd=proj_dir,
         )
         # Fix 2: check returncode
         if cc_result.returncode != 0:
             _err(f"  [confer] CC CLI exited with code {cc_result.returncode}")
+            # CX rec 5: log stderr for diagnostics
+            if cc_result.stderr:
+                _err(f"  [confer] CC stderr: {cc_result.stderr[:300]}")
             cc_failed = True
             confer_log_parts.append(
                 f"CC CLI failed (exit code {cc_result.returncode}): "
@@ -1286,15 +1331,20 @@ def confer_diminishing_returns(
             [
                 "codex", "exec",
                 "--skip-git-repo-check",
+                "--output-last-message",
+                "--cd", proj_dir,
                 "-o", str(cx_output_file),
                 "-",
             ],
             input=cx_prompt,
-            capture_output=True, text=True, timeout=180,
+            capture_output=True, text=True, timeout=600,
         )
         # Fix 2: check returncode
         if cx_result.returncode != 0:
             _err(f"  [confer] CX CLI exited with code {cx_result.returncode}")
+            # CX rec 5: log stderr for diagnostics
+            if cx_result.stderr:
+                _err(f"  [confer] CX stderr: {cx_result.stderr[:300]}")
             cx_failed = True
             confer_log_parts.append(
                 f"CX CLI failed (exit code {cx_result.returncode}): "
@@ -1411,6 +1461,7 @@ def run_adaptive(
     total_cc_failures = 0
     total_cx_failures = 0
     total_confer_calls = 0
+    consecutive_infra_fails = 0  # CX rec 5: track consecutive INFRA_FAILs
     last_confer_outcome = ""
 
     for i in range(1, max_passes + 1):
@@ -1464,6 +1515,13 @@ def run_adaptive(
 
         # After confer_after passes, invoke CC+CX confer for termination
         if i >= confer_after:
+            # CX rec 5: short-circuit if confer has failed consecutively
+            if consecutive_infra_fails >= 2:
+                _err(f"  [adaptive] skipping confer — {consecutive_infra_fails} consecutive INFRA_FAILs, "
+                     f"continuing to next pass without confer")
+                confer_logs.append(f"After pass {i}: confer skipped (consecutive INFRA_FAIL short-circuit)")
+                continue
+
             _err(f"  [adaptive] pass {i} complete — invoking CC+CX confer ...")
             total_confer_calls += 1
             should_stop, confer_log, cli_failures = confer_diminishing_returns(
@@ -1474,6 +1532,12 @@ def run_adaptive(
             if cli_failures.get("cx_failed"):
                 total_cx_failures += 1
             confer_logs.append(f"After pass {i}:\n{confer_log}")
+
+            # CX rec 5: track consecutive infra failures
+            if cli_failures.get("cc_failed") or cli_failures.get("cx_failed"):
+                consecutive_infra_fails += 1
+            else:
+                consecutive_infra_fails = 0
 
             if should_stop:
                 status = "RESOLVED"
@@ -1910,12 +1974,24 @@ def main() -> None:
              "available variant alphabetically.",
     )
     parser.add_argument(
+        "--max-output-tokens",
+        type=int,
+        default=None,
+        help="Override max_output_tokens for the chosen provider. "
+             "CX recommendation 4: use >=32768 for code tasks to avoid truncation.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Load and validate tasks only - no API calls",
     )
 
     args = parser.parse_args()
+
+    # CX rec 4: apply user-specified token limit override
+    if args.max_output_tokens is not None:
+        DEFAULT_MAX_OUTPUT_TOKENS[args.provider] = args.max_output_tokens
+        _err(f"  [config] max_output_tokens for {args.provider} set to {args.max_output_tokens}")
 
     # Gemini R4 fix 9: extended mode requires >= 2 passes (1 iterative + 1 adversarial)
     if args.mode == "extended" and args.passes < 2:
