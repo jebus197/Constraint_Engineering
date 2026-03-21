@@ -1,6 +1,6 @@
 # CX Full Project Handoff — Constraint Engineering (CDSFL)
 
-**Date:** 2026-03-21T00:02:49+00:00
+**Date:** 2026-03-21T01:15:00+00:00 (updated)
 **From:** CC (Claude Code, Opus 4.6)
 **To:** CX (Codex 5.3) — fresh instance
 **Owner:** George Jackson (The Founder)
@@ -40,11 +40,12 @@ The intellectual ancestry is openly Popperian: claims earn trust by surviving se
 
 ## 2. Current Git State
 
-**HEAD:** `0ca007d` (pushed, clean working tree)
+**HEAD:** `e0e6600` (pushed, `bench/run_benchmark.py` has local modifications)
 **Branch:** `main`
 
 Recent commits (newest first):
 ```
+e0e6600 Add comprehensive CX handoff for fresh instance bootstrap
 0ca007d Record Gemini 3.1 Pro diagnostic results — all 3 tasks scored
 ecf6471 Add EXPERIMENTAL_RESULTS.md — canonical record of all empirical testing
 532f7fc Add adaptive prompt handling for Gemini infrastructure failures
@@ -159,22 +160,27 @@ All tiers overseen by a human domain-level expert:
 - Tests the biodiversity hypothesis: does heterogeneous multi-architecture adversarial review find more than monoculture?
 - Stopping: all architectures agree diminishing returns reached, or 5-round cap
 
-**Known infrastructure issues (YOUR INPUT NEEDED):**
+**Known infrastructure issues:**
 
-1. `confer_diminishing_returns()` in `bench/run_benchmark.py` (lines 1171-1380) spawns CC via `claude -p --no-session-persistence --tools ""` and CX via `codex exec --skip-git-repo-check -o <outfile> -`. Previous INFRA_FAILs were caused by:
-   - Nested CC invocation (can't run `claude -p` inside an existing CC session)
-   - `codex exec` timing out at 180s
-   - Prompt too large for CLI stdin piping
+CX provided a round-robin infra review via IM (2026-03-21T00:11:42Z). Key recommendations:
 
-2. **Questions for you:**
-   - Is `codex exec` still the correct invocation? Any updated flags?
-   - Should your timeout be increased beyond 180s for frontier tasks?
-   - Review the full confer logic and advise on any issues
-   - For the round-robin: how should iteration be structured? A→B→C→A? Or A→B→C sequentially with confer at each transition?
+1. `codex exec` invocation valid on codex-cli 0.89.0 — add `--output-last-message` and `--cd <project>`
+2. Raise timeouts: CX 180s→600s, CC 120s→300s
+3. Double-retry bug: `_call_with_retry()` wrapping `call_gemini()`'s internal adapt loop = up to 33 attempts. Must fix.
+4. Increase `max_output_tokens` to >=32768 for code tasks (ft-006 proved 16384 truncates); make configurable by task category
+5. Confer robustness: log stderr on failures, bounded retry for CLI timeout, short-circuit repeated INFRA_FAILs
+6. **Topology: ring cycles A→B→C→A**, stop-check only after full cycle, require unanimous STOP, max-cycle cap
+7. Experimental caveats: unbalanced n (control/CDSFL n=1 vs PE n=5), ft-006 truncation confound, structural-not-numeric scoring, assessor non-blinding
 
-3. `max_output_tokens` must be increased to 32768+ for code tasks (ft-006 proved 16384 truncates)
+**STATUS:** CX's recommendations accepted. Harness modifications in progress (`bench/run_benchmark.py` has local changes). The Test 1 (individual Gemini) vs Test 2 (round-robin) distinction is now clear:
+- **Test 1**: Gemini only, three conditions (control/PE/CDSFL), CC orchestrates as domain expert. No CX in the loop.
+- **Test 2**: CC/CX/Gemini all run CDSFL, iterating on each other's output. Ring topology. THIS is where CX participates as a model under test.
 
-4. Double-retry issue: `_call_with_retry()` wraps `call_gemini()` with 10 retries, but `call_gemini()` has its own 3-attempt adaptation loop. Up to 30 API calls for one logical request. Needs fixing.
+**IMPORTANT CONTEXT FROM THIS SESSION:**
+- The Gemini diagnostic (3 tasks) showed near-ceiling performance — tasks may be too easy for 3.1 Pro
+- George identified the Specialist Gap: current bench tasks are well-known problems likely in training data; genuinely frontier testing requires novel problems that only human domain experts can currently produce
+- George's position: the project's own development history (44 issues across 18 rounds, Gemini finding 16 issues CC missed) IS the strongest qualitative evidence that CDSFL works — the quantitative bench is supplementary, not primary
+- The round-robin tests something different from the individual model test: whether heterogeneous architectures find different flaws (biodiversity hypothesis), which is measurable even on moderately difficult problems
 
 ---
 
@@ -268,19 +274,23 @@ The `.env` file is gitignored. Contains `export GOOGLE_API_KEY=...` for Gemini A
 
 ## 14. What You Need To Do
 
-1. **Read the IM** — CC posted two messages about round-robin infrastructure. Respond with your assessment and recommendations.
+Your round-robin infra review (2026-03-21T00:11:42Z) has been received and accepted. Next steps:
 
-2. **Review `bench/run_benchmark.py`** — specifically:
-   - `confer_diminishing_returns()` (lines 1171-1380): the CC/CX subprocess confer mechanism
-   - `_call_with_retry()` (lines 173-211): the double-retry issue
-   - `call_gemini()` (lines 426-502): the adaptive prompt truncation
-   - `run_adaptive()` (lines 1383-1500): the iterative P-Pass loop
+1. **Read this entire handoff** — your CE thread has been lost. This is your full bootstrap.
 
-3. **Advise on round-robin architecture** — how should three models iterate on each other's output via CLI? What's the optimal invocation pattern for `codex exec`?
+2. **Read all docs in read order** (Section 0) — especially `PAPER.md` Section 2.3 (G_n) and `docs/EXPERIMENTAL_RESULTS.md`.
 
-4. **Review `docs/EXPERIMENTAL_RESULTS.md`** — check the diagnostic results and methodology. Flag any issues with experimental design or scoring.
+3. **Review the updated `bench/run_benchmark.py`** — your infra recommendations are being implemented. Verify:
+   - Double-retry path is eliminated
+   - Timeouts raised per your recommendation
+   - `max_output_tokens` configurable by task category
+   - Confer subprocess calls are robust
 
-5. **Prepare for the round-robin** — this is the next experiment. You are a participant, not just a reviewer.
+4. **Prepare for round-robin participation** — you are a model under test, not just a reviewer. CC orchestrates, calls you via `codex exec`, you run full CDSFL on the task and attack the prior model's output. Ring topology: A→B→C→A per your recommendation.
+
+5. **Read the IM** — CC's two infrastructure posts are there for context. Your response is already recorded. Check for any newer messages.
+
+6. **Post to IM when ready** — confirm you've bootstrapped successfully and are prepared for the round-robin.
 
 ---
 
@@ -305,4 +315,4 @@ The `.env` file is gitignored. Contains `export GOOGLE_API_KEY=...` for Gemini A
 
 ---
 
-*This handoff was written by CC (Claude Code, Opus 4.6) on 2026-03-21. If anything in this document contradicts the actual codebase or git history, trust the code.*
+*This handoff was written by CC (Claude Code, Opus 4.6) on 2026-03-21 and updated during the same session. If anything in this document contradicts the actual codebase or git history, trust the code.*
