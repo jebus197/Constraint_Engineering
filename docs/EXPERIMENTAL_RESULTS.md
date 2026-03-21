@@ -208,13 +208,91 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 **Orchestrator:** CC via CLI
 **Budget:** $20 cap (Google API)
 
-### Experiment 4: Three-Way Round-Robin Convergence Test
+### Experiment 4: Round-Robin Distributed Compute Test
 
-**Status:** Planned — pending Experiment 3
-**Models:** Claude Code (Opus 4.6), Codex (5.3), Gemini 3.1 Pro
-**Design:** All three architectures iterate on each other's output under full CDSFL. CC orchestrates. Sequential execution (M1 8GB constraint). Confer/defer protocol shared across all three. `confer` for agreement, `defer` for irreconcilable disagreement → human review.
-**Purpose:** Test biodiversity hypothesis systematically. Does heterogeneous multi-architecture adversarial review under CDSFL find more than any single architecture alone? Measure convergence curves per architecture.
-**Stopping criterion:** All architectures agree diminishing returns reached, or 5-round cap.
+**Status:** Smoke test complete (2026-03-21). Full run approved.
+**Models:** Opus 4.6 (orchestrator/arbiter), Gemini 3.1 Pro Preview (SDK), Codex 5.3 / GPT-5.3-codex (codex exec CLI)
+**Task set:** 25 frontier tasks × 4 conditions = 100 runs
+
+#### Design
+
+2×2 factorial design testing two independent variables: structure (CDSFL framework) and guidance (domain expert HIL).
+
+|  | No Structure | Full CDSFL Structure |
+|--|--|--|
+| **No Guidance** | Control | CDSFL |
+| **Expert Guidance** | HIL | CDSFL+HIL |
+
+Topology: Opus 4.6 orchestrates. Gemini 3.1 Pro and Codex 5.3 review independently (blind round 1), then confer (rounds 2-5, each sees the other's findings). Opus 4.6 arbitrates stop/continue. Both reviewers must concur with stop call. No concurrence after 5 rounds = defer for founder review.
+
+Cryptographic verification: SHA-256 per-round input hashing, hash chain linking each record to predecessor, per-task Merkle root.
+
+#### Smoke Test Results (2026-03-21)
+
+**Task:** ft-001 — Monotone Subsequence Bound Tightening (mathematics)
+**Gemini model:** Initial run with Gemini 3 (CLI), comparison run with Gemini 3.1 Pro Preview (SDK)
+
+##### Gemini 3 (CLI) — All Four Conditions
+
+| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | CX | Merkle Root |
+|-----------|----------|----------|-------|-------|----------|--------|-----|-------------|
+| Control | 19 | — | — | — | — | — | — | `186e39bc...` |
+| HIL | 2 | 0 | 1 | 0 | 0.93 | 0 | 1 | `62594df9...` |
+| CDSFL | 10 | 2 | 4 | 4 | 0.88 | 3 | 3 | `2a4e6509...` |
+| CDSFL+HIL | 27 | 17 | 10 | 0 | 0.95 | 9 | 18 | `38cb6006...` |
+
+Corpus hash: `ad66ba3d82edd205...`
+Directives hash: `cec89b733c3f4259`
+All four hash chains verified valid.
+
+##### Gemini 3.1 Pro (SDK) — CDSFL+HIL Only
+
+| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | CX | Merkle Root |
+|-----------|----------|----------|-------|-------|----------|--------|-----|-------------|
+| CDSFL+HIL | 22 | — | — | — | 0.96 | — | — | `95c98809...` |
+
+##### Qualitative Analysis
+
+**Depth vs churn:** Under control, confer rounds 3-5 rehash rounds 1-2 (same complaints reworded: "proof is missing," "proof is omitted," "proof is not shown"). Under CDSFL+HIL, confer rounds produce genuinely novel structural findings: "label-pair uniqueness proof not at full rigour," "pigeonhole arithmetic off-by-one conclusion unverified," "submission not self-contained — relies on unavailable external reference." The methodology produces deepening analysis, not volume.
+
+**Methodology activates dormant capability:** Gemini contributed 0-3 findings under control/CDSFL/HIL but 9 substantive findings under CDSFL+HIL, including domain-specific catches ("must not use 'by construction' to bypass structural proofs," "must not conflate subsequence with contiguous substring"). Expert guidance transforms weaker model output.
+
+**Interaction effect:** CDSFL+HIL (27 findings) exceeds CDSFL (10) + HIL (2) = 12. The combination produces findings neither component produces alone. The whole is greater than the sum of its parts.
+
+**HIL alone is too focused:** Only 2 findings. Expert guidance narrows the search excessively, missing structural issues the framework catches.
+
+##### P-Pass Assessment
+
+The claim "these results are encouraging" survives falsification with caveats:
+- n=1. Not statistically significant. The qualitative pattern (depth vs churn, methodology activation) is observable but not quantitatively established.
+- ft-001 (Erdos-Szekeres) is in training data. Near-ceiling generation expected. These results validate the infrastructure and experimental design, not the methodology's performance on genuinely novel problems.
+- Self-reviewing bias: Opus 4.6 generates solutions and arbitrates. Blind-pass design mitigates but does not eliminate.
+- Nothing in these results says "stop." Nothing says "conclusive" either. The full 25-task run is required.
+
+##### Extrapolation
+
+Three falsifiable questions generated:
+1. Does the CDSFL+HIL advantage persist on problems NOT in training data? (The specialist gap — only humans can supply test cases.)
+2. Does the "methodology activates dormant capability" effect replicate with other weak models?
+3. Is the depth-not-churn property of confer rounds specific to CDSFL+HIL, or does any structured iterative methodology produce it?
+
+##### Infrastructure Notes
+
+- Gemini CLI auth issue resolved by switching from OAuth to API key (`GEMINI_API_KEY`).
+- Gemini upgraded from CLI (Gemini 3) to SDK (Gemini 3.1 Pro Preview) for stronger capability.
+- Budget system corrected: no longer clamps individual subprocess timeouts (was strangling retries to 10s).
+- Gemini failure policy: kill → retry → progressive prompt reduction × 5 → halt and diagnose with CX.
+- Zero API cost (CLI subscriptions). Gemini API key on paid quota.
+
+**Raw data:** `bench/results/round_robin/` (Gemini 3), `bench/results/round_robin_31pro/` (Gemini 3.1 Pro)
+**Smoke test record:** `bench/results/round_robin/SMOKE_TEST_RECORD.md`
+**Activity logs:** `bench/logs/round_robin_smoke_*.log`
+
+#### Full Run
+
+**Status:** Approved by founder (2026-03-21). 25 tasks × 4 conditions = 100 runs.
+**Estimated duration:** 20-30 hours (checkpoint/resume across sessions).
+**Command:** `python3 bench/run_round_robin.py`
 
 ---
 

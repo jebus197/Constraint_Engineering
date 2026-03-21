@@ -249,8 +249,8 @@ REQUIRED_FAULT_FIELDS = {"id", "type", "description", "location_hint"}
 
 
 def _err(msg: str) -> None:
-    """Print to stderr."""
-    print(msg, file=sys.stderr)
+    """Print to stderr with forced flush (prevents loss on hard kill)."""
+    print(msg, file=sys.stderr, flush=True)
 
 
 # ---------------------------------------------------------------------------
