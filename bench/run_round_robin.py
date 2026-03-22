@@ -35,26 +35,21 @@ What this tests:
 
 Topology:
   - CC (Opus 4.6): Orchestrator, simulated domain expert, final arbiter.
-  - Gemini 3: Heterogeneous falsifier #1 (gemini CLI).
+  - DeepSeek V3.2: Heterogeneous falsifier #1 (OpenAI-compatible API).
   - CX (Codex 5.3): Heterogeneous falsifier #2 (codex exec CLI).
 
 Protocol per task per condition:
-  Round 1 (blind):   CC generates solution; Gemini and CX independently
+  Round 1 (blind):   CC generates solution; DeepSeek and Codex independently
                      review (neither sees the other's findings).
   Rounds 2-5 (confer): Each reviewer receives the OTHER reviewer's
                         findings. CC assesses combined output.
   Stop rule:         Two consecutive rounds with zero novel HARD findings
-                     AND both Gemini and CX concur → stop.
+                     AND both DeepSeek and Codex concur → stop.
   Hard cap:          5 rounds total.
 
-Gemini failure policy (non-skippable):
-  1. Kill → retry same prompt (attempt 2)
-  2. Progressively reduce prompt complexity (attempts 3-5)
-  3. After 5 failures: STOP test, diagnose with CX, decide:
-     (a) Fix identified → apply, resume
-     (b) Fix uncertain → apply, resume, monitor
-     (c) No viable fix → stop, save diagnostic, inform founder
-  Gemini may NOT be skipped or replaced with a different model.
+DeepSeek failure policy:
+  1. Retry with exponential backoff (3 attempts)
+  2. After 3 failures: raise DeepSeekExhausted, stop-and-diagnose with CX
 
 Verification chain (CDSFL layers 1-3):
   Layer 1: SHA-256 content hash of every artifact.
@@ -96,8 +91,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# Load .env file at import time — ensures GEMINI_API_KEY is available
-# for subprocess calls to gemini CLI.
+# Load .env file at import time — ensures API keys are available.
 _env_path = Path(__file__).resolve().parent.parent / ".env"
 if _env_path.exists():
     with open(_env_path) as _f:
@@ -126,7 +120,6 @@ from run_benchmark import (
     _err,
     _extract_section,
     _safe_format,
-    call_gemini as _call_gemini_sdk,
     classify_issue_severity,
     compose_directives,
     load_directives,
@@ -168,11 +161,11 @@ SMOKE_TASK_IDS = ["ft-001"]  # Phase 1: single task
 SMOKE_TASK_IDS_PHASE2 = ["ft-001", "ft-006", "ft-013"]  # Phase 2: 3 tasks (maths, code, cross-domain)
 ALL_CONDITIONS = ("control", "hil", "cdsfl", "cdsfl_hil")
 MAX_ROUNDS = 5
-GEMINI_MAX_ATTEMPTS = 5  # non-skippable: 5 attempts before stop-and-diagnose
+DEEPSEEK_MAX_ATTEMPTS = 3  # DeepSeek: 3 attempts with exponential backoff
 CONFER_START_ROUND = 1  # blind review IS round 1
 
 # Timeout constants
-GEMINI_TIMEOUT = 300   # Gemini: 5 min hard cap (was 600s — if it can't respond in 5, it won't in 10)
+DEEPSEEK_TIMEOUT = 300  # DeepSeek: 5 min per call
 CX_TIMEOUT = 600       # CX: 10 min (consistently fast, but buffer for large prompts)
 CC_TIMEOUT = 1200      # CC per-step: 20 min (cross-domain engineering tasks need headroom)
 CC_ARBITER_TIMEOUT = 120  # CC arbiter assessment: 2 min (bounded, non-fatal)
@@ -1192,7 +1185,7 @@ def _compute_manifest(task_ids: list[str], directives_hash: str, corpus_hash: st
         "directives_hash": directives_hash,
         "corpus_hash": corpus_hash,
         "max_rounds": MAX_ROUNDS,
-        "models": ["claude-cli/opus-4.6", "gemini-sdk/gemini-3.1-pro-preview", "codex-cli/gpt-5.3-codex"],
+        "models": ["claude-cli/opus-4.6", "deepseek-api/deepseek-v3.2", "codex-cli/gpt-5.3-codex"],
     }, sort_keys=True)
     return hashlib.sha256(manifest_data.encode()).hexdigest()[:32]
 
@@ -1251,7 +1244,7 @@ class DeadlineBudget:
         gets its full allocated time on every call. Budget exhaustion is
         checked only at task/condition boundaries (gate, not clamp).
 
-        Bug fix (2026-03-21): budget clamping was strangling Gemini retries
+        Bug fix (2026-03-21): budget clamping was strangling reviewer retries
         to 10s, guaranteeing failure. CLI-only runs have no per-call cost,
         so clamping individual timeouts serves no purpose.
         """
@@ -1281,222 +1274,11 @@ def _prompt_size_check(prompt: str, label: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Gemini process cleanup — prevents zombie/orphan node processes
-#
-# Bug fix (2026-03-21): Gemini CLI spawns node processes that can hang
-# and block subsequent calls. Three-layer defence:
-#   1. Startup sweep: kill any pre-existing orphans from prior runs
-#   2. Popen + process group: track and kill the exact process tree
-#   3. Post-call sweep: verify no orphans remain
+# Legacy Gemini code removed (2026-03-22). Gemini 3.1 Pro replaced by
+# DeepSeek V3.2. Gemini proved non-functional as a reviewer: zero novel
+# findings in confer rounds across all conditions. See EXPERIMENTAL_RESULTS.md.
 # ---------------------------------------------------------------------------
-
-def _kill_gemini() -> None:
-    """Kill all gemini node processes. Each call is stateless — kill before
-    and after every invocation to prevent orphans accumulating."""
-    sp.run(["pkill", "-f", "/opt/homebrew/bin/gemini"],
-           capture_output=True, timeout=5)
-
-
-def _call_gemini_simple(user_prompt: str) -> str:
-    """Call Gemini 3.1 Pro Preview via Google GenAI SDK.
-
-    Switched from gemini CLI (Gemini 3) to SDK (Gemini 3.1 Pro Preview)
-    for stronger model capability and built-in prompt adaptation.
-    The SDK call in run_benchmark.py handles context window issues via
-    progressive prompt truncation (_truncate_prompt_for_gemini).
-
-    Bug fix (2026-03-21): CLI used Gemini 3 (weaker model) and suffered
-    persistent auth/zombie process issues. SDK uses API key directly,
-    no subprocess, no orphans possible.
-    """
-    _prompt_size_check(user_prompt, "gemini")
-    return _call_gemini_sdk(
-        model="gemini-3.1-pro-preview",
-        system_prompt=None,
-        user_prompt=user_prompt,
-    )
-
-
 # ---------------------------------------------------------------------------
-# Model callers — all via CLI subprocesses (no API SDKs)
-#
-# CC:     claude -p "..." --output-format text
-# Gemini: gemini -p "..." --output-format text
-# CX:     codex exec -o output_file "..."
-# ---------------------------------------------------------------------------
-
-
-def _call_cli(cmd: list[str], input_text: str | None = None,
-              timeout: int = 600, label: str = "cli") -> str:
-    """Run a CLI subprocess with optional stdin. Returns stdout text.
-
-    Deterministic failure policy: caller wraps with _with_retry (1 retry).
-    """
-    try:
-        result = sp.run(
-            cmd,
-            input=input_text,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        output = result.stdout.strip()
-        if result.returncode != 0:
-            # Known Claude Code bug: claude -p can return exit 1 with empty
-            # stderr even on success. If stdout has content, use it.
-            if output:
-                _err(f"  [{label}] WARNING: exit {result.returncode} but stdout "
-                     f"has {len(output)} chars — using output (known CLI bug)")
-            else:
-                stderr = result.stderr[:300] if result.stderr else "(no stderr)"
-                raise RuntimeError(f"{label} failed (exit {result.returncode}): {stderr}")
-        if not output:
-            raise RuntimeError(f"{label} returned empty output")
-        return output
-    except sp.TimeoutExpired:
-        raise RuntimeError(f"{label} timed out after {timeout}s")
-    except FileNotFoundError:
-        raise RuntimeError(f"{label} CLI not found on PATH")
-
-
-def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
-    """CC (Opus 4.6) via claude CLI (inner, no retry).
-
-    Pipes the combined prompt via stdin. System prompt (CDSFL directives)
-    is prepended to the user prompt to stay within ARG_MAX limits.
-    """
-    cmd = ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
-
-    if system_prompt:
-        combined = f"SYSTEM DIRECTIVES:\n{system_prompt}\n\nTASK:\n{user_prompt}"
-    else:
-        combined = user_prompt
-
-    timeout = _budget.clamp_timeout(CC_TIMEOUT) if _budget else CC_TIMEOUT
-    _prompt_size_check(combined, "cc")
-    return _call_cli(cmd, input_text=combined, timeout=timeout, label="claude")
-
-
-def _call_cc(system_prompt: str | None, user_prompt: str) -> str:
-    """CC with deterministic failure policy (1 retry)."""
-    return _with_retry(_call_cc_inner, system_prompt, user_prompt)
-
-
-def _reduce_prompt_complexity(prompt: str, attempt: int) -> str:
-    """Progressively reduce prompt complexity for Gemini retries.
-
-    Attempt 1-2: full prompt (no reduction).
-    Attempt 3: strip supplementary context (evidence spans in prior findings).
-    Attempt 4: strip confidence/proposed_check fields from findings.
-    Attempt 5: strip everything except core task + solution + bare findings list.
-
-    The core adversarial brief and task always stay intact.
-    """
-    if attempt <= 2:
-        return prompt
-
-    import re
-
-    if attempt == 3:
-        # Strip evidence_span values (keep the key for schema compliance)
-        prompt = re.sub(
-            r'"evidence_span"\s*:\s*"[^"]*"',
-            '"evidence_span": "(reduced)"',
-            prompt,
-        )
-        return prompt
-
-    if attempt == 4:
-        # Strip evidence_span + confidence + proposed_check
-        prompt = re.sub(r'"evidence_span"\s*:\s*"[^"]*"', '"evidence_span": "(reduced)"', prompt)
-        prompt = re.sub(r'"confidence"\s*:\s*[\d.]+', '"confidence": 0.5', prompt)
-        prompt = re.sub(r'"proposed_check"\s*:\s*"[^"]*"', '"proposed_check": "(reduced)"', prompt)
-        return prompt
-
-    # attempt >= 5: strip to bare minimum
-    prompt = re.sub(r'"evidence_span"\s*:\s*"[^"]*"', '"evidence_span": "(reduced)"', prompt)
-    prompt = re.sub(r'"confidence"\s*:\s*[\d.]+', '"confidence": 0.5', prompt)
-    prompt = re.sub(r'"proposed_check"\s*:\s*"[^"]*"', '"proposed_check": "(reduced)"', prompt)
-    prompt = re.sub(r'"justification"\s*:\s*"[^"]*"', '"justification": "(reduced)"', prompt)
-    return prompt
-
-
-def _call_gemini_with_retry(user_prompt: str) -> str:
-    """Gemini reviewer with 5-attempt progressive retry policy.
-
-    Gemini may NOT be skipped. If all 5 attempts fail, raises
-    GeminiExhausted which triggers stop-and-diagnose with CX.
-    """
-    last_error = None
-    for attempt in range(1, GEMINI_MAX_ATTEMPTS + 1):
-        reduced = _reduce_prompt_complexity(user_prompt, attempt)
-        if attempt > 1:
-            _err(f"    [gemini retry] attempt {attempt}/{GEMINI_MAX_ATTEMPTS}"
-                 f"{' (prompt reduced)' if attempt >= 3 else ''}")
-        try:
-            return _call_gemini_simple(reduced)
-        except Exception as exc:
-            last_error = exc
-            _err(f"    [gemini retry] attempt {attempt} failed: {str(exc)[:100]}")
-            time.sleep(3)
-
-    exc = GeminiExhausted(
-        f"Gemini failed all {GEMINI_MAX_ATTEMPTS} attempts. "
-        f"Last error: {last_error}"
-    )
-    exc.prompt_size = len(user_prompt)  # CX P-pass fix (HARD 4)
-    raise exc
-
-
-class GeminiExhausted(Exception):
-    """Raised when Gemini fails all retry attempts. Triggers stop-and-diagnose."""
-    prompt_size: int = 0
-
-
-def _diagnose_gemini_with_cx(task_id: str, error: str, prompt_size: int) -> dict:
-    """Stop-and-diagnose: ask CX to help diagnose the Gemini failure.
-
-    Returns a diagnostic dict with CX's assessment and recommendation.
-    """
-    _err(f"  [STOP] Gemini exhausted all {GEMINI_MAX_ATTEMPTS} attempts — diagnosing with CX")
-
-    diag_prompt = (
-        f"CX, Gemini has failed all {GEMINI_MAX_ATTEMPTS} attempts on task {task_id}. "
-        f"Last error: {error[:500]}. "
-        f"Prompt size was {prompt_size} chars (~{prompt_size // 4} tokens). "
-        f"Progressive prompt reduction was applied on attempts 3-5. "
-        f"Diagnose: is this (a) a prompt size issue, (b) a Gemini service issue, "
-        f"(c) a content issue (something in the prompt Gemini can't handle), or "
-        f"(d) something else? "
-        f"Recommend: (1) a specific fix to try, (2) whether to resume or stop, "
-        f"(3) whether this is likely to recur on other tasks. Be direct."
-    )
-
-    try:
-        cx_response = _call_cx_reviewer(diag_prompt, f"diag_{task_id}")
-        _err(f"  [DIAG] CX response: {cx_response[:300]}")
-        return {
-            "cx_diagnosis": cx_response,
-            "recommendation": "see_cx_response",
-            "task_id": task_id,
-            "error": error,
-            "prompt_size": prompt_size,
-        }
-    except Exception as cx_exc:
-        _err(f"  [DIAG] CX also failed: {cx_exc}")
-        return {
-            "cx_diagnosis": f"CX diagnostic also failed: {cx_exc}",
-            "recommendation": "stop_and_inform_founder",
-            "task_id": task_id,
-            "error": error,
-            "prompt_size": prompt_size,
-        }
-
-
-def _call_gemini_reviewer(user_prompt: str) -> str:
-    """Gemini reviewer — 5-attempt progressive retry, non-skippable."""
-    return _call_gemini_with_retry(user_prompt)
-
 
 def _call_cx_reviewer_inner(user_prompt: str, task_id: str) -> str:
     """CX (Codex 5.3) as blind/confer reviewer via codex exec CLI (inner, no retry)."""
@@ -1551,80 +1333,83 @@ def _call_cx_reviewer(user_prompt: str, task_id: str) -> str:
 # in the same conversation. The reviewer builds on its own prior analysis
 # rather than starting from scratch each round.
 #
-# Gemini: native SDK multi-turn chat (client.chats.create())
+# DeepSeek: native multi-turn chat via OpenAI-compatible API
 # CX: accumulated conversation history prefixed to each codex exec call
 # ---------------------------------------------------------------------------
 
 
-class GeminiReviewChat:
-    """Multi-turn review conversation with Gemini via SDK.
+class DeepSeekReviewChat:
+    """Multi-turn review conversation with DeepSeek V3.2 via OpenAI-compatible API.
 
-    Round 1 (blind) is the first message. Each confer round adds to
-    the same conversation. Gemini sees all its prior analysis naturally.
+    Native multi-turn chat — messages list accumulates naturally.
+    No process management, no zombie cleanup, no CLI auth issues.
+    Replaces Gemini 3.1 Pro which proved non-functional as a reviewer
+    (zero novel findings in confer rounds across all conditions).
 
-    Wraps the SDK chat with the same 5-attempt retry policy as the
-    stateless path. Raises GeminiExhausted for stop-and-diagnose.
+    Retry policy: 3 attempts with exponential backoff.
     """
 
+    DEEPSEEK_TIMEOUT = 300  # 5 min per call
+    DEEPSEEK_MAX_ATTEMPTS = 3
+
     def __init__(self):
-        from google import genai
-        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        self.client = genai.Client(api_key=api_key)
-        self.chat = self.client.chats.create(
-            model="gemini-3.1-pro-preview",
-            config=genai.types.GenerateContentConfig(
-                max_output_tokens=32768,
-                temperature=0.0,
-            ),
-        )
+        from openai import OpenAI
+        api_key = os.environ.get("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise RuntimeError("DEEPSEEK_API_KEY not set")
+        self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+        self.messages: list[dict[str, str]] = []
 
-    def _send_once(self, prompt: str, timeout: int) -> str:
-        """Single send attempt with hard timeout enforcement.
+    def send(self, prompt: str, timeout: int = 300) -> str:
+        """Send a message in the ongoing review conversation.
 
-        Does NOT use context manager — shutdown(wait=False) ensures
-        we don't block waiting for the worker if timeout fires.
-        CX P-pass fix: context manager's __exit__ called shutdown(wait=True),
-        making the timeout soft (~2s late).
+        Messages accumulate natively — DeepSeek sees all prior exchanges.
+        3-attempt retry with backoff. Raises DeepSeekExhausted on failure.
         """
-        import concurrent.futures
-        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        future = pool.submit(self.chat.send_message, prompt)
-        try:
-            response = future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            future.cancel()
-            pool.shutdown(wait=False, cancel_futures=True)
-            raise
-        pool.shutdown(wait=False)
-        text = response.text or ""
-        return text.strip()
-
-    def send(self, prompt: str, timeout: int = GEMINI_TIMEOUT) -> str:
-        """Send with 5-attempt retry policy. Raises GeminiExhausted on failure."""
-        _prompt_size_check(prompt, "gemini_chat")
+        _prompt_size_check(prompt, "deepseek_chat")
+        self.messages.append({"role": "user", "content": prompt})
         last_error = None
-        for attempt in range(1, GEMINI_MAX_ATTEMPTS + 1):
+
+        for attempt in range(1, self.DEEPSEEK_MAX_ATTEMPTS + 1):
             if attempt > 1:
-                _err(f"    [gemini_chat retry] attempt {attempt}/{GEMINI_MAX_ATTEMPTS}")
+                _err(f"    [deepseek retry] attempt {attempt}/{self.DEEPSEEK_MAX_ATTEMPTS}")
             t0 = time.monotonic()
             try:
-                text = self._send_once(prompt, timeout)
+                response = self.client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=self.messages,
+                    max_tokens=32768,
+                    temperature=0.0,
+                    timeout=timeout,
+                )
                 elapsed = time.monotonic() - t0
-                _err(f"  [gemini_chat] done ({elapsed:.1f}s, {len(text)} chars)")
+                text = response.choices[0].message.content or ""
+                text = text.strip()
+                self.messages.append({"role": "assistant", "content": text})
+                _err(f"  [deepseek_chat] done ({elapsed:.1f}s, {len(text)} chars)")
                 return text
             except Exception as e:
                 elapsed = time.monotonic() - t0
                 last_error = e
-                _err(f"    [gemini_chat retry] attempt {attempt} failed "
+                _err(f"    [deepseek retry] attempt {attempt} failed "
                      f"({elapsed:.1f}s): {str(e)[:100]}")
-                time.sleep(3)
+                # Remove the user message on failure so we can retry cleanly
+                if attempt < self.DEEPSEEK_MAX_ATTEMPTS:
+                    time.sleep(3 * attempt)  # exponential backoff
 
-        exc = GeminiExhausted(
-            f"Gemini chat failed all {GEMINI_MAX_ATTEMPTS} attempts. "
+        # All attempts failed — remove the unanswered user message
+        self.messages.pop()
+        exc = DeepSeekExhausted(
+            f"DeepSeek failed all {self.DEEPSEEK_MAX_ATTEMPTS} attempts. "
             f"Last error: {last_error}"
         )
         exc.prompt_size = len(prompt)
         raise exc
+
+
+class DeepSeekExhausted(Exception):
+    """Raised when DeepSeek fails all retry attempts."""
+    prompt_size: int = 0
 
 
 class CXReviewChat:
@@ -1920,16 +1705,15 @@ def _run_blind_round(
     ledger: CostLedger,
     condition: str = "cdsfl",
     expert_guidance: str = "",
-    gemini_chat: "GeminiReviewChat | None" = None,
+    deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
-    """Round 1: Dual blind review — Gemini and CX independently review.
+    """Round 1: Dual blind review — DeepSeek and Codex independently review.
 
-    Phase 2: If chat objects are provided, uses persistent conversations.
-    Phase 1 (backward compatible): If no chat objects, uses stateless calls.
+    Phase 2 only: persistent conversations via chat objects.
     """
     task_id = task["id"]
-    phase = "phase2" if gemini_chat else "phase1"
+    phase = "phase2" if deepseek_chat else "phase1"
     _err(f"  [round 1/blind/{phase}] starting dual blind review for {task_id} [{condition}]")
 
     blind_template, _ = _get_condition_prompts(condition)
@@ -1951,29 +1735,28 @@ def _run_blind_round(
     input_hash = _content_hash(input_bundle)
     chain.record("round_input", input_bundle, {"task_id": task_id, "round": 1})
 
-    # Gemini blind review
-    gemini_findings_raw = ""
-    gemini_findings: list[dict] = []
-    gemini_error = None
-    _err(f"  [round 1/blind] calling Gemini 3.1 Pro ...")
+    # DeepSeek blind review
+    deepseek_findings_raw = ""
+    deepseek_findings: list[dict] = []
+    deepseek_error = None
+    _err(f"  [round 1/blind] calling DeepSeek V3.2 ...")
     t0 = time.monotonic()
     try:
-        if gemini_chat:
-            gemini_findings_raw = gemini_chat.send(blind_prompt)
-        else:
-            gemini_findings_raw = _call_gemini_reviewer(blind_prompt)
-        gemini_findings = _extract_findings_json(gemini_findings_raw)
+        if not deepseek_chat:
+            raise RuntimeError("Phase 2 requires DeepSeekReviewChat — no stateless fallback")
+        deepseek_findings_raw = deepseek_chat.send(blind_prompt)
+        deepseek_findings = _extract_findings_json(deepseek_findings_raw)
         elapsed = time.monotonic() - t0
-        _err(f"  [round 1/blind] Gemini done ({elapsed:.1f}s, {len(gemini_findings)} findings)")
-        ledger.record("gemini_cli", 0.0)  # subscription-based
-    except GeminiExhausted:
+        _err(f"  [round 1/blind] DeepSeek done ({elapsed:.1f}s, {len(deepseek_findings)} findings)")
+        ledger.record("deepseek_api", 0.0)  # free tier / prepaid
+    except DeepSeekExhausted:
         raise  # non-skippable — propagate for stop-and-diagnose
     except Exception as exc:
         elapsed = time.monotonic() - t0
-        gemini_error = str(exc)
-        _err(f"  [round 1/blind] Gemini FAILED ({elapsed:.1f}s): {gemini_error[:100]}")
+        deepseek_error = str(exc)
+        _err(f"  [round 1/blind] DeepSeek FAILED ({elapsed:.1f}s): {deepseek_error[:100]}")
 
-    chain.record("gemini_blind", gemini_findings_raw or f"ERROR: {gemini_error}",
+    chain.record("deepseek_blind", deepseek_findings_raw or f"ERROR: {deepseek_error}",
                  {"task_id": task_id, "round": 1})
 
     # CX blind review
@@ -2003,10 +1786,10 @@ def _run_blind_round(
         "round": 1,
         "round_type": "blind",
         "input_hash": input_hash,
-        "gemini": {
-            "raw_response": gemini_findings_raw,
-            "findings": gemini_findings,
-            "error": gemini_error,
+        "deepseek": {
+            "raw_response": deepseek_findings_raw,
+            "findings": deepseek_findings,
+            "error": deepseek_error,
         },
         "cx": {
             "raw_response": cx_findings_raw,
@@ -2020,14 +1803,14 @@ def _run_confer_round(
     task: dict,
     solution: str,
     round_num: int,
-    gemini_prev_findings: list[dict],
+    deepseek_prev_findings: list[dict],
     cx_prev_findings: list[dict],
     chain: VerificationChain,
     ledger: CostLedger,
     output_dir: Path | None = None,
     condition: str = "cdsfl",
     expert_guidance: str = "",
-    gemini_chat: "GeminiReviewChat | None" = None,
+    deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
     """Rounds 2-5: Confer — each reviewer sees the OTHER's findings.
@@ -2045,20 +1828,20 @@ def _run_confer_round(
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     cx_findings_path = artifacts_dir / f"round_{round_num}_cx_prev_findings.json"
-    gemini_findings_path = artifacts_dir / f"round_{round_num}_gemini_prev_findings.json"
+    deepseek_findings_path = artifacts_dir / f"round_{round_num}_deepseek_prev_findings.json"
     _atomic_write(cx_findings_path, json.dumps(cx_prev_findings, indent=2, sort_keys=True) + "\n")
-    _atomic_write(gemini_findings_path, json.dumps(gemini_prev_findings, indent=2, sort_keys=True) + "\n")
+    _atomic_write(deepseek_findings_path, json.dumps(deepseek_prev_findings, indent=2, sort_keys=True) + "\n")
 
-    # Gemini gets CX's findings (from file)
+    # DeepSeek gets CX's findings (from file)
     cx_findings_json = cx_findings_path.read_text()
     fmt_kwargs_g = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cx_findings_json}
     if condition in ("hil", "cdsfl_hil"):
         fmt_kwargs_g["expert_guidance"] = expert_guidance
-    gemini_confer_prompt = _safe_format(confer_template, **fmt_kwargs_g)
+    deepseek_confer_prompt = _safe_format(confer_template, **fmt_kwargs_g)
 
-    # CX gets Gemini's findings (from file)
-    gemini_findings_json = gemini_findings_path.read_text()
-    fmt_kwargs_c = {"task_prompt": task["prompt"], "solution": solution, "other_findings": gemini_findings_json}
+    # CX gets DeepSeek's findings (from file)
+    deepseek_findings_json = deepseek_findings_path.read_text()
+    fmt_kwargs_c = {"task_prompt": task["prompt"], "solution": solution, "other_findings": deepseek_findings_json}
     if condition in ("hil", "cdsfl_hil"):
         fmt_kwargs_c["expert_guidance"] = expert_guidance
     cx_confer_prompt = _safe_format(confer_template, **fmt_kwargs_c)
@@ -2069,44 +1852,43 @@ def _run_confer_round(
         "round": round_num,
         "round_type": "confer",
         "solution_hash": _content_hash(solution),
-        "gemini_prompt_hash": _content_hash(gemini_confer_prompt),
+        "deepseek_prompt_hash": _content_hash(deepseek_confer_prompt),
         "cx_prompt_hash": _content_hash(cx_confer_prompt),
     }, sort_keys=True)
     input_hash = _content_hash(input_bundle)
     chain.record("round_input", input_bundle, {"task_id": task_id, "round": round_num})
 
-    # Gemini confer
-    gemini_raw = ""
-    gemini_response: dict = {}
-    gemini_error = None
-    _err(f"  [round {round_num}/confer] calling Gemini (reviewing CX findings) ...")
+    # DeepSeek confer
+    deepseek_raw = ""
+    deepseek_response: dict = {}
+    deepseek_error = None
+    _err(f"  [round {round_num}/confer] calling DeepSeek (reviewing Codex findings) ...")
     t0 = time.monotonic()
     try:
-        if gemini_chat:
-            gemini_raw = gemini_chat.send(gemini_confer_prompt)
-        else:
-            gemini_raw = _call_gemini_reviewer(gemini_confer_prompt)
-        gemini_response = _extract_confer_response(gemini_raw)
+        if not deepseek_chat:
+            raise RuntimeError("Phase 2 requires DeepSeekReviewChat — no stateless fallback")
+        deepseek_raw = deepseek_chat.send(deepseek_confer_prompt)
+        deepseek_response = _extract_confer_response(deepseek_raw)
         elapsed = time.monotonic() - t0
-        _err(f"  [round {round_num}/confer] Gemini done ({elapsed:.1f}s, "
-             f"{len(gemini_response.get('new_findings', []))} new findings, "
-             f"concur_stop={gemini_response.get('concur_stop')})")
-        ledger.record("gemini_cli", 0.0)  # subscription-based
-    except GeminiExhausted:
+        _err(f"  [round {round_num}/confer] DeepSeek done ({elapsed:.1f}s, "
+             f"{len(deepseek_response.get('new_findings', []))} new findings, "
+             f"concur_stop={deepseek_response.get('concur_stop')})")
+        ledger.record("deepseek_api", 0.0)  # free tier / prepaid
+    except DeepSeekExhausted:
         raise  # non-skippable — propagate for stop-and-diagnose
     except Exception as exc:
         elapsed = time.monotonic() - t0
-        gemini_error = str(exc)
-        _err(f"  [round {round_num}/confer] Gemini FAILED ({elapsed:.1f}s): {gemini_error[:100]}")
+        deepseek_error = str(exc)
+        _err(f"  [round {round_num}/confer] DeepSeek FAILED ({elapsed:.1f}s): {deepseek_error[:100]}")
 
-    chain.record("gemini_confer", gemini_raw or f"ERROR: {gemini_error}",
+    chain.record("deepseek_confer", deepseek_raw or f"ERROR: {deepseek_error}",
                  {"task_id": task_id, "round": round_num})
 
     # CX confer
     cx_raw = ""
     cx_response: dict = {}
     cx_error = None
-    _err(f"  [round {round_num}/confer] calling CX (reviewing Gemini findings) ...")
+    _err(f"  [round {round_num}/confer] calling CX (reviewing DeepSeek findings) ...")
     t0 = time.monotonic()
     try:
         if cx_chat:
@@ -2131,10 +1913,10 @@ def _run_confer_round(
         "round": round_num,
         "round_type": "confer",
         "input_hash": input_hash,
-        "gemini": {
-            "raw_response": gemini_raw,
-            "confer_response": gemini_response,
-            "error": gemini_error,
+        "deepseek": {
+            "raw_response": deepseek_raw,
+            "confer_response": deepseek_response,
+            "error": deepseek_error,
         },
         "cx": {
             "raw_response": cx_raw,
@@ -2162,7 +1944,7 @@ def _count_novel_hard_findings(
     """
     round_keys: set[str] = set()  # deduplicate within this round first
 
-    for source in ("gemini", "cx"):
+    for source in ("deepseek", "cx"):
         source_data = current_round.get(source, {})
         if current_round["round_type"] == "blind":
             findings = source_data.get("findings", [])
@@ -2185,14 +1967,14 @@ def _count_novel_hard_findings(
 
 
 def _both_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool:
-    """Check if both Gemini and CX concur that diminishing returns are reached.
+    """Check if both DeepSeek and Codex concur that diminishing returns are reached.
 
     Bug fix (2026-03-21): A reviewer that produces zero findings for 2+
     consecutive rounds has its concurrence automatically set to True.
     A model that contributes nothing does not get to block the protocol.
     """
-    gemini_findings = len(
-        round_data.get("gemini", {})
+    deepseek_findings = len(
+        round_data.get("deepseek", {})
         .get("confer_response", {})
         .get("new_findings", [])
     )
@@ -2201,8 +1983,8 @@ def _both_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool
         .get("confer_response", {})
         .get("new_findings", [])
     )
-    gemini_concur = (
-        round_data.get("gemini", {})
+    deepseek_concur = (
+        round_data.get("deepseek", {})
         .get("confer_response", {})
         .get("concur_stop", False)
     )
@@ -2215,14 +1997,14 @@ def _both_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool
     # Auto-concur: if a reviewer has zero findings AND we have 2+ consecutive
     # zero-novel rounds, treat as concurring. Can't block with nothing to say.
     if consecutive_zero_novel >= 2:
-        if gemini_findings == 0 and not gemini_concur:
-            _err(f"  [concur] Gemini auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
-            gemini_concur = True
+        if deepseek_findings == 0 and not deepseek_concur:
+            _err(f"  [concur] DeepSeek auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
+            deepseek_concur = True
         if cx_findings == 0 and not cx_concur:
             _err(f"  [concur] CX auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
             cx_concur = True
 
-    return gemini_concur and cx_concur
+    return deepseek_concur and cx_concur
 
 
 # ---------------------------------------------------------------------------
@@ -2510,6 +2292,10 @@ def run_task(
                 task_prompt=task["prompt"],
             )
             expert_guidance = _call_cc(None, guidance_prompt)
+            # Hard truncation — models don't always respect char limits
+            if len(expert_guidance) > 500:
+                _err(f"  [hil] truncating guidance from {len(expert_guidance)} to 500 chars")
+                expert_guidance = expert_guidance[:500].rsplit(" ", 1)[0]  # break at word boundary
             elapsed = time.monotonic() - t0
             _err(f"  [hil] expert guidance done ({elapsed:.1f}s, {len(expert_guidance)} chars)")
             chain.record("expert_guidance", expert_guidance, {"task_id": task_id})
@@ -2600,11 +2386,11 @@ def run_task(
 
     # Phase 2: create persistent conversations for each reviewer.
     # Each reviewer maintains context across all rounds of this task.
-    gemini_chat = None
+    deepseek_chat = None
     cx_chat = None
     if phase2:
         _err(f"  [phase2] creating persistent conversations for reviewers")
-        gemini_chat = GeminiReviewChat()  # fail hard — Phase 2 requires persistent conversations
+        deepseek_chat = DeepSeekReviewChat()  # fail hard — Phase 2 requires persistent conversations
         cx_chat = CXReviewChat(task_id)
 
     for round_num in range(1, MAX_ROUNDS + 1):
@@ -2620,27 +2406,27 @@ def run_task(
             # Blind round
             round_data = _run_blind_round(task, solution, chain, ledger,
                                           condition=condition, expert_guidance=expert_guidance,
-                                          gemini_chat=gemini_chat, cx_chat=cx_chat)
+                                          deepseek_chat=deepseek_chat, cx_chat=cx_chat)
         else:
             # Confer round — each sees the OTHER's previous findings
             prev_round = rounds[-1]
             if prev_round["round_type"] == "blind":
-                gemini_prev = prev_round["gemini"].get("findings", [])
+                deepseek_prev = prev_round["deepseek"].get("findings", [])
                 cx_prev = prev_round["cx"].get("findings", [])
             else:
                 # CX P-pass fix (SOFT 3): pass only new_findings, not mixed
                 # assessment objects — keeps schema consistent for reviewer context.
-                gemini_prev = prev_round["gemini"].get("confer_response", {}).get("new_findings", [])
+                deepseek_prev = prev_round["deepseek"].get("confer_response", {}).get("new_findings", [])
                 cx_prev = prev_round["cx"].get("confer_response", {}).get("new_findings", [])
 
             round_data = _run_confer_round(
                 task, solution, round_num,
-                gemini_prev, cx_prev,
+                deepseek_prev, cx_prev,
                 chain, ledger,
                 output_dir=output_dir,
                 condition=condition,
                 expert_guidance=expert_guidance,
-                gemini_chat=gemini_chat,
+                deepseek_chat=deepseek_chat,
                 cx_chat=cx_chat,
             )
 
@@ -2660,12 +2446,12 @@ def run_task(
 
         # CX P-pass fix (HARD 2): defer on ANY reviewer failure, not just both.
         # Single-reviewer failure breaks the topology (need both for biodiversity).
-        gemini_err = round_data.get("gemini", {}).get("error")
+        deepseek_err = round_data.get("deepseek", {}).get("error")
         cx_err = round_data.get("cx", {}).get("error")
-        if gemini_err or cx_err:
+        if deepseek_err or cx_err:
             failed = []
-            if gemini_err:
-                failed.append("Gemini")
+            if deepseek_err:
+                failed.append("DeepSeek")
             if cx_err:
                 failed.append("CX")
             _err(f"  [round {round_num}] reviewer(s) failed: {', '.join(failed)} — deferring")
@@ -2673,7 +2459,7 @@ def run_task(
                 "round": round_num,
                 "reason": "reviewer_failed",
                 "failed_reviewers": failed,
-                "gemini_error": gemini_err,
+                "deepseek_error": deepseek_err,
                 "cx_error": cx_err,
             })
             # Deterministic failure policy: one retry already happened inside callers
@@ -2696,11 +2482,11 @@ def run_task(
             # Extract findings from both blind and confer round structures
             # Blind rounds: findings under "findings" key
             # Confer rounds: new findings under "confer_response.new_findings"
-            gemini_data = round_data.get("gemini", {})
+            deepseek_data = round_data.get("deepseek", {})
             cx_data = round_data.get("cx", {})
             all_round_findings = (
-                gemini_data.get("findings", []) +
-                gemini_data.get("confer_response", {}).get("new_findings", []) +
+                deepseek_data.get("findings", []) +
+                deepseek_data.get("confer_response", {}).get("new_findings", []) +
                 cx_data.get("findings", []) +
                 cx_data.get("confer_response", {}).get("new_findings", [])
             )
@@ -2733,7 +2519,7 @@ def run_task(
                 deferred_items.append({
                     "round": round_num,
                     "reason": "no_concurrence_on_stop",
-                    "gemini_concur": round_data.get("gemini", {}).get("confer_response", {}).get("concur_stop"),
+                    "deepseek_concur": round_data.get("deepseek", {}).get("confer_response", {}).get("concur_stop"),
                     "cx_concur": round_data.get("cx", {}).get("confer_response", {}).get("concur_stop"),
                 })
 
@@ -3044,29 +2830,25 @@ def main() -> None:
         _err(f"  Output:     {output_dir}")
         _err(f"  Directives: {'custom' if args.directives else 'built-in'} ({directives_hash})")
         if args.phase2:
-            _err(f"  Models:     CC (claude CLI, Opus 4.6), Gemini (SDK, Gemini 3.1 Pro), CX (codex CLI, GPT-5.3)")
+            _err(f"  Models:     CC (claude CLI, Opus 4.6), DeepSeek V3.2 (API), CX (codex CLI, GPT-5.3)")
         else:
-            _err(f"  Models:     CC (claude CLI, Opus 4.6), Gemini (gemini CLI, Gemini 3), CX (codex CLI, GPT-5.3)")
+            _err(f"  Models:     CC (claude CLI, Opus 4.6), DeepSeek V3.2 (API), CX (codex CLI, GPT-5.3)")
 
         # Validate environment — required CLIs must be available
         env_ok = True
         required_clis = ["claude", "codex"]
-        if not args.phase2:
-            required_clis.append("gemini")  # Phase 2 uses SDK, not CLI
         for cli_name in required_clis:
             try:
                 sp.run([cli_name, "--version"], capture_output=True, timeout=10)
             except (FileNotFoundError, sp.TimeoutExpired):
                 _err(f"  WARNING: {cli_name} CLI not found or not responding")
                 env_ok = False
-        if args.phase2:
-            # Validate Gemini SDK + API key instead of CLI
-            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            if not api_key:
-                _err(f"  WARNING: GEMINI_API_KEY / GOOGLE_API_KEY not set (Phase 2 requires SDK)")
-                env_ok = False
-            else:
-                _err(f"  Gemini SDK: API key present")
+        # Validate DeepSeek API key
+        if not os.environ.get("DEEPSEEK_API_KEY"):
+            _err(f"  WARNING: DEEPSEEK_API_KEY not set")
+            env_ok = False
+        else:
+            _err(f"  DeepSeek API: key present")
 
         if env_ok:
             _err("  Environment: OK")
@@ -3074,23 +2856,18 @@ def main() -> None:
 
     # Validate environment (non-dry-run) — required CLIs must be available
     required_clis = ["claude", "codex"]
-    if not args.phase2:
-        required_clis.append("gemini")  # Phase 2 uses SDK, not CLI
     for cli_name in required_clis:
         try:
             sp.run([cli_name, "--version"], capture_output=True, timeout=10)
         except (FileNotFoundError, sp.TimeoutExpired):
             _err(f"ERROR: {cli_name} CLI not found or not responding")
             sys.exit(1)
-    if args.phase2:
-        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            _err("ERROR: GEMINI_API_KEY / GOOGLE_API_KEY not set (Phase 2 requires SDK)")
-            sys.exit(1)
+    if not os.environ.get("DEEPSEEK_API_KEY"):
+        _err("ERROR: DEEPSEEK_API_KEY not set")
+        sys.exit(1)
 
-    # Startup: kill any stale gemini processes from prior runs
-    _kill_gemini()
-    _err("[startup] gemini cleanup done")
+    # Startup: DeepSeek uses API — no process cleanup needed
+    _err("[startup] DeepSeek uses API — no process cleanup needed")
 
     # Freeze corpus
     corpus_dir = output_dir / "frozen_corpus"
@@ -3128,7 +2905,7 @@ def main() -> None:
     results: list[dict] = []
     completed = 0
     skipped = 0
-    gemini_stopped = False  # if True, Gemini exhausted — test halted
+    deepseek_stopped = False  # if True, DeepSeek exhausted — test halted
 
     run_idx = 0
     for task in tasks:
@@ -3147,13 +2924,13 @@ def main() -> None:
 
             if not ledger.check_cap():
                 _err(f"[{run_idx}/{total_runs}] {run_key} — skipped (cost cap reached)")
-                gemini_stopped = True  # use as general halt flag
+                deepseek_stopped = True  # use as general halt flag
                 break
 
             if _budget and _budget.exhausted():
                 _err(f"[{run_idx}/{total_runs}] {run_key} — skipped (deadline budget exhausted)")
                 _err(f"  [budget] {_budget.summary()}")
-                gemini_stopped = True
+                deepseek_stopped = True
                 break
 
             _err(f"[{run_idx}/{total_runs}] {run_key}")
@@ -3179,34 +2956,22 @@ def main() -> None:
                      f"{result['total_unique_hard_findings']} unique HARD findings")
                 _err(f"  {ledger.summary()}")
 
-            except GeminiExhausted as exc:
-                _err(f"  [{run_key}] GEMINI EXHAUSTED — stopping test for diagnosis")
-                # Track last failed prompt size for diagnosis
+            except DeepSeekExhausted as exc:
+                _err(f"  [{run_key}] DEEPSEEK EXHAUSTED — stopping test for diagnosis")
                 prompt_size = getattr(exc, 'prompt_size', 0) or len(str(exc))
-                diagnostic = _diagnose_gemini_with_cx(
-                    task_id, str(exc), prompt_size,
-                )
                 error_result = {
                     "task_id": task_id,
                     "condition": condition,
-                    "status": "GEMINI_EXHAUSTED",
+                    "status": "DEEPSEEK_EXHAUSTED",
                     "error": str(exc),
-                    "diagnostic": diagnostic,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 results.append(error_result)
-                # CX P-pass fix (HARD 3): do NOT checkpoint under run_key —
-                # that would block resume. Save under a diagnostic key instead
-                # so the run can be retried after fixes are applied.
-                checkpoint.save(f"{run_key}__gemini_diag", error_result)
-
-                # Save diagnostic for founder review
-                diag_path = output_dir / f"{task_id}_{condition}_gemini_diagnostic.json"
-                _atomic_write(diag_path, json.dumps(diagnostic, indent=2) + "\n")
+                checkpoint.save(f"{run_key}__deepseek_diag", error_result)
+                diag_path = output_dir / f"{task_id}_{condition}_deepseek_diagnostic.json"
+                _atomic_write(diag_path, json.dumps(error_result, indent=2) + "\n")
                 _err(f"  [DIAG] saved to {diag_path}")
-
-                # STOP the entire test — Gemini is non-skippable
-                gemini_stopped = True
+                deepseek_stopped = True
                 break
 
             except Exception as exc:
@@ -3221,7 +2986,7 @@ def main() -> None:
                 results.append(error_result)
                 checkpoint.save(run_key, error_result)
 
-        if gemini_stopped:
+        if deepseek_stopped:
             _err("[HALT] Test halted — see diagnostic output above")
             break
 
@@ -3257,7 +3022,7 @@ def main() -> None:
             "corpus_hash": corpus_manifest["corpus_hash"],
             "models": {
                 "orchestrator": "claude-cli/opus-4.6",
-                "falsifier_1": "gemini-sdk/gemini-3.1-pro-preview",
+                "falsifier_1": "deepseek-api/deepseek-v3.2",
                 "falsifier_2": "codex-cli/gpt-5.3-codex",
             },
         },
