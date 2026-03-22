@@ -1443,7 +1443,7 @@ class DeepSeekReviewChat:
                 response = self.client.chat.completions.create(
                     model="deepseek-chat",
                     messages=self.messages,
-                    max_tokens=32768,
+                    max_tokens=8192,
                     temperature=0.0,
                     timeout=timeout,
                 )
