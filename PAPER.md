@@ -596,6 +596,85 @@ The testbench supports `--mode extended` for comparative data against the standa
 
 ---
 
+## Part X-A — Experimental Methods
+
+This section documents the procedures used in all empirical experiments. It is separated from Part X (which describes the validation protocol) because the experimental methods evolved during execution — a standard feature of iterative empirical work. All methodological changes are recorded with their rationale.
+
+### Models
+
+Three frontier-class models serve distinct roles:
+
+| Model | Role | Access Method |
+|---|---|---|
+| Opus 4.6 (Anthropic Claude) | Orchestrator, arbiter, tutor, domain expert (HIL) | `claude -p` CLI |
+| Gemini 3.1 Pro Preview (Google) | Independent reviewer | Google GenAI SDK (multi-turn chat) |
+| Codex 5.3 / GPT-5.3-codex (OpenAI) | Independent reviewer | `codex exec` CLI |
+
+Opus 4.6 sets the problems, provides expert guidance (in HIL/CDSFL+HIL conditions), and judges results. It does not participate as a test subject — that would be marking its own homework.
+
+### Factorial Design
+
+2×2 factorial crossing two independent variables:
+
+|  | No Structure | Full CDSFL Structure |
+|--|--|--|
+| **No Guidance** | Control | CDSFL |
+| **Expert Guidance** | HIL | CDSFL+HIL |
+
+- **Control:** Raw task prompt. No system instruction, no framework, no expert guidance.
+- **HIL:** Domain expert guidance (provided by Opus 4.6 acting as intelligence-agnostic HIL) but no CDSFL framework structure.
+- **CDSFL:** Full CDSFL framework (constraint classification, P-Pass self-falsification, epistemic marking) but no domain expert guidance.
+- **CDSFL+HIL:** Full framework with domain expert guidance. The combination condition.
+
+### Confer Protocol
+
+Each task runs blind dual review (round 1), then confer rounds (rounds 2-5). In round 1, both reviewers work independently. In subsequent rounds, each reviewer sees the other's findings and can add novel findings, upgrade/downgrade severity, or concur with stopping. Pre-registered stop rule: 2 consecutive rounds with zero novel HARD findings AND both reviewers concur = stop. Maximum 5 rounds regardless.
+
+### Cryptographic Verification
+
+SHA-256 hash per-round input, hash chain linking each record to its predecessor, per-task Merkle root. Canonical defect key: hash of (task_id, constraint_class, claim_normalized) for stable deduplication across rounds.
+
+### Delivery Mechanism
+
+**Phase 1 (Pilot):** Stateless per-step invocation. Each model call was independent — no accumulated context between steps. This was the initial design.
+
+**Phase 2 (Main experiment):** Persistent-conversation tutor-style decomposition. Each model maintains full conversation context across all steps of a task, accumulating understanding sequentially — exactly as a student builds context during a lecture.
+
+The change was prompted by observed failure during Phase 1: Codex 5.3 produced zero output on ft-004 (Continuous Nowhere-Differentiable Function) under stateless invocation but completed all 8 steps under persistent-conversation delivery, producing a mathematically sharper result than Gemini (Wolfram-verified). The diagnosis: stateless invocation conflates "model cannot solve this problem" with "model cannot solve this problem when presented without context accumulation." Persistent conversation removes this confound.
+
+This is standard pedagogical practice applied to machines. Breaking complex problems into sequential steps, each building on the student's demonstrated understanding of prior steps, is established teaching methodology (scaffolded instruction, Vygotsky's zone of proximal development, least-to-most prompting). The fact that it works on LLMs is an empirical observation about LLM architecture, not a methodological innovation.
+
+**Known confound (CX P-Pass finding, 2026-03-22):** The change introduces persistent conversation and sequential decomposition simultaneously. These are architecturally coupled — decomposition without persistence was tested and failed (stateless per-step), and persistence without decomposition is simply a monolithic prompt in a chat window. Separating them would require a third condition (monolithic-in-persistent-conversation), which is deferred to follow-up study. Within Phase 2, the delivery mechanism is uniform across all 4 factorial conditions, so within-phase comparisons remain valid.
+
+**Phase boundary:** Phase 1 data (12 runs, stateless) is retained as pilot data. Phase 2 data (persistent conversation) is the main experiment. The two phases are not pooled for confirmatory analysis.
+
+### Tutor-Style Decomposition
+
+For complex tasks (particularly mathematical proofs), the problem is presented to the model in sequential steps, each building on the model's own prior answers:
+
+1. The tutor (Opus 4.6) sets step 1. The model answers.
+2. The tutor acknowledges and sets step 2, referencing the model's step 1 work. The model answers with full context of its prior work.
+3. This continues through all steps. Each prompt says "use YOUR construction," "use YOUR values," ensuring the model builds on its own reasoning rather than switching approaches mid-proof.
+4. A final self-verification step asks the model to review its complete proof (which exists in its own conversation context) for gaps, inconsistencies, and unused assumptions.
+
+The granularity of decomposition is recursive: if any step is too complex for a single turn (evidenced by timeout, empty output, or incoherent reasoning), it is decomposed further. The right granularity is whatever the model can handle in one focused reasoning pass.
+
+For Gemini, persistent conversation uses the native SDK multi-turn chat API (`client.chats.create()`, `chat.send_message()`). For Codex, which has a stateless CLI, persistence is simulated by accumulating the full conversation history and prefixing it to each call. The model sees all prior exchanges as context.
+
+### Scoring
+
+Task-specific binary scoring criteria derived from ground truth. Each criterion tests whether a specific mathematical, engineering, or computational claim is present and correct. Automated scoring is supplemented by manual review — automated scoring catches structural presence/absence but not correctness (a response can score well while containing incorrect calculations).
+
+### Budget and Infrastructure
+
+- Opus 4.6 and Codex 5.3: CLI subscriptions (zero per-call API cost)
+- Gemini 3.1 Pro: Google API key, paid quota
+- No per-call budget clamping within a task — once a task starts, it runs to completion
+- Budget checked at task/condition boundaries only
+- Checkpoint/resume system for multi-session execution
+
+---
+
 ## Part XI — Worked Examples
 
 Each of the following projects was built using this methodology. They are linked here as evidence of the methodology in practice, not as claims of superiority over alternative approaches. Each repo has its own documentation and stands independently.

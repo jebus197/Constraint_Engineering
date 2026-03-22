@@ -62,20 +62,26 @@ Verification chain (CDSFL layers 1-3):
   Layer 3: Epoch Merkle tree — per-task Merkle root over all round hashes.
 
 Usage:
-    # Smoke test (1 task × 4 conditions, validates wiring + output quality)
+    # Phase 2 smoke test (3 tasks × 4 conditions, persistent conversations)
+    python3 bench/run_round_robin.py --phase2 --smoke
+
+    # Phase 2 smoke with custom tasks
+    python3 bench/run_round_robin.py --phase2 --smoke --tasks ft-001,ft-006,ft-013
+
+    # Phase 2 full run (25 tasks × 4 conditions = 100 runs)
+    python3 bench/run_round_robin.py --phase2
+
+    # Phase 2 resume after crash
+    python3 bench/run_round_robin.py --phase2 --resume
+
+    # Phase 1 (legacy stateless — retained for backward compatibility)
     python3 bench/run_round_robin.py --smoke
-
-    # Full run (25 tasks × 4 conditions = 100 runs)
-    python3 bench/run_round_robin.py
-
-    # Resume after crash
-    python3 bench/run_round_robin.py --resume
 
     # Dry run (validate tasks and config only)
     python3 bench/run_round_robin.py --dry-run
 
     # Single condition only
-    python3 bench/run_round_robin.py --condition cdsfl
+    python3 bench/run_round_robin.py --phase2 --condition cdsfl
 """
 
 import argparse
@@ -103,6 +109,15 @@ if _env_path.exists():
                 _key, _, _val = _line.partition("=")
                 os.environ.setdefault(_key.strip(), _val.strip())
 
+# Safety guard: ANTHROPIC_API_KEY forces claude -p to use pay-per-token API
+# instead of subscription auth. This burned API credits in Phase 2 smoke test 1.
+# If it's set, warn and remove it. CC must use subscription auth.
+if "ANTHROPIC_API_KEY" in os.environ:
+    print("WARNING: ANTHROPIC_API_KEY is set — removing to force subscription auth. "
+          "claude -p must use CLI subscription, not API credits.",
+          file=sys.stderr, flush=True)
+    del os.environ["ANTHROPIC_API_KEY"]
+
 from run_benchmark import (
     ADVERSARIAL_PASS_TEMPLATE,
     CDSFL_DIRECTIVES,
@@ -118,6 +133,14 @@ from run_benchmark import (
     load_domain_directives,
     load_tasks,
 )
+
+# Override _err with timestamped version — founder needs timestamps to
+# distinguish "stuck" from "slow" during long runs.
+def _err(msg: str) -> None:
+    """Print to stderr with timestamp and forced flush."""
+    ts = time.strftime("%H:%M:%S")
+    print(f"[{ts}] {msg}", file=sys.stderr, flush=True)
+
 
 # Frontier tasks have a different schema than seeded-fault tasks.
 REQUIRED_FRONTIER_FIELDS = {"id", "domain", "prompt", "ground_truth_notes"}
@@ -138,9 +161,11 @@ def validate_frontier_task(task: dict[str, Any]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 RESULTS_DIR = Path(__file__).parent / "results" / "round_robin"
+RESULTS_DIR_PHASE2 = Path(__file__).parent / "results" / "round_robin_phase2"
 LOGS_DIR = Path(__file__).parent / "logs"
 TASKS_DIR = Path(__file__).parent / "tasks_frontier"
-SMOKE_TASK_IDS = ["ft-001"]  # single task × 3 conditions for smoke
+SMOKE_TASK_IDS = ["ft-001"]  # Phase 1: single task
+SMOKE_TASK_IDS_PHASE2 = ["ft-001", "ft-006", "ft-013"]  # Phase 2: 3 tasks (maths, code, cross-domain)
 ALL_CONDITIONS = ("control", "hil", "cdsfl", "cdsfl_hil")
 MAX_ROUNDS = 5
 GEMINI_MAX_ATTEMPTS = 5  # non-skippable: 5 attempts before stop-and-diagnose
@@ -149,7 +174,7 @@ CONFER_START_ROUND = 1  # blind review IS round 1
 # Timeout constants
 GEMINI_TIMEOUT = 300   # Gemini: 5 min hard cap (was 600s — if it can't respond in 5, it won't in 10)
 CX_TIMEOUT = 600       # CX: 10 min (consistently fast, but buffer for large prompts)
-CC_TIMEOUT = 300       # CC generation: 5 min
+CC_TIMEOUT = 1200      # CC per-step: 20 min (cross-domain engineering tasks need headroom)
 CC_ARBITER_TIMEOUT = 120  # CC arbiter assessment: 2 min (bounded, non-fatal)
 SAFETY_MARGIN = 60     # Budget safety margin (seconds)
 PROMPT_SIZE_WARN = 50_000  # Warn if prompt exceeds this many chars
@@ -157,8 +182,12 @@ PROMPT_SIZE_WARN = 50_000  # Warn if prompt exceeds this many chars
 # Finding schema fields (normalised record)
 FINDING_FIELDS = (
     "finding_id", "claim", "evidence_span", "constraint_class",
-    "severity", "confidence", "proposed_check",
+    "severity", "confidence", "proposed_check", "verifiable_claim",
 )
+
+# Verified confer protocol constants (CDSFL conditions only)
+VERIFY_CONTINUE_THRESHOLD = 0.8  # if aggregate >= this AND counting says stop, continue
+VERIFY_MIN_SAMPLE = 3            # need at least this many determinate verifications to override
 
 
 # ---------------------------------------------------------------------------
@@ -601,19 +630,415 @@ JUSTIFICATION: [1-2 sentences on whether diminishing returns are reached]
 
 # CC generates expert guidance for HIL condition (one-shot per task)
 HIL_EXPERT_GUIDANCE_PROMPT = """\
-You are a domain expert providing review guidance for the following task. \
-Do NOT solve the task yourself. Instead, provide:
+You are a senior domain expert — the person a PhD student would go to \
+when stuck. You have deep research-level knowledge in this problem domain. \
+Your job is to provide SPECIFIC, TECHNICAL review guidance that only a \
+genuine expert would know. Do NOT solve the task yourself.
 
-1. The 3-5 most critical constraints a reviewer should check.
-2. Common failure modes in this problem domain.
-3. Specific things to look for that a non-expert might miss.
-4. Any domain-specific knowledge needed to evaluate correctness.
+Provide:
+
+1. HARD CONSTRAINTS: The specific mathematical, physical, or logical \
+constraints that MUST hold. Not generic ("check correctness") but specific \
+("the Weierstrass M-test requires uniform convergence, not just pointwise — \
+verify the reviewer checks |a^n cos(b^n pi x)| <= a^n and sum a^n < inf"). \
+Name the theorems, cite the conditions, state what breaks if they fail.
+
+2. KNOWN PITFALLS: What do practitioners in this domain commonly get wrong? \
+What subtle errors do students make? What looks right but is wrong? Be \
+specific — cite the exact step or technique where errors hide.
+
+3. VERIFICATION TARGETS: Specific numerical values, bounds, or properties \
+that can be independently checked. If a proof claims C = 2/3, what should \
+C actually be? If an algorithm claims O(n log n), what is the actual \
+recurrence? If an engineering design claims 500W, what does the physics say?
+
+4. EDGE CASES AND BOUNDARY CONDITIONS: What happens at the extremes of the \
+parameter space? What degenerate cases does the solution need to handle? \
+What assumptions might silently fail at boundaries?
+
+5. CROSS-REFERENCES: What related results, theorems, or known solutions \
+should the reviewer compare against? What would a textbook say about this \
+problem class?
 
 Task:
 {task_prompt}
 
-Provide your guidance in clear, actionable bullet points.
+Be precise, technical, and domain-specific. Generic advice ("check for \
+errors") is worthless — provide the kind of pointed guidance that changes \
+what a reviewer actually looks for.
 """
+
+
+HIL_RESEARCH_PROMPT = """\
+You are preparing to provide expert review guidance on the following task. \
+Before generating guidance, you need to identify what should be researched \
+and verified externally.
+
+Task:
+{task_prompt}
+
+List the specific things that need to be looked up or verified:
+
+1. THEOREMS TO VERIFY: Name specific theorems, lemmas, or results that \
+are relevant. For each, state the exact conditions/hypotheses that must \
+hold. What are the standard references?
+
+2. NUMERICAL BOUNDS TO CHECK: List any specific constants, bounds, or \
+values that should be computationally verified (e.g. "verify that \
+ab > 1 + 3*pi/2 is the correct sufficient condition for the Weierstrass \
+function").
+
+3. KNOWN RESULTS TO CROSS-REFERENCE: What is the strongest known result \
+in this area? Who proved it? What year? What are the key search terms \
+for finding it?
+
+4. COMPUTATIONAL CHECKS: What specific calculations could be run in \
+SymPy (or equivalent computer algebra system) to verify claims?
+
+Be specific. Give exact search queries, exact computational queries (SymPy-compatible expressions), \
+exact theorem names. Do not be vague.
+"""
+
+
+def _verify_sympy(claim: dict) -> dict:
+    """SymPy verification kernel — OSS replacement for Wolfram Alpha.
+
+    Runs SymPy in a subprocess sandbox to prevent code injection from
+    untrusted model output (CX P-pass critical finding).
+
+    Input claim format (structured, not free text):
+        {"op": "eq"|"gt"|"lt"|"ge"|"le"|"eval",
+         "lhs": "a*b",
+         "rhs": "1 + 3*pi/2",
+         "symbols": {"a": "positive", "b": "positive,odd"},
+         "description": "human-readable claim text"}
+
+    Returns:
+        {"verified": True|False|None,
+         "result": "computed result or explanation",
+         "method": "symbolic"|"numeric"|"counterexample"|"unverifiable",
+         "expression": "the claim as evaluated"}
+
+    CDSFL and CDSFL_HIL conditions ONLY. Control and HIL never call this.
+    """
+    # Validate claim structure
+    if not isinstance(claim, dict) or "op" not in claim:
+        return {"verified": None, "result": "invalid claim format",
+                "method": "unverifiable", "expression": str(claim)}
+
+    op = claim.get("op", "")
+    lhs = claim.get("lhs", "")
+    rhs = claim.get("rhs", "")
+    description = claim.get("description", "")
+
+    # Size guards (CX P-pass hardening)
+    if len(lhs) > 500 or len(rhs) > 500:
+        return {"verified": None, "result": "expression too long",
+                "method": "unverifiable", "expression": f"{lhs} {op} {rhs}"}
+
+    # Reject anything that looks like code injection
+    for danger in ["__", "import", "exec", "eval", "open(", "os.", "sys.",
+                    "lambda", "getattr", "setattr", "delattr", "globals",
+                    "locals", "compile", "breakpoint"]:
+        if danger in lhs or danger in rhs:
+            return {"verified": None, "result": f"rejected: contains '{danger}'",
+                    "method": "unverifiable", "expression": f"{lhs} {op} {rhs}"}
+
+    # Build the sandboxed verification script
+    verify_script = f'''
+import json, sys
+try:
+    from sympy import (symbols, pi, E, oo, sqrt, cos, sin, log, exp,
+                       Eq, Gt, Lt, Ge, Le, Ne, And, Or, Not, Implies,
+                       Sum, Product, Integral, Limit, factorial, binomial,
+                       simplify, N, S, solve, oo, zoo, nan, Rational, Integer,
+                       Float, reduce_inequalities, Symbol)
+    from sympy.parsing.sympy_parser import (parse_expr, standard_transformations,
+                                             implicit_multiplication_application)
+
+    ALLOWED = {{
+        "pi": pi, "E": E, "oo": oo, "sqrt": sqrt, "cos": cos, "sin": sin,
+        "log": log, "exp": exp, "Eq": Eq, "Gt": Gt, "Lt": Lt, "Ge": Ge,
+        "Le": Le, "Ne": Ne, "And": And, "Or": Or, "Not": Not,
+        "Implies": Implies, "Sum": Sum, "Product": Product, "Rational": Rational,
+        "Integral": Integral, "Limit": Limit, "factorial": factorial,
+        "binomial": binomial, "S": S, "simplify": simplify, "N": N,
+        "Integer": Integer, "Float": Float,
+    }}
+
+    # Add declared symbols
+    sym_defs = {json.dumps(claim.get("symbols", {}))}
+    for name in json.loads('{json.dumps(list(claim.get("symbols", {}).keys()))}'):
+        ALLOWED[name] = Symbol(name, positive="positive" in sym_defs.get(name, ""))
+
+    transforms = standard_transformations + (implicit_multiplication_application,)
+
+    lhs_expr = parse_expr({json.dumps(lhs)}, local_dict=ALLOWED,
+                          global_dict={{"__builtins__": {{}}}},
+                          transformations=transforms)
+    rhs_expr = parse_expr({json.dumps(rhs)}, local_dict=ALLOWED,
+                          global_dict={{"__builtins__": {{}}}},
+                          transformations=transforms)
+
+    op = {json.dumps(op)}
+    result = {{"verified": None, "result": "", "method": "unverifiable",
+              "expression": f"{{lhs_expr}} {{op}} {{rhs_expr}}"}}
+
+    if op == "eval":
+        val = N(lhs_expr)
+        result = {{"verified": None, "result": str(val), "method": "numeric",
+                  "expression": str(lhs_expr)}}
+    elif op in ("eq", "gt", "lt", "ge", "le"):
+        diff = simplify(lhs_expr - rhs_expr)
+        num_diff = N(diff)
+        if op == "eq":
+            is_true = diff == 0 or abs(num_diff) < 1e-12
+            result = {{"verified": bool(is_true), "result": f"diff = {{diff}} (numeric: {{num_diff}})",
+                      "method": "symbolic" if diff == 0 else "numeric",
+                      "expression": f"{{lhs_expr}} = {{rhs_expr}}"}}
+        elif op == "gt":
+            result = {{"verified": bool(num_diff > 0), "result": f"lhs - rhs = {{num_diff}}",
+                      "method": "numeric", "expression": f"{{lhs_expr}} > {{rhs_expr}}"}}
+        elif op == "lt":
+            result = {{"verified": bool(num_diff < 0), "result": f"lhs - rhs = {{num_diff}}",
+                      "method": "numeric", "expression": f"{{lhs_expr}} < {{rhs_expr}}"}}
+        elif op == "ge":
+            result = {{"verified": bool(num_diff >= 0), "result": f"lhs - rhs = {{num_diff}}",
+                      "method": "numeric", "expression": f"{{lhs_expr}} >= {{rhs_expr}}"}}
+        elif op == "le":
+            result = {{"verified": bool(num_diff <= 0), "result": f"lhs - rhs = {{num_diff}}",
+                      "method": "numeric", "expression": f"{{lhs_expr}} <= {{rhs_expr}}"}}
+
+    print(json.dumps(result))
+
+except Exception as exc:
+    print(json.dumps({{"verified": None, "result": f"sympy error: {{exc}}",
+                      "method": "unverifiable", "expression": ""}}))
+'''
+
+    # Run in subprocess with timeout (CX P-pass: signal.alarm is brittle)
+    try:
+        proc = sp.run(
+            [sys.executable, "-c", verify_script],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            return json.loads(proc.stdout.strip())
+        else:
+            return {"verified": None,
+                    "result": f"subprocess error: {proc.stderr[:200]}",
+                    "method": "unverifiable",
+                    "expression": f"{lhs} {op} {rhs}"}
+    except sp.TimeoutExpired:
+        return {"verified": None, "result": "verification timed out (10s)",
+                "method": "unverifiable", "expression": f"{lhs} {op} {rhs}"}
+    except Exception as exc:
+        return {"verified": None, "result": f"verification failed: {exc}",
+                "method": "unverifiable", "expression": f"{lhs} {op} {rhs}"}
+
+
+def _compute_sympy(query: str) -> str:
+    """Research computation — evaluates a mathematical expression via SymPy.
+
+    This is RESEARCH COMPUTATION (available to HIL and CDSFL_HIL):
+    looking up what an expression evaluates to. Equivalent to using a
+    calculator or CAS during literature review.
+
+    NOT to be confused with _verify_findings() which is METHODOLOGY
+    VERIFICATION (CDSFL and CDSFL_HIL only): checking whether a
+    reviewer's claim is mathematically correct.
+
+    The distinction: research_compute = "what is 1 + 3*pi/2?"
+                     methodology_verify = "is this reviewer's bound correct?"
+    """
+    result = _verify_sympy({"op": "eval", "lhs": query, "rhs": "0",
+                            "symbols": {}, "description": query})
+    return f"  SymPy result: {result.get('result', 'no result')}"
+
+
+def _search_arxiv(query: str, max_results: int = 3) -> str:
+    """Search arXiv for relevant papers. Returns titles + abstracts."""
+    try:
+        import arxiv
+        search = arxiv.Search(query=query, max_results=max_results,
+                              sort_by=arxiv.SortCriterion.Relevance)
+        results = []
+        for paper in search.results():
+            results.append(
+                f"  Title: {paper.title}\n"
+                f"  Authors: {', '.join(a.name for a in paper.authors[:3])}\n"
+                f"  Year: {paper.published.year}\n"
+                f"  Abstract: {paper.summary[:300]}...\n"
+                f"  URL: {paper.entry_id}"
+            )
+        return "\n\n".join(results) if results else "(no arXiv results)"
+    except Exception as exc:
+        return f"(arxiv error: {exc})"
+
+
+def _search_web(query: str, max_results: int = 5) -> str:
+    """Search the web via DuckDuckGo. Returns titles + snippets."""
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = []
+            for r in ddgs.text(query, max_results=max_results):
+                results.append(
+                    f"  Title: {r['title']}\n"
+                    f"  URL: {r['href']}\n"
+                    f"  Snippet: {r['body'][:200]}"
+                )
+            return "\n\n".join(results) if results else "(no web results)"
+    except Exception as exc:
+        return f"(web search error: {exc})"
+
+
+def _read_page(url: str, max_chars: int = 3000) -> str:
+    """Read a web page and extract text content.
+
+    Tries lightweight requests+BeautifulSoup first (static HTML).
+    Falls back to headless Chromium via Playwright for JS-rendered pages.
+    Caps output to max_chars to avoid flooding the guidance prompt.
+    """
+    # Try lightweight approach first
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        resp = requests.get(url, timeout=15, headers={
+            "User-Agent": "Mozilla/5.0 (research bot)"
+        })
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "header", "footer"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n", strip=True)
+        if len(text) > 200:
+            return text[:max_chars]
+    except Exception:
+        pass  # fall through to Playwright
+
+    # Fallback: headless Chromium for JS-rendered pages
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=20000)
+            page.wait_for_load_state("networkidle", timeout=10000)
+            text = page.inner_text("body")
+            browser.close()
+            return text[:max_chars] if text else "(page rendered but no text)"
+    except Exception as exc:
+        return f"(could not read page: {exc})"
+
+
+def _search_and_read(query: str, max_results: int = 3, read_top_n: int = 2) -> str:
+    """Search the web, then READ the top results.
+
+    This is what a real researcher does: find relevant pages, then read them.
+    Not just snippets — actual content with theorem statements, conditions,
+    bounds, and proofs.
+    """
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            search_results = list(ddgs.text(query, max_results=max_results))
+    except Exception as exc:
+        return f"(web search error: {exc})"
+
+    if not search_results:
+        return "(no web results)"
+
+    output = []
+    for i, r in enumerate(search_results):
+        output.append(f"  [{i+1}] {r['title']}\n  URL: {r['href']}")
+        if i < read_top_n:
+            _err(f"    [research/read] reading {r['href'][:60]}...")
+            content = _read_page(r['href'], max_chars=2000)
+            output.append(f"  Content:\n{content}\n")
+        else:
+            output.append(f"  Snippet: {r['body'][:200]}\n")
+
+    return "\n".join(output)
+
+
+def _do_external_research(task: dict, research_needs: str) -> str:
+    """Perform external research using SymPy computation, arXiv, and web search.
+
+    CC has already identified specific queries in research_needs.
+    This function extracts them and calls the APIs directly — no
+    subprocess, no proxy, no headless browser. Direct HTTP calls.
+
+    Returns consolidated research results as a string.
+    """
+    results = []
+    task_title = task.get("title", "")
+
+    # Parse CC's research needs into categorised queries
+    wolfram_queries = []
+    arxiv_queries = []
+    web_queries = []
+
+    lines = research_needs.split("\n")
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        lower = stripped.lower()
+
+        # Lines with mathematical verification keywords → Wolfram
+        if any(kw in lower for kw in ["verify", "compute", "calculate",
+                                       "evaluate", "solve", "simplify",
+                                       "what is", "check that", "confirm"]):
+            # Clean up for Wolfram: remove bullet markers, numbering
+            clean = stripped.lstrip("-*0123456789.) ")
+            if clean:
+                wolfram_queries.append(clean)
+
+        # Lines mentioning theorems, papers, proofs → arXiv
+        if any(kw in lower for kw in ["theorem", "proved", "paper",
+                                       "result", "conjecture", "lemma",
+                                       "known", "published", "reference"]):
+            clean = stripped.lstrip("-*0123456789.) ")
+            if clean:
+                arxiv_queries.append(clean)
+
+        # Lines with search/lookup intent → web
+        if any(kw in lower for kw in ["search", "look up", "find",
+                                       "check", "standard", "textbook"]):
+            clean = stripped.lstrip("-*0123456789.) ")
+            if clean:
+                web_queries.append(clean)
+
+    # Always add a baseline web search for the task domain
+    web_queries.append(f"{task_title} known results best bounds proof techniques")
+
+    # Execute SymPy computational queries (cap at 5)
+    for i, wq in enumerate(wolfram_queries[:5]):
+        _err(f"    [research/sympy] query {i+1}/{min(len(wolfram_queries), 5)}: "
+             f"{wq[:80]}...")
+        answer = _compute_sympy(wq)
+        results.append(f"SYMPY COMPUTATION: {wq}\n{answer}\n")
+
+    # Execute arXiv searches (cap at 3)
+    for i, aq in enumerate(arxiv_queries[:3]):
+        _err(f"    [research/arxiv] query {i+1}/{min(len(arxiv_queries), 3)}: "
+             f"{aq[:80]}...")
+        answer = _search_arxiv(aq)
+        results.append(f"ARXIV SEARCH: {aq}\n{answer}\n")
+
+    # Execute web searches — search AND read top results (cap at 3)
+    for i, wq in enumerate(web_queries[:3]):
+        _err(f"    [research/web] query {i+1}/{min(len(web_queries), 3)}: "
+             f"{wq[:80]}...")
+        answer = _search_and_read(wq, max_results=3, read_top_n=2)
+        results.append(f"WEB RESEARCH: {wq}\n{answer}\n")
+
+    if not results:
+        return "(No external research queries extracted from CC's research needs.)"
+
+    return "\n".join(results)
 
 
 def _get_condition_prompts(condition: str) -> tuple[str, str]:
@@ -896,10 +1321,16 @@ def _call_cli(cmd: list[str], input_text: str | None = None,
             text=True,
             timeout=timeout,
         )
-        if result.returncode != 0:
-            stderr = result.stderr[:300] if result.stderr else "(no stderr)"
-            raise RuntimeError(f"{label} failed (exit {result.returncode}): {stderr}")
         output = result.stdout.strip()
+        if result.returncode != 0:
+            # Known Claude Code bug: claude -p can return exit 1 with empty
+            # stderr even on success. If stdout has content, use it.
+            if output:
+                _err(f"  [{label}] WARNING: exit {result.returncode} but stdout "
+                     f"has {len(output)} chars — using output (known CLI bug)")
+            else:
+                stderr = result.stderr[:300] if result.stderr else "(no stderr)"
+                raise RuntimeError(f"{label} failed (exit {result.returncode}): {stderr}")
         if not output:
             raise RuntimeError(f"{label} returned empty output")
         return output
@@ -915,7 +1346,7 @@ def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
     Pipes the combined prompt via stdin. System prompt (CDSFL directives)
     is prepended to the user prompt to stay within ARG_MAX limits.
     """
-    cmd = ["claude", "-p", "--output-format", "text"]
+    cmd = ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
 
     if system_prompt:
         combined = f"SYSTEM DIRECTIVES:\n{system_prompt}\n\nTASK:\n{user_prompt}"
@@ -1094,6 +1525,181 @@ def _call_cx_reviewer(user_prompt: str, task_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Phase 2: Persistent conversation wrappers
+#
+# Each reviewer maintains context across all rounds of a task. The blind
+# review is the first message; each confer round is a subsequent message
+# in the same conversation. The reviewer builds on its own prior analysis
+# rather than starting from scratch each round.
+#
+# Gemini: native SDK multi-turn chat (client.chats.create())
+# CX: accumulated conversation history prefixed to each codex exec call
+# ---------------------------------------------------------------------------
+
+
+class GeminiReviewChat:
+    """Multi-turn review conversation with Gemini via SDK.
+
+    Round 1 (blind) is the first message. Each confer round adds to
+    the same conversation. Gemini sees all its prior analysis naturally.
+
+    Wraps the SDK chat with the same 5-attempt retry policy as the
+    stateless path. Raises GeminiExhausted for stop-and-diagnose.
+    """
+
+    def __init__(self):
+        from google import genai
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        self.client = genai.Client(api_key=api_key)
+        self.chat = self.client.chats.create(
+            model="gemini-3.1-pro-preview",
+            config=genai.types.GenerateContentConfig(
+                max_output_tokens=32768,
+                temperature=0.0,
+            ),
+        )
+
+    def _send_once(self, prompt: str, timeout: int) -> str:
+        """Single send attempt with hard timeout enforcement.
+
+        Does NOT use context manager — shutdown(wait=False) ensures
+        we don't block waiting for the worker if timeout fires.
+        CX P-pass fix: context manager's __exit__ called shutdown(wait=True),
+        making the timeout soft (~2s late).
+        """
+        import concurrent.futures
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = pool.submit(self.chat.send_message, prompt)
+        try:
+            response = future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            pool.shutdown(wait=False, cancel_futures=True)
+            raise
+        pool.shutdown(wait=False)
+        text = response.text or ""
+        return text.strip()
+
+    def send(self, prompt: str, timeout: int = GEMINI_TIMEOUT) -> str:
+        """Send with 5-attempt retry policy. Raises GeminiExhausted on failure."""
+        _prompt_size_check(prompt, "gemini_chat")
+        last_error = None
+        for attempt in range(1, GEMINI_MAX_ATTEMPTS + 1):
+            if attempt > 1:
+                _err(f"    [gemini_chat retry] attempt {attempt}/{GEMINI_MAX_ATTEMPTS}")
+            t0 = time.monotonic()
+            try:
+                text = self._send_once(prompt, timeout)
+                elapsed = time.monotonic() - t0
+                _err(f"  [gemini_chat] done ({elapsed:.1f}s, {len(text)} chars)")
+                return text
+            except Exception as e:
+                elapsed = time.monotonic() - t0
+                last_error = e
+                _err(f"    [gemini_chat retry] attempt {attempt} failed "
+                     f"({elapsed:.1f}s): {str(e)[:100]}")
+                time.sleep(3)
+
+        exc = GeminiExhausted(
+            f"Gemini chat failed all {GEMINI_MAX_ATTEMPTS} attempts. "
+            f"Last error: {last_error}"
+        )
+        exc.prompt_size = len(prompt)
+        raise exc
+
+
+class CXReviewChat:
+    """Simulated multi-turn review conversation with Codex via codex exec.
+
+    codex exec is stateless, so we carry forward context manually.
+    To avoid context overflow (CX P-pass: 52K chars at round 2 with
+    research-enriched HIL prompts), we carry only CX's OWN prior
+    responses — not the full orchestrator prompts, which contain
+    redundant task descriptions, expert guidance, and research results
+    that CX already processed in round 1.
+
+    MAX_CONTEXT_CHARS caps the total prior context to prevent overflow.
+    Oldest responses are summarised if the cap is exceeded.
+    """
+
+    MAX_CONTEXT_CHARS = 15000  # ~3750 tokens — leaves room for the new prompt
+
+    def __init__(self, task_id: str):
+        self.task_id = task_id
+        self.responses: list[str] = []  # CX's own prior responses only
+
+    def send(self, prompt: str, timeout: int = CX_TIMEOUT) -> str:
+        """Send a message with capped prior-response context."""
+
+        # Build context from CX's own prior responses
+        if not self.responses:
+            full_prompt = prompt
+        else:
+            # Carry forward CX's own responses, newest-first priority.
+            # Build from the end so the most recent (most relevant) responses
+            # get budget priority. Older responses are truncated/dropped first.
+            context_entries = []  # will be reversed for chronological display
+            total_chars = 0
+            for i in range(len(self.responses) - 1, -1, -1):
+                resp = self.responses[i]
+                label = f"YOUR RESPONSE (round {i + 1})"
+                entry = f"--- {label} ---\n{resp}\n"
+                if total_chars + len(entry) > self.MAX_CONTEXT_CHARS:
+                    remaining = self.MAX_CONTEXT_CHARS - total_chars
+                    if remaining > 200:
+                        context_entries.append(
+                            f"--- {label} (truncated) ---\n{resp[:remaining]}...\n"
+                        )
+                    break
+                context_entries.append(entry)
+                total_chars += len(entry)
+            context_parts = list(reversed(context_entries))  # chronological order
+
+            full_prompt = (
+                "This is a continuing review conversation. "
+                "Your previous responses are shown below. "
+                "Build on YOUR OWN prior findings — do not repeat them.\n\n"
+                + "\n".join(context_parts)
+                + f"\n--- CURRENT ROUND ---\n{prompt}\n"
+                + "Respond to this round now, building on your prior analysis above."
+            )
+
+        _prompt_size_check(full_prompt, "cx_chat")
+        t0 = time.monotonic()
+
+        output_path = Path(f"/tmp/cx_rr_{self.task_id}_{int(time.time())}.txt")
+        proj_dir = str(Path.home() / "Developer_Projects" / "Constraint_Engineering")
+        try:
+            result = sp.run(
+                ["codex", "exec", "-o", str(output_path), "-C", proj_dir, full_prompt],
+                capture_output=True, text=True, timeout=timeout,
+            )
+            elapsed = time.monotonic() - t0
+
+            text = ""
+            if output_path.exists():
+                text = output_path.read_text().strip()
+                output_path.unlink(missing_ok=True)
+
+            if not text:
+                text = result.stdout.strip() if result.stdout else ""
+
+            if not text:
+                raise RuntimeError(
+                    f"codex exec returned empty output "
+                    f"(exit {result.returncode}, stderr: {result.stderr[:200]})"
+                )
+
+            _err(f"  [cx_chat] done ({elapsed:.1f}s, {len(text)} chars)")
+            self.responses.append(text)
+            return text
+
+        except sp.TimeoutExpired:
+            output_path.unlink(missing_ok=True)
+            raise RuntimeError(f"codex exec timed out after {timeout}s")
+
+
+# ---------------------------------------------------------------------------
 # Finding extraction and normalisation
 # ---------------------------------------------------------------------------
 
@@ -1125,7 +1731,74 @@ def _normalise_finding(f: dict) -> dict:
         normalised["confidence"] = 0.5
 
     normalised["proposed_check"] = str(f.get("proposed_check", "")).strip()
+    normalised["verifiable_claim"] = f.get("verifiable_claim")  # preserve if present
     return normalised
+
+
+def _verify_findings(findings: list[dict], condition: str) -> dict:
+    """Verify mathematical claims in findings using SymPy kernel.
+
+    CONDITION ISOLATION: Only runs for cdsfl and cdsfl_hil conditions.
+    Control and HIL never call this — they get no verification.
+
+    Returns:
+        {"scores": [float], "aggregate": float, "determinate_count": int,
+         "details": [dict]}
+
+    Verification metadata is kept in orchestrator records ONLY — it is
+    NOT attached to findings passed to reviewers (CX P-pass: would
+    contaminate next round's reviewer behaviour).
+    """
+    if condition not in ("cdsfl", "cdsfl_hil"):
+        return {"scores": [], "aggregate": 0.0, "determinate_count": 0, "details": []}
+
+    scores = []
+    details = []
+    for f in findings:
+        vc = f.get("verifiable_claim")
+        if not vc or not isinstance(vc, dict):
+            continue  # no verifiable claim — skip, don't penalise
+
+        result = _verify_sympy(vc)
+        if result["verified"] is True:
+            scores.append(1.0)
+        elif result["verified"] is False:
+            scores.append(0.0)
+        # verified=None → unverifiable, not scored (CX P-pass: don't count unknowns)
+
+        details.append({
+            "finding_id": f.get("finding_id", ""),
+            "claim": vc,
+            "verification": result,
+            "score": scores[-1] if scores and result["verified"] is not None else None,
+        })
+
+    determinate = [s for s in scores]  # only True/False scores
+    aggregate = sum(determinate) / len(determinate) if determinate else 0.0
+
+    return {
+        "scores": scores,
+        "aggregate": round(aggregate, 3),
+        "determinate_count": len(determinate),
+        "details": details,
+    }
+
+
+def _should_override_stop(verification: dict) -> bool:
+    """Asymmetric override: prevent premature stop if high-quality findings
+    are still emerging.
+
+    Returns True if counting says stop but verification says continue.
+    Does NOT implement reverse override (early stop) — deferred until
+    calibration data exists (CX P-pass recommendation).
+
+    Gate conditions:
+    - At least VERIFY_MIN_SAMPLE determinate verifications (avoid small-sample noise)
+    - Aggregate score >= VERIFY_CONTINUE_THRESHOLD
+    """
+    if verification["determinate_count"] < VERIFY_MIN_SAMPLE:
+        return False  # not enough data to override
+    return verification["aggregate"] >= VERIFY_CONTINUE_THRESHOLD
 
 
 def _extract_findings_json(response: str) -> list[dict]:
@@ -1228,10 +1901,17 @@ def _run_blind_round(
     ledger: CostLedger,
     condition: str = "cdsfl",
     expert_guidance: str = "",
+    gemini_chat: "GeminiReviewChat | None" = None,
+    cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
-    """Round 1: Dual blind review — Gemini and CX independently review."""
+    """Round 1: Dual blind review — Gemini and CX independently review.
+
+    Phase 2: If chat objects are provided, uses persistent conversations.
+    Phase 1 (backward compatible): If no chat objects, uses stateless calls.
+    """
     task_id = task["id"]
-    _err(f"  [round 1/blind] starting dual blind review for {task_id} [{condition}]")
+    phase = "phase2" if gemini_chat else "phase1"
+    _err(f"  [round 1/blind/{phase}] starting dual blind review for {task_id} [{condition}]")
 
     blind_template, _ = _get_condition_prompts(condition)
 
@@ -1259,7 +1939,10 @@ def _run_blind_round(
     _err(f"  [round 1/blind] calling Gemini 3.1 Pro ...")
     t0 = time.monotonic()
     try:
-        gemini_findings_raw = _call_gemini_reviewer(blind_prompt)
+        if gemini_chat:
+            gemini_findings_raw = gemini_chat.send(blind_prompt)
+        else:
+            gemini_findings_raw = _call_gemini_reviewer(blind_prompt)
         gemini_findings = _extract_findings_json(gemini_findings_raw)
         elapsed = time.monotonic() - t0
         _err(f"  [round 1/blind] Gemini done ({elapsed:.1f}s, {len(gemini_findings)} findings)")
@@ -1281,7 +1964,10 @@ def _run_blind_round(
     _err(f"  [round 1/blind] calling Codex 5.3 ...")
     t0 = time.monotonic()
     try:
-        cx_findings_raw = _call_cx_reviewer(blind_prompt, task_id)
+        if cx_chat:
+            cx_findings_raw = cx_chat.send(blind_prompt)
+        else:
+            cx_findings_raw = _call_cx_reviewer(blind_prompt, task_id)
         cx_findings = _extract_findings_json(cx_findings_raw)
         elapsed = time.monotonic() - t0
         _err(f"  [round 1/blind] CX done ({elapsed:.1f}s, {len(cx_findings)} findings)")
@@ -1322,6 +2008,8 @@ def _run_confer_round(
     output_dir: Path | None = None,
     condition: str = "cdsfl",
     expert_guidance: str = "",
+    gemini_chat: "GeminiReviewChat | None" = None,
+    cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
     """Rounds 2-5: Confer — each reviewer sees the OTHER's findings.
 
@@ -1375,7 +2063,10 @@ def _run_confer_round(
     _err(f"  [round {round_num}/confer] calling Gemini (reviewing CX findings) ...")
     t0 = time.monotonic()
     try:
-        gemini_raw = _call_gemini_reviewer(gemini_confer_prompt)
+        if gemini_chat:
+            gemini_raw = gemini_chat.send(gemini_confer_prompt)
+        else:
+            gemini_raw = _call_gemini_reviewer(gemini_confer_prompt)
         gemini_response = _extract_confer_response(gemini_raw)
         elapsed = time.monotonic() - t0
         _err(f"  [round {round_num}/confer] Gemini done ({elapsed:.1f}s, "
@@ -1399,7 +2090,10 @@ def _run_confer_round(
     _err(f"  [round {round_num}/confer] calling CX (reviewing Gemini findings) ...")
     t0 = time.monotonic()
     try:
-        cx_raw = _call_cx_reviewer(cx_confer_prompt, task_id)
+        if cx_chat:
+            cx_raw = cx_chat.send(cx_confer_prompt)
+        else:
+            cx_raw = _call_cx_reviewer(cx_confer_prompt, task_id)
         cx_response = _extract_confer_response(cx_raw)
         elapsed = time.monotonic() - t0
         _err(f"  [round {round_num}/confer] CX done ({elapsed:.1f}s, "
@@ -1471,8 +2165,23 @@ def _count_novel_hard_findings(
     return len(new_keys), new_keys
 
 
-def _both_concur_stop(round_data: dict) -> bool:
-    """Check if both Gemini and CX concur that diminishing returns are reached."""
+def _both_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool:
+    """Check if both Gemini and CX concur that diminishing returns are reached.
+
+    Bug fix (2026-03-21): A reviewer that produces zero findings for 2+
+    consecutive rounds has its concurrence automatically set to True.
+    A model that contributes nothing does not get to block the protocol.
+    """
+    gemini_findings = len(
+        round_data.get("gemini", {})
+        .get("confer_response", {})
+        .get("new_findings", [])
+    )
+    cx_findings = len(
+        round_data.get("cx", {})
+        .get("confer_response", {})
+        .get("new_findings", [])
+    )
     gemini_concur = (
         round_data.get("gemini", {})
         .get("confer_response", {})
@@ -1483,6 +2192,17 @@ def _both_concur_stop(round_data: dict) -> bool:
         .get("confer_response", {})
         .get("concur_stop", False)
     )
+
+    # Auto-concur: if a reviewer has zero findings AND we have 2+ consecutive
+    # zero-novel rounds, treat as concurring. Can't block with nothing to say.
+    if consecutive_zero_novel >= 2:
+        if gemini_findings == 0 and not gemini_concur:
+            _err(f"  [concur] Gemini auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
+            gemini_concur = True
+        if cx_findings == 0 and not cx_concur:
+            _err(f"  [concur] CX auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
+            cx_concur = True
+
     return gemini_concur and cx_concur
 
 
@@ -1521,38 +2241,171 @@ Task:
 {task_prompt}
 """
 
+# ---------------------------------------------------------------------------
+# Decomposed generation — break complex problems into sequential steps
+#
+# Bug fix (2026-03-22): single-shot generation timed out at 20 minutes on
+# complex mathematical tasks (ft-004, ft-002). Decomposing into 3 sequential
+# calls (solve → attack → revise) keeps each step within timeout and mirrors
+# how a human expert approaches complex problems.
+#
+# Applied to ALL models, not just CC — the principle is universal.
+# ---------------------------------------------------------------------------
+
+DECOMPOSED_STEP1_SOLVE = """\
+Solve the following task. Focus only on producing the strongest, most \
+complete answer you can. Do NOT self-critique yet — just solve it.
+
+Task:
+{task_prompt}
+"""
+
+DECOMPOSED_STEP2_ATTACK = """\
+You produced the following answer to a task. Now attack it adversarially. \
+Look for errors, contradictions, physical impossibilities, logical flaws, \
+unstated assumptions, and constraint violations.
+
+Original task:
+{task_prompt}
+
+Your answer:
+{solution}
+
+List every issue you find, each on its own line starting with "- ".
+"""
+
+DECOMPOSED_STEP3_CLASSIFY = """\
+You found these issues with a solution. Classify each as HARD \
+(physics, maths, logic, safety — must fix) or SOFT (style, preference, \
+minor improvement — nice to fix). Return each issue on its own line \
+prefixed with [HARD] or [SOFT].
+
+Issues:
+{issues}
+"""
+
+DECOMPOSED_STEP3_REVISE_BATCH = """\
+Revise this solution to fix ONLY the issues listed below. Do not change \
+anything else. Surface any remaining uncertainty. Return the complete \
+revised solution.
+
+Solution to revise:
+{solution}
+
+Issues to fix in this batch:
+{issues_batch}
+"""
+
+
+def _split_issues(issues_text: str, max_per_batch: int = 5) -> list[str]:
+    """Split a list of issues into batches of max_per_batch lines.
+
+    Each batch is small enough for CC to handle in one focused revision.
+    """
+    lines = [l.strip() for l in issues_text.strip().split("\n") if l.strip()]
+    batches = []
+    for i in range(0, len(lines), max_per_batch):
+        batch = "\n".join(lines[i:i + max_per_batch])
+        if batch:
+            batches.append(batch)
+    return batches if batches else [issues_text]  # fallback: send everything
+
 
 def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl") -> str:
-    """CC generates the initial solution.
+    """CC generates the initial solution using decomposed sequential steps.
 
-    CX P-pass fix (HARD 1): control and hil conditions use a raw prompt
-    (no CDSFL template, no P-Pass language). cdsfl and cdsfl_hil use INITIAL_PASS_TEMPLATE.
+    All conditions use 4-step decomposition: solve → attack → classify → revise.
+    Revision is batched — issues are fed in groups of 5, each revision
+    building on the previous, avoiding the monolithic prompt that caused
+    timeouts on cross-domain tasks (ft-013).
+
+    Bug fix (2026-03-22): replaces monolithic step 3 that concatenated
+    task + solution + all issues into a single 20,000+ char prompt.
     """
     task_id = task["id"]
     _err(f"  [generate] CC generating solution for {task_id} [{condition}] ...")
 
-    if condition in ("cdsfl", "cdsfl_hil"):
-        user_prompt = _safe_format(
-            INITIAL_PASS_TEMPLATE,
-            n="1",
-            total="3",
-            task_prompt=task["prompt"],
-        )
-    else:
-        # Control and HIL: raw generation — no CDSFL framework language
-        user_prompt = _safe_format(RAW_GENERATION_PROMPT, task_prompt=task["prompt"])
+    use_directives = directives if condition in ("cdsfl", "cdsfl_hil") else None
 
+    # Step 1: Solve
+    _err(f"  [generate/step1] solving ...")
+    step1_prompt = _safe_format(DECOMPOSED_STEP1_SOLVE, task_prompt=task["prompt"])
     t0 = time.monotonic()
-    response = _call_cc(directives, user_prompt)
-    elapsed = time.monotonic() - t0
-    _err(f"  [generate] CC solution done ({elapsed:.1f}s)")
+    solution = _call_cc(use_directives, step1_prompt)
+    _err(f"  [generate/step1] done ({time.monotonic() - t0:.1f}s)")
 
-    if condition in ("cdsfl", "cdsfl_hil"):
-        revised = _extract_section(response, "REVISED_ANSWER")
-        initial = _extract_section(response, "INITIAL_ANSWER")
-        return revised or initial or response
-    else:
-        return response
+    # Step 2: Attack
+    _err(f"  [generate/step2] self-falsifying ...")
+    step2_prompt = _safe_format(
+        DECOMPOSED_STEP2_ATTACK,
+        task_prompt=task["prompt"],
+        solution=solution,
+    )
+    t1 = time.monotonic()
+    issues = _call_cc(use_directives, step2_prompt)
+    _err(f"  [generate/step2] done ({time.monotonic() - t1:.1f}s)")
+
+    # Step 3: Classify issues (small prompt — just the issues)
+    _err(f"  [generate/step3] classifying issues ...")
+    step3_prompt = _safe_format(DECOMPOSED_STEP3_CLASSIFY, issues=issues)
+    t2 = time.monotonic()
+    classified = _call_cc(use_directives, step3_prompt)
+    _err(f"  [generate/step3] done ({time.monotonic() - t2:.1f}s)")
+
+    # Step 4: Revise in batches — each batch is max 5 issues
+    # Only the solution + current batch are in each prompt (no task, no full issues list)
+    batches = _split_issues(classified)
+    _err(f"  [generate/step4] revising in {len(batches)} batch(es) ...")
+    revised = solution
+    for i, batch in enumerate(batches):
+        _err(f"  [generate/step4/{i+1}] batch {i+1}/{len(batches)} ...")
+        batch_prompt = _safe_format(
+            DECOMPOSED_STEP3_REVISE_BATCH,
+            solution=revised,
+            issues_batch=batch,
+        )
+        t3 = time.monotonic()
+        revised = _call_cc(use_directives, batch_prompt)
+        _err(f"  [generate/step4/{i+1}] done ({time.monotonic() - t3:.1f}s)")
+
+        # Per-chunk verification: check for cascading contradictions
+        _err(f"  [generate/step4/{i+1}] checking for contradictions ...")
+        # Include the revised content so CC can actually check it
+        check_prompt = (
+            "You just revised a solution. Here is your revised version:\n\n"
+            f"{revised[:4000]}\n\n"  # cap to avoid prompt bloat
+            "Check: did your revision introduce any NEW contradictions, "
+            "inconsistencies, or errors elsewhere in the solution? "
+            "If yes, list them. If no, reply 'No contradictions found.' "
+            "Be brief."
+        )
+        t4 = time.monotonic()
+        check = _call_cc(use_directives, check_prompt)
+        _err(f"  [generate/step4/{i+1}] check done ({time.monotonic() - t4:.1f}s)")
+
+        if "no contradiction" not in check.lower():
+            # Contradiction detected — feed it as an additional issue in next batch
+            _err(f"  [generate/step4/{i+1}] contradiction detected — "
+                 f"adding to revision queue")
+            if i + 1 < len(batches):
+                batches[i + 1] += f"\n\nADDITIONAL (from prior batch check):\n{check}"
+            else:
+                # Last batch — do one more revision pass
+                _err(f"  [generate/step4/fix] final contradiction fix ...")
+                fix_prompt = _safe_format(
+                    DECOMPOSED_STEP3_REVISE_BATCH,
+                    solution=revised,
+                    issues_batch=f"Fix these contradictions introduced by prior revision:\n{check}",
+                )
+                t5 = time.monotonic()
+                revised = _call_cc(use_directives, fix_prompt)
+                _err(f"  [generate/step4/fix] done ({time.monotonic() - t5:.1f}s)")
+
+    elapsed = time.monotonic() - t0
+    _err(f"  [generate] CC solution complete ({elapsed:.1f}s total, "
+         f"{3 + len(batches)} steps)")
+
+    return revised
 
 
 # ---------------------------------------------------------------------------
@@ -1568,6 +2421,7 @@ def run_task(
     output_dir: Path | None = None,
     checkpoint: "Checkpoint | None" = None,
     condition: str = "cdsfl",
+    phase2: bool = False,
 ) -> dict:
     """Run the full round-robin protocol for one task under one condition.
 
@@ -1588,6 +2442,7 @@ def run_task(
         _err(f"  [cost] cap reached before generation — skipping task")
         return {
             "task_id": task_id,
+            "condition": condition,
             "title": task.get("title", ""),
             "domain": task.get("domain", ""),
             "status": "COST_CAP",
@@ -1617,15 +2472,48 @@ def run_task(
     chain.record("solution", solution, {"task_id": task_id, "generator": "cc", "condition": condition})
 
     # Step 1b: Generate HIL expert guidance (if HIL or CDSFL_HIL condition)
+    # This is a multi-step pipeline:
+    #   (a) CC identifies what needs to be researched
+    #   (b) Script performs external research (SymPy, arXiv, web search)
+    #   (c) CC generates final guidance incorporating research results
+    # This mirrors what a real domain expert does: they don't just know
+    # things from memory — they look things up, verify, cross-reference.
     expert_guidance = ""
     if condition in ("hil", "cdsfl_hil"):
-        _err(f"  [hil] CC generating domain expert guidance ...")
+        _err(f"  [hil] Step 1: CC identifying research needs ...")
         t0 = time.monotonic()
         try:
-            guidance_prompt = _safe_format(HIL_EXPERT_GUIDANCE_PROMPT, task_prompt=task["prompt"])
+            # Step (a): CC identifies what needs researching
+            research_prompt = _safe_format(HIL_RESEARCH_PROMPT, task_prompt=task["prompt"])
+            research_needs = _call_cc(None, research_prompt)
+            elapsed_a = time.monotonic() - t0
+            _err(f"  [hil] research needs identified ({elapsed_a:.1f}s, {len(research_needs)} chars)")
+            chain.record("research_needs", research_needs, {"task_id": task_id})
+
+            # Step (b): External research — SymPy, arXiv, web search
+            _err(f"  [hil] Step 2: External research (SymPy, arXiv, web) ...")
+            external_research = _do_external_research(task, research_needs)
+            elapsed_b = time.monotonic() - t0
+            _err(f"  [hil] external research done ({elapsed_b:.1f}s, {len(external_research)} chars)")
+
+            # Step (c): CC generates final expert guidance WITH research results
+            _err(f"  [hil] Step 3: CC generating expert guidance with research ...")
+            guidance_prompt = _safe_format(
+                HIL_EXPERT_GUIDANCE_PROMPT,
+                task_prompt=task["prompt"],
+            )
+            # Append research results to the guidance prompt
+            guidance_prompt += (
+                f"\n\nEXTERNAL RESEARCH RESULTS (verified via SymPy computation and web search):\n"
+                f"{external_research}\n\n"
+                f"Incorporate these verified results into your guidance. Cite specific "
+                f"theorems, bounds, and conditions from the research. Flag any claims "
+                f"you cannot verify from these results."
+            )
             expert_guidance = _call_cc(None, guidance_prompt)
             elapsed = time.monotonic() - t0
-            _err(f"  [hil] expert guidance done ({elapsed:.1f}s, {len(expert_guidance)} chars)")
+            _err(f"  [hil] expert guidance done ({elapsed:.1f}s total, {len(expert_guidance)} chars)")
+            chain.record("external_research", external_research, {"task_id": task_id})
             chain.record("expert_guidance", expert_guidance, {"task_id": task_id})
         except Exception as exc:
             _err(f"  [hil] expert guidance FAILED: {exc} — cannot run HIL without guidance")
@@ -1653,6 +2541,15 @@ def run_task(
     status = "DEFERRED"  # default if we exhaust all rounds
     deferred_items: list[dict] = []
 
+    # Phase 2: create persistent conversations for each reviewer.
+    # Each reviewer maintains context across all rounds of this task.
+    gemini_chat = None
+    cx_chat = None
+    if phase2:
+        _err(f"  [phase2] creating persistent conversations for reviewers")
+        gemini_chat = GeminiReviewChat()  # fail hard — Phase 2 requires persistent conversations
+        cx_chat = CXReviewChat(task_id)
+
     for round_num in range(1, MAX_ROUNDS + 1):
         if not ledger.check_cap():
             _err(f"  [cost] cap reached — stopping at round {round_num}")
@@ -1665,7 +2562,8 @@ def run_task(
         if round_num == 1:
             # Blind round
             round_data = _run_blind_round(task, solution, chain, ledger,
-                                          condition=condition, expert_guidance=expert_guidance)
+                                          condition=condition, expert_guidance=expert_guidance,
+                                          gemini_chat=gemini_chat, cx_chat=cx_chat)
         else:
             # Confer round — each sees the OTHER's previous findings
             prev_round = rounds[-1]
@@ -1685,6 +2583,8 @@ def run_task(
                 output_dir=output_dir,
                 condition=condition,
                 expert_guidance=expert_guidance,
+                gemini_chat=gemini_chat,
+                cx_chat=cx_chat,
             )
 
         rounds.append(round_data)
@@ -1733,13 +2633,43 @@ def run_task(
         else:
             consecutive_zero_novel = 0
 
+        # SymPy verification scoring (CDSFL conditions only — condition isolation)
+        round_verification = {"scores": [], "aggregate": 0.0, "determinate_count": 0, "details": []}
+        if condition in ("cdsfl", "cdsfl_hil"):
+            # Extract findings from both blind and confer round structures
+            # Blind rounds: findings under "findings" key
+            # Confer rounds: new findings under "confer_response.new_findings"
+            gemini_data = round_data.get("gemini", {})
+            cx_data = round_data.get("cx", {})
+            all_round_findings = (
+                gemini_data.get("findings", []) +
+                gemini_data.get("confer_response", {}).get("new_findings", []) +
+                cx_data.get("findings", []) +
+                cx_data.get("confer_response", {}).get("new_findings", [])
+            )
+            # Verify only the findings (all are novel by this point — dedup already happened)
+            round_verification = _verify_findings(all_round_findings, condition)
+            round_data["verification"] = round_verification
+            if round_verification["determinate_count"] > 0:
+                _err(f"  [verify] {round_verification['determinate_count']} claims verified, "
+                     f"aggregate score: {round_verification['aggregate']}")
+            chain.record("verification", json.dumps(round_verification),
+                         {"task_id": task_id, "round": round_num})
+
         # Pre-registered stop rule: 2 consecutive rounds with 0 novel HARD + both concur
         if round_num >= 2 and consecutive_zero_novel >= 2:
-            if round_data["round_type"] == "confer" and _both_concur_stop(round_data):
-                _err(f"  [stop] pre-registered stop rule met at round {round_num}: "
-                     f"2+ consecutive zero-novel-HARD + both concur")
-                status = "RESOLVED"
-                break
+            if round_data["round_type"] == "confer" and _both_concur_stop(round_data, consecutive_zero_novel):
+                # Check for asymmetric override (CDSFL only: prevent premature stop)
+                if _should_override_stop(round_verification):
+                    _err(f"  [verify/override] counting says stop but verification score "
+                         f"{round_verification['aggregate']:.2f} >= {VERIFY_CONTINUE_THRESHOLD} "
+                         f"with {round_verification['determinate_count']} verified claims "
+                         f"— continuing one more round")
+                else:
+                    _err(f"  [stop] pre-registered stop rule met at round {round_num}: "
+                         f"2+ consecutive zero-novel-HARD + both concur")
+                    status = "RESOLVED"
+                    break
             elif round_data["round_type"] == "confer":
                 _err(f"  [stop] 2+ consecutive zero-novel-HARD but no concurrence — "
                      f"recording disagreement")
@@ -1766,7 +2696,7 @@ def run_task(
                     f"Reply in one sentence."
                 )
                 arbiter_response = _call_cli(
-                    ["claude", "-p", "--output-format", "text"],
+                    ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"],
                     input_text=arbiter_prompt,
                     timeout=arbiter_timeout,
                     label="cc_arbiter",
@@ -1952,13 +2882,25 @@ def main() -> None:
     )
     parser.add_argument(
         "--max-runtime", type=int, default=None,
-        help="Global deadline budget in seconds (default: 5400 for smoke, 43200 for full)",
+        help="Global deadline budget in seconds (default: unlimited — runs until complete)",
     )
     parser.add_argument(
         "--condition", type=str, default=None,
         choices=ALL_CONDITIONS,
         help="Run a single condition only (default: all four)",
     )
+    parser.add_argument(
+        "--phase2", action="store_true",
+        help="Phase 2: persistent-conversation delivery mechanism. "
+             "Each reviewer maintains context across all rounds of a task.",
+    )
+    parser.add_argument(
+        "--tasks", type=str, default=None,
+        help="Comma-separated task IDs for smoke test (e.g. ft-001,ft-006,ft-013). "
+             "Overrides default smoke task selection.",
+    )
+    # NOTE: close any active Claude Code session before running.
+    # claude -p subprocess calls fail if CC is already running.
 
     args = parser.parse_args()
 
@@ -1969,19 +2911,26 @@ def main() -> None:
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         mode = "smoke" if args.smoke else "full"
-        log_path = LOGS_DIR / f"round_robin_{mode}_{timestamp}.log"
+        phase = "phase2" if args.phase2 else "phase1"
+        log_path = LOGS_DIR / f"round_robin_{phase}_{mode}_{timestamp}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     _setup_log_tee(log_path)
     _err(f"[log] activity log: {log_path}")
 
     # Set up global deadline budget
+    # Default: no deadline — all runs (smoke and full) run until complete or killed.
+    # Use --max-runtime to impose a limit if needed.
     global _budget
     if args.max_runtime:
         max_runtime = args.max_runtime
     else:
-        max_runtime = 5400 if args.smoke else 43200  # 90 min smoke (4 conditions), 12 hr full
-    _budget = DeadlineBudget(max_runtime)
-    _err(f"[budget] deadline: {max_runtime}s ({max_runtime // 60}m)")
+        max_runtime = 0  # no deadline — runs until complete or killed
+    if max_runtime > 0:
+        _budget = DeadlineBudget(max_runtime)
+        _err(f"[budget] deadline: {max_runtime}s ({max_runtime // 60}m)")
+    else:
+        _budget = None
+        _err("[budget] no deadline — runs until complete")
 
     # Load directives
     directives = load_directives(args.directives)
@@ -2008,14 +2957,25 @@ def main() -> None:
 
     # Filter for smoke test
     if args.smoke:
-        tasks = [t for t in tasks if t["id"] in SMOKE_TASK_IDS]
-        _err(f"Smoke test: {len(tasks)} task(s) selected")
+        if args.tasks:
+            smoke_ids = [t.strip() for t in args.tasks.split(",")]
+        elif args.phase2:
+            smoke_ids = SMOKE_TASK_IDS_PHASE2
+        else:
+            smoke_ids = SMOKE_TASK_IDS
+        tasks = [t for t in tasks if t["id"] in smoke_ids]
+        _err(f"Smoke test: {len(tasks)} task(s) selected ({', '.join(t['id'] for t in tasks)})")
         if not tasks:
-            _err(f"ERROR: smoke task IDs {SMOKE_TASK_IDS} not found in {tasks_dir}")
+            _err(f"ERROR: smoke task IDs {smoke_ids} not found in {tasks_dir}")
             sys.exit(1)
 
-    # Output directory
-    output_dir = Path(args.output_dir) if args.output_dir else RESULTS_DIR
+    # Output directory — Phase 2 uses separate results dir
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+    elif args.phase2:
+        output_dir = RESULTS_DIR_PHASE2
+    else:
+        output_dir = RESULTS_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Dry run
@@ -2026,27 +2986,49 @@ def main() -> None:
         _err(f"  Cost cap:   ${args.cost_cap:.2f}")
         _err(f"  Output:     {output_dir}")
         _err(f"  Directives: {'custom' if args.directives else 'built-in'} ({directives_hash})")
-        _err(f"  Models:     CC (claude CLI, Opus 4.6), Gemini (gemini CLI, Gemini 3), CX (codex CLI, GPT-5.3)")
+        if args.phase2:
+            _err(f"  Models:     CC (claude CLI, Opus 4.6), Gemini (SDK, Gemini 3.1 Pro), CX (codex CLI, GPT-5.3)")
+        else:
+            _err(f"  Models:     CC (claude CLI, Opus 4.6), Gemini (gemini CLI, Gemini 3), CX (codex CLI, GPT-5.3)")
 
-        # Validate environment — all three CLIs must be available
+        # Validate environment — required CLIs must be available
         env_ok = True
-        for cli_name in ("claude", "gemini", "codex"):
+        required_clis = ["claude", "codex"]
+        if not args.phase2:
+            required_clis.append("gemini")  # Phase 2 uses SDK, not CLI
+        for cli_name in required_clis:
             try:
                 sp.run([cli_name, "--version"], capture_output=True, timeout=10)
             except (FileNotFoundError, sp.TimeoutExpired):
                 _err(f"  WARNING: {cli_name} CLI not found or not responding")
                 env_ok = False
+        if args.phase2:
+            # Validate Gemini SDK + API key instead of CLI
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+            if not api_key:
+                _err(f"  WARNING: GEMINI_API_KEY / GOOGLE_API_KEY not set (Phase 2 requires SDK)")
+                env_ok = False
+            else:
+                _err(f"  Gemini SDK: API key present")
 
         if env_ok:
-            _err("  Environment: OK (claude, gemini, codex all available)")
+            _err("  Environment: OK")
         sys.exit(0)
 
-    # Validate environment (non-dry-run) — all three CLIs must be available
-    for cli_name in ("claude", "gemini", "codex"):
+    # Validate environment (non-dry-run) — required CLIs must be available
+    required_clis = ["claude", "codex"]
+    if not args.phase2:
+        required_clis.append("gemini")  # Phase 2 uses SDK, not CLI
+    for cli_name in required_clis:
         try:
             sp.run([cli_name, "--version"], capture_output=True, timeout=10)
         except (FileNotFoundError, sp.TimeoutExpired):
             _err(f"ERROR: {cli_name} CLI not found or not responding")
+            sys.exit(1)
+    if args.phase2:
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            _err("ERROR: GEMINI_API_KEY / GOOGLE_API_KEY not set (Phase 2 requires SDK)")
             sys.exit(1)
 
     # Startup: kill any stale gemini processes from prior runs
@@ -2124,6 +3106,7 @@ def main() -> None:
                     task, directives, ledger,
                     output_dir=output_dir, checkpoint=checkpoint,
                     condition=condition,
+                    phase2=args.phase2,
                 )
                 results.append(result)
                 # Clean up in-progress snapshot, save final result
@@ -2209,6 +3192,8 @@ def main() -> None:
         "experiment": "round_robin",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "config": {
+            "phase": "phase2" if args.phase2 else "phase1",
+            "delivery_mechanism": "persistent_conversation" if args.phase2 else "stateless",
             "max_rounds": MAX_ROUNDS,
             "cost_cap_usd": args.cost_cap,
             "directives_hash": directives_hash,
