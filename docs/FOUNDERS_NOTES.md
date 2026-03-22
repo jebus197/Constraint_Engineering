@@ -255,6 +255,20 @@ I am not very good at maths. I freely admit this. But I clearly recognise its va
 
 As for the broader implications — computational approaches to aesthetics, philosophy, social science — those are for future generations to consider. CDSFL is a science calculator for STEM. That is its scope, and that scope is sufficient.
 
+The absence of this kind of verified computational kernel from mainstream AI systems is, I believe, one of the most significant gaps in current AI research and development. It deserves serious attention. Where OSS tools fall short today — particularly in natural language mathematical interpretation — these gaps should be flagged as primary categories for continued future research. We can borrow proprietary facilities as proof-of-concept, but the direction must be open.
+
+## On Condition Isolation and "Stacking the Deck" (22 March 2026)
+
+A predictable criticism of the CDSFL bench test is that we are stacking things in CDSFL's favour by giving it external research tools, computational verification, and structured expert guidance while giving the control condition nothing. This criticism misunderstands what is being tested.
+
+CDSFL is a system designed to consistently outperform any single human operator under variable conditions. Giving it every tool it is supposed to have is not bias — it is testing the system as designed. You do not test antibiotics by giving the control group half a dose to keep it fair.
+
+The four experimental conditions model four real-world scenarios. Control approximates a developer pasting code into an LLM with no preparation. HIL approximates a knowledgeable human providing guidance from their own expertise and training knowledge — no external research, no verification tools, just what they know. CDSFL provides formal structure and computational verification but no domain expertise. CDSFL+HIL is the full methodology at full strength — structure, verification, research, and expert guidance working together.
+
+The defence against "stacking" is that the results are externally verifiable. If CDSFL finds a mathematical error and SymPy confirms it, that finding is objectively correct regardless of how the test was designed. Truth does not care about methodology bias.
+
+CDSFL is fully pluggable. Anyone who believes a component confers an unfair advantage is welcome to remove it and measure the difference. That is, after all, what the 2x2 factorial design already does — it decomposes the contribution of each layer so the value of each component is independently measurable.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
