@@ -669,6 +669,27 @@ what a reviewer actually looks for.
 """
 
 
+HIL_SIMPLE_GUIDANCE_PROMPT = """\
+You are a senior domain expert providing review guidance from your own \
+knowledge and experience. Do NOT solve the task yourself.
+
+Provide focused, specific guidance a reviewer should use:
+
+1. The 3-5 most critical constraints that MUST hold for this problem class.
+2. Common mistakes practitioners make on problems like this.
+3. Specific values, bounds, or properties the reviewer should check.
+4. Edge cases and boundary conditions that often trip people up.
+
+Draw on your training knowledge — what would a good textbook or \
+experienced professor say about this problem type?
+
+Task:
+{task_prompt}
+
+Be precise and technical. Generic advice is worthless.
+"""
+
+
 HIL_RESEARCH_PROMPT = """\
 You are preparing to provide expert review guidance on the following task. \
 Before generating guidance, you need to identify what should be researched \
@@ -2479,25 +2500,63 @@ def run_task(
     # This mirrors what a real domain expert does: they don't just know
     # things from memory — they look things up, verify, cross-reference.
     expert_guidance = ""
-    if condition in ("hil", "cdsfl_hil"):
-        _err(f"  [hil] Step 1: CC identifying research needs ...")
+    if condition == "hil":
+        # HIL: CC generates guidance from training knowledge only.
+        # Simulates a knowledgeable human working from their own expertise —
+        # no external research, no SymPy verification, no literature search.
+        _err(f"  [hil] CC generating expert guidance (from training knowledge) ...")
+        t0 = time.monotonic()
+        try:
+            guidance_prompt = _safe_format(
+                HIL_SIMPLE_GUIDANCE_PROMPT,
+                task_prompt=task["prompt"],
+            )
+            expert_guidance = _call_cc(None, guidance_prompt)
+            elapsed = time.monotonic() - t0
+            _err(f"  [hil] expert guidance done ({elapsed:.1f}s, {len(expert_guidance)} chars)")
+            chain.record("expert_guidance", expert_guidance, {"task_id": task_id})
+        except Exception as exc:
+            _err(f"  [hil] expert guidance FAILED: {exc} — cannot run HIL without guidance")
+            return {
+                "task_id": task_id,
+                "condition": condition,
+                "title": task.get("title", ""),
+                "domain": task.get("domain", ""),
+                "status": "HIL_GUIDANCE_FAILED",
+                "error": str(exc),
+                "rounds_completed": 0,
+                "total_unique_hard_findings": 0,
+                "rounds": [],
+                "deferred_items": [{"reason": "expert_guidance_failed", "error": str(exc)}],
+                "verification_chain": chain.to_dict(),
+                "chain_valid": True,
+                "merkle_root": chain.merkle_root(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    elif condition == "cdsfl_hil":
+        # CDSFL+HIL: Full research pipeline — the complete methodology.
+        # CC identifies research needs, performs external research (SymPy,
+        # arXiv, web), then generates guidance incorporating verified results.
+        # This is the CDSFL methodology at full strength.
+        _err(f"  [cdsfl_hil] Step 1: CC identifying research needs ...")
         t0 = time.monotonic()
         try:
             # Step (a): CC identifies what needs researching
             research_prompt = _safe_format(HIL_RESEARCH_PROMPT, task_prompt=task["prompt"])
             research_needs = _call_cc(None, research_prompt)
             elapsed_a = time.monotonic() - t0
-            _err(f"  [hil] research needs identified ({elapsed_a:.1f}s, {len(research_needs)} chars)")
+            _err(f"  [cdsfl_hil] research needs identified ({elapsed_a:.1f}s, {len(research_needs)} chars)")
             chain.record("research_needs", research_needs, {"task_id": task_id})
 
             # Step (b): External research — SymPy, arXiv, web search
-            _err(f"  [hil] Step 2: External research (SymPy, arXiv, web) ...")
+            _err(f"  [cdsfl_hil] Step 2: External research (SymPy, arXiv, web) ...")
             external_research = _do_external_research(task, research_needs)
             elapsed_b = time.monotonic() - t0
-            _err(f"  [hil] external research done ({elapsed_b:.1f}s, {len(external_research)} chars)")
+            _err(f"  [cdsfl_hil] external research done ({elapsed_b:.1f}s, {len(external_research)} chars)")
 
             # Step (c): CC generates final expert guidance WITH research results
-            _err(f"  [hil] Step 3: CC generating expert guidance with research ...")
+            _err(f"  [cdsfl_hil] Step 3: CC generating expert guidance with research ...")
             guidance_prompt = _safe_format(
                 HIL_EXPERT_GUIDANCE_PROMPT,
                 task_prompt=task["prompt"],
@@ -2512,11 +2571,11 @@ def run_task(
             )
             expert_guidance = _call_cc(None, guidance_prompt)
             elapsed = time.monotonic() - t0
-            _err(f"  [hil] expert guidance done ({elapsed:.1f}s total, {len(expert_guidance)} chars)")
+            _err(f"  [cdsfl_hil] expert guidance done ({elapsed:.1f}s total, {len(expert_guidance)} chars)")
             chain.record("external_research", external_research, {"task_id": task_id})
             chain.record("expert_guidance", expert_guidance, {"task_id": task_id})
         except Exception as exc:
-            _err(f"  [hil] expert guidance FAILED: {exc} — cannot run HIL without guidance")
+            _err(f"  [cdsfl_hil] expert guidance FAILED: {exc} — cannot run CDSFL+HIL without guidance")
             return {
                 "task_id": task_id,
                 "condition": condition,
