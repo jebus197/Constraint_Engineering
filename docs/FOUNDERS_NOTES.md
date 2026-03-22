@@ -259,6 +259,18 @@ The absence of this kind of verified computational kernel from mainstream AI sys
 
 This work is, plainly stated, a direct corollary to Galileo's thesis, restated for the 21st century: the book of nature is written in mathematics, and the instruments for reading it must be mathematically rigorous. The addition our century makes is that the "reader" is no longer exclusively human. Machines can now participate in reading the book of nature, provided they have the right methodology (falsification) and the right tools (computational verification). That is the contribution of CDSFL — not inventing the thesis, but operationalising it for mixed human-AI populations. The work remains incomplete, but the direction is clear, and I believe it is the right one.
 
+## On Scepticism, Honesty, and Unfalsifiable Claims (22 March 2026)
+
+I am largely inspired in this regard by the work of Sabine Hossenfelder — a noted sceptic and, in my view, a voice of reason in a scientific culture that has lost sight of the true and invaluable nature of scepticism. Her consistent position — that theoretical physics has drifted into unfalsifiable speculation, rewarded by institutional prestige rather than experimental confirmation — identifies precisely the disease that CDSFL and Genesis are designed to address structurally.
+
+The distinction: Hossenfelder argues for scepticism as a cultural norm. Genesis builds scepticism into the architecture. Culture can drift. Architecture cannot. A norm says "you should be honest about your work." A cryptographic verification chain says "your work is transparent whether you intended it to be or not."
+
+This has a direct implication for constraint classification. Under CDSFL, claims that cannot be realistically falsified — string theory's extra dimensions, multiverse hypotheses, any assertion that resists experimental or computational verification — should be classified as SOFT, not HARD. They are philosophy, not science. This is not a value judgment. Philosophy has its place. But it should not be presented as science, and it should not receive the trust score weighting that verified, falsifiable work earns. CDSFL's constraint classification system makes this boundary explicit and enforceable: if you cannot state the conditions under which your claim would be proven wrong, it is SOFT by definition.
+
+Nobody gets punished. People are simply required to be honest about their work. The verification chain makes the quality of your output visible. Your trust score reflects your track record. Your worst work is as visible as your best — permanently, on a public blockchain, peer-reviewable by anyone. There is no judgment authority imposing consequences. The record simply exists. The upward selection pressure on scientific quality is a deliberate design feature: people will be less inclined to publish work they cannot defend when doing so would directly and visibly impact their professional reputation.
+
+It is this scepticism — honest, rigorous, Popperian scepticism — that I hope to help restore.
+
 ## On Condition Isolation and "Stacking the Deck" (22 March 2026)
 
 A predictable criticism of the CDSFL bench test is that we are stacking things in CDSFL's favour by giving it external research tools, computational verification, and structured expert guidance while giving the control condition nothing. This criticism misunderstands what is being tested.

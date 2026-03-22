@@ -1052,4 +1052,22 @@ If any of these claims do not survive external testing, the methodology is impro
 
 ---
 
+## References
+
+1. **Popper, K.R.** (1959). *The Logic of Scientific Discovery*. Hutchinson. — The foundational work on falsificationism. CDSFL is a direct computational implementation of Popper's thesis that scientific theories gain corroboration by surviving serious attempts at refutation, not by accumulating confirming instances.
+
+2. **Galileo Galilei** (1623). *The Assayer*. — "The book of nature is written in the language of mathematics." CDSFL's computational verification kernel is a direct corollary: if the book of nature is mathematical, the instruments for reading it must be mathematically rigorous. The 21st century addition is that the reader is no longer exclusively human.
+
+3. **Hossenfelder, S.** (2018). *Lost in Math: How Beauty Leads Physics Astray*. Basic Books. — Hossenfelder's critique of post-empirical theoretical physics, where unfalsifiable speculation is rewarded by institutional prestige rather than experimental confirmation. CDSFL's HARD/SOFT constraint classification addresses this directly: claims that cannot state their falsification conditions are SOFT by definition.
+
+4. **Hardy, G.H.** (1916). "Weierstrass's Non-Differentiable Function." *Transactions of the American Mathematical Society*, 17(3), 301-325. — Proved the Weierstrass nowhere-differentiable function theorem for ab >= 1, the sharpest known sufficient condition. Referenced in the tutor-style decomposition experiment (Experiment 5).
+
+5. **Zhou, D. et al.** (2022). "Least-to-Most Prompting Enables Complex Reasoning in Large Language Models." *arXiv:2205.10625*. — Formalisation of sequential input decomposition for LLMs. The tutor-style approach used in CDSFL's generation step is an independent rediscovery of this established pedagogical technique.
+
+6. **Vygotsky, L.S.** (1978). *Mind in Society: The Development of Higher Psychological Processes*. Harvard University Press. — Zone of proximal development. The tutor-style decomposition works because LLMs, like human students, have effective working memory constraints that scaffolded instruction respects.
+
+7. **Bainbridge, L.** (1983). "Ironies of Automation." *Automatica*, 19(6), 775-779. — The automation paradox: routine automation removes practice opportunities, human expertise silently atrophies, and the system discovers this only when automation fails. Referenced in Genesis's human competence preservation provisions.
+
+---
+
 *For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](docs/EXPERIMENTAL_RESULTS.md). For the project overview, see the [README](README.md).*
