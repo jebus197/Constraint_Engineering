@@ -1278,7 +1278,72 @@ def _prompt_size_check(prompt: str, label: str) -> None:
 # DeepSeek V3.2. Gemini proved non-functional as a reviewer: zero novel
 # findings in confer rounds across all conditions. See EXPERIMENTAL_RESULTS.md.
 # ---------------------------------------------------------------------------
+
 # ---------------------------------------------------------------------------
+# CC (Opus 4.6) caller — via claude CLI
+# ---------------------------------------------------------------------------
+
+
+def _call_cli(cmd: list[str], input_text: str | None = None,
+              timeout: int = 600, label: str = "cli") -> str:
+    """Run a CLI subprocess with optional stdin. Returns stdout text.
+
+    Deterministic failure policy: caller wraps with _with_retry (1 retry).
+    """
+    try:
+        result = sp.run(
+            cmd,
+            input=input_text,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        output = result.stdout.strip()
+        if result.returncode != 0:
+            # Known Claude Code bug: claude -p can return exit 1 with empty
+            # stderr even on success. If stdout has content, use it.
+            if output:
+                _err(f"  [{label}] WARNING: exit {result.returncode} but stdout "
+                     f"has {len(output)} chars — using output (known CLI bug)")
+            else:
+                stderr = result.stderr[:300] if result.stderr else "(no stderr)"
+                raise RuntimeError(f"{label} failed (exit {result.returncode}): {stderr}")
+        if not output:
+            raise RuntimeError(f"{label} returned empty output")
+        return output
+    except sp.TimeoutExpired:
+        raise RuntimeError(f"{label} timed out after {timeout}s")
+    except FileNotFoundError:
+        raise RuntimeError(f"{label} CLI not found on PATH")
+
+
+def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
+    """CC (Opus 4.6) via claude CLI (inner, no retry).
+
+    Pipes the combined prompt via stdin. System prompt (CDSFL directives)
+    is prepended to the user prompt to stay within ARG_MAX limits.
+    """
+    cmd = ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
+
+    if system_prompt:
+        combined = f"SYSTEM DIRECTIVES:\n{system_prompt}\n\nTASK:\n{user_prompt}"
+    else:
+        combined = user_prompt
+
+    timeout = _budget.clamp_timeout(CC_TIMEOUT) if _budget else CC_TIMEOUT
+    _prompt_size_check(combined, "cc")
+    return _call_cli(cmd, input_text=combined, timeout=timeout, label="claude")
+
+
+def _call_cc(system_prompt: str | None, user_prompt: str) -> str:
+    """CC with deterministic failure policy (1 retry)."""
+    return _with_retry(_call_cc_inner, system_prompt, user_prompt)
+
+
+# ---------------------------------------------------------------------------
+# CX (Codex 5.3) caller — via codex exec CLI
+# ---------------------------------------------------------------------------
+
 
 def _call_cx_reviewer_inner(user_prompt: str, task_id: str) -> str:
     """CX (Codex 5.3) as blind/confer reviewer via codex exec CLI (inner, no retry)."""
