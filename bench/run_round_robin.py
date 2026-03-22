@@ -670,23 +670,21 @@ what a reviewer actually looks for.
 
 
 HIL_SIMPLE_GUIDANCE_PROMPT = """\
-You are a senior domain expert providing review guidance from your own \
-knowledge and experience. Do NOT solve the task yourself.
+You are simulating a competent human expert giving brief review guidance \
+to a colleague. This must be realistic — a short paragraph, the kind of \
+thing someone says in passing or writes in a brief message.
 
-Provide focused, specific guidance a reviewer should use:
-
-1. The 3-5 most critical constraints that MUST hold for this problem class.
-2. Common mistakes practitioners make on problems like this.
-3. Specific values, bounds, or properties the reviewer should check.
-4. Edge cases and boundary conditions that often trip people up.
-
-Draw on your training knowledge — what would a good textbook or \
-experienced professor say about this problem type?
+Give 2-3 specific, pointed observations from your domain knowledge. \
+What would an experienced practitioner mention if asked "anything I \
+should watch out for?" Not an exhaustive briefing — just the one or \
+two things that experience tells you matter most.
 
 Task:
 {task_prompt}
 
-Be precise and technical. Generic advice is worthless.
+HARD CONSTRAINT: Your response MUST be under 500 characters. This \
+simulates realistic human expert input — most researchers provide \
+a sentence or two, not a comprehensive review guide.
 """
 
 
