@@ -1068,6 +1068,24 @@ If any of these claims do not survive external testing, the methodology is impro
 
 7. **Bainbridge, L.** (1983). "Ironies of Automation." *Automatica*, 19(6), 775-779. — The automation paradox: routine automation removes practice opportunities, human expertise silently atrophies, and the system discovers this only when automation fails. Referenced in Genesis's human competence preservation provisions.
 
+8. **Turing, A.M.** (1936). "On Computable Numbers, with an Application to the Entscheidungsproblem." *Proceedings of the London Mathematical Society*, 2(42), 230-265. — The theoretical foundation: computation as a formal process. Turing's work at Bletchley Park (1939-1945), alongside **Tommy Flowers'** construction of Colossus — the first programmable electronic computer — demonstrated that machines could break centralised information monopolies. The direct ancestor of computational verification.
+
+9. **Shannon, C.E.** (1948). "A Mathematical Theory of Communication." *Bell System Technical Journal*, 27(3), 379-423. — Information has mathematical structure. The theoretical basis for every verification chain, hash function, and error-detection mechanism in CDSFL.
+
+10. **Diffie, W. and Hellman, M.E.** (1976). "New Directions in Cryptography." *IEEE Transactions on Information Theory*, 22(6), 644-654. — Public key cryptography: two parties can establish trust without a trusted intermediary. The conceptual ancestor of trustless verification in distributed systems.
+
+11. **Chaum, D.** (1982). "Blind Signatures for Untraceable Payments." *Advances in Cryptology — Crypto '82*, 199-203. — The first formal vision of cryptographically private digital transactions. Chaum's work established that privacy and accountability are not mutually exclusive — a principle Genesis inherits directly.
+
+12. **Szabo, N.** (1997). "Formalizing and Securing Relationships on Public Networks." *First Monday*, 2(9). — Smart contracts: encoding contractual relationships in tamper-evident computational protocols. Genesis's constitutional enforcement and escrow lifecycle are direct implementations of Szabo's vision.
+
+13. **Dai, W.** (1998). "b-money." Unpublished proposal. — Distributed digital currency with pseudonymous participants and community-enforced contracts. Dai's design anticipated the synthesis of cryptographic accountability with distributed governance that Genesis now implements.
+
+14. **Back, A.** (2002). "Hashcash — A Denial of Service Counter-Measure." Technical report. — Proof of work as a computational commitment mechanism. The conceptual bridge between cryptographic cost and earned trust.
+
+15. **Nakamoto, S.** (2008). "Bitcoin: A Peer-to-Peer Electronic Cash System." — The synthesis: trustless consensus without central authority, at scale, in production. Genesis extends Nakamoto's question from "can trust be engineered for money?" to "can trust be engineered for work, governance, and scientific integrity?" CDSFL's verification chains (SHA-256 content hashing, hash-chain linking, Merkle epoch trees) are direct applications of the cryptographic infrastructure Bitcoin proved viable.
+
+16. **Stephenson, N.** (1999). *Cryptonomicon*. Avon Books. — A fictional exploration of cryptographic systems, information warfare, and the relationship between mathematical infrastructure and political freedom. Influential on the broader cypherpunk movement and on the philosophical orientation of projects that treat cryptographic verification as a foundation for social systems rather than merely a security mechanism.
+
 ---
 
 *For a general-audience discussion, see the [Extended Rationale](docs/EXTENDED_RATIONALE.md). For the design reasoning behind key decisions, see the [Founder's Notes](docs/FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](docs/EXPERIMENTAL_RESULTS.md). For the project overview, see the [README](README.md).*
