@@ -1,6 +1,6 @@
-# Constraint Engineering
+# CDSFL: Constraint-Driven Synthesis and Falsification
 
-**Constraint-Driven Synthesis and Falsification (CDSFL)** is a methodology for making AI-assisted technical work more reliable.
+A methodology for making AI-assisted technical work more reliable.
 
 Large language models can be useful engineering assistants. They can also produce polished, confident output that is physically impossible, logically inconsistent, legally non-compliant, or silently outside scope. In non-trivial work, the central problem is not only model capability. It is method.
 

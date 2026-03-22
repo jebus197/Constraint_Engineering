@@ -1,4 +1,6 @@
-# Founder's Notes on CDSFL
+# CDSFL: Constraint-Driven Synthesis and Falsification
+
+## Founder's Notes
 
 *Founder's observations starting 14 March 2026.*
 
@@ -235,7 +237,7 @@ Science done honestly includes the mistakes. These are mine.
 
 **The API Key Confound.** The project `.env` file contained an Anthropic API key. When `claude -p` sees that environment variable, it uses pay-per-token API authentication instead of the existing subscription. This generated "credit balance too low" warnings that I initially mistook for a billing problem. In reality, I was paying per token for calls that should have been free under my subscription. The key was a leftover from early setup. Removing it fixed the billing warnings and the authentication path.
 
-**The Tutor Observation.** When complex mathematical problems caused model failures, I suggested breaking the input into sequential steps — presenting problems the way a tutor presents them at a blackboard, one concept at a time. CC initially framed this as potentially novel. It is not. It is standard teaching practice, formalised in the AI literature as "least-to-most prompting" (Zhou et al., 2022). What is interesting is not the technique but the fact that it works on machines with no modification — suggesting these models have working-memory constraints analogous to human students. I arrived at this from teaching intuition, not from the prompting literature. CC was right to note it, wrong to oversell it.
+**The Tutor Observation.** When complex mathematical problems caused model failures, I suggested breaking the input into sequential steps — presenting problems the way a tutor presents them at a blackboard, one concept at a time. Claude initially framed this as potentially novel. It is not. It is standard teaching practice, formalised in the AI literature as "least-to-most prompting" (Zhou et al., 2022). What is interesting is not the technique but the fact that it works on machines with no modification — suggesting these models have working-memory constraints analogous to human students. I arrived at this from teaching intuition, not from the prompting literature. Claude was right to note it, wrong to oversell it.
 
 None of these errors invalidate the experimental findings. The Phase 1 data is valid as pilot data collected under the conditions that actually obtained (Sonnet, not Opus). Phase 2 corrects all three confounds. The corrections themselves are documented in the experimental record, not hidden. A reader who sees them can assess for themselves whether the Phase 1 results are meaningful despite the errors, or because of them.
 
@@ -251,9 +253,7 @@ This raises a question that I find genuinely baffling: why is computational veri
 
 The architecture is obvious. LLMs are good at reasoning, interpretation, and communication. They are unreliable at arithmetic, symbolic manipulation, and constraint checking. Computer algebra systems are provably correct at exactly those tasks. The obvious design is to let each do what it does well. Yet almost no production AI system does this. The barriers are not technical — they are commercial. Admitting the LLM needs a calculator undermines the product narrative. Adding verification slows response time, which hurts engagement metrics. The market rewards fluency, not correctness.
 
-I am not very good at maths. I freely admit this. But I clearly recognise its value, and I recognise that nobody owns mathematics. It is humanity's shared inheritance.
-
-As for the broader implications — computational approaches to aesthetics, philosophy, social science — those are for future generations to consider. CDSFL is a science calculator for STEM. That is its scope, and that scope is sufficient.
+I am not very good at maths. I freely admit this. But I clearly recognise its value. As for the broader implications — computational approaches to aesthetics, philosophy, social science — those are for future generations to consider. CDSFL is a science calculator for STEM. That is its scope, and that scope is sufficient.
 
 The absence of this kind of verified computational kernel from mainstream AI systems is, I believe, one of the most significant gaps in current AI research and development. It deserves the most serious attention. Where OSS tools fall short today — particularly in natural language mathematical interpretation — these gaps should be flagged as primary categories for continued future research. This is not a minor tooling issue. It is arguably the single most impactful area where current AI development has failed to invest, and the one where investment would most directly address the hallucination problem that the entire field acknowledges but has not structurally solved.
 

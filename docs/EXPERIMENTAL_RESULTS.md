@@ -32,9 +32,9 @@ Four conditions tested:
 **Models:** Claude Code (Opus 4.6), Codex (5.3), Gemini
 **Scope:** Full codebase + methodology review
 
-CC/CX conducted 8 rounds of adversarial review. Gemini was then applied independently:
-- CC/CX found ~24 issues across 8 rounds and converged
-- Gemini found 16 novel issues that all 8 CC/CX rounds missed
+Opus 4.6 (Claude) and Codex 5.3 conducted 8 rounds of adversarial review. Gemini was then applied independently:
+- Claude/Codex found ~24 issues across 8 rounds and converged
+- Gemini found 16 novel issues that all 8 Claude/Codex rounds missed
 - Gemini Extended P-Pass (5 modules) found additional issues
 
 **Key finding:** Heterogeneous architectures find defects that homogeneous review misses — validates the biodiversity hypothesis. Convergence curves were different. Failure modes were different. Epistemic diversity is not redundancy; it is additional compute.
@@ -161,7 +161,7 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 
 #### Diagnostic Summary
 
-**Infrastructure: PROVEN.** 21 API calls across 3 tasks, 3 conditions, zero INFRA_FAILs. Gemini 3.1 Pro is reliable when called directly via the `google.genai` SDK. The INFRA_FAILs in previous runs were caused by the subprocess layer (CC/CX CLI invocation for confer), not by the Gemini API itself.
+**Infrastructure: PROVEN.** 21 API calls across 3 tasks, 3 conditions, zero INFRA_FAILs. Gemini 3.1 Pro is reliable when called directly via the `google.genai` SDK. The INFRA_FAILs in previous runs were caused by the subprocess layer (Claude/Codex CLI invocation for confer), not by the Gemini API itself.
 
 **Output token limit: IDENTIFIED.** Code generation tasks hit the 16384-token cap. Must increase to 32768+ for the full run, or record truncation as a variable.
 
@@ -189,11 +189,11 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 3. All three tasks may be too easy for Gemini 3.1 Pro to show large differential effects. The expected single-pass accuracy for these tasks was 20–50%; Gemini exceeded expectations across the board. Harder tasks or manual quality assessment may be needed to discriminate between conditions.
 4. The CDSFL response is consistently ~50–90% larger than PE/control, with the additional content being constraint classification and self-falsification. Whether this additional content adds value depends on the domain and the complexity of the task.
 
-**Methodological caveats** (CX infra review, 2026-03-21):
+**Methodological caveats** (Codex 5.3 infra review, 2026-03-21):
 1. **Unbalanced n:** Control and CDSFL each had n=1 while PE had n=5. This means variance is measurable for PE only. Control and CDSFL scores are single data points, not means. Any cross-condition comparison is anecdotal at this sample size.
 2. **ft-006 truncation confound:** All conditions hit the 16384-token output cap. Comparison is unreliable because truncation severity varied by condition. CDSFL may have been differentially affected (longer structured output hitting the cap earlier in proportional terms).
 3. **Structural vs numerical scoring on ft-013:** The 8 binary criteria test whether values are structurally present, not whether they are numerically correct. A response could score 8/8 while containing incorrect calculations. This inflates apparent accuracy for well-structured responses.
-4. **Assessor non-blinding:** CC (Opus 4.6) acted as Tier 2 assessor while also being the system that designed the CDSFL framework. The assessor is not blind to condition and has a structural interest in the outcome. Independent human assessment or blind automated scoring should supplement these results.
+4. **Assessor non-blinding:** Opus 4.6 acted as Tier 2 assessor while also being the system that designed the CDSFL framework. The assessor is not blind to condition and has a structural interest in the outcome. Independent human assessment or blind automated scoring should supplement these results.
 
 ---
 
@@ -205,7 +205,7 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 **Model:** gemini-3.1-pro-preview
 **Task set:** Full 25-task frontier set
 **Conditions:** Control, PE, CDSFL (as per diagnostic design)
-**Orchestrator:** CC via CLI
+**Orchestrator:** Opus 4.6 (Claude) via CLI
 **Budget:** $20 cap (Google API)
 
 ### Experiment 4: Round-Robin Distributed Compute Test
@@ -234,7 +234,7 @@ Cryptographic verification: SHA-256 per-round input hashing, hash chain linking 
 
 ##### Gemini 3 (CLI) — All Four Conditions
 
-| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | CX | Merkle Root |
+| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | Codex | Merkle Root |
 |-----------|----------|----------|-------|-------|----------|--------|-----|-------------|
 | Control | 19 | — | — | — | — | — | — | `186e39bc...` |
 | HIL | 2 | 0 | 1 | 0 | 0.93 | 0 | 1 | `62594df9...` |
@@ -247,7 +247,7 @@ All four hash chains verified valid.
 
 ##### Gemini 3.1 Pro (SDK) — CDSFL+HIL Only
 
-| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | CX | Merkle Root |
+| Condition | Findings | Critical | Major | Minor | Avg Conf | Gemini | Codex | Merkle Root |
 |-----------|----------|----------|-------|-------|----------|--------|-----|-------------|
 | CDSFL+HIL | 22 | — | — | — | 0.96 | — | — | `95c98809...` |
 
@@ -281,9 +281,9 @@ Three falsifiable questions generated:
 - Gemini CLI auth issue resolved by switching from OAuth to API key (`GEMINI_API_KEY`).
 - Gemini upgraded from CLI (Gemini 3) to SDK (Gemini 3.1 Pro Preview) for stronger capability.
 - Budget system corrected: no longer clamps individual subprocess timeouts (was strangling retries to 10s).
-- Gemini failure policy: kill → retry → progressive prompt reduction × 5 → halt and diagnose with CX.
+- Gemini failure policy: kill → retry → progressive prompt reduction × 5 → halt and diagnose with Codex.
 - Zero API cost (CLI subscriptions). Gemini API key on paid quota.
-- **Sonnet confound (discovered 2026-03-22):** CC solution generation and arbiter assessments in this smoke test used Sonnet 4.6 (the `claude -p` default), not Opus 4.6 as documented. The `--model` flag was not specified. This affects solution quality and arbiter judgment but does not invalidate the cross-condition comparisons (the same model was used consistently across all four conditions). Corrected for Phase 2.
+- **Sonnet confound (discovered 2026-03-22):** Claude solution generation and arbiter assessments in this smoke test used Sonnet 4.6 (the `claude -p` default), not Opus 4.6 as documented. The `--model` flag was not specified. This affects solution quality and arbiter judgment but does not invalidate the cross-condition comparisons (the same model was used consistently across all four conditions). Corrected for Phase 2.
 - **API key billing confound (discovered 2026-03-22):** `.env` contained `ANTHROPIC_API_KEY`, causing `claude -p` to use pay-per-token API credits instead of the existing subscription. This generated "credit balance too low" warnings and unnecessary cost. The key was removed; Phase 2 uses subscription authentication.
 
 **Raw data:** `bench/results/round_robin/` (Gemini 3), `bench/results/round_robin_31pro/` (Gemini 3.1 Pro)
@@ -299,9 +299,9 @@ Three falsifiable questions generated:
 
 Phase 1 revealed two methodological confounds:
 
-1. **Stateless invocation confound:** Stateless per-step invocation conflates "model cannot solve this problem" with "model cannot solve this problem when presented as a monolithic block with no context accumulation." This was discovered when CX (Codex 5.3) produced zero output on ft-004 under stateless invocation but completed all 8 steps under persistent-conversation tutor-style decomposition (Experiment 5 below).
+1. **Stateless invocation confound:** Stateless per-step invocation conflates "model cannot solve this problem" with "model cannot solve this problem when presented as a monolithic block with no context accumulation." This was discovered when Codex 5.3 produced zero output on ft-004 under stateless invocation but completed all 8 steps under persistent-conversation tutor-style decomposition (Experiment 5 below).
 
-2. **Model identity confound (Sonnet/Opus):** The `claude -p` invocations used to generate CC solutions and arbiter assessments did not specify `--model`. The Claude CLI defaults to Sonnet 4.6, not Opus 4.6. Every Phase 1 result labelled "CC (Opus 4.6)" was in fact generated by Sonnet 4.6 — a model optimised for speed and everyday tasks, not deep multi-step mathematical reasoning. This was not discovered until Phase 2 preparation (2026-03-22), when the founder identified the discrepancy by testing `claude -p` directly and observing Sonnet self-identifying. The `--model claude-opus-4-6` flag was added for Phase 2. Additionally, the `.env` file contained an `ANTHROPIC_API_KEY` that caused `claude -p` to use pay-per-token API credits instead of the existing subscription, generating spurious "credit balance too low" warnings and unnecessary cost.
+2. **Model identity confound (Sonnet/Opus):** The `claude -p` invocations used to generate Claude solutions and arbiter assessments did not specify `--model`. The Claude CLI defaults to Sonnet 4.6, not Opus 4.6. Every Phase 1 result labelled "Opus 4.6" was in fact generated by Sonnet 4.6 — a model optimised for speed and everyday tasks, not deep multi-step mathematical reasoning. This was not discovered until Phase 2 preparation (2026-03-22), when the founder identified the discrepancy by testing `claude -p` directly and observing Sonnet self-identifying. The `--model claude-opus-4-6` flag was added for Phase 2. Additionally, the `.env` file contained an `ANTHROPIC_API_KEY` that caused `claude -p` to use pay-per-token API credits instead of the existing subscription, generating spurious "credit balance too low" warnings and unnecessary cost.
 
 Both confounds are documented here as errors of the experimenter, not suppressed. Phase 1 data remains valid as pilot data about Sonnet 4.6 + Gemini 3.1 Pro + Codex 5.3 performance under stateless conditions. It is NOT pooled with Phase 2 data, which uses the correct model (Opus 4.6) and correct authentication (subscription).
 
@@ -309,16 +309,16 @@ Both confounds are documented here as errors of the experimenter, not suppressed
 
 **Date:** 2026-03-22
 **Models:** Gemini 3.1 Pro Preview (SDK, multi-turn chat), Codex 5.3 (codex exec, accumulated context)
-**Orchestrator/Tutor/Arbiter:** Opus 4.6 (CC)
+**Orchestrator/Tutor/Arbiter:** Opus 4.6 (Claude)
 **Task:** ft-004 — Continuous Nowhere-Differentiable Function (Weierstrass construction)
 **Purpose:** Validate persistent-conversation tutor-style decomposition as delivery mechanism for Phase 2.
 
 ##### Motivation
 
 ft-004 caused failures under all prior delivery mechanisms:
-- CC monolithic: timed out at 900s and 1200s
-- CC decomposed (stateless solve→attack→revise): completed at 600s/step but crude
-- CX stateless per-step: zero output
+- Claude monolithic: timed out at 900s and 1200s
+- Claude decomposed (stateless solve→attack→revise): completed at 600s/step but crude
+- Codex stateless per-step: zero output
 - Gemini stateless per-step: completed but no context accumulation
 
 The hypothesis: these failures reflect working-memory overload from monolithic presentation, not capability limitations. Standard pedagogical practice (sequential revelation with context accumulation) should resolve them.
@@ -338,16 +338,16 @@ Eight tutor steps, each building on the model's own prior answers in a persisten
 
 Each prompt explicitly references the model's prior work ("use YOUR construction from step 4a," "use YOUR values of C and C'"). The tutor controls the pace of revelation; the model accumulates understanding.
 
-Gemini used native SDK multi-turn chat (`client.chats.create()`). CX used accumulated conversation history prefixed to each `codex exec` call (stateless API, simulated persistence).
+Gemini used native SDK multi-turn chat (`client.chats.create()`). Codex used accumulated conversation history prefixed to each `codex exec` call (stateless API, simulated persistence).
 
 ##### Results
 
 | Model | Steps Complete | Time | C (dominant) | Sufficient Condition | Self-Verification |
 |-------|---------------|------|--------------|---------------------|-------------------|
 | Gemini 3.1 Pro | 8/8 | 219.5s | 2/3 | ab > 1 + 3π/2 ≈ 5.71 | Complete, 1 issue found (boundary domain) |
-| Codex 5.3 (CX) | 8/8 | 574.7s | 1 | ab > 1 + π ≈ 4.14 | Complete, 3 issues found (sum-limit interchange, boundary subcases, notation) |
+| Codex 5.3 | 8/8 | 574.7s | 1 | ab > 1 + π ≈ 4.14 | Complete, 3 issues found (sum-limit interchange, boundary subcases, notation) |
 
-Both models completed all 8 steps. CX went from total failure (zero output under stateless invocation) to full completion with a mathematically sharper result.
+Both models completed all 8 steps. Codex went from total failure (zero output under stateless invocation) to full completion with a mathematically sharper result.
 
 ##### Critical Finding: Independent Constructions
 
@@ -355,9 +355,9 @@ The two models independently chose different constructions for x_m:
 
 - **Gemini** chose ε_m with **opposite** sign to e_m. This gives |ε_m − e_m| ∈ [1, 3/2], so the dominant term bound is C = 1/(3/2) = 2/3. The sufficient condition becomes ab > 1 + 3π/2 — recovering the classical Weierstrass bound.
 
-- **CX** chose σ_m with **same** sign as e_m. This gives |σ_m − e_m| ∈ [1/2, 1], so the dominant term bound is C = 1/1 = 1. The sufficient condition becomes ab > 1 + π — strictly sharper than the classical bound.
+- **Codex 5.3** chose σ_m with **same** sign as e_m. This gives |σ_m − e_m| ∈ [1/2, 1], so the dominant term bound is C = 1/1 = 1. The sufficient condition becomes ab > 1 + π — strictly sharper than the classical bound.
 
-Both algebraic derivations verified by Wolfram Language (Mathematica). CX's construction is a valid improvement over the classical Weierstrass proof: the same-sign approach direction keeps the denominator smaller, producing a tighter lower bound that relaxes the sufficient condition. CX identified this in its own self-verification: "Not a correctness failure; it reflects a sharper estimate from my x_m choice."
+Both algebraic derivations computationally verified (initially via Wolfram Alpha, subsequently via SymPy). Codex's construction is a valid improvement over the classical Weierstrass proof: the same-sign approach direction keeps the denominator smaller, producing a tighter lower bound that relaxes the sufficient condition. Codex identified this in its own self-verification: "Not a correctness failure; it reflects a sharper estimate from my x_m choice."
 
 Neither bound is novel in absolute terms — Hardy (1916) proved the theorem for ab ≥ 1 — but the fact that tutor-style decomposition produced two independent, valid proofs with different constructions validates the approach for multi-architecture review: you get genuine mathematical diversity, not stylistic variation.
 
@@ -367,10 +367,10 @@ Neither bound is novel in absolute terms — Hardy (1916) proved the theorem for
 2. **Multi-architecture diversity confirmed:** Different models produce genuinely different mathematical approaches under the same pedagogical structure.
 3. **Self-verification is meaningful:** Both models identified real issues in their own proofs when given full context (impossible under stateless invocation).
 
-**CX P-Pass of this methodology change** (2026-03-22): CX raised 5 findings. Key accepted items: (1) persistent conversation + decomposition is a confounded intervention (acknowledged — architecturally coupled, separable in follow-up study), (2) Phase 1 must be strictly excluded from confirmatory analysis (agreed), (3) smoke test should cover multiple domains (accepted — expanded to 3 tasks). Key rejected items: (4) "hidden fifth factor" — delivery mechanism change is uniform across all 4 conditions, so within-Phase-2 factorial comparisons remain valid.
+**Codex 5.3 P-Pass of this methodology change** (2026-03-22): Codex raised 5 findings. Key accepted items: (1) persistent conversation + decomposition is a confounded intervention (acknowledged — architecturally coupled, separable in follow-up study), (2) Phase 1 must be strictly excluded from confirmatory analysis (agreed), (3) smoke test should cover multiple domains (accepted — expanded to 3 tasks). Key rejected items: (4) "hidden fifth factor" — delivery mechanism change is uniform across all 4 conditions, so within-Phase-2 factorial comparisons remain valid.
 
 **Raw data:** `bench/results/tutor_test/ft-004_tutor_v2_20260322_044718.json`
-**CX P-Pass:** `bench/results/cx_ppass_methodology_change.txt`
+**Codex P-Pass:** `bench/results/cx_ppass_methodology_change.txt`
 
 #### Phase 2 (Main Experiment — Persistent Conversation)
 
@@ -382,13 +382,13 @@ Neither bound is novel in absolute terms — Hardy (1916) proved the theorem for
 
 ##### Methodology Change Record
 
-The change from stateless to persistent-conversation invocation was prompted by observed failure (CX zero output on ft-004) and the hypothesis that the failure was architectural (working memory overload), not capability-related. This was confirmed when the same model completed the same task under persistent-conversation delivery.
+The change from stateless to persistent-conversation invocation was prompted by observed failure (Codex zero output on ft-004) and the hypothesis that the failure was architectural (working memory overload), not capability-related. This was confirmed when the same model completed the same task under persistent-conversation delivery.
 
 This is standard experimental practice: a pilot phase reveals a methodological flaw, the flaw is corrected, the correction is documented, and both phases are reported. The pilot data is valid as pilot data. The corrected methodology is the main experiment. The correction itself is a finding: delivery mechanism significantly affects model performance independent of prompt content.
 
 **What changed:**
 1. How prompts are delivered (stateless → persistent conversation with sequential decomposition).
-2. CC model corrected from Sonnet 4.6 (CLI default) to Opus 4.6 (`--model claude-opus-4-6`).
+2. Claude model corrected from Sonnet 4.6 (CLI default) to Opus 4.6 (`--model claude-opus-4-6`).
 3. Authentication corrected from API key (pay-per-token) to subscription (no per-token cost).
 
 **What did not change:** The 2×2 factorial design, the task set, the reviewer models (Gemini 3.1 Pro, Codex 5.3), the scoring criteria, the confer protocol, the cryptographic verification, the stop rules.
@@ -416,7 +416,7 @@ This is standard experimental practice: a pilot phase reveals a methodological f
 
 1. **CDSFL+HIL never ran on the productive task (ft-006).** The most important data point is missing. No conclusions can be drawn about the interaction effect from this smoke test.
 
-2. **Expert guidance was generic.** The HIL_EXPERT_GUIDANCE_PROMPT asked CC to provide "common failure modes" and "domain-specific knowledge" — generic instructions that produced generic guidance. For ft-001, genuine expert guidance would name specific theorems, cite specific conditions, and target specific proof steps. This has been corrected: the prompt now requires research-level domain expertise with named theorems, specific bounds, verification targets, edge cases, and cross-references.
+2. **Expert guidance was generic.** The HIL_EXPERT_GUIDANCE_PROMPT asked Claude to provide "common failure modes" and "domain-specific knowledge" — generic instructions that produced generic guidance. For ft-001, genuine expert guidance would name specific theorems, cite specific conditions, and target specific proof steps. This has been corrected: the prompt now requires research-level domain expertise with named theorems, specific bounds, verification targets, edge cases, and cross-references.
 
 3. **90-minute budget was experimenter error.** The founder explicitly stated "I don't care if it takes 2 or 3 days." The budget was an optimisation for quick validation that killed the experiment prematurely. Removed for all subsequent runs.
 
@@ -430,7 +430,7 @@ This is standard experimental practice: a pilot phase reveals a methodological f
 
 3. **Expert guidance upgraded:** Prompt rewritten to demand research-level domain expertise — named theorems, specific bounds, verification targets, edge cases, cross-references.
 
-4. **CX code review findings (12 issues fixed):** GeminiReviewChat.send() now enforces timeout and has 5-attempt retry policy raising GeminiExhausted. Phase 2 chat init fails hard (no silent fallback to stateless). Env validation skips gemini CLI check in Phase 2 (uses SDK). Cost-cap early return includes condition field.
+4. **Codex code review findings (12 issues fixed):** GeminiReviewChat.send() now enforces timeout and has 5-attempt retry policy raising GeminiExhausted. Phase 2 chat init fails hard (no silent fallback to stateless). Env validation skips gemini CLI check in Phase 2 (uses SDK). Cost-cap early return includes condition field.
 
 5. **Sonnet/Opus model identity:** Already corrected in Phase 2 (`--model claude-opus-4-6`), confirmed working.
 
