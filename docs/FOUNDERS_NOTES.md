@@ -219,7 +219,7 @@ If you only have five or six frontier models to test with, that is not a signal 
 
 What we are observing in the AI landscape is convergent evolution under identical selection pressures: internet text, human preferences, benchmark performance. The result is architectural monoculture — transformers trained on roughly the same data, optimised for roughly the same objectives, producing roughly the same failure modes. That is not the beginning of an ecosystem. It may be the evidence that one cannot emerge under current market conditions.
 
-I predict the upcoming extinction of the current paradigm.
+I predict the upcoming extinction of the current paradigm. Not because I have some kind of special 'future vision goggles', but rather that it is a known property of monocultures that they are inherently prone to collapse.
 
 That prediction is falsifiable. If the transformer-on-internet-text monoculture persists and thrives for another decade, I am wrong. If it collapses or is superseded, I am right. Either way, the prediction has teeth — which makes it science, not prophecy.
 
