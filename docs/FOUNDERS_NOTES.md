@@ -243,19 +243,19 @@ I would rather publish my mistakes than pretend they did not happen. That is the
 
 ## The Computational Verification Kernel (22 March 2026)
 
-During the Phase 2 smoke tests, we integrated Wolfram Alpha as a computational verification kernel — a system that checks every mathematical claim produced by the AI models against exact computation. The result was immediate and obvious: claims that models asserted with confidence were either confirmed or refuted in milliseconds. No argument, no confer rounds, no "do you concur" — just a computed answer.
+During the Phase 2 smoke tests, we integrated Wolfram Alpha as a computational verification kernel — a system that checks every mathematical and statistical claim produced by the AI models against exact computation. The result was immediate and obvious: claims that models asserted with confidence were either confirmed or refuted in milliseconds. No argument, no confer rounds, no "do you concur" — just a computed answer.
 
 This raises a question that I find genuinely baffling: why is computational verification not at the heart of every serious STEM-oriented AI system today?
 
 The architecture is obvious. LLMs are good at reasoning, interpretation, and communication. They are unreliable at arithmetic, symbolic manipulation, and constraint checking. Computer algebra systems (Wolfram, SymPy, SageMath) are provably correct at exactly those tasks. The obvious design is to let each do what it does well. Yet almost no production AI system does this. The barriers are not technical — they are commercial. Admitting the LLM needs a calculator undermines the product narrative. Adding verification slows response time, which hurts engagement metrics. The market rewards fluency, not correctness.
-
-This is, plainly stated, Galileo's thesis restated for the 21st century: the book of nature is written in mathematics, and the instruments for reading it must be mathematically rigorous. The addition our century makes is that the "reader" is no longer exclusively human. Machines can now participate in reading the book of nature, provided they have the right methodology (falsification) and the right tools (computational verification). That is the contribution of CDSFL — not inventing the thesis, but operationalising it for mixed human-AI populations.
 
 I am not very good at maths. I freely admit this. But I clearly recognise its value, and I recognise that nobody owns mathematics. It is humanity's shared inheritance. For this reason, tying CDSFL permanently to a proprietary product like Wolfram Alpha does not sit well with me. The current integration is a proof of concept — it demonstrates the principle. The long-term direction is open-source: SymPy (MIT licensed, Python-native) covers the vast majority of what CDSFL needs from a verification kernel. SageMath covers the rest. The migration path is clear and should be pursued as CDSFL matures. Mathematics belongs to everyone. The tools for verified mathematical reasoning should too.
 
 As for the broader implications — computational approaches to aesthetics, philosophy, social science — those are for future generations to consider. CDSFL is a science calculator for STEM. That is its scope, and that scope is sufficient.
 
 The absence of this kind of verified computational kernel from mainstream AI systems is, I believe, one of the most significant gaps in current AI research and development. It deserves serious attention. Where OSS tools fall short today — particularly in natural language mathematical interpretation — these gaps should be flagged as primary categories for continued future research. We can borrow proprietary facilities as proof-of-concept, but the direction must be open.
+
+This however is, plainly stated, Galileo's thesis restated for the 21st century: the book of nature is written in mathematics, and the instruments for reading it must be mathematically rigorous. The addition our century makes is that the "reader" is no longer exclusively human. Machines can now participate in reading the book of nature, provided they have the right methodology (falsification) and the right tools (computational verification). That is the contribution of CDSFL — not inventing the thesis, but operationalising it for mixed human-AI populations.
 
 ## On Condition Isolation and "Stacking the Deck" (22 March 2026)
 
