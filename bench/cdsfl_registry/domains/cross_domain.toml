@@ -1,0 +1,13 @@
+# CDSFL Registry — Layer 2: Cross-Domain Tasks
+# Applied when task spans multiple domains (e.g. "cross-domain").
+# Adds interface-checking requirements between domains.
+
+[verification]
+cross_domain_interface_check = true     # verify assumptions at domain boundaries
+assumption_propagation_audit = true     # track assumptions across domains
+
+[convergence]
+advisory_d_after_round = 2             # tighter advisory threshold for multi-domain
+
+[constraints]
+shared_variable_consistency = true      # variables shared across domains must agree

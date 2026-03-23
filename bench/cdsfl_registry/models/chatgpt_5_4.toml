@@ -1,0 +1,13 @@
+# CDSFL Registry — Layer 4: ChatGPT 5.4
+# Model-specific tuning for OpenAI ChatGPT.
+
+[model]
+name = "chatgpt-5.4"
+alias = "chatgpt"
+timeout = 120
+
+[protocol]
+# ChatGPT works well in pipe mode (single-shot structured response).
+pipe_mode = true
+explicit_format_instructions = true
+structured_output_native = false

@@ -1,0 +1,13 @@
+# CDSFL Registry — Layer 4: Codex 5.3 (CX)
+# Model-specific tuning for Claude Codex.
+
+[model]
+name = "codex-5-3"
+alias = "cx"
+timeout = 300
+reasoning_effort = "xhigh"
+
+[protocol]
+# Codex benefits from explicit format instructions in system prompt.
+explicit_format_instructions = true
+structured_output_native = true

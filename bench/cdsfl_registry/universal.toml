@@ -1,0 +1,35 @@
+# CDSFL Registry — Layer 1: Universal Policy
+# These constraints are ALWAYS enforced, regardless of domain, task, or model.
+# Any lower layer that attempts to weaken a HARD constraint here will trigger
+# a PolicyViolationError at merge time (monotonicity enforcement).
+
+[constraints]
+anti_deference = true           # HARD — schema rejects empty responses
+falsification_required = true   # HARD — every finding must attempt refutation
+hard_soft_classification = true # HARD — all findings must classify constraints
+fail_closed_unassessed = true   # HARD — unassessed HARDs block convergence
+json_schema_required = true     # HARD — all I/O must be structured JSON
+sympy_auto_verify = true        # HARD — verifiable claims checked automatically
+
+[convergence]
+method = "non_compensatory"     # v_comp AND v_struct AND hard_coverage all must pass
+v_comp_threshold = 0.5
+v_struct_threshold = 0.3
+hard_coverage_threshold = 1.0   # ALL HARDs must be assessed — non-negotiable
+advisory_d_after_round = 3
+hard_veto = true                # any unrefuted HARD finding blocks convergence
+
+[anti_deference]
+min_independent_observations = 1
+null_find_requires_scoped_justification = true
+agreement_requires_evidence = true
+
+[verification]
+sympy_timeout_seconds = 10
+sympy_sandbox = true
+peer_support_min_families = 2   # cross-family matches only
+
+[protocol]
+max_rounds = 5
+stop_rule = "counting_plus_verify"
+blind_first = true

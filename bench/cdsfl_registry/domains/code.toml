@@ -1,0 +1,11 @@
+# CDSFL Registry — Layer 2: Code/Software Domain
+# Applied when task domain is "software" or "code".
+
+[verification]
+static_analysis = true              # run static analysis where available
+test_execution = "when_available"   # execute tests if runtime is present
+type_check = true                   # verify type consistency in typed languages
+
+[constraints]
+deterministic_output = true         # code solutions must be deterministic
+edge_case_coverage = true           # findings must address boundary conditions

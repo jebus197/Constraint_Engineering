@@ -1,0 +1,13 @@
+# CDSFL Registry — Layer 4: Gemini 3.1 Pro
+# Model-specific tuning for Google Gemini.
+
+[model]
+name = "gemini-3.1-pro"
+alias = "gemini"
+timeout = 150
+
+[protocol]
+# Gemini needs explicit JSON schema in prompt for reliable structured output.
+explicit_format_instructions = true
+structured_output_native = false
+json_schema_in_prompt = true
