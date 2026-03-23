@@ -271,6 +271,18 @@ Nobody gets punished. People are simply required to be honest about their work. 
 
 It is this scepticism — honest, rigorous, Popperian scepticism — that I hope to help restore.
 
+## The Inverse Square Root Law and Chatbot Churn (23 March 2026)
+
+During the Phase 2 smoke tests, an observation emerged from the round-by-round finding data that connects to well-established statistics. The Inverse Square Root Law of Precision predicts that each additional measurement yields diminishing returns: to halve the error, you must quadruple the measurements. Or in intuitive terms: if you keep rolling a ball up an ever steeper hill, eventually the work you put in will clearly outweigh the reward for your effort.
+
+This applies directly to iterative review. A reviewer doing genuine analysis will produce fewer findings in each successive round, because the easy-to-find issues are exhausted first. The curve decays. This is what Codex 5.3 produced on ft-001/CDSFL: 5, 3, 2, 2, 0. A clear convergent curve — the model was exhausting a finite set of real issues.
+
+DeepSeek V3 on the same task under Control produced: 2, 2, 2, 2. A flat line. The same number of "new findings" in every round, regardless of whether there was anything left to find. This violates the inverse square root law, which all genuine measurement processes obey.
+
+The flat line is the mathematical signature of chatbot behaviour: producing output because output is expected, not because there is something to report. DeepSeek compounded this by simultaneously stating "concur_stop=True" (I agree we should stop) while generating "new" findings — saying "I have nothing more to add" and "here are two more things" in the same breath. Gemini 3.1 Pro exhibited the same behaviour in earlier tests.
+
+This is not a criticism of any specific model. It is an observation about the fundamental tension between engagement optimisation and analytical accuracy. Models trained to be helpful will produce content when asked, even when the honest answer is "there is nothing more to find." CDSFL's verification kernel addresses this directly: under CDSFL conditions, each finding is computationally verified via SymPy. A flat finding curve with a low verification rate is pure churn. A decaying curve with a high verification rate is genuine analysis. The inverse square root law provides the diagnostic. The verification kernel provides the confirmation.
+
 ## On Condition Isolation and "Stacking the Deck" (22 March 2026)
 
 A predictable criticism of the CDSFL bench test is that we are stacking things in CDSFL's favour by giving it external research tools, computational verification, and structured expert guidance while giving the control condition nothing. This criticism misunderstands what is being tested.

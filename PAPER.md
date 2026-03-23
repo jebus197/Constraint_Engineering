@@ -636,6 +636,16 @@ Opus 4.6 sets the problems, provides expert guidance (in HIL/CDSFL+HIL condition
 
 Each task runs blind dual review (round 1), then confer rounds (rounds 2-5). In round 1, both reviewers work independently. In subsequent rounds, each reviewer sees the other's findings and can add novel findings, upgrade/downgrade severity, or concur with stopping. Pre-registered stop rule: 2 consecutive rounds with zero novel HARD findings AND both reviewers concur = stop. Maximum 5 rounds regardless.
 
+### Convergence Diagnostic: The Inverse Square Root Law
+
+The Inverse Square Root Law of Precision (SE = σ/√n) predicts that each additional measurement yields diminishing returns. Applied to iterative review: genuine analysis produces a convergent finding curve (each round finds fewer novel issues than the last, because the easy-to-find issues are exhausted first). This is an inherent property of all real measurement processes.
+
+This provides a built-in diagnostic for distinguishing genuine analysis from engagement-optimised chatbot behaviour. A model doing real analysis produces a decaying curve — consistent with the inverse square root law and with the G_n formula's geometric decay term (1-ρ)^n. A model producing churn generates a flat or near-flat line — constant output regardless of whether anything remains to find. A flat finding curve violates the inverse square root law and indicates the model is generating content because it is expected to, not because there are genuine issues to report.
+
+Observed in Phase 2 smoke testing: Codex 5.3 on ft-001/CDSFL produced 5 → 3 → 2 → 2 → 0 findings across rounds (convergent, consistent with genuine analysis). DeepSeek V3 on ft-001/Control produced 2 → 2 → 2 → 2 findings across confer rounds (flat, consistent with chatbot churn). DeepSeek simultaneously reported concur_stop=True while generating "new" findings — contradictory behaviour characteristic of engagement-optimised language models.
+
+The SymPy verification kernel (CDSFL conditions only) provides a complementary diagnostic: what fraction of a model's findings are computationally verified as correct? A model with a flat finding curve AND a low verification rate is producing pure churn. A model with a decaying curve AND a high verification rate is doing genuine falsification work.
+
 ### Cryptographic Verification
 
 SHA-256 hash per-round input, hash chain linking each record to its predecessor, per-task Merkle root. Canonical defect key: hash of (task_id, constraint_class, claim_normalized) for stable deduplication across rounds.

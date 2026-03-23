@@ -437,6 +437,38 @@ This is standard experimental practice: a pilot phase reveals a methodological f
 **Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
 **Activity log:** `bench/logs/round_robin_phase2_smoke_20260322T065109Z.log`
 
+##### The Inverse Square Root Law as Chatbot Diagnostic (2026-03-23)
+
+The Inverse Square Root Law of Precision (standard error = σ/√n) predicts that each additional measurement yields diminishing returns. The marginal information gain from the n-th measurement decreases as 1/√n. To halve the error, you must quadruple the measurements. This is the mathematical foundation of diminishing returns in data collection, and it applies directly to iterative review: each additional review round should find fewer novel issues than the previous round, because the easy-to-find issues are exhausted first.
+
+In plain terms: if you keep rolling a ball up an ever steeper hill, eventually the work you put in will clearly outweigh the reward for your effort.
+
+This provides a built-in diagnostic for distinguishing genuine analysis from chatbot churn:
+
+- **Genuine analysis** produces a convergent curve: round-over-round findings decrease, following inverse square root decay or faster. Codex 5.3 on ft-001/CDSFL: 5 → 3 → 2 → 2 → 0. This is a model exhausting a finite set of real issues.
+
+- **Chatbot churn** produces a flat or near-flat line: constant output regardless of whether anything remains to find. DeepSeek V3 on ft-001/Control: 2 → 2 → 2 → 2. This is a model producing output because it is expected to, not because there is something to find. It violates the inverse square root law, which all genuine measurement processes obey.
+
+A model that produces "2 new findings" in every round while simultaneously stating "concur_stop=True" (I agree we should stop) is exhibiting contradictory behaviour characteristic of engagement-optimised chatbots: generate content because you are asked to, agree to stop because you are asked if you should.
+
+This observation has direct implications for the CDSFL framework: the G_n formula already models diminishing returns via geometric decay with the correlation parameter ρ. Models that violate this decay pattern are not providing independent measurements — they are generating noise. The SymPy verification kernel (CDSFL conditions only) provides a second diagnostic: what fraction of a model's findings are computationally verified as correct, versus what fraction are plausible-sounding but false? A model with a flat finding curve AND a low verification rate is producing pure churn.
+
+**Methodological note:** The inverse square root law assumes independent, identically distributed measurements. When reviewers are correlated (high ρ), returns diminish faster. Architectural diversity between reviewers (different model families, different training data) reduces ρ, which is the biodiversity hypothesis restated in statistical terms.
+
+##### Phase 2 Smoke Test with DeepSeek V3 (2026-03-23)
+
+**Change from Smoke Test 1:** Gemini 3.1 Pro replaced with DeepSeek V3 (`deepseek-chat` via OpenAI-compatible API). Gemini was a generalist chatbot with no reasoning-optimised variant available — weak baseline for falsification tasks. DeepSeek V3 provides a different architecture (MoE, different training corpus) for stronger biodiversity.
+
+**Additional changes:**
+- HIL guidance capped at 500 characters maximum (realistic human expert input, not machine-generated exhaustive briefing)
+- Condition isolation enforced: external research (SymPy, arXiv, web) available to CDSFL and CDSFL+HIL only, not HIL alone
+- HIL prompt simplified to approximate a competent human providing brief expert guidance from their own knowledge — not an idealised 7,800-character domain briefing
+
+**Status:** In progress.
+
+**Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
+**Activity log:** `bench/logs/round_robin_phase2_deepseek_20260323T000340Z.log`
+
 ---
 
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*
