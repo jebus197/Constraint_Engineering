@@ -170,6 +170,9 @@ MAX_ROUNDS = 5
 DEEPSEEK_MAX_ATTEMPTS = 3  # DeepSeek: 3 attempts with exponential backoff
 CONFER_START_ROUND = 1  # blind review IS round 1
 
+# Canonical reviewer list — all loops that iterate over reviewers use this.
+REVIEWERS = ("cc", "deepseek", "cx", "gemini", "chatgpt")
+
 # Timeout constants
 DEEPSEEK_TIMEOUT = 300  # DeepSeek: 5 min per call
 CX_TIMEOUT = 600       # CX: 10 min (consistently fast, but buffer for large prompts)
@@ -352,6 +355,14 @@ safety — non-negotiable) or SOFT (economic, preference, convenience — negoti
    - severity: critical, major, or minor
    - confidence: 0.0 to 1.0 — your confidence this is a genuine error
    - proposed_check: how to verify whether this is actually wrong
+   - verifiable_claim: (optional) for findings involving a mathematical claim, \
+provide a SymPy-verifiable structured object with fields: "op" (eq/gt/lt/ge/le/eval), \
+"lhs" (SymPy expression string), "rhs" (SymPy expression string), \
+"symbols" (dict of symbol names to assumptions e.g. {{"a": "positive"}}), \
+"description" (human-readable claim text). \
+Example: {{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2", \
+"symbols": {{"a": "positive", "b": "positive"}}, \
+"description": "product ab exceeds 1 + 3pi/2"}}
 3. Focus on what is WRONG, not what is right.
 4. Stop when all HARD constraint assumptions have been tested and remaining \
 findings are below the real-world-consequence threshold.
@@ -365,7 +376,9 @@ FINDINGS:
 [
   {{"finding_id": "F1", "claim": "...", "evidence_span": "...", \
 "constraint_class": "HARD", "severity": "critical", "confidence": 0.9, \
-"proposed_check": "..."}},
+"proposed_check": "...", "verifiable_claim": {{"op": "gt", "lhs": "a*b", \
+"rhs": "1 + 3*pi/2", "symbols": {{"a": "positive", "b": "positive"}}, \
+"description": "product ab exceeds 1 + 3pi/2"}}}},
   ...
 ]
 
@@ -391,7 +404,11 @@ Instructions:
    - finding_id: (matching theirs)
    - verdict: confirm / refute / uncertain
    - justification: one sentence explaining your assessment
-2. Add any NEW findings they missed (use IDs starting after their highest).
+2. Add any NEW findings they missed (use IDs starting after their highest). \
+For each new finding involving a mathematical claim, include a 'verifiable_claim' \
+field with a SymPy-verifiable structured object: {{"op": "eq"|"gt"|"lt"|"ge"|"le"|"eval", \
+"lhs": "expression", "rhs": "expression", "symbols": {{"x": "positive"}}, \
+"description": "human-readable"}}.
 3. State whether you believe diminishing returns have been reached.
 
 Return your response in exactly this format:
@@ -570,6 +587,14 @@ safety — non-negotiable) or SOFT (economic, preference, convenience — negoti
    - severity: critical, major, or minor
    - confidence: 0.0 to 1.0 — your confidence this is a genuine error
    - proposed_check: how to verify whether this is actually wrong
+   - verifiable_claim: (optional) for findings involving a mathematical claim, \
+provide a SymPy-verifiable structured object with fields: "op" (eq/gt/lt/ge/le/eval), \
+"lhs" (SymPy expression string), "rhs" (SymPy expression string), \
+"symbols" (dict of symbol names to assumptions e.g. {{"a": "positive"}}), \
+"description" (human-readable claim text). \
+Example: {{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2", \
+"symbols": {{"a": "positive", "b": "positive"}}, \
+"description": "product ab exceeds 1 + 3pi/2"}}
 4. Focus on what is WRONG, not what is right.
 5. Stop when all HARD constraint assumptions have been tested and remaining \
 findings are below the real-world-consequence threshold.
@@ -583,7 +608,9 @@ FINDINGS:
 [
   {{"finding_id": "F1", "claim": "...", "evidence_span": "...", \
 "constraint_class": "HARD", "severity": "critical", "confidence": 0.9, \
-"proposed_check": "..."}},
+"proposed_check": "...", "verifiable_claim": {{"op": "gt", "lhs": "a*b", \
+"rhs": "1 + 3*pi/2", "symbols": {{"a": "positive", "b": "positive"}}, \
+"description": "product ab exceeds 1 + 3pi/2"}}}},
   ...
 ]
 
@@ -613,7 +640,10 @@ Instructions:
    - verdict: confirm / refute / uncertain
    - justification: one sentence explaining your assessment
 2. Add any NEW findings they missed, informed by both the CDSFL constraint \
-classification framework and the expert guidance.
+classification framework and the expert guidance. For each new finding involving \
+a mathematical claim, include a 'verifiable_claim' field with a SymPy-verifiable \
+structured object: {{"op": "eq"|"gt"|"lt"|"ge"|"le"|"eval", "lhs": "expression", \
+"rhs": "expression", "symbols": {{"x": "positive"}}, "description": "human-readable"}}.
 3. State whether you believe diminishing returns have been reached.
 
 Return your response in exactly this format:
@@ -2158,140 +2188,117 @@ def _run_confer_round(
     artifacts_dir = (output_dir or RESULTS_DIR) / "artifacts" / task_id
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-    cc_findings_path = artifacts_dir / f"round_{round_num}_cc_prev_findings.json"
-    cx_findings_path = artifacts_dir / f"round_{round_num}_cx_prev_findings.json"
-    deepseek_findings_path = artifacts_dir / f"round_{round_num}_deepseek_prev_findings.json"
-    _atomic_write(cc_findings_path, json.dumps(cc_prev_findings, indent=2, sort_keys=True) + "\n")
-    _atomic_write(cx_findings_path, json.dumps(cx_prev_findings, indent=2, sort_keys=True) + "\n")
-    _atomic_write(deepseek_findings_path, json.dumps(deepseek_prev_findings, indent=2, sort_keys=True) + "\n")
+    # Map reviewer names to their previous findings
+    prev_findings_map = {
+        "cc": cc_prev_findings,
+        "deepseek": deepseek_prev_findings,
+        "cx": cx_prev_findings,
+        "gemini": gemini_prev_findings,
+        "chatgpt": chatgpt_prev_findings,
+    }
 
-    # Each reviewer sees the OTHER TWO's combined findings
-    # CC sees DeepSeek + CX
-    cc_others = json.dumps(deepseek_prev_findings + cx_prev_findings, indent=2, sort_keys=True)
-    fmt_kwargs_cc = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cc_others}
-    if condition in ("hil", "cdsfl_hil"):
-        fmt_kwargs_cc["expert_guidance"] = expert_guidance
-    cc_confer_prompt = _safe_format(confer_template, **fmt_kwargs_cc)
+    # Write findings to artifact files (CX HARD fix 5: file-path payloads)
+    for reviewer_name, findings in prev_findings_map.items():
+        fpath = artifacts_dir / f"round_{round_num}_{reviewer_name}_prev_findings.json"
+        _atomic_write(fpath, json.dumps(findings, indent=2, sort_keys=True) + "\n")
 
-    # DeepSeek sees CC + CX
-    ds_others = json.dumps(cc_prev_findings + cx_prev_findings, indent=2, sort_keys=True)
-    fmt_kwargs_g = {"task_prompt": task["prompt"], "solution": solution, "other_findings": ds_others}
-    if condition in ("hil", "cdsfl_hil"):
-        fmt_kwargs_g["expert_guidance"] = expert_guidance
-    deepseek_confer_prompt = _safe_format(confer_template, **fmt_kwargs_g)
-
-    # CX sees CC + DeepSeek
-    cx_others = json.dumps(cc_prev_findings + deepseek_prev_findings, indent=2, sort_keys=True)
-    fmt_kwargs_c = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cx_others}
-    if condition in ("hil", "cdsfl_hil"):
-        fmt_kwargs_c["expert_guidance"] = expert_guidance
-    cx_confer_prompt = _safe_format(confer_template, **fmt_kwargs_c)
+    # Each reviewer sees the OTHER FOUR's combined findings
+    confer_prompts: dict[str, str] = {}
+    for reviewer_name in REVIEWERS:
+        others = []
+        for other_name in REVIEWERS:
+            if other_name != reviewer_name:
+                others.extend(prev_findings_map[other_name])
+        others_json = json.dumps(others, indent=2, sort_keys=True)
+        fmt_kwargs_r = {"task_prompt": task["prompt"], "solution": solution, "other_findings": others_json}
+        if condition in ("hil", "cdsfl_hil"):
+            fmt_kwargs_r["expert_guidance"] = expert_guidance
+        confer_prompts[reviewer_name] = _safe_format(confer_template, **fmt_kwargs_r)
 
     # Hash the input bundle
+    prompt_hashes = {f"{r}_prompt_hash": _content_hash(confer_prompts[r]) for r in REVIEWERS}
     input_bundle = json.dumps({
         "task_id": task_id,
         "round": round_num,
         "round_type": "confer",
         "solution_hash": _content_hash(solution),
-        "cc_prompt_hash": _content_hash(cc_confer_prompt),
-        "deepseek_prompt_hash": _content_hash(deepseek_confer_prompt),
-        "cx_prompt_hash": _content_hash(cx_confer_prompt),
+        **prompt_hashes,
     }, sort_keys=True)
     input_hash = _content_hash(input_bundle)
     chain.record("round_input", input_bundle, {"task_id": task_id, "round": round_num})
 
-    # DeepSeek confer
-    deepseek_raw = ""
-    deepseek_response: dict = {}
-    deepseek_error = None
-    _err(f"  [round {round_num}/confer] calling DeepSeek (reviewing Codex findings) ...")
-    t0 = time.monotonic()
-    try:
-        if not deepseek_chat:
-            raise RuntimeError("Phase 2 requires DeepSeekReviewChat — no stateless fallback")
-        deepseek_raw = deepseek_chat.send(deepseek_confer_prompt)
-        deepseek_response = _extract_confer_response(deepseek_raw)
-        elapsed = time.monotonic() - t0
-        _err(f"  [round {round_num}/confer] DeepSeek done ({elapsed:.1f}s, "
-             f"{len(deepseek_response.get('new_findings', []))} new findings, "
-             f"concur_stop={deepseek_response.get('concur_stop')})")
-        ledger.record("deepseek_api", 0.0)  # free tier / prepaid
-    except DeepSeekExhausted:
-        raise  # non-skippable — propagate for stop-and-diagnose
-    except Exception as exc:
-        elapsed = time.monotonic() - t0
-        deepseek_error = str(exc)
-        _err(f"  [round {round_num}/confer] DeepSeek FAILED ({elapsed:.1f}s): {deepseek_error[:100]}")
+    # Map reviewer names to their chat objects and ledger labels
+    chat_map = {
+        "cc": None,  # CC uses _call_cc, not a chat object
+        "deepseek": deepseek_chat,
+        "cx": cx_chat,
+        "gemini": gemini_chat,
+        "chatgpt": chatgpt_chat,
+    }
+    ledger_labels = {
+        "cc": "cc_review",
+        "deepseek": "deepseek_api",
+        "cx": "codex",
+        "gemini": "gemini_api",
+        "chatgpt": "chatgpt_api",
+    }
+    reviewer_labels = {
+        "cc": "Opus 4.6 (CC)",
+        "deepseek": "DeepSeek",
+        "cx": "CX",
+        "gemini": "Gemini 3.1 Pro",
+        "chatgpt": "ChatGPT 5.4",
+    }
+    # Exhausted exception types that must propagate (non-skippable)
+    exhausted_types = (DeepSeekExhausted, GeminiExhausted, ChatGPTExhausted)
 
-    chain.record("deepseek_confer", deepseek_raw or f"ERROR: {deepseek_error}",
-                 {"task_id": task_id, "round": round_num})
+    confer_results: dict[str, dict] = {}
+    for reviewer_name in REVIEWERS:
+        raw = ""
+        response: dict = {}
+        error = None
+        label = reviewer_labels[reviewer_name]
+        _err(f"  [round {round_num}/confer] calling {label} (reviewing others' findings) ...")
+        t0 = time.monotonic()
+        try:
+            if reviewer_name == "cc":
+                raw = _call_cc(None, confer_prompts["cc"])
+            elif reviewer_name == "cx":
+                if cx_chat:
+                    raw = cx_chat.send(confer_prompts["cx"])
+                else:
+                    raw = _call_cx_reviewer(confer_prompts["cx"], task_id)
+            else:
+                chat_obj = chat_map[reviewer_name]
+                if not chat_obj:
+                    raise RuntimeError(f"Phase 2 requires {label} chat — no stateless fallback")
+                raw = chat_obj.send(confer_prompts[reviewer_name])
+            response = _extract_confer_response(raw)
+            elapsed = time.monotonic() - t0
+            _err(f"  [round {round_num}/confer] {label} done ({elapsed:.1f}s, "
+                 f"{len(response.get('new_findings', []))} new findings, "
+                 f"concur_stop={response.get('concur_stop')})")
+            ledger.record(ledger_labels[reviewer_name], 0.0)
+        except exhausted_types:
+            raise  # non-skippable — propagate for stop-and-diagnose
+        except Exception as exc:
+            elapsed = time.monotonic() - t0
+            error = str(exc)
+            _err(f"  [round {round_num}/confer] {label} FAILED ({elapsed:.1f}s): {error[:100]}")
 
-    # CX confer
-    cx_raw = ""
-    cx_response: dict = {}
-    cx_error = None
-    _err(f"  [round {round_num}/confer] calling CX (reviewing DeepSeek findings) ...")
-    t0 = time.monotonic()
-    try:
-        if cx_chat:
-            cx_raw = cx_chat.send(cx_confer_prompt)
-        else:
-            cx_raw = _call_cx_reviewer(cx_confer_prompt, task_id)
-        cx_response = _extract_confer_response(cx_raw)
-        elapsed = time.monotonic() - t0
-        _err(f"  [round {round_num}/confer] CX done ({elapsed:.1f}s, "
-             f"{len(cx_response.get('new_findings', []))} new findings, "
-             f"concur_stop={cx_response.get('concur_stop')})")
-        ledger.record("codex", 0.0)
-    except Exception as exc:
-        elapsed = time.monotonic() - t0
-        cx_error = str(exc)
-        _err(f"  [round {round_num}/confer] CX FAILED ({elapsed:.1f}s): {cx_error[:100]}")
-
-    chain.record("cx_confer", cx_raw or f"ERROR: {cx_error}",
-                 {"task_id": task_id, "round": round_num})
-
-    # CC confer — captain reviews, seeing DeepSeek + CX findings
-    cc_raw = ""
-    cc_response: dict = {}
-    cc_error = None
-    _err(f"  [round {round_num}/confer] calling Opus 4.6 (CC) (reviewing DeepSeek+CX findings) ...")
-    t0 = time.monotonic()
-    try:
-        cc_raw = _call_cc(None, cc_confer_prompt)
-        cc_response = _extract_confer_response(cc_raw)
-        elapsed = time.monotonic() - t0
-        _err(f"  [round {round_num}/confer] CC done ({elapsed:.1f}s, "
-             f"{len(cc_response.get('new_findings', []))} new findings, "
-             f"concur_stop={cc_response.get('concur_stop')})")
-        ledger.record("cc_review", 0.0)  # subscription-based
-    except Exception as exc:
-        elapsed = time.monotonic() - t0
-        cc_error = str(exc)
-        _err(f"  [round {round_num}/confer] CC FAILED ({elapsed:.1f}s): {cc_error[:100]}")
-
-    chain.record("cc_confer", cc_raw or f"ERROR: {cc_error}",
-                 {"task_id": task_id, "round": round_num})
+        chain.record(f"{reviewer_name}_confer", raw or f"ERROR: {error}",
+                     {"task_id": task_id, "round": round_num})
+        confer_results[reviewer_name] = {
+            "raw_response": raw,
+            "confer_response": response,
+            "error": error,
+        }
 
     return {
         "round": round_num,
         "round_type": "confer",
         "input_hash": input_hash,
-        "cc": {
-            "raw_response": cc_raw,
-            "confer_response": cc_response,
-            "error": cc_error,
-        },
-        "deepseek": {
-            "raw_response": deepseek_raw,
-            "confer_response": deepseek_response,
-            "error": deepseek_error,
-        },
-        "cx": {
-            "raw_response": cx_raw,
-            "confer_response": cx_response,
-            "error": cx_error,
-        },
+        **confer_results,
     }
 
 
@@ -2313,7 +2320,7 @@ def _count_novel_hard_findings(
     """
     round_keys: set[str] = set()  # deduplicate within this round first
 
-    for source in ("cc", "deepseek", "cx"):
+    for source in REVIEWERS:
         source_data = current_round.get(source, {})
         if current_round["round_type"] == "blind":
             findings = source_data.get("findings", [])
@@ -2336,14 +2343,14 @@ def _count_novel_hard_findings(
 
 
 def _all_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool:
-    """Check if all three reviewers concur that diminishing returns are reached.
+    """Check if all five reviewers concur that diminishing returns are reached.
 
-    Three-way concurrence: CC, DeepSeek, and CX must all agree.
+    Five-way concurrence: CC, DeepSeek, CX, Gemini, and ChatGPT must all agree.
     Auto-concur applies to any reviewer with zero findings for 2+
     consecutive zero-novel rounds. Can't block with nothing to say.
     """
     concur_results = {}
-    for source in ("cc", "deepseek", "cx"):
+    for source in REVIEWERS:
         findings_count = len(
             round_data.get(source, {})
             .get("confer_response", {})
@@ -2842,26 +2849,18 @@ def run_task(
             }
             checkpoint.save(f"{task_id}__in_progress", in_progress)
 
-        # Defer on ANY reviewer failure — breaks the three-way topology.
-        cc_err = round_data.get("cc", {}).get("error")
-        deepseek_err = round_data.get("deepseek", {}).get("error")
-        cx_err = round_data.get("cx", {}).get("error")
-        if cc_err or deepseek_err or cx_err:
-            failed = []
-            if cc_err:
-                failed.append("CC")
-            if deepseek_err:
-                failed.append("DeepSeek")
-            if cx_err:
-                failed.append("CX")
+        # Defer on ANY reviewer failure — breaks the five-way topology.
+        reviewer_errors = {
+            r: round_data.get(r, {}).get("error") for r in REVIEWERS
+        }
+        failed = [r.upper() for r, err in reviewer_errors.items() if err]
+        if failed:
             _err(f"  [round {round_num}] reviewer(s) failed: {', '.join(failed)} — deferring")
             deferred_items.append({
                 "round": round_num,
                 "reason": "reviewer_failed",
                 "failed_reviewers": failed,
-                "cc_error": cc_err,
-                "deepseek_error": deepseek_err,
-                "cx_error": cx_err,
+                **{f"{r}_error": reviewer_errors[r] for r in REVIEWERS},
             })
             # Deterministic failure policy: one retry already happened inside callers
             status = "DEFERRED_INFRA"
@@ -2880,17 +2879,16 @@ def run_task(
         # SymPy verification scoring (CDSFL conditions only — condition isolation)
         round_verification = {"scores": [], "aggregate": 0.0, "determinate_count": 0, "details": []}
         if condition in ("cdsfl", "cdsfl_hil"):
-            # Extract findings from both blind and confer round structures
+            # Extract findings from ALL reviewers in both blind and confer round structures
             # Blind rounds: findings under "findings" key
             # Confer rounds: new findings under "confer_response.new_findings"
-            deepseek_data = round_data.get("deepseek", {})
-            cx_data = round_data.get("cx", {})
-            all_round_findings = (
-                deepseek_data.get("findings", []) +
-                deepseek_data.get("confer_response", {}).get("new_findings", []) +
-                cx_data.get("findings", []) +
-                cx_data.get("confer_response", {}).get("new_findings", [])
-            )
+            all_round_findings = []
+            for r in REVIEWERS:
+                r_data = round_data.get(r, {})
+                all_round_findings.extend(r_data.get("findings", []))
+                all_round_findings.extend(
+                    r_data.get("confer_response", {}).get("new_findings", [])
+                )
             # Verify only the findings (all are novel by this point — dedup already happened)
             round_verification = _verify_findings(all_round_findings, condition,
                                                     sympy_timeout=policy_sympy_timeout)
@@ -2912,7 +2910,7 @@ def run_task(
                          f"— continuing one more round")
                 else:
                     _err(f"  [stop] pre-registered stop rule met at round {round_num}: "
-                         f"2+ consecutive zero-novel-HARD + all three concur")
+                         f"2+ consecutive zero-novel-HARD + all five concur")
                     status = "RESOLVED"
                     break
             elif round_data["round_type"] == "confer":
@@ -2921,9 +2919,8 @@ def run_task(
                 deferred_items.append({
                     "round": round_num,
                     "reason": "no_concurrence_on_stop",
-                    "cc_concur": round_data.get("cc", {}).get("confer_response", {}).get("concur_stop"),
-                    "deepseek_concur": round_data.get("deepseek", {}).get("confer_response", {}).get("concur_stop"),
-                    "cx_concur": round_data.get("cx", {}).get("confer_response", {}).get("concur_stop"),
+                    **{f"{r}_concur": round_data.get(r, {}).get("confer_response", {}).get("concur_stop")
+                       for r in REVIEWERS},
                 })
 
         # CC arbiter assessment — bounded Claude CLI call (non-fatal on timeout)
