@@ -127,6 +127,12 @@ from run_benchmark import (
     load_tasks,
 )
 
+from cdsfl_registry.registry import (
+    load_effective_policy,
+    validate_all_policies,
+    PolicyViolationError,
+)
+
 # Override _err with timestamped version — founder needs timestamps to
 # distinguish "stuck" from "slow" during long runs.
 def _err(msg: str) -> None:
@@ -177,6 +183,15 @@ FINDING_FIELDS = (
     "finding_id", "claim", "evidence_span", "constraint_class",
     "severity", "confidence", "proposed_check", "verifiable_claim",
 )
+
+# Registry model name mapping: script internal name -> registry filename (without .toml)
+REGISTRY_MODEL_MAP = {
+    "cc": "opus_4_6",
+    "deepseek": "deepseek_v3",
+    "cx": "codex_5_3",
+    "gemini": "gemini_3_1_pro",
+    "chatgpt": "chatgpt_5_4",
+}
 
 # Verified confer protocol constants (CDSFL conditions only)
 VERIFY_CONTINUE_THRESHOLD = 0.8  # if aggregate >= this AND counting says stop, continue
@@ -712,7 +727,7 @@ exact theorem names. Do not be vague.
 """
 
 
-def _verify_sympy(claim: dict) -> dict:
+def _verify_sympy(claim: dict, timeout: int = 10) -> dict:
     """SymPy verification kernel — OSS replacement for Wolfram Alpha.
 
     Runs SymPy in a subprocess sandbox to prevent code injection from
@@ -832,7 +847,7 @@ except Exception as exc:
     try:
         proc = sp.run(
             [sys.executable, "-c", verify_script],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=timeout,
             env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         )
         if proc.returncode == 0 and proc.stdout.strip():
@@ -843,7 +858,7 @@ except Exception as exc:
                     "method": "unverifiable",
                     "expression": f"{lhs} {op} {rhs}"}
     except sp.TimeoutExpired:
-        return {"verified": None, "result": "verification timed out (10s)",
+        return {"verified": None, "result": f"verification timed out ({timeout}s)",
                 "method": "unverifiable", "expression": f"{lhs} {op} {rhs}"}
     except Exception as exc:
         return {"verified": None, "result": f"verification failed: {exc}",
@@ -1478,6 +1493,162 @@ class DeepSeekExhausted(Exception):
     prompt_size: int = 0
 
 
+class GeminiReviewChat:
+    """Multi-turn review conversation with Gemini 3.1 Pro via SDK.
+
+    Re-added for 5-model ecosystem test. Native multi-turn chat via
+    client.chats.create(). 5-attempt retry with timeout enforcement.
+    """
+
+    GEMINI_TIMEOUT = 300
+    GEMINI_MAX_ATTEMPTS = 5
+
+    def __init__(self):
+        from google import genai
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY / GOOGLE_API_KEY not set")
+        self.client = genai.Client(api_key=api_key)
+        self.chat = self.client.chats.create(
+            model="gemini-3.1-pro-preview",
+            config=genai.types.GenerateContentConfig(
+                max_output_tokens=32768,
+                temperature=0.0,
+            ),
+        )
+
+    def _send_once(self, prompt: str, timeout: int) -> str:
+        """Single send attempt with hard timeout enforcement."""
+        import concurrent.futures
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = pool.submit(self.chat.send_message, prompt)
+        try:
+            response = future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            pool.shutdown(wait=False, cancel_futures=True)
+            raise
+        pool.shutdown(wait=False)
+        text = response.text or ""
+        return text.strip()
+
+    def send(self, prompt: str, timeout: int = 300) -> str:
+        """Send with 5-attempt retry. Raises GeminiExhausted on failure."""
+        _prompt_size_check(prompt, "gemini_chat")
+        last_error = None
+        for attempt in range(1, self.GEMINI_MAX_ATTEMPTS + 1):
+            if attempt > 1:
+                _err(f"    [gemini_chat retry] attempt {attempt}/{self.GEMINI_MAX_ATTEMPTS}")
+            t0 = time.monotonic()
+            try:
+                text = self._send_once(prompt, timeout)
+                elapsed = time.monotonic() - t0
+                _err(f"  [gemini_chat] done ({elapsed:.1f}s, {len(text)} chars)")
+                return text
+            except Exception as e:
+                elapsed = time.monotonic() - t0
+                last_error = e
+                _err(f"    [gemini_chat retry] attempt {attempt} failed "
+                     f"({elapsed:.1f}s): {str(e)[:100]}")
+                time.sleep(3)
+
+        exc = GeminiExhausted(
+            f"Gemini chat failed all {self.GEMINI_MAX_ATTEMPTS} attempts. "
+            f"Last error: {last_error}"
+        )
+        exc.prompt_size = len(prompt)
+        raise exc
+
+
+class GeminiExhausted(Exception):
+    """Raised when Gemini fails all retry attempts."""
+    prompt_size: int = 0
+
+
+class ChatGPTReviewChat:
+    """Multi-turn review conversation with GPT-5.4 via chatgpt CLI.
+
+    Uses kardolus/chatgpt-cli in pipe mode. Stateless per call,
+    so we accumulate conversation history manually (same approach as CX).
+    """
+
+    CHATGPT_TIMEOUT = 600  # 10 min — GPT-5.4 can be slow on complex reviews
+    CHATGPT_MAX_ATTEMPTS = 3
+
+    def __init__(self, task_id: str):
+        self.task_id = task_id
+        self.history: list[tuple[str, str]] = []  # (role, text)
+
+    def send(self, prompt: str, timeout: int = 600) -> str:
+        """Send a message, including prior conversation context."""
+        self.history.append(("orchestrator", prompt))
+
+        # Build full conversation
+        if len(self.history) == 1:
+            full_prompt = prompt
+        else:
+            parts = [
+                "This is a continuing review conversation. "
+                "Your previous analyses are shown below. "
+                "Build on YOUR OWN prior findings — do not repeat them.\n"
+            ]
+            # Context cap: keep full text of latest 2 rounds, summarise older
+            recent_start = max(0, len(self.history) - 5)  # last ~2.5 exchanges
+            for role, text in self.history[recent_start:-1]:
+                label = "ORCHESTRATOR" if role == "orchestrator" else "YOUR RESPONSE"
+                parts.append(f"--- {label} ---\n{text}\n")
+            parts.append(f"--- ORCHESTRATOR (current round) ---\n{prompt}\n")
+            parts.append("Respond to this round now, building on your prior analysis above.")
+            full_prompt = "\n".join(parts)
+
+        _prompt_size_check(full_prompt, "chatgpt_chat")
+        last_error = None
+
+        for attempt in range(1, self.CHATGPT_MAX_ATTEMPTS + 1):
+            if attempt > 1:
+                _err(f"    [chatgpt retry] attempt {attempt}/{self.CHATGPT_MAX_ATTEMPTS}")
+            t0 = time.monotonic()
+            try:
+                result = sp.run(
+                    ["chatgpt", "-q", "--model", "gpt-5.4"],
+                    input=full_prompt,
+                    capture_output=True, text=True, timeout=timeout,
+                )
+                elapsed = time.monotonic() - t0
+                text = result.stdout.strip()
+                if not text:
+                    raise RuntimeError(
+                        f"chatgpt returned empty output "
+                        f"(exit {result.returncode}, stderr: {result.stderr[:200]})"
+                    )
+                _err(f"  [chatgpt_chat] done ({elapsed:.1f}s, {len(text)} chars)")
+                self.history.append(("reviewer", text))
+                return text
+            except sp.TimeoutExpired:
+                elapsed = time.monotonic() - t0
+                last_error = RuntimeError(f"chatgpt timed out after {timeout}s")
+                _err(f"    [chatgpt retry] attempt {attempt} timed out ({elapsed:.1f}s)")
+                time.sleep(3 * attempt)
+            except Exception as e:
+                elapsed = time.monotonic() - t0
+                last_error = e
+                _err(f"    [chatgpt retry] attempt {attempt} failed "
+                     f"({elapsed:.1f}s): {str(e)[:100]}")
+                time.sleep(3 * attempt)
+
+        # Remove unanswered orchestrator message
+        self.history.pop()
+        raise ChatGPTExhausted(
+            f"ChatGPT failed all {self.CHATGPT_MAX_ATTEMPTS} attempts. "
+            f"Last error: {last_error}"
+        )
+
+
+class ChatGPTExhausted(Exception):
+    """Raised when ChatGPT fails all retry attempts."""
+    prompt_size: int = 0
+
+
 class CXReviewChat:
     """Simulated multi-turn review conversation with Codex via codex exec.
 
@@ -1605,7 +1776,7 @@ def _normalise_finding(f: dict) -> dict:
     return normalised
 
 
-def _verify_findings(findings: list[dict], condition: str) -> dict:
+def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 10) -> dict:
     """Verify mathematical claims in findings using SymPy kernel.
 
     CONDITION ISOLATION: Only runs for cdsfl and cdsfl_hil conditions.
@@ -1629,7 +1800,7 @@ def _verify_findings(findings: list[dict], condition: str) -> dict:
         if not vc or not isinstance(vc, dict):
             continue  # no verifiable claim — skip, don't penalise
 
-        result = _verify_sympy(vc)
+        result = _verify_sympy(vc, timeout=sympy_timeout)
         if result["verified"] is True:
             scores.append(1.0)
         elif result["verified"] is False:
@@ -1773,16 +1944,18 @@ def _run_blind_round(
     expert_guidance: str = "",
     deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
+    gemini_chat: "GeminiReviewChat | None" = None,
+    chatgpt_chat: "ChatGPTReviewChat | None" = None,
 ) -> dict:
-    """Round 1: Triple blind review — CC, DeepSeek, and Codex independently review.
+    """Round 1: 5-way blind review — CC, DeepSeek, Codex, Gemini, ChatGPT independently review.
 
     CC is captain of the team, not just the referee. It participates as a
-    full reviewer alongside DeepSeek and CX, contributing findings through
+    full reviewer alongside all others, contributing findings through
     the same CDSFL loop. Phase 2 only: persistent conversations via chat objects.
     """
     task_id = task["id"]
     phase = "phase2" if deepseek_chat else "phase1"
-    _err(f"  [round 1/blind/{phase}] starting dual blind review for {task_id} [{condition}]")
+    _err(f"  [round 1/blind/{phase}] starting 5-way blind review for {task_id} [{condition}]")
 
     blind_template, _ = _get_condition_prompts(condition)
 
@@ -1870,6 +2043,54 @@ def _run_blind_round(
     chain.record("cc_blind", cc_findings_raw or f"ERROR: {cc_error}",
                  {"task_id": task_id, "round": 1})
 
+    # Gemini blind review
+    gemini_findings_raw = ""
+    gemini_findings: list[dict] = []
+    gemini_error = None
+    _err(f"  [round 1/blind] calling Gemini 3.1 Pro ...")
+    t0 = time.monotonic()
+    try:
+        if not gemini_chat:
+            raise RuntimeError("Phase 2 requires GeminiReviewChat")
+        gemini_findings_raw = gemini_chat.send(blind_prompt)
+        gemini_findings = _extract_findings_json(gemini_findings_raw)
+        elapsed = time.monotonic() - t0
+        _err(f"  [round 1/blind] Gemini done ({elapsed:.1f}s, {len(gemini_findings)} findings)")
+        ledger.record("gemini_api", 0.0)
+    except GeminiExhausted:
+        raise
+    except Exception as exc:
+        elapsed = time.monotonic() - t0
+        gemini_error = str(exc)
+        _err(f"  [round 1/blind] Gemini FAILED ({elapsed:.1f}s): {gemini_error[:100]}")
+
+    chain.record("gemini_blind", gemini_findings_raw or f"ERROR: {gemini_error}",
+                 {"task_id": task_id, "round": 1})
+
+    # ChatGPT 5.4 blind review
+    chatgpt_findings_raw = ""
+    chatgpt_findings: list[dict] = []
+    chatgpt_error = None
+    _err(f"  [round 1/blind] calling ChatGPT 5.4 ...")
+    t0 = time.monotonic()
+    try:
+        if not chatgpt_chat:
+            raise RuntimeError("Phase 2 requires ChatGPTReviewChat")
+        chatgpt_findings_raw = chatgpt_chat.send(blind_prompt)
+        chatgpt_findings = _extract_findings_json(chatgpt_findings_raw)
+        elapsed = time.monotonic() - t0
+        _err(f"  [round 1/blind] ChatGPT done ({elapsed:.1f}s, {len(chatgpt_findings)} findings)")
+        ledger.record("chatgpt_api", 0.0)
+    except ChatGPTExhausted:
+        raise
+    except Exception as exc:
+        elapsed = time.monotonic() - t0
+        chatgpt_error = str(exc)
+        _err(f"  [round 1/blind] ChatGPT FAILED ({elapsed:.1f}s): {chatgpt_error[:100]}")
+
+    chain.record("chatgpt_blind", chatgpt_findings_raw or f"ERROR: {chatgpt_error}",
+                 {"task_id": task_id, "round": 1})
+
     return {
         "round": 1,
         "round_type": "blind",
@@ -1889,6 +2110,16 @@ def _run_blind_round(
             "findings": cx_findings,
             "error": cx_error,
         },
+        "gemini": {
+            "raw_response": gemini_findings_raw,
+            "findings": gemini_findings,
+            "error": gemini_error,
+        },
+        "chatgpt": {
+            "raw_response": chatgpt_findings_raw,
+            "findings": chatgpt_findings,
+            "error": chatgpt_error,
+        },
     }
 
 
@@ -1899,6 +2130,8 @@ def _run_confer_round(
     cc_prev_findings: list[dict],
     deepseek_prev_findings: list[dict],
     cx_prev_findings: list[dict],
+    gemini_prev_findings: list[dict],
+    chatgpt_prev_findings: list[dict],
     chain: VerificationChain,
     ledger: CostLedger,
     output_dir: Path | None = None,
@@ -1906,11 +2139,15 @@ def _run_confer_round(
     expert_guidance: str = "",
     deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
+    gemini_chat: "GeminiReviewChat | None" = None,
+    chatgpt_chat: "ChatGPTReviewChat | None" = None,
+    sympy_feedback: str = "",
 ) -> dict:
-    """Rounds 2-5: Confer — each reviewer sees the OTHER TWO's findings.
+    """Rounds 2-5: Confer — each reviewer sees the OTHER FOUR's findings.
 
-    Three-way cross-pollination: CC sees DeepSeek+CX, DeepSeek sees CC+CX,
-    CX sees CC+DeepSeek. CX P-pass fix (HARD 5): findings written to files.
+    Five-way cross-pollination. Each model sees all other models' findings
+    plus SymPy verification feedback (CDSFL conditions only).
+    CX P-pass fix (HARD 5): findings written to files.
     """
     task_id = task["id"]
     _err(f"  [round {round_num}/confer] starting confer round for {task_id} [{condition}]")
@@ -2357,6 +2594,33 @@ def run_task(
 
     chain = VerificationChain()
 
+    # Load effective CDSFL policy for this task (base: no model-specific layer)
+    task_domain = task.get("domain", "cross-domain")
+    try:
+        base_policy = load_effective_policy(domain=task_domain, task_id=task_id, model=None)
+    except (FileNotFoundError, PolicyViolationError) as exc:
+        _err(f"  [registry] WARNING: could not load base policy: {exc}")
+        base_policy = {}
+
+    # Apply policy-controlled overrides
+    policy_max_rounds = base_policy.get("protocol", {}).get("max_rounds", MAX_ROUNDS)
+    policy_sympy_timeout = base_policy.get("verification", {}).get("sympy_timeout_seconds", 10)
+
+    _err(f"  [registry] base policy loaded for domain={task_domain}, task_id={task_id}")
+    _err(f"  [registry] max_rounds={policy_max_rounds}, sympy_timeout={policy_sympy_timeout}s")
+
+    # Load model-specific policies for each reviewer and log them
+    model_policies: dict[str, dict] = {}
+    for model_alias, registry_name in REGISTRY_MODEL_MAP.items():
+        try:
+            mp = load_effective_policy(domain=task_domain, task_id=task_id, model=registry_name)
+            model_policies[model_alias] = mp
+            model_timeout = mp.get("model", {}).get("timeout", "default")
+            _err(f"  [registry] {model_alias} policy: timeout={model_timeout}s")
+        except (FileNotFoundError, PolicyViolationError) as exc:
+            _err(f"  [registry] WARNING: {model_alias} policy failed: {exc}")
+            model_policies[model_alias] = base_policy
+
     # CX P-pass fix (HARD 7): check cost cap BEFORE expensive generation
     if not ledger.check_cap():
         _err(f"  [cost] cap reached before generation — skipping task")
@@ -2503,16 +2767,24 @@ def run_task(
     status = "DEFERRED"  # default if we exhaust all rounds
     deferred_items: list[dict] = []
 
-    # Phase 2: create persistent conversations for each reviewer.
+    # Phase 2: create persistent conversations for ALL 5 reviewers.
     # Each reviewer maintains context across all rounds of this task.
     deepseek_chat = None
     cx_chat = None
+    gemini_chat = None
+    chatgpt_chat = None
+    cc_chat = None  # CC reviews via claude -p (stateless but decomposed)
     if phase2:
-        _err(f"  [phase2] creating persistent conversations for reviewers")
-        deepseek_chat = DeepSeekReviewChat()  # fail hard — Phase 2 requires persistent conversations
+        _err(f"  [phase2] creating persistent conversations for 5 reviewers")
+        deepseek_chat = DeepSeekReviewChat()
         cx_chat = CXReviewChat(task_id)
+        gemini_chat = GeminiReviewChat()
+        chatgpt_chat = ChatGPTReviewChat(task_id)
+        # CC (Opus) reviews are handled via _call_cc in the blind/confer functions
+        # — it uses claude -p which is stateless, but findings accumulate in the protocol
 
-    for round_num in range(1, MAX_ROUNDS + 1):
+    effective_max_rounds = policy_max_rounds if base_policy else MAX_ROUNDS
+    for round_num in range(1, effective_max_rounds + 1):
         if not ledger.check_cap():
             _err(f"  [cost] cap reached — stopping at round {round_num}")
             status = "COST_CAP"
@@ -2522,31 +2794,38 @@ def run_task(
         # it runs to completion. Budget is checked at task/condition boundaries only.
 
         if round_num == 1:
-            # Blind round
+            # Blind round — all 5 reviewers independently
             round_data = _run_blind_round(task, solution, chain, ledger,
                                           condition=condition, expert_guidance=expert_guidance,
-                                          deepseek_chat=deepseek_chat, cx_chat=cx_chat)
+                                          deepseek_chat=deepseek_chat, cx_chat=cx_chat,
+                                          gemini_chat=gemini_chat, chatgpt_chat=chatgpt_chat)
         else:
-            # Confer round — each sees the OTHER TWO's previous findings
+            # Confer round — each sees the OTHER FOUR's previous findings
             prev_round = rounds[-1]
             if prev_round["round_type"] == "blind":
                 cc_prev = prev_round.get("cc", {}).get("findings", [])
-                deepseek_prev = prev_round["deepseek"].get("findings", [])
-                cx_prev = prev_round["cx"].get("findings", [])
+                deepseek_prev = prev_round.get("deepseek", {}).get("findings", [])
+                cx_prev = prev_round.get("cx", {}).get("findings", [])
+                gemini_prev = prev_round.get("gemini", {}).get("findings", [])
+                chatgpt_prev = prev_round.get("chatgpt", {}).get("findings", [])
             else:
                 cc_prev = prev_round.get("cc", {}).get("confer_response", {}).get("new_findings", [])
-                deepseek_prev = prev_round["deepseek"].get("confer_response", {}).get("new_findings", [])
-                cx_prev = prev_round["cx"].get("confer_response", {}).get("new_findings", [])
+                deepseek_prev = prev_round.get("deepseek", {}).get("confer_response", {}).get("new_findings", [])
+                cx_prev = prev_round.get("cx", {}).get("confer_response", {}).get("new_findings", [])
+                gemini_prev = prev_round.get("gemini", {}).get("confer_response", {}).get("new_findings", [])
+                chatgpt_prev = prev_round.get("chatgpt", {}).get("confer_response", {}).get("new_findings", [])
 
             round_data = _run_confer_round(
                 task, solution, round_num,
-                cc_prev, deepseek_prev, cx_prev,
+                cc_prev, deepseek_prev, cx_prev, gemini_prev, chatgpt_prev,
                 chain, ledger,
                 output_dir=output_dir,
                 condition=condition,
                 expert_guidance=expert_guidance,
                 deepseek_chat=deepseek_chat,
                 cx_chat=cx_chat,
+                gemini_chat=gemini_chat,
+                chatgpt_chat=chatgpt_chat,
             )
 
         rounds.append(round_data)
@@ -2613,7 +2892,8 @@ def run_task(
                 cx_data.get("confer_response", {}).get("new_findings", [])
             )
             # Verify only the findings (all are novel by this point — dedup already happened)
-            round_verification = _verify_findings(all_round_findings, condition)
+            round_verification = _verify_findings(all_round_findings, condition,
+                                                    sympy_timeout=policy_sympy_timeout)
             round_data["verification"] = round_verification
             if round_verification["determinate_count"] > 0:
                 _err(f"  [verify] {round_verification['determinate_count']} claims verified, "
@@ -2647,14 +2927,14 @@ def run_task(
                 })
 
         # CC arbiter assessment — bounded Claude CLI call (non-fatal on timeout)
-        if round_num < MAX_ROUNDS:
+        if round_num < effective_max_rounds:
             _err(f"  [arbiter] CC assessing — round {round_num} complete, "
                  f"consecutive_zero_novel={consecutive_zero_novel}")
             try:
                 arbiter_timeout = _budget.clamp_timeout(CC_ARBITER_TIMEOUT) if _budget else CC_ARBITER_TIMEOUT
                 arbiter_prompt = (
                     f"You are the CC arbiter in a CDSFL round-robin test. "
-                    f"Task: {task_id}. Round {round_num} of {MAX_ROUNDS} complete. "
+                    f"Task: {task_id}. Round {round_num} of {effective_max_rounds} complete. "
                     f"Total unique HARD findings so far: {len(all_known_keys)}. "
                     f"Novel HARD findings this round: {novel_count}. "
                     f"Consecutive zero-novel rounds: {consecutive_zero_novel}. "
@@ -2692,6 +2972,13 @@ def run_task(
         "chain_valid": chain_valid,
         "merkle_root": merkle,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "effective_policy": {
+            "max_rounds": effective_max_rounds,
+            "sympy_timeout": policy_sympy_timeout,
+            "convergence_method": base_policy.get("convergence", {}).get("method", ""),
+            "hard_veto": base_policy.get("convergence", {}).get("hard_veto", True),
+            "anti_deference": base_policy.get("constraints", {}).get("anti_deference", True),
+        },
     }
 
     return result
@@ -2865,10 +3152,57 @@ def main() -> None:
         help="Comma-separated task IDs for smoke test (e.g. ft-001,ft-006,ft-013). "
              "Overrides default smoke task selection.",
     )
+    parser.add_argument(
+        "--max-rounds", type=int, default=None,
+        help="Override MAX_ROUNDS (default: 5). Use --max-rounds 1 for wiring smoke tests.",
+    )
+    parser.add_argument(
+        "--validate-only", action="store_true",
+        help="Run CDSFL registry policy validation and exit (no experiment run).",
+    )
     # NOTE: close any active Claude Code session before running.
     # claude -p subprocess calls fail if CC is already running.
 
     args = parser.parse_args()
+
+    # Override MAX_ROUNDS if specified
+    global MAX_ROUNDS
+    if args.max_rounds is not None:
+        MAX_ROUNDS = args.max_rounds
+        print(f"[config] MAX_ROUNDS overridden to {MAX_ROUNDS}", file=sys.stderr, flush=True)
+
+    # --validate-only: run registry validation and exit
+    if args.validate_only:
+        print("=" * 60, file=sys.stderr)
+        print("CDSFL Registry — Policy Validation (pre-flight)", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        results = validate_all_policies()
+        all_ok = True
+        for name, status in results.items():
+            indicator = "PASS" if status == "ok" else "FAIL"
+            if status != "ok":
+                all_ok = False
+            print(f"  [{indicator}] {name}", file=sys.stderr)
+            if status != "ok":
+                for line in status.split("\n"):
+                    print(f"         {line}", file=sys.stderr)
+        if all_ok:
+            print("\nAll CDSFL registry policies valid.", file=sys.stderr)
+            sys.exit(0)
+        else:
+            print("\nVALIDATION FAILED — fix the above before running experiments.", file=sys.stderr)
+            sys.exit(1)
+
+    # Pre-flight: validate all CDSFL registry policies before any experiment run
+    _preflight_results = validate_all_policies()
+    _preflight_failures = {k: v for k, v in _preflight_results.items() if v != "ok"}
+    if _preflight_failures:
+        print("CDSFL Registry pre-flight FAILED:", file=sys.stderr, flush=True)
+        for name, err in _preflight_failures.items():
+            print(f"  [{name}] {err}", file=sys.stderr, flush=True)
+        sys.exit(1)
+    print(f"[registry] pre-flight: {len(_preflight_results)} policies validated OK",
+          file=sys.stderr, flush=True)
 
     # Set up log file — always enabled (auto-generate if not specified)
     if args.log_file:
