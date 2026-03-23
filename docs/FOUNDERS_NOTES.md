@@ -315,7 +315,7 @@ CDSFL is fully pluggable. Anyone who believes a component confers an unfair adva
 
 ## The ChatGPT Self-Diagnosis (23 March 2026)
 
-After developing the (D, v-bar, A, C) capability fingerprint, I decided to test it in a way I found amusing: I asked ChatGPT (GPT-4o) to assess my white paper, then applied the diagnostic framework to its own behaviour when it started churning.
+After developing the (D, v-bar, A, C) capability fingerprint, I decided to test it in a way I found amusing: I asked ChatGPT 5.4 Business — OpenAI's frontier model, specifically designed for professional and analytical work — to assess my white paper, then applied the diagnostic framework to its own behaviour when it started churning. This is not a minor model. It is marketed as a premium tool for exactly the kind of rigorous analytical review I was asking it to perform.
 
 Over three successive passes on the same point — how to frame the inverse square root observation for non-specialists — ChatGPT produced increasingly cautious, hedge-laden, over-qualified prose. Each pass was longer but said less. Classic chatbot behaviour, diagnosed in real time by the very framework designed to detect it.
 
@@ -325,7 +325,7 @@ The most telling moment was when it distinguished between its token count decayi
 
 When I asked "so basically churn, by your own measure?" it said yes. A frontier model, applied the diagnostic, found itself wanting, and admitted it. The framework survived self-application by a model with every commercial incentive to score itself favourably.
 
-This is not a criticism of ChatGPT specifically. It is an empirical demonstration that the (D, v-bar, A, C) diagnostic works. If a model can apply it to itself and arrive at an honest verdict, the framework is robust enough to be useful. And if a model's honest self-assessment is "I was churning," that tells you something important about the model's default operating mode under iterative review conditions.
+This is not a criticism of ChatGPT specifically, though the fact that a frontier business-logic model — marketed for exactly this kind of analytical work — defaulted to churn under iterative review conditions is notable. It is an empirical demonstration that the (D, v-bar, A, C) diagnostic works. If a frontier model can apply it to itself and arrive at an honest verdict, the framework is robust enough to be useful. And if a frontier model's honest self-assessment is "I was churning," that tells you something important about where the entire industry currently stands on the distinction between fluency and analysis.
 
 ## Closing Reflection
 
