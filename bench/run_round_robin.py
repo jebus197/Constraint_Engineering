@@ -875,8 +875,9 @@ def _search_arxiv(query: str, max_results: int = 3) -> str:
         import arxiv
         search = arxiv.Search(query=query, max_results=max_results,
                               sort_by=arxiv.SortCriterion.Relevance)
+        client = arxiv.Client()
         results = []
-        for paper in search.results():
+        for paper in client.results(search):
             results.append(
                 f"  Title: {paper.title}\n"
                 f"  Authors: {', '.join(a.name for a in paper.authors[:3])}\n"
@@ -892,7 +893,7 @@ def _search_arxiv(query: str, max_results: int = 3) -> str:
 def _search_web(query: str, max_results: int = 5) -> str:
     """Search the web via DuckDuckGo. Returns titles + snippets."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             results = []
             for r in ddgs.text(query, max_results=max_results):
@@ -953,7 +954,7 @@ def _search_and_read(query: str, max_results: int = 3, read_top_n: int = 2) -> s
     bounds, and proofs.
     """
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             search_results = list(ddgs.text(query, max_results=max_results))
     except Exception as exc:
