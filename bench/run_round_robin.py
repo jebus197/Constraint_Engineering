@@ -1774,9 +1774,11 @@ def _run_blind_round(
     deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
-    """Round 1: Dual blind review — DeepSeek and Codex independently review.
+    """Round 1: Triple blind review — CC, DeepSeek, and Codex independently review.
 
-    Phase 2 only: persistent conversations via chat objects.
+    CC is captain of the team, not just the referee. It participates as a
+    full reviewer alongside DeepSeek and CX, contributing findings through
+    the same CDSFL loop. Phase 2 only: persistent conversations via chat objects.
     """
     task_id = task["id"]
     phase = "phase2" if deepseek_chat else "phase1"
@@ -1848,10 +1850,35 @@ def _run_blind_round(
     chain.record("cx_blind", cx_findings_raw or f"ERROR: {cx_error}",
                  {"task_id": task_id, "round": 1})
 
+    # CC blind review — captain participates, not just arbitrates
+    cc_findings_raw = ""
+    cc_findings: list[dict] = []
+    cc_error = None
+    _err(f"  [round 1/blind] calling Opus 4.6 (CC) ...")
+    t0 = time.monotonic()
+    try:
+        cc_findings_raw = _call_cc(None, blind_prompt)
+        cc_findings = _extract_findings_json(cc_findings_raw)
+        elapsed = time.monotonic() - t0
+        _err(f"  [round 1/blind] CC done ({elapsed:.1f}s, {len(cc_findings)} findings)")
+        ledger.record("cc_review", 0.0)  # subscription-based
+    except Exception as exc:
+        elapsed = time.monotonic() - t0
+        cc_error = str(exc)
+        _err(f"  [round 1/blind] CC FAILED ({elapsed:.1f}s): {cc_error[:100]}")
+
+    chain.record("cc_blind", cc_findings_raw or f"ERROR: {cc_error}",
+                 {"task_id": task_id, "round": 1})
+
     return {
         "round": 1,
         "round_type": "blind",
         "input_hash": input_hash,
+        "cc": {
+            "raw_response": cc_findings_raw,
+            "findings": cc_findings,
+            "error": cc_error,
+        },
         "deepseek": {
             "raw_response": deepseek_findings_raw,
             "findings": deepseek_findings,
@@ -1869,6 +1896,7 @@ def _run_confer_round(
     task: dict,
     solution: str,
     round_num: int,
+    cc_prev_findings: list[dict],
     deepseek_prev_findings: list[dict],
     cx_prev_findings: list[dict],
     chain: VerificationChain,
@@ -1879,10 +1907,10 @@ def _run_confer_round(
     deepseek_chat: "DeepSeekReviewChat | None" = None,
     cx_chat: "CXReviewChat | None" = None,
 ) -> dict:
-    """Rounds 2-5: Confer — each reviewer sees the OTHER's findings.
+    """Rounds 2-5: Confer — each reviewer sees the OTHER TWO's findings.
 
-    CX P-pass fix (HARD 5): findings are written to files; prompts reference
-    file-path payloads for auditability and hashability.
+    Three-way cross-pollination: CC sees DeepSeek+CX, DeepSeek sees CC+CX,
+    CX sees CC+DeepSeek. CX P-pass fix (HARD 5): findings written to files.
     """
     task_id = task["id"]
     _err(f"  [round {round_num}/confer] starting confer round for {task_id} [{condition}]")
@@ -1893,21 +1921,31 @@ def _run_confer_round(
     artifacts_dir = (output_dir or RESULTS_DIR) / "artifacts" / task_id
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
+    cc_findings_path = artifacts_dir / f"round_{round_num}_cc_prev_findings.json"
     cx_findings_path = artifacts_dir / f"round_{round_num}_cx_prev_findings.json"
     deepseek_findings_path = artifacts_dir / f"round_{round_num}_deepseek_prev_findings.json"
+    _atomic_write(cc_findings_path, json.dumps(cc_prev_findings, indent=2, sort_keys=True) + "\n")
     _atomic_write(cx_findings_path, json.dumps(cx_prev_findings, indent=2, sort_keys=True) + "\n")
     _atomic_write(deepseek_findings_path, json.dumps(deepseek_prev_findings, indent=2, sort_keys=True) + "\n")
 
-    # DeepSeek gets CX's findings (from file)
-    cx_findings_json = cx_findings_path.read_text()
-    fmt_kwargs_g = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cx_findings_json}
+    # Each reviewer sees the OTHER TWO's combined findings
+    # CC sees DeepSeek + CX
+    cc_others = json.dumps(deepseek_prev_findings + cx_prev_findings, indent=2, sort_keys=True)
+    fmt_kwargs_cc = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cc_others}
+    if condition in ("hil", "cdsfl_hil"):
+        fmt_kwargs_cc["expert_guidance"] = expert_guidance
+    cc_confer_prompt = _safe_format(confer_template, **fmt_kwargs_cc)
+
+    # DeepSeek sees CC + CX
+    ds_others = json.dumps(cc_prev_findings + cx_prev_findings, indent=2, sort_keys=True)
+    fmt_kwargs_g = {"task_prompt": task["prompt"], "solution": solution, "other_findings": ds_others}
     if condition in ("hil", "cdsfl_hil"):
         fmt_kwargs_g["expert_guidance"] = expert_guidance
     deepseek_confer_prompt = _safe_format(confer_template, **fmt_kwargs_g)
 
-    # CX gets DeepSeek's findings (from file)
-    deepseek_findings_json = deepseek_findings_path.read_text()
-    fmt_kwargs_c = {"task_prompt": task["prompt"], "solution": solution, "other_findings": deepseek_findings_json}
+    # CX sees CC + DeepSeek
+    cx_others = json.dumps(cc_prev_findings + deepseek_prev_findings, indent=2, sort_keys=True)
+    fmt_kwargs_c = {"task_prompt": task["prompt"], "solution": solution, "other_findings": cx_others}
     if condition in ("hil", "cdsfl_hil"):
         fmt_kwargs_c["expert_guidance"] = expert_guidance
     cx_confer_prompt = _safe_format(confer_template, **fmt_kwargs_c)
@@ -1918,6 +1956,7 @@ def _run_confer_round(
         "round": round_num,
         "round_type": "confer",
         "solution_hash": _content_hash(solution),
+        "cc_prompt_hash": _content_hash(cc_confer_prompt),
         "deepseek_prompt_hash": _content_hash(deepseek_confer_prompt),
         "cx_prompt_hash": _content_hash(cx_confer_prompt),
     }, sort_keys=True)
@@ -1975,10 +2014,37 @@ def _run_confer_round(
     chain.record("cx_confer", cx_raw or f"ERROR: {cx_error}",
                  {"task_id": task_id, "round": round_num})
 
+    # CC confer — captain reviews, seeing DeepSeek + CX findings
+    cc_raw = ""
+    cc_response: dict = {}
+    cc_error = None
+    _err(f"  [round {round_num}/confer] calling Opus 4.6 (CC) (reviewing DeepSeek+CX findings) ...")
+    t0 = time.monotonic()
+    try:
+        cc_raw = _call_cc(None, cc_confer_prompt)
+        cc_response = _extract_confer_response(cc_raw)
+        elapsed = time.monotonic() - t0
+        _err(f"  [round {round_num}/confer] CC done ({elapsed:.1f}s, "
+             f"{len(cc_response.get('new_findings', []))} new findings, "
+             f"concur_stop={cc_response.get('concur_stop')})")
+        ledger.record("cc_review", 0.0)  # subscription-based
+    except Exception as exc:
+        elapsed = time.monotonic() - t0
+        cc_error = str(exc)
+        _err(f"  [round {round_num}/confer] CC FAILED ({elapsed:.1f}s): {cc_error[:100]}")
+
+    chain.record("cc_confer", cc_raw or f"ERROR: {cc_error}",
+                 {"task_id": task_id, "round": round_num})
+
     return {
         "round": round_num,
         "round_type": "confer",
         "input_hash": input_hash,
+        "cc": {
+            "raw_response": cc_raw,
+            "confer_response": cc_response,
+            "error": cc_error,
+        },
         "deepseek": {
             "raw_response": deepseek_raw,
             "confer_response": deepseek_response,
@@ -2010,7 +2076,7 @@ def _count_novel_hard_findings(
     """
     round_keys: set[str] = set()  # deduplicate within this round first
 
-    for source in ("deepseek", "cx"):
+    for source in ("cc", "deepseek", "cx"):
         source_data = current_round.get(source, {})
         if current_round["round_type"] == "blind":
             findings = source_data.get("findings", [])
@@ -2032,45 +2098,32 @@ def _count_novel_hard_findings(
     return len(new_keys), new_keys
 
 
-def _both_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool:
-    """Check if both DeepSeek and Codex concur that diminishing returns are reached.
+def _all_concur_stop(round_data: dict, consecutive_zero_novel: int = 0) -> bool:
+    """Check if all three reviewers concur that diminishing returns are reached.
 
-    Bug fix (2026-03-21): A reviewer that produces zero findings for 2+
-    consecutive rounds has its concurrence automatically set to True.
-    A model that contributes nothing does not get to block the protocol.
+    Three-way concurrence: CC, DeepSeek, and CX must all agree.
+    Auto-concur applies to any reviewer with zero findings for 2+
+    consecutive zero-novel rounds. Can't block with nothing to say.
     """
-    deepseek_findings = len(
-        round_data.get("deepseek", {})
-        .get("confer_response", {})
-        .get("new_findings", [])
-    )
-    cx_findings = len(
-        round_data.get("cx", {})
-        .get("confer_response", {})
-        .get("new_findings", [])
-    )
-    deepseek_concur = (
-        round_data.get("deepseek", {})
-        .get("confer_response", {})
-        .get("concur_stop", False)
-    )
-    cx_concur = (
-        round_data.get("cx", {})
-        .get("confer_response", {})
-        .get("concur_stop", False)
-    )
+    concur_results = {}
+    for source in ("cc", "deepseek", "cx"):
+        findings_count = len(
+            round_data.get(source, {})
+            .get("confer_response", {})
+            .get("new_findings", [])
+        )
+        concur = (
+            round_data.get(source, {})
+            .get("confer_response", {})
+            .get("concur_stop", False)
+        )
+        # Auto-concur: zero findings + sustained zero-novel rounds
+        if consecutive_zero_novel >= 2 and findings_count == 0 and not concur:
+            _err(f"  [concur] {source} auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
+            concur = True
+        concur_results[source] = concur
 
-    # Auto-concur: if a reviewer has zero findings AND we have 2+ consecutive
-    # zero-novel rounds, treat as concurring. Can't block with nothing to say.
-    if consecutive_zero_novel >= 2:
-        if deepseek_findings == 0 and not deepseek_concur:
-            _err(f"  [concur] DeepSeek auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
-            deepseek_concur = True
-        if cx_findings == 0 and not cx_concur:
-            _err(f"  [concur] CX auto-concur (0 findings, {consecutive_zero_novel} zero-novel rounds)")
-            cx_concur = True
-
-    return deepseek_concur and cx_concur
+    return all(concur_results.values())
 
 
 # ---------------------------------------------------------------------------
@@ -2474,20 +2527,20 @@ def run_task(
                                           condition=condition, expert_guidance=expert_guidance,
                                           deepseek_chat=deepseek_chat, cx_chat=cx_chat)
         else:
-            # Confer round — each sees the OTHER's previous findings
+            # Confer round — each sees the OTHER TWO's previous findings
             prev_round = rounds[-1]
             if prev_round["round_type"] == "blind":
+                cc_prev = prev_round.get("cc", {}).get("findings", [])
                 deepseek_prev = prev_round["deepseek"].get("findings", [])
                 cx_prev = prev_round["cx"].get("findings", [])
             else:
-                # CX P-pass fix (SOFT 3): pass only new_findings, not mixed
-                # assessment objects — keeps schema consistent for reviewer context.
+                cc_prev = prev_round.get("cc", {}).get("confer_response", {}).get("new_findings", [])
                 deepseek_prev = prev_round["deepseek"].get("confer_response", {}).get("new_findings", [])
                 cx_prev = prev_round["cx"].get("confer_response", {}).get("new_findings", [])
 
             round_data = _run_confer_round(
                 task, solution, round_num,
-                deepseek_prev, cx_prev,
+                cc_prev, deepseek_prev, cx_prev,
                 chain, ledger,
                 output_dir=output_dir,
                 condition=condition,
@@ -2510,12 +2563,14 @@ def run_task(
             }
             checkpoint.save(f"{task_id}__in_progress", in_progress)
 
-        # CX P-pass fix (HARD 2): defer on ANY reviewer failure, not just both.
-        # Single-reviewer failure breaks the topology (need both for biodiversity).
+        # Defer on ANY reviewer failure — breaks the three-way topology.
+        cc_err = round_data.get("cc", {}).get("error")
         deepseek_err = round_data.get("deepseek", {}).get("error")
         cx_err = round_data.get("cx", {}).get("error")
-        if deepseek_err or cx_err:
+        if cc_err or deepseek_err or cx_err:
             failed = []
+            if cc_err:
+                failed.append("CC")
             if deepseek_err:
                 failed.append("DeepSeek")
             if cx_err:
@@ -2525,6 +2580,7 @@ def run_task(
                 "round": round_num,
                 "reason": "reviewer_failed",
                 "failed_reviewers": failed,
+                "cc_error": cc_err,
                 "deepseek_error": deepseek_err,
                 "cx_error": cx_err,
             })
@@ -2565,9 +2621,9 @@ def run_task(
             chain.record("verification", json.dumps(round_verification),
                          {"task_id": task_id, "round": round_num})
 
-        # Pre-registered stop rule: 2 consecutive rounds with 0 novel HARD + both concur
+        # Pre-registered stop rule: 2 consecutive rounds with 0 novel HARD + all three concur
         if round_num >= 2 and consecutive_zero_novel >= 2:
-            if round_data["round_type"] == "confer" and _both_concur_stop(round_data, consecutive_zero_novel):
+            if round_data["round_type"] == "confer" and _all_concur_stop(round_data, consecutive_zero_novel):
                 # Check for asymmetric override (CDSFL only: prevent premature stop)
                 if _should_override_stop(round_verification):
                     _err(f"  [verify/override] counting says stop but verification score "
@@ -2576,7 +2632,7 @@ def run_task(
                          f"— continuing one more round")
                 else:
                     _err(f"  [stop] pre-registered stop rule met at round {round_num}: "
-                         f"2+ consecutive zero-novel-HARD + both concur")
+                         f"2+ consecutive zero-novel-HARD + all three concur")
                     status = "RESOLVED"
                     break
             elif round_data["round_type"] == "confer":
@@ -2585,6 +2641,7 @@ def run_task(
                 deferred_items.append({
                     "round": round_num,
                     "reason": "no_concurrence_on_stop",
+                    "cc_concur": round_data.get("cc", {}).get("confer_response", {}).get("concur_stop"),
                     "deepseek_concur": round_data.get("deepseek", {}).get("confer_response", {}).get("concur_stop"),
                     "cx_concur": round_data.get("cx", {}).get("confer_response", {}).get("concur_stop"),
                 })
