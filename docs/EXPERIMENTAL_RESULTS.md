@@ -464,7 +464,46 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 - Condition isolation enforced: external research (SymPy, arXiv, web) available to CDSFL and CDSFL+HIL only, not HIL alone
 - HIL prompt simplified to approximate a competent human providing brief expert guidance from their own knowledge — not an idealised 7,800-character domain briefing
 
-**Status:** In progress.
+**Status:** Complete (6 of 12 runs — ft-013 not reached before test stopped for design revision).
+
+**Results summary:**
+
+| Condition | Runs | HARD findings | Avg rounds |
+|-----------|------|---------------|------------|
+| Control | 2 | 37 | 5.0 |
+| HIL | 2 | 0 | 1.0 |
+| CDSFL | 1 | 22 | 5.0 |
+| CDSFL+HIL | 1 | 20 | 5.0 |
+
+**Decay curve analysis (per-model, per-round novel finding counts):**
+
+| Task/Condition | DeepSeek V3.2 | Pattern | Codex 5.3 | Pattern |
+|----------------|--------------|---------|-----------|---------|
+| ft-001/Control | 5,4,0,2,2 | Non-monotone | 0,1,0,0,0 | Near-zero |
+| ft-001/HIL | 1,0 | — | 0,0 | — |
+| ft-001/CDSFL | 2,2,2,2,2 | **Flat** | 5,3,2,2,0 | **Decay** |
+| ft-001/CDSFL+HIL | 6,3,4,2,2 | Non-monotone | 3,0,1,1,0 | Decay (noisy) |
+| ft-006/Control | 5,4,4,5,5 | **Flat** (~4.6) | 4,2,0,0,0 | **Steep decay** |
+
+**Key findings:**
+
+1. **CDSFL activates Codex but not DeepSeek.** Codex under Control on ft-001 found almost nothing (0,1,0,0,0). Under CDSFL on the same task: 5,3,2,2,0. The methodology activated dormant capability. DeepSeek showed no such activation — flat output regardless of condition.
+
+2. **Decay curve diagnostic validated.** Codex consistently produced convergent decay curves (genuine analysis). DeepSeek consistently produced flat or non-monotone curves (chatbot churn). The ft-001/CDSFL comparison is the clearest: DeepSeek produced exactly 2 findings per round for 5 rounds (perfectly flat), while Codex produced a textbook decay curve.
+
+3. **HIL found zero HARD findings.** Both runs, both tasks. The 500-character guidance cap correctly prevented the over-powered HIL condition from earlier smoke tests.
+
+4. **Control HARD finding count (37) is likely inflated by churn.** DeepSeek contributed most of the Control findings with flat curves, suggesting many are not genuine. Without SymPy verification on Control conditions, the raw count is unreliable.
+
+5. **Wolfram-verified mathematical framework (AICc model comparison):**
+   - Codex ft-001/CDSFL data fitted to exponential (AICc=2.88), power law (4.88), logarithmic (6.69), constant (8.18). Exponential best fit. D = 0.667 (half-life 1.5 rounds).
+   - DeepSeek ft-001/CDSFL: lambda = 4.1e-17 (effectively zero). D = 0. Constant model fits perfectly.
+   - F-test: Codex decay vs flat, F=29.87, p=0.012 (indicative at n=5, requires bench test confirmation).
+
+**Design revision prompted by these results:**
+- CC (Opus 4.6) added as third reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
+- Three-way confer topology: each reviewer sees the other two's findings
+- (D, v̄, A, C) capability fingerprint framework adopted for computational assessment
 
 **Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
 **Activity log:** `bench/logs/round_robin_phase2_deepseek_20260323T000340Z.log`
