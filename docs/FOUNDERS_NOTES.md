@@ -126,6 +126,14 @@ One structural observation that emerged during review deserves mention. The math
 
 The system can also be decomposed as five layers, each constraining the others: (1) universal reasoning discipline, (2) domain-specific expert encodings, (3) heterogeneous adversarial review topology, (4) benchmark harness as selection mechanism, (5) persistence and reputation layer. No single layer is sufficient. The value is in the stack.
 
+## Falsification Claims Tested (P-Pass, 14 March 2026)
+
+1. **Method formalisation** — CDSFL captures the Popperian scientific method (constraint classification, hypothesis testing via falsification, corroboration, fixed-point termination, proportionality). Boundary: does not capture paradigm shifts (Kuhn) or Bayesian updating as primary mechanism.
+2. **Expert dependency** — CDSFL is a force multiplier, not a force generator. Additionally: the framework reveals competence or its absence (the constraint box is a competence test disguised as a configuration step).
+3. **Platform/model/domain agnosticism** — no counterexample found. The framework governs process, not capability. A more capable system runs better passes but the structure is unchanged. Falsifiable prediction: if unstructured reasoning consistently outperforms CDSFL-structured reasoning across domains, the framework is refuted.
+4. **Self-bootstrapping** — distinguished from circular reasoning by external validation at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
+5. **Selection pressure** — mechanism sound (variation, fitness function, selection, heritability all present). Conditional on adoption threshold. Goodhart's Law risk mitigated by the generative nature of falsification, which is harder to game than knowledge-retrieval benchmarks.
+
 ## Complexity Threshold (Extrapolation, 19 March 2026)
 
 The self-test (code review, 805 lines, Gemini Flash) suggests a complexity threshold below which methodology formalisation adds nothing measurable. All conditions capped at ~40% recall regardless of methodology.
@@ -133,6 +141,25 @@ The self-test (code review, 805 lines, Gemini Flash) suggests a complexity thres
 The threshold may correlate with constraint count × constraint interaction density. Simple problems with few independent constraints do not need formal falsification. Multi-constraint problems with non-linear interactions — the problems CDSFL was designed for — are where the differential value should appear.
 
 This is testable. The 25 frontier tasks span five categories at 10-50% expected single-pass accuracy. If CDSFL's contribution correlates with task category and constraint density, the threshold's shape becomes visible.
+
+## Open Falsifiable Questions (19 March 2026)
+
+1. Does schema competition produce better schemas?
+2. Does intelligence-agnostic HIL hold at frontier difficulty?
+3. Where does the complexity threshold sit?
+4. Does multi-architecture review generalise beyond code?
+5. Is there a convergence limit for heterogeneous review?
+6. Does the three-model topology outperform any monoculture or two-model subset?
+7. Does orchestration improve net defect discovery versus un-orchestrated round-robin exchange?
+8. Which defect classes are found preferentially by which architecture?
+9. Where does the convergence limit sit for this exact heterogeneous set?
+10. Does schema evolution improve faster under this topology than under single-model self-revision?
+11. Does CDSFL + domain-specialist outperform CDSFL + generalist on matched domain tasks?
+12. Does the Bayesian posterior on HIL expertise E converge at the rate the Beta-Binomial model predicts across different domains and task complexities?
+13. Does asymmetric calibration (penalising overconfidence more heavily) produce better system-level detection than symmetric calibration?
+14. Does publishing the calibration score produce honest self-assessment or strategic sandbagging?
+
+Questions 1–10 are testable with existing infrastructure. Question 11 requires domain-specialist models that are not yet broadly available (see [PAPER.md Part XI](../PAPER.md)). Questions 12–14 require repeated HIL reviews generating sufficient empirical data for calibration — testable once the framework is deployed with real domain experts (see [PAPER.md §2.3](../PAPER.md) and [MATHEMATICAL_APPENDIX.md §6](MATHEMATICAL_APPENDIX.md)).
 
 ## The Specialist Gap (Observation, 20 March 2026)
 
@@ -159,33 +186,6 @@ The self-correcting parameter makes this concrete. E starts as a self-declaratio
 This is the point where CDSFL connects naturally to Genesis. The calibration signal — the divergence between claimed and observed expertise — feeds directly into Genesis's trust score system. Cryptographically recorded, on-chain anchored where stakes warrant it. A reviewer whose self-assessment consistently diverges from their empirical performance sees their trust score adjust accordingly. Not as punishment, but as calibration. The system learns what their assessments are actually worth.
 
 The credential question dissolves entirely. The formula does not ask where you studied, what title you hold, or who endorses you. It asks: can you characterise your own capability honestly, and does your track record bear it out? A self-taught domain expert who honestly estimates E=0.6 and consistently delivers it will outscore a credentialed professor who claims E=0.95 and delivers 0.4.
-
-## Open Falsifiable Questions (19 March 2026)
-
-1. Does schema competition produce better schemas?
-2. Does intelligence-agnostic HIL hold at frontier difficulty?
-3. Where does the complexity threshold sit?
-4. Does multi-architecture review generalise beyond code?
-5. Is there a convergence limit for heterogeneous review?
-6. Does the three-model topology outperform any monoculture or two-model subset?
-7. Does orchestration improve net defect discovery versus un-orchestrated round-robin exchange?
-8. Which defect classes are found preferentially by which architecture?
-9. Where does the convergence limit sit for this exact heterogeneous set?
-10. Does schema evolution improve faster under this topology than under single-model self-revision?
-11. Does CDSFL + domain-specialist outperform CDSFL + generalist on matched domain tasks?
-12. Does the Bayesian posterior on HIL expertise E converge at the rate the Beta-Binomial model predicts across different domains and task complexities?
-13. Does asymmetric calibration (penalising overconfidence more heavily) produce better system-level detection than symmetric calibration?
-14. Does publishing the calibration score produce honest self-assessment or strategic sandbagging?
-
-Questions 1–10 are testable with existing infrastructure. Question 11 requires domain-specialist models that are not yet broadly available (see [PAPER.md Part XI](../PAPER.md)). Questions 12–14 require repeated HIL reviews generating sufficient empirical data for calibration — testable once the framework is deployed with real domain experts (see [PAPER.md §2.3](../PAPER.md) and [MATHEMATICAL_APPENDIX.md §6](MATHEMATICAL_APPENDIX.md)).
-
-## Falsification Claims Tested (P-Pass, 14 March 2026)
-
-1. **Method formalisation** — CDSFL captures the Popperian scientific method (constraint classification, hypothesis testing via falsification, corroboration, fixed-point termination, proportionality). Boundary: does not capture paradigm shifts (Kuhn) or Bayesian updating as primary mechanism.
-2. **Expert dependency** — CDSFL is a force multiplier, not a force generator. Additionally: the framework reveals competence or its absence (the constraint box is a competence test disguised as a configuration step).
-3. **Platform/model/domain agnosticism** — no counterexample found. The framework governs process, not capability. A more capable system runs better passes but the structure is unchanged. Falsifiable prediction: if unstructured reasoning consistently outperforms CDSFL-structured reasoning across domains, the framework is refuted.
-4. **Self-bootstrapping** — distinguished from circular reasoning by external validation at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
-5. **Selection pressure** — mechanism sound (variation, fitness function, selection, heritability all present). Conditional on adoption threshold. Goodhart's Law risk mitigated by the generative nature of falsification, which is harder to game than knowledge-retrieval benchmarks.
 
 ## The Self-Referential Defence (Observation, 21 March 2026)
 
