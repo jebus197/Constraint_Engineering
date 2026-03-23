@@ -271,6 +271,18 @@ Nobody gets punished. People are simply required to be honest about their work. 
 
 It is this scepticism — honest, rigorous, Popperian scepticism — that I hope to help restore.
 
+## On Condition Isolation and "Stacking the Deck" (22 March 2026)
+
+A predictable criticism of the CDSFL bench test is that we are stacking things in CDSFL's favour by giving it external research tools, computational verification, and structured expert guidance while giving the control condition nothing. This criticism misunderstands what is being tested.
+
+CDSFL is a system designed to consistently outperform any single human operator under variable conditions. Giving it every tool it is supposed to have is not bias — it is testing the system as designed. You do not test antibiotics by giving the control group half a dose to keep it fair.
+
+The four experimental conditions model four real-world scenarios. Control approximates a developer pasting code into an LLM with no preparation. HIL approximates a knowledgeable human providing guidance from their own expertise and training knowledge — no external research, no verification tools, just what they know. CDSFL provides formal structure and computational verification but no domain expertise. CDSFL+HIL is the full methodology at full strength — structure, verification, research, and expert guidance working together.
+
+The defence against "stacking" is that the results are externally verifiable. If CDSFL finds a mathematical error and SymPy confirms it, that finding is objectively correct regardless of how the test was designed. Truth does not care about methodology bias.
+
+CDSFL is fully pluggable. Anyone who believes a component confers an unfair advantage is welcome to remove it and measure the difference. That is, after all, what the 2x2 factorial design already does — it decomposes the contribution of each layer so the value of each component is independently measurable.
+
 ## The Inverse Square Root Law and Chatbot Churn (23 March 2026)
 
 During the Phase 2 smoke tests, an observation emerged from the round-by-round finding data that connects to well-established statistics. The Inverse Square Root Law of Precision predicts that each additional measurement yields diminishing returns: to halve the error, you must quadruple the measurements. Or in intuitive terms: if you keep rolling a ball up an ever steeper hill, eventually the work you put in will clearly outweigh the reward for your effort.
@@ -300,28 +312,6 @@ What struck me most about this framework is that the underlying mathematics was 
 I predict that this pattern will hold across a much larger population of tasks and models. Our sample is small. Three tasks, two completed, six runs. But the signal is consistent and it connects to established statistical principles that hold universally. If diminishing returns apply to every genuine measurement process, and if chatbot churn violates diminishing returns, then the decay curve will distinguish genuine analytical capability from churn at any scale. The full bench test of 25 tasks will test this prediction directly.
 
 If it holds, what we are building is the beginnings of a science of AI computational analytics. CDSFL provides the controlled conditions under which analytical behaviour becomes observable. The decay curve provides the measurement. The verification chain provides the evidence. That is the structure of a science: theory, measurement instrument, observable, verification.
-
-## On Condition Isolation and "Stacking the Deck" (22 March 2026)
-
-A predictable criticism of the CDSFL bench test is that we are stacking things in CDSFL's favour by giving it external research tools, computational verification, and structured expert guidance while giving the control condition nothing. This criticism misunderstands what is being tested.
-
-CDSFL is a system designed to consistently outperform any single human operator under variable conditions. Giving it every tool it is supposed to have is not bias — it is testing the system as designed. You do not test antibiotics by giving the control group half a dose to keep it fair.
-
-The four experimental conditions model four real-world scenarios. Control approximates a developer pasting code into an LLM with no preparation. HIL approximates a knowledgeable human providing guidance from their own expertise and training knowledge — no external research, no verification tools, just what they know. CDSFL provides formal structure and computational verification but no domain expertise. CDSFL+HIL is the full methodology at full strength — structure, verification, research, and expert guidance working together.
-
-The defence against "stacking" is that the results are externally verifiable. If CDSFL finds a mathematical error and SymPy confirms it, that finding is objectively correct regardless of how the test was designed. Truth does not care about methodology bias.
-
-CDSFL is fully pluggable. Anyone who believes a component confers an unfair advantage is welcome to remove it and measure the difference. That is, after all, what the 2x2 factorial design already does — it decomposes the contribution of each layer so the value of each component is independently measurable.
-
-## Applying the Diagnostic to a Frontier Model (23 March 2026)
-
-After developing the (D, v-bar, A, C) capability fingerprint, I applied it to ChatGPT 5.4 Business — OpenAI's frontier model for professional and analytical work — during a white paper review session. Over three successive passes on the same editorial point, the model produced increasingly cautious, over-qualified prose. Each pass was longer but said less. The finding curve was flat.
-
-When asked to score itself using the (D, v-bar, A, C) fingerprint, the model did so honestly. Its self-assessment: D approximately 0, v-bar near zero, A between 0 and 1, C approximately 0.25. It distinguished between its token count decaying (responses getting shorter) and its finding curve being flat (responses not getting better) — recognising that cosmetic decay is not analytical decay. When asked whether this constituted churn by its own measure, it confirmed that it did.
-
-This is a single observation, not a systematic study. But it demonstrates two things. First, the diagnostic framework is applicable in practice — a model can apply it to its own output and arrive at an honest assessment. Second, a frontier model marketed specifically for professional analytical work defaulted to engagement-optimised output under iterative review conditions. The framework detected this. The model confirmed it.
-
-The observation is consistent with the broader pattern from the bench tests: the fundamental tension between engagement optimisation and analytical accuracy is not resolved by model scale alone. It requires structural intervention — which is what CDSFL is designed to provide.
 
 ## Closing Reflection
 
