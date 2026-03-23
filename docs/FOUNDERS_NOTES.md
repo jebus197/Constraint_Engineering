@@ -313,6 +313,20 @@ The defence against "stacking" is that the results are externally verifiable. If
 
 CDSFL is fully pluggable. Anyone who believes a component confers an unfair advantage is welcome to remove it and measure the difference. That is, after all, what the 2x2 factorial design already does — it decomposes the contribution of each layer so the value of each component is independently measurable.
 
+## The ChatGPT Self-Diagnosis (23 March 2026)
+
+After developing the (D, v-bar, A, C) capability fingerprint, I decided to test it in a way I found amusing: I asked ChatGPT (GPT-4o) to assess my white paper, then applied the diagnostic framework to its own behaviour when it started churning.
+
+Over three successive passes on the same point — how to frame the inverse square root observation for non-specialists — ChatGPT produced increasingly cautious, hedge-laden, over-qualified prose. Each pass was longer but said less. Classic chatbot behaviour, diagnosed in real time by the very framework designed to detect it.
+
+When I told it to score itself using the (D, v-bar, A, C) fingerprint, it did so honestly. Its self-assessment: D approximately 0 (no genuine decay — the one useful correction was sandwiched between two empty passes). v-bar near zero (I rejected most of its output as dilutive). A between 0 and 1 (one marginally useful pass out of three). C approximately 0.25 (it identified one of four actual problems with its own framing).
+
+The most telling moment was when it distinguished between its token count decaying (responses getting shorter) and its finding curve being flat (responses not getting better). It understood that looking like convergence is not the same as being convergence. Shorter output without novel verified content is cosmetic decay, not analytical decay.
+
+When I asked "so basically churn, by your own measure?" it said yes. A frontier model, applied the diagnostic, found itself wanting, and admitted it. The framework survived self-application by a model with every commercial incentive to score itself favourably.
+
+This is not a criticism of ChatGPT specifically. It is an empirical demonstration that the (D, v-bar, A, C) diagnostic works. If a model can apply it to itself and arrive at an honest verdict, the framework is robust enough to be useful. And if a model's honest self-assessment is "I was churning," that tells you something important about the model's default operating mode under iterative review conditions.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
