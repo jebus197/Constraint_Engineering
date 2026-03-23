@@ -313,19 +313,15 @@ The defence against "stacking" is that the results are externally verifiable. If
 
 CDSFL is fully pluggable. Anyone who believes a component confers an unfair advantage is welcome to remove it and measure the difference. That is, after all, what the 2x2 factorial design already does — it decomposes the contribution of each layer so the value of each component is independently measurable.
 
-## The ChatGPT Self-Diagnosis (23 March 2026)
+## Applying the Diagnostic to a Frontier Model (23 March 2026)
 
-After developing the (D, v-bar, A, C) capability fingerprint, I decided to test it in a way I found amusing: I asked ChatGPT 5.4 Business — OpenAI's frontier model, specifically designed for professional and analytical work — to assess my white paper, then applied the diagnostic framework to its own behaviour when it started churning. This is not a minor model. It is marketed as a premium tool for exactly the kind of rigorous analytical review I was asking it to perform.
+After developing the (D, v-bar, A, C) capability fingerprint, I applied it to ChatGPT 5.4 Business — OpenAI's frontier model for professional and analytical work — during a white paper review session. Over three successive passes on the same editorial point, the model produced increasingly cautious, over-qualified prose. Each pass was longer but said less. The finding curve was flat.
 
-Over three successive passes on the same point — how to frame the inverse square root observation for non-specialists — ChatGPT produced increasingly cautious, hedge-laden, over-qualified prose. Each pass was longer but said less. Classic chatbot behaviour, diagnosed in real time by the very framework designed to detect it.
+When asked to score itself using the (D, v-bar, A, C) fingerprint, the model did so honestly. Its self-assessment: D approximately 0, v-bar near zero, A between 0 and 1, C approximately 0.25. It distinguished between its token count decaying (responses getting shorter) and its finding curve being flat (responses not getting better) — recognising that cosmetic decay is not analytical decay. When asked whether this constituted churn by its own measure, it confirmed that it did.
 
-When I told it to score itself using the (D, v-bar, A, C) fingerprint, it did so honestly. Its self-assessment: D approximately 0 (no genuine decay — the one useful correction was sandwiched between two empty passes). v-bar near zero (I rejected most of its output as dilutive). A between 0 and 1 (one marginally useful pass out of three). C approximately 0.25 (it identified one of four actual problems with its own framing).
+This is a single observation, not a systematic study. But it demonstrates two things. First, the diagnostic framework is applicable in practice — a model can apply it to its own output and arrive at an honest assessment. Second, a frontier model marketed specifically for professional analytical work defaulted to engagement-optimised output under iterative review conditions. The framework detected this. The model confirmed it.
 
-The most telling moment was when it distinguished between its token count decaying (responses getting shorter) and its finding curve being flat (responses not getting better). It understood that looking like convergence is not the same as being convergence. Shorter output without novel verified content is cosmetic decay, not analytical decay.
-
-When I asked "so basically churn, by your own measure?" it said yes. A frontier model, applied the diagnostic, found itself wanting, and admitted it. The framework survived self-application by a model with every commercial incentive to score itself favourably.
-
-This is not a criticism of ChatGPT specifically, though the fact that a frontier business-logic model — marketed for exactly this kind of analytical work — defaulted to churn under iterative review conditions is notable. It is an empirical demonstration that the (D, v-bar, A, C) diagnostic works. If a frontier model can apply it to itself and arrive at an honest verdict, the framework is robust enough to be useful. And if a frontier model's honest self-assessment is "I was churning," that tells you something important about where the entire industry currently stands on the distinction between fluency and analysis.
+The observation is consistent with the broader pattern from the bench tests: the fundamental tension between engagement optimisation and analytical accuracy is not resolved by model scale alone. It requires structural intervention — which is what CDSFL is designed to provide.
 
 ## Closing Reflection
 
