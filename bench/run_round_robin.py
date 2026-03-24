@@ -1814,6 +1814,71 @@ def _normalise_finding(f: dict) -> dict:
     return normalised
 
 
+CLAIM_EXTRACTION_PROMPT = """\
+Extract mathematical claims from the following review findings. For each \
+finding that contains a mathematical assertion (a bound, inequality, equality, \
+convergence claim, or computational result), express it as a SymPy-parseable \
+structured object.
+
+FINDINGS:
+{findings_json}
+
+Return a JSON array. For EVERY finding_id, produce an entry:
+- If it contains a mathematical claim: {{"finding_id": "F1", "expression": {{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2"}}, "claim_text": "the bound ab > 1+3pi/2"}}
+- If it contains NO mathematical claim: {{"finding_id": "F1", "expression": null, "claim_text": null}}
+
+Use SymPy-parseable expressions. Valid ops: eq, gt, lt, ge, le, ne.
+Return ONLY the JSON array, nothing else.
+"""
+
+
+def _extract_verifiable_claims(findings: list[dict]) -> dict:
+    """CC extracts mathematical claims from raw findings (blinded).
+
+    This is the 'team captain' role: actively processing model output
+    rather than passively hoping for structured fields. Model names are
+    NOT included in the extraction prompt to prevent selective bias.
+
+    Returns: {finding_id: {"expression": dict|None, "claim_text": str|None}}
+    """
+    if not findings:
+        return {}
+
+    # Blind the findings — strip model identity
+    blinded = []
+    for f in findings:
+        blinded.append({
+            "finding_id": f.get("finding_id", ""),
+            "claim": f.get("claim", ""),
+            "evidence_span": f.get("evidence_span", "")[:500],
+        })
+
+    prompt = _safe_format(
+        CLAIM_EXTRACTION_PROMPT,
+        findings_json=json.dumps(blinded, indent=2)[:8000],
+    )
+
+    try:
+        raw = _call_cc(None, prompt)
+        # Parse JSON array from response
+        import re
+        json_match = re.search(r'\[[\s\S]*\]', raw)
+        if json_match:
+            extracted = json.loads(json_match.group())
+            return {
+                item["finding_id"]: {
+                    "expression": item.get("expression"),
+                    "claim_text": item.get("claim_text"),
+                }
+                for item in extracted
+                if isinstance(item, dict) and "finding_id" in item
+            }
+    except Exception as exc:
+        _err(f"  [extract] claim extraction failed: {exc}")
+
+    return {}
+
+
 def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 10) -> dict:
     """Verify mathematical claims in findings using SymPy kernel.
 
@@ -1834,12 +1899,34 @@ def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 
     # This distinction was identified by the founder on 2026-03-24:
     # without v-bar on Control/HIL, we cannot compare quality across conditions.
 
+    # Hybrid approach (CC-CX confer, 2026-03-24):
+    # 1. Trust model-provided verifiable_claim when present
+    # 2. For findings missing the field, CC extracts claims (blinded)
+    # 3. Track both sources: v_bar_provided and v_bar_augmented
+    extracted_claims = {}
+    findings_missing_vc = [f for f in findings if not f.get("verifiable_claim") or not isinstance(f.get("verifiable_claim"), dict)]
+    if findings_missing_vc:
+        _err(f"  [verify] {len(findings_missing_vc)}/{len(findings)} findings lack verifiable_claim — CC extracting ...")
+        extracted_claims = _extract_verifiable_claims(findings_missing_vc)
+        _err(f"  [verify] CC extracted {sum(1 for v in extracted_claims.values() if v.get('expression'))} claims from {len(findings_missing_vc)} findings")
+
     scores = []
+    scores_provided = []
+    scores_extracted = []
     details = []
     for f in findings:
         vc = f.get("verifiable_claim")
+        source = "provided"
+
+        # If no model-provided claim, try CC-extracted
         if not vc or not isinstance(vc, dict):
-            continue  # no verifiable claim — skip, don't penalise
+            fid = f.get("finding_id", "")
+            extracted = extracted_claims.get(fid, {})
+            vc = extracted.get("expression")
+            source = "extracted"
+
+        if not vc or not isinstance(vc, dict):
+            continue  # genuinely no mathematical claim — skip, don't penalise
 
         result = _verify_sympy(vc, timeout=sympy_timeout)
         if result["verified"] is True:
@@ -1848,20 +1935,35 @@ def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 
             scores.append(0.0)
         # verified=None → unverifiable, not scored (CX P-pass: don't count unknowns)
 
+        score_val = scores[-1] if scores and result["verified"] is not None else None
         details.append({
             "finding_id": f.get("finding_id", ""),
             "claim": vc,
+            "source": source,
             "verification": result,
-            "score": scores[-1] if scores and result["verified"] is not None else None,
+            "score": score_val,
         })
+
+        # Track by source for separate v_bar reporting
+        if score_val is not None:
+            if source == "provided":
+                scores_provided.append(score_val)
+            else:
+                scores_extracted.append(score_val)
 
     determinate = [s for s in scores]  # only True/False scores
     aggregate = sum(determinate) / len(determinate) if determinate else 0.0
+    agg_provided = sum(scores_provided) / len(scores_provided) if scores_provided else 0.0
+    agg_extracted = sum(scores_extracted) / len(scores_extracted) if scores_extracted else 0.0
 
     return {
         "scores": scores,
         "aggregate": round(aggregate, 3),
+        "v_bar_provided": round(agg_provided, 3),
+        "v_bar_extracted": round(agg_extracted, 3),
         "determinate_count": len(determinate),
+        "provided_count": len(scores_provided),
+        "extracted_count": len(scores_extracted),
         "details": details,
     }
 
