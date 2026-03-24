@@ -608,15 +608,17 @@ This section documents the procedures used in all empirical experiments. It is s
 
 ### Models
 
-Three frontier-class models serve distinct roles:
+Five frontier-class models from three vendors participate as co-equal reviewers:
 
-| Model | Role | Access Method |
+| Model | Vendor | Access Method |
 |---|---|---|
-| Opus 4.6 (Anthropic Claude) | Orchestrator, arbiter, tutor, domain expert (HIL) | `claude -p` CLI |
-| Gemini 3.1 Pro Preview (Google) | Independent reviewer | Google GenAI SDK (multi-turn chat) |
-| Codex 5.3 / GPT-5.3-codex (OpenAI) | Independent reviewer | `codex exec` CLI |
+| Opus 4.6 (Claude) | Anthropic | `claude -p --model claude-opus-4-6` CLI |
+| Codex 5.3 (GPT-5.3-codex) | OpenAI | `codex exec` CLI |
+| DeepSeek V3.2 | DeepSeek | DeepSeek SDK (multi-turn chat) |
+| Gemini 3.1 Pro Preview | Google | Google GenAI SDK (multi-turn chat) |
+| ChatGPT 5.4 | OpenAI | `chatgpt --model gpt-5.4` CLI |
 
-Opus 4.6 sets the problems, provides expert guidance (in HIL/CDSFL+HIL conditions), and judges results. It does not participate as a test subject — that would be marking its own homework.
+Opus 4.6 serves as orchestrator (coordinates the protocol), domain expert (generates expert guidance in HIL/CDSFL+HIL conditions), AND reviewer (produces independent findings alongside the other four). This "team captain" role — participating while also coordinating — mirrors how a lead researcher functions in a real review team.
 
 ### Factorial Design
 
@@ -627,14 +629,24 @@ Opus 4.6 sets the problems, provides expert guidance (in HIL/CDSFL+HIL condition
 | **No Guidance** | Control | CDSFL |
 | **Expert Guidance** | HIL | CDSFL+HIL |
 
-- **Control:** Raw task prompt. No system instruction, no framework, no expert guidance.
-- **HIL:** Domain expert guidance (provided by Opus 4.6 acting as intelligence-agnostic HIL) but no CDSFL framework structure.
-- **CDSFL:** Full CDSFL framework (constraint classification, P-Pass self-falsification, epistemic marking) but no domain expert guidance.
-- **CDSFL+HIL:** Full framework with domain expert guidance. The combination condition.
+- **Control:** Raw task prompt. Single-shot solution generation (no self-falsification). Five independent self-iteration rounds per model (each model re-examines its own prior findings, no cross-model exchange). No CDSFL structure, no expert guidance.
+- **HIL:** Same as Control but with a brief (~500 character) domain expert hint from training knowledge. Still single-shot generation, still self-iteration only. Models what a knowledgeable human says in passing — not an exhaustive briefing.
+- **CDSFL:** Full CDSFL framework. Decomposed solution generation (solve, attack, classify, batch-revise with per-batch contradiction checks). Five cross-model confer rounds (each model sees the other four's findings — distributed compute). SymPy computational verification of mathematical claims. Structured JSON finding schema with anti-deference enforcement.
+- **CDSFL+HIL:** Full framework with domain expert guidance backed by external research (SymPy computation, arXiv literature search, web search with page reading). The complete methodology at full strength.
 
-### Confer Protocol
+### Review Protocol
 
-Each task runs blind dual review (round 1), then confer rounds (rounds 2-5). In round 1, both reviewers work independently. In subsequent rounds, each reviewer sees the other's findings and can add novel findings, upgrade/downgrade severity, or concur with stopping. Pre-registered stop rule: 2 consecutive rounds with zero novel HARD findings AND both reviewers concur = stop. Maximum 5 rounds regardless.
+The review protocol differs fundamentally between conditions. This is the experimental manipulation — the difference between unstructured individual review and CDSFL's distributed compute.
+
+**Control and HIL (self-iteration):** All five models review the solution independently in round 1 (blind). In rounds 2-5, each model is re-prompted with its OWN prior findings only and asked "look again — anything you missed?" No model ever sees any other model's findings. This simulates a real user asking the same model to check again — the most common real-world usage pattern.
+
+**CDSFL and CDSFL+HIL (cross-model confer):** All five models review independently in round 1 (blind). In rounds 2-5, each model sees the OTHER FOUR models' findings and responds with new findings, confirmations, or challenges. This is CDSFL's distributed compute innovation — heterogeneous architectures performing structured adversarial collaboration. It has no equivalent in standard LLM usage.
+
+Pre-registered stop rule (CDSFL conditions only): 2 consecutive rounds with zero novel HARD findings AND all five reviewers concur = stop. Non-compensatory convergence gates: v_comp (SymPy verification rate), v_struct (cross-family peer support rate), and hard_coverage (fraction of registered HARD constraints assessed) must all pass simultaneously. Any unrefuted HARD finding blocks convergence regardless of other metrics.
+
+Control and HIL stop rule: 2 consecutive self-iteration rounds where all models produce zero novel findings.
+
+**Confound identified and corrected (2026-03-24):** Earlier smoke tests gave Control and HIL the full cross-model confer protocol — CDSFL's most powerful feature — for free. This was a fundamental experimental design error that explained all anomalous results (Control matching CDSFL+HIL performance, no clear methodology advantage). The confound was identified by the founder observing the test in real time and recognising that the confer mechanism was giving non-CDSFL conditions an advantage they would never have in reality. Similarly, an earlier iteration gave Control and HIL the full self-falsification pipeline (solve, attack, classify, revise) during solution generation — another CDSFL-exclusive feature erroneously shared with all conditions. Both confounds are corrected in the final experimental design.
 
 ### Convergence Diagnostic: The Inverse Square Root Law
 
@@ -683,11 +695,21 @@ Task-specific binary scoring criteria derived from ground truth. Each criterion 
 
 ### Budget and Infrastructure
 
-- Opus 4.6 and Codex 5.3: CLI subscriptions (zero per-call API cost)
-- Gemini 3.1 Pro: Google API key, paid quota
+- Opus 4.6: Anthropic subscription (CLI, zero per-call cost)
+- Codex 5.3: OpenAI API key (pay-per-token)
+- DeepSeek V3.2: DeepSeek API key (pay-per-token, 5M free tokens)
+- Gemini 3.1 Pro: Google API key (paid quota)
+- ChatGPT 5.4: OpenAI API key (pay-per-token, shared with Codex)
 - No per-call budget clamping within a task — once a task starts, it runs to completion
 - Budget checked at task/condition boundaries only
+- No global time limit — tests run until complete
 - Checkpoint/resume system for multi-session execution
+
+### CDSFL Registry (Policy Governance)
+
+All experimental conditions are governed by a hierarchical policy registry modelled on the Windows Group Policy architecture. Four static layers (universal, domain, task, model) merge top-down with monotonicity enforcement — no lower layer may weaken a universal HARD constraint. A fifth runtime layer records per-model performance metrics (decay rate D, verification score v-bar) and adjusts policies accordingly (advisory in the current implementation, enforcement deferred pending calibration data).
+
+The registry ensures that condition isolation is structural, not prompt-dependent. Control and HIL conditions receive no CDSFL-specific policy fields. The anti-deference gate (mandatory independent observations or scoped null-find justification) and SymPy auto-verification are enforced by code, not by prompt instructions that models can ignore.
 
 ---
 
