@@ -1820,8 +1820,11 @@ def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 
     NOT attached to findings passed to reviewers (CX P-pass: would
     contaminate next round's reviewer behaviour).
     """
-    if condition not in ("cdsfl", "cdsfl_hil"):
-        return {"scores": [], "aggregate": 0.0, "determinate_count": 0, "details": []}
+    # SymPy verification runs on ALL conditions as a MEASUREMENT tool
+    # (scoring finding quality for cross-condition comparison).
+    # It is only fed BACK to models as a METHODOLOGY tool under CDSFL.
+    # This distinction was identified by the founder on 2026-03-24:
+    # without v-bar on Control/HIL, we cannot compare quality across conditions.
 
     scores = []
     details = []
