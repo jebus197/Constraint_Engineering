@@ -3151,19 +3151,24 @@ def run_task(
         else:
             consecutive_zero_novel = 0
 
-        # SymPy verification scoring (CDSFL conditions only — condition isolation)
+        # SymPy verification scoring — runs on ALL conditions as MEASUREMENT.
+        # Feedback to models is CDSFL-exclusive (confer path).
+        # Gate removed from call site on 2026-03-24 (was incorrectly restricting
+        # verification to CDSFL only, preventing cross-condition quality comparison).
         round_verification = {"scores": [], "aggregate": 0.0, "determinate_count": 0, "details": []}
-        if condition in ("cdsfl", "cdsfl_hil"):
+        if True:  # universal measurement — all conditions
             # Extract findings from ALL reviewers in both blind and confer round structures
             # Blind rounds: findings under "findings" key
             # Confer rounds: new findings under "confer_response.new_findings"
             all_round_findings = []
             for r in REVIEWERS:
                 r_data = round_data.get(r, {})
+                # Collect from all round types: blind, self-iterate, and confer
                 all_round_findings.extend(r_data.get("findings", []))
-                all_round_findings.extend(
-                    r_data.get("confer_response", {}).get("new_findings", [])
-                )
+                if round_data.get("round_type") == "confer":
+                    all_round_findings.extend(
+                        r_data.get("confer_response", {}).get("new_findings", [])
+                    )
             # Verify only the findings (all are novel by this point — dedup already happened)
             round_verification = _verify_findings(all_round_findings, condition,
                                                     sympy_timeout=policy_sympy_timeout)
