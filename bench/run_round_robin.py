@@ -454,6 +454,9 @@ List any issues you find. For each issue, provide:
 - severity: critical, major, or minor
 - confidence: 0.0 to 1.0
 - proposed_check: how to verify
+- verifiable_claim: (optional) if the issue involves a mathematical or \
+computational claim, express it as a SymPy-parseable object, e.g. \
+{{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2"}}
 
 Return findings as a JSON array under a FINDINGS: heading.
 
@@ -487,7 +490,8 @@ ASSESSMENTS:
 NEW_FINDINGS:
 [{{"finding_id": "F10", "claim": "...", "evidence_span": "...", \
 "constraint_class": "HARD", "severity": "major", "confidence": 0.8, \
-"proposed_check": "..."}}, ...]
+"proposed_check": "...", \
+"verifiable_claim": {{"op": "...", "lhs": "...", "rhs": "..."}} }}, ...]
 
 CONCUR_STOP: true/false
 JUSTIFICATION: [1-2 sentences]
@@ -517,6 +521,9 @@ Instructions:
    - severity: critical, major, or minor
    - confidence: 0.0 to 1.0
    - proposed_check: how to verify whether this is actually wrong
+   - verifiable_claim: (optional) if the issue involves a mathematical or \
+computational claim, express it as a SymPy-parseable object, e.g. \
+{{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2"}}
 3. Focus on what is WRONG, not what is right.
 
 FINDINGS:
@@ -552,7 +559,8 @@ ASSESSMENTS:
 NEW_FINDINGS:
 [{{"finding_id": "F10", "claim": "...", "evidence_span": "...", \
 "constraint_class": "HARD", "severity": "major", "confidence": 0.8, \
-"proposed_check": "..."}}, ...]
+"proposed_check": "...", \
+"verifiable_claim": {{"op": "...", "lhs": "...", "rhs": "..."}} }}, ...]
 
 CONCUR_STOP: true/false
 JUSTIFICATION: [1-2 sentences]
@@ -2175,9 +2183,14 @@ Output your NEW findings (if any) as a JSON array in a FINDINGS block:
 [
   {{"finding_id": "F1", "claim": "...", "evidence_span": "...", \
 "constraint_class": "HARD or SOFT", "severity": "critical/major/minor", \
-"confidence": 0.9, "proposed_check": "..."}}
+"confidence": 0.9, "proposed_check": "...", \
+"verifiable_claim": {{"op": "eq", "lhs": "...", "rhs": "..."}} }}
 ]
 ```
+The verifiable_claim field is optional but encouraged for any finding \
+involving a mathematical or computational claim. Use SymPy-parseable \
+expressions (e.g. {{"op": "gt", "lhs": "a*b", "rhs": "1 + 3*pi/2"}}).
+
 If you have nothing new, output:
 ```FINDINGS
 []
