@@ -321,6 +321,29 @@ The roles mapped exactly to the CDSFL schema. I provided real-time domain expert
 
 Every improvement was produced through the P-pass cycle: generate, falsify, fix, verify, iterate until diminishing returns. The methodology built the infrastructure that tests the methodology. Whether the resulting system produces better analytical results than unstructured review will be determined by the bench test. But the process that built it is itself a verifiable example of the system engaging in substantial self-improvement — and anyone who argues the P-pass does not work need only examine the commit history from this date to see what it produced.
 
+## First Successful Full CDSFL Bench Loop (24 March 2026)
+
+On 24 March 2026 at 06:37 UTC, the first correctly designed smoke test of the full CDSFL schema completed. One task (ft-001, Erdos-Szekeres theorem), four conditions, five models, five rounds.
+
+The results:
+
+Control (no methodology, self-iteration only): 10 unique HARD findings.
+HIL (expert guidance only, self-iteration only): 2 unique HARD findings.
+CDSFL (full framework, distributed confer): 29 unique HARD findings.
+CDSFL with HIL (full framework plus expert guidance with research): 43 unique HARD findings.
+
+The gradient runs exactly as predicted: Control < CDSFL < CDSFL+HIL. The distributed compute multiplier is 4.3x (CDSFL+HIL vs Control on the same task with the same models). Expert guidance with research adds 48% on top of structure alone (43 vs 29).
+
+The CDSFL+HIL decay curve was 10, 12, 10, 6, 5. The spike at round 2 is the distributed compute effect: models seeing each other's work in the first confer round triggered new discoveries that none found alone. The subsequent decay (10, 6, 5) follows the diminishing returns pattern the inverse square root law predicts. This is what genuine analysis looks like: a burst of cross-pollinated discovery followed by convergence as the problem space is exhausted.
+
+Control's self-iteration produced a flat pattern: each model dutifully found one thing per round when asked to look again. No convergence, no deepening, no cross-pollination. The models produced content because they were asked to, not because there was more to find. This is what the absence of methodology looks like.
+
+Seven confounds were identified and corrected during the development of this test. The Sonnet confound (wrong model), the API key confound (wrong authentication), the overpowered HIL confound (8000 characters instead of 500), the confer confound (distributed compute given to all conditions), the self-falsification confound (P-pass given to all conditions), the reviewer exclusion confound (Gemini and ChatGPT dropped from confer rounds), and the verification confound (SymPy never firing). Each was discovered through the P-pass process, diagnosed with Codex 5.3, and fixed. Every confound is documented in the experimental record.
+
+The result that matters is not the specific numbers. It is that the corrected experimental design produces results consistent with the mathematical modelling. The G_n formula predicted diminishing returns under genuine analysis. The decay curve showed diminishing returns under genuine analysis. The inverse square root law predicted that churn would produce flat curves. Control's self-iteration produced flat curves. The theory and the observation agree.
+
+The full bench test of 26 tasks will determine whether this pattern holds at scale. If it does, CDSFL demonstrably and measurably improves analytical quality through structured distributed compute. If it does not, the methodology needs revision. Either outcome is science.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
