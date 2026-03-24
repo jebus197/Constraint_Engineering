@@ -132,6 +132,12 @@ from cdsfl_registry.registry import (
     validate_all_policies,
     PolicyViolationError,
 )
+from cdsfl_registry.refinements import (
+    classify_finding_support,
+    count_independent_confirmations,
+    structural_canon_hash,
+    MODEL_FAMILIES,
+)
 
 # Override _err with timestamped version — founder needs timestamps to
 # distinguish "stuck" from "slow" during long runs.
@@ -1701,46 +1707,72 @@ class CXReviewChat:
     Oldest responses are summarised if the cap is exceeded.
     """
 
-    MAX_CONTEXT_CHARS = 15000  # ~3750 tokens — leaves room for the new prompt
+    MAX_CONTEXT_CHARS = 6000   # ~1500 tokens — tight cap to conserve CX quota
+    MAX_FULL_RESPONSES = 2     # keep last 2 responses in full, summarise older
 
     def __init__(self, task_id: str):
         self.task_id = task_id
         self.responses: list[str] = []  # CX's own prior responses only
+        self.summaries: list[str] = []  # compact summaries of older rounds
+
+    def _summarise_response(self, resp: str, round_num: int) -> str:
+        """Compact summary of a prior response — topics and finding count only."""
+        # Count findings (look for numbered items or "Finding" markers)
+        import re
+        finding_markers = re.findall(r'(?:Finding|HARD|SOFT|Claim|Issue)\b', resp, re.I)
+        count = len(finding_markers) if finding_markers else 1
+        # Extract first 150 chars as topic indicator
+        topic = resp[:150].replace('\n', ' ').strip()
+        return f"Round {round_num}: ~{count} findings. Topics: {topic}..."
 
     def send(self, prompt: str, timeout: int = CX_TIMEOUT) -> str:
-        """Send a message with capped prior-response context."""
+        """Send a message with aggressively capped context.
 
-        # Build context from CX's own prior responses
+        Keeps last 2 responses in full. Older responses become one-line
+        summaries. Total context capped at MAX_CONTEXT_CHARS.
+        This conserves CX's token quota while preserving recent context.
+        """
+
         if not self.responses:
             full_prompt = prompt
         else:
-            # Carry forward CX's own responses, newest-first priority.
-            # Build from the end so the most recent (most relevant) responses
-            # get budget priority. Older responses are truncated/dropped first.
-            context_entries = []  # will be reversed for chronological display
-            total_chars = 0
-            for i in range(len(self.responses) - 1, -1, -1):
-                resp = self.responses[i]
-                label = f"YOUR RESPONSE (round {i + 1})"
+            context_parts = []
+
+            # Older rounds: compact summaries only
+            if len(self.responses) > self.MAX_FULL_RESPONSES:
+                older = self.responses[:-self.MAX_FULL_RESPONSES]
+                summary_lines = [
+                    self._summarise_response(r, i + 1)
+                    for i, r in enumerate(older)
+                ]
+                context_parts.append(
+                    "PRIOR ROUNDS (summarised):\n" + "\n".join(summary_lines) + "\n"
+                )
+
+            # Recent rounds: full text, newest-first budget priority
+            recent = self.responses[-self.MAX_FULL_RESPONSES:]
+            recent_start = max(0, len(self.responses) - self.MAX_FULL_RESPONSES)
+            total_chars = sum(len(p) for p in context_parts)
+            for i, resp in enumerate(recent):
+                round_num = recent_start + i + 1
+                label = f"YOUR RESPONSE (round {round_num})"
                 entry = f"--- {label} ---\n{resp}\n"
                 if total_chars + len(entry) > self.MAX_CONTEXT_CHARS:
                     remaining = self.MAX_CONTEXT_CHARS - total_chars
                     if remaining > 200:
-                        context_entries.append(
+                        context_parts.append(
                             f"--- {label} (truncated) ---\n{resp[:remaining]}...\n"
                         )
                     break
-                context_entries.append(entry)
+                context_parts.append(entry)
                 total_chars += len(entry)
-            context_parts = list(reversed(context_entries))  # chronological order
 
             full_prompt = (
-                "This is a continuing review conversation. "
-                "Your previous responses are shown below. "
+                "This is a continuing review. "
                 "Build on YOUR OWN prior findings — do not repeat them.\n\n"
                 + "\n".join(context_parts)
                 + f"\n--- CURRENT ROUND ---\n{prompt}\n"
-                + "Respond to this round now, building on your prior analysis above."
+                + "Respond now."
             )
 
         _prompt_size_check(full_prompt, "cx_chat")
@@ -1860,19 +1892,35 @@ def _extract_verifiable_claims(findings: list[dict]) -> dict:
 
     try:
         raw = _call_cc(None, prompt)
-        # Parse JSON array from response
+        # Parse JSON array from response — try progressively to handle
+        # CC appending commentary after the JSON array
         import re
-        json_match = re.search(r'\[[\s\S]*\]', raw)
-        if json_match:
-            extracted = json.loads(json_match.group())
-            return {
-                item["finding_id"]: {
-                    "expression": item.get("expression"),
-                    "claim_text": item.get("claim_text"),
-                }
-                for item in extracted
-                if isinstance(item, dict) and "finding_id" in item
-            }
+        # Find all potential JSON array starts
+        for match in re.finditer(r'\[', raw):
+            start = match.start()
+            # Try to parse from this [ to find matching ]
+            depth = 0
+            for i in range(start, len(raw)):
+                if raw[i] == '[':
+                    depth += 1
+                elif raw[i] == ']':
+                    depth -= 1
+                    if depth == 0:
+                        candidate = raw[start:i+1]
+                        try:
+                            extracted = json.loads(candidate)
+                            if isinstance(extracted, list):
+                                return {
+                                    item["finding_id"]: {
+                                        "expression": item.get("expression"),
+                                        "claim_text": item.get("claim_text"),
+                                    }
+                                    for item in extracted
+                                    if isinstance(item, dict) and "finding_id" in item
+                                }
+                        except json.JSONDecodeError:
+                            continue  # try next [
+                        break
     except Exception as exc:
         _err(f"  [extract] claim extraction failed: {exc}")
 
@@ -2552,6 +2600,69 @@ def _run_confer_round(
 # ---------------------------------------------------------------------------
 
 
+def _classify_round_findings(round_data: dict, verification_data: dict) -> dict:
+    """Classify each finding's support level using CX refinements.
+
+    Uses independence-aware peer confirmation, structural canonicalisation,
+    and the validated-novelty channel. Runs on all conditions as measurement.
+
+    Returns: {finding_id: {support_class, independent_families, canon_hash}}
+    """
+    # Collect all findings by model for cross-model comparison
+    all_findings_by_model = {}
+    for source in REVIEWERS:
+        source_data = round_data.get(source, {})
+        if round_data.get("round_type") == "blind":
+            findings = source_data.get("findings", [])
+        elif round_data.get("round_type") == "self_iterate":
+            findings = source_data.get("findings", [])
+        else:
+            findings = source_data.get("confer_response", {}).get("new_findings", [])
+        all_findings_by_model[source] = findings if isinstance(findings, list) else []
+
+    # Classify each finding
+    classifications = {}
+    for source, findings in all_findings_by_model.items():
+        for f in findings:
+            if not isinstance(f, dict):
+                continue
+            fid = f.get("finding_id", "unknown")
+            # Check SymPy verification status
+            sympy_verified = False
+            sympy_refuted = False
+            if verification_data and verification_data.get("details"):
+                for d in verification_data["details"]:
+                    if d.get("finding_id") == fid:
+                        if d.get("score") == 1.0:
+                            sympy_verified = True
+                        elif d.get("score") == 0.0:
+                            sympy_refuted = True
+                        break
+
+            # Count independent confirmations
+            indep_count = count_independent_confirmations(f, all_findings_by_model)
+            canon = structural_canon_hash(f)
+
+            # Classify
+            if sympy_refuted:
+                support = "refuted"
+            elif sympy_verified:
+                support = "sympy_verified"
+            elif indep_count >= 2:
+                support = "peer_verified"
+            else:
+                support = "unconfirmed_novel"
+
+            classifications[fid] = {
+                "support_class": support,
+                "independent_families": indep_count,
+                "canon_hash": canon,
+                "source_model": source,
+            }
+
+    return classifications
+
+
 def _count_novel_hard_findings(
     current_round: dict,
     all_known_keys: set[str],
@@ -3179,6 +3290,16 @@ def run_task(
                      f"aggregate score: {round_verification['aggregate']}")
             chain.record("verification", json.dumps(round_verification),
                          {"task_id": task_id, "round": round_num})
+
+            # Classify findings using CX refinements (independence, canonicalisation, novelty)
+            round_classifications = _classify_round_findings(round_data, round_verification)
+            round_data["classifications"] = round_classifications
+            support_counts = {}
+            for cls in round_classifications.values():
+                sc = cls["support_class"]
+                support_counts[sc] = support_counts.get(sc, 0) + 1
+            if support_counts:
+                _err(f"  [classify] {support_counts}")
 
         # Pre-registered stop rule: 2 consecutive rounds with 0 novel HARD + all three concur
         if round_num >= 2 and consecutive_zero_novel >= 2:
