@@ -1882,8 +1882,9 @@ def _extract_verifiable_claims(findings: list[dict]) -> dict:
 def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 10) -> dict:
     """Verify mathematical claims in findings using SymPy kernel.
 
-    CONDITION ISOLATION: Only runs for cdsfl and cdsfl_hil conditions.
-    Control and HIL never call this — they get no verification.
+    Runs on ALL conditions as a MEASUREMENT tool (cross-condition quality
+    comparison). For findings lacking verifiable_claim, CC extracts claims
+    (blinded). Feedback to models is CDSFL-exclusive (confer path only).
 
     Returns:
         {"scores": [float], "aggregate": float, "determinate_count": int,
