@@ -1749,23 +1749,28 @@ class CXReviewChat:
                     "PRIOR ROUNDS (summarised):\n" + "\n".join(summary_lines) + "\n"
                 )
 
-            # Recent rounds: full text, newest-first budget priority
+            # Recent rounds: full text, newest-first budget priority.
+            # Build in REVERSE (newest first) so the most recent gets budget
+            # priority. Then reverse for chronological display.
             recent = self.responses[-self.MAX_FULL_RESPONSES:]
             recent_start = max(0, len(self.responses) - self.MAX_FULL_RESPONSES)
             total_chars = sum(len(p) for p in context_parts)
-            for i, resp in enumerate(recent):
+            recent_entries = []
+            for i in range(len(recent) - 1, -1, -1):  # newest first
+                resp = recent[i]
                 round_num = recent_start + i + 1
                 label = f"YOUR RESPONSE (round {round_num})"
                 entry = f"--- {label} ---\n{resp}\n"
                 if total_chars + len(entry) > self.MAX_CONTEXT_CHARS:
                     remaining = self.MAX_CONTEXT_CHARS - total_chars
                     if remaining > 200:
-                        context_parts.append(
+                        recent_entries.append(
                             f"--- {label} (truncated) ---\n{resp[:remaining]}...\n"
                         )
                     break
-                context_parts.append(entry)
+                recent_entries.append(entry)
                 total_chars += len(entry)
+            context_parts.extend(reversed(recent_entries))  # chronological
 
             full_prompt = (
                 "This is a continuing review. "
@@ -1987,6 +1992,7 @@ def _verify_findings(findings: list[dict], condition: str, sympy_timeout: int = 
         score_val = scores[-1] if scores and result["verified"] is not None else None
         details.append({
             "finding_id": f.get("finding_id", ""),
+            "source_model": f.get("_source_model", ""),
             "claim": vc,
             "source": source,
             "verification": result,
@@ -2620,44 +2626,44 @@ def _classify_round_findings(round_data: dict, verification_data: dict) -> dict:
             findings = source_data.get("confer_response", {}).get("new_findings", [])
         all_findings_by_model[source] = findings if isinstance(findings, list) else []
 
-    # Classify each finding
+    # Classify each finding using the refinements module
     classifications = {}
     for source, findings in all_findings_by_model.items():
         for f in findings:
             if not isinstance(f, dict):
                 continue
             fid = f.get("finding_id", "unknown")
-            # Check SymPy verification status
-            sympy_verified = False
-            sympy_refuted = False
-            if verification_data and verification_data.get("details"):
-                for d in verification_data["details"]:
-                    if d.get("finding_id") == fid:
-                        if d.get("score") == 1.0:
-                            sympy_verified = True
-                        elif d.get("score") == 0.0:
-                            sympy_refuted = True
-                        break
+            # Unique key: model + finding_id (prevents cross-model collision)
+            unique_key = f"{source}:{fid}"
 
-            # Count independent confirmations
+            # Use the classify_finding_support function from refinements
+            support = classify_finding_support(
+                f, all_findings_by_model, MODEL_FAMILIES
+            )
+
+            # Count independent families for peer support detail
             indep_count = count_independent_confirmations(f, all_findings_by_model)
             canon = structural_canon_hash(f)
 
-            # Classify
-            if sympy_refuted:
-                support = "refuted"
-            elif sympy_verified:
-                support = "sympy_verified"
-            elif indep_count >= 2:
-                support = "peer_verified"
-            else:
-                support = "unconfirmed_novel"
+            # Override with SymPy data if available
+            # Match on both finding_id AND source model to prevent cross-model collision
+            if verification_data and verification_data.get("details"):
+                for d in verification_data["details"]:
+                    d_fid = d.get("finding_id", "")
+                    d_source = d.get("source_model", "")
+                    if d_fid == fid and (not d_source or d_source == source):
+                        if d.get("score") == 1.0:
+                            support = "sympy_verified"
+                        elif d.get("score") == 0.0:
+                            support = "refuted"
+                        break
 
-            classifications[fid] = {
+            classifications[unique_key] = {
                 "support_class": support,
                 "independent_families": indep_count,
                 "canon_hash": canon,
                 "source_model": source,
+                "finding_id": fid,
             }
 
     return classifications
@@ -3276,11 +3282,16 @@ def run_task(
             for r in REVIEWERS:
                 r_data = round_data.get(r, {})
                 # Collect from all round types: blind, self-iterate, and confer
-                all_round_findings.extend(r_data.get("findings", []))
+                # Tag each finding with source_model for verification-to-classification mapping
+                for f in r_data.get("findings", []):
+                    if isinstance(f, dict):
+                        f["_source_model"] = r
+                    all_round_findings.append(f)
                 if round_data.get("round_type") == "confer":
-                    all_round_findings.extend(
-                        r_data.get("confer_response", {}).get("new_findings", [])
-                    )
+                    for f in r_data.get("confer_response", {}).get("new_findings", []):
+                        if isinstance(f, dict):
+                            f["_source_model"] = r
+                        all_round_findings.append(f)
             # Verify only the findings (all are novel by this point — dedup already happened)
             round_verification = _verify_findings(all_round_findings, condition,
                                                     sympy_timeout=policy_sympy_timeout)

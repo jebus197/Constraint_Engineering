@@ -32,13 +32,14 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 MODEL_FAMILIES: dict[str, list[str]] = {
-    "anthropic": ["opus_4_6"],
-    "openai": ["codex_5_3", "chatgpt_5_4"],
-    "google": ["gemini_3_1_pro"],
-    "deepseek": ["deepseek_v3"],
+    "anthropic": ["opus_4_6", "cc"],
+    "openai": ["codex_5_3", "cx", "chatgpt_5_4", "chatgpt"],
+    "google": ["gemini_3_1_pro", "gemini"],
+    "deepseek": ["deepseek_v3", "deepseek"],
 }
 
 # Inverted index: model name -> family name (built once at import time).
+# Accepts both registry IDs (opus_4_6) and script aliases (cc).
 _MODEL_TO_FAMILY: dict[str, str] = {}
 for _family, _models in MODEL_FAMILIES.items():
     for _model in _models:
