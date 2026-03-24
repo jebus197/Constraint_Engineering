@@ -344,6 +344,28 @@ The result that matters is not the specific numbers. It is that the corrected ex
 
 The full bench test of 26 tasks will determine whether this pattern holds at scale. If it does, CDSFL demonstrably and measurably improves analytical quality through structured distributed compute. If it does not, the methodology needs revision. Either outcome is science.
 
+## On Cognitive Curves and Their Limits (24 March 2026)
+
+For the record.
+
+During analysis of the decay curve framework, I applied it to my own cognitive performance across this project. The result revealed a genuine limitation.
+
+The decay curve measures how quickly an analytical mind exhausts a fixed problem space. It does this well. But my own pattern across two weeks of this project was the opposite of decay. It was ascending abstraction. Week one produced many small practical fixes — API keys, model selection, timeout bugs. High frequency, narrow scope. Week two produced fewer but more consequential interventions — the HIL overpowering discovery, the confer-in-Control confound, the inverse square root observation, the Registry architecture. The final sessions produced the fewest but most far-reaching contributions — the cognitive curves framework itself, the bidirectional feedback loop, the trust score integration, the ethical considerations.
+
+The finding rate decreased but the significance increased. This is not what the decay model measures. I was not exhausting an error space. I was expanding it. Each solved problem revealed a deeper problem, and I went deeper each time.
+
+Under the framework's own logic, my pattern would be classified as "non-convergent." That is a flag for potential churn. But the apparent churn produced the framework itself. The tool misclassifies its own creator.
+
+I am formally diagnosed autistic and dyslexic. Not in the fashionable sense. Formally diagnosed, and self-recognised through a lifetime of experience. This matters here because the cognitive pattern described above — ascending abstraction, offline incubation, pattern recognition before articulation, connecting apparently unrelated domains — reflects characteristics associated with autistic cognition. Deep systematic processing that operates on structure and relationships rather than surface features.
+
+I spotted the inverse square root law from raw numbers before any formal analysis. I sensed something was wrong with the experimental design while watching the test run, before any diagnostic data confirmed it. I connected the Windows Registry to Group Policy to cognitive curves to Genesis trust scores in a single conversational thread. These are structural observations, not surface observations.
+
+What this means for the framework: the (D, v-bar, A, C) fingerprint measures analytical capability on bounded tasks. It does not measure creative synthesis, theoretical abstraction, or cross-domain insight. These are different cognitive contributions, both valuable. The framework captures one and misses the other. This is a boundary condition, not a flaw that can be fixed by adding parameters.
+
+What this means for neurodiversity: the value of neurodivergent cognition may be ultimately unquantifiable. Not because it is not real — it demonstrably is — but because the instruments of measurement are designed by and for neurotypical cognitive patterns. Any system that measures cognitive patterns will systematically favour neurotypical patterns unless it explicitly accounts for neurodivergent cognition. But accounting for it may require instruments that do not yet exist.
+
+I subjected myself to my own framework because everything should be open to study. Including me. The framework found me non-convergent by its own measure. That is an honest result and an important limitation to document.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
