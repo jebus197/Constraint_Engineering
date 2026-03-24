@@ -2498,7 +2498,16 @@ def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl")
     solution = _call_cc(use_directives, step1_prompt)
     _err(f"  [generate/step1] done ({time.monotonic() - t0:.1f}s)")
 
-    # Step 2: Attack
+    # Control and HIL: single-shot generation only. No self-falsification.
+    # The P-pass (attack → classify → revise) IS the CDSFL methodology.
+    # A real user under Control gets the first draft, not a revised one.
+    if condition in ("control", "hil"):
+        elapsed = time.monotonic() - t0
+        _err(f"  [generate] CC solution complete ({elapsed:.1f}s total, 1 step — "
+             f"{condition} has no self-falsification)")
+        return solution
+
+    # Step 2: Attack (CDSFL and CDSFL+HIL only)
     _err(f"  [generate/step2] self-falsifying ...")
     step2_prompt = _safe_format(
         DECOMPOSED_STEP2_ATTACK,
