@@ -2806,6 +2806,15 @@ def run_task(
                                           condition=condition, expert_guidance=expert_guidance,
                                           deepseek_chat=deepseek_chat, cx_chat=cx_chat,
                                           gemini_chat=gemini_chat, chatgpt_chat=chatgpt_chat)
+
+            # Control and HIL: single blind round only. No confer.
+            # Confer (distributed multi-model iterative review) is CDSFL's
+            # innovation and the feature being tested. Giving it to Control/HIL
+            # was a fundamental confound identified by the founder on 2026-03-24.
+            if condition in ("control", "hil"):
+                _err(f"  [{condition}] single blind round only — no confer (CDSFL-exclusive)")
+                rounds.append(round_data)
+                break
         else:
             # Confer round — each sees the OTHER FOUR's previous findings
             prev_round = rounds[-1]

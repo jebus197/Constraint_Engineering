@@ -30,6 +30,9 @@ sympy_sandbox = true
 peer_support_min_families = 2   # cross-family matches only
 
 [protocol]
+# max_rounds applies to CDSFL/CDSFL_HIL only. Control and HIL are
+# code-capped at 1 blind round (no confer). Confer is the CDSFL
+# distributed compute innovation being tested — not a shared baseline.
 max_rounds = 5
 stop_rule = "counting_plus_verify"
 blind_first = true
