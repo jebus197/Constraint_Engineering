@@ -8,7 +8,7 @@
 
 ## Abstract
 
-Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical third-party validation has been conducted: three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed the methodology and its implementation under shared falsification protocol (March 2026), identifying 44 issues across 18 review rounds — with heterogeneous architectures finding defects that homogeneous review missed. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
+Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March 2026), identifying 44 issues across 18 review rounds — with heterogeneous architectures finding defects that homogeneous review missed. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
 
 ---
 
@@ -565,7 +565,7 @@ The gap between stated confidence and demonstrated confidence cannot be closed b
 **Core measurement:** Does methodology-prompted output contain fewer physically impossible, logically incoherent, or commercially unviable claims than unguided output, when evaluated by a domain expert against established ground truth?
 
 **Test design:**
-- 90 technical prompts across ten domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, mathematics, cross-domain systems), 10 per domain
+- 100 technical prompts across ten domains (hardware engineering, software architecture, logistics, chemistry, structural engineering, biomedical engineering, industrial design, product engineering, mathematics, cross-domain systems), 10 per domain
 - Control condition: each prompt run with no instruction set
 - Experimental condition: each prompt run with the methodology as system prompt
 - Evaluation: domain expert reviews outputs blind to condition, rates each factual claim on a four-point scale from established-and-correct to critically-incorrect
@@ -778,8 +778,7 @@ returns through adversarial collaboration.
 CDSFL is not canonical. It is a starting point — a hypothesis, not a
 conclusion. There can be as many competing methodology schemas as there are
 practitioners to design them. The selection mechanism is empirical
-performance: the benchmark harness is schema-agnostic by design. Its three
-conditions (control, experimental, calibration) can test any methodology, not
+performance: the benchmark harness is schema-agnostic by design. Its four conditions form a 2x2 factorial: Control (no structure, no guidance), HIL (guidance only), CDSFL (structure only), CDSFL+HIL (structure and guidance) — and can test any methodology, not
 just CDSFL. If a competing schema outperforms CDSFL on the frontier task set,
 CDSFL's proper response is adoption, not resistance.
 
@@ -790,7 +789,7 @@ equally to CDSFL itself.
 This has a further consequence: it barely matters if CDSFL itself is wrong.
 What the project is building is a schema for testing schemas. CDSFL is the
 first specimen in a methodology laboratory. The benchmark harness, the
-schema-agnostic evaluation protocol, the three-condition experimental design,
+schema-agnostic evaluation protocol, the four-condition 2x2 factorial design (Control, HIL, CDSFL, CDSFL+HIL),
 and the convergence test are the durable assets. If CDSFL performs well, it
 is a useful schema. If it performs poorly, the benchmark detected that, which
 means the testing infrastructure works. If a competing schema outperforms
@@ -1030,7 +1029,7 @@ routine work tolerates larger ε (fewer architectures).
    toward consensus, raising effective ρ and reducing coverage.
 
 5. **Reduction property.** Under simplifying assumptions (K=1, all p_ik = p,
-   ρ = 0), the model reduces exactly to C(n) = 1 − (1−p)ⁿ from Part III.
+   ρ = 0), the model reduces exactly to C(n) = 1 − (1−p)ⁿ from Part II.
    The simple corroboration model is the degenerate case of the distributed
    compute model. Verified computationally.
 

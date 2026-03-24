@@ -21,7 +21,7 @@ There is a corollary to this that became clearer over time: the constraint box �
 
 ## Self-Bootstrapping
 
-The method was used to develop itself. The P-pass was used to develop the P-pass. The constraint classification was used to classify constraints about constraint classification. This is bootstrapping, not circular reasoning — each iteration had external validation (testbench results, real-world application). Self-applicability is a necessary condition for foundational validity, not a weakness.
+The method was used to develop itself. The P-pass was used to develop the P-pass. The constraint classification was used to classify constraints about constraint classification. This is bootstrapping, not circular reasoning — each iteration had empirical testing against measurable outcomes (testbench results, real-world application). Self-applicability is a necessary condition for foundational validity, not a weakness.
 
 This extends further than simple self-reference. During development, the methodology was not only applied to itself by a single agent — it was improved by a population of heterogeneous agents operating on shared schemas. The distributed compute loop is not an add-on. It is the primary mechanism for methodology evolution: distributed-self-referential in structure, not merely self-referential.
 
@@ -85,7 +85,7 @@ Under the non-canonical principle, it barely matters if CDSFL itself is wrong. B
 
 If CDSFL performs well on the benchmark: useful schema, keep iterating. If CDSFL performs poorly: the benchmark detected that, which means the testing infrastructure works — which is the actual contribution. If a competing schema outperforms CDSFL: that is the system functioning as designed. CDSFL's extinction IS the evidence that methodology engineering works.
 
-The benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol, the convergence test — those are the durable assets. CDSFL is the first organism. The ecosystem is the point.
+The benchmark harness, the four-condition 2x2 factorial design (Control, HIL, CDSFL, CDSFL+HIL), the schema-agnostic evaluation protocol, the convergence test — those are the durable assets. CDSFL is the first organism. The ecosystem is the point.
 
 This also clarifies why the non-canonical principle is not a caveat bolted on after the fact. It is load-bearing architecture. Without it, CDSFL is a methodology making claims about itself. With it, CDSFL is a test specimen in a methodology laboratory. The laboratory is the contribution. The specimen is expendable.
 
@@ -112,7 +112,7 @@ Without orchestration, multi-model review risks collapsing into noise, duplicate
 
 This also constitutes empirical evidence that software (and potentially any schema) can be automatically self-improving under CDSFL with distributed compute: diverse architectures apply the same falsification methodology to each other's output, converging on diminishing returns through adversarial collaboration.
 
-What deserves explicit statement is what the machines were actually refining. They were not only reviewing CDSFL-generated code or design output. They were iteratively improving the test procedures themselves: the benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol, the confer mechanism, the convergence criteria. The instruments of measurement were the objects under distributed improvement. This is machines in a distributed compute environment actively collaborating to refine their own model-agnostic testing infrastructure — and doing so under the same falsification discipline that the infrastructure is designed to enforce.
+What deserves explicit statement is what the machines were actually refining. They were not only reviewing CDSFL-generated code or design output. They were iteratively improving the test procedures themselves: the benchmark harness, the four-condition 2x2 factorial design (Control, HIL, CDSFL, CDSFL+HIL), the schema-agnostic evaluation protocol, the confer mechanism, the convergence criteria. The instruments of measurement were the objects under distributed improvement. This is machines in a distributed compute environment actively collaborating to refine their own model-agnostic testing infrastructure — and doing so under the same falsification discipline that the infrastructure is designed to enforce.
 
 ## Methodology Formalisation as Research Area
 
@@ -131,7 +131,7 @@ The system can also be decomposed as five layers, each constraining the others: 
 1. **Method formalisation** — CDSFL captures the Popperian scientific method (constraint classification, hypothesis testing via falsification, corroboration, fixed-point termination, proportionality). Boundary: does not capture paradigm shifts (Kuhn) or Bayesian updating as primary mechanism.
 2. **Expert dependency** — CDSFL is a force multiplier, not a force generator. Additionally: the framework reveals competence or its absence (the constraint box is a competence test disguised as a configuration step).
 3. **Platform/model/domain agnosticism** — no counterexample found. The framework governs process, not capability. A more capable system runs better passes but the structure is unchanged. Falsifiable prediction: if unstructured reasoning consistently outperforms CDSFL-structured reasoning across domains, the framework is refuted.
-4. **Self-bootstrapping** — distinguished from circular reasoning by external validation at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
+4. **Self-bootstrapping** — distinguished from circular reasoning by empirical testing against external outcomes at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
 5. **Selection pressure** — mechanism sound (variation, fitness function, selection, heritability all present). Conditional on adoption threshold. Goodhart's Law risk mitigated by the generative nature of falsification, which is harder to game than knowledge-retrieval benchmarks.
 
 ## Complexity Threshold (Extrapolation, 19 March 2026)
@@ -149,7 +149,7 @@ This is testable. The 25 frontier tasks span five categories at 10-50% expected 
 3. Where does the complexity threshold sit?
 4. Does multi-architecture review generalise beyond code?
 5. Is there a convergence limit for heterogeneous review?
-6. Does the three-model topology outperform any monoculture or two-model subset?
+6. Does the five-model topology outperform any monoculture or two-model subset?
 7. Does orchestration improve net defect discovery versus un-orchestrated round-robin exchange?
 8. Which defect classes are found preferentially by which architecture?
 9. Where does the convergence limit sit for this exact heterogeneous set?
@@ -332,7 +332,7 @@ HIL (expert guidance only, self-iteration only): 2 unique HARD findings.
 CDSFL (full framework, distributed confer): 29 unique HARD findings.
 CDSFL with HIL (full framework plus expert guidance with research): 43 unique HARD findings.
 
-The gradient runs exactly as predicted: Control < CDSFL < CDSFL+HIL. The distributed compute multiplier is 4.3x (CDSFL+HIL vs Control on the same task with the same models). Expert guidance with research adds 48% on top of structure alone (43 vs 29).
+The gradient runs exactly as predicted: HIL (2) < Control (10) < CDSFL (29) < CDSFL+HIL (43). The distributed compute multiplier is 4.3x (CDSFL+HIL vs Control on the same task with the same models). Expert guidance with research adds 48% on top of structure alone (43 vs 29).
 
 The CDSFL+HIL decay curve was 10, 12, 10, 6, 5. The spike at round 2 is the distributed compute effect: models seeing each other's work in the first confer round triggered new discoveries that none found alone. The subsequent decay (10, 6, 5) follows the diminishing returns pattern the inverse square root law predicts. This is what genuine analysis looks like: a burst of cross-pollinated discovery followed by convergence as the problem space is exhausted.
 

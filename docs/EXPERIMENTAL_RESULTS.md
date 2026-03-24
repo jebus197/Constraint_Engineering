@@ -204,14 +204,14 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 **Status:** Planned — pending diagnostic completion
 **Model:** gemini-3.1-pro-preview
 **Task set:** Full 25-task frontier set
-**Conditions:** Control, PE, CDSFL (as per diagnostic design)
+**Conditions:** Control, HIL, CDSFL, CDSFL+HIL (2x2 factorial design)
 **Orchestrator:** Opus 4.6 (Claude) via CLI
 **Budget:** $20 cap (Google API)
 
 ### Experiment 4: Round-Robin Distributed Compute Test
 
 **Status:** Smoke test complete (2026-03-21). Full run approved.
-**Models:** Opus 4.6 (orchestrator/arbiter), Gemini 3.1 Pro Preview (SDK), Codex 5.3 / GPT-5.3-codex (codex exec CLI)
+**Models:** Opus 4.6 (orchestrator/arbiter), Gemini 3.1 Pro Preview (SDK), Codex 5.3 / GPT-5.3-codex (codex exec CLI), DeepSeek V3.2 (API), ChatGPT 5.4 (API)
 **Task set:** 25 frontier tasks × 4 conditions = 100 runs
 
 #### Design
@@ -223,7 +223,7 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 | **No Guidance** | Control | CDSFL |
 | **Expert Guidance** | HIL | CDSFL+HIL |
 
-Topology: Opus 4.6 orchestrates. Gemini 3.1 Pro and Codex 5.3 review independently (blind round 1), then confer (rounds 2-5, each sees the other's findings). Opus 4.6 arbitrates stop/continue. Both reviewers must concur with stop call. No concurrence after 5 rounds = defer for founder review.
+Topology: Opus 4.6 orchestrates, reviews, and arbitrates. Gemini 3.1 Pro, Codex 5.3, DeepSeek V3.2, and ChatGPT 5.4 review independently (blind round 1), then confer (rounds 2-5, each sees the others' findings). Opus 4.6 arbitrates stop/continue. All reviewers must concur with stop call. No concurrence after 5 rounds = defer for founder review.
 
 Cryptographic verification: SHA-256 per-round input hashing, hash chain linking each record to predecessor, per-task Merkle root.
 
@@ -501,8 +501,9 @@ This observation has direct implications for the CDSFL framework: the G_n formul
    - F-test: Codex decay vs flat, F=29.87, p=0.012 (indicative at n=5, requires bench test confirmation).
 
 **Design revision prompted by these results:**
-- CC (Opus 4.6) added as third reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
-- Three-way confer topology: each reviewer sees the other two's findings
+- CC (Opus 4.6) added as reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
+- DeepSeek V3.2 and ChatGPT 5.4 added subsequently, bringing topology to 5 reviewers from 4 vendors
+- Five-way confer topology: each reviewer sees the other four's findings
 - (D, v̄, A, C) capability fingerprint framework adopted for computational assessment
 
 **Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
