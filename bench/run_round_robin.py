@@ -2153,6 +2153,132 @@ def _run_blind_round(
     }
 
 
+SELF_ITERATE_PROMPT = """\
+You previously reviewed a solution and produced findings. Here are YOUR \
+OWN findings from the previous round:
+
+{own_findings}
+
+Look at the solution again. Are there issues you MISSED in your previous \
+review? Focus on what you overlooked, not on restating what you already found. \
+If you genuinely have nothing new to add, state that explicitly with a brief \
+justification for why you believe your review is complete.
+
+Solution under review:
+{solution_excerpt}
+
+Output your NEW findings (if any) as a JSON array in a FINDINGS block:
+```FINDINGS
+[
+  {{"finding_id": "F1", "claim": "...", "evidence_span": "...", \
+"constraint_class": "HARD or SOFT", "severity": "critical/major/minor", \
+"confidence": 0.9, "proposed_check": "..."}}
+]
+```
+If you have nothing new, output:
+```FINDINGS
+[]
+```
+"""
+
+
+def _run_self_iteration_round(
+    task: dict,
+    solution: str,
+    chain: "VerificationChain",
+    ledger: "CostLedger",
+    round_num: int,
+    prev_round: dict,
+    condition: str = "control",
+    expert_guidance: str = "",
+    deepseek_chat=None,
+    cx_chat=None,
+    gemini_chat=None,
+    chatgpt_chat=None,
+) -> dict:
+    """Self-iteration round for Control/HIL.
+
+    Each model sees only its OWN prior findings and is asked to look again.
+    No cross-model confer. Simulates a user saying 'check again, anything else?'
+    """
+    task_id = task["id"]
+    _err(f"  [round {round_num}/self-iterate] starting for {task_id} [{condition}]")
+
+    solution_excerpt = solution[:6000]
+    results = {
+        "round": round_num,
+        "round_type": "self_iterate",
+    }
+
+    chat_map = {
+        "deepseek": deepseek_chat,
+        "cx": cx_chat,
+        "cc": None,  # CC uses claude -p
+        "gemini": gemini_chat,
+        "chatgpt": chatgpt_chat,
+    }
+
+    for reviewer in REVIEWERS:
+        # Get this model's OWN prior findings
+        prev_data = prev_round.get(reviewer, {})
+        if prev_round["round_type"] == "blind":
+            own_findings = prev_data.get("findings", [])
+        else:
+            own_findings = prev_data.get("confer_response", {}).get("new_findings", [])
+            if not own_findings:
+                own_findings = prev_data.get("findings", [])
+
+        own_str = json.dumps(own_findings, indent=2)[:3000] if own_findings else "(no prior findings)"
+
+        prompt = _safe_format(
+            SELF_ITERATE_PROMPT,
+            own_findings=own_str,
+            solution_excerpt=solution_excerpt,
+        )
+
+        if condition == "hil" and expert_guidance:
+            prompt += f"\n\nExpert guidance: {expert_guidance}"
+
+        _err(f"  [round {round_num}/self-iterate] calling {reviewer} ...")
+        t0 = time.monotonic()
+        raw = ""
+        findings = []
+        error = None
+
+        try:
+            chat = chat_map.get(reviewer)
+            if reviewer == "cc":
+                raw = _call_cc(None, prompt)
+            elif chat:
+                raw = chat.send(prompt)
+            else:
+                raw = ""
+                error = f"{reviewer} chat not available"
+
+            findings = _extract_findings_json(raw)
+            elapsed = time.monotonic() - t0
+            _err(f"  [round {round_num}/self-iterate] {reviewer} done "
+                 f"({elapsed:.1f}s, {len(findings)} new findings)")
+            ledger.record(f"{reviewer}_cli", 0.0)
+        except Exception as exc:
+            elapsed = time.monotonic() - t0
+            error = str(exc)
+            _err(f"  [round {round_num}/self-iterate] {reviewer} FAILED "
+                 f"({elapsed:.1f}s): {error[:100]}")
+
+        results[reviewer] = {
+            "raw_response": raw[:5000],
+            "findings": findings,
+            "error": error,
+        }
+
+    chain.record("self_iterate_round", json.dumps({
+        "round": round_num, "task_id": task_id,
+    }), {"task_id": task_id, "round": round_num})
+
+    return results
+
+
 def _run_confer_round(
     task: dict,
     solution: str,
@@ -2323,6 +2449,9 @@ def _count_novel_hard_findings(
     for source in REVIEWERS:
         source_data = current_round.get(source, {})
         if current_round["round_type"] == "blind":
+            findings = source_data.get("findings", [])
+        elif current_round["round_type"] == "self_iterate":
+            # Self-iteration rounds store findings directly (no confer_response)
             findings = source_data.get("findings", [])
         else:
             findings = source_data.get("confer_response", {}).get("new_findings", [])
@@ -2816,14 +2945,24 @@ def run_task(
                                           deepseek_chat=deepseek_chat, cx_chat=cx_chat,
                                           gemini_chat=gemini_chat, chatgpt_chat=chatgpt_chat)
 
-            # Control and HIL: single blind round only. No confer.
-            # Confer (distributed multi-model iterative review) is CDSFL's
-            # innovation and the feature being tested. Giving it to Control/HIL
-            # was a fundamental confound identified by the founder on 2026-03-24.
-            if condition in ("control", "hil"):
-                _err(f"  [{condition}] single blind round only — no confer (CDSFL-exclusive)")
-                rounds.append(round_data)
-                break
+            # Control and HIL: no cross-model confer (CDSFL-exclusive).
+            # But models DO get 5 rounds of independent self-iteration —
+            # simulating a user saying "look again, anything else?" to the
+            # same model. Each model is re-prompted with its OWN prior findings
+            # only. No model sees any other model's work.
+            # This gives comparable 5-point decay curves while accurately
+            # modelling real-world usage. Founder directive, 2026-03-24.
+        elif condition in ("control", "hil"):
+            # Self-iteration round — each model sees only its OWN prior findings
+            _err(f"  [round {round_num}/self-iterate] {condition}: each model re-examining independently ...")
+            prev_round = rounds[-1]
+            round_data = _run_self_iteration_round(
+                task, solution, chain, ledger, round_num,
+                prev_round=prev_round, condition=condition,
+                expert_guidance=expert_guidance,
+                deepseek_chat=deepseek_chat, cx_chat=cx_chat,
+                gemini_chat=gemini_chat, chatgpt_chat=chatgpt_chat,
+            )
         else:
             # Confer round — each sees the OTHER FOUR's previous findings
             prev_round = rounds[-1]
