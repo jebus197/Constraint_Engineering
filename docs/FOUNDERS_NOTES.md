@@ -321,6 +321,20 @@ The roles mapped exactly to the CDSFL schema. I provided real-time domain expert
 
 Every improvement was produced through the P-pass cycle: generate, falsify, fix, verify, iterate until diminishing returns. The methodology built the infrastructure that tests the methodology. Whether the resulting system produces better analytical results than unstructured review will be determined by the bench test. But the process that built it is itself a verifiable example of the system engaging in substantial self-improvement — and anyone who argues the P-pass does not work need only examine the commit history from this date to see what it produced.
 
+## The 3-to-5 Model Transition (23-24 March 2026)
+
+During the smoke test iterations on 23-24 March, the bench test expanded from three collaborating independent vendor models (Anthropic Claude Opus 4.6, OpenAI Codex 5.3, and Google Gemini 3.1 Pro) to five (adding DeepSeek V3.2 and OpenAI ChatGPT 5.4). This brought the test to four independent vendor architectures — Anthropic, OpenAI, Google, and DeepSeek — each with distinct training, architecture, and cognitive characteristics.
+
+In practice, the active model count during development was higher still. While the bench test ran its 5-model review loop, Claude Opus 4.6 was simultaneously conferring with Codex 5.3 via the CLI to diagnose and fix errors as they emerged — a parallel CDSFL loop running alongside the test itself. The monitoring, diagnosis, and repair cycle was not separate from the methodology. It was the methodology applied to its own infrastructure in real time.
+
+## Compact Protocol Language (24 March 2026)
+
+An unplanned observation from the development process. As the project progressed, a set of single-character keyboard shorthands emerged for directing AI analytical behaviour: p (falsify via P-pass), d (discuss), e (extrapolate), c (confer with another model and run P-passes), a (analyse dispassionately), and several others defined in the working protocol.
+
+These are not conventional prompt shortcuts. Each character triggers a complex multi-step analytical process. The command "p d e" — three characters — invokes: falsify the claim with iterative refinement against HARD constraints, discuss the implications, then extrapolate beyond the immediate domain to generate new falsifiable questions. "c p a d" invokes a full distributed compute cycle: confer with an independent model, run mutual P-passes until convergence, analyse the results dispassionately, then discuss.
+
+The symbols are composable and order-dependent. They are human-memorable (single letters with mnemonic meaning) and encode substantial methodology in minimal space. This has the characteristics of a compact command language for research-AI interaction — potentially useful beyond this project as a general-purpose way for researchers to invoke complex analytical workflows with minimum effort. The Registry architecture makes this extensible: each shorthand could be a registered command with behaviour defined in policy, allowing new commands to be added without code changes.
+
 ## First Successful Full CDSFL Bench Loop (24 March 2026)
 
 On 24 March 2026 at 06:37 UTC, the first correctly designed smoke test of the full CDSFL schema completed. One task (ft-001, Erdos-Szekeres theorem), four conditions, five models, five rounds.
