@@ -2,7 +2,7 @@
 
 ## Founder's Notes
 
-*Founder's observations starting 14 March 2026.*
+*Founder's observations, recorded chronologically from 14 March 2026 onwards. Undated sections reflect foundational principles established at the project's inception. Dated sections record observations as they emerged during development and testing.*
 
 ## What This Is
 
@@ -315,7 +315,7 @@ If it holds, what we are building is the beginnings of a science of AI computati
 
 ## Self-Improvement Under CDSFL (23 March 2026)
 
-On 23 March 2026, the CDSFL bench test infrastructure underwent substantial self-improvement through the same methodology it is designed to test. Over approximately 12 hours, the system evolved from a broken script with no verification, no structured output, and no policy governance into a 5-layer hierarchical policy engine with 5-model distributed review, automatic computational verification, non-compensatory convergence gates, and decay curve diagnostics.
+On 23 March 2026, the CDSFL bench test infrastructure underwent substantial self-improvement through the same methodology it is designed to test. Over approximately 12 hours, the system evolved from a broken script with no verification, no structured output, and no policy governance into a substantially more capable architecture: a hierarchical policy engine (universal rules that lower layers cannot weaken, analogous to Group Policy in enterprise IT), 5-model distributed review, automatic mathematical verification via SymPy, convergence gates that require all quality dimensions to pass independently (not trade off against each other), and the decay curve diagnostics described above.
 
 The roles mapped exactly to the CDSFL schema. I provided real-time domain expert guidance — the inverse square root observation, the Registry analogy, the anti-deference requirement, the bidirectional P-pass correction, the programmatic protocol insight. Every major architectural decision originated from this guidance. Claude Opus 4.6 generated implementations and ran P-passes. Codex 5.3 independently falsified each module and found real vulnerabilities — registry bypass exploits, format mismatches, structural flaws in convergence logic. Gemini 3.1 Pro provided third-architecture validation. SymPy verified mathematical claims computationally.
 
@@ -327,7 +327,7 @@ On 24 March 2026 at 06:37 UTC, the first correctly designed smoke test of the fu
 
 The results:
 
-Control (no methodology, self-iteration only): 10 unique HARD findings.
+Control (no methodology, self-iteration only — each model re-examines its own prior work without seeing other models' findings): 10 unique HARD findings.
 HIL (expert guidance only, self-iteration only): 2 unique HARD findings.
 CDSFL (full framework, distributed confer): 29 unique HARD findings.
 CDSFL with HIL (full framework plus expert guidance with research): 43 unique HARD findings.
@@ -364,9 +364,23 @@ What this means for the framework: the (D, v-bar, A, C) fingerprint measures ana
 
 What this means for neurodiversity: the value of neurodivergent cognition may be ultimately unquantifiable. Not because it is not real — it demonstrably is — but because the instruments of measurement are typically designed by and for neurotypical cognitive patterns. Any system that measures cognitive patterns will systematically favour neurotypical patterns unless it explicitly accounts for neurodivergent cognition. But accounting for it may require instruments that do not yet exist and may never fully capture what makes neurodivergent thinking valuable.
 
-If optimal human cognitive curves can be mapped — and there is reason to believe they can, at least for analytical tasks — these could potentially be used not only to produce better human-AI interaction patterns, but could map back onto AI cognition itself. The feedback loop becomes bidirectional: better human patterns inform better AI design, which in turn assists in building better human-AI collaboration. These curves could feed into the domain-level expert tradeable configurations envisaged under the complete CDSFL schema, and into the trust score mechanisms of Genesis. The ethical implications of measuring human cognitive patterns — privacy, neurodiversity protection, consent, the risk of optimising for a single cognitive style — are significant and largely unexplored. They deserve serious future attention.
-
 A life lived purely in the pursuit of knowledge demands humility. The founder subjected himself to his own framework because everything should be open to study. The framework found him non-convergent by its own measure. That is an honest result and an important limitation to document.
+
+## Bidirectional Cognitive Feedback (24 March 2026)
+
+A separate observation emerged from the cognitive curves work above.
+
+The decay curve framework — the (D, v-bar, A, C) fingerprint described in the Inverse Square Root section — was designed to measure AI model performance on analytical tasks. D is the decay rate (how quickly finding rate drops per round), v-bar is the fraction of findings computationally verified, A is the total verified finding count, and C is coverage of the problem's constraint space.
+
+But these same measurements could in principle be applied to human experts performing analytical work. A domain expert reviewing a proof or debugging code produces findings over successive rounds, just as an AI model does. Their per-round finding rate has a shape — steep decay, gradual decay, flat, or non-monotone — and that shape reflects their cognitive strategy.
+
+If such human cognitive curves can be mapped with reasonable accuracy, two applications follow.
+
+First, the curves could improve human-AI interaction design. If domain experts in a given field typically produce steep initial decay followed by a plateau, the optimal AI interaction is to let them scan first, then prompt them at the plateau point with targeted questions. The AI extends the human's natural curve past their stagnation point. Different cognitive profiles would benefit from different interaction patterns — measurable, designable, and testable.
+
+Second, the curves could feed back into AI design itself. If the best human analysts show specific temporal patterns on specific task types, those patterns could inform how AI review protocols are structured. The feedback loop becomes bidirectional: studying human cognition improves AI interaction patterns, and improved AI tools in turn produce better conditions for human cognition. This connects to the domain-level expert configurations envisaged under the CDSFL schema — a verified expert's cognitive strategy, not just their knowledge, becomes a tradeable and reusable asset.
+
+The ethical implications are significant and largely unexplored. Cognitive curves are deeply personal data — they reveal how a person thinks, not just what they produce. Neurodiversity protection, informed consent, and the risk of optimising for a single cognitive style are all concerns that deserve serious future attention. These are questions for a programme of work that extends well beyond this project.
 
 ## Closing Reflection
 
