@@ -97,6 +97,14 @@ CDSFL's HIL (Human In the Loop) role is functional, not species-restricted. A sy
 
 The confer mechanism handles expertise boundaries: when any expert (human or AI) reaches the limit of its competence, items are flagged for peer review. Human peer review is explicitly invited at the confer stage, not bypassed. The quality of the HIL (human vs AI, different AI architectures) is a separate variable, testable in subsequent rounds.
 
+## Falsification Claims Tested (P-Pass, 14 March 2026)
+
+1. **Method formalisation** — CDSFL captures the Popperian scientific method (constraint classification, hypothesis testing via falsification, corroboration, fixed-point termination, proportionality). Boundary: does not capture paradigm shifts (Kuhn) or Bayesian updating as primary mechanism.
+2. **Expert dependency** — CDSFL is a force multiplier, not a force generator. Additionally: the framework reveals competence or its absence (the constraint box is a competence test disguised as a configuration step).
+3. **Platform/model/domain agnosticism** — no counterexample found. The framework governs process, not capability. A more capable system runs better passes but the structure is unchanged. Falsifiable prediction: if unstructured reasoning consistently outperforms CDSFL-structured reasoning across domains, the framework is refuted.
+4. **Self-bootstrapping** — distinguished from circular reasoning by empirical testing against external outcomes at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
+5. **Selection pressure** — mechanism sound (variation, fitness function, selection, heritability all present). Conditional on adoption threshold. Goodhart's Law risk mitigated by the generative nature of falsification, which is harder to game than knowledge-retrieval benchmarks.
+
 ## Multi-Vendor Model Collaboration (Novel Occurrence, 19 March 2026)
 
 During CE (Constraint Engineering/CDSFL) benchmark development, a potentially unprecedented event occurred: multiple vendor models (Anthropic Claude Opus 4.6/OpenAI Codex 5.3, Google Gemini 3.1, all via the CLI) actively communicated through a custom-built IM (instant messaging) service and directly via the CLI itself via this same confer mechanism, to collaboratively improve their own shared schemas and workflows. This is not prompt-chaining or pipeline orchestration. Each model independently reviewed the others' output under a shared methodology, identified issues the others missed, and fixes were integrated iteratively.
@@ -125,14 +133,6 @@ If the hypothesis holds, the methodology is transferable, auditable, and improva
 One structural observation that emerged during review deserves mention. The mathematical layer — anchor states, diversity discounts, the tiered review model — is not decorating a workflow with equations. It is attempting to quantify something most AI methodology ignores: epistemic strength is not just a property of content but of who reviewed it, how correlated they were, and whether the review was socially independent or merely internally recycled. This is importing the institutional structure of scientific peer review into reasoning itself.
 
 The system can also be decomposed as five layers, each constraining the others: (1) universal reasoning discipline, (2) domain-specific expert encodings, (3) heterogeneous adversarial review topology, (4) benchmark harness as selection mechanism, (5) persistence and reputation layer. No single layer is sufficient. The value is in the stack.
-
-## Falsification Claims Tested (P-Pass, 14 March 2026)
-
-1. **Method formalisation** — CDSFL captures the Popperian scientific method (constraint classification, hypothesis testing via falsification, corroboration, fixed-point termination, proportionality). Boundary: does not capture paradigm shifts (Kuhn) or Bayesian updating as primary mechanism.
-2. **Expert dependency** — CDSFL is a force multiplier, not a force generator. Additionally: the framework reveals competence or its absence (the constraint box is a competence test disguised as a configuration step).
-3. **Platform/model/domain agnosticism** — no counterexample found. The framework governs process, not capability. A more capable system runs better passes but the structure is unchanged. Falsifiable prediction: if unstructured reasoning consistently outperforms CDSFL-structured reasoning across domains, the framework is refuted.
-4. **Self-bootstrapping** — distinguished from circular reasoning by empirical testing against external outcomes at each iteration. Consistent with foundational work in logic (Gödel), computation (Turing), and science itself.
-5. **Selection pressure** — mechanism sound (variation, fitness function, selection, heritability all present). Conditional on adoption threshold. Goodhart's Law risk mitigated by the generative nature of falsification, which is harder to game than knowledge-retrieval benchmarks.
 
 ## Complexity Threshold (Extrapolation, 19 March 2026)
 
