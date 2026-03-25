@@ -378,7 +378,7 @@ What this means for the framework: the (D, v-bar, A, C) fingerprint measures ana
 
 What this means for neurodiversity: the value of neurodivergent cognition may be ultimately unquantifiable. Not because it is not real — it demonstrably is — but because the instruments of measurement are typically designed by and for neurotypical cognitive patterns. Any system that measures cognitive patterns will systematically favour neurotypical patterns unless it explicitly accounts for neurodivergent cognition. But accounting for it may require instruments that do not yet exist and may never fully capture what makes neurodivergent thinking valuable.
 
-A life lived purely in the pursuit of knowledge demands humility. The founder subjected himself to his own framework because everything should be open to study. The framework found him non-convergent by its own measure. That is an honest result and an important limitation to document.
+A life lived purely in the pursuit of knowledge demands humility. The founder subjected himself to his own framework because everything should be open to study under the CDSFL schema, including the founder himself. The framework found him non-convergent by its own measure. That is an important limitation to document.
 
 ## Bidirectional Cognitive Feedback (24 March 2026)
 
