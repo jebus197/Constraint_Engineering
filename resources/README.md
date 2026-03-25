@@ -25,8 +25,3 @@ Read ONBOARDING.md first. Then read the [Founder's Notes](../docs/FOUNDERS_NOTES
 for design intent and open questions. The [PAPER.md](../PAPER.md) is the
 canonical technical statement. The bench test code is in `bench/`.
 
-## For the Founder
-
-After compaction or fresh session: point your new model instance at
-ONBOARDING.md. It contains everything needed to resume work without
-the 30-minute recovery dance.
