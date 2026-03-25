@@ -154,6 +154,7 @@ That moves the focus away from "which single model is best?" and toward "what pr
 - **`bench/directives/`** — domain-specific constraint configurations
 - **`bench/cdsfl_registry/`** — Constraint Editor (CE): hierarchical policy engine for configuration governance
 - **[`configs/`](configs/)** — domain expert configurations: portable, reusable cognitive encodings with examples and templates (see [`configs/README.md`](configs/README.md))
+- **[`resources/`](resources/)** — project onboarding and recovery: everything needed to pick up the project from scratch, reproduce results, or attempt to refute them (see [`resources/ONBOARDING.md`](resources/ONBOARDING.md))
 
 ## Quick start
 
