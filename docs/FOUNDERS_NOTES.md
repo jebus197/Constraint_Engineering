@@ -97,7 +97,7 @@ CDSFL's HIL (Human In the Loop) role is functional, not species-restricted. A sy
 
 The confer mechanism handles expertise boundaries: when any expert (human or AI) reaches the limit of its competence, items are flagged for peer review. Human peer review is explicitly invited at the confer stage, not bypassed. The quality of the HIL (human vs AI, different AI architectures) is a separate variable, testable in subsequent rounds.
 
-## Multi-Vendor Model Collaboration (Novel Occurrence, March 2026)
+## Multi-Vendor Model Collaboration (Novel Occurrence, 19 March 2026)
 
 During CE (Constraint Engineering/CDSFL) benchmark development, a potentially unprecedented event occurred: multiple vendor models (Anthropic Claude Opus 4.6/OpenAI Codex 5.3, Google Gemini 3.1, all via the CLI) actively communicated through a custom-built IM (instant messaging) service and directly via the CLI itself via this same confer mechanism, to collaboratively improve their own shared schemas and workflows. This is not prompt-chaining or pipeline orchestration. Each model independently reviewed the others' output under a shared methodology, identified issues the others missed, and fixes were integrated iteratively.
 
@@ -114,7 +114,7 @@ This also constitutes empirical evidence that software (and potentially any sche
 
 What deserves explicit statement is what the machines were actually refining. They were not only reviewing CDSFL-generated code or design output. They were iteratively improving the test procedures themselves: the benchmark harness, the four-condition 2x2 factorial design (Control, HIL, CDSFL, CDSFL+HIL), the schema-agnostic evaluation protocol, the confer mechanism, the convergence criteria. The instruments of measurement were the objects under distributed improvement. This is machines in a distributed compute environment actively collaborating to refine their own model-agnostic testing infrastructure — and doing so under the same falsification discipline that the infrastructure is designed to enforce.
 
-## Methodology Formalisation as Research Area
+## Methodology Formalisation as Research Area (19 March 2026)
 
 The deeper hypothesis: methodology itself — the structured application of scientific discipline to cognitive work — can be captured in a document that any sufficiently capable agent can apply. This is distinct from prompt engineering (expertise in the prompt) and from training (expertise in the weights). CDSFL encodes expertise in the protocol. The paradigm shift, if it holds, is from "what model do you have?" to "what procedure can your model survive?"
 
