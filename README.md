@@ -152,6 +152,8 @@ That moves the focus away from "which single model is best?" and toward "what pr
 - **[`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md)** — empirical results, including null findings and failures
 - **`bench/`** — benchmark harness, evaluation pipeline, and experiment design
 - **`bench/directives/`** — domain-specific constraint configurations
+- **`bench/cdsfl_registry/`** — Constraint Editor (CE): hierarchical policy engine for configuration governance
+- **[`configs/`](configs/)** — domain expert configurations: portable, reusable cognitive encodings with examples and templates (see [`configs/README.md`](configs/README.md))
 
 ## Quick start
 

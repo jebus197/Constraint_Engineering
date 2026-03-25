@@ -583,6 +583,8 @@ The implementation of this protocol is provided in [`bench/`](bench/).
 
 The protocol is published so that anyone can execute it, reproduce or refute the observation, and extend the methodology. If the advantage does not replicate, that is a result, not a failure.
 
+**Domain expert configurations:** The methodology is designed to be applied through portable, reusable cognitive configurations — system-level prompts with three layers: universal methodology, domain-specific expert directives, and user personalisation. Example configurations and a template are provided in [`configs/`](configs/). These are the first artefacts envisaged as tradeable under the CDSFL schema: the methodology layer is freely shared, the domain layer encodes transferable expertise, and the personalisation layer is user-specific. Configurations are ultimately governable via the Constraint Editor (CE), a hierarchical policy engine with monotonicity guarantees (see [`bench/cdsfl_registry/`](bench/cdsfl_registry/)).
+
 ### Extended P-Pass
 
 The standard P-Pass runs all passes within a single context window. For multi-module projects (3+ distinct modules or components with independent constraint sets), this creates two problems: (1) monolithic passes spread attention across all components, reducing detection probability for intra-module faults; (2) later passes in the same context anchor on conclusions from earlier passes, reducing adversarial effectiveness through confirmation bias.
