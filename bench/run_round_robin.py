@@ -179,10 +179,12 @@ CONFER_START_ROUND = 1  # blind review IS round 1
 # Canonical reviewer list — all loops that iterate over reviewers use this.
 REVIEWERS = ("cc", "deepseek", "cx", "gemini", "chatgpt")
 
-# Timeout constants
-DEEPSEEK_TIMEOUT = 300  # DeepSeek: 5 min per call
-CX_TIMEOUT = 600       # CX: 10 min (consistently fast, but buffer for large prompts)
-CC_TIMEOUT = 1200      # CC per-step: 20 min (cross-domain engineering tasks need headroom)
+# Timeout constants — FALLBACK defaults, used when registry policy load fails.
+# When registry policies are available, model-specific timeouts are read from
+# policy["model"]["timeout"] and passed to each chat class / call function.
+DEEPSEEK_TIMEOUT = 300  # DeepSeek: 5 min per call (fallback)
+CX_TIMEOUT = 600       # CX: 10 min (fallback)
+CC_TIMEOUT = 1200      # CC per-step: 20 min (fallback)
 CC_ARBITER_TIMEOUT = 120  # CC arbiter assessment: 2 min (bounded, non-fatal)
 SAFETY_MARGIN = 60     # Budget safety margin (seconds)
 PROMPT_SIZE_WARN = 50_000  # Warn if prompt exceeds this many chars
@@ -324,11 +326,24 @@ class VerificationChain:
 # ---------------------------------------------------------------------------
 
 
-def _defect_key(task_id: str, constraint_class: str, claim: str) -> str:
-    """Canonical defect key: full SHA-256 hash of (task_id, constraint_class, normalised claim).
+def _defect_key(task_id: str, constraint_class: str, claim: str,
+                finding: dict | None = None) -> str:
+    """Canonical defect key using structural_canon_hash when structural fields exist.
 
     CX P-pass fix (SOFT 1): use full hash, not truncated 16-char.
+    Finding 5 fix: prefer structural_canon_hash from refinements module
+    for findings with structural fields. Falls back to raw claim hash
+    only when structural fields are empty (which structural_canon_hash
+    already handles internally).
     """
+    if finding is not None:
+        s_hash = structural_canon_hash(finding)
+        # structural_canon_hash returns claim-based fallback when structural
+        # fields are empty, so we always prefix with task_id for uniqueness.
+        return hashlib.sha256(
+            f"{task_id}:{constraint_class}:{s_hash}".encode("utf-8")
+        ).hexdigest()
+    # Legacy path: no finding dict available — raw claim hash
     normalised = claim.strip().lower()
     return hashlib.sha256(
         f"{task_id}:{constraint_class}:{normalised}".encode("utf-8")
@@ -1475,6 +1490,9 @@ class DeadlineBudget:
 # Global instance — set in main()
 _budget: DeadlineBudget | None = None
 
+# Per-task CC timeout from registry policy — set in run_task(), falls back to CC_TIMEOUT
+_cc_policy_timeout: int | None = None
+
 
 def _prompt_size_check(prompt: str, label: str) -> None:
     """Log prompt size and warn if exceeding threshold."""
@@ -1543,7 +1561,8 @@ def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
     else:
         combined = user_prompt
 
-    timeout = _budget.clamp_timeout(CC_TIMEOUT) if _budget else CC_TIMEOUT
+    effective_cc_timeout = _cc_policy_timeout if _cc_policy_timeout is not None else CC_TIMEOUT
+    timeout = _budget.clamp_timeout(effective_cc_timeout) if _budget else effective_cc_timeout
     _prompt_size_check(combined, "cc")
     return _call_cli(cmd, input_text=combined, timeout=timeout, label="claude")
 
@@ -1603,6 +1622,39 @@ def _call_cx_reviewer(user_prompt: str, task_id: str) -> str:
     return _with_retry(_call_cx_reviewer_inner, user_prompt, task_id)
 
 
+def _extract_verifiable_claims_from_text(text: str) -> list[dict]:
+    """Extract verifiable_claim JSON objects from raw response text.
+
+    Finding 3 fix: when context capping summarises older responses, structured
+    verifiable_claim data must survive. This function scans for JSON objects
+    containing the "op" field (the signature of a verifiable_claim) and returns
+    a compact list of them.
+    """
+    import re
+    claims = []
+    # Find JSON objects that look like verifiable_claim (contain "op" key)
+    for match in re.finditer(r'\{[^{}]*"op"\s*:', text):
+        start = match.start()
+        depth = 0
+        for i in range(start, min(start + 500, len(text))):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        obj = json.loads(text[start:i + 1])
+                        if isinstance(obj, dict) and "op" in obj:
+                            # Keep only the essential fields
+                            compact = {k: obj[k] for k in ("op", "lhs", "rhs") if k in obj}
+                            if compact:
+                                claims.append(compact)
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    break
+    return claims
+
+
 # ---------------------------------------------------------------------------
 # Phase 2: Persistent conversation wrappers
 #
@@ -1627,23 +1679,25 @@ class DeepSeekReviewChat:
     Retry policy: 3 attempts with exponential backoff.
     """
 
-    DEEPSEEK_TIMEOUT = 300  # 5 min per call
+    DEEPSEEK_TIMEOUT = 300  # 5 min per call (class-level fallback)
     DEEPSEEK_MAX_ATTEMPTS = 3
 
-    def __init__(self):
+    def __init__(self, timeout: int | None = None):
         from openai import OpenAI
         api_key = os.environ.get("DEEPSEEK_API_KEY")
         if not api_key:
             raise RuntimeError("DEEPSEEK_API_KEY not set")
         self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
         self.messages: list[dict[str, str]] = []
+        self._timeout = timeout if timeout is not None else self.DEEPSEEK_TIMEOUT
 
-    def send(self, prompt: str, timeout: int = 300) -> str:
+    def send(self, prompt: str, timeout: int | None = None) -> str:
         """Send a message in the ongoing review conversation.
 
         Messages accumulate natively — DeepSeek sees all prior exchanges.
         3-attempt retry with backoff. Raises DeepSeekExhausted on failure.
         """
+        timeout = timeout if timeout is not None else self._timeout
         _prompt_size_check(prompt, "deepseek_chat")
         self.messages.append({"role": "user", "content": prompt})
         last_error = None
@@ -1697,10 +1751,10 @@ class GeminiReviewChat:
     client.chats.create(). 5-attempt retry with timeout enforcement.
     """
 
-    GEMINI_TIMEOUT = 300
+    GEMINI_TIMEOUT = 300  # class-level fallback
     GEMINI_MAX_ATTEMPTS = 5
 
-    def __init__(self):
+    def __init__(self, timeout: int | None = None):
         from google import genai
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
@@ -1713,6 +1767,7 @@ class GeminiReviewChat:
                 temperature=0.0,
             ),
         )
+        self._timeout = timeout if timeout is not None else self.GEMINI_TIMEOUT
 
     def _send_once(self, prompt: str, timeout: int) -> str:
         """Single send attempt with hard timeout enforcement."""
@@ -1729,8 +1784,9 @@ class GeminiReviewChat:
         text = response.text or ""
         return text.strip()
 
-    def send(self, prompt: str, timeout: int = 300) -> str:
+    def send(self, prompt: str, timeout: int | None = None) -> str:
         """Send with 5-attempt retry. Raises GeminiExhausted on failure."""
+        timeout = timeout if timeout is not None else self._timeout
         _prompt_size_check(prompt, "gemini_chat")
         last_error = None
         for attempt in range(1, self.GEMINI_MAX_ATTEMPTS + 1):
@@ -1769,25 +1825,33 @@ class ChatGPTReviewChat:
     so we accumulate conversation history manually (same approach as CX).
     """
 
-    CHATGPT_TIMEOUT = 600  # 10 min — GPT-5.4 can be slow on complex reviews
+    CHATGPT_TIMEOUT = 600  # 10 min — GPT-5.4 can be slow (class-level fallback)
     CHATGPT_MAX_ATTEMPTS = 3
     MAX_CONTEXT_CHARS = 8000  # ~2000 tokens — leaves room for current prompt
     MAX_FULL_RESPONSES = 2    # keep last 2 reviewer responses in full
 
-    def __init__(self, task_id: str):
+    def __init__(self, task_id: str, timeout: int | None = None):
         self.task_id = task_id
         self.history: list[tuple[str, str]] = []  # (role, text)
         self.responses: list[str] = []  # reviewer responses only (for summarisation)
+        self._timeout = timeout if timeout is not None else self.CHATGPT_TIMEOUT
 
     def _summarise_response(self, resp: str, round_num: int) -> str:
-        """One-line summary of a prior response for context cap."""
+        """One-line summary of a prior response for context cap.
+
+        Finding 3 fix: preserves verifiable_claim JSON objects from truncated
+        responses. Structured data survives context capping.
+        """
         import re
         count = len(re.findall(r'"finding_id"', resp))
+        claims = _extract_verifiable_claims_from_text(resp)
+        claims_str = f" Claims: {json.dumps(claims[:3])}" if claims else ""  # CX C3: cap at 3 claims per summary
         topic = resp[:150].replace("\n", " ").strip()
-        return f"Round {round_num}: ~{count} findings. Topics: {topic}..."
+        return f"Round {round_num}: ~{count} findings.{claims_str} Topics: {topic}..."
 
-    def send(self, prompt: str, timeout: int = 600) -> str:
+    def send(self, prompt: str, timeout: int | None = None) -> str:
         """Send a message with capped context to prevent overflow."""
+        timeout = timeout if timeout is not None else self._timeout
         self.history.append(("orchestrator", prompt))
 
         # Build context with cap — same pattern as CXReviewChat
@@ -1895,28 +1959,35 @@ class CXReviewChat:
     MAX_CONTEXT_CHARS = 6000   # ~1500 tokens — tight cap to conserve CX quota
     MAX_FULL_RESPONSES = 2     # keep last 2 responses in full, summarise older
 
-    def __init__(self, task_id: str):
+    def __init__(self, task_id: str, timeout: int | None = None):
         self.task_id = task_id
         self.responses: list[str] = []  # CX's own prior responses only
         self.summaries: list[str] = []  # compact summaries of older rounds
+        self._timeout = timeout if timeout is not None else CX_TIMEOUT
 
     def _summarise_response(self, resp: str, round_num: int) -> str:
-        """Compact summary of a prior response — topics and finding count only."""
-        # Count findings (look for numbered items or "Finding" markers)
+        """Compact summary of a prior response — topics, finding count, and claims.
+
+        Finding 3 fix: preserves verifiable_claim JSON objects from truncated
+        responses. Structured data survives context capping.
+        """
         import re
         finding_markers = re.findall(r'(?:Finding|HARD|SOFT|Claim|Issue)\b', resp, re.I)
         count = len(finding_markers) if finding_markers else 1
-        # Extract first 150 chars as topic indicator
+        # Extract verifiable_claim objects before summarisation
+        claims = _extract_verifiable_claims_from_text(resp)
+        claims_str = f" Claims: {json.dumps(claims[:3])}" if claims else ""  # CX C3: cap at 3 claims per summary
         topic = resp[:150].replace('\n', ' ').strip()
-        return f"Round {round_num}: ~{count} findings. Topics: {topic}..."
+        return f"Round {round_num}: ~{count} findings.{claims_str} Topics: {topic}..."
 
-    def send(self, prompt: str, timeout: int = CX_TIMEOUT) -> str:
+    def send(self, prompt: str, timeout: int | None = None) -> str:
         """Send a message with aggressively capped context.
 
         Keeps last 2 responses in full. Older responses become one-line
         summaries. Total context capped at MAX_CONTEXT_CHARS.
         This conserves CX's token quota while preserving recent context.
         """
+        timeout = timeout if timeout is not None else self._timeout
 
         if not self.responses:
             full_prompt = prompt
@@ -2016,9 +2087,11 @@ def _normalise_finding(f: dict) -> dict:
     normalised["claim"] = str(f.get("claim", "")).strip()
     normalised["evidence_span"] = str(f.get("evidence_span", "")).strip()
 
-    # Normalise constraint_class: strip whitespace, uppercase, default HARD
-    raw_class = str(f.get("constraint_class", "HARD")).strip().upper()
-    normalised["constraint_class"] = "HARD" if raw_class not in ("HARD", "SOFT") else raw_class
+    # Normalise constraint_class: strip whitespace, uppercase, default SOFT.
+    # Finding 4 fix: default to SOFT not HARD — prevents phantom HARD findings
+    # when models omit the field. Explicit "HARD" must be stated, not assumed.
+    raw_class = str(f.get("constraint_class", "SOFT")).strip().upper()
+    normalised["constraint_class"] = raw_class if raw_class in ("HARD", "SOFT") else "SOFT"
 
     # Normalise severity
     raw_sev = str(f.get("severity", "major")).strip().lower()
@@ -2033,6 +2106,13 @@ def _normalise_finding(f: dict) -> dict:
 
     normalised["proposed_check"] = str(f.get("proposed_check", "")).strip()
     normalised["verifiable_claim"] = f.get("verifiable_claim")  # preserve if present
+
+    # CX extended P-pass: preserve structural fields for structural_canon_hash.
+    # Also preserve _source_model for cross-model tracking.
+    for extra_field in ("artifact", "assumption", "violation_mode", "witness", "_source_model"):
+        if extra_field in f:
+            normalised[extra_field] = f[extra_field]
+
     return normalised
 
 
@@ -2286,6 +2366,7 @@ def _extract_confer_response(response: str) -> dict:
             pass
 
     # Try NEW_FINDINGS — normalise through _normalise_finding (CX HARD 4 residual fix)
+    # CX extended P-pass cycle 4: fallback chain when primary parse fails.
     new_findings_text = _extract_section(response, "NEW_FINDINGS")
     if new_findings_text:
         try:
@@ -2297,6 +2378,39 @@ def _extract_confer_response(response: str) -> dict:
                     _normalise_finding(f) for f in raw_findings if isinstance(f, dict)
                 ]
         except (json.JSONDecodeError, AttributeError):
+            pass
+
+    # Fallback: if NEW_FINDINGS parse failed, try extracting any JSON array from full response.
+    # Finding 4 fix: validate that extracted arrays contain finding-like dicts
+    # (must have "claim" field), not assessment-like dicts. Reject arrays where
+    # most items lack both "claim" and "evidence_span". Default constraint_class
+    # to SOFT (not HARD) for fallback-extracted findings where model didn't specify.
+    if not result["new_findings"]:
+        try:
+            import re
+            json_arrays = re.findall(r'\[[\s\S]*?\]', response)
+            for arr_str in json_arrays:
+                try:
+                    parsed = json.loads(arr_str)
+                    if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+                        # Validate: majority of items must look like findings, not assessments
+                        finding_like = sum(
+                            1 for f in parsed
+                            if isinstance(f, dict) and ("claim" in f or "evidence_span" in f)
+                        )
+                        if finding_like < len(parsed) * 0.5:
+                            continue  # mostly assessment-like — skip this array
+                        # Default constraint_class to SOFT for fallback-extracted findings
+                        for f in parsed:
+                            if isinstance(f, dict) and "constraint_class" not in f:
+                                f["constraint_class"] = "SOFT"
+                        result["new_findings"] = [
+                            _normalise_finding(f) for f in parsed if isinstance(f, dict)
+                        ]
+                        break
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        except Exception:
             pass
 
     # CONCUR_STOP
@@ -2884,7 +2998,7 @@ def _count_novel_hard_findings(
             if constraint != "HARD":
                 continue
             claim = f.get("claim", "")
-            key = _defect_key(task_id, constraint, claim)
+            key = _defect_key(task_id, constraint, claim, finding=f)
             round_keys.add(key)
 
     # Novel = keys in this round that aren't already known
@@ -3014,15 +3128,43 @@ Issues to fix in this batch:
 def _split_issues(issues_text: str, max_per_batch: int = 5) -> list[str]:
     """Split a list of issues into batches of max_per_batch lines.
 
-    Each batch is small enough for CC to handle in one focused revision.
+    CX P-pass: handles bullet lists, prose paragraphs, and empty input.
     """
-    lines = [l.strip() for l in issues_text.strip().split("\n") if l.strip()]
+    import re
+
+    if not issues_text or not issues_text.strip():
+        return []
+
+    text = issues_text.strip()
+
+    # Try bullet-style splitting first (lines starting with -, *, [HARD], [SOFT], etc.)
+    bullet_lines = [l.strip() for l in text.split("\n")
+                    if l.strip() and re.match(r'^[-*•\[]', l.strip())]
+    if len(bullet_lines) >= 2:
+        lines = bullet_lines
+    elif len(text.split("\n")) >= 2:
+        # Multiple lines but no bullets — use all non-empty lines
+        lines = [l.strip() for l in text.split("\n") if l.strip()]
+    else:
+        # Single prose line — split by sentences
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        lines = [s.strip() for s in sentences if s.strip()]
+
+    # Filter out "no issues" variants (CX cycle 2)
+    no_issue_patterns = ["no issues", "no contradictions", "none found", "all correct",
+                         "no errors", "no problems", "nothing to fix"]
+    lines = [l for l in lines
+             if not any(p in l.lower() for p in no_issue_patterns)]
+
+    if not lines:
+        return []
+
     batches = []
     for i in range(0, len(lines), max_per_batch):
         batch = "\n".join(lines[i:i + max_per_batch])
         if batch:
             batches.append(batch)
-    return batches if batches else [issues_text]  # fallback: send everything
+    return batches
 
 
 def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl") -> str:
@@ -3078,6 +3220,11 @@ def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl")
     # Step 4: Revise in batches — each batch is max 5 issues
     # Only the solution + current batch are in each prompt (no task, no full issues list)
     batches = _split_issues(classified)
+    if not batches:
+        _err(f"  [generate/step4] no actionable issues found — skipping revision")
+        elapsed = time.monotonic() - t0
+        _err(f"  [generate] CC solution complete ({elapsed:.1f}s total, 3 steps — no revision needed)")
+        return solution
     _err(f"  [generate/step4] revising in {len(batches)} batch(es) ...")
     revised = solution
     for i, batch in enumerate(batches):
@@ -3090,10 +3237,15 @@ def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl")
             solution=revised,
             issues_batch=batch_capped,
         )
-        # Hard cap: if the assembled prompt exceeds 20K, truncate batch and reassemble
+        # Hard cap: if the assembled prompt exceeds 20K, truncate batch and reassemble.
+        # CX cycle 3: if batch is empty after truncation, skip this batch entirely.
         if len(batch_prompt) > 20000:
             excess = len(batch_prompt) - 20000
             batch_capped = batch[:max(0, len(batch) - excess - 100)]
+            if not batch_capped.strip():
+                _err(f"  [generate/step4/{i+1}] prompt {len(batch_prompt)} > 20K and "
+                     f"no room for batch — skipping (deferred)")
+                continue
             _err(f"  [generate/step4/{i+1}] prompt {len(batch_prompt)} > 20K — batch capped to {len(batch_capped)} chars")
             batch_prompt = _safe_format(
                 DECOMPOSED_STEP3_REVISE_BATCH,
@@ -3101,25 +3253,48 @@ def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl")
                 issues_batch=batch_capped,
             )
         t3 = time.monotonic()
-        revised = _call_cc(use_directives, batch_prompt)
+        candidate = _call_cc(use_directives, batch_prompt)
         _err(f"  [generate/step4/{i+1}] done ({time.monotonic() - t3:.1f}s)")
+
+        # CX cycle 5: validate revised output before accepting.
+        # Reject malformed tiny replies, refusals, or drastically oversized outputs.
+        min_ratio = 0.3  # revised should be at least 30% of original length
+        max_ratio = 3.0  # and at most 300%
+        if len(candidate) < len(revised) * min_ratio:
+            _err(f"  [generate/step4/{i+1}] WARNING: revised output suspiciously short "
+                 f"({len(candidate)} vs {len(revised)}) — keeping previous version")
+        elif len(candidate) > len(revised) * max_ratio:
+            _err(f"  [generate/step4/{i+1}] WARNING: revised output suspiciously large "
+                 f"({len(candidate)} vs {len(revised)}) — keeping previous version")
+        else:
+            revised = candidate
 
         # Per-chunk verification: check for cascading contradictions
         _err(f"  [generate/step4/{i+1}] checking for contradictions ...")
         # Include the revised content so CC can actually check it
+        # Include enough of the revised solution for CC to check contradictions.
+        # Use first 3000 + last 3000 to cover both ends without exceeding 8K.
+        if len(revised) > 8000:
+            check_context = revised[:3000] + "\n\n[...]\n\n" + revised[-3000:]
+        else:
+            check_context = revised
         check_prompt = (
             "You just revised a solution. Here is your revised version:\n\n"
-            f"{revised[:4000]}\n\n"  # cap to avoid prompt bloat
+            f"{check_context}\n\n"
             "Check: did your revision introduce any NEW contradictions, "
-            "inconsistencies, or errors elsewhere in the solution? "
-            "If yes, list them. If no, reply 'No contradictions found.' "
-            "Be brief."
+            "inconsistencies, or errors elsewhere in the solution?\n\n"
+            "Reply with EXACTLY one of:\n"
+            "STATUS: CLEAN\n"
+            "STATUS: ISSUES\n[list each issue on its own line]\n\n"
+            "Use STATUS: CLEAN only if you found zero new problems."
         )
         t4 = time.monotonic()
         check = _call_cc(use_directives, check_prompt)
         _err(f"  [generate/step4/{i+1}] check done ({time.monotonic() - t4:.1f}s)")
 
-        if "no contradiction" not in check.lower():
+        # CX cycle 4: structured detection — look for STATUS: CLEAN/ISSUES
+        check_clean = "status: clean" in check.lower() or "no contradiction" in check.lower()
+        if not check_clean:
             # Contradiction detected — feed it as an additional issue in next batch
             _err(f"  [generate/step4/{i+1}] contradiction detected — "
                  f"adding to revision queue")
@@ -3345,8 +3520,14 @@ def run_task(
     status = "DEFERRED"  # default if we exhaust all rounds
     deferred_items: list[dict] = []
 
+    # Set CC policy timeout for _call_cc_inner (Finding 1 fix: registry-sourced timeouts)
+    global _cc_policy_timeout
+    _cc_policy_timeout = model_policies.get("cc", {}).get("model", {}).get("timeout")
+
     # Phase 2: create persistent conversations for ALL 5 reviewers.
     # Each reviewer maintains context across all rounds of this task.
+    # Timeouts are sourced from registry model policies (Finding 1 fix).
+    # Fallback to class-level defaults when policy is absent.
     deepseek_chat = None
     cx_chat = None
     gemini_chat = None
@@ -3354,10 +3535,14 @@ def run_task(
     cc_chat = None  # CC reviews via claude -p (stateless but decomposed)
     if phase2:
         _err(f"  [phase2] creating persistent conversations for 5 reviewers")
-        deepseek_chat = DeepSeekReviewChat()
-        cx_chat = CXReviewChat(task_id)
-        gemini_chat = GeminiReviewChat()
-        chatgpt_chat = ChatGPTReviewChat(task_id)
+        ds_timeout = model_policies.get("deepseek", {}).get("model", {}).get("timeout")
+        cx_timeout = model_policies.get("cx", {}).get("model", {}).get("timeout")
+        gm_timeout = model_policies.get("gemini", {}).get("model", {}).get("timeout")
+        cg_timeout = model_policies.get("chatgpt", {}).get("model", {}).get("timeout")
+        deepseek_chat = DeepSeekReviewChat(timeout=ds_timeout)
+        cx_chat = CXReviewChat(task_id, timeout=cx_timeout)
+        gemini_chat = GeminiReviewChat(timeout=gm_timeout)
+        chatgpt_chat = ChatGPTReviewChat(task_id, timeout=cg_timeout)
         # CC (Opus) reviews are handled via _call_cc in the blind/confer functions
         # — it uses claude -p which is stateless, but findings accumulate in the protocol
 
@@ -3419,6 +3604,42 @@ def run_task(
         else:
             # Confer round — each sees the OTHER FOUR's previous findings
             prev_round = rounds[-1]
+
+            # Finding 2 fix: iterative HIL guidance for CDSFL+HIL confer rounds.
+            # Round 1 guidance was research-based (full pipeline). Rounds 2-5 get
+            # iterative follow-up guidance based on confer findings, same pattern
+            # as plain HIL but applied to the CDSFL+HIL condition.
+            if condition == "cdsfl_hil" and round_num <= len(ITERATIVE_HIL_ROUND_GOALS):
+                prev_findings = _summarise_round_findings(prev_round)
+                _err(f"  [cdsfl_hil] Iterative guidance: generating round {round_num} follow-up ...")
+                try:
+                    iterative_guidance, leakage = _generate_iterative_hil_guidance(
+                        task, round_num=round_num, prev_findings=prev_findings,
+                    )
+                    # CX Turn 1 C2 fix: cap base, keep all follow-ups (they're small).
+                    # Split on first FOLLOW-UP marker to get base only.
+                    base_only = expert_guidance.split("\n\nFOLLOW-UP")[0]
+                    base_cap = 3000 if round_num > 2 else len(base_only)
+                    capped_base = base_only[:base_cap]
+                    if len(base_only) > base_cap:
+                        capped_base += "\n[base guidance truncated]"
+                    # Append ONLY the new follow-up (older ones are in the chain record)
+                    expert_guidance = (
+                        capped_base
+                        + f"\n\nFOLLOW-UP (round {round_num}):\n"
+                        + iterative_guidance
+                    )
+                    _err(f"  [cdsfl_hil] round {round_num} guidance: {len(iterative_guidance)} chars, "
+                         f"goal={ITERATIVE_HIL_ROUND_GOALS.get(round_num, {}).get('goal', '?')}"
+                         f"{', LEAKAGE' if leakage else ''}")
+                    chain.record(f"expert_guidance_r{round_num}", iterative_guidance, {
+                        "task_id": task_id, "round": round_num,
+                        "guidance_goal": ITERATIVE_HIL_ROUND_GOALS.get(round_num, {}).get("goal", ""),
+                        "leakage": leakage, "condition": "cdsfl_hil",
+                    })
+                except Exception as exc:
+                    _err(f"  [cdsfl_hil] round {round_num} guidance failed: {exc} — using previous")
+
             if prev_round["round_type"] == "blind":
                 cc_prev = prev_round.get("cc", {}).get("findings", [])
                 deepseek_prev = prev_round.get("deepseek", {}).get("findings", [])

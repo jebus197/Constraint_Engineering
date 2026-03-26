@@ -151,17 +151,25 @@ def canonicalise_structural_finding(finding_dict: dict[str, Any]) -> tuple[str, 
 def structural_canon_hash(finding_dict: dict[str, Any]) -> str:
     """Produce a SHA-256 hash of the canonical tuple for a structural finding.
 
-    This replaces raw claim hashing for structural dedup. Two findings that
-    describe the same (artifact, assumption, violation_mode, witness) in
-    different words will collide to the same hash after canonicalisation.
+    CX extended P-pass: falls back to claim-based hashing when structural
+    fields (artifact, assumption, violation_mode, witness) are empty.
+    This prevents all non-structural findings from colliding to the same
+    empty-tuple hash.
 
     Args:
-        finding_dict: Dict containing the 4 canonical fields.
+        finding_dict: Dict containing structural fields or at least 'claim'.
 
     Returns:
         Hex-encoded SHA-256 digest string.
     """
     canon = canonicalise_structural_finding(finding_dict)
+    # CX extended P-pass: if all structural fields are empty, fall back to
+    # claim-based hashing to prevent all non-structural findings from colliding.
+    if all(f == "" for f in canon):
+        claim = str(finding_dict.get("claim", "")).strip().lower()
+        constraint = str(finding_dict.get("constraint_class", "")).strip().lower()
+        fallback = f"{constraint}|{claim}"
+        return hashlib.sha256(fallback.encode("utf-8")).hexdigest()
     payload = "|".join(canon).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
