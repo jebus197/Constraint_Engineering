@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 24 March 2026
+Last updated: 26 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -12,19 +12,22 @@ making AI-assisted technical work more reliable. It formalises the scientific
 method — specifically Popperian falsification — as a structured protocol that
 AI models follow when producing and reviewing technical output.
 
-The project is approximately 10 days old (first commit: 14 March 2026). It
+The project is approximately 12 days old (first commit: 14 March 2026). It
 was built by a single founder (George Jackson) working with Claude Opus 4.6
-(CC) as primary collaborator and OpenAI Codex 5.3 (CX) as independent
-falsifier, with DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional
-review models.
+as primary collaborator and OpenAI Codex 5.3 as independent falsifier, with
+DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 **Repository:** `github.com/jebus197/Constraint_Engineering`
 **Local path:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/`
 
 ## Current State (update after each major milestone)
 
-- **Full bench test running** — 26 tasks x 4 conditions = 104 runs, 5 models
-  per run (Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4)
+- **First full bench test running (Run 1)** — 26 tasks x 4 conditions = 104
+  runs, 5 models per run. ~70 of 104 runs complete as of 26 March.
+  This run has known confounds (see below and BENCH_RUN_1_ANALYSIS.md).
+  It measures distributed compute effectiveness, not full CDSFL.
+  A corrected Run 2 is planned with bare-metal model parity, iterative HIL,
+  full SymPy verification, and OpenRouter integration for ChatGPT.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
@@ -70,7 +73,7 @@ Constraint_Engineering/
       universal.toml          -- Layer 1 (immutable HARD constraints)
       domains/                -- Layer 2 (domain-specific policies)
       models/                 -- Layer 4 (model-specific settings)
-    tasks_frontier/           -- 26 frontier tasks (ft-001 through ft-026)
+    tasks_frontier/           -- 27 frontier tasks (ft-001 through ft-027)
     directives/               -- Domain-specific constraint boxes
     interactive_smoke.py      -- Bidirectional P-pass test script
     tutor_test.py             -- Tutor-style decomposition test
@@ -122,6 +125,17 @@ universal methodology, domain-specific directives, user personalisation.
    available population, not a chosen sample. The diversity hypothesis
    cannot be fully tested until the ecosystem is larger.
 
+5. **HIL prompt narrowing:** The HIL guidance says "focus on these points,"
+   which narrows model search. Confirmed by framing bias literature
+   (arXiv:2603.18740). Fix designed: iterative 5-round guidance pattern.
+
+6. **ChatGPT hidden system prompt:** ChatGPT 5.4 via proprietary API carries
+   a hidden RLHF preamble. Fix designed: OpenRouter access with user-defined
+   system prompts.
+
+7. **Phantom HARD inflation:** Default constraint_class was HARD instead of
+   SOFT. Fixed in code but affects Run 1 data.
+
 ## Communication Protocols
 
 The founder uses single-letter shorthand:
@@ -132,8 +146,10 @@ The founder uses single-letter shorthand:
 - `e` = extrapolate beyond immediate domain
 - `c` = confer with CX via CLI, run mutual P-passes until convergence
 - `a` = analyse dispassionately
-- `r` = re-read key context files
-- `rc` = full recovery (re-read all resources, rebuild context from scratch)
+- `r` = read IM only (quick context check)
+- `rr` = full recovery (re-read all resources, rebuild context from scratch)
+- `rs` = external research (web search, arXiv, Semantic Scholar)
+- `t` = export to TTS accessibility file
 
 These compose: `p d e` = falsify, discuss, extrapolate. `c p a d` = confer
 with CX, P-pass, analyse, discuss.

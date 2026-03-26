@@ -43,8 +43,8 @@ happened. It is never sufficient on its own. The external sources (git log,
 bench logs, ONBOARDING.md) always take precedence over the continuation
 summary when they conflict.
 
-Your shorthand `rc` triggers full recovery. Your shorthand `r` triggers
-standard recovery.
+Your shorthand `rr` triggers full recovery. Your shorthand `r` triggers
+IM read only (quick context check).
 
 ## For New Model Instances
 
