@@ -1097,7 +1097,7 @@ def _compute_sympy(query: str) -> str:
 
 
 def _search_arxiv(query: str, max_results: int = 3) -> str:
-    """Search arXiv for relevant papers. Returns titles + abstracts."""
+    """Search arXiv for relevant papers. Returns titles + abstracts + DOIs."""
     try:
         import arxiv
         search = arxiv.Search(query=query, max_results=max_results,
@@ -1105,16 +1105,205 @@ def _search_arxiv(query: str, max_results: int = 3) -> str:
         client = arxiv.Client()
         results = []
         for paper in client.results(search):
+            doi_str = f"  DOI: {paper.doi}" if paper.doi else "  DOI: (none)"
             results.append(
                 f"  Title: {paper.title}\n"
                 f"  Authors: {', '.join(a.name for a in paper.authors[:3])}\n"
                 f"  Year: {paper.published.year}\n"
                 f"  Abstract: {paper.summary[:300]}...\n"
-                f"  URL: {paper.entry_id}"
+                f"  URL: {paper.entry_id}\n"
+                f"{doi_str}"
             )
         return "\n\n".join(results) if results else "(no arXiv results)"
     except Exception as exc:
         return f"(arxiv error: {exc})"
+
+
+def _search_semantic_scholar(query: str, max_results: int = 5) -> str:
+    """Search Semantic Scholar for papers by query.
+
+    Returns titles, years, citation counts, and truncated abstracts.
+    Uses the semanticscholar Python package with a 10-second timeout.
+    Gracefully handles rate limits (429) and all other errors.
+    """
+    try:
+        from semanticscholar import SemanticScholar
+        sch = SemanticScholar(timeout=10)
+        results = sch.search_paper(
+            query,
+            limit=max_results,
+            fields=["title", "year", "citationCount", "abstract", "externalIds"],
+        )
+        if not results or len(results) == 0:
+            return "(no Semantic Scholar results)"
+        output = []
+        for paper in results:
+            title = getattr(paper, "title", "(no title)") or "(no title)"
+            year = getattr(paper, "year", "?") or "?"
+            cites = getattr(paper, "citationCount", 0) or 0
+            abstract = getattr(paper, "abstract", "") or ""
+            ext_ids = getattr(paper, "externalIds", {}) or {}
+            doi = ext_ids.get("DOI", "(none)") if isinstance(ext_ids, dict) else "(none)"
+            output.append(
+                f"  Title: {title}\n"
+                f"  Year: {year} | Citations: {cites}\n"
+                f"  DOI: {doi}\n"
+                f"  Abstract: {abstract[:300]}..."
+            )
+        return "\n\n".join(output)
+    except Exception as exc:
+        exc_str = str(exc)
+        if "429" in exc_str or "rate" in exc_str.lower():
+            return "(Semantic Scholar rate-limited — skipping)"
+        return f"(Semantic Scholar error: {exc_str[:200]})"
+
+
+def _fetch_scihub(doi: str, max_pages: int = 3) -> str:
+    """Fetch full-text PDF from Sci-Hub for a given DOI.
+
+    Attempts to find PDF URL from sci-hub.red, download it, and extract
+    text from the first max_pages pages. Falls back gracefully if Sci-Hub
+    is unavailable or the PDF cannot be parsed.
+
+    Timeout: 15 seconds for network operations.
+    """
+    if not doi or doi == "(none)":
+        return "(no DOI provided)"
+
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return "(requests/beautifulsoup4 not available)"
+
+    # Step 1: Get the PDF URL from Sci-Hub
+    try:
+        scihub_url = f"https://sci-hub.red/{doi}"
+        resp = requests.get(scihub_url, timeout=15, headers={
+            "User-Agent": "Mozilla/5.0 (research bot)"
+        })
+        if resp.status_code != 200:
+            return f"(Sci-Hub returned HTTP {resp.status_code} for {doi})"
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        # Sci-Hub embeds the PDF in an iframe or a direct link
+        pdf_url = None
+        iframe = soup.find("iframe", {"id": "pdf"})
+        if iframe and iframe.get("src"):
+            pdf_url = iframe["src"]
+        else:
+            embed = soup.find("embed", {"type": "application/pdf"})
+            if embed and embed.get("src"):
+                pdf_url = embed["src"]
+        if not pdf_url:
+            # Try finding any .pdf link — restrict to known academic domains
+            _SAFE_DOMAINS = ("sci-hub", "libgen", "arxiv.org", "unpaywall", "core.ac.uk")
+            for a_tag in soup.find_all("a", href=True):
+                href = a_tag["href"]
+                if ".pdf" in href and any(d in href for d in _SAFE_DOMAINS):
+                    pdf_url = href
+                    break
+        if not pdf_url:
+            return f"(Sci-Hub: no PDF link found for {doi})"
+
+        # Normalise URL
+        if pdf_url.startswith("//"):
+            pdf_url = "https:" + pdf_url
+        elif pdf_url.startswith("/"):
+            pdf_url = "https://sci-hub.red" + pdf_url
+    except requests.exceptions.Timeout:
+        return f"(Sci-Hub timed out for {doi})"
+    except Exception as exc:
+        return f"(Sci-Hub lookup error: {str(exc)[:150]})"
+
+    # Step 2: Download the PDF
+    try:
+        pdf_resp = requests.get(pdf_url, timeout=15, headers={
+            "User-Agent": "Mozilla/5.0 (research bot)"
+        })
+        if pdf_resp.status_code != 200:
+            return f"(PDF download failed: HTTP {pdf_resp.status_code})"
+        # Size limits: reject < 1KB (not a real PDF) and > 20MB (too large)
+        MAX_PDF_BYTES = 20 * 1024 * 1024  # 20MB
+        content_length = int(pdf_resp.headers.get("Content-Length", 0))
+        if content_length > MAX_PDF_BYTES:
+            return f"(PDF too large: {content_length} bytes, max {MAX_PDF_BYTES})"
+        pdf_bytes = pdf_resp.content
+        if len(pdf_bytes) > MAX_PDF_BYTES:
+            return f"(PDF too large: {len(pdf_bytes)} bytes)"
+        if len(pdf_bytes) < 1000:
+            return f"(PDF too small — likely not a real PDF: {len(pdf_bytes)} bytes)"
+    except requests.exceptions.Timeout:
+        return "(PDF download timed out)"
+    except Exception as exc:
+        return f"(PDF download error: {str(exc)[:150]})"
+
+    # Step 3: Extract text from the first N pages
+    import io
+    text = ""
+
+    # Try pdfplumber first (better extraction), fall back to PyPDF2
+    try:
+        import pdfplumber
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            pages_to_read = min(max_pages, len(pdf.pages))
+            parts = []
+            for i in range(pages_to_read):
+                page_text = pdf.pages[i].extract_text()
+                if page_text:
+                    parts.append(page_text)
+            text = "\n\n".join(parts)
+    except Exception:
+        try:
+            import PyPDF2
+            reader = PyPDF2.PdfReader(io.BytesIO(pdf_bytes))
+            pages_to_read = min(max_pages, len(reader.pages))
+            parts = []
+            for i in range(pages_to_read):
+                page_text = reader.pages[i].extract_text()
+                if page_text:
+                    parts.append(page_text)
+            text = "\n\n".join(parts)
+        except Exception as exc:
+            return f"(PDF text extraction failed: {str(exc)[:150]})"
+
+    if not text.strip():
+        return f"(PDF downloaded but no text extracted from first {max_pages} pages)"
+
+    return f"  [Full text, first {max_pages} pages, DOI: {doi}]\n{text[:5000]}"
+
+
+def _delegate_research_to_cx(topic: str, timeout: int = 120) -> str:
+    """Delegate a focused research query to CX (Codex 5.3) via CLI.
+
+    Called only for cdsfl_hil condition — leverages CX's independent
+    knowledge base for citation-aware research.
+
+    Returns CX's research findings as a string, or a fallback message
+    on any error.
+    """
+    prompt = (
+        f"Find the 3 most cited papers on: {topic}\n\n"
+        f"Return titles, years, citation counts, and one-sentence summaries. "
+        f"If you cannot find exact citation counts, estimate from your knowledge. "
+        f"Format as a numbered list."
+    )
+    try:
+        result = sp.run(
+            ["codex", "exec", prompt],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        output = result.stdout.strip()
+        if result.returncode != 0 or not output:
+            stderr = result.stderr[:200] if result.stderr else "(no stderr)"
+            return f"(CX research delegation failed: exit {result.returncode}, {stderr})"
+        return output
+    except sp.TimeoutExpired:
+        return f"(CX research delegation timed out after {timeout}s)"
+    except FileNotFoundError:
+        return "(codex CLI not found on PATH — CX delegation unavailable)"
+    except Exception as exc:
+        return f"(CX research delegation error: {str(exc)[:200]})"
 
 
 def _search_web(query: str, max_results: int = 5) -> str:
@@ -1203,16 +1392,25 @@ def _search_and_read(query: str, max_results: int = 3, read_top_n: int = 2) -> s
     return "\n".join(output)
 
 
-def _do_external_research(task: dict, research_needs: str) -> str:
-    """Perform external research using SymPy computation, arXiv, and web search.
+def _do_external_research(task: dict, research_needs: str,
+                          condition: str = "cdsfl_hil") -> str:
+    """Perform external research using multiple sources.
+
+    Pipeline order:
+      (a) SymPy computation (mathematical queries)
+      (b) arXiv search (with DOI extraction)
+      (c) Semantic Scholar search (citation counts + reference context)
+      (d) Sci-Hub full-text fetch (top 2 most relevant papers by DOI)
+      (e) Web search + page reading
+      (f) CX delegation (cdsfl_hil condition only)
 
     CC has already identified specific queries in research_needs.
-    This function extracts them and calls the APIs directly — no
-    subprocess, no proxy, no headless browser. Direct HTTP calls.
-
-    Returns consolidated research results as a string.
+    Each source failure is logged but doesn't stop the pipeline.
+    Total output is capped at 15000 chars to prevent context overflow.
     """
+    RESEARCH_OUTPUT_CAP = 15000
     results = []
+    collected_dois = []  # DOIs gathered from arXiv and Semantic Scholar
     task_title = task.get("title", "")
 
     # Parse CC's research needs into categorised queries
@@ -1227,11 +1425,10 @@ def _do_external_research(task: dict, research_needs: str) -> str:
             continue
         lower = stripped.lower()
 
-        # Lines with mathematical verification keywords → Wolfram
+        # Lines with mathematical verification keywords → SymPy
         if any(kw in lower for kw in ["verify", "compute", "calculate",
                                        "evaluate", "solve", "simplify",
                                        "what is", "check that", "confirm"]):
-            # Clean up for Wolfram: remove bullet markers, numbering
             clean = stripped.lstrip("-*0123456789.) ")
             if clean:
                 wolfram_queries.append(clean)
@@ -1254,31 +1451,93 @@ def _do_external_research(task: dict, research_needs: str) -> str:
     # Always add a baseline web search for the task domain
     web_queries.append(f"{task_title} known results best bounds proof techniques")
 
-    # Execute SymPy computational queries (cap at 5)
+    # --- (a) SymPy computational queries (cap at 5) ---
     for i, wq in enumerate(wolfram_queries[:5]):
         _err(f"    [research/sympy] query {i+1}/{min(len(wolfram_queries), 5)}: "
              f"{wq[:80]}...")
-        answer = _compute_sympy(wq)
-        results.append(f"SYMPY COMPUTATION: {wq}\n{answer}\n")
+        try:
+            answer = _compute_sympy(wq)
+            results.append(f"SYMPY COMPUTATION: {wq}\n{answer}\n")
+        except Exception as exc:
+            _err(f"    [research/sympy] error: {exc}")
+            results.append(f"SYMPY COMPUTATION: {wq}\n  (error: {exc})\n")
 
-    # Execute arXiv searches (cap at 3)
+    # --- (b) arXiv searches (cap at 3) — now extracts DOIs ---
     for i, aq in enumerate(arxiv_queries[:3]):
         _err(f"    [research/arxiv] query {i+1}/{min(len(arxiv_queries), 3)}: "
              f"{aq[:80]}...")
-        answer = _search_arxiv(aq)
-        results.append(f"ARXIV SEARCH: {aq}\n{answer}\n")
+        try:
+            answer = _search_arxiv(aq)
+            results.append(f"ARXIV SEARCH: {aq}\n{answer}\n")
+            # Extract DOIs from arXiv results
+            for result_line in answer.split("\n"):
+                if result_line.strip().startswith("DOI:"):
+                    doi_val = result_line.strip().replace("DOI:", "").strip()
+                    if doi_val and doi_val != "(none)":
+                        collected_dois.append(doi_val)
+        except Exception as exc:
+            _err(f"    [research/arxiv] error: {exc}")
+            results.append(f"ARXIV SEARCH: {aq}\n  (error: {exc})\n")
 
-    # Execute web searches — search AND read top results (cap at 3)
+    # --- (c) Semantic Scholar search (cap at 3 queries) ---
+    for i, aq in enumerate(arxiv_queries[:3]):
+        _err(f"    [research/semantic_scholar] query {i+1}/{min(len(arxiv_queries), 3)}: "
+             f"{aq[:80]}...")
+        try:
+            answer = _search_semantic_scholar(aq, max_results=5)
+            results.append(f"SEMANTIC SCHOLAR: {aq}\n{answer}\n")
+            # Extract DOIs from Semantic Scholar results
+            for result_line in answer.split("\n"):
+                if result_line.strip().startswith("DOI:"):
+                    doi_val = result_line.strip().replace("DOI:", "").strip()
+                    if doi_val and doi_val != "(none)":
+                        collected_dois.append(doi_val)
+        except Exception as exc:
+            _err(f"    [research/semantic_scholar] error: {exc}")
+            results.append(f"SEMANTIC SCHOLAR: {aq}\n  (error: {exc})\n")
+
+    # --- (d) Sci-Hub full-text fetch (top 2 unique DOIs) ---
+    unique_dois = list(dict.fromkeys(collected_dois))  # deduplicate, preserve order
+    for i, doi in enumerate(unique_dois[:2]):
+        _err(f"    [research/scihub] fetching DOI {i+1}/2: {doi[:60]}...")
+        try:
+            answer = _fetch_scihub(doi, max_pages=3)
+            results.append(f"SCIHUB FULL TEXT: {doi}\n{answer}\n")
+        except Exception as exc:
+            _err(f"    [research/scihub] error: {exc}")
+            results.append(f"SCIHUB FULL TEXT: {doi}\n  (error: {exc})\n")
+
+    # --- (e) Web searches — search AND read top results (cap at 3) ---
     for i, wq in enumerate(web_queries[:3]):
         _err(f"    [research/web] query {i+1}/{min(len(web_queries), 3)}: "
              f"{wq[:80]}...")
-        answer = _search_and_read(wq, max_results=3, read_top_n=2)
-        results.append(f"WEB RESEARCH: {wq}\n{answer}\n")
+        try:
+            answer = _search_and_read(wq, max_results=3, read_top_n=2)
+            results.append(f"WEB RESEARCH: {wq}\n{answer}\n")
+        except Exception as exc:
+            _err(f"    [research/web] error: {exc}")
+            results.append(f"WEB RESEARCH: {wq}\n  (error: {exc})\n")
+
+    # --- (f) CX delegation (cdsfl_hil only) ---
+    if condition == "cdsfl_hil":
+        topic = task_title or task.get("prompt", "")[:200]
+        _err(f"    [research/cx] delegating research to CX: {topic[:80]}...")
+        try:
+            cx_answer = _delegate_research_to_cx(topic, timeout=120)
+            results.append(f"CX RESEARCH DELEGATION: {topic}\n{cx_answer}\n")
+        except Exception as exc:
+            _err(f"    [research/cx] error: {exc}")
+            results.append(f"CX RESEARCH DELEGATION: {topic}\n  (error: {exc})\n")
 
     if not results:
         return "(No external research queries extracted from CC's research needs.)"
 
-    return "\n".join(results)
+    # Cap total output to prevent context overflow
+    combined = "\n".join(results)
+    if len(combined) > RESEARCH_OUTPUT_CAP:
+        _err(f"    [research] output capped: {len(combined)} -> {RESEARCH_OUTPUT_CAP} chars")
+        combined = combined[:RESEARCH_OUTPUT_CAP]  # strict cap, no suffix that exceeds it
+    return combined
 
 
 def _get_condition_prompts(condition: str) -> tuple[str, str]:
@@ -1548,13 +1807,30 @@ def _call_cli(cmd: list[str], input_text: str | None = None,
         raise RuntimeError(f"{label} CLI not found on PATH")
 
 
+# Module-level flag: whether CC should run in --bare mode with explicit system prompt.
+# Set per-condition in run_task(). When True, CC ignores CLAUDE.md and uses only
+# the methodology reference file (CDSFL conditions) or nothing (Control/HIL).
+_cc_bare_mode: bool = False
+_cc_system_prompt_file: str | None = None
+
+METHODOLOGY_FILE = str(
+    Path(__file__).resolve().parent.parent / "resources" / "configs" / "methodology_reference.md"
+)
+
+
 def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
     """CC (Opus 4.6) via claude CLI (inner, no retry).
 
-    Pipes the combined prompt via stdin. System prompt (CDSFL directives)
-    is prepended to the user prompt to stay within ARG_MAX limits.
+    Uses --bare mode to strip CLAUDE.md auto-loading, ensuring CC operates
+    under the same directive conditions as other models. System-level
+    directives are injected via --system-prompt (CDSFL) or omitted (Control/HIL).
     """
     cmd = ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
+
+    if _cc_bare_mode:
+        cmd.append("--bare")
+        if _cc_system_prompt_file:
+            cmd.extend(["--system-prompt-file", _cc_system_prompt_file])
 
     if system_prompt:
         combined = f"SYSTEM DIRECTIVES:\n{system_prompt}\n\nTASK:\n{user_prompt}"
@@ -1683,13 +1959,17 @@ class DeepSeekReviewChat:
     DEEPSEEK_TIMEOUT = 300  # 5 min per call (class-level fallback)
     DEEPSEEK_MAX_ATTEMPTS = 3
 
-    def __init__(self, timeout: int | None = None):
+    def __init__(self, timeout: int | None = None, system_prompt: str | None = None):
         from openai import OpenAI
         api_key = os.environ.get("DEEPSEEK_API_KEY")
         if not api_key:
             raise RuntimeError("DEEPSEEK_API_KEY not set")
         self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
         self.messages: list[dict[str, str]] = []
+        # System-level directive injection (CDSFL conditions only).
+        # This is a true system message — persists across all turns.
+        if system_prompt:
+            self.messages.append({"role": "system", "content": system_prompt})
         self._timeout = timeout if timeout is not None else self.DEEPSEEK_TIMEOUT
 
     def send(self, prompt: str, timeout: int | None = None) -> str:
@@ -1755,18 +2035,20 @@ class GeminiReviewChat:
     GEMINI_TIMEOUT = 300  # class-level fallback
     GEMINI_MAX_ATTEMPTS = 5
 
-    def __init__(self, timeout: int | None = None):
+    def __init__(self, timeout: int | None = None, system_prompt: str | None = None):
         from google import genai
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY / GOOGLE_API_KEY not set")
         self.client = genai.Client(api_key=api_key)
+        # System-level directive injection via system_instruction parameter.
+        # This persists across all turns in the chat session.
+        config_kwargs = {"max_output_tokens": 32768, "temperature": 0.0}
+        if system_prompt:
+            config_kwargs["system_instruction"] = system_prompt
         self.chat = self.client.chats.create(
             model="gemini-3.1-pro-preview",
-            config=genai.types.GenerateContentConfig(
-                max_output_tokens=32768,
-                temperature=0.0,
-            ),
+            config=genai.types.GenerateContentConfig(**config_kwargs),
         )
         self._timeout = timeout if timeout is not None else self.GEMINI_TIMEOUT
 
@@ -1831,11 +2113,13 @@ class ChatGPTReviewChat:
     MAX_CONTEXT_CHARS = 8000  # ~2000 tokens — leaves room for current prompt
     MAX_FULL_RESPONSES = 2    # keep last 2 reviewer responses in full
 
-    def __init__(self, task_id: str, timeout: int | None = None):
+    def __init__(self, task_id: str, timeout: int | None = None, system_prompt: str | None = None):
         self.task_id = task_id
         self.history: list[tuple[str, str]] = []  # (role, text)
         self.responses: list[str] = []  # reviewer responses only (for summarisation)
         self._timeout = timeout if timeout is not None else self.CHATGPT_TIMEOUT
+        # Context-level methodology injection (best available for chatgpt CLI pipe mode).
+        self._system_prompt = system_prompt
 
     def _summarise_response(self, resp: str, round_num: int) -> str:
         """One-line summary of a prior response for context cap.
@@ -1857,7 +2141,11 @@ class ChatGPTReviewChat:
 
         # Build context with cap — same pattern as CXReviewChat
         if len(self.history) == 1:
-            full_prompt = prompt
+            # First message: prepend system prompt if available (context-level injection)
+            if self._system_prompt:
+                full_prompt = f"METHODOLOGY DIRECTIVES:\n{self._system_prompt}\n\nTASK:\n{prompt}"
+            else:
+                full_prompt = prompt
         else:
             context_parts = [
                 "This is a continuing review conversation. "
@@ -1960,11 +2248,14 @@ class CXReviewChat:
     MAX_CONTEXT_CHARS = 6000   # ~1500 tokens — tight cap to conserve CX quota
     MAX_FULL_RESPONSES = 2     # keep last 2 responses in full, summarise older
 
-    def __init__(self, task_id: str, timeout: int | None = None):
+    def __init__(self, task_id: str, timeout: int | None = None, system_prompt: str | None = None):
         self.task_id = task_id
         self.responses: list[str] = []  # CX's own prior responses only
         self.summaries: list[str] = []  # compact summaries of older rounds
         self._timeout = timeout if timeout is not None else CX_TIMEOUT
+        # Context-level methodology injection (best available for codex exec).
+        # Prepended to the first prompt. Weaker than true system prompt.
+        self._system_prompt = system_prompt
 
     def _summarise_response(self, resp: str, round_num: int) -> str:
         """Compact summary of a prior response — topics, finding count, and claims.
@@ -1991,7 +2282,11 @@ class CXReviewChat:
         timeout = timeout if timeout is not None else self._timeout
 
         if not self.responses:
-            full_prompt = prompt
+            # First message: prepend system prompt if available (context-level injection)
+            if self._system_prompt:
+                full_prompt = f"METHODOLOGY DIRECTIVES:\n{self._system_prompt}\n\nTASK:\n{prompt}"
+            else:
+                full_prompt = prompt
         else:
             context_parts = []
 
@@ -3376,6 +3671,21 @@ def run_task(
             _err(f"  [registry] WARNING: {model_alias} policy failed: {exc}")
             model_policies[model_alias] = base_policy
 
+    # Set CC directive mode per condition.
+    # Control/HIL: --bare with NO system prompt (level playing field).
+    # CDSFL/CDSFL+HIL: --bare with methodology reference as system prompt.
+    # This eliminates the directive asymmetry confound: CC no longer gets
+    # CLAUDE.md advantages under Control/HIL, and all models get the same
+    # methodology directives under CDSFL conditions.
+    global _cc_bare_mode, _cc_system_prompt_file
+    _cc_bare_mode = True  # always strip CLAUDE.md auto-loading
+    if condition in ("cdsfl", "cdsfl_hil"):
+        _cc_system_prompt_file = METHODOLOGY_FILE
+        _err(f"  [directives] CC: --bare + methodology reference ({METHODOLOGY_FILE})")
+    else:
+        _cc_system_prompt_file = None
+        _err(f"  [directives] CC: --bare only (no methodology directives — level playing field)")
+
     # CX P-pass fix (HARD 7): check cost cap BEFORE expensive generation
     if not ledger.check_cap():
         _err(f"  [cost] cap reached before generation — skipping task")
@@ -3472,7 +3782,7 @@ def run_task(
 
             # Step (b): External research — SymPy, arXiv, web search
             _err(f"  [cdsfl_hil] Step 2: External research (SymPy, arXiv, web) ...")
-            external_research = _do_external_research(task, research_needs)
+            external_research = _do_external_research(task, research_needs, condition=condition)
             elapsed_b = time.monotonic() - t0
             _err(f"  [cdsfl_hil] external research done ({elapsed_b:.1f}s, {len(external_research)} chars)")
 
@@ -3540,10 +3850,29 @@ def run_task(
         cx_timeout = model_policies.get("cx", {}).get("model", {}).get("timeout")
         gm_timeout = model_policies.get("gemini", {}).get("model", {}).get("timeout")
         cg_timeout = model_policies.get("chatgpt", {}).get("model", {}).get("timeout")
-        deepseek_chat = DeepSeekReviewChat(timeout=ds_timeout)
-        cx_chat = CXReviewChat(task_id, timeout=cx_timeout)
-        gemini_chat = GeminiReviewChat(timeout=gm_timeout)
-        chatgpt_chat = ChatGPTReviewChat(task_id, timeout=cg_timeout)
+
+        # Load methodology directives for CDSFL conditions.
+        # Control/HIL: no directives (level playing field).
+        # CDSFL/CDSFL+HIL: all models get identical methodology reference.
+        methodology_text = None
+        if condition in ("cdsfl", "cdsfl_hil"):
+            try:
+                methodology_text = Path(METHODOLOGY_FILE).read_text().strip()
+                _err(f"  [directives] Methodology loaded ({len(methodology_text)} chars) for all models")
+            except FileNotFoundError:
+                _err(f"  [directives] WARNING: {METHODOLOGY_FILE} not found — no methodology injection")
+        else:
+            _err(f"  [directives] No methodology injection ({condition} — level playing field)")
+
+        # System-level injection where supported (DeepSeek, Gemini — true system prompt).
+        # Context-level for CX and ChatGPT (prepended to first message — weaker persistence,
+        # documented as platform limitation, not a design choice).
+        deepseek_chat = DeepSeekReviewChat(timeout=ds_timeout, system_prompt=methodology_text)
+        gemini_chat = GeminiReviewChat(timeout=gm_timeout, system_prompt=methodology_text)
+        # CX and ChatGPT: inject methodology as context prefix (best available mechanism)
+        cx_system = methodology_text if methodology_text else None
+        cx_chat = CXReviewChat(task_id, timeout=cx_timeout, system_prompt=cx_system)
+        chatgpt_chat = ChatGPTReviewChat(task_id, timeout=cg_timeout, system_prompt=cx_system)
         # CC (Opus) reviews are handled via _call_cc in the blind/confer functions
         # — it uses claude -p which is stateless, but findings accumulate in the protocol
 
