@@ -740,6 +740,159 @@ a sentence or two, not a comprehensive review guide.
 """
 
 
+# ---------------------------------------------------------------------------
+# Iterative HIL guidance templates (evidence-based, arXiv:2603.18740)
+# Each round has a fixed GOAL but CC fills content from previous findings.
+# Guidance is questions/checks only — never declarative answers.
+# Character limits enforced in code, not just prompt.
+# ---------------------------------------------------------------------------
+
+ITERATIVE_HIL_ROUND_GOALS = {
+    1: {
+        "goal": "broad_context",
+        "max_chars": 500,
+        "template": """\
+You are simulating a competent human expert starting a review conversation. \
+Give 2-3 specific observations from your domain knowledge about this task. \
+Consider these among other issues — do NOT restrict your search to only these.
+
+Task:
+{task_prompt}
+
+RULES: Under {max_chars} characters. Questions and observations only. \
+Do NOT solve the task or state answers. Do NOT say "focus on" — say \
+"consider" or "watch for".""",
+    },
+    2: {
+        "goal": "gap_followup",
+        "max_chars": 200,
+        "template": """\
+The reviewers found these issues in round 1:
+{findings_summary}
+
+As a domain expert, what did they MISS? What gap is most concerning? \
+Ask ONE targeted question about something they haven't checked yet.
+
+RULES: Under {max_chars} characters. One question only. No answers.""",
+    },
+    3: {
+        "goal": "targeted_risk",
+        "max_chars": 250,
+        "template": """\
+Round 2 findings:
+{findings_summary}
+
+Point the reviewers at ONE specific risk or edge case that hasn't been \
+examined yet. Something that your experience tells you matters but that \
+reviewers often overlook.
+
+RULES: Under {max_chars} characters. One specific check. No answers.""",
+    },
+    4: {
+        "goal": "counter_check",
+        "max_chars": 250,
+        "template": """\
+Round 3 findings:
+{findings_summary}
+
+Ask the reviewers to assume their strongest finding is WRONG. What would \
+disprove it? What alternative explanation exists?
+
+RULES: Under {max_chars} characters. Adversarial question only. No answers.""",
+    },
+    5: {
+        "goal": "synthesis",
+        "max_chars": 100,
+        "template": """\
+Final round. Ask the reviewers to state their top 3 findings with \
+confidence levels and what remains uncertain.
+
+RULES: Under {max_chars} characters.""",
+    },
+}
+
+# Banned phrases in HIL guidance (prevents CC from solving instead of guiding)
+# Banned phrases in HIL guidance (prevents CC from solving instead of guiding)
+# CX P-pass: removed "= " (false-flags equations). Added more specific patterns.
+HIL_GUIDANCE_BANNED = [
+    "the answer is", "the bug is", "the error is", "the fix is",
+    "you should change", "replace with", "the correct value is",
+    "the result is", "the solution is", "should be changed to",
+    "here is the fix", "the correct answer",
+]
+
+# Safe fallback guidance when leakage persists after retries
+HIL_SAFE_FALLBACK = "Review the solution carefully. Are there any issues you haven't examined yet?"
+
+
+def _generate_iterative_hil_guidance(
+    task: dict, round_num: int, prev_findings: list[dict],
+    max_retries: int = 1,
+) -> tuple[str, bool]:
+    """Generate iterative HIL guidance for a specific round.
+
+    Returns (guidance_text, leakage_detected).
+    Leakage means CC injected an answer despite being told not to.
+    """
+    round_config = ITERATIVE_HIL_ROUND_GOALS.get(round_num)
+    if not round_config:
+        return "", False
+
+    # Summarise previous findings compactly
+    if prev_findings:
+        summary_parts = []
+        for f in prev_findings[:10]:  # cap at 10 to keep prompt small
+            if isinstance(f, dict):
+                claim = f.get("claim", "")[:100]
+                sev = f.get("severity", "?")
+                summary_parts.append(f"- [{sev}] {claim}")
+        findings_summary = "\n".join(summary_parts) if summary_parts else "(none)"
+    else:
+        findings_summary = "(no findings yet — this is round 1)"
+
+    prompt = _safe_format(
+        round_config["template"],
+        task_prompt=task.get("prompt", "")[:1000],  # cap task prompt in later rounds
+        findings_summary=findings_summary,
+        max_chars=round_config["max_chars"],
+    )
+
+    for attempt in range(max_retries + 1):
+        guidance = _call_cc(None, prompt)
+
+        # Hard character limit
+        max_c = round_config["max_chars"]
+        if len(guidance) > max_c:
+            guidance = guidance[:max_c].rsplit(" ", 1)[0]
+
+        # Leakage check — did CC inject answers?
+        leakage = any(banned in guidance.lower() for banned in HIL_GUIDANCE_BANNED)
+        if leakage:
+            if attempt < max_retries:
+                _err(f"  [hil] guidance leakage detected, regenerating (attempt {attempt + 2})")
+                prompt += "\n\nYour previous response contained answer content. Questions ONLY."
+                continue
+            else:
+                # CX P-pass fix: leakage persisted — use safe fallback
+                _err(f"  [hil] leakage persisted after {max_retries + 1} attempts — using safe fallback")
+                return HIL_SAFE_FALLBACK, True
+
+        return guidance, False
+
+
+def _summarise_round_findings(round_data: dict) -> list[dict]:
+    """Extract a flat list of findings from a round's data for HIL guidance."""
+    findings = []
+    for r in REVIEWERS:
+        r_data = round_data.get(r, {})
+        findings.extend(r_data.get("findings", []))
+        if round_data.get("round_type") == "confer":
+            findings.extend(
+                r_data.get("confer_response", {}).get("new_findings", [])
+            )
+    return findings
+
+
 HIL_RESEARCH_PROMPT = """\
 You are preparing to provide expert review guidance on the following task. \
 Before generating guidance, you need to identify what should be researched \
@@ -1618,32 +1771,63 @@ class ChatGPTReviewChat:
 
     CHATGPT_TIMEOUT = 600  # 10 min — GPT-5.4 can be slow on complex reviews
     CHATGPT_MAX_ATTEMPTS = 3
+    MAX_CONTEXT_CHARS = 8000  # ~2000 tokens — leaves room for current prompt
+    MAX_FULL_RESPONSES = 2    # keep last 2 reviewer responses in full
 
     def __init__(self, task_id: str):
         self.task_id = task_id
         self.history: list[tuple[str, str]] = []  # (role, text)
+        self.responses: list[str] = []  # reviewer responses only (for summarisation)
+
+    def _summarise_response(self, resp: str, round_num: int) -> str:
+        """One-line summary of a prior response for context cap."""
+        import re
+        count = len(re.findall(r'"finding_id"', resp))
+        topic = resp[:150].replace("\n", " ").strip()
+        return f"Round {round_num}: ~{count} findings. Topics: {topic}..."
 
     def send(self, prompt: str, timeout: int = 600) -> str:
-        """Send a message, including prior conversation context."""
+        """Send a message with capped context to prevent overflow."""
         self.history.append(("orchestrator", prompt))
 
-        # Build full conversation
+        # Build context with cap — same pattern as CXReviewChat
         if len(self.history) == 1:
             full_prompt = prompt
         else:
-            parts = [
+            context_parts = [
                 "This is a continuing review conversation. "
-                "Your previous analyses are shown below. "
                 "Build on YOUR OWN prior findings — do not repeat them.\n"
             ]
-            # Context cap: keep full text of latest 2 rounds, summarise older
-            recent_start = max(0, len(self.history) - 5)  # last ~2.5 exchanges
-            for role, text in self.history[recent_start:-1]:
-                label = "ORCHESTRATOR" if role == "orchestrator" else "YOUR RESPONSE"
-                parts.append(f"--- {label} ---\n{text}\n")
-            parts.append(f"--- ORCHESTRATOR (current round) ---\n{prompt}\n")
-            parts.append("Respond to this round now, building on your prior analysis above.")
-            full_prompt = "\n".join(parts)
+
+            # Older responses: summarised one-liners
+            if len(self.responses) > self.MAX_FULL_RESPONSES:
+                for i, resp in enumerate(self.responses[:-self.MAX_FULL_RESPONSES]):
+                    context_parts.append(self._summarise_response(resp, i + 1))
+
+            # Recent responses: full text, newest-first budget priority
+            recent = self.responses[-self.MAX_FULL_RESPONSES:]
+            recent_start = max(0, len(self.responses) - self.MAX_FULL_RESPONSES)
+            total_chars = sum(len(p) for p in context_parts)
+            recent_entries = []
+            for i in range(len(recent) - 1, -1, -1):  # newest first
+                resp = recent[i]
+                round_num = recent_start + i + 1
+                entry = f"--- YOUR RESPONSE (round {round_num}) ---\n{resp}\n"
+                if total_chars + len(entry) > self.MAX_CONTEXT_CHARS:
+                    remaining = self.MAX_CONTEXT_CHARS - total_chars
+                    if remaining > 200:
+                        recent_entries.append(
+                            f"--- YOUR RESPONSE (round {round_num}, truncated) ---\n{resp[:remaining]}...\n"
+                        )
+                    break
+                recent_entries.append(entry)
+                total_chars += len(entry)
+            context_parts.extend(reversed(recent_entries))  # chronological
+
+            # Current prompt
+            context_parts.append(f"--- ORCHESTRATOR (current round) ---\n{prompt}\n")
+            context_parts.append("Respond now.")
+            full_prompt = "\n".join(context_parts)
 
         _prompt_size_check(full_prompt, "chatgpt_chat")
         last_error = None
@@ -1667,6 +1851,7 @@ class ChatGPTReviewChat:
                     )
                 _err(f"  [chatgpt_chat] done ({elapsed:.1f}s, {len(text)} chars)")
                 self.history.append(("reviewer", text))
+                self.responses.append(text)
                 return text
             except sp.TimeoutExpired:
                 elapsed = time.monotonic() - t0
@@ -2897,11 +3082,24 @@ def _generate_cc_solution(task: dict, directives: str, condition: str = "cdsfl")
     revised = solution
     for i, batch in enumerate(batches):
         _err(f"  [generate/step4/{i+1}] batch {i+1}/{len(batches)} ...")
+        # CX P-pass: solution is source of truth — never truncate it.
+        # Cap the issues batch to control total prompt size.
+        batch_capped = batch
         batch_prompt = _safe_format(
             DECOMPOSED_STEP3_REVISE_BATCH,
             solution=revised,
-            issues_batch=batch,
+            issues_batch=batch_capped,
         )
+        # Hard cap: if the assembled prompt exceeds 20K, truncate batch and reassemble
+        if len(batch_prompt) > 20000:
+            excess = len(batch_prompt) - 20000
+            batch_capped = batch[:max(0, len(batch) - excess - 100)]
+            _err(f"  [generate/step4/{i+1}] prompt {len(batch_prompt)} > 20K — batch capped to {len(batch_capped)} chars")
+            batch_prompt = _safe_format(
+                DECOMPOSED_STEP3_REVISE_BATCH,
+                solution=revised,
+                issues_batch=batch_capped,
+            )
         t3 = time.monotonic()
         revised = _call_cc(use_directives, batch_prompt)
         _err(f"  [generate/step4/{i+1}] done ({time.monotonic() - t3:.1f}s)")
@@ -3045,24 +3243,23 @@ def run_task(
     # things from memory — they look things up, verify, cross-reference.
     expert_guidance = ""
     if condition == "hil":
-        # HIL: CC generates guidance from training knowledge only.
-        # Simulates a knowledgeable human working from their own expertise —
-        # no external research, no SymPy verification, no literature search.
-        _err(f"  [hil] CC generating expert guidance (from training knowledge) ...")
+        # HIL: Iterative guidance — CC generates a new prompt each round
+        # based on what models found in the previous round. Evidence-based
+        # pattern from arXiv:2603.18740, arXiv:2405.01470, arXiv:2402.04568.
+        # Round 1 guidance generated here; rounds 2-5 updated in the loop.
+        _err(f"  [hil] Iterative HIL: generating round 1 guidance ...")
         t0 = time.monotonic()
         try:
-            guidance_prompt = _safe_format(
-                HIL_SIMPLE_GUIDANCE_PROMPT,
-                task_prompt=task["prompt"],
+            expert_guidance, leakage = _generate_iterative_hil_guidance(
+                task, round_num=1, prev_findings=[],
             )
-            expert_guidance = _call_cc(None, guidance_prompt)
-            # Hard truncation — models don't always respect char limits
-            if len(expert_guidance) > 500:
-                _err(f"  [hil] truncating guidance from {len(expert_guidance)} to 500 chars")
-                expert_guidance = expert_guidance[:500].rsplit(" ", 1)[0]  # break at word boundary
             elapsed = time.monotonic() - t0
-            _err(f"  [hil] expert guidance done ({elapsed:.1f}s, {len(expert_guidance)} chars)")
-            chain.record("expert_guidance", expert_guidance, {"task_id": task_id})
+            _err(f"  [hil] round 1 guidance done ({elapsed:.1f}s, {len(expert_guidance)} chars"
+                 f"{', LEAKAGE' if leakage else ''})")
+            chain.record("expert_guidance_r1", expert_guidance, {
+                "task_id": task_id, "round": 1,
+                "guidance_goal": "broad_context", "leakage": leakage,
+            })
         except Exception as exc:
             _err(f"  [hil] expert guidance FAILED: {exc} — cannot run HIL without guidance")
             return {
@@ -3192,6 +3389,26 @@ def run_task(
             # Self-iteration round — each model sees only its OWN prior findings
             _err(f"  [round {round_num}/self-iterate] {condition}: each model re-examining independently ...")
             prev_round = rounds[-1]
+
+            # Iterative HIL: update guidance each round based on previous findings
+            if condition == "hil" and round_num <= len(ITERATIVE_HIL_ROUND_GOALS):
+                prev_findings = _summarise_round_findings(prev_round)
+                _err(f"  [hil] Iterative HIL: generating round {round_num} guidance ...")
+                try:
+                    expert_guidance, leakage = _generate_iterative_hil_guidance(
+                        task, round_num=round_num, prev_findings=prev_findings,
+                    )
+                    _err(f"  [hil] round {round_num} guidance: {len(expert_guidance)} chars, "
+                         f"goal={ITERATIVE_HIL_ROUND_GOALS.get(round_num, {}).get('goal', '?')}"
+                         f"{', LEAKAGE' if leakage else ''}")
+                    chain.record(f"expert_guidance_r{round_num}", expert_guidance, {
+                        "task_id": task_id, "round": round_num,
+                        "guidance_goal": ITERATIVE_HIL_ROUND_GOALS.get(round_num, {}).get("goal", ""),
+                        "leakage": leakage,
+                    })
+                except Exception as exc:
+                    _err(f"  [hil] round {round_num} guidance failed: {exc} — using previous")
+
             round_data = _run_self_iteration_round(
                 task, solution, chain, ledger, round_num,
                 prev_round=prev_round, condition=condition,
