@@ -1633,10 +1633,11 @@ def _extract_verifiable_claims_from_text(text: str) -> list[dict]:
     import re
     claims = []
     # Find JSON objects that look like verifiable_claim (contain "op" key)
+    # CX C3 fix: increased scan window from 500 to 2000 for complex claims
     for match in re.finditer(r'\{[^{}]*"op"\s*:', text):
         start = match.start()
         depth = 0
-        for i in range(start, min(start + 500, len(text))):
+        for i in range(start, min(start + 2000, len(text))):
             if text[i] == '{':
                 depth += 1
             elif text[i] == '}':
@@ -3619,7 +3620,7 @@ def run_task(
                     # CX Turn 1 C2 fix: cap base, keep all follow-ups (they're small).
                     # Split on first FOLLOW-UP marker to get base only.
                     base_only = expert_guidance.split("\n\nFOLLOW-UP")[0]
-                    base_cap = 3000 if round_num > 2 else len(base_only)
+                    base_cap = 3000 if round_num >= 2 else len(base_only)
                     capped_base = base_only[:base_cap]
                     if len(base_only) > base_cap:
                         capped_base += "\n[base guidance truncated]"
