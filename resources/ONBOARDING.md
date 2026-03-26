@@ -150,6 +150,7 @@ The founder uses single-letter shorthand:
 - `rr` = full recovery (re-read all resources, rebuild context from scratch)
 - `rs` = external research (web search, arXiv, Semantic Scholar)
 - `t` = export to TTS accessibility file
+- `sv` = save state (Open Brain + update recovery resources + commit + push)
 
 These compose: `p d e` = falsify, discuss, extrapolate. `c p a d` = confer
 with CX, P-pass, analyse, discuss.
