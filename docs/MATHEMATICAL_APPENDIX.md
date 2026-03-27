@@ -409,6 +409,8 @@ v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical de
 
 **Practical value:** Enables early stopping for efficient analysts (steep decay, most value captured) while allowing systematic processors to continue (late bloomers whose best findings come in later rounds). Directly supports the cognitive diversity accommodation principle: evaluate by total verified yield, not by when findings arrive.
 
+**Ascending abstraction guard:** V̂ stop recommendations are valid only when dH̄/dt ≤ 0. When the ascending abstraction condition (§7.3) is active — finding count is decreasing but abstraction depth is increasing — V̂ underestimates remaining value because it is count-based and does not account for deepening. In bimodal discovery patterns (surface findings followed by late deep findings after incubation), ungated V̂ would recommend premature termination during the lull. The guard prevents this. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 
 When models confer and converge on shared findings, the convergence could be genuine (both independently found the same real issue) or sycophantic (they are agreeing to agree). This metric distinguishes them using SymPy verification as a proxy for ground truth:
@@ -426,6 +428,8 @@ The composite sycophancy score:
 > **S_sync = (1 − δ̄) · (1 − O_A)**
 
 S_sync ≈ 0: genuine consensus (convergence on verified facts). S_sync high: sycophantic convergence (convergence on unverified claims).
+
+**Non-verifiable domain guard:** When fewer than 2 findings in F_conv are computationally verifiable, O_A is undefined and independence assessment relies on Δ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = (1 − δ̄) — falsely flagging all convergence as sycophantic regardless of its quality. The guard prevents systematic false positives in domains where SymPy verification is inapplicable. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
 
 **Limitation:** O_A is computed only from the subset of findings that SymPy can verify (mathematical claims). For tasks with few mathematical claims, the metric has low statistical power. This is documented, not hidden.
 
@@ -475,13 +479,11 @@ SymPy falsification gives absolute zero. Simple, fixed weights.
 
 **Approach B (Bayesian log-odds, preferred):**
 
-> **L_total = Σ_i w_i · L_i**
+> **L_total = Σ_i [L_i · log(TPR_i / FPR_i) + (1 − L_i) · log(FNR_i / TNR_i)]**
 >
 > **S_v = 1 / (1 + exp(−L_total))**
 
-Where weights are derived from empirical true positive rate (TPR) and false positive rate (FPR):
-- If verifier outputs 1 (verified): w_positive = log(TPR / FPR)
-- If verifier outputs 0 (falsified): w_negative = log(FNR / TNR)
+Where L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
 
 | Verifier | TPR | FPR | Positive weight | Negative weight |
 |---|---|---|---|---|
