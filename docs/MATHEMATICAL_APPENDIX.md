@@ -409,7 +409,11 @@ v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical de
 
 **Practical value:** Enables early stopping for efficient analysts (steep decay, most value captured) while allowing systematic processors to continue (late bloomers whose best findings come in later rounds). Directly supports the cognitive diversity accommodation principle: evaluate by total verified yield, not by when findings arrive.
 
-**Ascending abstraction guard:** V̂ stop recommendations are valid only when dH̄/dt ≤ 0. When the ascending abstraction condition (§7.3) is active — finding count is decreasing but abstraction depth is increasing — V̂ underestimates remaining value because it is count-based and does not account for deepening. In bimodal discovery patterns (surface findings followed by late deep findings after incubation), ungated V̂ would recommend premature termination during the lull. The guard prevents this. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+**Ascending abstraction guard:**
+
+> **stop_valid(t) = (V̂_remaining(t) < ε) ∧ (dH̄(t)/dt ≤ 0)**
+
+V̂ stop recommendations require both conditions: the count-based remaining estimate is below threshold ε, AND mean abstraction depth is not increasing. When dH̄/dt > 0 (ascending abstraction, §7.3), the analyst is deepening rather than exhausting. V̂ underestimates remaining value in this mode because it is count-based. In bimodal discovery patterns (surface findings → lull → late deep findings), ungated V̂ would recommend premature termination during the lull. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
 
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 
@@ -429,7 +433,13 @@ The composite sycophancy score:
 
 S_sync ≈ 0: genuine consensus (convergence on verified facts). S_sync high: sycophantic convergence (convergence on unverified claims).
 
-**Non-verifiable domain guard:** When fewer than 2 findings in F_conv are computationally verifiable, O_A is undefined and independence assessment relies on Δ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = (1 − δ̄) — falsely flagging all convergence as sycophantic regardless of its quality. The guard prevents systematic false positives in domains where SymPy verification is inapplicable. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+**Non-verifiable domain guard:**
+
+> **O_A defined iff |{f ∈ F_conv : verifiable(f)}| ≥ 2**
+>
+> **If |{f ∈ F_conv : verifiable(f)}| < 2: O_A = ⊥, S_sync = S_sync(Δ)**
+
+When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = (1 − δ̄) — falsely flagging all convergence as sycophantic. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
 
 **Limitation:** O_A is computed only from the subset of findings that SymPy can verify (mathematical claims). For tasks with few mathematical claims, the metric has low statistical power. This is documented, not hidden.
 
