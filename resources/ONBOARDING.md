@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 26 March 2026
+Last updated: 27 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -12,7 +12,7 @@ making AI-assisted technical work more reliable. It formalises the scientific
 method — specifically Popperian falsification — as a structured protocol that
 AI models follow when producing and reviewing technical output.
 
-The project is approximately 12 days old (first commit: 14 March 2026). It
+The project is approximately 13 days old (first commit: 14 March 2026). It
 was built by a single founder (George Jackson) working with Claude Opus 4.6
 as primary collaborator and OpenAI Codex 5.3 as independent falsifier, with
 DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
@@ -22,12 +22,14 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
-- **First full bench test running (Run 1)** — 26 tasks x 4 conditions = 104
-  runs, 5 models per run. ~70 of 104 runs complete as of 26 March.
+- **First full bench test running (Run 1)** — 27 tasks x 4 conditions = 108
+  runs, 5 models per run. ~78 of 108 runs complete as of 27 March.
+  Run resumed from checkpoint after CX quota issue (switched to API key auth).
   This run has known confounds (see below and BENCH_RUN_1_ANALYSIS.md).
   It measures distributed compute effectiveness, not full CDSFL.
-  A corrected Run 2 is planned with bare-metal model parity, iterative HIL,
-  full SymPy verification, and OpenRouter integration for ChatGPT.
+  A corrected Run 2 is planned with bare-metal model parity (claude --bare,
+  OpenRouter for ChatGPT), iterative HIL, full SymPy verification, enhanced
+  research pipeline (arXiv MCP, Sci-Hub, CX delegation).
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
