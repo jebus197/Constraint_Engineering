@@ -504,7 +504,7 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 - CC (Opus 4.6) added as reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
 - DeepSeek V3.2 and ChatGPT 5.4 added subsequently, bringing topology to 5 reviewers from 4 vendors
 - Five-way confer topology: each reviewer sees the other four's findings
-- (D, v̄, A, C) capability fingerprint framework adopted for computational assessment
+- (D_decay, v̄, A, C) capability fingerprint framework adopted for computational assessment
 
 **Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
 **Activity log:** `bench/logs/round_robin_phase2_deepseek_20260323T000340Z.log`

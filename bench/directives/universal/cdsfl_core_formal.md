@@ -52,7 +52,8 @@ For constraints c_i, c_j ∈ C_H:
 For every claim, state the strongest falsifying condition, attempt to satisfy it,
 and revise or accept the claim accordingly. This is iterative — after revision,
 re-examine downstream claims. Continue until further passes produce no new
-failures or revisions.
+failures or revisions (convergence), or the pass budget is exhausted. Budget
+exhaustion is not convergence — claims carry residual falsification debt.
 
 **Formal:**
 ```
@@ -68,12 +69,25 @@ Iteration:
   Let downstream(c_i) = {c_j : c_j depends on c_i}
   After revise(c_i) → c_i', re-evaluate ∀ c_j ∈ downstream(c_i)
 
-Termination condition:
+Termination conditions:
   Let Δ(k) = |{c_i : revised in pass k}|
-  Terminate when Δ(k) = 0 (no new revisions in pass k)
+  Let k_max be the pass budget.
+
+  converged(k)        ≡ Δ(k) = 0
+  budget_exhausted(k) ≡ k = k_max ∧ Δ(k) > 0
+
+  Terminate when converged(k) ∨ budget_exhausted(k)
+
+  falsification_debt(k) = 0      if converged(k)
+  falsification_debt(k) > 0      if budget_exhausted(k)
 
 This is a fixed-point iteration. Convergence is not guaranteed in theory
-but is observed in practice for bounded problem domains.
+but is observed in practice for bounded problem domains. Budget exhaustion
+is an operational stop, not epistemic convergence. Outputs terminated this
+way carry residual falsification debt: unexecuted passes that might have
+produced corrections. The corroboration model C(n) applies to convergent
+termination; for budget-exhausted runs, R_n with elevated π_k (see
+Mathematical Appendix §1) is the appropriate risk model.
 ```
 
 ---

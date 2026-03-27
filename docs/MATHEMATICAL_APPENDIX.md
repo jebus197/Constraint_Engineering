@@ -69,6 +69,8 @@ The reporting format extends from (F_n, A) to **(F_n, R_n, A)**.
 
 R_n is only as good as the prior. When π_k is unknown, report R_n with explicit prior assumptions stated.
 
+**Termination-aware R_n:** When the falsification loop terminates by budget exhaustion rather than convergence (see §3 of the core directives), π_k should be inflated to reflect the residual falsification debt. A conservative approach: π_k(exhausted) = π_k + (1 − π_k) · Δ(k_max), treating the terminal Δ as evidence of remaining undiscovered flaws. This is a first-order approximation; refinement via Duane extrapolation (§7.1) is possible but adds complexity. (Added during 3-model confer, 27 March 2026.)
+
 ### Reduction Property
 
 Under simplifying assumptions (K = 1, d_i = 1, all p_ik = p, π = 0.5), R_n reduces to:
@@ -372,18 +374,18 @@ The convergence parameter γ = 1 − β classifies analytical behaviour:
 
 Not all findings are equal. A syntax error and a paradigm-level architectural flaw both count as one finding, but contribute different analytical value. The Abstraction Index scores each finding on three dimensions:
 
-> **H(x) = c · F(x) · D(x) · G(x)**
+> **H(x) = c · F(x) · ρ_info(x) · G(x)**
 
 Where:
 - **F(x)** = 1 + α·𝟙(verifiable_claim exists) + β·𝟙(constraint_class = HARD) — **Formality**: presence of verifiable claims and HARD constraint violations
-- **D(x)** = ln(e + W_e / (W_c + 1)) — **Information density**: evidence-to-claim word ratio (short dense findings score higher than verbose restatements)
+- **ρ_info(x)** = ln(e + W_e / (W_c + 1)) — **Information density**: evidence-to-claim word ratio (short dense findings score higher than verbose restatements)
 - **G(x)** = 1 + γ·ln(1 + N_cm) + δ·ln(1 + D_ref) — **Generalisation scope**: cross-module mention count and reference depth
 - **c** = model confidence (0 to 1)
 - α, β, γ, δ initialised at 1.0 (calibration against human-ranked examples pending)
 
-**Verified:** High-abstraction finding (formal, dense, cross-cutting, high confidence) scores H = 17.89. Low-abstraction finding (informal, verbose, local, moderate confidence) scores H = 0.53. Discrimination ratio: 33.4×.
+**Verified:** High-abstraction finding (formal, dense, cross-cutting, high confidence) scores H = 17.89. Low-abstraction finding (informal, verbose, local, moderate confidence) scores H = 0.53. Discrimination ratio: 33.4×. (D(x) renamed to ρ_info(x) during 3-model confer, 27 March 2026, to resolve triple collision with D(n) distributed coverage and D_decay in the capability fingerprint.)
 
-**Reduction property:** When all Boolean indicators are 0, evidence word count W_e = 0, and there are no cross-module references (N_cm = D_ref = 0), H(x) reduces to c · ln(e) · 1 = c (confidence alone). The index degrades gracefully to the simplest possible measure. (Note: the density function D(x) = ln(e + W_e/(W_c + 1)) equals 1 only when W_e = 0, not when W_e = W_c > 0. This is by design — any evidence content adds informational value.)
+**Reduction property:** When all Boolean indicators are 0, evidence word count W_e = 0, and there are no cross-module references (N_cm = D_ref = 0), H(x) reduces to c · ln(e) · 1 = c (confidence alone). The index degrades gracefully to the simplest possible measure. (Note: the density function ρ_info(x) = ln(e + W_e/(W_c + 1)) equals 1 only when W_e = 0, not when W_e = W_c > 0. This is by design — any evidence content adds informational value.)
 
 ### 7.3 Total Cognitive Yield Y(t)
 
@@ -449,27 +451,44 @@ Where Δ̄ is the mean Adoption Delta (§7.6) across all model pairs. S_sync ≈
 >
 > **If |{f ∈ F_conv : verifiable(f)}| < 2: O_A = ⊥, S_sync = S_sync(Δ)**
 
-When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ̄ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = Δ̄ · 1 = Δ̄ — flagging all convergence with high deference as sycophantic regardless of content quality. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ̄ alone. The threshold at 2 is deliberate: a single verification outcome produces O_A ∈ {0, 1}, making S_sync binary on one data point. Two or more verifiable findings provide the minimum discriminative power for a meaningful verification rate. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = Δ̄ · 1 = Δ̄ — flagging all convergence with high deference as sycophantic regardless of content quality. (Guard identified during CC × Gemini 3.1 Pro Extended P-Pass; rationale formalised during 3-model confer, 27 March 2026.)
+
+**Mutual suppression guard:**
+
+S_sync measures convergence on unverified shared claims. A separate failure mode exists: both models drop their blind findings without converging on anything new. When F_conv = ∅ and both models abandoned findings, S_sync = 0 (because O_A = 1 by convention), which misclassifies mutual analytical collapse as independence. The mutual suppression metric detects this:
+
+> **M_suppress(A, B) = 𝟙(F_conv = ∅) · (Δ_drop(A→B) + Δ_drop(B→A)) / 2**
+
+Where Δ_drop is the asymmetric drop rate from §7.6. When M_suppress > τ_suppress, flag as destructive convergence (distinct from sycophancy). When F_conv = ∅ and M_suppress triggers, O_A = ⊥ and S_sync = ⊥ — evaluate mutual suppression instead. τ_suppress calibration: start conservatively at 0.5 (both models dropped at least half their unique findings). (Identified during 5-model meta-test; formalised during 3-model confer, 27 March 2026.)
 
 **Limitation:** O_A is computed only from the subset of findings that SymPy can verify (mathematical claims). For tasks with few mathematical claims, the metric has low statistical power. This is documented, not hidden.
 
 ### 7.6 Adoption Delta Δ (Independence Measurement)
 
-Static overlap between finding sets does not reveal whether a model changed its analysis after seeing another's work. The adoption delta measures dynamic deference:
+Static overlap between finding sets does not reveal whether a model changed its analysis after seeing another's work. The adoption delta measures dynamic deference via two asymmetric rates:
 
 > **A_adopt = C_A ∩ (B_B \ B_A)** — findings A adopted from B
 >
 > **A_drop = (B_A \ B_B) \ C_A** — findings A dropped after seeing B
 >
-> **Δ(A→B) = (|A_adopt| + |A_drop|) / |B_A △ B_B|**
+> **Δ_adopt(A→B) = |A_adopt| / |B_B \ B_A|** — adoption rate (fraction of available novel findings incorporated)
+>
+> **Δ_drop(A→B) = |A_drop| / |B_A \ B_B|** — drop rate (fraction of unique own findings abandoned)
 
-Where △ is the symmetric difference.
+Convention: if a denominator is zero, the corresponding rate is zero.
 
-- Δ = 0: complete independence (maintained all own findings, adopted nothing)
-- Δ = 1: complete capitulation (adopted everything, dropped everything)
-- Convention: if B_A △ B_B = ∅, Δ = 0
+- Δ_adopt = 0, Δ_drop = 0: complete independence
+- Δ_adopt = 1, Δ_drop = 1: complete capitulation
+- High Δ_adopt with low Δ_drop: selective incorporation (incorporating what survives scrutiny)
+- Low Δ_adopt with high Δ_drop: self-suppression (abandoning own work without replacement)
 
-**Verified:** Test case with A blind = {f1, f2, f3}, B blind = {f2, f4, f5}, A confer = {f2, f4, f6} yields Δ = 0.75 (high capitulation). Identical blind findings yield Δ = 0 (nothing to adopt).
+Where a single scalar is needed (e.g., for S_sync in §7.5), the derived scalar is:
+
+> **Δ̄(A→B) = (Δ_adopt(A→B) + Δ_drop(A→B)) / 2**
+
+The asymmetric rates are the primary construct. The derived scalar is a convenience summary that should not be used for cross-pairing comparison, because the underlying opportunity sets (|B_B \ B_A| and |B_A \ B_B|) differ across pairings. (Confound identified during 5-model meta-test, 27 March 2026; asymmetric split resolved during 3-model confer, 27 March 2026.)
+
+**Verified:** Test case with A blind = {f1, f2, f3}, B blind = {f2, f4, f5}, A confer = {f2, f4, f6}: Δ_adopt = |{f4}|/|{f4,f5}| = 0.5, Δ_drop = |{f3}|/|{f1,f3}| = 0.5, Δ̄ = 0.5. Identical blind findings yield Δ_adopt = 0, Δ_drop = 0 (nothing to adopt or drop).
 
 ### 7.7 Per-Finding Severity
 
@@ -519,16 +538,16 @@ Where L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsi
 
 The four-dimensional fingerprint per model per condition per task:
 
-> **(D, v̄, A, C)**
+> **(D_decay, v̄, A, C)**
 
 | Component | Meaning | Source |
 |---|---|---|
-| D | Decay rate (inverse half-life) | Best-fitting decay model (§7.1) |
+| D_decay | Decay rate (inverse half-life) | Best-fitting decay model (§7.1) |
 | v̄ | Mean verification score | All findings from this model |
 | A | Total novel verified findings | Post-dedup, post-verification count |
 | C | Coverage = A / estimated total real findings | Estimated real finding count from convergence analysis |
 
-No single number tells the whole story. A model might find many things quickly (high D, high A) but most are wrong (low v̄). Another finds few things (low A) but every one is correct (high v̄). The fingerprint distinguishes these cases.
+No single number tells the whole story. A model might find many things quickly (high D_decay, high A) but most are wrong (low v̄). Another finds few things (low A) but every one is correct (high v̄). The fingerprint distinguishes these cases.
 
 ### 7.10 Implementation Status
 
@@ -543,6 +562,25 @@ No single number tells the whole story. A model might find many things quickly (
 | Sev(f) (§7.7) | Verified | Implemented in pipeline |
 | Multi-verifier (§7.8) | Verified, both approaches | Ready for implementation |
 | Fingerprint (§7.9) | Verified | Partially implemented |
+| Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+
+### 7.11 Manager Selection Function
+
+In a multi-agent review, a formal predicate is required to decide which findings are actioned. The selection function filters the union of all proposed findings:
+
+> **selected(f) ≡ (Sev(f) > τ_sev) ∧ (S_v(f) ≥ 0.5) ∧ (class(f) = HARD ∨ Sev(f) > τ_soft)**
+
+Where:
+- Sev(f) is per-finding severity (§7.7)
+- S_v(f) is multi-verifier Bayesian severity (§7.8)
+- τ_sev is the minimum severity threshold (task-dependent; default 0.0 for safety-critical, 0.3 for routine)
+- τ_soft is the elevated severity threshold for SOFT constraints (default τ_sev)
+
+This function prioritises verified, severe findings concerning HARD constraints, while allowing exceptionally severe SOFT findings to pass. The ≥ 0.5 threshold (not strict >) ensures that unverifiable findings (which default to S_v = 0.5 when all verifiers are indeterminate) are not systematically excluded — they are evaluated on severity and constraint class alone.
+
+When 2/3 or more models agree on a finding but S_v < 0.5 (computational evidence is net negative), the finding is rejected. Model agreement does not override computational falsification. This is by design: the framework trusts mathematics over consensus.
+
+(Added during 3-model confer, 27 March 2026.)
 
 ---
 
@@ -684,29 +722,33 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | γ | Convergence parameter (1 − β) | This appendix §7.1 |
 | H(x) | Abstraction Index (finding depth) | This appendix §7.2 |
 | F(x) | Formality component of H(x) | This appendix §7.2 |
-| D(x) | Information density component of H(x) | This appendix §7.2 |
+| ρ_info(x) | Information density component of H(x) | This appendix §7.2 |
 | G(x) | Generalisation scope component of H(x) | This appendix §7.2 |
 | Y(t) | Total Cognitive Yield | This appendix §7.3 |
 | H̄(t) | Mean Abstraction Index at time t | This appendix §7.3 |
 | V̂(t,T) | Online Total Value Estimator | This appendix §7.4 |
 | k(t) | Local exponential decay rate of v_w(t) | This appendix §7.4 |
-| Δ̄ | Mean Adoption Delta across model pairs | This appendix §7.5 |
+| Δ̄ | Mean derived scalar Adoption Delta across model pairs | This appendix §7.5 |
 | σ̂(Y) | Bootstrap standard error of Y estimates | This appendix §8.2 |
 | O_A | Objective Alignment (sycophancy detection) | This appendix §7.5 |
 | F_conv | Newly converged finding set | This appendix §7.5 |
 | S_sync | Composite sycophancy score | This appendix §7.5 |
-| Δ(A→B) | Adoption Delta (independence measurement) | This appendix §7.6 |
+| Δ_adopt(A→B) | Adoption rate (fraction of novel partner findings incorporated) | This appendix §7.6 |
+| Δ_drop(A→B) | Drop rate (fraction of unique own findings abandoned) | This appendix §7.6 |
+| Δ̄(A→B) | Derived scalar adoption delta (mean of rates) | This appendix §7.6 |
+| M_suppress | Mutual suppression metric | This appendix §7.5 |
 | Sev(f) | Per-finding severity score | This appendix §7.7 |
 | S_v | Multi-verifier Bayesian severity | This appendix §7.8 |
 | L_total | Bayesian log-odds total | This appendix §7.8 |
-| (D,v̄,A,C) | Capability fingerprint | This appendix §7.9 |
+| (D_decay,v̄,A,C) | Capability fingerprint | This appendix §7.9 |
+| selected(f) | Manager selection predicate | This appendix §7.11 |
 | Y_composite | Composite system Total Cognitive Yield | This appendix §8.2 |
 
 ---
 
 ## Attribution
 
-The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase.
+The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion.
 
 ---
 

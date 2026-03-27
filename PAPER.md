@@ -1087,7 +1087,7 @@ To measure this phenomenon rigorously, a 10-component measurement framework was 
 6. **Adoption Delta Δ** — dynamic deference measurement (0 = independent, 1 = capitulation)
 7. **Per-Finding Severity** — multiplicative (constraint weight × confidence × verification)
 8. **Multi-Verifier Bayesian Severity** — log-odds fusion with empirical TPR/FPR weights
-9. **Capability Fingerprint (D, v̄, A, C)** — four-dimensional analytical profile per agent
+9. **Capability Fingerprint (D_decay, v̄, A, C)** — four-dimensional analytical profile per agent
 10. **G_n Information Gain** — geometric decay of novel findings per round
 
 These components are detailed with verification evidence in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) §7.
