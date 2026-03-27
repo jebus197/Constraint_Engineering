@@ -1,0 +1,53 @@
+[log] writing to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_smoke_20260321T061506Z.log
+[log] activity log: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_smoke_20260321T061506Z.log
+[budget] deadline: 600s (10m)
+Loading frontier tasks from /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tasks_frontier ...
+Loaded and validated 25 task(s).
+Smoke test: 2 task(s) selected
+[startup] no orphaned gemini processes found
+Corpus frozen: 2 tasks, hash: f3f924e381d8bf74
+[1/2] ft-001
+  [budget] Elapsed: 3s, Remaining: 597s / 600s
+
+============================================================
+  TASK: ft-001 — Monotone Subsequence Bound Tightening
+============================================================
+  [generate] CC generating solution for ft-001 ...
+  [telemetry] cc prompt: 3263 chars (~815 tokens)
+  [generate] CC solution done (200.7s)
+  [round 1/blind] starting dual blind review for ft-001
+  [round 1/blind] calling Gemini 3.1 Pro ...
+  [telemetry] gemini prompt: 8446 chars (~2111 tokens)
+  [round 1/blind] Gemini FAILED (7.4s): gemini returned empty output
+  [round 1/blind] calling Codex 5.3 ...
+  [telemetry] cx prompt: 8446 chars (~2111 tokens)
+  [round 1/blind] CX done (89.7s, 0 findings)
+  [round 1] reviewer(s) failed: Gemini — deferring
+  [chain] verification: valid (4 entries)
+  [chain] Merkle root: 357ca1e42b945bf1...
+  [ft-001] DEFERRED_INFRA — 1 rounds, 0 unique HARD findings
+  Cost: $0.0000 / $100.00 ($100.0000 remaining)
+[2/2] ft-010
+  [budget] Elapsed: 301s, Remaining: 299s / 600s
+
+============================================================
+  TASK: ft-010 — Compiler for a Tiny Language with Type Inference
+============================================================
+  [generate] CC generating solution for ft-010 ...
+  [telemetry] cc prompt: 3803 chars (~950 tokens)
+  [retry] attempt 1 failed: claude timed out after 239s, retrying...
+  [telemetry] cc prompt: 3803 chars (~950 tokens)
+  [ft-010] FATAL ERROR: claude timed out after 10s
+
+============================================================
+  ROUND-ROBIN COMPLETE
+============================================================
+  Completed: 1, Skipped (resumed): 0
+  Cost: $0.0000 / $100.00 ($100.0000 remaining)
+  Resolved: 0/2
+  Deferred: 1/2
+  Total unique HARD findings: 0
+  Avg rounds/task: 0.5
+
+  Results written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin/round_robin_results.json
+  Deferred items written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin/deferred_items.json

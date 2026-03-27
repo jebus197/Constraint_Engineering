@@ -1,0 +1,56 @@
+[log] writing to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_smoke_20260321T063346Z.log
+[log] activity log: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_smoke_20260321T063346Z.log
+[budget] deadline: 600s (10m)
+Loading frontier tasks from /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tasks_frontier ...
+Loaded and validated 25 task(s).
+Smoke test: 2 task(s) selected
+[startup] gemini cleanup done
+Corpus frozen: 2 tasks, hash: f3f924e381d8bf74
+[1/2] ft-001
+  [budget] Elapsed: 3s, Remaining: 597s / 600s
+
+============================================================
+  TASK: ft-001 — Monotone Subsequence Bound Tightening
+============================================================
+  [generate] CC generating solution for ft-001 ...
+  [telemetry] cc prompt: 3263 chars (~815 tokens)
+  [generate] CC solution done (239.6s)
+  [round 1/blind] starting dual blind review for ft-001
+  [round 1/blind] calling Gemini 3.1 Pro ...
+  [telemetry] gemini prompt: 4054 chars (~1013 tokens)
+  [round 1/blind] Gemini done (142.2s, 1 findings)
+  [round 1/blind] calling Codex 5.3 ...
+  [telemetry] cx prompt: 4054 chars (~1013 tokens)
+  [round 1/blind] CX done (118.9s, 1 findings)
+  [round 1] novel HARD findings: 1 (total unique: 1)
+  [arbiter] CC assessing — round 1 complete, consecutive_zero_novel=0
+  [arbiter] assessment: Proceed — one finding in round one establishes only that the loop is functioning, not that it is converging.
+  [round 2/confer] starting confer round for ft-001
+  [round 2/confer] calling Gemini (reviewing CX findings) ...
+  [telemetry] gemini prompt: 4393 chars (~1098 tokens)
+  [round 2/confer] Gemini FAILED (31.1s): gemini timed out after 31s
+  [round 2/confer] calling CX (reviewing Gemini findings) ...
+  [telemetry] cx prompt: 4447 chars (~1111 tokens)
+  [retry] skipping retry — deadline budget exhausted
+  [round 2/confer] CX FAILED (10.0s): codex exec timed out after 600s
+  [budget] deadline exhausted — graceful exit at round 2
+  [budget] Elapsed: 550s, Remaining: 50s / 600s
+  [chain] verification: valid (7 entries)
+  [chain] Merkle root: e06487ee55fb301c...
+  [ft-001] BUDGET_EXHAUSTED — 2 rounds, 1 unique HARD findings
+  Cost: $0.0000 / $20.00 ($20.0000 remaining)
+[2/2] ft-010 — skipped (deadline budget exhausted)
+  [budget] Elapsed: 550s, Remaining: 50s / 600s
+
+============================================================
+  ROUND-ROBIN COMPLETE
+============================================================
+  Completed: 1, Skipped (resumed): 0
+  Cost: $0.0000 / $20.00 ($20.0000 remaining)
+  Resolved: 0/1
+  Deferred: 0/1
+  Total unique HARD findings: 1
+  Avg rounds/task: 2.0
+
+  Results written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin/round_robin_results.json
+  Deferred items written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin/deferred_items.json

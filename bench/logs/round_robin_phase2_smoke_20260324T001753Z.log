@@ -1,0 +1,56 @@
+[00:17:53] [log] writing to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_phase2_smoke_20260324T001753Z.log
+[00:17:53] [log] activity log: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_phase2_smoke_20260324T001753Z.log
+[00:17:53] [budget] no deadline — runs until complete
+[00:17:53] Loading frontier tasks from /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tasks_frontier ...
+[00:17:53] Loaded and validated 26 task(s).
+[00:17:53] Smoke test: 1 task(s) selected (ft-001)
+[00:17:53] [startup] DeepSeek uses API — no process cleanup needed
+[00:17:53] Corpus frozen: 1 tasks, hash: ad66ba3d82edd205
+[00:17:53] Running 1 task(s) × 4 condition(s) = 4 runs
+[00:17:53] [1/4] ft-001/control
+[00:17:53] 
+[00:17:53] 
+============================================================
+[00:17:53]   TASK: ft-001 — Monotone Subsequence Bound Tightening
+[00:17:53]   CONDITION: CONTROL
+[00:17:53] ============================================================
+[00:17:53]   [registry] base policy loaded for domain=mathematics, task_id=ft-001
+[00:17:53]   [registry] max_rounds=5, sympy_timeout=10s
+[00:17:53]   [registry] cc policy: timeout=180s
+[00:17:53]   [registry] deepseek policy: timeout=120s
+[00:17:53]   [registry] cx policy: timeout=300s
+[00:17:53]   [registry] gemini policy: timeout=150s
+[00:17:53]   [registry] chatgpt policy: timeout=120s
+[00:17:53]   [generate] CC generating solution for ft-001 [control] ...
+[00:17:53]   [generate/step1] solving ...
+[00:17:53]   [telemetry] cc prompt: 1448 chars (~362 tokens)
+[00:18:32]   [generate/step1] done (38.9s)
+[00:18:32]   [generate/step2] self-falsifying ...
+[00:18:32]   [telemetry] cc prompt: 7688 chars (~1922 tokens)
+[00:20:17]   [generate/step2] done (105.2s)
+[00:20:17]   [generate/step3] classifying issues ...
+[00:20:17]   [telemetry] cc prompt: 3009 chars (~752 tokens)
+[00:20:29]   [generate/step3] done (11.6s)
+[00:20:29]   [generate/step4] revising in 2 batch(es) ...
+[00:20:29]   [generate/step4/1] batch 1/2 ...
+[00:20:29]   [telemetry] cc prompt: 7214 chars (~1803 tokens)
+[00:21:01]   [generate/step4/1] done (32.4s)
+[00:21:01]   [generate/step4/1] checking for contradictions ...
+[00:21:01]   [telemetry] cc prompt: 4243 chars (~1060 tokens)
+[00:21:06]   [generate/step4/1] check done (5.1s)
+[00:21:06]   [generate/step4/2] batch 2/2 ...
+[00:21:06]   [telemetry] cc prompt: 8438 chars (~2109 tokens)
+[00:21:19]   [generate/step4/2] done (13.0s)
+[00:21:19]   [generate/step4/2] checking for contradictions ...
+[00:21:19]   [telemetry] cc prompt: 1396 chars (~349 tokens)
+[00:21:26]   [generate/step4/2] check done (6.9s)
+[00:21:26]   [generate] CC solution complete (213.0s total, 5 steps)
+[00:21:26]   [phase2] creating persistent conversations for 5 reviewers
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[00:21:27]   [round 1/blind/phase2] starting 5-way blind review for ft-001 [control]
+[00:21:27]   [round 1/blind] calling DeepSeek V3.2 ...
+[00:21:27]   [telemetry] deepseek_chat prompt: 2991 chars (~747 tokens)
+[00:21:44]   [deepseek_chat] done (17.0s, 2757 chars)
+[00:21:44]   [round 1/blind] DeepSeek done (17.0s, 4 findings)
+[00:21:44]   [round 1/blind] calling Codex 5.3 ...
+[00:21:44]   [telemetry] cx_chat prompt: 2991 chars (~747 tokens)

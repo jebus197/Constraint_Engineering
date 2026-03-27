@@ -1,0 +1,109 @@
+[23:04:39] [log] writing to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_phase2_smoke_20260322T230439Z.log
+[23:04:39] [log] activity log: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/round_robin_phase2_smoke_20260322T230439Z.log
+[23:04:39] [budget] no deadline — runs until complete
+[23:04:39] Loading frontier tasks from /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tasks_frontier ...
+[23:04:39] Loaded and validated 25 task(s).
+[23:04:39] Smoke test: 3 task(s) selected (ft-001, ft-006, ft-013)
+[23:04:40] [startup] DeepSeek uses API — no process cleanup needed
+[23:04:40] Corpus frozen: 3 tasks, hash: 476ce329f56e0c1d
+[23:04:40] Running 3 task(s) × 4 condition(s) = 12 runs
+[23:04:40] [1/12] ft-001/control
+[23:04:40] 
+[23:04:40] 
+============================================================
+[23:04:40]   TASK: ft-001 — Monotone Subsequence Bound Tightening
+[23:04:40]   CONDITION: CONTROL
+[23:04:40] ============================================================
+[23:04:40]   [generate] CC generating solution for ft-001 [control] ...
+[23:04:40]   [generate/step1] solving ...
+[23:04:40]   [telemetry] cc prompt: 1448 chars (~362 tokens)
+[23:05:12]   [generate/step1] done (32.5s)
+[23:05:12]   [generate/step2] self-falsifying ...
+[23:05:12]   [telemetry] cc prompt: 6815 chars (~1703 tokens)
+[23:06:29]   [generate/step2] done (76.3s)
+[23:06:29]   [generate/step3] classifying issues ...
+[23:06:29]   [telemetry] cc prompt: 3419 chars (~854 tokens)
+[23:06:53]   [generate/step3] done (24.1s)
+[23:06:53]   [generate/step4] revising in 2 batch(es) ...
+[23:06:53]   [generate/step4/1] batch 1/2 ...
+[23:06:53]   [telemetry] cc prompt: 5932 chars (~1483 tokens)
+[23:07:20]   [generate/step4/1] done (27.0s)
+[23:07:20]   [generate/step4/1] checking for contradictions ...
+[23:07:20]   [telemetry] cc prompt: 4243 chars (~1060 tokens)
+[23:07:24]   [generate/step4/1] check done (4.6s)
+[23:07:24]   [generate/step4/2] batch 2/2 ...
+[23:07:24]   [telemetry] cc prompt: 7645 chars (~1911 tokens)
+[23:08:24]   [generate/step4/2] done (59.8s)
+[23:08:24]   [generate/step4/2] checking for contradictions ...
+[23:08:24]   [telemetry] cc prompt: 4243 chars (~1060 tokens)
+[23:08:31]   [generate/step4/2] check done (7.3s)
+[23:08:31]   [generate] CC solution complete (231.6s total, 5 steps)
+[23:08:31]   [phase2] creating persistent conversations for reviewers
+[23:08:32]   [round 1/blind/phase2] starting dual blind review for ft-001 [control]
+[23:08:32]   [round 1/blind] calling DeepSeek V3.2 ...
+[23:08:32]   [telemetry] deepseek_chat prompt: 10484 chars (~2621 tokens)
+[23:08:32]     [deepseek retry] attempt 1 failed (0.6s): Error code: 400 - {'error': {'message': 'Invalid max_tokens value, the valid range of max_tokens is 
+[23:08:35]     [deepseek retry] attempt 2/3
+[23:08:36]     [deepseek retry] attempt 2 failed (0.5s): Error code: 400 - {'error': {'message': 'Invalid max_tokens value, the valid range of max_tokens is 
+[23:08:42]     [deepseek retry] attempt 3/3
+[23:08:43]     [deepseek retry] attempt 3 failed (0.6s): Error code: 400 - {'error': {'message': 'Invalid max_tokens value, the valid range of max_tokens is 
+[23:08:43]   [ft-001/control] DEEPSEEK EXHAUSTED — stopping test for diagnosis
+[23:08:43]   [DIAG] saved to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin_phase2/ft-001_control_deepseek_diagnostic.json
+[23:08:43] [HALT] Test halted — see diagnostic output above
+[23:08:43] 
+============================================================
+[23:08:43]   ROUND-ROBIN COMPLETE
+[23:08:43] ============================================================
+[23:08:43]   Completed: 0, Skipped (resumed): 0
+[23:08:43]   Cost: $0.0000 / $100.00 ($100.0000 remaining)
+[23:08:43]   Resolved: 0/1
+[23:08:43]   Deferred: 0/1
+[23:08:43]   Total unique HARD findings: 0
+[23:08:43]   Avg rounds/run: 0.0
+[23:08:43]   [CONTROL] 1 runs, 0 HARD findings (avg 0.0), avg 0.0 rounds
+[23:08:43] 
+  Results written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin_phase2/round_robin_results.json
+[23:08:43]   Deferred items written to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/results/round_robin_phase2/deferred_items.json
+{
+  "total_runs": 1,
+  "tasks_resolved": 0,
+  "tasks_deferred": 0,
+  "total_unique_hard_findings": 0,
+  "total_rounds": 0,
+  "avg_rounds_per_run": 0.0,
+  "avg_unique_hard_per_run": 0.0,
+  "per_condition": {
+    "control": {
+      "runs": 1,
+      "resolved": 0,
+      "unique_hard": 0,
+      "total_rounds": 0,
+      "avg_unique_hard": 0.0,
+      "avg_rounds": 0.0
+    },
+    "hil": {
+      "runs": 0,
+      "resolved": 0,
+      "unique_hard": 0,
+      "total_rounds": 0,
+      "avg_unique_hard": 0.0,
+      "avg_rounds": 0.0
+    },
+    "cdsfl": {
+      "runs": 0,
+      "resolved": 0,
+      "unique_hard": 0,
+      "total_rounds": 0,
+      "avg_unique_hard": 0.0,
+      "avg_rounds": 0.0
+    },
+    "cdsfl_hil": {
+      "runs": 0,
+      "resolved": 0,
+      "unique_hard": 0,
+      "total_rounds": 0,
+      "avg_unique_hard": 0.0,
+      "avg_rounds": 0.0
+    }
+  }
+}
