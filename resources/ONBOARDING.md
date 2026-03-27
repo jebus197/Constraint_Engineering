@@ -28,6 +28,11 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   mathematical model itself. 11 genuine fixes applied to MATHEMATICAL_APPENDIX.md
   (commit `08ccab1`). CC2 dominated (16 findings, 10 genuine, 8 unique). CX
   contaminated (read Gemini output, Δ≈1.0). ChatGPT non-compliant (format failure).
+- **3-model confer COMPLETE (27 March 2026):** CX + Gemini + CC2 resolved 5
+  deferred design decisions and added manager selection function §7.11. Rejected
+  anti-parroting (A-N1) and contribution discount (A-N3) as premature. Key changes:
+  asymmetric Δ rates, D symbol renames (ρ_info, D_decay), mutual suppression metric
+  M_suppress, dual termination in core_formal.md. Commit `77a4a7f`.
   Critical post-mortem finding: no model operated UNDER CDSFL — all received the
   model as document content, not as system prompt. Full report: `bench/logs/meta_test_final_report.md`.
 - **Next: Fix confer (pending).** CX + Gemini + CC2 to resolve 5 deferred items
