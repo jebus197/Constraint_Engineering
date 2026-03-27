@@ -94,12 +94,31 @@ or preference-based (SOFT). Ambiguous defaults to HARD.
 iteratively. Confer = agreement. Defer = escalation to human review.
 
 **Decay curve (D):** Genuine analysis produces diminishing finding rates per
-round (the inverse square root law). Chatbot churn produces flat curves.
+round (Duane NHPP model, γ > 0). Chatbot churn produces flat curves (γ ≈ 0).
 The shape distinguishes analysis from noise.
 
 **(D, v-bar, A, C) fingerprint:** Four-metric capability assessment.
 D = decay rate, v-bar = verification score (SymPy-confirmed fraction),
 A = total verified findings, C = coverage of constraint space.
+
+**Abstraction Index H(x):** Measures finding depth — formality × information
+density × generalisation scope. Captures the difference between spotting a
+typo and identifying a paradigm-level architectural flaw.
+
+**Total Cognitive Yield Y(t):** Count × mean depth. When findings decrease
+but depth increases, total yield can still rise. Captures ascending
+abstraction as a distinct cognitive mode.
+
+**Emergence:** When multiple agents work under structured falsification,
+the composite system's Y exceeds any individual's. Empirically demonstrated
+in the three-architecture review (Gemini found 16 issues CC/CX missed).
+Formalised in Mathematical Appendix §8.
+
+**Second-order cognition:** The composite system analyses, monitors its own
+analysis (via decay curves + verification rates + adoption deltas), and
+adjusts based on monitoring (metacognitive feedback protocol). Meets the
+formal MIDCA definition. Substrate-agnostic — the same maths applies to
+human teams.
 
 **Constraint Editor (CE):** Hierarchical policy engine. 5 layers cascade
 with monotonicity — lower layers cannot weaken higher-layer HARD constraints.

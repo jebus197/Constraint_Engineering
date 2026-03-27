@@ -28,14 +28,16 @@ Everything above, plus:
 
 Everything above, plus:
 
-8. Read `PAPER.md` — canonical technical statement
-9. Read `configs/README.md` — domain expert configuration system
-10. Read `bench/cdsfl_registry/universal.toml` — current HARD constraints
-11. Read `PRIVATE_NOTES.md` (if it exists locally) — known confounds and
+8. Read `PAPER.md` — canonical technical statement (Parts I-XIV)
+9. Read `docs/MATHEMATICAL_APPENDIX.md` — mathematical extensions including
+   the cognitive measurement framework (§7) and emergence formalisations (§8)
+10. Read `configs/README.md` — domain expert configuration system
+11. Read `bench/cdsfl_registry/universal.toml` — current HARD constraints
+12. Read `PRIVATE_NOTES.md` (if it exists locally) — known confounds and
     design decisions not yet public
-12. Check Open Brain for session context:
+13. Check Open Brain for session context:
     `python3 -m open_brain.cli session-context --agent cc`
-13. Check IM service for inter-model communications:
+14. Check IM service for inter-model communications:
     `python3 cw_handoff/im_service.py read`
 
 ## For the Founder Specifically

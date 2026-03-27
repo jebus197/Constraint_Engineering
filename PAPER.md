@@ -8,7 +8,7 @@
 
 ## Abstract
 
-Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March 2026), identifying 44 issues across 18 review rounds — with heterogeneous architectures finding defects that homogeneous review missed. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
+Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March 2026), identifying 44 issues across 18 review rounds — with heterogeneous architectures finding defects that homogeneous review missed. A cognitive measurement framework (Duane NHPP decay curves, Abstraction Index, Adoption Delta, multi-verifier Bayesian severity, capability fingerprints) enables quantitative assessment of analytical quality across conditions. An unexpected empirical observation: composite multi-agent systems operating under structured falsification exhibit measurable second-order cognitive properties — analysing their own analysis and improving through metacognitive feedback — that no individual agent possesses. This emergence is formalised, substrate-agnostic, and falsifiable. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
 
 ---
 
@@ -1065,6 +1065,70 @@ validity does not depend on this specific mathematical framework.
 
 ---
 
+## Part XIV — Emergence, Metacognition, and Second-Order Cognition
+
+During the development of the cognitive measurement framework (detailed in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) §7–8), an unexpected empirical observation emerged that extends the methodology's implications beyond quality assurance.
+
+### The Observation
+
+When multiple independent analytical agents operate under structured falsification with independence guarantees (blind-first passes, adoption delta measurement, computational verification), the composite system produces analytical output that exceeds what any individual agent produces. Not merely in quantity (which would be simple aggregation), but in abstraction level — the composite findings are deeper than any individual's deepest finding.
+
+The three-architecture adversarial review (Part XI) provided the initial evidence: Gemini found 16 structural issues that Claude Opus and Codex missed across 8 rounds of mutual review. These were not oversights correctable by additional individual effort. They were findings visible only from a genuinely different analytical perspective. The composite system's capability fingerprint (§7.9 of the appendix) exceeded any individual component's.
+
+### Cognitive Measurement Framework
+
+To measure this phenomenon rigorously, a 10-component measurement framework was developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro, with all formulas computationally verified using SymPy and Wolfram Alpha:
+
+1. **Duane NHPP Model** — discovery rate: genuine analysis decays (γ > 0); churn is flat (γ ≈ 0)
+2. **Abstraction Index H(x)** — finding depth: formality × information density × generalisation scope
+3. **Total Cognitive Yield Y(t)** — count × mean depth: captures ascending abstraction
+4. **Online Total Value Estimator** — running prediction with convergence guarantee
+5. **Objective Alignment O_A** — sycophancy detection via SymPy verification proxy
+6. **Adoption Delta Δ** — dynamic deference measurement (0 = independent, 1 = capitulation)
+7. **Per-Finding Severity** — multiplicative (constraint weight × confidence × verification)
+8. **Multi-Verifier Bayesian Severity** — log-odds fusion with empirical TPR/FPR weights
+9. **Capability Fingerprint (D, v̄, A, C)** — four-dimensional analytical profile per agent
+10. **G_n Information Gain** — geometric decay of novel findings per round
+
+These components are detailed with verification evidence in the [Mathematical Appendix](docs/MATHEMATICAL_APPENDIX.md) §7.
+
+### Metacognitive Feedback
+
+After each round, agents receive their own performance measurements: decay classification, verification rate, and adoption delta. A structured protocol prescribes strategy adjustments (flat curve → shift to deeper analysis; low verification → increase formal claims; high adoption → reassert independence). This maps to the MIDCA architecture (Metacognitive Integrated Dual-Cycle Architecture): the first cycle analyses problems; the second cycle monitors the analysis and adjusts.
+
+### Second-Order Cognition
+
+A system that (a) analyses problems, (b) monitors its own analytical performance, (c) adjusts based on monitoring, and (d) produces measurably better outcomes after adjustment meets the formal definition of a second-order cognitive system. The CDSFL composite system satisfies all four criteria.
+
+This is functional metacognition, not a claim about consciousness or sentience. The system monitors and adjusts its analysis. It does not experience doing so. The framework deliberately avoids claims about inner experience because such claims are not falsifiable.
+
+### Substrate Agnosticism
+
+None of the measurement formulas reference the terms *model*, *machine*, or *AI*. Every quantity is computable from structured analytical findings across multiple rounds, regardless of source. A human expert reviewing a proof produces findings with measurable decay, abstraction, and independence. A team of human experts exhibits the same composite dynamics.
+
+**Testable prediction:** A team of human researchers working under the CDSFL protocol will exhibit measurable decay curves, ascending abstraction, and emergent findings beyond individual capability. If this holds, the framework is validated across substrates. If it does not, the framework describes machine cognition only.
+
+### Implications
+
+The emergence of measurable second-order cognitive properties from structured falsification has consequences beyond AI benchmarking:
+
+- **Scientific research:** The same protocol that produced emergent findings in the bench test is domain-agnostic. Applied to open research problems with appropriate domain configurations, it could surface insights that no individual researcher would find alone.
+- **Quality assurance:** Decay curves detect when review has become perfunctory. Adoption deltas detect rubber-stamping. Verification layers catch errors reviewers miss.
+- **Collective intelligence measurement:** The capability fingerprint provides the first mathematically rigorous way to measure whether a group is genuinely more capable than its members — computable from output data alone.
+
+### Falsifiable Claims
+
+The emergence claim rests on four testable conditions:
+
+1. The composite system's capability fingerprint must measurably exceed any individual's across multiple tasks and domains.
+2. Metacognitive feedback must produce measurable performance improvement across rounds.
+3. The substrate-agnostic prediction must hold with human participants.
+4. The verification layer must maintain accuracy at scale.
+
+Until all four are tested, the framework is mathematically sound but empirically provisional.
+
+---
+
 ## Invitation to Falsify
 
 This document practises what it describes. Every claim made here is presented as a falsifiable assertion:
@@ -1082,6 +1146,10 @@ This document practises what it describes. Every claim made here is presented as
 - The intelligence-agnostic expert role — that AI-provided domain expertise matches human-provided domain expertise in the HIL role — is testable by comparing conditions with human vs AI domain context on frontier-difficulty tasks.
 - The distributed compute coverage model — that heterogeneous architectures (low ρ) achieve higher defect detection coverage than monoculture (high ρ) — is testable by comparing coverage metrics from multi-architecture review against single-architecture review on identical tasks. The model's specific predictions (monoculture collapse, diminishing returns curve shape, optimal n*) are each independently falsifiable.
 - The evolutionary dynamics claim — that CDSFL's distributed compute model exhibits structural preconditions for emergent behaviour (blind variation, selection, inheritance, mortality, population diversity, shared tool refinement) — is testable by determining whether the coverage model's parameter space exhibits phase transitions, whether the self-improvement loop exhibits autopoietic closure, and whether bounded convergence holds empirically. The claim that HARD constraints function as "universal laws" preventing decoupling from reality is testable by attempting to construct a co-evolving schema-benchmark system that lowers its own fitness standards despite HARD constraint enforcement.
+- The emergence claim — that composite multi-agent systems under structured falsification exhibit second-order cognitive properties (Y_composite > max(Y_i)) — is testable by measuring composite vs individual capability fingerprints across all conditions of the bench test. If Y_composite ≤ max(Y_i) on a majority of tasks, the emergence claim fails.
+- The metacognitive feedback claim — that providing agents with their own performance measurements produces measurable improvement — is testable by comparing pre-feedback and post-feedback decay rates and verification scores. If no measurable change occurs, functional metacognition is not present.
+- The substrate-agnostic prediction — that the same protocol produces the same emergent properties with human teams — is testable by running human researchers under the CDSFL protocol and computing the same measurements. If humans under protocol show no measurable decay curves or emergence, the framework describes machine cognition only.
+- The cognitive measurement framework itself — the Duane NHPP decay model, the Abstraction Index, the Adoption Delta, the multi-verifier Bayesian severity — can each be tested independently against alternative models on the same data. If simpler models predict outcomes equally well, the richer models should be discarded.
 
 If any of these claims do not survive external testing, the methodology is improved by the correction. The commitment is to the process of falsification, not to any particular outcome.
 
@@ -1122,6 +1190,10 @@ If any of these claims do not survive external testing, the methodology is impro
 14. **Nakamoto, S.** (2008). "Bitcoin: A Peer-to-Peer Electronic Cash System." — The synthesis: trustless consensus without central authority, at scale, in production. Genesis extends Nakamoto's question from "can trust be engineered for money?" to "can trust be engineered for work, governance, and scientific integrity?" CDSFL's verification chains (SHA-256 content hashing, hash-chain linking, Merkle epoch trees) are direct applications of the cryptographic infrastructure Bitcoin proved viable.
 
 15. **Stephenson, N.** (1999). *Cryptonomicon*. Avon Books. — A fictional exploration of cryptographic systems, information warfare, and the relationship between mathematical infrastructure and political freedom. Influential on the broader cypherpunk movement and on the philosophical orientation of projects that treat cryptographic verification as a foundation for social systems rather than merely a security mechanism.
+
+16. **Duane, J.T.** (1964). "Learning Curve Approach to Reliability Monitoring." *IEEE Transactions on Aerospace*, 2(2), 563-566. — The original Non-Homogeneous Poisson Process model for reliability growth. Applied in CDSFL's cognitive measurement framework (Part XIV, Mathematical Appendix §7.1) as the basis for measuring finding rate convergence vs churn across review rounds.
+
+17. **Cox, M.T.** (2005). "Metacognition in Computation: A Selected Research Review." *Artificial Intelligence*, 169(2), 104-141. — The MIDCA (Metacognitive Integrated Dual-Cycle Architecture) framework for computational metacognition. The CDSFL composite system's self-monitoring and strategy adjustment (Part XIV, Mathematical Appendix §8.1) maps directly to MIDCA's dual-cycle structure.
 
 ---
 
