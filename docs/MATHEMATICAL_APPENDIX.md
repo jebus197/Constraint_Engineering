@@ -46,6 +46,8 @@ Weighted residual risk across all flaw classes:
 - When m_k → 0 (perfect detection), R_n → 0 regardless of prior. As expected.
 - When m_k → 1 (no detection capability), R_n → Σ_k w_k · π_k. The prior is unchanged. Testing added nothing.
 
+**Domain note:** R_n is defined for π_k ∈ [0, 1) or m_k ∈ (0, 1]. The boundary (π_k = 1, m_k = 0) represents a logical contradiction (certain flaw + perfect detection + no finding) and is excluded.
+
 ### Relationship to F_n
 
 F_n and R_n are complementary views of the same underlying process:
@@ -71,7 +73,7 @@ R_n is only as good as the prior. When π_k is unknown, report R_n with explicit
 
 Under simplifying assumptions (K = 1, d_i = 1, all p_ik = p, π = 0.5), R_n reduces to:
 
-> R_1 = (1 − p)^n / (1 + (1 − p)^n)
+> R_n = (1 − p)^n / (1 + (1 − p)^n)
 
 which is the standard Bayesian posterior for a symmetric prior under repeated Bernoulli non-detection. The residual risk model is the Bayesian generalisation of the coverage model in the same way that F_n is the multi-class generalisation of C(n).
 
@@ -226,7 +228,7 @@ The formula models two independent detection streams (machine and human) whose c
 
 The HIL's per-pass detection probability is parameterised as:
 
-> **p_{H,j,k} = f_k(E, M) · Π_s (1 + λ_s · V_s)**
+> **p_{H,j,k} = min(1, f_k(E, M) · Π_s (1 + λ_s · V_s))**
 
 > **f_k(E, M) = E · (α + (1−α) · M)**
 
@@ -234,7 +236,7 @@ Where:
 - E ∈ [0,1] — domain expertise level
 - M ∈ [0,1] — methodology formality (0 = informal judgment, 1 = fully formal)
 - α ∈ (0,1) — floor coefficient (expertise alone, without formal method)
-- λ_s — sensitivity coefficient for domain variable s
+- λ_s ∈ [0, 1) — sensitivity coefficient for domain variable s (bounded to ensure (1 + λ_s · V_s) > 0)
 - V_s ∈ [-1,1] — domain-specific variable s (pluggable by operator)
 
 The base function f_k(E, M) captures two empirical observations: expertise is necessary but not sufficient (the floor is α·E without formal method), and methodology is a multiplier on expertise, not an independent contributor (M without E produces nothing). The product term Π_s(1 + λ_s · V_s) allows domain operators to extend detection probability with context-specific factors. When V_s = 0 for all s, the formula reduces to the base case.
@@ -381,7 +383,7 @@ Where:
 
 **Verified:** High-abstraction finding (formal, dense, cross-cutting, high confidence) scores H = 17.89. Low-abstraction finding (informal, verbose, local, moderate confidence) scores H = 0.53. Discrimination ratio: 33.4×.
 
-**Reduction property:** When all Boolean indicators are 0 and word counts are equal, H(x) reduces to c (confidence alone). The index degrades gracefully to the simplest possible measure.
+**Reduction property:** When all Boolean indicators are 0, evidence word count W_e = 0, and there are no cross-module references (N_cm = D_ref = 0), H(x) reduces to c · ln(e) · 1 = c (confidence alone). The index degrades gracefully to the simplest possible measure. (Note: the density function D(x) = ln(e + W_e/(W_c + 1)) equals 1 only when W_e = 0, not when W_e = W_c > 0. This is by design — any evidence content adds informational value.)
 
 ### 7.3 Total Cognitive Yield Y(t)
 
@@ -389,7 +391,11 @@ Where:
 
 Where N(t) is finding count at time t and H̄(t) is the mean Abstraction Index of all findings up to time t.
 
-**Ascending abstraction condition:** dH̄/dt > 0 while dN/dt < 0. The analyst is finding fewer things but each is deeper. If the rate of abstraction increase exceeds the rate of count decrease, total yield increases despite fewer findings. This captures creative deepening as a distinct cognitive mode from analytical exhaustion.
+**Ascending abstraction condition:** dH̄/dt > 0 while dλ/dt < 0 (equivalently, d²N/dt² < 0 — the finding *rate* is decreasing, not the cumulative count, which is monotonically increasing by definition). The analyst is producing findings at a decreasing rate but each is deeper. Total yield Y(t) increases despite the rate decrease when the relative depth increase exceeds the relative rate decrease:
+
+> **(dH̄/dt) / H̄(t) > |dλ/dt| / λ(t)**
+
+This is the formal condition for ascending abstraction. When this inequality holds, dY/dt > 0 despite declining finding rate. This captures creative deepening as a distinct cognitive mode from analytical exhaustion.
 
 **Motivation:** The founder's cognitive pattern across the project showed decreasing finding count (fewer observations per session) but monotonically increasing significance (from debugging scripts to designing theoretical frameworks). The decay curve alone would classify this as non-convergent. Y(t) correctly recognises it as ascending abstraction.
 
@@ -400,8 +406,10 @@ The total analytical value can only be calculated after the analysis completes. 
 > **V̂(t, T) = ∫₀ᵗ v(τ)dτ + remaining_estimate**
 
 Where the remaining estimate is:
-- If λ(t) > 0: v_w(t) · (1 − exp(−λ(t) · (T − t))) / λ(t)
-- If λ(t) ≤ 0: v_w(t) · (T − t)
+- If k(t) > 0: v_w(t) · (1 − exp(−k(t) · (T − t))) / k(t)
+- If k(t) ≤ 0: v_w(t) · (T − t)
+
+Here k(t) is the local exponential decay rate of the sliding-window generation rate v_w(t), estimated from consecutive round values. This is distinct from the Duane NHPP intensity λ(t) in §7.1, which is the global power-law intensity and is always positive.
 
 v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical decay rate estimated from consecutive round values.
 
@@ -411,9 +419,11 @@ v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical de
 
 **Ascending abstraction guard:**
 
-> **stop_valid(t) = (V̂_remaining(t) < ε) ∧ (dH̄(t)/dt ≤ 0)**
+> **stop_valid(t) = (V̂_remaining(t) < ε) ∧ ¬ascending_abstraction(t)**
+>
+> **ascending_abstraction(t) ≡ (dH̄/dt > 0) ∧ (dλ/dt < 0) ∧ ((dH̄/dt)/H̄(t) > |dλ/dt|/λ(t))**
 
-V̂ stop recommendations require both conditions: the count-based remaining estimate is below threshold ε, AND mean abstraction depth is not increasing. When dH̄/dt > 0 (ascending abstraction, §7.3), the analyst is deepening rather than exhausting. V̂ underestimates remaining value in this mode because it is count-based. In bimodal discovery patterns (surface findings → lull → late deep findings), ungated V̂ would recommend premature termination during the lull. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+V̂ stop recommendations require both conditions: the count-based remaining estimate is below threshold ε, AND ascending abstraction is not active. Ascending abstraction (§7.3) holds when the finding rate is decreasing but the relative depth increase exceeds the relative rate decrease, guaranteeing that total yield Y(t) is still increasing. V̂ underestimates remaining value in this mode because it is count-based. In bimodal discovery patterns (surface findings → lull → late deep findings), ungated V̂ would recommend premature termination during the lull. (Originally identified during CC × Gemini 3.1 Pro Extended P-Pass; quantitative condition added during 5-model meta-test, 27 March 2026.)
 
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 
@@ -429,9 +439,9 @@ F_conv is the set of newly converged findings (present in both models' confer ou
 
 The composite sycophancy score:
 
-> **S_sync = (1 − δ̄) · (1 − O_A)**
+> **S_sync = Δ̄ · (1 − O_A)**
 
-S_sync ≈ 0: genuine consensus (convergence on verified facts). S_sync high: sycophantic convergence (convergence on unverified claims).
+Where Δ̄ is the mean Adoption Delta (§7.6) across all model pairs. S_sync ≈ 0: genuine consensus (low deference or high verification). S_sync high: sycophantic convergence (high deference on unverified claims). High Δ̄ (capitulation) combined with low O_A (unverified) correctly maximises the sycophancy signal. (Formula corrected during 5-model meta-test, 27 March 2026 — original formula (1 − δ̄)·(1 − O_A) was inverted with respect to Δ.)
 
 **Non-verifiable domain guard:**
 
@@ -439,7 +449,7 @@ S_sync ≈ 0: genuine consensus (convergence on verified facts). S_sync high: sy
 >
 > **If |{f ∈ F_conv : verifiable(f)}| < 2: O_A = ⊥, S_sync = S_sync(Δ)**
 
-When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = (1 − δ̄) — falsely flagging all convergence as sycophantic. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ̄ alone. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = Δ̄ · 1 = Δ̄ — flagging all convergence with high deference as sycophantic regardless of content quality. (Identified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
 
 **Limitation:** O_A is computed only from the subset of findings that SymPy can verify (mathematical claims). For tasks with few mathematical claims, the metric has low statistical power. This is documented, not hidden.
 
@@ -493,15 +503,15 @@ SymPy falsification gives absolute zero. Simple, fixed weights.
 >
 > **S_v = 1 / (1 + exp(−L_total))**
 
-Where L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass, 27 March 2026.)
+Where L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). When verifier i returns indeterminate (neither verified nor falsified), it is excluded from the sum — it does not contribute to L_total. When all verifiers are indeterminate, L_total = 0 and S_v = 0.5 (neutral prior). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass; indeterminate handling formalised during 5-model meta-test, 27 March 2026.)
 
-| Verifier | TPR | FPR | Positive weight | Negative weight |
+| Verifier | TPR | FPR | Positive weight log(TPR/FPR) | Negative weight log(FNR/TNR) |
 |---|---|---|---|---|
 | SymPy | 0.99 | 0.001 | 6.90 | −4.60 |
-| Dimensional | 0.80 | 0.10 | 2.08 | −1.39 |
-| Numerical | 0.70 | 0.15 | 1.54 | −0.85 |
+| Dimensional | 0.80 | 0.10 | 2.08 | −1.50 |
+| Numerical | 0.70 | 0.15 | 1.54 | −1.04 |
 
-**Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto.
+**Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto. (Table corrected during 5-model meta-test, 27 March 2026 — original Dimensional and Numerical negative weights were computed as ln(FNR/TPR) instead of the correct ln(FNR/TNR). Veto property is strengthened by the correction since correct negative weights are more negative.)
 
 **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
 
@@ -572,13 +582,15 @@ For a set of n independent analytical agents {A₁, ..., Aₙ} operating under s
 
 **Emergence condition:**
 
-> **Y_composite(t) > max{Y_i(t)} for all individual agents i**
+> **Y_composite(t) > max{Y_i(t)} + k · σ̂(Y)**
 
-This exceeds mere aggregation. The union of individual outputs would give:
+Where σ̂(Y) is the bootstrap standard error of the Y estimates and k is a confidence multiplier (k = 1.96 for 95% confidence). The strict inequality Y_composite > max(Y_i) is necessary but not sufficient — it must exceed the measurement uncertainty to distinguish genuine emergence from statistical noise. (Statistical threshold added during 5-model meta-test, 27 March 2026.)
+
+The Y_composite > max(Y_i) condition is necessary but not sufficient to distinguish emergence from simple aggregation. The union of individual outputs would give:
 
 > Y_union(t) = |⋃ F_i(t)| · H̄_union(t)
 
-Emergence exceeds even this because the confer protocol forces agents into analytical territory none explored alone. A finding from agent A provokes investigation by agent B, which surfaces a structural issue that agent C formalises. The resulting insight exists because of the interaction and is not present in any individual agent's blind output.
+**Strong emergence condition:** Y_composite(t) > Y_union(t) + k · σ̂(Y). This establishes that interaction produced cognitive value beyond what the union of independent outputs would yield. The weaker condition (composite > max individual) is satisfiable by trivial aggregation and should not be used alone. Genuine emergence is the confer protocol forcing agents into analytical territory none explored alone. A finding from agent A provokes investigation by agent B, which surfaces a structural issue that agent C formalises. The resulting insight exists because of the interaction and is not present in any individual agent's blind output.
 
 **Empirical evidence:** Three-architecture adversarial review (March 2026). Gemini found 16 issues that Claude Opus and Codex missed across 8 rounds of mutual review. These were structural findings visible only from a different analytical perspective. The composite system was measurably more capable than any pair.
 
@@ -602,7 +614,7 @@ A system S is **second-order cognitive** if and only if:
 3. S adjusts its behaviour based on that monitoring (metacognitive feedback protocol, §8.1)
 4. The adjustment produces measurable improvement (post-feedback γ increases or v̄ increases)
 
-The CDSFL composite system meets all four criteria. The decay curves and verification rates are the monitoring. The metacognitive feedback protocol is the adjustment. Measurable improvement across rounds is the evidence that adjustment works.
+The CDSFL composite system meets criteria 1–3 by construction. Criterion 4 (measurable improvement from metacognitive adjustment) is a testable empirical claim. If confirmed, the system qualifies as second-order cognitive under this definition. (Qualification added during 5-model meta-test, 27 March 2026 — the original categorical assertion preceded the necessary empirical evidence.)
 
 **Scope:** This is functional metacognition, not phenomenal self-awareness. The system monitors and adjusts its analysis. It does not experience doing so. The framework deliberately avoids claims about inner experience because such claims are not falsifiable with current tools.
 
@@ -620,7 +632,7 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 
 | Claim | Test | Failure criterion |
 |---|---|---|
-| Composite Y > individual max Y | Bench test, all conditions | Y_composite ≤ max(Y_i) on majority of tasks |
+| Composite Y > individual max Y + k·σ̂ | Bench test, all conditions | Y_composite ≤ max(Y_i) + 1.96·σ̂(Y) on majority of tasks |
 | Metacognitive feedback improves performance | Pre/post feedback comparison | No measurable change in γ or v̄ after feedback |
 | Substrate agnosticism | Human trials under CDSFL | Humans under protocol show no measurable decay curves |
 | Emergence is genuine, not aggregation | Δ and O_A joint analysis | High Δ with low O_A across majority of tasks |
@@ -677,6 +689,9 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | Y(t) | Total Cognitive Yield | This appendix §7.3 |
 | H̄(t) | Mean Abstraction Index at time t | This appendix §7.3 |
 | V̂(t,T) | Online Total Value Estimator | This appendix §7.4 |
+| k(t) | Local exponential decay rate of v_w(t) | This appendix §7.4 |
+| Δ̄ | Mean Adoption Delta across model pairs | This appendix §7.5 |
+| σ̂(Y) | Bootstrap standard error of Y estimates | This appendix §8.2 |
 | O_A | Objective Alignment (sycophancy detection) | This appendix §7.5 |
 | F_conv | Newly converged finding set | This appendix §7.5 |
 | S_sync | Composite sycophancy score | This appendix §7.5 |
