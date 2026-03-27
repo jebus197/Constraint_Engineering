@@ -22,21 +22,23 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
-- **First full bench test running (Run 1)** — 27 tasks x 4 conditions = 108
-  runs, 5 models per run. ~78 of 108 runs complete as of 27 March.
-  Run resumed from checkpoint after CX quota issue (switched to API key auth).
-  This run has known confounds (see below and BENCH_RUN_1_ANALYSIS.md).
-  It measures distributed compute effectiveness, not full CDSFL.
-  A corrected Run 2 is planned with bare-metal model parity (claude --bare,
-  OpenRouter for ChatGPT), iterative HIL, full SymPy verification, enhanced
-  research pipeline (arXiv MCP, Sci-Hub, CX delegation).
+- **Bench Run 1:** 27 tasks x 4 conditions = 108 runs, 5 models per run.
+  ~78 of 108 complete. Known confounds (BENCH_RUN_1_ANALYSIS.md). Run 2 planned.
+- **Meta-test Stage 1 COMPLETE (27 March 2026):** 5-model blind pass on the
+  mathematical model itself. 11 genuine fixes applied to MATHEMATICAL_APPENDIX.md
+  (commit `08ccab1`). CC2 dominated (16 findings, 10 genuine, 8 unique). CX
+  contaminated (read Gemini output, Δ≈1.0). ChatGPT non-compliant (format failure).
+  Critical post-mortem finding: no model operated UNDER CDSFL — all received the
+  model as document content, not as system prompt. Full report: `bench/logs/meta_test_final_report.md`.
+- **Next: Fix confer (pending).** CX + Gemini + CC2 to resolve 5 deferred items
+  and 3 proposed new additions (anti-parroting, manager selection, discount function),
+  all operating under CDSFL as system prompt. Plan: `~/.claude/plans/agile-wondering-hejlsberg.md`.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
-- **Key distinction:** Control and HIL use self-iteration (each model
-  re-examines independently, no cross-model exchange). CDSFL and CDSFL+HIL
-  use confer rounds (models review each other's findings). Confer is the
-  distributed compute feature being tested.
+- **System prompt injection:** `run_benchmark.py` (lines 310-673) implements
+  correct per-model system prompt delivery for all 5 models. Use this
+  infrastructure — do not reinvent.
 - **Verification:** SymPy (OSS) auto-verifies mathematical claims. CC
   extracts verifiable claims from raw findings when models don't provide them.
 - **Policy engine:** Hierarchical Constraint Editor (CE) with 5 layers:

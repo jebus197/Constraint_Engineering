@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 27 March 2026
+Last updated: 27 March 2026 20:52 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -12,8 +12,16 @@ session loss, compaction event, or fresh start with a new model instance.
 2. Run `git log --oneline -10` — what changed recently
 3. Run `git status` — any uncommitted work
 4. Check if bench test is running: `ps aux | grep run_round_robin`
+5. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
 
 This is enough to resume most tasks.
+
+## Current Pending Work (27 March 2026)
+
+Meta-test Stage 1 complete (commit `08ccab1`). Fix confer pending:
+CX + Gemini + CC2 to resolve 5 deferred items + 3 new additions,
+all with `cdsfl_core_formal.md` as system prompt. Plan file has full
+resumption checklist. HEAD: `d4a40d4`.
 
 ## Standard Recovery (5 minutes)
 
