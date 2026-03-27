@@ -396,6 +396,58 @@ Second, the curves could feed back into AI design itself. If the best human anal
 
 The ethical implications are significant and largely unexplored. Cognitive curves are deeply personal data — they reveal how a person thinks, not just what they produce. Neurodiversity protection, informed consent, and the risk of optimising for a single cognitive style are all concerns that deserve serious future attention. These are questions for a programme of work that extends well beyond this project.
 
+## The Extended P-Pass and Distributed Compute as Team Sport (25 March 2026)
+
+During the extended P-pass on the bench test codebase, a pattern emerged that connects the P-pass protocol directly to the decay curve diagnostic and to the practice of distributed compute more generally.
+
+When models exchanged single fixes — one observation per turn, pass back immediately — the per-turn finding curve was flat. Each turn produced exactly one finding because each turn WAS one finding. This is structurally identical to the chatbot churn pattern. You cannot distinguish genuine analysis from protocol compliance when the output is always one item per turn. The diagnostic framework requires within-turn variation to detect decay, and single-touch exchanges eliminate within-turn variation by design.
+
+When the full extended P-pass protocol was applied — each model running up to 5 internal falsification cycles including a monolithic check before passing to the other model — the within-turn decay curves appeared naturally. The first internal cycle found 4 issues. The second found 1. The third found 0. That is a decay curve within a single turn. It proves the model is exhausting a real error space, not generating content on demand.
+
+The analogy to team sport is precise. A player who gets one touch before passing cannot demonstrate skill. A player who runs with the ball — dribbles, feints, shoots — demonstrates their actual capability through the sequence of actions within their possession. The touches are the measurement. Fewer touches means less signal, regardless of the player's quality. In distributed compute terms: each model needs enough compute per turn to demonstrate depth before handing off. Single-kick exchanges waste the very capability the protocol is designed to leverage.
+
+The practical implication was measurable. Single-touch P-pass exchanges took roughly the same wall-clock time as the full extended protocol but produced incomplete results. The integration failures that single-touch missed were only discovered later in smoke tests, requiring additional debugging cycles. The full protocol found everything in one pass. The time "saved" by shallow exchanges was spent later on rework. As in football: a team that only plays short passes and never runs with the ball may look busy but rarely scores.
+
+## The Own Goal (25 March 2026)
+
+The first full bench run was launched with known integration flaws in the codebase — flaws that were only discovered and fixed by the extended P-pass that ran in parallel. The run will complete with confounded data: phantom HARD findings from parser fallback, unverified convergence, iterative guidance applied to only some conditions, and context overflow in some model interactions.
+
+This run will not be discarded. It will be published as a documented baseline with all confounds explicitly recorded. The corrected bench run — with the extended P-pass fixes applied — will follow on the same task set, producing a direct before/after comparison.
+
+The decision to publish a failed run is deliberate. Most AI research publishes only successes. Failures are hidden in unreported experiments and discarded runs. This project publishes the lab notebook, not just the paper. The commit history shows every confound as it was discovered, every fix as it was applied, and every correction as it was verified. If someone wishes to challenge the results, the raw material for that challenge is already public.
+
+There is also a practical consideration. Ten days from first commit to a working five-model distributed compute bench test is fast. If the results were also clean on the first attempt, that would strain credibility. A failed first run followed by a corrected second run is a more believable narrative — because it is the true one.
+
+## The Level Playing Field (25 March 2026)
+
+A persistent confound throughout the bench test series was directive asymmetry: Claude Opus 4.6 and Codex 5.3 carried persistent methodology directives (via CLAUDE.md and AGENTS.md respectively) into every condition, including Control. DeepSeek, Gemini, and ChatGPT operated with no equivalent persistent directives. This meant the "Control" condition was not a true control for CC and CX — they had embedded methodology advantages that the other models lacked.
+
+The solution that emerged was to run all models bare — stripped of their default system prompts and vendor-specific training overlays — and inject CDSFL methodology directives identically across all five models under CDSFL conditions. This required different mechanisms per model:
+
+Claude: the --bare flag strips CLAUDE.md auto-discovery. CDSFL methodology is injected via --system-prompt-file.
+Codex: methodology is written to AGENTS.md and config.toml persistent_instructions per condition.
+DeepSeek: system message in the OpenAI-compatible API. True system-level persistence.
+Gemini: system_instruction parameter in the SDK config. True system-level persistence.
+ChatGPT: accessed via OpenRouter API instead of the proprietary ChatGPT CLI, giving full control over the system prompt. True system-level persistence.
+
+The OpenRouter discovery was significant. The proprietary ChatGPT 5.4 service has a hidden, mandatory system prompt baked into its RLHF training that cannot be stripped or overridden through the official API. OpenRouter provides access to the same model family (GPT-5.4 via OpenAI's API) with a fully user-defined system prompt — no hidden preamble, no mandatory "helpful assistant" overlay. This gave us the same level of control over ChatGPT that we had over every other model.
+
+The result: five models, all bare, all receiving identical CDSFL methodology injection at the system prompt level (the strongest persistence mechanism available). Four of five get true system-level injection. The fifth (Codex via codex exec) gets the closest equivalent available through its AGENTS.md and persistent_instructions mechanisms. The playing field is as level as current platform capabilities allow.
+
+For potential third-party researchers wishing to reproduce or extend these results: OpenRouter (openrouter.ai) provides unified API access to hundreds of models with full system prompt control. The CDSFL methodology reference file, the bench test task corpus, and the orchestration script are all on the public repository. The barrier to independent replication is an API key and compute budget — nothing else.
+
+## Two Probes Into Deeper Structure (25 March 2026)
+
+The 26th bench test task tests Hossenfelder's hypothesis that quantum mechanics is a statistical theory with a deeper deterministic layer beneath it. The 27th tests whether the Riemann zeta zeros — which control the distribution of prime numbers — encode the structure of a physical system, as the Montgomery-Odlyzko connection to quantum energy level statistics suggests.
+
+These are independent investigations. Neither references the other. They probe different domains — quantum physics and number theory — from different directions.
+
+The observation that connects them is simple. If quantum mechanics has a deeper layer (Hossenfelder), and the Riemann zeros correspond to quantum energy levels (Montgomery-Dyson), then the Riemann zeros may encode the structure of whatever lies beneath quantum mechanics. The primes, which are the atoms of arithmetic, may share structural DNA with the atoms of the physical universe at a level deeper than either quantum mechanics or number theory currently reaches.
+
+This connection is speculative. It may be entirely wrong. The instinct that flagged it is the same pattern recognition that identified the decay curve framework from a single data set earlier in this project — structural connections between apparently unrelated domains. That instinct has been productive but is not infallible.
+
+The methodology for testing it is honest. Run both tasks independently. Let the models analyse each problem on its own terms. After both complete, examine whether the outputs contain any connections that neither task was designed to find. Emergent connections from independent probes are more credible than directed searches because they cannot be attributed to prompt bias. If no connection emerges, the instinct was wrong. If one does, it's a hypothesis worth pursuing — by people with deeper expertise than a dyslexic founder working from instinct and curiosity.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.

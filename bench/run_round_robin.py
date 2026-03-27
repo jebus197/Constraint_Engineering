@@ -1640,9 +1640,11 @@ class Checkpoint:
             _err("  [checkpoint] WARNING: corrupt checkpoint, starting fresh")
             return True
         stored_manifest = data.get("manifest", "")
-        if stored_manifest != self.manifest:
-            _err(f"  [checkpoint] INCOMPATIBLE: manifest mismatch")
-            return False
+        if stored_manifest and stored_manifest != self.manifest:
+            _err(f"  [checkpoint] WARNING: manifest changed (tasks/directives updated)")
+            _err(f"  [checkpoint] Resuming anyway — completed runs are preserved")
+            # Don't block resume on manifest change. Completed runs used the
+            # old config; new runs use the new config. Both are recorded.
         self.completed = data.get("completed", {})
         _err(f"  [checkpoint] resumed {len(self.completed)} completed task(s)")
         return True
@@ -4023,8 +4025,15 @@ def run_task(
                 "failed_reviewers": failed,
                 **{f"{r}_error": reviewer_errors[r] for r in REVIEWERS},
             })
-            # Deterministic failure policy: one retry already happened inside callers
+            # HARD STOP: any model failure halts the entire bench run.
+            # Graceful degradation is useful in production but not during
+            # controlled experiments where all 5 models must participate.
             status = "DEFERRED_INFRA"
+            _err(f"\n  [HARD STOP] Model failure detected. Halting bench run.")
+            _err(f"  Failed reviewers: {failed}")
+            _err(f"  Fix the issue and resume with --resume flag.")
+            _err(f"  Completed runs are checkpointed and will not re-run.")
+            # Save checkpoint before exit
             break
 
         # Novelty assessment
@@ -4590,6 +4599,15 @@ def main() -> None:
                 _err(f"  [{run_key}] {result['status']} — {result['rounds_completed']} rounds, "
                      f"{result['total_unique_hard_findings']} unique HARD findings")
                 _err(f"  {ledger.summary()}")
+
+                # HARD STOP on infra failure — all 5 models must participate
+                if result.get("status") == "DEFERRED_INFRA":
+                    _err(f"\n{'='*60}")
+                    _err(f"  BENCH RUN HALTED — model failure on {run_key}")
+                    _err(f"  Fix the issue and resume with: --resume")
+                    _err(f"  {completed} runs completed, {len(tasks) * len(conditions) - completed} remaining")
+                    _err(f"{'='*60}")
+                    sys.exit(1)
 
             except DeepSeekExhausted as exc:
                 _err(f"  [{run_key}] DEEPSEEK EXHAUSTED — stopping test for diagnosis")

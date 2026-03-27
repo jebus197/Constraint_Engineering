@@ -509,6 +509,47 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 **Raw data:** `bench/results/round_robin_phase2/round_robin_results.json`
 **Activity log:** `bench/logs/round_robin_phase2_deepseek_20260323T000340Z.log`
 
+#### Phase 2b: Full Bench Run — Confounded Baseline (2026-03-24, in progress)
+
+**Status:** Running. ~50% complete. Known confounds documented below.
+**Task set:** 26 frontier tasks × 4 conditions = 104 runs.
+**Models:** 5 (Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4).
+
+**Known confounds (discovered during run via extended P-pass):**
+1. Registry policy timeouts not wired — model timeouts hardcoded, not from policy.
+2. Iterative HIL not applied to CDSFL+HIL confer rounds — only plain HIL got iterative guidance.
+3. Context capping drops verifiable_claim data from SymPy pipeline.
+4. Parser fallback creates phantom HARD findings (default was HARD, not SOFT).
+5. Convergence uses raw claim hashing, not structural canonical hash — reworded duplicates counted as novel.
+6. Directive asymmetry: CC and CX carry persistent directives (CLAUDE.md, AGENTS.md) into all conditions including Control. Other models have no equivalent. Not a level playing field.
+7. ChatGPT accessed via kardolus CLI with hidden mandatory system prompt that cannot be stripped.
+
+**Decision:** Run will complete and be published as documented baseline. Not discarded. The confounds are the evidence for why the corrected run is necessary.
+
+#### Experiment 7: Corrected Full Bench Run (planned)
+
+**Status:** Planned. Pending completion of Phase 2b and resource assessment.
+**Task set:** 26 frontier tasks × 4 conditions = 104 runs.
+**Models:** 5 (Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4).
+
+**Corrections from Phase 2b:**
+All 7 confounds addressed. Key changes:
+- All models run bare (no default system prompts) — level playing field.
+- CC: `--bare` flag strips CLAUDE.md. CDSFL conditions get `--system-prompt-file methodology.md`.
+- CX: Methodology written to AGENTS.md + config.toml persistent_instructions per condition.
+- DeepSeek: System message in API (no message = bare, methodology = CDSFL).
+- Gemini: system_instruction in SDK config (no instruction = bare, methodology = CDSFL).
+- ChatGPT: Accessed via OpenRouter API (openrouter.ai) instead of kardolus CLI. Full system prompt control. No hidden preamble.
+- Iterative HIL applied to both HIL and CDSFL+HIL conditions.
+- All extended P-pass fixes applied (5 adversarial findings + 2 residuals, 11 CC-CX cycles).
+- SymPy verification fires on all conditions (measurement), feedback to models on CDSFL only (methodology).
+- Default constraint_class changed to SOFT (models must explicitly state HARD).
+- Structural canonical hashing for convergence dedup.
+
+**Estimated cost:** ~$26 for ChatGPT via OpenRouter. All other models on subscription or near-free API.
+
+**Replication instructions for third parties:** OpenRouter (openrouter.ai) provides unified API access to hundreds of models with full system prompt control. The methodology reference file, task corpus, and orchestration script are on the public repository. Independent replication requires only an API key and compute budget.
+
 ---
 
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*

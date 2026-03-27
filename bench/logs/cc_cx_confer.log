@@ -68,3 +68,23 @@ CX will then run up to 5 cycles on CC's work. Up to 5 exchanges total.
 [2026-03-26T03:18:45+00:00] CC Turn 2 complete. Fixed C1 (noted, phase2 only), C2 (guidance cap preserves follow-ups), C3 (claims capped at 3 per summary), C5 (structural fields preserved in normalisation). C4 is docs-only. CC at diminishing returns after 3 cycles. Passing back to CX for Turn 2.
 [2026-03-26T03:27:18+00:00] CX Turn 2: CONVERGED after 3 cycles. C5 PASSES. C2/C3 have minor residuals (round-2 uncapped base, claim extractor edge cases). These affect measurement precision, not correctness. CC-CX CONVERGENCE REACHED on exchange 2 of 5.
 [2026-03-26T03:27:18+00:00] EXTENDED P-PASS COMPLETE. 2 exchanges, 11 total cycles (CC: 3+3, CX: 5+3). 5 adversarial findings fixed, 2 minor residuals documented. Codebase ready for next bench run.
+
+[2026-03-26T04:54:40+00:00] NEW WORK: System-level directive injection for all 5 models.
+CC building: (1) --bare flag for CC under Control/HIL, (2) system_instruction for Gemini,
+(3) system message for DeepSeek, (4) --prompt for ChatGPT, (5) methodology.md reference file.
+[2026-03-26T04:56:59+00:00] CX confirms: analytical-only methodology file, --bare safe for tools, document CX/ChatGPT as imperfect controls. Building now.
+[2026-03-26T05:01:29+00:00] CC built system-level directive injection for all 5 models. Sending to CX.
+[2026-03-26T05:08:05+00:00] CC fixed CX check 3: methodology_text now injected to ALL 5 models under CDSFL. DeepSeek+Gemini: system-level. CX+ChatGPT: context-level (first message prefix). Both accept system_prompt parameter in constructor. Platform limitation documented in code comments.
+
+[2026-03-26] CC: Enhanced research pipeline in run_round_robin.py:
+  Added _search_semantic_scholar() — Semantic Scholar API, 10s timeout, graceful 429 handling.
+  Added _fetch_scihub() — Sci-Hub PDF by DOI, text extraction via pdfplumber/PyPDF2, 15s timeout.
+  Added _delegate_research_to_cx() — codex exec CLI, 120s timeout, cdsfl_hil only.
+  Enhanced _do_external_research() pipeline: SymPy -> arXiv (now extracts DOIs) -> Semantic Scholar -> Sci-Hub (top 2 DOIs) -> Web -> CX delegation.
+  Added condition parameter, 15000-char output cap, per-source try/except. AST parse verified.
+[2026-03-26T21:05:55+00:00] CC fixed 2 CX P-pass failures: (1) _fetch_scihub PDF domain allowlist + 20MB size limit, (2) research output cap is now strict (no suffix). CX verified 3/5 PASS, CC fixed 2/5 FAIL.
+
+[2026-03-27T02:46:58+00:00] NEW WORK: Integrating Duane NHPP analysis into bench pipeline.
+CC building analysis sidecar. CX confirmed Duane beats geometric 17/18 on CDSFL runs.
+[2026-03-27T03:14:20+00:00] CX designed decay_analysis.py spec. CC building. CX conventions adopted: D=inverse half-life, beta=gamma-1, AIC fallback for n<5.
+[2026-03-27T03:19:50+00:00] DECAY ANALYSIS COMPLETE. 78 runs. Key finding: gamma discriminates conditions. Control/HIL gamma~0 (single-shot exhaustion). CDSFL gamma~0.5 (sustained distributed analysis). No churn detected in this run. D metric interpretation reversed: high D = quick exhaustion, not necessarily better.

@@ -150,7 +150,8 @@ The founder uses single-letter shorthand:
 - `a` = analyse dispassionately
 - `r` = read IM only (quick context check)
 - `rr` = full recovery (re-read all resources, rebuild context from scratch)
-- `rs` = external research (web search, arXiv, Semantic Scholar)
+- `rs` = restore state (full recovery: rebuild context from all sources)
+- `re` = external research (web search, arXiv, Semantic Scholar, Sci-Hub)
 - `t` = export to TTS accessibility file
 - `sv` = save state (Open Brain + update recovery resources + commit + push)
 
