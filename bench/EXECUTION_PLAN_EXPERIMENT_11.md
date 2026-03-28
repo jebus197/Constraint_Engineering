@@ -11,10 +11,22 @@ It incorporates all lessons from Experiments 1-10 and the suspended bench run.
 
 ## Task
 
-Dynamic management and load-balancing formalisation for the CDSFL
-mathematical model. New mathematical work — no prior implementation exists.
-This is a stronger test of the protocol than re-running the persistence
-layer, because the output is genuinely unknown.
+Formalise the dynamic management and load-balancing components of the
+CDSFL mathematical model. Specifically: how the framework assigns models
+to roles, balances computational load across participants, manages round
+progression, detects convergence and diminishing returns, and handles
+participant failure or underperformance — all expressed as mathematical
+extensions to the existing CDSFL schema (MATHEMATICAL_APPENDIX.md).
+
+This is new mathematical work — no prior implementation exists. It is a
+stronger test of the protocol than re-running the persistence layer,
+because the output is genuinely unknown.
+
+Scope boundary: this task formalises the MANAGEMENT AND LOAD-BALANCING
+LAYER ONLY. It does not revisit the core falsification model, the
+cognitive measurement framework, or the emergence formalisations — those
+are already formalised. The output extends the existing schema; it does
+not replace it.
 
 ---
 
@@ -189,6 +201,125 @@ output must be investigated before proceeding (lesson #22).
 
 ---
 
+## Circuit Breaker — Halt on Unforeseen Issues
+
+CC1 halts the test IMMEDIATELY if any of the following occur. No further
+API calls are made until the issue is diagnosed and resolved. API credits
+are not bottomless — never burn through them chasing a broken pipeline.
+
+### Automatic Halt Conditions
+
+1. **Model identity mismatch.** Any model returns a different identity
+   than expected during preflight or produces output inconsistent with
+   its claimed model (e.g., Sonnet-quality reasoning from an Opus call).
+   Halt, diagnose, fix before resuming.
+
+2. **Empty or malformed response.** Any model returns an empty response
+   body, an HTTP error after exhausting retries, or output that is not
+   parseable as a coherent response. Log the raw response. Do not retry
+   beyond the configured retry policy. Halt and report.
+
+3. **Structured output failure.** Any model fails to produce CDSFL
+   structured output (VERDICT/EVIDENCE/CONSTRAINT_CLASS/CONFIDENCE/
+   STRONGEST_OBJECTION/RESPONSE) after receiving the system prompt.
+   This indicates a prompt delivery or model compatibility issue. Halt.
+
+4. **Cross-contamination detected.** Any model's output references
+   another model's findings during a blind round, or contains content
+   that could only have come from another model's output. Halt
+   immediately — the blind round is compromised.
+
+5. **Scope drift.** Any model produces output that is not about
+   dynamic management and load-balancing formalisation — e.g., it
+   rewrites the core falsification model, proposes changes to the
+   cognitive measurement framework, or goes off-task. Flag to founder
+   before dispatching further rounds. The prompt may need tightening.
+
+6. **Budget threshold.** If cumulative API spend (tracked by CC1)
+   exceeds $20 before Phase 5 completes, halt and report to founder.
+   The estimated total is $10-15; exceeding $20 indicates something
+   is wrong (excessive retries, runaway token counts, or more rounds
+   than expected).
+
+7. **Unexpected infrastructure failure.** API key rejected, OpenRouter
+   down, Codex CLI auth failure, Gemini quota exceeded, or any
+   infrastructure issue not covered by the retry policy. Halt, do not
+   improvise workarounds during the test.
+
+### Halt Procedure
+
+1. Log the halt condition with timestamp.
+2. Save all outputs received so far to bench/logs/.
+3. Report to founder: what happened, which phase, which model, what
+   was received.
+4. Do NOT resume until the issue is understood and either fixed or
+   the founder explicitly approves continuing with a known limitation.
+
+### Resume After Halt
+
+If a halt occurs mid-phase (e.g., 3 of 5 models have responded in
+Phase 2 when the 4th fails), the options are:
+
+a. Fix the issue and re-dispatch ONLY the failed model(s). The
+   previously successful responses are preserved.
+b. Re-run the entire phase from scratch if the fix changes conditions
+   that affect all models (e.g., prompt change).
+c. Founder decides to proceed without the failed model, reducing
+   the participant count for that round. Document the decision.
+
+---
+
+## Design Constraint: UX Readiness
+
+The implementation produced in Phase 6 must be architected so that a
+future UX layer can integrate with it without significant refactoring.
+This is NOT a requirement to build the UX now — it is a requirement to
+not make building it later unnecessarily difficult.
+
+### What This Means Concretely
+
+1. **All orchestration logic must be callable programmatically.** No
+   hardcoded interactive flows. Every operation (dispatch prompt, collect
+   response, run synthesis, check convergence) must be a function or
+   method that accepts parameters and returns structured results.
+
+2. **Model selection must be configuration-driven.** The list of
+   participating models, their API endpoints, model IDs, token limits,
+   timeouts, and retry policies must come from a configuration source
+   (file, dict, or dataclass) — not hardcoded in orchestration logic.
+   A future UX lets the user pick models from a dropdown; the backend
+   just reads a different config.
+
+3. **Role assignment must be parameterised.** Which model is collator,
+   which is player manager, which are participants — these must be
+   assignable at runtime, not baked into the code. A future UX lets
+   the user assign roles; the backend accepts the assignment.
+
+4. **API key handling must support multiple sources.** Environment
+   variables (current), user-provided keys via config, or CLI
+   subscription auth. The implementation must not assume a single
+   key source. A future UX offers "use your own API key" or "use
+   CLI subscription" — the backend accepts either.
+
+5. **Phase progression must be observable.** Each phase transition,
+   each model dispatch, each response received must emit a structured
+   event (log entry, callback, or return value) that a UX layer can
+   subscribe to for progress display.
+
+6. **All outputs must be persistable.** Every model response, every
+   synthesis, every convergence check must be saveable to a structured
+   format (JSON or the persistence layer). A future UX displays these;
+   the backend just writes them.
+
+### What This Does NOT Mean
+
+- No web framework, no API server, no frontend code in this test.
+- No premature abstraction. The implementation serves the test first.
+- UX readiness is a design constraint on the architecture, not a
+  deliverable of this experiment.
+
+---
+
 ## Execution Phases
 
 ### Phase 0: Problem Definition (CC1)
@@ -327,6 +458,7 @@ Only after Phase 5 produces a stop condition:
 | 27 | Protocol violations             | CC2 manages under CDSFL; CC1 collates only |
 | 28 | DeepSeek reasoner empty content | Use deepseek-reasoner; monitor; chat fallback|
 | 29 | Anthropic Sonnet/Opus default   | Preflight identity check before test        |
+| 30 | Wasted API spend on broken runs | Circuit breaker: halt on unforeseen issues  |
 
 ---
 
@@ -351,6 +483,7 @@ Pre:     [ ] All 5 models pass identity verification
          [ ] All 5 models pass structured output compliance check
          [ ] All API keys verified and funded
          [ ] bench/logs/ directory exists
+         [ ] Circuit breaker conditions understood — halt on any trigger
 Phase 0: [ ] Task brief written
          [ ] Task brief is self-contained and unambiguous
 Phase 1: [ ] CC2 architecture received
