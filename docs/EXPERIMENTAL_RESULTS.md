@@ -685,29 +685,29 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 **Date:** 2026-03-28
 **Models:** CC2 (Opus 4.6), CX (GPT-5.4, xhigh reasoning), Gemini 3.1 Pro
 **Manager:** CC1 (Opus 4.6, separate instance)
-**System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected for all three players
+**System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected for all three reviewing models
 **Scope:** Build the verification chain module described in PAPER.md Part V (tamper-evident persistence for reasoning artifacts)
-**Purpose:** First CDSFL-guided implementation task using the 4-player distributed compute protocol.
+**Purpose:** First CDSFL-guided implementation task using the 4-model distributed compute protocol.
 
 #### Design
 
-Four-player structure: CC1 as manager (no CDSFL system prompt), CX as team captain, CC2 as deep analyst, Gemini as mathematical/cryptographic verifier. All three players received the corrected CDSFL core formal as system prompt.
+Four-model structure: CC1 as manager (no CDSFL system prompt), CX as team captain, CC2 as deep analyst, Gemini as mathematical/cryptographic verifier. All three reviewing models received the corrected CDSFL core formal as system prompt.
 
-Phase 1: CX proposed architecture; CC1↔CX confered until convergence (1 round, zero disagreements). Phase 2: three-player parallel execution. Phase 3: CC1 merged findings and applied fixes.
+Phase 1: CX proposed architecture; CC1↔CX confered until convergence (1 round, zero disagreements). Phase 2: three-model parallel execution. Phase 3: CC1 merged findings and applied fixes.
 
 #### What Was Correct
 
-- All three players received `cdsfl_core_formal.md` as system prompt and operated under the framework.
+- All three reviewing models received `cdsfl_core_formal.md` as system prompt and operated under the framework.
 - CX architecture proposal and CC1↔CX confer followed the protocol correctly and reached genuine convergence.
-- All three players produced independently useful output: CC2 wrote 704 lines of implementation + 850 lines of tests; Gemini identified 6 cryptographic findings; CX identified 7 code review findings (3 BLOCKING).
-- Every finding from every player was incorporated into the final implementation.
+- All three models produced independently useful output: CC2 wrote 704 lines of implementation + 850 lines of tests; Gemini identified 6 cryptographic findings; CX identified 7 code review findings (3 BLOCKING).
+- Every finding from every model was incorporated into the final implementation.
 - Final state: 790 lines, 97 tests passing, RFC 9162 Merkle trees, hash chains, optional Ed25519 signing, CLI interface.
 
 #### What Was Wrong (Process Confound)
 
-1. **No blind round.** The distributed compute protocol requires all players to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, CX reviewed code. This means there is no inter-model agreement data — each player did a different job, so their findings cannot be compared.
+1. **No blind round.** The distributed compute protocol requires all models to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, CX reviewed code. This means there is no inter-model agreement data — each model did a different job, so their findings cannot be compared.
 
-2. **No second round.** The protocol requires CC1 to synthesise blind round findings, pass them back to all players, and iterate. CC1 collected one round of outputs, applied fixes, and stopped.
+2. **No second round.** The protocol requires CC1 to synthesise blind round findings, pass them back to all models, and iterate. CC1 collected one round of outputs, applied fixes, and stopped.
 
 3. **No fresh CX instance.** CX carried context from the architecture confer into the code review, contaminating its independence.
 

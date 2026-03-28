@@ -1126,14 +1126,14 @@ Three specific errors would have been committed by the manager without the frame
 
 In each case, the structured output format — which separates verdict from evidence, evidence from proposed change, and proposed change from self-criticism — made it possible for the non-framework manager to evaluate reasoning it could not have generated. The structured format is the compensation mechanism.
 
-**The communication protocol hypothesis:** CDSFL may function as a communication protocol as much as an analytical protocol. When models operate under the framework, they produce output that is not just better analysis but more interpretable analysis. The structured format allows a player who cannot use the framework directly to benefit from it indirectly, by evaluating the structured output of players who can.
+**The communication protocol hypothesis:** CDSFL may function as a communication protocol as much as an analytical protocol. When models operate under the framework, they produce output that is not just better analysis but more interpretable analysis. The structured format allows a participant who cannot use the framework directly to benefit from it indirectly, by evaluating the structured output of models that can.
 
 This has implications for mixed teams of humans and AI models. A human who cannot internalise the full CDSFL schema can still benefit from it if the AI models in the team operate under it and produce structured output. The human retains decision authority. The framework ensures that the analysis presented to them is self-tested, clearly structured, and transparent about its own limitations.
 
 **Where compensation breaks down:**
 - When the evaluator cannot read structured arguments at all (minimum literacy floor)
 - When the output is so dense that evaluation requires the same expertise as generation
-- When all players in the chain are weak (no framework-guided output to evaluate)
+- When all participants in the chain are weak (no framework-guided output to evaluate)
 - For real-time decisions that cannot wait for a structured review cycle
 
 **Caveats:** The sample size is one. The "weak player" was not genuinely weak — CC1 is a frontier AI model. Whether the observation generalises to human weak players is a falsifiable prediction that has not yet been tested. The observation is consistent with the hypothesis but does not prove it.
