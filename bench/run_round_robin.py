@@ -211,103 +211,73 @@ VERIFY_MIN_SAMPLE = 3            # need at least this many determinate verificat
 
 # ---------------------------------------------------------------------------
 # Verification chain — CDSFL layers 1-3
+# Canonical implementation: bench/verification_chain.py
+# This section provides a compatibility adapter for the benchmark runner.
 # ---------------------------------------------------------------------------
+
+from verification_chain import (  # noqa: E402
+    VerificationChain as _CanonicalChain,
+    canonical_json as _canonical_json,
+    sha256_digest as _sha256_digest,
+    rfc9162_merkle_root as _rfc9162_root,
+)
 
 
 def _content_hash(data: str) -> str:
-    """Layer 1: SHA-256 content hash of a string."""
+    """SHA-256 content hash of a string (bare hex, no prefix)."""
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _chain_hash(content_hash: str, prev_hash: str) -> str:
-    """Layer 2: Hash chain — link to predecessor."""
-    return hashlib.sha256(
-        f"{prev_hash}:{content_hash}".encode("utf-8")
-    ).hexdigest()
-
-
-def _merkle_root(hashes: list[str]) -> str:
-    """Layer 3: Compute Merkle root from a list of hashes.
-
-    Uses a standard binary Merkle tree. If the list has an odd number
-    of elements, the last element is duplicated.
-    """
-    if not hashes:
-        return _content_hash("")
-    level = list(hashes)
-    while len(level) > 1:
-        next_level: list[str] = []
-        for i in range(0, len(level), 2):
-            left = level[i]
-            right = level[i + 1] if i + 1 < len(level) else level[i]
-            next_level.append(
-                hashlib.sha256(f"{left}:{right}".encode("utf-8")).hexdigest()
-            )
-        level = next_level
-    return level[0]
-
-
 class VerificationChain:
-    """CDSFL verification chain — layers 1-3.
+    """CDSFL verification chain — compatibility adapter.
 
-    Every artifact is hashed (layer 1), chained to its predecessor
-    (layer 2), and combined into a Merkle root per epoch (layer 3).
+    Wraps bench/verification_chain.py (the canonical implementation)
+    to preserve the runner's existing call-site API. One implementation,
+    one source of truth.
     """
 
     def __init__(self):
+        self._chain = _CanonicalChain()
         self.entries: list[dict[str, str]] = []
-        self.prev_hash: str = _content_hash("GENESIS")  # chain anchor
 
     def record(self, artifact_type: str, content: str, metadata: dict | None = None) -> dict[str, str]:
-        """Record an artifact in the chain. Returns the chain entry.
-
-        CX P-pass fix (SOFT): metadata and artifact_type are now included
-        in the chain hash so they cannot be altered without detection.
-        """
-        # Include metadata + type in the hashed content (CX SOFT fix 2)
-        full_content = json.dumps({
-            "artifact_type": artifact_type,
-            "content": content,
-            "metadata": metadata,
-        }, sort_keys=True)
-        content_h = _content_hash(full_content)
-        chain_h = _chain_hash(content_h, self.prev_hash)
+        """Record an artifact in the chain. Returns the chain entry."""
+        payload = {"content": content, "metadata": metadata}
+        rec = self._chain.append_record(
+            artifact_type=artifact_type,
+            payload=payload,
+            recorded_by="benchmark",
+            metadata=metadata,
+        )
+        # Build a backward-compatible entry dict for the runner
         entry = {
-            "seq": len(self.entries),
+            "seq": rec["sealed_body"]["seq"],
             "artifact_type": artifact_type,
-            "content_hash": content_h,
-            "chain_hash": chain_h,
-            "prev_hash": self.prev_hash,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "content_hash": rec["sealed_body"]["payload_hash"],
+            "chain_hash": rec["chain_hash"],
+            "prev_hash": rec["prev_hash"],
+            "entry_hash": rec["entry_hash"],
+            "timestamp": rec["sealed_body"]["timestamp_utc"],
         }
         if metadata:
             entry["metadata"] = metadata
         self.entries.append(entry)
-        self.prev_hash = chain_h
         return entry
 
     def merkle_root(self) -> str:
-        """Layer 3: Compute Merkle root over all chain hashes."""
-        return _merkle_root([e["chain_hash"] for e in self.entries])
+        """Layer 3: Compute RFC 9162 Merkle root over all chain hashes."""
+        epoch = self._chain.seal_epoch()
+        return epoch["merkle_root"]
 
     def verify_chain(self) -> tuple[bool, str]:
         """Verify the entire chain is intact. Returns (valid, message)."""
-        if not self.entries:
-            return True, "empty chain"
-        expected_prev = _content_hash("GENESIS")
-        for i, entry in enumerate(self.entries):
-            if entry["prev_hash"] != expected_prev:
-                return False, f"broken at entry {i}: prev_hash mismatch"
-            recomputed = _chain_hash(entry["content_hash"], expected_prev)
-            if recomputed != entry["chain_hash"]:
-                return False, f"broken at entry {i}: chain_hash mismatch"
-            expected_prev = entry["chain_hash"]
-        return True, f"valid ({len(self.entries)} entries)"
+        return self._chain.verify_chain()
 
     def to_dict(self) -> dict:
+        epoch = self._chain.seal_epoch()
         return {
             "entries": self.entries,
-            "merkle_root": self.merkle_root(),
+            "merkle_root": epoch["merkle_root"],
             "chain_length": len(self.entries),
         }
 
@@ -316,8 +286,8 @@ class VerificationChain:
         """Reconstruct chain from serialised form (for resume)."""
         chain = cls()
         chain.entries = data.get("entries", [])
-        if chain.entries:
-            chain.prev_hash = chain.entries[-1]["chain_hash"]
+        # Note: the canonical chain cannot be reconstructed from legacy
+        # entries alone; this preserves the entry list for display purposes.
         return chain
 
 

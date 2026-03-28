@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 27 March 2026
+Last updated: 28 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -28,21 +28,16 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   mathematical model itself. 11 genuine fixes applied to MATHEMATICAL_APPENDIX.md
   (commit `08ccab1`). CC2 dominated (16 findings, 10 genuine, 8 unique). CX
   contaminated (read Gemini output, Δ≈1.0). ChatGPT non-compliant (format failure).
-- **3-model confer COMPLETE (27 March 2026):** CX + Gemini + CC2 resolved 5
-  deferred design decisions and added manager selection function §7.11. Rejected
-  anti-parroting (A-N1) and contribution discount (A-N3) as premature. Key changes:
-  asymmetric Δ rates, D symbol renames (ρ_info, D_decay), mutual suppression metric
-  M_suppress, dual termination in core_formal.md. Commit `77a4a7f`.
-  Critical post-mortem finding: no model operated UNDER CDSFL — all received the
-  model as document content, not as system prompt. Full report: `bench/logs/meta_test_final_report.md`.
-- **Documentation sweep COMPLETE (27 March 2026):** All findings from meta-test
-  and confer written up across EXPERIMENTAL_RESULTS.md (Experiments 8-9),
-  FOUNDERS_NOTES.md, PAPER.md (Part XIV + Part X), EXTENDED_RATIONALE.md,
-  and README.md. Weak player compensation observation documented as falsifiable
-  prediction across all relevant docs.
-- **Next: Persistence/cryptographic layer build** using full CDSFL/distributed
-  compute model (6 players: CC1 manager + CC2/CX/Gemini/DeepSeek/ChatGPT).
-  Then Stage 2 full distributed compute test.
+- **3-model confer COMPLETE (27 March 2026):** First fully functional distributed
+  compute round. CX + Gemini + CC2, all under CDSFL system prompt, resolved 5
+  deferred design decisions and added manager selection function §7.11. Commit `77a4a7f`.
+- **Persistence layer BUILT (28 March 2026):** `bench/verification_chain.py` —
+  790 lines, 97 tests, RFC 9162 Merkle trees, hash chains, optional Ed25519.
+  Output correct but process was a PARTIAL CONFOUND: manager split work into
+  specialised subtasks instead of running blind rounds. Documented as Experiment 10.
+  Protocol document written: `bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`.
+- **Next:** Re-run persistence layer under correct protocol. Then dynamic
+  management/load-balancing formalisation. Then Stage 2 full distributed compute test.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

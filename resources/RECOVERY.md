@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 27 March 2026 23:21 UTC
+Last updated: 28 March 2026 04:15 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -16,14 +16,17 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (27 March 2026)
+## Current Pending Work (28 March 2026)
 
-Meta-test Stage 1 complete (commit `08ccab1`). 3-model confer COMPLETE
-(commit `77a4a7f`): 5 deferred items resolved, §7.11 manager selection
-added, 2 proposals rejected. Documentation sweep COMPLETE: all findings
-written up across 5 docs + README. Weak player compensation observation
-documented as falsifiable prediction. Next: persistence/cryptographic
-layer build, then Stage 2 distributed compute test.
+Persistence layer BUILT (bench/verification_chain.py, 790 lines, 97 tests)
+but process was a PARTIAL CONFOUND — manager broke the distributed compute
+protocol by splitting into specialised subtasks instead of blind rounds.
+Output correct, process not citable as clean test. Documented as Experiment 10.
+Protocol document written: bench/DISTRIBUTED_COMPUTE_PROTOCOL.md.
+
+Next: (1) Re-run persistence layer under correct protocol. (2) Dynamic
+management/load-balancing formalisation using same protocol. (3) Stage 2
+full distributed compute test.
 
 ## Standard Recovery (5 minutes)
 

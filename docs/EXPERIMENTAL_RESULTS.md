@@ -678,4 +678,54 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 
 ---
 
+---
+
+### Experiment 10: Persistence Layer Build — Partial Process Confound
+
+**Date:** 2026-03-28
+**Models:** CC2 (Opus 4.6), CX (GPT-5.4, xhigh reasoning), Gemini 3.1 Pro
+**Manager:** CC1 (Opus 4.6, separate instance)
+**System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected for all three players
+**Scope:** Build the verification chain module described in PAPER.md Part V (tamper-evident persistence for reasoning artifacts)
+**Purpose:** First CDSFL-guided implementation task using the 4-player distributed compute protocol.
+
+#### Design
+
+Four-player structure: CC1 as manager (no CDSFL system prompt), CX as team captain, CC2 as deep analyst, Gemini as mathematical/cryptographic verifier. All three players received the corrected CDSFL core formal as system prompt.
+
+Phase 1: CX proposed architecture; CC1↔CX confered until convergence (1 round, zero disagreements). Phase 2: three-player parallel execution. Phase 3: CC1 merged findings and applied fixes.
+
+#### What Was Correct
+
+- All three players received `cdsfl_core_formal.md` as system prompt and operated under the framework.
+- CX architecture proposal and CC1↔CX confer followed the protocol correctly and reached genuine convergence.
+- All three players produced independently useful output: CC2 wrote 704 lines of implementation + 850 lines of tests; Gemini identified 6 cryptographic findings; CX identified 7 code review findings (3 BLOCKING).
+- Every finding from every player was incorporated into the final implementation.
+- Final state: 790 lines, 97 tests passing, RFC 9162 Merkle trees, hash chains, optional Ed25519 signing, CLI interface.
+
+#### What Was Wrong (Process Confound)
+
+1. **No blind round.** The distributed compute protocol requires all players to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, CX reviewed code. This means there is no inter-model agreement data — each player did a different job, so their findings cannot be compared.
+
+2. **No second round.** The protocol requires CC1 to synthesise blind round findings, pass them back to all players, and iterate. CC1 collected one round of outputs, applied fixes, and stopped.
+
+3. **No fresh CX instance.** CX carried context from the architecture confer into the code review, contaminating its independence.
+
+4. **No formal convergence calculation.** CC1 declared completion because tests passed and findings were fixed. That is engineering judgement, not convergence under the formal model.
+
+#### Output Assessment
+
+The implementation is functionally correct. Three independent reviewers under CDSFL examined different aspects of it, and all findings were resolved. The code is cryptographically sound (Gemini verification), specification-compliant (CX review), and comprehensively tested (CC2 tests + additional coverage from CC1).
+
+However, the process cannot be cited as evidence for or against the distributed compute protocol, because the protocol was not followed. It is a data point about a different thing: what happens when the manager optimises for engineering efficiency over protocol compliance.
+
+#### Corrective Action
+
+A protocol document was written: [`bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`](../bench/DISTRIBUTED_COMPUTE_PROTOCOL.md). The persistence layer will be re-run under the correct protocol as a direct comparison.
+
+**Raw data:** `bench/logs/persistence_cx_architecture.md`, `bench/logs/persistence_cx_confer1.md`, `bench/logs/persistence_cx_review.md`, `bench/logs/persistence_gemini_review.md`
+**Implementation:** `bench/verification_chain.py` (790 lines), `bench/tests/test_verification_chain.py` (1012 lines, 97 tests)
+
+---
+
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*

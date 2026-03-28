@@ -450,17 +450,13 @@ This connection is speculative. It may be entirely wrong. The instinct that flag
 
 The methodology for testing it is honest. Run both tasks independently. Let the models analyse each problem on its own terms. After both complete, examine whether the outputs contain any connections that neither task was designed to find. Emergent connections from independent probes are more credible than directed searches because they cannot be attributed to prompt bias. If no connection emerges, the instinct was wrong. If one does, it's a hypothesis worth pursuing — by people with deeper expertise than a dyslexic founder working from instinct and curiosity.
 
-## The Meta-Test: When the Method Tests Itself (27 March 2026)
+## The First Distributed Compute Round (27 March 2026)
 
-On 27 March 2026, the CDSFL mathematical model was subjected to its own distributed compute protocol. Five AI models independently reviewed the mathematical appendix — the formalisations that define CDSFL's own measurement instruments. This was the first time the methodology was applied to itself at full strength, and the results were instructive in ways I did not anticipate.
+On 27 March, three models — CX, Gemini, and CC2 — each received the full CDSFL core directives as their system prompt and independently reviewed five deferred design decisions in the mathematical model. This was the first time the full distributed compute protocol ran correctly: all players under CDSFL, blind independent assessment, structured convergence through a manager who did not operate under the framework.
 
-Stage 1 was a blind pass. Five models, each working independently, produced findings on the 714-line mathematical appendix. CC2 (a second Claude instance) dominated with 16 findings, 10 genuine, 8 unique. Gemini achieved a perfect verification rate — every finding it submitted was correct. DeepSeek contributed some unique catches despite its known churn tendency. CX was contaminated — it had read Gemini's output before producing its own, which invalidated its independence. ChatGPT produced sharp qualitative observations but failed to comply with the structured output format, which meant its findings could not be programmatically extracted.
+A precursor blind pass (five models reviewing the mathematical appendix without the CDSFL system prompt) had already found eleven genuine errors, which were corrected. That pass was useful but was not CDSFL-guided analysis — it was structured peer review using native capability. The distinction matters. The distributed compute round that followed is the clean result. See [Experiment 8](EXPERIMENTAL_RESULTS.md) for the precursor and [Experiment 9](EXPERIMENTAL_RESULTS.md) for the full distributed round.
 
-Eleven genuine fixes were applied. The model grew tighter. Notation collisions were resolved, formula errors corrected, reduction properties verified. But five items could not be resolved by simple correction — they were design decisions that required deliberation. Three new additions were proposed.
-
-So I ran a second pass. This time, three models — CX, Gemini, and CC2 — each received the full CDSFL core directives as their system prompt. This is the distinction that matters. In Stage 1, the models reviewed the mathematical model as a document. In the confer, they reviewed it while operating under the framework as their working rules. The framework shaped how they analysed, how they structured their responses, and how they tested their own conclusions.
-
-I did not receive the system prompt. I acted as manager — comparing the three models' structured output, identifying agreement and disagreement, making judgment calls where they diverged, and applying the fixes. I was the weak player in the chain.
+I acted as manager — comparing the three models' structured output, identifying agreement and disagreement, making judgment calls where they diverged, and applying the fixes. I was the weak player in the chain. I did not receive the CDSFL system prompt.
 
 Three errors would have survived without the framework-guided models. The first was a threshold rule that would have silently rejected every finding that could not be computationally verified — design findings, prose findings, everything qualitative. One model caught this. The fix was a single character. I did not see it. The second was a cross-item synthesis — combining components from two separate fixes into one integrated solution. That combination was not in my thinking. The third was a statistical question I was uncertain about. One model resolved it with a specific mathematical argument I would not have performed.
 
@@ -473,6 +469,14 @@ The compensation breaks down when the evaluator cannot read structured arguments
 Whether this generalises to human weak players is a falsifiable prediction. It has not yet been tested. If confirmed, it would mean CDSFL does not just improve individual analytical performance — it makes high-quality analytical output accessible to people who cannot perform the analysis themselves. That is a communication claim as much as an analytical claim.
 
 I found this observation more consequential than the mathematical fixes themselves. The fixes tightened the model. The observation suggests the framework has a property I did not design for and did not expect.
+
+## The Persistence Layer and a Process Confound (28 March 2026)
+
+The next day, four models built the verification chain — the tamper-evident persistence layer described in Part V of the white paper. All three players received the CDSFL core directives as system prompt. The output was functionally correct: 790 lines of implementation, 97 tests passing, three independent reviewers' findings incorporated.
+
+But the process was wrong. The manager split the work into specialised subtasks — one model implementing, one reviewing cryptography, one reviewing code — instead of running a proper blind round where all players receive the same task independently. There was no second round. No formal convergence calculation. The manager optimised for engineering efficiency and broke the protocol.
+
+The output stands. The process does not count as a clean test of the distributed compute protocol. It is recorded as a partial confound in [Experiment 10](EXPERIMENTAL_RESULTS.md). A protocol document was written to prevent the regression from recurring, and the persistence layer will be re-run under the correct protocol. See [`bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`](../bench/DISTRIBUTED_COMPUTE_PROTOCOL.md).
 
 ## Closing Reflection
 
