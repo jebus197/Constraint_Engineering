@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 28 March 2026 04:15 UTC
+Last updated: 28 March 2026 19:30 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -12,7 +12,9 @@ session loss, compaction event, or fresh start with a new model instance.
 2. Run `git log --oneline -10` — what changed recently
 3. Run `git status` — any uncommitted work
 4. Check if bench test is running: `ps aux | grep run_round_robin`
-5. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
+5. If resuming Experiment 11: read `bench/EXECUTION_PLAN_EXPERIMENT_11.md`
+6. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
+7. For UX vision context: read `~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
 
 This is enough to resume most tasks.
 
@@ -25,9 +27,22 @@ Output correct, process not citable as clean distributed compute test but
 generated an observation about CDSFL boundaries in mixed-ability environments.
 Documented as Experiment 10. Protocol document: bench/DISTRIBUTED_COMPUTE_PROTOCOL.md.
 
-Next: (1) Re-run persistence layer under correct protocol. (2) Dynamic
-management/load-balancing formalisation using same protocol. (3) Stage 2
-full distributed compute test.
+Experiment 11 execution plan COMPLETE and committed (bench/EXECUTION_PLAN_EXPERIMENT_11.md).
+Five-model distributed compute test: CC1 as collator, CC2 as player manager,
+Codex/ChatGPT/Gemini/DeepSeek as participants. Circuit breaker, preflight
+verification, 17 lessons applied, UX readiness design constraint. Awaiting
+founder approval to execute.
+
+UX vision sketch saved to ~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt.
+Three surfaces: Orchestration Console, Registry/Group Policy Editor, Domain
+Configuration Manager. Registry/policy engine exists (bench/cdsfl_registry/,
+4-layer hierarchy, monotonicity enforcement). Task layer and runtime layer
+separation still needed. UX build follows Experiment 11.
+
+Next: (1) Founder approves Experiment 11 plan. (2) Build OpenRouter calling
+function and task brief. (3) Execute Experiment 11. (4) Build UX on the
+resulting orchestration module. The persistence layer re-run is subsumed —
+the five-model test is the stronger test.
 
 ## Standard Recovery (5 minutes)
 
