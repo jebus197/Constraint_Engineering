@@ -653,7 +653,7 @@ Each produced structured output per item: VERDICT, EVIDENCE, PROPOSED_CHANGE, CO
 
 Mathematical appendix grew from 714 → 755 lines. Core formal file grew from 277 → 290 lines.
 
-#### Weak Player Compensation (Emergent Observation)
+#### Compensation for Less Capable Participants (Emergent Observation)
 
 Three specific errors would have been committed by CC1 (the non-CDSFL manager) without the framework-guided output from the three reviewing models:
 
@@ -669,9 +669,9 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 
 **Methodological caveats:**
 - Sample size is one (one manager, one confer session).
-- The "weak player" was not genuinely weak — CC1 is a frontier AI model with strong analytical capabilities; it was weaker only relative to this specific task because the framework was not injected into its reasoning chain.
-- A genuinely weak player (e.g., a non-technical decision-maker) has not been tested.
-- The observation is consistent with the hypothesis but does not prove it. Whether it generalises to human weak players is a falsifiable prediction that has not yet been tested.
+- The less capable participant was not genuinely incapable — CC1 is a frontier AI model with strong analytical capabilities; it was less capable only relative to this specific task because the framework was not injected into its reasoning chain.
+- A genuinely less capable participant (e.g., a non-technical decision-maker) has not been tested.
+- The observation is consistent with the hypothesis but does not prove it. Whether it generalises to human participants who lack the framework is a falsifiable prediction that has not yet been tested.
 
 **Raw data:** `bench/logs/confer_cx_output.md`, `bench/logs/confer_gemini_output.md`, `bench/logs/confer_cc2_output.md`
 **Commit:** `77a4a7f` (fixes), `68fe963` (recovery docs)
