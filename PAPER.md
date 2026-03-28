@@ -777,6 +777,22 @@ self-improving under distributed compute: diverse architectures apply the same
 falsification methodology to each other's output, converging on diminishing
 returns through adversarial collaboration.
 
+### Cognitive Mode Diversity Under Identical Protocol
+
+A subsequent experiment (Experiment 11, 28 March 2026) provided stronger evidence for mode diversity. Four models received identical prompts under the full CDSFL system prompt and independently formalised the same six areas of a dynamic management layer. No model saw any other model's output. The outputs revealed four distinct cognitive modes:
+
+1. **Deep architecture with self-adversarial review** (CC2, Claude Opus 4.6): highest volume (60,883 chars), highest mathematical density (~224 expressions), generation and falsification coupled as one process. Five unique contributions adopted into the merged formulation, including cascade reallocation guards and severity-weighted yield functions.
+
+2. **Engineering pragmatism** (ChatGPT, GPT-5.4): five unique operational contributions adopted — more than any other model. Each addresses a practical failure mode the mathematical formulation alone would miss: oscillation prevention, persistence windows, severity vetoes.
+
+3. **Mathematical compression** (Gemini, 3.1 Pro): shortest successful output (17,741 chars) but highest reduction property density relative to output length. Three unique contributions catalogued — all mathematically elegant but operationally aggressive. Consistent pattern: diverges toward elegance, sometimes at the expense of robustness.
+
+4. **Iterative refinement** (DeepSeek, V3.2 Reasoner): six documented mid-output self-corrections, one per area, each moving from a simpler formulation toward the converged consensus. Arrived at the consensus not through deep reasoning but through trying something simple, recognising insufficiency, and correcting. The most visibly Popperian process of the four.
+
+These modes appear to be complementary rather than redundant. Each model's distinctive contributions came from its distinctive mode. A team of four identical frontier models would find the same class of flaw four times. A team of four different models — one deep architect, one pragmatic engineer, one mathematical compressor, one iterative refiner — finds four different classes of flaw. The coverage function D(n) approaches 1 through diversity, not through scale.
+
+This implies a stronger claim: no participating system is inherently useless. A model that times out on a 21,000-character prompt may excel at a precisely scoped 15,000-character adversarial review. A model that produces the shortest output may be the only one that visibly self-corrects. Excluding either reduces coverage. The adaptive routing mechanism in the dynamic management layer exploits this: each participant receives work matched to its demonstrated cognitive strengths, optimising for complementary coverage rather than uniform capability. The composition hypothesis — that a diverse team outperforms a homogeneous team of the strongest single model — is the central prediction for Experiment 12 (Live Wire).
+
 ### Schema Competition
 
 CDSFL is not canonical. It is a starting point — a hypothesis, not a

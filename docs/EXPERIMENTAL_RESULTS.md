@@ -730,4 +730,77 @@ A protocol document was written to formalise the correct procedure: [`bench/DIST
 
 ---
 
+### Experiment 11: Four-Model Converged Formalisation of the Dynamic Management Layer
+
+**Date:** 28 March 2026
+**Models:** CC2 (Claude Opus 4.6), ChatGPT (GPT-5.4), Gemini (3.1 Pro), DeepSeek (V3.2 Reasoner), Codex (GPT-5.4 — timed out)
+**Scope:** All five models received identical prompts under full CDSFL system prompt (`cdsfl_core_formal.md`). Task: independently formalise six areas of the dynamic management and load-balancing layer with interface contracts, reduction properties, edge cases, constraint classification, self-assessment, and cross-reference verification. No model saw any other model's output.
+
+#### Phase 2: Blind Round Results
+
+| Model | Chars | Time (s) | Math expressions | Reduction properties | Self-falsification markers | HARD/SOFT | Structured fields |
+|-------|------:|--------:|----------------:|--------------------:|-------------------------:|-----------|:-----------------:|
+| CC2 (Claude Opus 4.6) | 60,883 | 387.1 | ~224 | 39 | 20 | 30/44 | 4/4 |
+| ChatGPT (GPT-5.4) | 36,931 | 164.6 | ~75 | 19 | 12 | 10/1 | 4/4 |
+| Gemini (3.1 Pro) | 17,741 | 112.5 | ~32 | 24 | 12 | 5/2 | 4/4 |
+| DeepSeek (V3.2 Reasoner) | 16,553 | 113.9 | ~68 | 18 | 13 | 5/6 | 4/4 |
+| Codex (GPT-5.4) | — | >600 | — | — | — | — | — |
+
+All four completing models covered all six areas with full structured output compliance (4/4 required fields). Codex timed out at 600 seconds via CLI delivery mechanism and produced no output. The differences between the four completing models lie in depth, breadth, mathematical rigour, and what each model chose to do beyond the minimum requirements.
+
+#### Four Cognitive Modes Observed
+
+The blind round revealed four distinct cognitive modes under the same protocol:
+
+**CC2 — Deep Architecture with Self-Adversarial Review.** Produced the longest output by a factor of 1.65, highest mathematical density (224 expressions), most reduction property demonstrations (39), most self-falsification markers (20). Only model to produce 30 HARD and 44 SOFT classifications. Unique contributions adopted into the merged formulation: cascade reallocation guard (`max_realloc_depth = 2`), VCR smoothing window (`W = 2`), severity-weighted yield function, uniqueness-weighted performance metric, explicit argument against backward FSM transitions. Generation and falsification are one coupled process — CC2 produces a reviewed draft, not a first draft followed by a review.
+
+**ChatGPT — Engineering Pragmatism.** Second in volume (36,931 chars) with moderate mathematical density. Contributed five unique variations adopted into the merged formulation — more than any other model: failure-history penalty in role reassignment, hysteresis band for COL oscillation prevention, persistence window for underperformance detection, severity veto clause in convergence detection, and task-level coverage with per-task overlap coefficients. Every contribution addresses a practical operational failure mode that the mathematical formulation alone would miss.
+
+**Gemini — Mathematical Compression.** Shortest successful output (17,741 chars) but highest reduction property density relative to output length: 24 reduction properties in under 18,000 characters versus CC2's 39 in 61,000. Three unique contributions catalogued (disjunctive ascending abstraction guard, convergence threshold coupled to γ, capability decay on underperformance) — all mathematically elegant but operationally aggressive. The majority rejected all three for practical reasons.
+
+**DeepSeek — Iterative Refinement.** Shortest output (16,553 chars), 68 mathematical expressions. By raw numbers the weakest contributor, but the numbers are misleading. DeepSeek was the only model that visibly corrected itself mid-output, with six documented self-corrections (one per area), each moving from a simpler formulation toward the consensus. This is a fundamentally different cognitive mode: start simple, fail fast, correct, converge. DeepSeek's process is visibly Popperian in a way the other models' are not. Unique contributions: sufficiency constraint (frames load-balancing from the task side), lookahead for diminishing returns (catalogued as advanced variant by CC2's synthesis).
+
+#### Phase 3: CC2 Synthesis
+
+CC2 synthesised the four independent formalisations into a single converged design. Structural convergence was declared: all four models converged on the same core architecture for all six areas. Divergences were in depth and edge-case coverage, not in fundamental structure. Two founder design decisions were locked: ascending abstraction guard CONJUNCTIVE (3/4 majority), convergence threshold τ_κ separate from γ (3/4 majority).
+
+#### Phase 6: Implementation
+
+CC2 implemented the converged formalisation as a callable Python module (`dynamic_management.py`, 3,161 lines, 27 classes). 164 tests passing. Self-test: 12/12 reduction properties pass, Codex feasibility correctly blocked at P=0.710. Three additions from Codex timeout analysis: pre-dispatch probabilistic feasibility (uncertainty-aware), correlated failure model (shared vulnerability coefficient), real-time manager event stream (callback protocol).
+
+#### Codex Timeout Analysis
+
+The Codex timeout (600s, 21,681-char prompt, no output) was diagnosed as a capacity mismatch failure — the gap between what the orchestrator assumed and what the CLI delivery mechanism could handle. This is a systematic, correlated failure mode: any model delivered via the same mechanism with similar constraints would fail the same way. The failure led to three structural additions to the dynamic management layer (pre-dispatch feasibility, correlated failure model, event stream).
+
+#### Task Allocation Table (Initial, from Observed Cognitive Modes)
+
+| Model | Primary tasks | Secondary tasks | Avoid |
+|-------|--------------|----------------|-------|
+| CC2 | Synthesis, integration, architectural design | Self-adversarial review, merged formulation | Simple verification (overkill) |
+| ChatGPT | Operational wiring, failure mode identification | Integration testing, edge case enumeration | Pure mathematical proof (not its strength) |
+| Gemini | Mathematical verification, structural flaw detection | Concise proof, notation consistency | Operational design (tends toward elegance over robustness) |
+| DeepSeek | Exploratory formulation, simple-first prototyping | Protocol compliance canary, complementary framing | Tasks requiring deep architecture on first pass |
+| Codex | Adversarial review of critical components | Line-level flaw detection, precision verification | Large prompts (>15K tokens via CLI) |
+
+This table is advisory. The dynamic management layer's live fingerprint update overrides these initial estimates as observed performance data accumulates.
+
+#### Composition Hypothesis
+
+The four observed modes (deep architecture, engineering pragmatism, mathematical compression, iterative refinement) plus the estimated fifth (precision adversarial review) appear to be complementary rather than redundant. Preliminary evidence from the three-architecture review (18 March 2026) supports this: Gemini found 16 issues that CC and CX missed. If the modes compose well, a diverse team should outperform a homogeneous team of the strongest single model. This is testable and will be tested in Experiment 12 (Live Wire).
+
+The underlying principle: there is no such thing as a useless system. Codex timed out on a 21,681-character prompt — but a 15,000-character adversarial review of a single critical component is well within its capability window. DeepSeek produced the shortest output and by raw metrics looks weakest — but was the only model that visibly self-corrected six times, the most Popperian process in the group. Excluding either would reduce coverage. The coverage function D(n) approaches 1 through diversity of cognitive modes, not through scale of any single mode. The dynamic management layer's adaptive routing exploits this: each model receives work matched to its demonstrated strengths, optimising for complementary coverage rather than uniform capability.
+
+#### Limitations
+
+- Single domain (mathematical formalisation). Profiles may not transfer to other task types.
+- Single experiment per model. DeepSeek's characterisation is the most robust (six documented self-corrections); Codex's is the weakest (estimated from prior data).
+- Full CDSFL only. Without the protocol, cognitive modes may differ.
+- No between-model interaction. The blind round eliminates interaction effects.
+
+**Raw data:** `bench/logs/experiment_11/phase2_blind_{cc2,chatgpt,gemini,deepseek}_*.json`, `bench/logs/experiment_11/phase3_synthesis_cc2_*.json`, `bench/logs/experiment_11/phase2_summary.json`
+**Implementation:** `bench/dynamic_management.py` (3,161 lines), `bench/tests/test_dynamic_management.py` (1,476 lines, 164 tests)
+**Cognitive mode profiles:** [`docs/COGNITIVE_MODE_PROFILES.md`](COGNITIVE_MODE_PROFILES.md)
+
+---
+
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*
