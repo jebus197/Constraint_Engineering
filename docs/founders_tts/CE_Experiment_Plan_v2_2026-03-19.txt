@@ -1,0 +1,217 @@
+CE (Constraint Engineering) Experimental Plan version 2 -- Redesigned
+Saved: 2026-03-19 04:18 UTC
+Source: bench/EXPERIMENT_PLAN.md in the Constraint Engineering repo
+
+
+OBJECTIVE
+
+Demonstrate whether CE produces real, meaningful improvement in AI reasoning quality, or prove that it does not. CE is a scientific method engine. It provides methodological discipline for problems where the optimal solution must be constructed and tested, not looked up. It is not an intelligence amplifier. It is a testing discipline.
+
+CE was designed to operate at the frontier. The experiment must test there.
+
+
+THE PROBLEM WITH VERSION 1
+
+Version 1 used a dumb script running unattended. Three fatal flaws.
+
+First, fake diminishing returns. The script counted severity labels in text output using regex pattern matching, not reasoning. It had no understanding of whether findings were real, novel, or meaningful.
+
+Second, unsupervised execution. CC's attention window drops after minutes of inactivity. The script ran for hours with no intelligent oversight. Result: hung processes, wasted money, unreliable termination decisions.
+
+Third, self-assessment. CC was testing Anthropic models via the Anthropic API, the same rate limit bucket as its own session. Methodologically wrong and operationally broken.
+
+All three are eliminated in version 2.
+
+
+KEY DESIGN CHANGE: THE CONFER STAGE
+
+Version 2 replaces the dumb adaptive termination with the CE confer stage.
+
+Step 1. Script runs P-passes 1 through 3 for a task. This is mechanical, no decisions.
+Step 2. Script pauses and invokes CC CLI with the 3-pass output.
+Step 3. CC assesses: are these passes showing genuine diminishing returns?
+Step 4. CC posts assessment to the IM service.
+Step 5. Script invokes CX CLI: read IM, assess CC's finding, agree or disagree?
+Step 6. CX reads IM, posts counter-assessment.
+Step 7. Script reads both assessments. If agreement on diminishing returns, move to next task. If disagreement, run pass 4 and re-confer. Maximum 5 passes hard cap regardless.
+
+This means no unsupervised decisions, genuine intelligence at every termination point, two-model adversarial agreement with different training biases, the experiment uses CE to test CE making it self-demonstrating, and no attention window problem because each invocation is fresh, focused, and on-demand.
+
+The IM service is the confer channel. All confer transcripts are logged alongside results.
+
+
+MODEL CONFIGURATIONS (8 models, 4 providers)
+
+All models are current-generation frontier as of 2026-03-18.
+
+Config: gpt-5.4. Model ID: gpt-5.4. Provider: openai. Access: API.
+Config: o4-mini. Model ID: o4-mini. Provider: openai-reasoning. Access: API.
+Config: gpt-5.3-codex. Model ID: default codex model. Provider: codex exec. Access: subscription.
+Config: gemini-3.1-pro. Model ID: gemini-3.1-pro-preview. Provider: gemini. Access: API.
+Config: gemini-3-flash. Model ID: gemini-3-flash-preview. Provider: gemini. Access: API.
+Config: llama-4-scout. Model ID: meta-llama/llama-4-scout-17b-16e-instruct. Provider: groq. Access: API.
+Config: sonnet-4.6. Model ID: claude-sonnet-4-6. Provider: anthropic. Access: CX runs.
+Config: sonnet-4-thinking. Model ID: claude-sonnet-4-6 with extended thinking. Provider: anthropic-thinking. Access: CX runs.
+
+Access methods. "API" means direct API call from the script, costs per-call. "Subscription" means codex exec, covered by Codex Business. "CX runs" means CX handles via Codex Business, not CC's API key.
+
+CC runs: gpt-5.4, o4-mini, gpt-5.3-codex, gemini-3.1-pro, gemini-3-flash, llama-4-scout.
+CX runs: sonnet-4.6, sonnet-4-thinking. This avoids CC self-assessment.
+
+Confer calls using CC CLI and CX CLI are covered by existing subscriptions, zero API cost.
+
+
+THREE CONDITIONS
+
+Condition 1, Control. Bare prompt, no system instructions, single pass.
+
+Condition 2, CE. Full directives plus iterative P-passes, up to 5, confer-terminated.
+
+Condition 3, Calibration Baseline. Length-matched generic instructions saying "be thorough, check your work", same number of passes, but without CE's specific methodology. No constraint classification, no hard/soft distinction, no adversarial brief, no structured verification.
+
+The calibration baseline isolates methodology from prompt quality. If CE beats calibration baseline, the structured falsification matters. If it does not, CE is just "think harder" in a fancy wrapper.
+
+
+CE AS ONE TOOL IN A CHEST
+
+CE makes no claim to be the sole arbiter of truth. It is a composable testing discipline.
+
+Use when the problem has classifiable constraints, single-pass solutions risk undetected failure modes, and the cost of iteration is justified by the cost of being wrong.
+
+Do not use when the problem is simple enough that single-pass accuracy is reliable, or when there are no meaningful constraints to classify.
+
+Combine: CE's falsification loop can be applied to output from any generation approach such as domain-optimised prompts, chain-of-thought, and so on. Combined approaches may outperform either alone.
+
+The calibration baseline tells users when CE earns its keep. A methodology that provides the means to falsify itself is consistent with its Popperian core.
+
+The experiment output should be a suitability map showing which task properties predict CE's contribution, not a winner/loser declaration.
+
+CE is authoritative on hard constraints, because physics does not negotiate, and advisory on soft constraints, because preferences are the user's domain.
+
+
+P-PASS SCHEMAS
+
+Schema A, Standard Monolithic, 5-pass. Pass 1 generates the solution. Passes 2 through 5 iteratively falsify own output. Each pass builds on the full prior chain. Confer after pass 3 to assess diminishing returns. Applies to all tasks.
+
+Schema B, Extended/Modular, 4+1. Passes 1 through 4 are each scoped to one module or subsystem, falsifying its constraints in isolation. Pass 5 is an isolated adversarial pass with fresh context and the canonical adversarial brief. Confer after pass 4 to assess whether pass 5 is needed. Applies to tasks with 3 or more distinct modules, tagged at design time.
+
+Schema C, Cross-Model Adversarial. Model A generates in pass 1. Model B falsifies in pass 2. Model A responds in pass 3. CC and CX confer to assess diminishing returns. Model B re-checks if needed in pass 4. Isolated adversarial in pass 5. Model pairs chosen for maximum training-bias diversity. Applies to a representative subset of approximately 10 of 25 tasks.
+
+Grandslam. Post-main-run. CC and CX confer via IM on results from all schemas. Full CE confer protocol. Deferred to after main data collection.
+
+
+TASK DESIGN (25 frontier tasks)
+
+Already designed in bench/tasks_frontier/. Five categories, 5 each.
+
+Category 1, Proof. Mathematical proofs that are machine-checkable.
+Category 2, Code. Programs that must compile and pass a hidden test suite.
+Category 3, Design. Engineering problems with quantifiable constraints.
+Category 4, Synthesis. Multi-domain problems subject to physical laws.
+Category 5, Reasoning-about-reasoning. Self-referential verification protocols.
+
+All tasks are hard enough that frontier models make real errors, with 10 to 50 percent expected single-pass accuracy, but verifiable enough to score objectively.
+
+
+MEASUREMENT
+
+1. Verification score: does the final output pass verification?
+2. Per-pass delta: what did each pass find? Confer assessment logged.
+3. Cross-schema comparison: Schema B versus A, Schema C versus A on shared tasks.
+4. Calibration baseline comparison: CE versus baseline. This is the critical test.
+5. Suitability map: which task properties predict CE's contribution?
+6. Breakout observations: novel STEM insights tagged for peer review.
+
+
+EXECUTION ARCHITECTURE
+
+The script bench/run_phase2.py is the orchestrator. It makes no decisions.
+
+It makes API calls for passes 1, 2, and 3. Then it pauses after pass 3. It invokes CC CLI to assess the 3 passes. It posts the CC assessment to IM. It invokes CX CLI to read IM and agree or disagree. It parses agreement. Agreement means move to next task. Disagreement means run pass 4 and re-confer. Maximum 5 passes hard cap.
+
+Checkpoint after every task for crash-safe resume. Cost ledger with hard cap.
+
+Monitoring: tail -f bench/results/phase2/overnight.log for script progress. python3 cw_handoff/im_service.py read for confer transcripts.
+
+
+BUDGET
+
+OpenAI API: approximately 10 dollars for GPT-5.4 and o4-mini.
+Codex Business: zero dollars for gpt-5.3-codex, CX Anthropic runs, and confer.
+Google API: approximately 7 dollars for Gemini 3.1 Pro and Flash.
+Groq API: approximately 25 cents for Llama 4 Scout.
+Confer via CC and CX: zero dollars, CLI subscriptions.
+Buffer at 30 percent: approximately 5 dollars for retries and failures.
+Total: approximately 22 dollars. Well within the 100 dollar cap.
+
+
+SEQUENCING
+
+Step 1. Clear stale checkpoint and cost ledger.
+Step 2. Pilot: 3 tasks, 1 model. Validate difficulty calibration.
+Step 3. Review pilot with founder.
+Step 4. Full run: 6 CC-configs times 25 tasks times 3 conditions, with confer.
+Step 5. CX runs: 2 Anthropic configs times 25 tasks times 3 conditions.
+Step 6. Schema C cross-model pairs on 10 tagged tasks.
+Step 7. Grandslam: CC/CX full confer on all results via IM.
+Step 8. Phase 2.5: Genesis case study, 5 to 10 real-world CE catches.
+Step 9. Phase 3: CX adversarial review of entire experiment.
+Step 10. Final report.
+
+
+CLI LAUNCH INSTRUCTIONS
+
+To resume this conversation from CLI: cd /Users/georgejackson/Developer_Projects then claude --resume.
+
+To launch the experiment after plan approval: cd /Users/georgejackson/Developer_Projects/Constraint_Engineering then source .env then python3 bench/run_phase2.py --cost-cap 100.
+
+To monitor in a separate terminal: tail -f followed by the path bench/results/phase2/overnight.log.
+
+To watch IM confer transcripts in another terminal: watch -n 5 followed by python3 cw_handoff/im_service.py read --recent 5.
+
+
+FILES
+
+bench/run_phase2.py is the experiment orchestrator, confer-enabled.
+bench/run_benchmark.py is the core API harness, all providers, retry, throttle.
+bench/evaluate.py is the scoring pipeline.
+bench/report.py is results reporting.
+bench/tasks_frontier/ contains 25 frontier tasks, ft-001 to ft-025.
+bench/directives/ contains domain-specific CE directives.
+bench/results/phase2/ is the output directory with checkpoint and cost ledger.
+bench/EXPERIMENT_PLAN.md is the plan file itself.
+bench/FINANCIAL_LEDGER.md tracks all outlays and subscriptions.
+
+
+PHASE 1 RESULTS (Baseline / Floor Test)
+
+Phase 1 established that CE does not hurt and provides marginal improvement on easy tasks. Ceiling effect confirmed: 90 to 100 percent baseline detection, 0 to 12.5 percentage points improvement. Necessary but insufficient. Floor test only.
+
+Sonnet 4: 95 percent to 100 percent, plus 5 percentage points.
+Sonnet 4 thinking: 97.5 percent to 100 percent, plus 2.5 percentage points.
+GPT-4o: 90 percent to 100 percent, plus 10 percentage points.
+o3-mini: 95 percent to 100 percent, plus 5 percentage points.
+Llama 3.3 70B: 87.5 percent to 100 percent, plus 12.5 percentage points.
+Gemini Flash: Phase 1 complete, scoring pending.
+Gemini Pro: Phase 1 incomplete, 504 errors.
+
+Pattern: weaker models benefit more. Reasoning models benefit less. Phase 2 tests whether this pattern holds at the frontier.
+
+
+LOCKED DESIGN DECISIONS (from EXPERIMENT_DESIGN_DECISIONS.md)
+
+Three conditions with defined roles and rationale.
+
+Control is single pass, no system prompt, no iteration. Purpose: raw unfiltered model output, the baseline. Executed first.
+
+CE/Experimental is iterative p-passes with CDSFL directives. Purpose: the experimental condition, full CE methodology applied.
+
+Calibration Baseline/Placebo is iterative p-passes with generic "be careful" directives, same iteration mechanism as CE, including adaptive confer termination. Purpose: isolates directive content as the variable. Controls for prompt quality and iteration count.
+
+The calibration baseline deliberately shares the adaptive confer mechanism with CE. This is not a defect. Without shared iteration machinery, any CE versus calibration comparison would conflate "better directives" with "different iteration count."
+
+Three comparisons, three questions. Control versus CE asks does the full methodology beat raw output. Calibration versus CE asks do the specific directives matter. Control versus Calibration asks does structured iteration alone help.
+
+Not defects, by design: placebo shares confer mechanism with CE. Control is single-pass while CE is iterative. Confer CLI costs are not metered in the CostLedger. Task randomization seed is constant, not manifest-derived. Schema C adversarial pass requires max_passes at least 5. Deferred report only shows resolved/deferred for adaptive conditions.
+
+Review history: rounds 1-8 CC/CX adversarial, rounds 9-13 Gemini, round 14 Gemini Extended P-Pass, round 15 CC Full P-Pass. Total approximately 23 review passes across 3 model architectures.

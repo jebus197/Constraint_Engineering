@@ -1,0 +1,58 @@
+CDSFL Iterative HIL Design
+25 March 2026
+
+BUILDING THE ITERATIVE HIL PATTERN
+
+The evidence based HIL interaction pattern described in the previous TTS note is practical to build and has been agreed between CC (Opus 4.6) and CX (Codex 5.3) after a P pass confer round.
+
+HOW IT WORKS
+
+Instead of generating one 500 character expert hint and dumping it before round 1, CC generates a new guidance prompt each round based on what the models actually found in the previous round.
+
+Round 1. CC generates initial broad context, approximately 500 characters. This sets the scene without narrowing the search. All models review the solution with this context.
+
+Round 2. CC reads the aggregate findings from round 1 and generates a follow up, approximately 200 characters. This fills gaps. If the models missed something obvious, CC nudges. If they found something unexpected, CC asks them to go deeper on it.
+
+Round 3. CC generates a targeted check, approximately 250 characters. Based on what rounds 1 and 2 revealed, CC identifies the highest risk area that has not been thoroughly examined and asks the models to verify it specifically.
+
+Round 4. CC generates a counter check, approximately 250 characters. This is the most important round. CC asks the models to assume their current conclusions are wrong and find evidence that would disprove them. This is an informal P pass, applied by the human expert through a single question.
+
+Round 5. CC asks for synthesis, approximately 100 characters. Summarise findings, flag uncertainties, rate confidence.
+
+One CC guidance call per round. All 5 models receive the same updated guidance. The guidance is questions only, never answers. CC asks "what about X" not "the answer is X." This prevents the framing bias that crippled the original HIL design.
+
+Total additional cost. 5 CC calls per task at approximately 30 seconds each. 2.5 minutes per task. Across 26 tasks, roughly 65 minutes total. Completely practical.
+
+CHARACTER LIMITS ENFORCED IN CODE
+
+CX recommended and CC agreed that character limits should be enforced programmatically, not just by prompt instruction. The code checks the length of each guidance prompt after CC generates it. If it exceeds the limit for that round, CC is asked to regenerate shorter. This prevents CC from gradually inflating guidance length over rounds, which would drift the HIL condition toward CDSFL territory.
+
+WHY THIS ALSO IMPROVES CDSFL PLUS HIL
+
+The current CDSFL plus HIL condition dumps 10 to 14 thousand characters of research backed expert guidance in round 1 and then lets the models confer without further expert input for rounds 2 through 5. A real domain expert would not do this. They would adjust their guidance based on what the confer rounds reveal.
+
+Under the revised design, CDSFL plus HIL also gets iterative expert guidance. CC reads what the distributed confer produced in each round and adjusts the next round's guidance accordingly. The expert participates in the confer process rather than briefing and walking away.
+
+The key distinction between HIL and CDSFL plus HIL remains unchanged.
+
+HIL gets iterative guidance plus self iteration. Each model works alone. No cross model exchange. No computational verification. No structured schema.
+
+CDSFL plus HIL gets iterative guidance plus cross model confer plus SymPy verification plus structured schema plus the full policy engine.
+
+The expert guidance pattern is the same in both conditions. What differs is everything else. This is a cleaner experimental design because it isolates the contribution of the CDSFL infrastructure from the contribution of expert guidance. Both conditions get the same expert. Only one gets the methodology.
+
+CONVERGENCE SAFEGUARD
+
+CX identified a risk. If CC can always generate another question, the test might never stop. The safeguard is that convergence remains based on model findings, not on expert verbosity. If models produce no materially new findings for 2 consecutive rounds, the test stops even if CC has more questions to ask. The expert does not control the stop rule. The data does.
+
+RISK OF HIL BECOMING TOO STRONG
+
+CX identified a moderate risk that iterative guidance could make HIL approach CDSFL capability. The mitigation is keeping HIL guidance strictly as questions. The expert checks and probes. The expert does not solve, does not classify constraints, does not provide verification, and does not structure the output. HIL is a human asking good questions. CDSFL is a methodology providing systematic verification. These are different things and the iterative design preserves the distinction.
+
+RELEVANCE TO BROADER CDSFL DESIGN
+
+This iterative guidance pattern reflects directly back to the full CDSFL schema. Under the complete envisaged system, domain experts would interact with AI systems through exactly this kind of iterative refinement. Not a single dump of all their knowledge, but an ongoing conversation that adapts to what the system reveals. The bench test is the first empirical measurement of whether this interaction pattern produces better results than static guidance.
+
+If it does, the implication is that human AI interaction in STEM should be iterative by design. The current paradigm of single prompt, single response, may be fundamentally wrong for analytical work. The decay curve framework can measure the difference. Iterative guidance should produce steeper initial decay (models find more in round 1 because the context is better) and cleaner convergence (models stop when they are genuinely done, not when they run out of prompt energy).
+
+This is testable in the next smoke test after the current bench run completes.

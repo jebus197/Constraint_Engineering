@@ -1,0 +1,64 @@
+CE Benchmark Code Review by CX (Codex) — Round 2
+Date: 2026-03-18T19:08:38Z
+Context: Review of all 6 Round 1 remediations plus full P-pass of updated code
+
+Round 2 Verdict
+
+Most Round 1 remediations hold. Resume no-op fix, returncode checks, fatal-before-transient retry, atomic writes, and INFRA_FAIL not treated as STOP are all materially improved. However, this is not clean yet. CX found 7 remaining substantive defects.
+
+
+Constraint Classification
+
+HARD: checkpoint compatibility integrity, scope-correct env gating, crash-free CLI behavior, correct termination and status semantics, pass-count contract correctness, hard-ish cost-stop behavior.
+
+SOFT: type-hint and doc consistency, estimator precision.
+
+
+Remaining Substantive Defects
+
+1. Schema C prevalidation is still over-scoped. It requires keys for pair configs that may never run because the selected config and task scope are ignored at validation time (run_phase2.py lines 615, 621, 624). Execution is actually pair-filtered later at lines 761 and 764. This means running a single config like gpt-5.4 still demands ANTHROPIC_API_KEY and GOOGLE_API_KEY even though those Schema C pairs would be skipped.
+
+2. Schema C missing-key runtime guard is logically broken. The continue statement only advances the inner for-pcfg loop, so the pair can still run even when a key is missing (run_phase2.py lines 771 and 774).
+
+3. Empty task selection crashes preflight. There is no guard after filtering tasks by ID (run_phase2.py lines 591 and 599). If the task ID does not match any loaded tasks, tasks is empty, and tasks[0] is dereferenced in the preflight function at line 366, causing an unhandled IndexError.
+
+4. Manifest compatibility is still under-specified. It hashes configs, directives, and max_passes only (run_phase2.py line 128) and omits task content and domain-directive files used at runtime (line 725). Checkpoints with a missing manifest field are accepted as compatible (line 238).
+
+5. DEFERRED_INFRA logic does not match intent. It requires both CC and CX to fail on every confer call (run_benchmark.py line 1309), not that all confer calls had an infra failure on either side. If CC fails but CX succeeds consistently, the status remains DEFERRED rather than DEFERRED_INFRA.
+
+6. Pass-count contract remains unsafe. No lower or upper validation exists (run_phase2.py line 538, run_benchmark.py line 1646). Passes less than 3 still yields zero confer calls and DEFERRED status. Schema C with max_passes greater than 5 produces skipped pass numbering due to the fixed 4-pass sequence plus a final pass labeled as max_passes (run_benchmark.py lines 1381, 1433, 1450).
+
+7. Cost cap is still non-hard in practice. Preflight spends unmetered API calls (run_phase2.py lines 339, 378, 385). Cap checks are post-call only (lines 423, 437). Schema C cost uses a fixed 3-pass split regardless of actual distribution (line 520).
+
+
+Reproductions Executed
+
+CX reproduced all 4 defects:
+
+Test 1: Running python3 bench/run_phase2.py with task-ids ft-003 and config gpt-5.4 demanded ANTHROPIC_API_KEY and GOOGLE_API_KEY even though those pairs would be skipped.
+
+Test 2: Running with a non-existent task ID and skip-schema-c produced an unhandled IndexError from tasks[0].
+
+Test 3: Monkeypatching run_adaptive so CC fails and CX succeeds every time resulted in status remaining DEFERRED, not DEFERRED_INFRA.
+
+Test 4: Running run_cross_model with max_passes of 7 and a dummy provider produced pass numbers 1, 2, 3, 4, 7 and actual_passes of 5.
+
+
+Definitive stance from CX: Round 2 still has real correctness and robustness gaps. This should not be treated as fully remediated yet.
+
+
+CC Proposed Fixes for Round 3
+
+Fix 1 (Schema C over-scoped validation): Only pre-validate env keys for Schema C pairs where BOTH models are in the selected configs dict. If skip-schema-c is set, skip all Schema C validation.
+
+Fix 2 (Schema C runtime guard): Replace the inner for-pcfg continue with a flag that skips the entire pair, not just one iteration of the inner loop.
+
+Fix 3 (Empty tasks crash): Add guard after task filtering. If tasks list is empty, print error and exit before reaching preflight.
+
+Fix 4 (Manifest under-specified): Add task IDs to manifest hash. Accept missing-manifest checkpoints only with a warning, not silently.
+
+Fix 5 (DEFERRED_INFRA logic): Change condition to check if ANY confer call had an infra failure on either side, not requiring ALL to fail.
+
+Fix 6 (Pass-count validation): Clamp passes to range 3 to 5 at argument parsing. Reject values outside this range.
+
+Fix 7 (Cost cap): Meter preflight calls through the ledger. This is the only actionable fix; post-call checking is inherent to any pay-per-call system.

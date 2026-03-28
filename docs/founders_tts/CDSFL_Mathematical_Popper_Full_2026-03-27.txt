@@ -1,0 +1,115 @@
+Mathematical Formalisation of Popper's Falsification and Domain Expert Configurations
+Full Treatment
+27 March 2026
+
+THE QUESTION
+
+Can Karl Popper's philosophy of falsification be mathematically modelled? Is it already implicitly expressed in the CDSFL decay curve mathematics? If so, could mathematical models of domain specific falsification processes become the basis for domain expert configurations? What would this mean for the efficiency of CDSFL and for AI systems more broadly?
+
+
+POPPER THE PHILOSOPHER, NOT THE MATHEMATICIAN
+
+Popper expressed falsification in natural language. A theory is scientific if and only if it makes predictions that could be shown false. Theories gain corroboration by surviving severe tests. Bolder theories that predict more are more falsifiable and therefore more scientific. These are powerful ideas, but they are verbal, not mathematical. For modern AI systems, verbal instructions leave significant scope for interpretation. A chatbot told to "try to disprove your conclusions" interprets this as "add a caveat." A capable reasoning model interprets it as "genuinely attack the weakest claims." The instruction is the same. The interpretation varies by model.
+
+
+THREE PRIOR ATTEMPTS AT MATHEMATICAL POPPER
+
+Popper himself attempted a mathematical formulation. His degree of corroboration formula C(h,e,b) relates hypothesis h, evidence e, and background knowledge b. The formula is C equals P of e given h, minus P of e, divided by P of e given h, minus P of e and h, plus P of e. This measures the outcome of testing. How corroborated is this hypothesis after this evidence? But it does not model the process. It tells you where you ended up, not how the journey unfolded.
+
+Deborah Mayo, in work published in 1996 and expanded in 2018, went further. Her severity criterion states that a hypothesis passes a severe test when the test had a high probability of detecting the error if the error were present. Formally, the severity of a passing result is the probability that, if the hypothesis is false, a test would have produced evidence less favourable to the hypothesis than the evidence actually obtained. This IS computable. Given a specific test and specific evidence, you can calculate severity as a number. Mayo explicitly built on Popper while correcting his lack of statistical sophistication. Her criterion maps directly to the CDSFL verification score v bar multiplied by coverage C. If the product v bar times C is high, the test was severe in Mayo's sense.
+
+Kevin Kelly at Carnegie Mellon University went furthest in the mathematical direction. He proved that Occam's razor, the preference for simpler and more falsifiable theories, is mathematically necessary for efficient convergence to truth. Not just useful. Necessary. Any method that converges reliably to the right answer must incorporate a simplicity bias. This connects Popper's preference for falsifiability directly to computational convergence bounds. Kelly's work maps to CDSFL's HARD and SOFT classification, which directs attention to the most constrained and therefore most falsifiable claims first. This is a computationally grounded simplicity bias.
+
+But none of these three modelled the process of falsification as it unfolds over iterative rounds. Popper's formula gives a snapshot after testing. Mayo's criterion evaluates a single test. Kelly's theory describes long run convergence. None of them describe what happens round by round as falsification proceeds iteratively. That is what the decay curve does.
+
+
+THE DECAY CURVE AS MATHEMATICAL POPPER
+
+Consider what actually happens in each round of the CDSFL protocol. The solution being reviewed contains F falsifiable claims. Each claim has a detection probability p sub i, the probability that a reviewer spots it in a single round. Claims are naturally ordered by detectability: p sub 1 is greater than or equal to p sub 2, which is greater than or equal to p sub 3, and so on down to p sub F. The easiest to falsify have high p values. The hardest have low p values.
+
+In round 1, reviewers find the easy to falsify claims. The boldest conjectures, in Popper's language, fail first because they are the most exposed. The expected number of findings is approximately the sum of all p sub i values.
+
+In round 2, the easy falsifications are done. Those claims are eliminated from consideration. The remaining claims survived round 1. They are now partially corroborated in Popper's sense. The reviewers must find subtler issues. The rate of discovery drops. Not because the reviewers are less capable, but because the remaining claims are harder to falsify.
+
+In round n, the solution has survived n minus 1 rounds of attempted falsification. What remains is maximally corroborated. The decay toward zero IS the mathematical expression of approaching corroboration.
+
+The formula is f of n equals F times p bar times the quantity 1 minus p bar, raised to the power n minus 1. This is geometric decay. The decay parameter, 1 minus p bar, is determined by three things. First, the reviewer's expertise, which is E star in CDSFL notation. Second, the domain's characteristic difficulty distribution of errors. Third, the methodology applied, whether structured or unstructured.
+
+This is Popper expressed as a measurable dynamic function. Not the outcome, like Popper's C. Not the criterion, like Mayo's severity. But the process. How falsification actually unfolds over iterative rounds of testing.
+
+
+WHY DIFFERENT DOMAINS PRODUCE DIFFERENT CURVES
+
+The detection probability distribution, the spread of p sub i values across all falsifiable claims in a typical artifact, differs by domain. This follows from the nature of errors in each domain.
+
+In mathematics, errors are bimodal. A step in a proof is either correct or incorrect. If incorrect, it is usually detectable by anyone competent, giving a high p value, or it is extremely subtle, giving a low p value. There is little in between. This produces steep initial decay. The incorrect steps are found immediately. Then a long flat tail follows, because the subtle errors are very hard to find. The curve looks like a cliff.
+
+In engineering, errors are more uniformly distributed. Constraints range smoothly from obvious, like a missing load path, to subtle, like thermal expansion under cyclic loading interacting with fatigue. Each successive check reveals a slightly harder issue. This produces gradual smooth decay. The curve looks like a gentle slope.
+
+In code, errors are multi modal. Syntax errors have p near 1 and are found immediately. Logic errors have p around 0.5 and are found with moderate effort. Design flaws have p around 0.1 and are found only with deep analysis. This produces a stepped curve with plateaus. There is a rapid initial drop, then a plateau, then another drop when logic errors are found, another plateau, then a slow decline for design flaws.
+
+These domain specific distributions are mathematical signatures. They can be measured empirically from bench test data and encoded as domain parameters.
+
+
+MATHEMATICAL POPPER AS DOMAIN EXPERT CONFIGURATION
+
+If you know the expected difficulty distribution for a domain, a domain expert config evolves from "check these things" in verbal form to a mathematical model. The config would specify the expected decay model, such as exponential or power law. The expected decay rate range, such as 0.3 to 0.6. The difficulty distribution type, such as bimodal, uniform, or multi modal. The expected total number of falsifiable claims. The minimum number of rounds required for corroboration. The severity threshold from Mayo's criterion. The expected order of falsification, such as boundary conditions first, then proof structure, then edge cases.
+
+This config does not tell the model what to think. It tells the model what genuine falsification looks like in this domain. The model can then compare its own behaviour against the mathematical template. If its curve is flat but the domain expects steep decay, it is probably churning. If its curve decayed after 2 rounds but the domain expects 5 rounds for corroboration, it stopped too early. If its curve matches the expected shape, the analysis is consistent with genuine falsification for that domain.
+
+The mathematical model becomes self diagnostic. The config does not just direct the analysis. It provides the criterion for evaluating whether the analysis was genuine.
+
+
+EFFICIENCY IMPLICATIONS
+
+Currently the CDSFL directives say "try to disprove your conclusions." This is Popper in words. The model interprets this however its training disposes it to. A chatbot interprets it as "add a caveat." A capable model interprets it as "genuinely attack the weakest claims." The verbal instruction leaves room for interpretation, and interpretation varies by model.
+
+A mathematical config says: produce findings at a rate that decays geometrically with parameter between 0.3 and 0.6. If your rate is flat, your findings are not genuine. If your rate decays faster than 0.6, you are skipping subtle issues. The expected number of genuine falsifiable claims in this domain is 5 to 15. If you have found 2 after 5 rounds, you have likely missed things.
+
+The model does not need to understand Popper philosophically. It needs to match a mathematical signature empirically. This is more efficient because it is measurable, not interpretable. The machine does not have to figure out what "try to disprove" means. It has to produce output that matches a specific mathematical profile.
+
+The prediction is that mathematical configs will improve weaker models more than stronger models. Stronger models already interpret "try to disprove" correctly. Their verbal understanding maps to genuine falsification. Weaker models do not. Their verbal understanding maps to adding caveats or producing more output. A mathematical config that says "your curve must decay with parameter greater than 0.3" gives the weaker models a concrete target that verbal instructions do not provide.
+
+
+MODELLING DOMAIN EXPERTS THEMSELVES
+
+If different experts produce different decay curves on the same tasks, the curve IS their cognitive signature for that domain. An expert who produces steep decay is a rapid scanner who finds obvious issues fast but may miss subtle ones. An expert who produces gradual decay is methodical, finding issues at a steady rate across difficulty levels. An expert whose curve matches the domain's expected distribution is well calibrated for that domain.
+
+Encoding this as a config means encoding not just what the expert knows, but how they apply it. A structural engineering expert config that specifies expected decay as gradual, focus order as load paths then connections then foundations, and expected rounds for corroboration as 5, encodes both knowledge and cognitive approach.
+
+This makes the domain expert config genuinely novel as an intellectual asset. It is not a knowledge dump. Any model can access the same knowledge. It is a mathematically characterised cognitive strategy that produces measurably different analytical results when applied.
+
+
+NOVELTY ASSESSMENT
+
+The individual components exist. Popper's corroboration formula dates from 1934. Mayo's severity criterion from 1996. Kelly's convergence theory from the 1990s. Defect discovery curves in software engineering from the 1970s onward.
+
+The specific assembly, using mathematical models of falsification dynamics as domain specific AI review configurations, measured via empirically observed decay curves, grounded in the Popper, Mayo, and Kelly tradition, does not appear to have prior art. The closest is Mayo's work, which explicitly operationalises Popper as a statistical criterion but applies it to experimental design, not to AI review protocols. Kelly applies formal learning theory to philosophy of science, not to practical AI systems. Software reliability engineering uses defect curves for quality estimation, not for reviewer configuration.
+
+The assembly is what appears to be new. Not the components. The integration.
+
+
+FALSIFIABLE PREDICTIONS
+
+One. Different STEM domains will produce statistically distinguishable decay curve shapes on the bench test. Mathematics tasks will show steeper initial decay than engineering tasks. Code tasks will show intermediate profiles. Cross domain tasks will show the most gradual curves.
+
+Two. A domain expert config that includes expected falsification dynamics will produce better analytical results than a config with natural language instructions alone. Testable by comparing mathematical configs against verbal configs on the same tasks.
+
+Three. Mayo's severity criterion maps to v bar multiplied by C. If this product is high, the test was severe. If low, the test was not severe. This is computationally verifiable from existing bench test data.
+
+Four. Kelly's convergence result predicts that CDSFL's HARD and SOFT classification should produce faster convergence than unstructured review. The decay rate D under CDSFL should be systematically higher than under Control. The current bench run can test this directly.
+
+Five. Mathematical configs will improve weaker models more than stronger models. Testable by comparing the change in D values with vs without mathematical configs across the 5 bench test models.
+
+Six. Domain experts with different cognitive styles will produce measurably different decay curves on the same tasks. If measured, these curves become tradeable cognitive assets under the CDSFL schema.
+
+
+SOURCES
+
+Popper's degree of corroboration and statistical perspectives. arXiv 2007.00238. Also at Springer.
+
+Deborah Mayo. Statistical Inference as Severe Testing. Cambridge University Press, 2018.
+
+Kevin Kelly. Formal Learning Theory. Stanford Encyclopedia of Philosophy. Also Carnegie Mellon publications.
+
+Karl Popper. Stanford Encyclopedia of Philosophy entry.

@@ -4,6 +4,8 @@
 
 *Founder's observations, recorded chronologically from 14 March 2026 onwards. Undated sections reflect foundational principles established at the project's inception. Dated sections record observations as they emerged during development and testing.*
 
+*The full chronological research notes from which these observations are drawn are preserved unedited in [`founders_tts/`](founders_tts/). Those are the raw thinking; this document is the curated version.*
+
 ## What This Is
 
 CDSFL is an attempt to formalise the scientific method within an LLM context. In more direct terms: a general-purpose "science calculator" applicable across a wide range of domains.

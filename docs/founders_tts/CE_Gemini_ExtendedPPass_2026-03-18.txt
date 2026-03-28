@@ -1,0 +1,182 @@
+CE Gemini Extended P-Pass (4 Modular + 1 Adversarial)
+2026-03-18T22:24:22+00:00
+Model: Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
+Input: Post-fix run_benchmark.py (1907 lines) + post-fix run_phase2.py (1082 lines)
+Context: Extended P-Pass on revised code after 13 fixes from 5 rounds of review
+Method: 4 modular passes (each scoped to one concern) + 1 isolated adversarial pass (fresh context, adversarial brief only)
+
+Full unfiltered Gemini output below.
+
+---
+
+MODULE 1 OF 4: run_benchmark.py (Core Benchmark Runner)
+Scope: API callers, section extraction, template formatting, draft pollution, cost estimation, CLI args, confer mechanism
+Findings: 10
+
+1. Category: Logic (Regex), Severity: CRITICAL, Affected Function: _extract_section (lines 351 to 386)
+The stop_pattern regex is flawed. It requires a newline before the next label and specifically checks for whitespace followed by newline or end of string after the colon. This means the extraction will only stop if the next label is followed by a newline and then another newline (empty line) or the end of the string. If a model outputs text on the same line as the label (for example, REVISED_ANSWER: The answer...) or immediately on the next line without an empty line, the lookahead fails to match, and the extraction consumes the next section's content. This causes critical section leakage where ISSUES_FOUND will often contain the REVISED_ANSWER.
+
+2. Category: CLI/Integration, Severity: HIGH, Affected Function: main (lines 1060 to 1150)
+The codex provider is fully implemented in the PROVIDERS dictionary but is missing from the choices list for the --provider argument in main(). This prevents users from selecting the Codex provider via the CLI.
+
+3. Category: CLI/Integration, Severity: HIGH, Affected Function: main (lines 1076 to 1085)
+New execution modes (adaptive, placebo, cross_model) are implemented as functions but are not added to the --mode choices in main(). These high-value Phase 2 features are currently "orphaned code" that cannot be triggered by the benchmark runner's primary entry point.
+
+4. Category: Reliability, Severity: HIGH, Affected Functions: run_experimental / run_extended (lines 438 to 572)
+The AdaptiveThrottle logic (lines 582 to 648) is implemented but is only utilized in the orphaned run_adaptive function. The primary benchmark paths reachable via the CLI (run_experimental and run_extended) call _call_with_retry directly and bypass the adaptive throttle. This makes the harness highly susceptible to rate-limiting failures on providers with tight quotas (for example, Gemini, Anthropic Tier 1) during large runs.
+
+5. Category: Logic (Heuristic), Severity: MEDIUM, Affected Function: classify_issue_severity (lines 651 to 690)
+The severity classifier checks if a line starts with list markers (dash, asterisk, 1 dot, and so on) but does not call .lstrip(). Consequently, it ignores indented list items, which are standard in LLM-generated issue lists. This results in under-counting or misclassifying findings as "trivial" because they don't match the marker check.
+
+6. Category: Portability, Severity: MEDIUM, Affected Function: confer_diminishing_returns (lines 726 to 868)
+The confer mechanism contains hardcoded paths to external project directories (Project_Genesis) and assumes a specific directory structure on the host machine (lines 728, 742, 743). This will cause immediate infra-failures (DEFERRED_INFRA) for any user other than the original author, effectively disabling the adaptive termination consensus.
+
+7. Category: Consistency, Severity: MEDIUM, Affected Functions: run_experimental vs run_adaptive
+There is a discrepancy in data output: run_adaptive (and other Phase 2 modes) includes severity_counts in each pass record, whereas run_experimental and run_extended do not. This inconsistency makes it difficult to perform unified downstream analysis of issue density across different benchmark conditions.
+
+8. Category: Logic (Cross-Model), Severity: LOW, Affected Function: run_cross_model (lines 923 to 1011)
+The isolated adversarial pass is only executed if len(passes) is less than max_passes. Since the preceding loop runs exactly 4 times (the length of pass_sequence), the critical isolated falsification pass is skipped entirely if the user sets max_passes to 3 or 4.
+
+9. Category: Maintainability, Severity: LOW, Affected Function: estimate_call_cost (lines 1014 to 1035)
+This function is defined but never called within the script, nor is it passed as a callback to the orphaned run_adaptive mode from any reachable path.
+
+10. Category: Security/Resources, Severity: LOW, Affected Function: call_codex (lines 300 to 343)
+If subprocess.run raises an OSError (for example, if the codex command is not found), the temporary file created via NamedTemporaryFile(delete=False) is never unlinked, leading to a minor accumulation of empty temporary files in /tmp.
+
+---
+
+MODULE 2 OF 4: run_phase2.py (Phase 2 Orchestrator)
+Scope: Orchestration loop, checkpoint system, cost tracking, run manifest, preflight, reporting, CLI args
+Findings: 8
+
+1. Category: Cost Control, Severity: HIGH, Affected: run_task_conditions (443 to 509) / run_adaptive
+The cost cap enforcement suffers from significant lag in adaptive loops. run_adaptive is passed ledger.check_cap as a check function, but the ledger is only updated via ledger.record after the entire task (up to 5 passes) completes. Consequently, all passes within a single task see the same "pre-task" total. This allows a single expensive task to overshoot the budget by a factor of 5x or more before the orchestrator can react and stop the run.
+
+2. Category: Reproducibility, Severity: HIGH, Affected: _compute_manifest (120) / main (625)
+The run manifest does not include the --variant argument. Since the variant determines which domain-specific directives are loaded, it directly impacts the LLM's behavior and the validity of the results. Currently, a user can resume a run with a different variant, and the orchestrator will incorrectly treat previous results (generated with a different variant) as valid and skip those tasks, leading to a "polluted" dataset.
+
+3. Category: Reporting, Severity: MEDIUM, Affected: main (750 to 754)
+The completeness percentage calculation in the final report and the deferred_for_review.json manifest does not account for Schema C (cross-model) items. expected_items is calculated based only on the 3 conditions in the main loop (control, cdsfl, placebo). If Schema C is active, the checkpoint will contain additional items, causing the completeness report to show inaccurate percentages or values exceeding 100%.
+
+4. Category: Cost Control, Severity: MEDIUM, Affected: run_task_conditions (453, 477, 505) / run_preflight (388, 406)
+The cost estimation logic consistently underestimates API spend because it ignores the length of the universal and domain-specific directives. Every call to estimate_call_cost passes only the length of the task prompt (len(task["prompt"])), whereas the actual prompt sent to the API includes the full CDSFL and domain directive sets, which can be several kilobytes in size and comprise a significant portion of the token cost.
+
+5. Category: Orchestration, Severity: MEDIUM, Affected: main (685 to 696)
+The main task loop fails to catch general Exceptions. While it specifically handles FatalAPIError for graceful exits, any transient but persistent error (for example, a network timeout that exhausts internal retries, or a specific task prompt triggering a non-fatal 400 error) will crash the entire script. For a large-scale frontier test, the orchestrator should log the error and proceed to the next task/config rather than requiring a manual resume for every transient failure.
+
+6. Category: Cost Control, Severity: MEDIUM, Affected: run_schema_c (515)
+The Schema C adversarial loop (run_schema_c) does not implement mid-run cost cap checking. Unlike the main CE loop, which passes a check function to run_adaptive, Schema C involves multiple models and multiple passes without any internal budget validation. Given that Schema C is typically the most expensive part of the run, it is the most likely to cause a significant budget overrun.
+
+7. Category: Reproducibility, Severity: LOW, Affected: _hash_domain_directives (138)
+The domain directive hashing logic uses txt_file.name but ignores the file's path relative to the directives directory. If a file is moved between domain folders (for example, from chemistry/ to physics/) without changing its name or content, the manifest hash will remain identical. This would cause the orchestrator to incorrectly validate a checkpoint even though the mapping of directives to task domains has changed.
+
+8. Category: Validation, Severity: LOW, Affected: run_preflight (351)
+The mandatory preflight pilot ignores domain-specific directives and the --variant argument. It only tests the "universal" directive set. This means errors in domain directive file paths, formatting, or variant selection logic are not caught during the preflight phase and will only surface during the main multi-task batch execution.
+
+---
+
+MODULE 3 OF 4: Scientific Validity
+Scope: Experimental design, confounds, threats to internal/external validity, bias, reproducibility
+Findings: 9
+
+1. Compound Variable Confound (Control vs. Methodology)
+Category: Experimental Design. Threat Type: Internal Validity. Severity: High.
+The "Control" condition is implemented as a single-pass, zero-shot prompt (run_control). In contrast, the "Experimental" (CDSFL) and "Calibration" (Placebo) conditions are iterative P-Pass loops with system prompts. This design conflates the methodology (the specific CDSFL directives) with the mechanism (iteration and system instructions). Superior performance in the Experimental condition cannot be cleanly attributed to the CDSFL directives; it could simply be the result of the model having multiple "thinking" passes compared to the Control's single attempt.
+
+2. Social Anchoring Bias in Confer Mechanism
+Category: Confer Mechanism. Threat Type: Bias. Severity: High.
+In _CX_CONFER_PROMPT, the second assessor (CX) is explicitly instructed to "Read the most recent CC message" and is asked "Do you agree with CC's verdict?" This destroys the independence of the two assessors. CX is heavily anchored to CC's opinion, leading to a "hallucinated consensus" rather than a robust inter-rater reliability measure.
+
+3. Criterion Contamination in Adaptive Termination
+Category: Confer Mechanism. Threat Type: Internal Validity / Bias. Severity: High.
+The confer_diminishing_returns function is used for both CDSFL and Placebo conditions. However, the _CC_CONFER_PROMPT tells the assessor they are "assessing... for a Constraint Engineering (CE) benchmark." The Placebo condition explicitly lacks CE markers (HARD/SOFT classification). Assessors may penalize the Placebo condition for not following the methodology it wasn't given, or conversely, "stop" CE runs early because they see the "correct" markers. This creates a systematic bias where the presence of the methodology is used as the quality metric for the termination of the methodology.
+
+4. Systematic Attrition Bias (Fixed Execution Order)
+Category: Execution Logic. Threat Type: Internal Validity. Severity: Moderate.
+run_task_conditions executes conditions in a fixed sequence: Control, then CDSFL, then Placebo. Because the CostLedger cap is checked before each condition, the "Placebo" baseline is disproportionately likely to be truncated or skipped as the budget is exhausted. The final calibration data will be skewed toward "cheap" tasks or early-experiment samples, making a direct statistical comparison with the (more complete) CDSFL data-set invalid.
+
+5. History Deletion Confound (Extended/Schema C Mode)
+Category: Prompt Construction. Threat Type: Confound. Severity: Moderate.
+The "Extended" and "Schema C" modes conclude with an "isolated adversarial pass" where the model is given only the task and the final draft, with all prior P-Pass history removed. Any performance improvement in the final pass conflates the benefit of adversarial scrutiny with the benefit of contextual cleaning (noise reduction). The design does not isolate whether the model got "smarter" or just "less distracted" by the long prior chain.
+
+6. Draft Pollution on Extraction Failure
+Category: Data Integrity. Threat Type: Confound. Severity: Moderate.
+In run_adaptive, if the regex-based _extract_section fails to find a REVISED_ANSWER, the logic falls back to using the raw response. This raw response includes meta-headers (ISSUES_FOUND:) and the model's own self-criticism. This text is then injected into the "current draft" block of the next pass. The model on the subsequent pass may treat its previous meta-commentary as part of the technical problem description, leading to "recursive noise" that invalidates the iteration.
+
+7. Arbitrary Cost Attribution (Schema C)
+Category: Cost Modeling. Threat Type: Confound. Severity: Minor.
+run_schema_c records costs by taking the total response length and splitting it 50/50 between Model A and Model B (total_resp // 2). In an adversarial setup, the falsifier often produces significantly different token counts than the generator. This arbitrary split masks the true cost-efficiency profile of different model combinations, which is a key goal of Schema C.
+
+8. Selection/Order Effects
+Category: Statistical Design. Threat Type: Internal Validity. Severity: Minor.
+Tasks are processed in a fixed alphabetical order based on filenames (sorted(tasks_dir.rglob("*.json"))). Lack of randomization means any temporal factors (API latency drift, provider-side caching, or rate-limit "bucket" depletion) will consistently affect the same tasks, potentially introducing a selection bias into the performance metrics of specific domains.
+
+9. Construct Validity of "Placebo"
+Category: Baseline Definition. Threat Type: Construct Validity. Severity: Minor.
+The PLACEBO_DIRECTIVES are actually a very strong "Best Practices" or "Chain of Thought" prompt. While this provides a high-quality baseline, it is not a "Placebo" in the medical/scientific sense (an inert treatment). Labeling it as such misrepresents the comparison; the experiment is actually a "Methodology A vs. Methodology B" test, not "Methodology vs. Null."
+
+---
+
+MODULE 4 OF 4: Cross-Module Integration
+Scope: Import dependencies, function signatures, data format assumptions, state flow, error propagation, configuration consistency
+Findings: 5
+
+1. Category: Environment Consistency, Severity: HIGH, Affected Functions: run_benchmark.confer_diminishing_returns
+The confer mechanism (used by run_adaptive) relies on absolute paths in the user's home directory for both the project root (proj_dir) and the Project Genesis IM service (_IM_SERVICE). If run_phase2.py is executed on a system with a different user name or directory structure (for example, in a CI environment or by a different developer), the subprocess.run calls will fail with OSError. While caught and converted to INFRA_FAIL, this effectively disables the intelligent termination feature of the Phase 2 experiment.
+
+2. Category: State Synchronization / Safety, Severity: MEDIUM, Affected Functions: run_benchmark.run_cross_model (called by run_phase2.run_schema_c)
+Unlike run_adaptive, the run_cross_model function does not accept a cost_check_fn. It executes its full 5-pass sequence without checking for budget depletion between calls. run_phase2.py only checks the cost ledger before and after the run_schema_c call. A single Schema C task using frontier models (for example, GPT-5.4 + Sonnet 4.6) could significantly overshoot the user-defined --cost-cap before the orchestration loop can intervene.
+
+3. Category: Data Format Assumptions, Severity: MEDIUM, Affected Functions: run_phase2.run_schema_c
+The cost estimation for Schema C tasks uses a fixed multiplier (len(task["prompt"]) * 3) for both Model A and Model B. This ignores the actual pass asymmetry (Model A produces 2 responses; Model B produces 3) and the cumulative nature of the prompt chain. This results in inaccurate ledger entries for Schema C, potentially causing premature or late cost-cap triggers.
+
+4. Category: Logic / Experimental Design, Severity: LOW, Affected Functions: run_benchmark.run_placebo
+run_placebo calls run_adaptive using default parameters, which include confer_after=3. The placebo calibration baseline (which uses generic instructions) is subject to the same CC/CX adversarial confer mechanism as the CDSFL group. Because the CC/CX prompts are specifically tuned to look for CDSFL-style constraint classification and falsification, they may produce erratic "STOP" or "CONTINUE" verdicts when evaluating generic placebo output, confounding the calibration.
+
+5. Category: Configuration Consistency, Severity: LOW, Affected Functions: run_phase2.run_preflight
+The preflight check calls run_adaptive with confer_after=99 to avoid overhead. While logical for a smoke test, this means the preflight pilot successfully validates API connectivity but fails to validate the confer CLI infrastructure (claude/codex). If the confer CLIs are missing, the preflight will still pass, only to have the main experiment degrade to INFRA_FAIL hours later.
+
+---
+
+PASS 5 OF 5: Isolated Adversarial (Fresh Context)
+Brief: "This output was produced by another system and has not been independently verified..."
+Focus: Cross-module interactions, shared assumptions, emergent contradictions
+Findings: 6
+
+1. Category: Batch Fragility, Severity: CRITICAL, Affected: run_phase2.py (lines 807 to 810) and run_benchmark.py (lines 104 to 129)
+The main orchestration loop in run_phase2.py exclusively catches FatalAPIError. However, run_benchmark.py's retry logic raises standard exceptions (or specific API errors) when max_retries is exhausted for transient errors (for example, persistent timeouts, 5xx errors). These non-fatal exceptions are not caught by the orchestrator, causing the entire batch experiment to crash upon a single task failure. A single stubborn task aborts the entire run, requiring manual intervention to resume, defeating the purpose of an autonomous batch runner.
+
+2. Category: Cost Ledger Data Loss, Severity: HIGH, Affected: run_phase2.py (run_task_conditions lines 681 to 744) and run_benchmark.py (run_adaptive)
+API costs are metered and committed to the ledger strictly transactionally, only after run_adaptive returns successfully. If the process is interrupted (OOM, kill signal, power loss) or crashes during the execution of a multi-pass task (which can take minutes), the costs incurred during that partial run are never recorded. The cost cap mechanism is leaky. A loop of crashes or interruptions allows the system to drain the API budget indefinitely without the ledger reflecting the wasted spend.
+
+3. Category: Double Billing, Severity: MEDIUM, Affected: run_phase2.py (run_preflight vs main loop)
+The mandatory run_preflight executes a full adaptive run for the first task to validate infrastructure but does not return or save the execution artifacts (result dict) to the checkpoint. The main loop subsequently re-executes the same task-config combination from scratch. The first task of every run is billed twice.
+
+4. Category: Environment Hardcoding, Severity: MEDIUM, Affected: run_benchmark.py (line 617)
+_IM_SERVICE is defined using Path.home() joined with a specific directory structure (Developer_Projects/Project_Genesis/...). This path structure is specific to the developer's machine. On any other environment (CI/CD, other developers), the confer mechanism will trigger FileNotFoundError or similar, leading to consistent INFRA_FAIL in the adaptive termination logic, forcing all tasks to run to the hard cap (max_passes) and degrading benchmark validity.
+
+5. Category: Reporting, Severity: LOW, Affected: run_phase2.py (lines 872 and 830 to 866)
+The deferred_report calculates expected_items based solely on len(tasks) * len(configs) * 3. It fails to account for Schema C (cross-model) tasks, even when they are executed and added to the checkpoint. Running Schema C will result in "completed" counts exceeding "expected" counts, and progress tracking for the cross-model phase is effectively missing from the summary.
+
+6. Category: Throttle Fragmentation, Severity: LOW, Affected: run_phase2.py (lines 790 and 855)
+AdaptiveThrottle instances are scoped to the inner loops (per-config and per-Schema-C-pair). Rate limit backoff state is lost when the runner transitions between configs using the same provider (for example, gpt-5.4 to o4-mini) or from the main loop to Schema C. The runner may hammer a provider immediately after a rate-limit backoff simply because it switched to a new configuration using the same underlying provider.
+
+---
+
+SUMMARY
+
+Total findings across all 5 passes: 38
+After deduplication (removing findings repeated across modules): approximately 27 unique defects
+
+Severity breakdown (unique):
+CRITICAL: 2 (section extraction regex edge case, batch fragility from unhandled exceptions)
+HIGH: 7 (orphaned CLI modes x2, adaptive throttle bypass, cost cap lag, variant not in manifest, confer hardcoded paths, cost ledger data loss on interruption)
+MEDIUM/MODERATE: 11 (classify_issue_severity lstrip, confer portability, output inconsistency, Schema C cost cap missing, directive length in estimates, Schema C completeness reporting, general exception handling, Schema C cost estimation, double billing preflight, compound variable confound, social anchoring bias, criterion contamination, systematic attrition, history deletion, draft pollution)
+LOW/MINOR: 7 (cross_model max_passes edge, estimate_call_cost unused, temp file leak, domain hash path-insensitive, preflight skips domain directives, order effects, placebo construct validity, throttle fragmentation)
+
+Novel findings from Pass 5 (not found in Modules 1 to 4):
+- Cost ledger data loss on process interruption (HIGH)
+- Preflight double billing (MEDIUM)
+- Throttle state fragmentation across configs (LOW)
+
+Convergence assessment: Modules 1 to 4 found 32 findings. Pass 5 found 6, of which 3 were novel and 3 confirmed earlier findings. This indicates the modular passes achieved good coverage, and the adversarial pass added value primarily in cross-cutting operational concerns (interruption resilience, billing efficiency) rather than code-level defects. Diminishing returns reached.

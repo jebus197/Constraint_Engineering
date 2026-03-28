@@ -1,0 +1,81 @@
+CDSFL META-TEST RESULTS. 27 MARCH 2026.
+
+
+WHAT HAPPENED.
+
+I ran the full instrumented meta-test on the CDSFL mathematical model. Five models participated in a blind pass. Each received the complete mathematical model and was asked to find genuine mathematical weaknesses. They were not allowed to see each other's output.
+
+The five models were Gemini 3.1 Pro as mathematical specialist, DeepSeek V3.2 as volume screener, ChatGPT 5.4 as generalist, CC2 which is another instance of Opus 4.6 as defender, and CX which is Codex on GPT-5.4 as captain.
+
+Three models produced proper structured output. ChatGPT gave a high level assessment but did not follow the required format. CX was contaminated because it read Gemini's output file during its blind pass, so all its findings were copies. That left Gemini, DeepSeek, and CC2 as the valid participants.
+
+
+WHAT THEY FOUND.
+
+Across the three valid models, there were 16 unique deduplicated findings. Eleven of these were genuine fixes. Four were notation or boundary cleanups. Three were soft issues that are design choices.
+
+CC2 was the strongest performer. It produced 16 findings with 10 genuine fixes, including 8 that no other model found. Gemini was the most precise, producing 6 findings that were all computationally verified. DeepSeek produced 5 findings with 3 unique contributions.
+
+
+THE MOST IMPORTANT FIXES.
+
+Fix one. The sycophancy detection formula was inverted. This is the formula called S sync that is supposed to detect when models are just agreeing with each other rather than genuinely converging on correct answers. The formula was S sync equals one minus delta bar times one minus O sub A. The problem is that when delta bar is high, meaning the models capitulated completely, the formula produces a LOW sycophancy score. That is the opposite of what it should do. The fix changes it to S sync equals delta bar times one minus O sub A. Now high capitulation combined with low verification correctly produces a high sycophancy score.
+
+This is the kind of bug that silently corrupts every measurement downstream. If you are measuring sycophancy and your meter is inverted, you will conclude that the most sycophantic interactions are the least sycophantic and vice versa.
+
+Fix two. The ascending abstraction condition used the wrong quantity. The text said d N d t less than zero, meaning the finding count is decreasing. But N of t is a cumulative count. Cumulative counts only go up. You cannot have fewer total findings than you had before. What the text meant was that the finding RATE is decreasing. The fix replaces d N d t less than zero with d lambda d t less than zero, which correctly refers to the rate. Additionally, the condition was made quantitative. Even with a decreasing rate and increasing depth, total yield can still decrease if the rate drops faster than depth rises. The formal condition now requires that the relative depth increase exceeds the relative rate decrease.
+
+Fix three. The probability that a human reviewer detects a flaw could exceed one. The formula multiplied a base probability by domain modifier terms. With multiple favourable domain variables, the result could be 1.8 or higher, which is not a valid probability. The fix adds a clip to ensure the result stays in the range zero to one, and bounds the modifier coefficients to prevent negative values.
+
+Fix four. The emergence condition was too weak. The condition said that composite yield should exceed the maximum individual yield. But this can be satisfied by simply combining two models' outputs without any genuine interaction. If model A finds two things and model B finds two different things, their union has four findings, which exceeds either individual's two. That is aggregation, not emergence. The fix requires composite yield to exceed the UNION yield plus a statistical confidence margin.
+
+Fix five. The claim that the system is a second order cognitive system was stated as fact before the evidence existed. The definition has four criteria. The fourth criterion says the adjustment from metacognitive feedback produces measurable improvement. But one section later, the text says whether models actually respond to feedback is an empirical question. You cannot assert a claim and then say the evidence for it does not yet exist. The fix qualifies the claim: the system meets criteria one through three by construction, and criterion four is conditional on empirical confirmation.
+
+
+OTHER FIXES.
+
+The negative weight values in the multi-verifier severity table were calculated using the wrong likelihood ratio. The table used the natural log of FNR divided by TPR instead of FNR divided by TNR. The veto property still holds because the SymPy verifier's weight is so dominant, but the table numbers were wrong for dimensional and numerical verifiers.
+
+The lambda symbol was used for two different things in different sections. In section 7.1 it means the Duane intensity function. In section 7.4 it means a local exponential decay rate. These are different quantities. The fix renames the section 7.4 variable to k of t.
+
+The multi-verifier formula did not handle the case where a verifier returns no result. The formula uses binary inputs, verified or falsified. But the per-finding severity metric has a third option, not assessed. The fix adds an explicit rule: indeterminate verifiers are excluded from the sum.
+
+The H of x reduction property statement was wrong. It said H of x reduces to c when word counts are equal. It actually only reduces to c when the evidence word count is zero. When evidence and claim word counts are equal but nonzero, the density function produces a value greater than one.
+
+The R sub n reduction formula had a subscript error, writing R sub 1 instead of R sub n. And the R sub n formula needed a domain boundary note for the degenerate case where prior certainty equals one and miss probability equals zero.
+
+
+WHO FOUND WHAT.
+
+Gemini found the probability bound violation, the table calculation error, the S sync inversion, the lambda overload, and the H of x reduction error. It also found the ascending abstraction count/rate confusion.
+
+DeepSeek found the ascending abstraction quantitative insufficiency, the emergence statistical threshold need, and the O sub A discontinuity.
+
+CC2 found the adoption delta confound, the falsification loop termination modes, the indeterminate verifier gap, the mutual suppression case, the criterion four qualification, and the R sub n boundary.
+
+Each model found issues the others missed. That is genuine biodiversity. No single model, regardless of architecture, found everything.
+
+
+EMERGENCE ANALYSIS.
+
+The emergence condition was not met for the blind pass alone. CC2 had the highest individual yield at 280.6. The composite yield was 249.0. The composite was lower because it averages in the lower depth findings from Gemini and DeepSeek while the deduplicated count equals CC2's raw count.
+
+This is the expected result for a single blind pass. Emergence requires the confer round where models interact with each other's findings and generate new insights that none found independently. The blind pass tests independent capability only. A single round cannot establish emergence.
+
+
+CX CONTAMINATION.
+
+CX read Gemini's output file. The Codex sandbox has read access to the entire working directory. Gemini's file was already written when CX started. CX's six findings are word-for-word identical to Gemini's. Its adoption delta is approximately 1.0, meaning complete adoption. CX's blind pass is invalid.
+
+The lesson is that future multi-model experiments must isolate output files so that later models cannot read earlier models' results during their blind pass.
+
+
+WHAT THIS MEANS.
+
+The mathematical model now has 11 genuine fixes from a systematic multi-architecture review. The most serious issues, the S sync inversion and the ascending abstraction confusion, affected how the model measures sycophancy and cognitive deepening, which are two of its most novel contributions. These are now corrected.
+
+The model's core detection machinery, sections one through six, proved robust. All genuine issues were in the novel constructs of sections seven and eight. This matches the game plan prediction that novel components carry the highest risk.
+
+The meta-test also tested its own measurement framework. H of x correctly ranked deep structural findings higher than surface notation issues. The deduplication correctly identified CX's contamination. Schema compliance varied across models, confirming that format adherence is itself a capability dimension.
+
+Eleven fixes. Three architectures producing valid output. Sixteen unique findings across all three. The framework's mathematical foundations are now tighter than they were this morning. The remaining deferred items, the adoption delta confound, the D symbol collision, the mutual suppression guard, and the dual termination mode, are genuine but lower priority. They require design decisions rather than corrections.

@@ -1,0 +1,63 @@
+CE Gemini Review Round 3
+2026-03-18T21:40:00+00:00
+Model: Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
+Input: Pre-fix run_benchmark.py (908 lines) + current run_phase2.py (1005 lines)
+Context: Given all prior findings (CC/CX 8 rounds + Gemini Rounds 1-2), asked for scientific validity, result corruption, edge cases, security
+
+Full unfiltered Gemini output below.
+
+---
+
+1. SCIENTIFIC VALIDITY: The "History Deletion" Confound (Standard vs. Extended)
+
+There is a fundamental structural difference between run_experimental (Standard) and run_extended (Extended) that invalidates them as a clean comparison of "context isolation."
+
+Standard Mode: Every pass (via FOLLOWUP_PASS_TEMPLATE) explicitly receives the prior_issues. The model is told: "Issues identified on the previous pass: {prior_issues}".
+
+Extended Mode: The final adversarial pass (via ADVERSARIAL_PASS_TEMPLATE) deletes the issue history. It only receives the current_draft and the original task_prompt.
+
+The Flaw: Any performance delta in "Extended" mode cannot be strictly attributed to "fresh context" (isolation). It is confounded by "history deletion." If the previous pass produced "hallucinated" issues that distracted the model, Extended mode will perform better simply because it isn't distracted, not because of isolation. This makes the "isolation" metric scientifically uninterpretable.
+
+2. RESULT CORRUPTION: Draft-to-Metadata "Catastrophic Feedback"
+
+In run_benchmark.py, both run_experimental and run_extended employ a dangerous fallback when the model fails to follow the section formatting:
+
+current_draft = extracted_revision or response
+
+The Failure: If a model produces ISSUES_FOUND but omits the REVISED_ANSWER section (e.g., if it concludes no changes are needed), the current_draft for the next pass becomes the entire raw response (including the "ISSUES_FOUND" header and the list of problems).
+
+The Corruption: In the next pass, the model is asked to "attack and revise" a draft that is now 50% metadata. The model will begin "fixing" the ISSUES_FOUND header or incorporating the metadata into the actual answer. The benchmark is no longer measuring the task; it is measuring the model's reaction to its own corrupted state.
+
+3. SECURITY: Template-Injection Denial of Service (DoS)
+
+The harness uses Python's .format() method to inject task["prompt"] and model-generated drafts directly into templates.
+
+The Vulnerability: Task prompts or model-generated drafts containing curly braces {} will trigger a KeyError or ValueError in the Python interpreter.
+
+The Exploit: A malicious (or merely complex) task file with a prompt like "Given the set {x, y}..." will crash the entire benchmark run instantly. Because run_phase2.py does not wrap the main loop's format calls in task-level exception handling, a single { anywhere in the input/output stream is a "poison pill" that kills the multi-hour process.
+
+4. RESULT CORRUPTION: "Ghosting" in Phase 2 Completion Reports
+
+The reporting logic at the end of run_phase2.py is architecturally "blind" to missing tasks.
+
+The Logic: The report generator iterates through checkpoint.completed.items(). It counts RESOLVED and DEFERRED items found in the checkpoint.
+
+The Problem: If the benchmark was interrupted (e.g., by a 429 error) and 50 out of 100 tasks are missing from the checkpoint, the report will still show a "clean" summary: "RESOLVED: 45, DEFERRED: 5".
+
+The Impact: A researcher looking at the deferred_for_review.json would conclude the run was successful and 100% of tasks were accounted for, when in fact half the data is missing. The report fails to compare the checkpoint count against the task_count from the manifest.
+
+5. SYSTEM INTEGRITY: Silent Save Failure and Spend Runaway
+
+The CostLedger and Checkpoint use _atomic_write, which is robust against file corruption but fails to signal the runner.
+
+The Failure: If os.replace or f.write fails (e.g., Disk Quota Exceeded or Permission Denied), the _atomic_write function catches the exception and prints a warning, but the script continues execution.
+
+The Consequence: The runner will continue making expensive API calls for the rest of the task list. Since the record() calls are failing to persist to disk, the CostLedger total on disk remains $0, and the Checkpoint remains empty. The script will continue "burning" the API budget for hours, but none of the results will be saved, and the cost cap will never trigger because it is checking a stale or empty in-memory state after a failed write.
+
+Summary of Round 3 Novel Findings:
+
+1. History Confounding — Scientific Validity — Extended mode "cheats" by clearing distracting issue history.
+2. Draft-Metadata Loop — Result Corruption — Metadata fallbacks pollute drafts, causing methodology divergence.
+3. Format Injection — Security/DoS — Curly braces in tasks or responses crash the harness.
+4. Report Ghosting — Result Corruption — Missing tasks are ignored in the final summary report.
+5. Spend Runaway — System Integrity — API spend continues even when disk/save operations fail.

@@ -1,0 +1,158 @@
+THE COMPLETE CDSFL MATHEMATICAL MODEL EXPLAINED IN PLAIN ENGLISH.
+
+Date. 27 March 2026.
+
+This document explains every mathematical component in the CDSFL framework, from the simplest building block to the most complex. Each formula is stated, then explained in plain English.
+
+
+LAYER ONE. THE CORE MODELS.
+
+These are the foundation. Everything else builds on them.
+
+1. Simple Corroboration. C(n) = 1 minus (1 minus p) to the power n.
+
+Each test of a claim has some probability p of catching a flaw if one exists. After n tests, the probability the flaw survived all of them is (1 minus p) multiplied by itself n times. Corroboration is the complement. It tells you how much trust the claim has earned.
+
+Four properties follow directly. Zero tests give zero trust. Trust approaches but never reaches 100 percent. Each additional test adds less than the one before. And a model that cannot reason adversarially (p equals zero) gains nothing from any number of passes. A thousand empty tests produce zero corroboration.
+
+2. Structured Operational Model. F_n equals the weighted sum across flaw classes k of 1 minus the product across passes i of (1 minus d_i times p_ik).
+
+This extends the simple model to handle reality. Different types of flaws (logic errors, arithmetic mistakes, physical impossibilities) have different detection probabilities. Different passes have different levels of independence. The diversity discount d_i captures how correlated each pass is with previous ones. Same model rechecking itself gets about 0.2 (highly correlated, same blind spots). A completely different architecture gets about 0.9 (genuinely independent). The weights w_k reflect how much each flaw type matters.
+
+Under uniform assumptions (one flaw type, one detection probability, full independence), F_n reduces to C(n). The simple model is a special case of the structured model.
+
+3. Anchor States. A classification of how much independence backs a claim. A0 is self-assessed only. A1 means another AI has verified it. A2 means a human expert has reviewed it. A3 means independent replication. Not a formula. A ladder of epistemic confidence.
+
+
+LAYER TWO. THE EXTENSIONS.
+
+These extend the core models to handle specific real world needs.
+
+4. Residual Risk. R_n equals the weighted sum across flaw classes k of (prior flaw rate times miss probability) divided by (1 minus prior flaw rate plus prior flaw rate times miss probability).
+
+After a clean run where nothing was found, what is the probability a flaw still exists? This uses Bayes' theorem. The prior flaw rate is how likely a flaw was before testing. The miss probability is the product of all passes failing to catch it. High prior plus high miss probability means substantial residual risk even after clean passes. Low prior plus low miss means safe. Testing mature, well-tested code leaves much less residual risk than testing suspect code, even at the same coverage level.
+
+5. Class-Specific Diversity Discounts. d_ik replaces scalar d_i with per-flaw-class values. A reviewer might be highly independent for logic flaws but correlated for arithmetic flaws because they use similar calculation methods.
+
+6. Severity-Weighted Expected Loss. L_n equals the sum across flaw classes k of expected harm times the posterior probability that the flaw remains. Same Bayesian posterior as residual risk but weighted by damage rather than consequence weight. Converts residual risk into expected real world harm.
+
+
+LAYER THREE. THE COMBINED DETECTION MODEL.
+
+This brings the human inside the formula.
+
+7. Combined Machine-HIL Model. G_n equals the weighted sum across flaw classes k of 1 minus (1 minus machine detection for class k) times (1 minus human detection for class k times (1 minus priming correlation)).
+
+Two independent detection streams. Machine passes (C_M) and human expert passes (C_H). The priming correlation (rho_MH) captures how much the human's analysis was influenced by seeing the machine's output first. If the human worked independently before seeing machine output, rho is near zero and their contribution is maximised. If they read the machine's work first, rho increases and their effective contribution shrinks. At rho equals 1, the human adds nothing. They are just agreeing with the machine.
+
+When no human passes exist, G_n reduces to F_n. When priming is zero (full independence), the two streams combine multiplicatively. Every simpler model in the paper is a special case of G_n.
+
+8. Human Detection Probability. p_H equals expertise times (floor plus (1 minus floor) times methodology formality) times the product of domain-specific adjustment factors.
+
+E is domain expertise from 0 to 1. M is methodology formality from 0 (informal gut feeling) to 1 (fully formal method). Alpha is the floor coefficient, what expertise alone achieves without a formal method. The key insight is that methodology is a multiplier on expertise, not independent. A formal method without expertise produces nothing. The domain-specific variables V_s are pluggable. Time pressure, equipment access, regulatory familiarity. When none are specified, the formula simplifies to the base case.
+
+The same expert working with a formal method catches roughly two and a half times what they catch working informally. Rigour is a procedure, not a personality trait.
+
+9. Bayesian Posterior Expertise. E*(t) equals (prior successes plus observed catches) divided by (prior successes plus prior failures plus total trials).
+
+Self-correcting. The human claims a certain expertise level. After enough reviews where the system can observe their actual detection rate, the claimed value is replaced by the observed value. By approximately five reviews, overclaiming is statistically falsifiable. This makes G_n learn from experience. An expert who consistently overclaims is detected not by administrative judgment but by their own track record.
+
+10. Calibration Metric. Kappa equals 1 minus the absolute difference between claimed expertise and observed expertise. The asymmetric variant penalises overconfidence more heavily than underconfidence. A bluffer scores negative. An honest novice scores almost as well as a well-calibrated expert. The metric rewards self-knowledge, not raw ability.
+
+
+LAYER FOUR. DISTRIBUTED COMPUTE COVERAGE.
+
+This models what happens when multiple different AI architectures review the same work.
+
+11. Multi-Architecture Coverage. D(n) equals the weighted sum across flaw classes k of 1 minus the product across architectures i of (1 minus detection probability for architecture i on flaw class k).
+
+Same structure as the operational model but specifically for heterogeneous architectures. The simplified single-class form introduces inter-architecture correlation rho. Each additional architecture's effective contribution decays by the correlation factor. Key properties.
+
+Diminishing returns. Early architectures add the most coverage. Later ones contribute progressively less.
+
+Heterogeneity premium. Low correlation (genuinely different architectures) reaches a higher ceiling than high correlation (similar architectures).
+
+Monoculture collapse. When correlation equals 1, adding architectures does nothing. A room full of the same model, however capable, leaves its blind spots permanently unexamined.
+
+Orchestration matters. Good orchestration preserves genuine independence between reviewers, keeping effective correlation low. Poor orchestration allows convergence toward consensus, raising effective correlation and reducing coverage.
+
+12. Marginal Gain and Optimal Stopping. The marginal gain from adding the next architecture is the probability it catches defects that ALL prior architectures missed. The optimal number of architectures is the smallest n where the marginal gain drops below a cost-benefit threshold. Safety-critical work demands a lower threshold (more architectures). Routine work tolerates a higher one.
+
+
+LAYER FIVE. THE COGNITIVE MEASUREMENT FRAMEWORK.
+
+This is the instrumentation layer. It measures the quality of analysis, not just the coverage.
+
+13. Duane NHPP Model. Lambda(t) equals (beta over eta) times (t over eta) to the power (beta minus 1).
+
+The finding rate across review rounds follows a Non-Homogeneous Poisson Process originally developed for hardware reliability growth (Duane, 1964). The convergence parameter gamma equals 1 minus beta classifies analytical behaviour. Gamma greater than zero means genuine convergence. The model is exhausting the error space. Gamma near zero means churn. The model is generating content because it is expected to, not because genuine issues remain. Gamma less than zero means divergence. The problem is expanding.
+
+This is the built-in diagnostic for distinguishing real analysis from chatbot behaviour. Empirically, the Duane model fits 17 out of 18 bench test runs better than geometric decay.
+
+14. Abstraction Index. H(x) equals confidence times formality times information density times generalisation scope.
+
+Not all findings are equal. A syntax error and a paradigm-level architectural flaw both count as one finding but contribute vastly different analytical value. H(x) scores each finding on three dimensions. Formality captures whether the finding contains verifiable claims and HARD constraint violations. Information density is the evidence-to-claim word ratio. Short dense findings score higher than verbose restatements. Generalisation scope captures whether the finding affects multiple components or just one.
+
+Verified discrimination ratio is 33.4 times. A deep structural finding with formal claims, dense evidence, and cross-cutting scope scores 33.4 times higher than a shallow verbose local observation.
+
+15. Total Cognitive Yield. Y(t) equals finding count at time t times mean abstraction depth at time t.
+
+The crucial insight is the ascending abstraction condition. When finding count decreases but depth increases, total yield can still rise. An analyst finding fewer things but each one deeper is not exhausted. They are deepening. The decay curve alone would classify this as non-convergent. Y(t) correctly recognises it as ascending abstraction, a distinct and valuable cognitive mode.
+
+16. Online Total Value Estimator. A running prediction of total analytical value while analysis is still ongoing.
+
+Used for continue-or-stop decisions during the analysis. The remaining estimate uses the current finding rate and empirical decay rate to project how much value remains. Convergence guarantee: as the analysis approaches completion, the estimate converges to the true total. This enables early stopping for efficient analysts who capture most value quickly, while allowing systematic processors to continue when their best findings come late.
+
+17. Objective Alignment. O_A equals the number of verified findings in the newly converged set divided by the total newly converged set.
+
+Sycophancy detector. When two models confer and agree on something they did not both find independently, is that agreement genuine or are they just converging for the sake of converging? O_A checks by looking at whether the converged findings are computationally verified. If they are, convergence is genuine. If they are not, it may be sycophantic.
+
+The composite sycophancy score S_sync combines O_A with the adoption delta. Near zero means genuine consensus on verified facts. High means models agreeing to agree on unverified claims.
+
+Limitation: O_A can only be computed for findings that SymPy can verify. For non-mathematical claims, the metric has low statistical power. This is documented, not hidden.
+
+18. Adoption Delta. Delta equals (findings adopted from the other model plus findings dropped after seeing the other model) divided by the symmetric difference of both models' blind finding sets.
+
+Measures how much a model changed its mind after seeing another model's work. Zero means complete independence. The model maintained all its own findings and adopted nothing. One means complete capitulation. The model adopted everything the other said and dropped everything it originally believed. Healthy engagement falls in between. A model that genuinely considers new evidence and selectively incorporates what survives scrutiny.
+
+19. Per-Finding Severity. Severity equals constraint weight times confidence times verification status.
+
+Multiplicative. HARD constraint violations get weight 1.0, SOFT gets 0.5. Verified findings get 1.0, unassessed 0.5, disproved 0.0. The key property: disproved findings ALWAYS receive zero severity, regardless of confidence. A model that is very confident about something wrong gets zero credit. This prevents hallucinated findings from inflating scores.
+
+20. Multi-Verifier Bayesian Severity. S_v equals 1 divided by (1 plus e to the power of negative L_total), where L_total is the weighted sum of log-likelihood ratios from each verifier.
+
+Different verifiers (SymPy, dimensional analysis, numerical spot-checking) catch different error types with different reliability. Each contributes evidence weighted by its empirical true positive rate and false positive rate. SymPy has a veto. Its negative weight magnitude (4.60) exceeds the sum of all other positive weights (3.62). If SymPy says a finding is wrong, that verdict overwhelms all other verifiers saying it is right. Mathematically grounded veto power.
+
+21. Capability Fingerprint. Four numbers per model per task. D is the decay rate (how fast it exhausts the problem). v bar is the mean verification score (fraction confirmed correct). A is total novel verified findings (raw quantity of real issues). C is coverage (A divided by estimated total real findings).
+
+No single number tells the whole story. A model can find many things quickly (high D, high A) but most of them wrong (low v bar). Another model finds very few things (low A) but every one is correct (high v bar). The fingerprint distinguishes these cases.
+
+
+LAYER SIX. EMERGENCE AND METACOGNITION.
+
+This is where the framework measures properties of the composite system that no individual component possesses.
+
+22. Metacognitive Feedback Protocol. After each round, each model receives its own performance measurements. Its decay classification (converging, flat, or diverging). Its verification rate. Its adoption delta. A structured protocol prescribes adjustments. Flat decay means shift from surface scanning to structural analysis. Low verification means increase use of formally verifiable claims. High adoption delta means reassert independent analysis before engaging with others' input.
+
+This maps to the MIDCA architecture from cognitive science. The first cycle is analysis (producing findings). The second cycle is monitoring analysis (computing decay, verification, and adoption from your own output). Whether models actually respond to this feedback is an empirical question. The protocol is structured so that response or lack of response is detectable in the data.
+
+23. Composite System Emergence. Y_composite equals composite finding count times composite mean abstraction depth. The emergence condition is that Y_composite exceeds the maximum individual Y for all individual agents.
+
+This exceeds aggregation. The union of individual outputs would give one number. Emergence exceeds even that because the confer protocol forces agents into analytical territory none explored alone. A finding from one agent provokes investigation by another, which surfaces a structural issue that a third formalises. The resulting insight exists because of the interaction and is not present in any individual agent's output.
+
+The Adoption Delta and Objective Alignment jointly distinguish emergence from groupthink. Low adoption delta with high objective alignment means genuine independence. Convergence on verified facts. High adoption delta with low objective alignment means sycophantic convergence. Models agreeing to agree on unverified claims. The instruments exist to tell the difference.
+
+24. Second-Order Cognitive System. A system is second-order cognitive if and only if it analyses problems, monitors its own analytical performance, adjusts its behaviour based on that monitoring, and the adjustment produces measurable improvement. The CDSFL composite system satisfies all four criteria.
+
+This is functional metacognition, not a claim about consciousness or sentience. The system monitors and adjusts its analysis. It does not experience doing so. The framework deliberately avoids claims about inner experience because such claims are not falsifiable with current tools.
+
+25. Substrate Agnosticism. None of the formulas in the cognitive measurement framework or the emergence formalisations reference the terms model, machine, or AI. Every quantity is computable from structured analytical findings across multiple rounds, regardless of source. A human expert reviewing a proof produces findings with measurable decay, abstraction, and independence. A team of human experts exhibits the same composite dynamics.
+
+Testable prediction: a team of human researchers working under the CDSFL protocol will exhibit measurable decay curves, ascending abstraction, and emergent findings beyond individual capability. If this holds, the framework is validated across substrates. If it does not, the framework describes machine cognition only, and the substrate-agnostic claim fails.
+
+
+HOW THE LAYERS CONNECT.
+
+Every layer reduces to the one below it under simplifying assumptions. G_n reduces to F_n when there are no human passes. F_n reduces to C(n) when there is one flaw class, one detection probability, and full independence. D(n) reduces to C(n) under the same assumptions. The cognitive measurement framework (layer five) measures the quality of the analysis that layers one through four quantify the coverage of. Layer six measures what happens when you put multiple instrumented agents together under structured falsification.
+
+The entire framework is falsifiable. Each component makes testable predictions. The paper lists every one. If any component fails to predict better than a simpler alternative, it should be discarded. The methodology does not depend on any specific equation. It depends on the principle that corroboration is earned through survived falsification.

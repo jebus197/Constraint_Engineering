@@ -1,0 +1,67 @@
+CE Gemini Review Round 2
+2026-03-18T21:36:00+00:00
+Model: Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
+Input: Pre-fix run_benchmark.py (908 lines) + current run_phase2.py (1005 lines)
+Context: Given full list of CC/CX known issues, asked to dig deeper
+
+Full unfiltered Gemini output below.
+
+---
+
+1. Critical Dependency and Library Desync
+
+The most immediate issue is that run_phase2.py is functionally unrunnable with the provided run_benchmark.py.
+Import Errors: run_phase2.py attempts to import run_adaptive, run_cross_model, run_placebo, estimate_call_cost, make_throttle, and PLACEBO_DIRECTIVES. None of these exist in the library file.
+Impact: Any attempt to start the Phase 2 benchmark results in an immediate ImportError. This suggests a significant version mismatch or truncated library implementation.
+
+2. Silent Cost Ledger Underestimation (Financial Risk)
+
+The cost calculation in run_phase2.py contains a logical flaw that systematically underestimates API spend.
+The Bug: It calculates cost using len(task["prompt"]) * actual_passes.
+The Reality: In iterative CDSFL passes (Pass 2+), the prompt sent to the API is not just the original task prompt. It includes the current_draft and prior_issues (see _build_pass_prompt). A complex draft can be 10 to 50 times larger than the original prompt.
+Impact: The CostLedger will report significantly lower spending than reality, potentially leading to massive, silent breaches of the USD cost cap and unexpected billing.
+
+3. Checkpoint Key Collision (Data Integrity)
+
+The Checkpoint.key method (f"{config_name}:{task_id}:{condition}") is vulnerable to collisions.
+The Bug: It uses a simple colon delimiter without escaping the inputs. If a task_id contains a colon (e.g., ft:001) or if a condition name overlaps with a task ID, different results will map to the same key.
+Impact: Completed task results can be overwritten by unrelated tasks, corrupting the benchmark data silently.
+
+4. Manifest Integrity Gap (The "Illusion of Rigor")
+
+Regarding the manifest disagreement (Round 1 item 7):
+Analysis: Including task_ids makes the script resume-hostile (you cannot add one task to a large batch without a full restart). However, because it only hashes IDs and not content, it fails to provide the scientific rigor it aims for. A user can change the prompt text of a task but keep the ID, and the script will "resume" using the old, stale result.
+Verdict: The current design is the "worst of both worlds." To fix this, the manifest should hash the entire task dictionary (ID + Prompt + Domain) to ensure content integrity, while providing an --append flag to allow adding new tasks without invalidating the manifest.
+
+5. Multi-Runner Race Condition (Data Loss)
+
+The "atomic" write mechanism is insufficient for multi-process environments.
+The Bug: There is no file locking on checkpoint.json. If two instances of run_phase2.py are started (e.g., across different terminal tabs for different models), they will load the same checkpoint, and then each write will overwrite the other's progress rather than merging it.
+Impact: Massive data loss in parallel execution scenarios.
+
+6. Case-Sensitive Extraction (Draft Pollution)
+
+Novel finding #3 from Round 1 is confirmed and deeper than suspected.
+Refinement: _extract_section is strictly case-sensitive (REVISED_ANSWER). LLMs frequently fluctuate case (e.g., Revised Answer:). When extraction fails due to case mismatch, the fallback current_draft = extracted_revision or response passes the entire raw response into the next prompt.
+The Feedback Loop: The next pass sees the previous pass's formatting (labels and all) as part of the "draft." The model then begins "critiquing" the labels themselves, leading to a total collapse of the adversarial loop into meta-discussion.
+
+7. Incomplete Preflight Validation
+
+The "Preflight Pilot" (run_preflight) is designed to catch infrastructure errors, but it has a major blind spot.
+The Bug: It calls run_adaptive with confer_after=99. This specifically bypasses the confer mechanism (the CLI assessors).
+Impact: If the claude or codex CLIs are missing, broken, or improperly authenticated, the pilot will pass, and the crash will only occur hours later during the main benchmark run when Pass 3 is reached.
+
+8. Phase 2 Control Loss (Hardcoded Variants)
+
+The run_benchmark.py script supports a --variant flag for domain-specific directives.
+The Bug: run_phase2.py ignores this entirely and hardcodes the variant to None when calling load_domain_directives.
+Impact: Users cannot run specific sub-variants (e.g., structural_building.txt vs electrical_building.txt) in Phase 2; the script will always default to the first file found alphabetically.
+
+9. Extended Mode Off-by-One (Verified)
+
+Finding #9 from Round 1 is precisely correct. When --passes 1 is used in extended mode, modular_count is 1, causing the iterative loop to run once, followed by the isolated adversarial pass.
+Impact: The system executes 2 passes when the user explicitly requested 1, and both records share the same pass_number in the JSON output.
+
+10. Gemini Safety Filter Crash (Verified)
+
+Finding #5 from Round 1 is confirmed. response.text in call_gemini is a "bomb" that explodes whenever the safety filter is triggered, as the SDK raises a ValueError rather than returning a status code.

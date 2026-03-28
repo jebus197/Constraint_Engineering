@@ -1,0 +1,70 @@
+CDSFL Mathematical Model. Three Model Review. What Happened and What It Means.
+27 March 2026.
+
+
+THE BIG PICTURE
+
+Earlier today, five AI models each independently reviewed the mathematical model that underpins CDSFL. They found real errors and proposed fixes. Eleven of those fixes were straightforward and got applied immediately. But eight items needed discussion because they involved design choices, not just corrections.
+
+So I ran a structured discussion between three models. Gemini, Codex, and a second Claude instance. Each received the same question paper and the same rules. Each worked independently and then I compared their answers, looking for agreement. Where two or three agreed, I applied the fix. Where they disagreed, I made a judgement call and explained why.
+
+This is the first time all three models operated under the CDSFL rules as their working framework, not just reviewing the maths as an external document. That distinction matters. In Stage 1 earlier today, the models reviewed the maths but did not use the framework to guide their review. Now they did both.
+
+
+WHAT THE EIGHT ITEMS WERE
+
+Five were design decisions that had been deferred because they needed a judgement call, not just a correction. Three were proposals for entirely new components.
+
+
+THE FIVE DESIGN DECISIONS. ALL RESOLVED.
+
+1. How to measure whether a model copies another model's work.
+
+The old measurement had a flaw. It mixed up two different things. How much of the other model's new work you adopted, and how much of your own original work you abandoned. These are different behaviours. Adopting good ideas from a colleague is healthy. Dropping all your own work after seeing theirs is not. But the old formula produced a single number that could not tell these apart. All three models agreed this was a real problem. The fix splits the single number into two separate measurements, one for adoption and one for dropping. You can still get a single number when you need one, but the two separate measurements are now the primary tool.
+
+2. The same letter was used for three different things.
+
+The letter D appeared in the mathematical model meaning three completely different quantities. This is like using the word bank to mean a river bank, a financial bank, and a blood bank in the same legal contract without ever specifying which one you mean. All three models agreed this had to be fixed. Two of the three quantities got new names. The documents that reference these quantities were updated to match.
+
+3. When to trust a small amount of evidence.
+
+One of the detection tools becomes unreliable when it has very little data to work with. Specifically, when only one verifiable data point exists, the tool can only say either zero percent or a hundred percent, with nothing in between. The question was whether to use a statistical smoothing technique to fill in the gap, or to simply refuse to report a number when the evidence is too thin. Two of three models said refusing to report is more honest than inventing precision from insufficient data. I agreed. The tool now includes a clear explanation of why it stays silent below the minimum evidence threshold.
+
+4. Detecting when models silence each other.
+
+The framework has a tool that detects when models agree too readily, which is called sycophancy. But there was a blind spot. If both models look at each other's work and then both abandon everything they originally found, converging on nothing at all, the sycophancy detector reports a clean bill of health. It scores zero, meaning no sycophancy detected. But mutual abandonment is arguably worse than sycophancy. It means both models lost confidence in their own work after seeing the other's, and neither produced anything to replace it. All three models confirmed this was a genuine error. They disagreed on the best fix. One said change the existing tool. Another said add a warning flag. The third said create a separate measurement specifically for this failure mode. I chose the separate measurement because sycophancy and mutual silencing are different problems that need different responses. The new measurement is now in the model.
+
+5. What it means when you run out of time before finishing.
+
+The formal rules said the review process ends when no more corrections are being found. But in practice, it also ends when you hit your budget, your time limit, or your allocated number of rounds. These are very different situations. Finishing because you found everything is not the same as finishing because you ran out of time. All three models agreed this distinction must be explicit. The rules now formally recognise both types of ending and specify that budget limited endings carry what is called falsification debt. Meaning the work is not fully checked and the remaining risk should be treated as higher than it would be after a genuinely complete review.
+
+
+THE THREE NEW PROPOSALS. TWO REJECTED, ONE ACCEPTED.
+
+6. Detecting paraphrasing. Rejected unanimously.
+
+The idea was to detect when a model restates another model's finding in different words to make it look like an original contribution. The concept is sound, but the proposed formula depends on a similarity function that has no fixed definition. Different implementations of that function would give different results. A formal mathematical model cannot contain a function that changes meaning depending on who implements it. All three models independently reached the same conclusion. The detection tool should be built into the testing software where implementation choices are expected, not into the formal mathematics where precision is required.
+
+7. Rules for deciding which findings to act on. Accepted with a fix.
+
+When multiple models produce findings, someone has to decide which ones to act on. The proposal formalised the decision criteria so they are transparent and auditable. All three models supported the concept. One of them caught an important error. The original rule would have silently rejected every finding that could not be computationally verified. That would exclude all design findings, all prose findings, and anything qualitative. The fix was a one character change in the formula, from strictly greater than to greater than or equal to, which allows unverifiable findings through while still rejecting findings that have been actively disproved. This is now in the model as a new section.
+
+8. Automatically sidelining weak performers. Rejected unanimously.
+
+The idea was to automatically reduce the influence of models that consistently produce low quality findings, and eventually remove them from the review entirely. All three models identified the same fundamental problem. Removing a model reduces the diversity of the review team. Less diversity means fewer perspectives, which means some types of errors become harder to find. Worse, the removal itself degrades the measurement tools for the remaining models, because those tools depend on comparisons between models. Fewer models means noisier comparisons, which can make the remaining models look worse than they are, which can trigger further removals. This is a cascading failure. The proposal was rejected until someone can prove the feedback loop is stable and will not spiral.
+
+
+WHAT THIS MEANS FOR THE PROJECT
+
+The mathematical model is now tighter than it was this morning. Seven changes were applied across two files, plus updates to two downstream documents. The model grew from 714 lines to 755 lines, and the core rules file grew from 277 to 290 lines.
+
+The three model discussion worked well as a protocol. Every model independently verified its claims rather than trusting the problem statement. Every model produced structured output in the requested format. Where they disagreed, the disagreements were substantive and informative, not noise.
+
+Two of the rejected proposals, the paraphrasing detection and the weak performer sidelining, are real problems that need solutions. They were rejected from the formal model, not from the project. They will be addressed in the testing software where implementation flexibility is appropriate.
+
+
+WHAT COMES NEXT
+
+The next step is Stage 2, the full distributed compute test. That test will exercise the mathematical model using the corrected testing infrastructure. The model it tests is now measurably better than the one that went into Stage 1 this morning.
+
+Everything is committed, pushed, and the recovery documents are updated.

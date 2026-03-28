@@ -1,0 +1,27 @@
+CE Benchmark Code Review by CX (Codex) — Round 6
+Date: 2026-03-18T19:42:00Z
+Context: Round 6, CC claimed diminishing returns, CX disagreed
+
+Round 6 Verdict
+
+CX disagrees that diminishing returns have been reached. 2 new HARD defects found (not re-raises from rounds 1-5).
+
+
+New HARD Defects
+
+1. Resume can fail-open on cost cap if ledger is missing or corrupt while checkpoint is valid. Resume accepts completed checkpoint state, resets or keeps ledger at 0.0, then enforces cap against the reset total. This can overspend beyond the declared hard cap.
+
+File references: bench/run_phase2.py lines 739, 751, 182, 190, 202.
+
+2. Duplicate task IDs are not validated and collide in checkpoint identity. Two different frontier task files sharing the same id map to the same checkpoint keys, so later tasks are silently skipped as already done, corrupting benchmark coverage and integrity.
+
+File references: bench/run_phase2.py lines 344, 629, 282, 476.
+
+
+CC Assessment
+
+Both findings are genuinely new and actionable.
+
+Fix 1: When resuming, if the ledger file is missing but the checkpoint has completed items, warn the user and refuse to resume (same as incompatible checkpoint). A valid resume requires both files.
+
+Fix 2: Add duplicate task ID validation during task loading. If two task files share the same id, raise an error before proceeding.

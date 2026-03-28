@@ -1,0 +1,92 @@
+CE Benchmark Code Review by CX (Codex)
+Date: 2026-03-18
+Files reviewed: bench/run_phase2.py, bench/run_benchmark.py
+Context: Full P-pass review of code, proposed changes, and architecture
+
+CX classified constraints as follows.
+
+HARD constraints: termination correctness, checkpoint integrity, cost-cap enforcement, provider and API compatibility, and resume isolation.
+
+SOFT constraints: model roster composition, confer prompt wording, and reporting granularity.
+
+
+P-Pass Findings (Code plus Adversarial)
+
+1. The resume flag is effectively a no-op. Stale state always loads because the checkpoint and ledger are always instantiated and loaded regardless of whether resume is specified. This means every run silently loads whatever checkpoint exists, even if it belongs to a different experiment configuration.
+
+2. Schema C ignores the config scope flag and can invoke models outside the selected configs. The dry-run confirms this. If you select a single config, Schema C still tries to run cross-model pairs involving configs you did not select.
+
+3. Environment key validation only checks the selected main configs, not Schema C pair configs. A missing Anthropic key can blow up the run later when Schema C tries to invoke Sonnet.
+
+4. The confer parser can produce false RESOLVED verdicts. CC's verdict parsing is naive. CC's subprocess return code is ignored entirely. CX failure defaults to AGREE. The combination of STOP plus AGREE immediately stops the run. This means if CC's CLI crashes and outputs garbage containing the word STOP, and CX times out (defaulting to AGREE), the run falsely resolves as consensus STOP.
+
+5. The call_codex function ignores subprocess return code and may return empty or invalid output as if successful.
+
+6. Quota handling is wrongly classified as a transient retry error. The word quota is in the retry set, so the script retries 10 times with exponential backoff on an insufficient_quota error that will never recover. Then the uncaught fatal error aborts the whole run.
+
+7. The crash-safe checkpoint and ledger are not actually crash-safe. They use non-atomic write_text calls. A crash mid-write produces a corrupted JSON file that prevents all future resumes. No load corruption handling exists.
+
+8. The cost cap is not hard in practice. It is only checked after expensive calls complete, and cost estimation uses max_passes instead of actual passes completed, so the estimate can be wrong.
+
+9. classify_issue_severity is not a termination gate in this version. Termination is confer-driven. Removing the classifier is optional cleanup, not a core fix.
+
+10. Edge case: if max_passes is less than 3, the run produces DEFERRED status with zero confer calls. No confer ever fires. This edge case was confirmed by simulation.
+
+
+Proposed Changes versus the Eight Failures
+
+Failure 1, max_tokens bug: Fixed already by the max_completion_tokens change for OpenAI.
+
+Failure 2, quota exhaustion handling: Not fixed by the proposal. The script still crashes without a graceful insufficient_quota branch.
+
+Failure 3, CX timeout from repo flag: Fixed by removing the -C flag from the confer command.
+
+Failure 4, Codex as benchmark provider too slow: Yes, removing from CORE_CONFIGS is correct.
+
+Failure 5, severity-counter termination: Already not the gate in this code. Removing the classifier is optional cleanup.
+
+Failure 6, old model versions: Fixed if configs are updated, but frontier model names should be verified as current.
+
+Failure 7, stale checkpoint contamination: Clearing once is not enough. The systemic bug remains until resume semantics are fixed so that incompatible checkpoints are rejected.
+
+Failure 8, no pilot validation: Not fixed. There is still no enforced preflight or pilot gate in the code.
+
+
+Architecture Verdict on Confer and Termination
+
+The core policy of consensus STOP else continue, with a hard cap then DEFERRED, is directionally sane.
+
+However, the current implementation is not sound enough for benchmark integrity. The problems are fail-open parsing and non-validated CLI outcomes. Specifically: CC return code is ignored, CC verdict parsing matches substrings naively, CX failure defaults to AGREE, and the STOP plus AGREE combination immediately terminates.
+
+CX recommends an explicit infrastructure-failure state, such as DEFERRED_INFRA or FAILED_INFRA, instead of defaulting malformed or failed assessor outputs into the consensus logic.
+
+
+What CC Is Still Not Seeing
+
+The repeated failure class is not wrong model choice. It is the absence of launch gates.
+
+CC is missing a run-contract layer: a manifest hash covering configs plus model IDs plus termination logic version plus directives hash, strict resume compatibility checking, and mandatory pilot unlock.
+
+Until those gates exist, CC will keep paying to rediscover setup defects.
+
+
+CX Definitive Remediation Order
+
+1. Make fresh runs the default. Require the resume flag explicitly and reject incompatible checkpoints by comparing manifest hashes.
+
+2. Add strict assessor parsing with return code checks. Malformed verdicts must become infrastructure failures, never STOP.
+
+3. Separate transient versus fatal API errors. Insufficient_quota, auth errors, and invalid_request should exit gracefully with saved state, not retry.
+
+4. Scope Schema C to selected configs or require an explicit flag. Pre-validate environment keys for all models that will actually run.
+
+5. Enforce preflight: one end-to-end pilot task must complete before any multi-task batch.
+
+6. Replace non-atomic checkpoint and ledger writes with atomic temp-write-plus-rename and file locking.
+
+Verification needed: confirm current production model IDs and endpoint parameter contracts before launch because provider and version drift can hard-fail runs.
+
+
+Note on CC Summary Bias
+
+CC summarised this review into five bullet points and omitted findings 1, 2, 3, 6, 7, 8, and 10 from the P-pass findings, omitted the false-RESOLVED vulnerability, omitted the run-contract recommendation, and omitted the remediation ordering. The summary retained the conclusions but removed the evidence and the specific file and line references that make the findings actionable.
