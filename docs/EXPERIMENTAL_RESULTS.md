@@ -552,4 +552,130 @@ All 7 confounds addressed. Key changes:
 
 ---
 
+### Experiment 8: Meta-Test Stage 1 — 5-Model Blind Pass on the Mathematical Model
+
+**Date:** 2026-03-27
+**Models:** CC2 (Opus 4.6), CX (Codex 5.3), Gemini 3.1 Pro, DeepSeek V3.2, ChatGPT 5.4
+**Manager:** CC1 (Opus 4.6, separate instance — orchestrator/merger only)
+**Scope:** The CDSFL mathematical model itself (`docs/MATHEMATICAL_APPENDIX.md`, 714 lines)
+**Purpose:** Apply the methodology's own distributed compute protocol to falsify the methodology's own mathematical formalisations.
+
+#### Design
+
+Five models independently reviewed the mathematical appendix. Each received the document as content to review (not as system prompt — this distinction became a critical post-mortem finding). Each produced structured JSON findings with severity, confidence, constraint classification, and verifiable claims. CC1 merged results, resolved disagreements, and applied fixes.
+
+#### Results
+
+| Model | Raw Findings | Genuine Fixes | Unique Finds | Contamination |
+|-------|-------------|---------------|--------------|---------------|
+| CC2 (Opus 4.6) | 16 | 10 | 8 | None |
+| Gemini 3.1 Pro | 6 | 6 | 0 | None |
+| DeepSeek V3.2 | 5 | 3 | 2 | None |
+| CX (Codex 5.3) | — | — | — | Δ ≈ 1.0 (read Gemini output) |
+| ChatGPT 5.4 | — | — | — | Format non-compliant |
+
+**11 genuine fixes applied** (commit `08ccab1`). Key corrections:
+
+1. §7.3/§7.4: dN/dt → dλ/dt + quantitative ascending abstraction guard
+2. §7.5: S_sync formula corrected from (1−δ̄)·(1−O_A) to Δ̄·(1−O_A)
+3. §6: p_H clip and λ_s bounded [0,1)
+4. §8.2: Emergence criterion tightened from Y_comp > max(Y_i) to Y_comp > Y_union + k·σ̂
+5. §7.8: Negative weights recalculated; indeterminate verifier exclusion rule added
+6. §7.2: H(x) reduction corrected ("W_e = W_c" → "W_e = 0")
+7. §1: R₁ generalised to Rₙ with domain boundary note
+
+**5 items deferred** to the 3-model confer (design decisions requiring deliberation, not correction).
+
+**Critical post-mortem finding:** No model operated UNDER CDSFL as system prompt. All received the mathematical model as document content to review. This means Stage 1 was structured peer review using native capability — not CDSFL-guided analysis. The distinction became the basis for the confer experiment that followed.
+
+#### Player Rankings
+
+1. CC2 — deepest, most unique findings, highest yield
+2. Gemini — 100% verification rate, zero false positives
+3. DeepSeek — some unique contributions despite known churn tendency
+4. CC1 — scoring/merge only, did not use stop predicate
+5. ChatGPT — sharp qualitative observations but format failure invalidated structured extraction
+6. CX — contaminated (read Gemini output before producing own findings, Δ ≈ 1.0)
+
+**Raw data:** `bench/logs/meta_test_final_report.md`, `bench/logs/meta_test_phase1_consolidated.md`
+**Commit:** `08ccab1` (fixes), `d4a40d4` (scoring data + final report)
+
+---
+
+### Experiment 9: 3-Model CDSFL-Guided Confer on Deferred Items
+
+**Date:** 2026-03-27
+**Models:** CX (Codex GPT-5.4), Gemini 3.1 Pro, CC2 (Opus 4.6)
+**Manager:** CC1 (Opus 4.6, separate instance)
+**System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected as system prompt for all three reviewing models
+**Scope:** 5 deferred design decisions + 3 proposed new additions from Stage 1
+**Purpose:** Resolve open items with all models operating UNDER the CDSFL framework, not merely reviewing it.
+
+#### Design
+
+This was the first time all reviewing models received `cdsfl_core_formal.md` as their system prompt. The distinction from Stage 1 is critical: the framework actively shaped how they analysed, structured responses, and tested their own conclusions. CC1 (the manager) did NOT receive the system prompt — CC1 operated under its own related but weaker analytical framework.
+
+Each model received:
+- The 26-item fixes table (11 applied + 5 deferred + 3 proposed + 7 process)
+- Current MATHEMATICAL_APPENDIX.md (714 lines)
+- Full formulas for proposed additions (A-N1, A-N2, A-N3)
+- Fix options for deferred items (A-D1 through A-D5)
+
+Each produced structured output per item: VERDICT, EVIDENCE, PROPOSED_CHANGE, CONSTRAINT_CLASS, CONFIDENCE, INDEPENDENT_VERIFICATION, TRIGGERED_BY, STRONGEST_OBJECTION, and RESPONSE.
+
+#### Results: Deferred Design Decisions (5/5 resolved)
+
+| Item | Issue | Resolution | Agreement |
+|------|-------|------------|-----------|
+| A-D1 | Δ confound: symmetric difference masks adoption vs drop | Split into Δ_adopt and Δ_drop with derived scalar Δ_* | 3/3 |
+| A-D2 | D symbol triple collision (D(n), D(x), bare D) | D(x) → ρ_info(x); fingerprint D → D_decay | 3/3 on need; CC1 chose variant |
+| A-D3 | O_A domain guard step function at n_v ≥ 2 | Keep threshold; add explicit rationale sentence | 3/3 |
+| A-D4 | Mutual suppression: F_conv = ∅ masks destructive convergence | New M_suppress metric; S_sync = ⊥ when F_conv = ∅ | 3/3 on problem; CC1 chose variant |
+| A-D5 | Dual termination: convergence vs budget not distinguished | Formalise as distinct states with falsification_debt | 3/3 |
+
+#### Results: Proposed New Additions (1 accepted, 2 rejected)
+
+| Item | Proposal | Verdict | Reason |
+|------|----------|---------|--------|
+| A-N1 | Anti-parroting mechanism (novelty_rate, w_parrot) | REJECTED (3/3) | Mathematically wrong as yield estimator; semantic_cluster too implementation-dependent for canonical maths |
+| A-N2 | Manager selection function | ACCEPTED as §7.11 (modified) | S_v ≥ 0.5 fix prevents silent rejection of unverifiable findings; escalation path added |
+| A-N3 | Contribution discount/benching | REJECTED (3/3) | Multiplicative form too brittle; single bad pairing collapses score; hard benching creates diversity feedback loop |
+
+#### Key Changes Applied
+
+- §7.6: Asymmetric Δ rates (Δ_adopt, Δ_drop) replacing confounded scalar
+- §7.2: D(x) renamed to ρ_info(x); H(x) formula updated correspondingly
+- §7.9: Fingerprint D renamed to D_decay; notation summary updated
+- §7.5: O_A threshold rationale added; M_suppress metric for mutual suppression
+- §1: R_n made termination-aware with π_k inflation formula for budget-exhausted runs
+- New §7.11: Manager Selection Function with S_v ≥ 0.5 gate and escalation path
+- Core formal file §3: Dual termination conditions (converged vs budget_exhausted), falsification_debt
+
+Mathematical appendix grew from 714 → 755 lines. Core formal file grew from 277 → 290 lines.
+
+#### Weak Player Compensation (Emergent Observation)
+
+Three specific errors would have been committed by CC1 (the non-CDSFL manager) without the framework-guided output from the three reviewing models:
+
+1. **Silent rejection of unverifiable findings.** The S_v > 0.5 threshold in the proposed §7.11 would have excluded every design finding, every prose finding, and everything qualitative. One reviewing model identified this. The fix was a one-character change (> to ≥) that CC1 did not independently conceive.
+
+2. **Cross-item synthesis.** CC1 did not conceive of combining the mutual suppression fix (A-D4) with components from the asymmetric Δ fix (A-D1) into an integrated solution. One reviewing model proposed M_suppress using Δ_drop from the other fix — synthesis across items that was not in the manager's thinking.
+
+3. **Statistical resolution.** CC1 was uncertain about the O_A threshold question (A-D3). One reviewing model resolved it with a specific mathematical argument about sample-size sufficiency that CC1 had not performed and would not have performed independently.
+
+In each case, the framework-guided model produced output in a structured format that separated verdict from evidence, evidence from proposed change, and proposed change from self-criticism. This made it possible for the non-framework manager to evaluate reasoning it could not have generated.
+
+This observation suggests CDSFL may function as a **communication protocol** as much as an analytical protocol: the structured output format allows a decision-maker who cannot use the framework directly to benefit from it indirectly by evaluating the structured output of agents who can. The degree of compensation depends on the evaluator's ability to read structured analytical arguments. See [PAPER.md Part XIV](#) for formal discussion.
+
+**Methodological caveats:**
+- Sample size is one (one manager, one confer session).
+- The "weak player" was not genuinely weak — CC1 is a frontier AI model with strong analytical capabilities; it was weaker only relative to this specific task because the framework was not injected into its reasoning chain.
+- A genuinely weak player (e.g., a non-technical decision-maker) has not been tested.
+- The observation is consistent with the hypothesis but does not prove it. Whether it generalises to human weak players is a falsifiable prediction that has not yet been tested.
+
+**Raw data:** `bench/logs/confer_cx_output.md`, `bench/logs/confer_gemini_output.md`, `bench/logs/confer_cc2_output.md`
+**Commit:** `77a4a7f` (fixes), `68fe963` (recovery docs)
+
+---
+
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*

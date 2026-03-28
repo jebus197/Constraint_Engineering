@@ -100,4 +100,42 @@ None of this makes the method established. Its own documents concede that the gr
 
 ---
 
+## The Method Applied to Itself (27 March 2026)
+
+There is a natural test for any methodology that claims to improve reasoning: apply it to its own formalisations and see whether it finds anything.
+
+On 27 March 2026, the CDSFL mathematical model — the formal apparatus that defines the framework's measurement instruments — was subjected to its own distributed compute protocol. Five AI models independently reviewed the mathematical appendix. They found eleven genuine errors, including formula mistakes, notation collisions, and missing mathematical properties. These were not cosmetic issues. One error meant that a measurement tool could not distinguish healthy collaboration from dangerous groupthink. Another meant that the methodology's termination condition conflated "finished because we checked everything" with "finished because we ran out of time" — semantically different states that require different downstream treatment.
+
+After those corrections, five items remained that required not correction but judgement: design decisions where more than one reasonable answer existed. Three models were then given the full CDSFL core directives as their operating rules — not merely reviewing the mathematics, but reasoning under the framework while improving the framework. A fourth model acted as manager, comparing their structured output, choosing between options when they disagreed, and applying the fixes.
+
+The results were technically productive. Seven changes were applied across two files. Two proposed additions were unanimously rejected — one because its formula was provably wrong as a yield estimator, the other because removing a weak contributor from a review team would reduce the diversity the rest of the framework is designed to measure, and the resulting feedback loop could cascade. A third addition was accepted with modifications.
+
+But the most consequential finding was not mathematical. It was a property of the structured output format itself.
+
+### The Communication Protocol Observation
+
+The manager model did not operate under the CDSFL framework. It used its own analytical capabilities, which are substantial — this is a frontier AI model — but it did not have the framework shaping its reasoning chain. The three reviewing models did. And three specific errors would have been committed by the manager without their framework-guided output.
+
+The first was a threshold rule that would have silently discarded every finding that could not be computationally verified — design findings, prose findings, everything qualitative. One reviewing model caught this. The fix was a one-character change. The manager did not see it.
+
+The second was a synthesis across two separate items — combining components from one fix into another to create an integrated solution. That combination was not in the manager's thinking.
+
+The third was a statistical question the manager was uncertain about. One reviewing model resolved it with a specific mathematical argument the manager would not have performed independently.
+
+In each case, what made the manager's evaluation possible was not the analysis itself — which the manager could not have generated — but the structured format in which the analysis was delivered. The format separated the verdict from the evidence. It separated the evidence from the proposed change. It separated the proposed change from the model's own self-criticism — the strongest objection it could find to its own conclusion, and its response to that objection. A reader who cannot generate the analysis can still evaluate it, provided they can follow a structured argument.
+
+This suggests that CDSFL may function as a communication protocol as much as an analytical protocol. When agents operate under the framework, they produce output that is not only better analysis but more interpretable analysis. The structured format is the compensation mechanism. It allows a decision-maker who cannot use the framework directly to benefit from it indirectly, by evaluating the structured output of agents who can.
+
+### What This Means for Mixed Teams
+
+The implication for mixed teams of humans and AI models is direct. A human who cannot internalise the full CDSFL schema — and most humans will not be able to — can still benefit from it if the AI models in their team operate under it and produce structured output. The human retains decision authority. The framework ensures that the analysis presented to them is self-tested, clearly structured, and transparent about its own limitations.
+
+The degree of compensation depends on the human's ability to read structured analytical arguments. A domain expert would get the most benefit. A competent generalist could use the agreement and disagreement patterns as a decision guide — when all three models agree, confidence is higher; when they disagree substantively, the disagreement itself is informative. Even a complete novice would benefit from the self-criticism requirement, which ensures that the strongest objection to each conclusion is always visible.
+
+The compensation fails when the evaluator cannot read structured arguments at all. It fails when the structured output is so dense that evaluating it requires the same expertise as generating it. It fails when all players in the chain are weak — if no one operates under the framework, there is no framework-guided output to evaluate. And it fails for real-time decisions that cannot wait for a structured review cycle.
+
+The observation is consistent with the hypothesis but does not prove it. The sample size is one. The "weak player" was not genuinely weak. Whether it generalises to human decision-makers is a falsifiable prediction that has not yet been tested. But the structural amenability of the output to non-specialist evaluation is a real, observable property — not a speculation. If confirmed, it would mean the framework is as much about making reasoning transparent as it is about making reasoning rigorous. That distinction — between rigour and transparency — deserves investigation in its own right.
+
+---
+
 *For the technical specification, see the [README](../README.md). For the formal methodology, see the [white paper](../PAPER.md). For the design reasoning behind key decisions, see the [Founder's Notes](FOUNDERS_NOTES.md). For experimental data, see the [Experimental Results](EXPERIMENTAL_RESULTS.md). For the empirical testbench, see [bench/](../bench/).*

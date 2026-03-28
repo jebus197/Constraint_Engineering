@@ -35,9 +35,14 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   M_suppress, dual termination in core_formal.md. Commit `77a4a7f`.
   Critical post-mortem finding: no model operated UNDER CDSFL — all received the
   model as document content, not as system prompt. Full report: `bench/logs/meta_test_final_report.md`.
-- **Next: Fix confer (pending).** CX + Gemini + CC2 to resolve 5 deferred items
-  and 3 proposed new additions (anti-parroting, manager selection, discount function),
-  all operating under CDSFL as system prompt. Plan: `~/.claude/plans/agile-wondering-hejlsberg.md`.
+- **Documentation sweep COMPLETE (27 March 2026):** All findings from meta-test
+  and confer written up across EXPERIMENTAL_RESULTS.md (Experiments 8-9),
+  FOUNDERS_NOTES.md, PAPER.md (Part XIV + Part X), EXTENDED_RATIONALE.md,
+  and README.md. Weak player compensation observation documented as falsifiable
+  prediction across all relevant docs.
+- **Next: Persistence/cryptographic layer build** using full CDSFL/distributed
+  compute model (6 players: CC1 manager + CC2/CX/Gemini/DeepSeek/ChatGPT).
+  Then Stage 2 full distributed compute test.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

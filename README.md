@@ -142,6 +142,14 @@ During development, different model families identified defects that prior monoc
 
 That moves the focus away from "which single model is best?" and toward "what procedure can a model survive, and what complementary architectures improve coverage?"
 
+## The method applied to itself
+
+On 27 March 2026, the mathematical model that underpins CDSFL was subjected to its own distributed compute protocol. Five frontier AI models independently reviewed the formalisations. They found eleven genuine errors — formula mistakes, notation collisions, missing reduction properties — which were corrected. Five design decisions were then resolved through a structured confer between three models operating under the full CDSFL core directives as their system prompt. Two proposed additions were unanimously rejected on mathematical grounds: one was a provably incorrect yield estimator; the other would have created a cascading feedback loop that degraded the diversity the framework is designed to measure. A third was accepted with modifications.
+
+The most unexpected finding was not mathematical. The manager model — which coordinated the review but did not operate under the CDSFL framework — was able to evaluate reasoning it could not have generated, because the framework-guided models produced output in a structured format that separated verdict from evidence, evidence from proposed change, and proposed change from self-criticism. This suggests the framework may function as a **communication protocol** as much as an analytical protocol: it makes high-quality analysis accessible to decision-makers who cannot perform the analysis themselves, provided they can follow a structured argument. Whether this generalises to human decision-makers is a [falsifiable prediction](docs/EXPERIMENTAL_RESULTS.md) that has not yet been tested.
+
+Full experimental data, including methodology, raw results, and caveats, is recorded in [`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md). The meta-test is documented in the [white paper](PAPER.md) (Part XIV) and discussed in the [founder's notes](docs/FOUNDERS_NOTES.md). The broader implications — for mixed human-AI teams, for non-specialist decision-makers, and for the framework's role as a transparency mechanism — are explored in the [extended rationale](docs/EXTENDED_RATIONALE.md).
+
 ## What this repository contains
 
 - **`README.md`** — operational front door

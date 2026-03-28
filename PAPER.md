@@ -583,6 +583,8 @@ The implementation of this protocol is provided in [`bench/`](bench/).
 
 The protocol is published so that anyone can execute it, reproduce or refute the observation, and extend the methodology. If the advantage does not replicate, that is a result, not a failure.
 
+**Validation progress (27 March 2026):** The methodology has been applied to its own mathematical formalisations through two stages. In Stage 1, five frontier models independently reviewed the Mathematical Appendix (714 lines) and identified 11 genuine errors that were corrected — including formula errors, notation collisions, and missing reduction properties. In Stage 2, three models operating under the CDSFL core directives as system prompt resolved five deferred design decisions and added a new manager selection function. Two of three proposed new additions were rejected as premature — one unanimously on mathematical grounds (the proposed weighting was a provably incorrect yield estimator), the other because it would create a cascading diversity-reduction feedback loop. See [Experimental Results](docs/EXPERIMENTAL_RESULTS.md) for full data. The meta-test also produced an unexpected observation about weak player compensation — see Part XIV.
+
 **Domain expert configurations:** The methodology is designed to be applied through portable, reusable cognitive configurations — system-level prompts with three layers: universal methodology, domain-specific expert directives, and user personalisation. Example configurations and a template are provided in [`configs/`](configs/). These are the first artefacts envisaged as tradeable under the CDSFL schema: the methodology layer is freely shared, the domain layer encodes transferable expertise, and the personalisation layer is user-specific. Configurations are ultimately governable via the Constraint Editor (CE), a hierarchical policy engine with monotonicity guarantees (see [`bench/cdsfl_registry/`](bench/cdsfl_registry/)).
 
 ### Extended P-Pass
@@ -1115,6 +1117,32 @@ The emergence of measurable second-order cognitive properties from structured fa
 - **Scientific research:** The same protocol that produced emergent findings in the bench test is domain-agnostic. Applied to open research problems with appropriate domain configurations, it could surface insights that no individual researcher would find alone.
 - **Quality assurance:** Decay curves detect when review has become perfunctory. Adoption deltas detect rubber-stamping. Verification layers catch errors reviewers miss.
 - **Collective intelligence measurement:** The capability fingerprint provides the first mathematically rigorous way to measure whether a group is genuinely more capable than its members — computable from output data alone.
+
+### Weak Player Compensation
+
+An unexpected observation emerged during the 3-model confer on the mathematical model (27 March 2026). The three reviewing models operated under `cdsfl_core_formal.md` as their system prompt — the framework actively shaped their analysis. The manager model (CC1) did not receive this system prompt. CC1 operated under a related but weaker analytical framework. The question is whether framework-guided output from the reviewing models compensated for the manager's weaker analytical position.
+
+Three specific errors would have been committed by the manager without the framework-guided models. First, a threshold rule that would have silently rejected all unverifiable findings — a one-character fix the manager did not independently identify. Second, a cross-item synthesis combining components from two separate fixes into one integrated solution — a combination not in the manager's thinking. Third, a statistical question the manager was uncertain about, resolved by one reviewing model with a specific mathematical argument the manager would not have performed.
+
+In each case, the structured output format — which separates verdict from evidence, evidence from proposed change, and proposed change from self-criticism — made it possible for the non-framework manager to evaluate reasoning it could not have generated. The structured format is the compensation mechanism.
+
+**The communication protocol hypothesis:** CDSFL may function as a communication protocol as much as an analytical protocol. When models operate under the framework, they produce output that is not just better analysis but more interpretable analysis. The structured format allows a player who cannot use the framework directly to benefit from it indirectly, by evaluating the structured output of players who can.
+
+This has implications for mixed teams of humans and AI models. A human who cannot internalise the full CDSFL schema can still benefit from it if the AI models in the team operate under it and produce structured output. The human retains decision authority. The framework ensures that the analysis presented to them is self-tested, clearly structured, and transparent about its own limitations.
+
+**Where compensation breaks down:**
+- When the evaluator cannot read structured arguments at all (minimum literacy floor)
+- When the output is so dense that evaluation requires the same expertise as generation
+- When all players in the chain are weak (no framework-guided output to evaluate)
+- For real-time decisions that cannot wait for a structured review cycle
+
+**Caveats:** The sample size is one. The "weak player" was not genuinely weak — CC1 is a frontier AI model. Whether the observation generalises to human weak players is a falsifiable prediction that has not yet been tested. The observation is consistent with the hypothesis but does not prove it.
+
+**Testable predictions:**
+1. A human expert making decisions on CDSFL-structured AI output produces better outcomes than the same expert on unstructured AI output.
+2. There is a minimum domain expertise threshold below which the structured format provides no benefit.
+3. The compensation effect can be decomposed: is it the framework improving the analysis, the framework improving the output format, or both? Three conditions can separate this: framework + structured output, no framework + same output format, framework + free-form output.
+4. [SPECULATIVE] The compensation may stack across levels: a junior analyst evaluating structured output and producing a structured summary that a non-technical manager then evaluates. This would extend the compensation chain beyond two levels.
 
 ### Falsifiable Claims
 
