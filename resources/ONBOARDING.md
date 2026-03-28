@@ -36,8 +36,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Output correct. Distributed compute protocol not followed — founder chose
   efficient build over clean test. Documented as Experiment 10 (process observation).
   Protocol document written: `bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`.
-- **Next:** Re-run persistence layer under correct protocol. Then dynamic
-  management/load-balancing formalisation. Then Stage 2 full distributed compute test.
+- **Experiment 11 Phases 1–3 COMPLETE (28 March 2026):** Five-model distributed
+  compute test formalising dynamic management and load-balancing (6 areas). CC1
+  collator, CC2 player manager. Phase 1: CC2 architecture + self-review (16
+  revisions integrated into converged_plan.md). Phase 2: blind round — CC2,
+  ChatGPT, Gemini, DeepSeek succeeded (4/5); Codex timed out (600s CLI limit).
+  Phase 3: CC2 synthesis declared structural convergence in 1 round. Two SOFT
+  design choices flagged for founder review. Logs: `bench/logs/experiment_11/`.
+- **Next:** Phase 6 (CC2 implements converged design as callable Python module).
+  Then UX build on the orchestration module.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

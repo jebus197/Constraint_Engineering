@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 28 March 2026 19:30 UTC
+Last updated: 28 March 2026 20:56 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -20,29 +20,29 @@ This is enough to resume most tasks.
 
 ## Current Pending Work (28 March 2026)
 
-Persistence layer BUILT (bench/verification_chain.py, 790 lines, 97 tests).
-Distributed compute protocol was not followed — founder chose to prioritise
-efficient build over clean test. Specialised subtasks instead of blind rounds.
-Output correct, process not citable as clean distributed compute test but
-generated an observation about CDSFL boundaries in mixed-ability environments.
-Documented as Experiment 10. Protocol document: bench/DISTRIBUTED_COMPUTE_PROTOCOL.md.
+Experiment 11 Phases 1–3 COMPLETE (28 March 2026). Five-model distributed
+compute test formalising dynamic management and load-balancing layer (6 areas:
+Role Assignment, Load Balancing, Round Progression, Convergence Detection,
+Diminishing Returns, Failure Handling).
 
-Experiment 11 execution plan COMPLETE and committed (bench/EXECUTION_PLAN_EXPERIMENT_11.md).
-Five-model distributed compute test: CC1 as collator, CC2 as player manager,
-Codex/ChatGPT/Gemini/DeepSeek as participants. Circuit breaker, preflight
-verification, 17 lessons applied, UX readiness design constraint. Awaiting
-founder approval to execute.
+Phase 1: CC2 produced architecture plan + self-review (8 material + 8 minor
+revisions). Integrated into bench/logs/experiment_11/converged_plan.md.
 
-UX vision sketch saved to ~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt.
-Three surfaces: Orchestration Console, Registry/Group Policy Editor, Domain
-Configuration Manager. Registry/policy engine exists (bench/cdsfl_registry/,
-4-layer hierarchy, monotonicity enforcement). Task layer and runtime layer
-separation still needed. UX build follows Experiment 11.
+Phase 2 (blind round): CC2 (60,883 chars, 387s), ChatGPT (36,931 chars, 165s),
+Gemini (17,741 chars, 112s), DeepSeek (16,553 chars, 114s). All 4/4 structured
+fields. Codex timed out at 600s (CLI delivery limit on 21,681-char prompt).
+4/5 models succeeded — 4 architecturally diverse training pipelines represented.
 
-Next: (1) Founder approves Experiment 11 plan. (2) Build OpenRouter calling
-function and task brief. (3) Execute Experiment 11. (4) Build UX on the
-resulting orchestration module. The persistence layer re-run is subsumed —
-the five-model test is the stronger test.
+Phase 3 (synthesis): CC2 synthesised all 4 blind outputs (47,170 chars, 335s).
+Declared structural convergence in 1 round. Two SOFT design choices flagged
+for founder review. Phases 4-5 skipped per CC2 stop condition.
+
+Logs: bench/logs/experiment_11/ (21 files: preflight, phase1, phase2, phase3).
+
+Next: (1) Phase 6 — CC2 implements converged design as callable Python module.
+(2) CC1 runs tests on implementation. (3) Commit with attribution. (4) UX
+build on orchestration module (three surfaces: Orchestration Console, Registry
+Editor, Domain Config Manager).
 
 ## Standard Recovery (5 minutes)
 
