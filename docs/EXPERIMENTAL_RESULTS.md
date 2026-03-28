@@ -501,7 +501,7 @@ This observation has direct implications for the CDSFL framework: the G_n formul
    - F-test: Codex decay vs flat, F=29.87, p=0.012 (indicative at n=5, requires bench test confirmation).
 
 **Design revision prompted by these results:**
-- CC (Opus 4.6) added as reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
+- Claude (Opus 4.6) added as reviewer in blind and confer rounds (was orchestrator/arbiter only — insufficient for biodiversity testing with only one genuine analyst)
 - DeepSeek V3.2 and ChatGPT 5.4 added subsequently, bringing topology to 5 reviewers from 4 vendors
 - Five-way confer topology: each reviewer sees the other four's findings
 - (D_decay, v̄, A, C) capability fingerprint framework adopted for computational assessment
@@ -521,7 +521,7 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 3. Context capping drops verifiable_claim data from SymPy pipeline.
 4. Parser fallback creates phantom HARD findings (default was HARD, not SOFT).
 5. Convergence uses raw claim hashing, not structural canonical hash — reworded duplicates counted as novel.
-6. Directive asymmetry: CC and CX carry persistent directives (CLAUDE.md, AGENTS.md) into all conditions including Control. Other models have no equivalent. Not a level playing field.
+6. Directive asymmetry: Claude and Codex carry persistent directives (CLAUDE.md, AGENTS.md) into all conditions including Control. Other models have no equivalent. Not a level playing field.
 7. ChatGPT accessed via kardolus CLI with hidden mandatory system prompt that cannot be stripped.
 
 **Decision:** Run will complete and be published as documented baseline. Not discarded. The confounds are the evidence for why the corrected run is necessary.
@@ -535,13 +535,13 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 **Corrections from Phase 2b:**
 All 7 confounds addressed. Key changes:
 - All models run bare (no default system prompts) — level playing field.
-- CC: `--bare` flag strips CLAUDE.md. CDSFL conditions get `--system-prompt-file methodology.md`.
-- CX: Methodology written to AGENTS.md + config.toml persistent_instructions per condition.
+- Claude: `--bare` flag strips CLAUDE.md. CDSFL conditions get `--system-prompt-file methodology.md`.
+- Codex: Methodology written to AGENTS.md + config.toml persistent_instructions per condition.
 - DeepSeek: System message in API (no message = bare, methodology = CDSFL).
 - Gemini: system_instruction in SDK config (no instruction = bare, methodology = CDSFL).
 - ChatGPT: Accessed via OpenRouter API (openrouter.ai) instead of kardolus CLI. Full system prompt control. No hidden preamble.
 - Iterative HIL applied to both HIL and CDSFL+HIL conditions.
-- All extended P-pass fixes applied (5 adversarial findings + 2 residuals, 11 CC-CX cycles).
+- All extended P-pass fixes applied (5 adversarial findings + 2 residuals, 11 Claude-Codex cycles).
 - SymPy verification fires on all conditions (measurement), feedback to models on CDSFL only (methodology).
 - Default constraint_class changed to SOFT (models must explicitly state HARD).
 - Structural canonical hashing for convergence dedup.
@@ -555,7 +555,7 @@ All 7 confounds addressed. Key changes:
 ### Experiment 8: Meta-Test Stage 1 — 5-Model Blind Pass on the Mathematical Model
 
 **Date:** 2026-03-27
-**Models:** CC2 (Opus 4.6), CX (Codex 5.3), Gemini 3.1 Pro, DeepSeek V3.2, ChatGPT 5.4
+**Models:** CC2 (Claude Opus 4.6), Codex 5.3, Gemini 3.1 Pro, DeepSeek V3.2, ChatGPT 5.4
 **Manager:** CC1 (Opus 4.6, separate instance — orchestrator/merger only)
 **Scope:** The CDSFL mathematical model itself (`docs/MATHEMATICAL_APPENDIX.md`, 714 lines)
 **Purpose:** Apply the methodology's own distributed compute protocol to falsify the methodology's own mathematical formalisations.
@@ -571,7 +571,7 @@ Five models independently reviewed the mathematical appendix. Each received the 
 | CC2 (Opus 4.6) | 16 | 10 | 8 | None |
 | Gemini 3.1 Pro | 6 | 6 | 0 | None |
 | DeepSeek V3.2 | 5 | 3 | 2 | None |
-| CX (Codex 5.3) | — | — | — | Δ ≈ 1.0 (read Gemini output) |
+| Codex 5.3 | — | — | — | Δ ≈ 1.0 (read Gemini output) |
 | ChatGPT 5.4 | — | — | — | Format non-compliant |
 
 **11 genuine fixes applied** (commit `08ccab1`). Key corrections:
@@ -595,7 +595,7 @@ Five models independently reviewed the mathematical appendix. Each received the 
 3. DeepSeek — some unique contributions despite known churn tendency
 4. CC1 — scoring/merge only, did not use stop predicate
 5. ChatGPT — sharp qualitative observations but format failure invalidated structured extraction
-6. CX — contaminated (read Gemini output before producing own findings, Δ ≈ 1.0)
+6. Codex — contaminated (read Gemini output before producing own findings, Δ ≈ 1.0)
 
 **Raw data:** `bench/logs/meta_test_final_report.md`, `bench/logs/meta_test_phase1_consolidated.md`
 **Commit:** `08ccab1` (fixes), `d4a40d4` (scoring data + final report)
@@ -605,7 +605,7 @@ Five models independently reviewed the mathematical appendix. Each received the 
 ### Experiment 9: 3-Model CDSFL-Guided Confer on Deferred Items
 
 **Date:** 2026-03-27
-**Models:** CX (Codex GPT-5.4), Gemini 3.1 Pro, CC2 (Opus 4.6)
+**Models:** Codex (GPT-5.4), Gemini 3.1 Pro, CC2 (Claude Opus 4.6)
 **Manager:** CC1 (Opus 4.6, separate instance)
 **System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected as system prompt for all three reviewing models
 **Scope:** 5 deferred design decisions + 3 proposed new additions from Stage 1
@@ -683,7 +683,7 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 ### Experiment 10: Persistence Layer Build — Partial Process Confound
 
 **Date:** 2026-03-28
-**Models:** CC2 (Opus 4.6), CX (GPT-5.4, xhigh reasoning), Gemini 3.1 Pro
+**Models:** CC2 (Claude Opus 4.6), Codex (GPT-5.4, xhigh reasoning), Gemini 3.1 Pro
 **Manager:** CC1 (Opus 4.6, separate instance)
 **System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected for all three reviewing models
 **Scope:** Build the verification chain module described in PAPER.md Part V (tamper-evident persistence for reasoning artifacts)
@@ -691,31 +691,31 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 
 #### Design
 
-Four-model structure: CC1 as manager (no CDSFL system prompt), CX as team captain, CC2 as deep analyst, Gemini as mathematical/cryptographic verifier. All three reviewing models received the corrected CDSFL core formal as system prompt.
+Four-model structure: CC1 (Claude Opus 4.6) as manager (no CDSFL system prompt), Codex as team captain, CC2 (Claude Opus 4.6) as deep analyst, Gemini as mathematical/cryptographic verifier. All three reviewing models received the corrected CDSFL core formal as system prompt.
 
-Phase 1: CX proposed architecture; CC1↔CX confered until convergence (1 round, zero disagreements). Phase 2: three-model parallel execution. Phase 3: CC1 merged findings and applied fixes.
+Phase 1: Codex proposed architecture; CC1↔Codex confered until convergence (1 round, zero disagreements). Phase 2: three-model parallel execution. Phase 3: CC1 merged findings and applied fixes.
 
 #### What Was Correct
 
 - All three reviewing models received `cdsfl_core_formal.md` as system prompt and operated under the framework.
-- CX architecture proposal and CC1↔CX confer followed the protocol correctly and reached genuine convergence.
-- All three models produced independently useful output: CC2 wrote 704 lines of implementation + 850 lines of tests; Gemini identified 6 cryptographic findings; CX identified 7 code review findings (3 BLOCKING).
+- Codex architecture proposal and CC1↔Codex confer followed the protocol correctly and reached genuine convergence.
+- All three models produced independently useful output: CC2 wrote 704 lines of implementation + 850 lines of tests; Gemini identified 6 cryptographic findings; Codex identified 7 code review findings (3 BLOCKING).
 - Every finding from every model was incorporated into the final implementation.
 - Final state: 790 lines, 97 tests passing, RFC 9162 Merkle trees, hash chains, optional Ed25519 signing, CLI interface.
 
 #### What Was Wrong (Process Confound)
 
-1. **No blind round.** The distributed compute protocol requires all models to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, CX reviewed code. This means there is no inter-model agreement data — each model did a different job, so their findings cannot be compared.
+1. **No blind round.** The distributed compute protocol requires all models to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, Codex reviewed code. This means there is no inter-model agreement data — each model did a different job, so their findings cannot be compared.
 
 2. **No second round.** The protocol requires CC1 to synthesise blind round findings, pass them back to all models, and iterate. CC1 collected one round of outputs, applied fixes, and stopped.
 
-3. **No fresh CX instance.** CX carried context from the architecture confer into the code review, contaminating its independence.
+3. **No fresh Codex instance.** Codex carried context from the architecture confer into the code review, contaminating its independence.
 
 4. **No formal convergence calculation.** CC1 declared completion because tests passed and findings were fixed. That is engineering judgement, not convergence under the formal model.
 
 #### Output Assessment
 
-The implementation is functionally correct. Three independent reviewers under CDSFL examined different aspects of it, and all findings were resolved. The code is cryptographically sound (Gemini verification), specification-compliant (CX review), and comprehensively tested (CC2 tests + additional coverage from CC1).
+The implementation is functionally correct. Three independent reviewers under CDSFL examined different aspects of it, and all findings were resolved. The code is cryptographically sound (Gemini verification), specification-compliant (Codex review), and comprehensively tested (CC2 tests + additional coverage from CC1).
 
 However, the process cannot be cited as evidence for or against the distributed compute protocol, because the protocol was not followed. It is a data point about a different thing: what happens when the manager optimises for engineering efficiency over protocol compliance.
 

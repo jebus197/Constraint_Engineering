@@ -422,7 +422,7 @@ There is also a practical consideration. Ten days from first commit to a working
 
 ## The Level Playing Field (25 March 2026)
 
-A persistent confound throughout the bench test series was directive asymmetry: Claude Opus 4.6 and Codex 5.3 carried persistent methodology directives (via CLAUDE.md and AGENTS.md respectively) into every condition, including Control. DeepSeek, Gemini, and ChatGPT operated with no equivalent persistent directives. This meant the "Control" condition was not a true control for CC and CX — they had embedded methodology advantages that the other models lacked.
+A persistent confound throughout the bench test series was directive asymmetry: Claude Opus 4.6 and Codex 5.3 carried persistent methodology directives (via CLAUDE.md and AGENTS.md respectively) into every condition, including Control. DeepSeek, Gemini, and ChatGPT operated with no equivalent persistent directives. This meant the "Control" condition was not a true control for Claude and Codex — they had embedded methodology advantages that the other models lacked.
 
 The solution that emerged was to run all models bare — stripped of their default system prompts and vendor-specific training overlays — and inject CDSFL methodology directives identically across all five models under CDSFL conditions. This required different mechanisms per model:
 
@@ -452,7 +452,7 @@ The methodology for testing it is honest. Run both tasks independently. Let the 
 
 ## The First Distributed Compute Round (27 March 2026)
 
-On 27 March, three models — CX, Gemini, and CC2 — each received the full CDSFL core directives as their system prompt and independently reviewed five deferred design decisions in the mathematical model. This was the first time the full distributed compute protocol ran correctly: all models under CDSFL, blind independent assessment, structured convergence through a manager who did not operate under the framework.
+On 27 March, three models — Codex, Gemini, and a second Claude instance (CC2) — each received the full CDSFL core directives as their system prompt and independently reviewed five deferred design decisions in the mathematical model. This was the first time the full distributed compute protocol ran correctly: all models under CDSFL, blind independent assessment, structured convergence through a manager who did not operate under the framework.
 
 A precursor blind pass (five models reviewing the mathematical appendix without the CDSFL system prompt) had already found eleven genuine errors, which were corrected. That pass was useful but was not CDSFL-guided analysis — it was structured peer review using native capability. The distinction matters. The distributed compute round that followed is the clean result. See [Experiment 8](EXPERIMENTAL_RESULTS.md) for the precursor and [Experiment 9](EXPERIMENTAL_RESULTS.md) for the full distributed round.
 

@@ -51,15 +51,15 @@ ChatGPT 5.4 via the kardolus CLI accumulated full conversation history, producin
 
 Impact: ChatGPT's contributions degraded in later rounds due to context overload.
 
-Status: Fix designed for next run. Context cap applied (same as CX). OpenRouter integration provides system-level prompt control.
+Status: Fix designed for next run. Context cap applied (same as Codex). OpenRouter integration provides system-level prompt control.
 
 ### 5. SymPy Verification Incomplete
 
-SymPy per-finding verification fired but produced limited results. Models under Control and HIL rarely included verifiable mathematical claims. CC claim extraction partially compensated but coverage was inconsistent.
+SymPy per-finding verification fired but produced limited results. Models under Control and HIL rarely included verifiable mathematical claims. Claude claim extraction partially compensated but coverage was inconsistent.
 
 Impact: The verification score (v-bar) component of the capability fingerprint is unreliable for this run. Decay curves (D) are measurable. Total findings (A) and coverage (C) are approximate.
 
-Status: Fix designed for next run. All models receive verifiable_claim schema instructions under CDSFL conditions. CC extraction runs universally as measurement tool.
+Status: Fix designed for next run. All models receive verifiable_claim schema instructions under CDSFL conditions. Claude extraction runs universally as measurement tool.
 
 ### 6. ChatGPT Hidden System Prompt
 
