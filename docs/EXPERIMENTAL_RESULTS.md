@@ -606,14 +606,14 @@ Five models independently reviewed the mathematical appendix. Each received the 
 
 **Date:** 2026-03-27
 **Models:** Codex (GPT-5.4), Gemini 3.1 Pro, CC2 (Claude Opus 4.6)
-**Manager:** CC1 (Opus 4.6, separate instance)
+**Project manager:** CC1 (Opus 4.6, separate instance)
 **System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected as system prompt for all three reviewing models
 **Scope:** 5 deferred design decisions + 3 proposed new additions from Stage 1
 **Purpose:** Resolve open items with all models operating UNDER the CDSFL framework, not merely reviewing it.
 
 #### Design
 
-This was the first time all reviewing models received `cdsfl_core_formal.md` as their system prompt. The distinction from Stage 1 is critical: the framework actively shaped how they analysed, structured responses, and tested their own conclusions. CC1 (the manager) did NOT receive the system prompt — CC1 operated under its own related but weaker analytical framework.
+This was the first time all reviewing models received `cdsfl_core_formal.md` as their system prompt. The distinction from Stage 1 is critical: the framework actively shaped how they analysed, structured responses, and tested their own conclusions. CC1 (the project manager) did NOT receive the system prompt — CC1 operated under its own related but weaker analytical framework.
 
 Each model received:
 - The 26-item fixes table (11 applied + 5 deferred + 3 proposed + 7 process)
@@ -655,20 +655,20 @@ Mathematical appendix grew from 714 → 755 lines. Core formal file grew from 27
 
 #### Compensation for Less Capable Participants (Emergent Observation)
 
-Three specific errors would have been committed by CC1 (the non-CDSFL manager) without the framework-guided output from the three reviewing models:
+Three specific errors would have been committed by CC1 (the non-CDSFL project manager) without the framework-guided output from the three reviewing models:
 
 1. **Silent rejection of unverifiable findings.** The S_v > 0.5 threshold in the proposed §7.11 would have excluded every design finding, every prose finding, and everything qualitative. One reviewing model identified this. The fix was a one-character change (> to ≥) that CC1 did not independently conceive.
 
-2. **Cross-item synthesis.** CC1 did not conceive of combining the mutual suppression fix (A-D4) with components from the asymmetric Δ fix (A-D1) into an integrated solution. One reviewing model proposed M_suppress using Δ_drop from the other fix — synthesis across items that was not in the manager's thinking.
+2. **Cross-item synthesis.** CC1 did not conceive of combining the mutual suppression fix (A-D4) with components from the asymmetric Δ fix (A-D1) into an integrated solution. One reviewing model proposed M_suppress using Δ_drop from the other fix — synthesis across items that was not in the project manager's thinking.
 
 3. **Statistical resolution.** CC1 was uncertain about the O_A threshold question (A-D3). One reviewing model resolved it with a specific mathematical argument about sample-size sufficiency that CC1 had not performed and would not have performed independently.
 
-In each case, the framework-guided model produced output in a structured format that separated verdict from evidence, evidence from proposed change, and proposed change from self-criticism. This made it possible for the non-framework manager to evaluate reasoning it could not have generated.
+In each case, the framework-guided model produced output in a structured format that separated verdict from evidence, evidence from proposed change, and proposed change from self-criticism. This made it possible for the non-framework project manager to evaluate reasoning it could not have generated.
 
 This observation suggests CDSFL may function as a **communication protocol** as much as an analytical protocol: the structured output format allows a decision-maker who cannot use the framework directly to benefit from it indirectly by evaluating the structured output of agents who can. The degree of compensation depends on the evaluator's ability to read structured analytical arguments. See [PAPER.md Part XIV](#) for formal discussion.
 
 **Methodological caveats:**
-- Sample size is one (one manager, one confer session).
+- Sample size is one (one project manager, one confer session).
 - The less capable participant was not genuinely incapable — CC1 is a frontier AI model with strong analytical capabilities; it was less capable only relative to this specific task because the framework was not injected into its reasoning chain.
 - A genuinely less capable participant (e.g., a non-technical decision-maker) has not been tested.
 - The observation is consistent with the hypothesis but does not prove it. Whether it generalises to human participants who lack the framework is a falsifiable prediction that has not yet been tested.
@@ -680,18 +680,18 @@ This observation suggests CDSFL may function as a **communication protocol** as 
 
 ---
 
-### Experiment 10: Persistence Layer Build — Partial Process Confound
+### Experiment 10: Persistence Layer Build — Process Observation
 
 **Date:** 2026-03-28
 **Models:** CC2 (Claude Opus 4.6), Codex (GPT-5.4, xhigh reasoning), Gemini 3.1 Pro
-**Manager:** CC1 (Opus 4.6, separate instance)
+**Project manager:** CC1 (Opus 4.6, separate instance)
 **System prompt:** `bench/directives/universal/cdsfl_core_formal.md` — injected for all three reviewing models
 **Scope:** Build the verification chain module described in PAPER.md Part V (tamper-evident persistence for reasoning artifacts)
 **Purpose:** First CDSFL-guided implementation task using the 4-model distributed compute protocol.
 
 #### Design
 
-Four-model structure: CC1 (Claude Opus 4.6) as manager (no CDSFL system prompt), Codex as team captain, CC2 (Claude Opus 4.6) as deep analyst, Gemini as mathematical/cryptographic verifier. All three reviewing models received the corrected CDSFL core formal as system prompt.
+Four-model structure: CC1 (Claude Opus 4.6) as project manager (no CDSFL system prompt), Codex as lead architect, CC2 (Claude Opus 4.6) as implementation specialist, Gemini as verification specialist. All three reviewing models received the corrected CDSFL core formal as system prompt.
 
 Phase 1: Codex proposed architecture; CC1↔Codex confered until convergence (1 round, zero disagreements). Phase 2: three-model parallel execution. Phase 3: CC1 merged findings and applied fixes.
 
@@ -703,13 +703,15 @@ Phase 1: Codex proposed architecture; CC1↔Codex confered until convergence (1 
 - Every finding from every model was incorporated into the final implementation.
 - Final state: 790 lines, 97 tests passing, RFC 9162 Merkle trees, hash chains, optional Ed25519 signing, CLI interface.
 
-#### What Was Wrong (Process Confound)
+#### What Did Not Follow Protocol
 
-1. **No blind round.** The distributed compute protocol requires all models to receive the SAME task and produce independent outputs. Instead, CC1 assigned specialised subtasks: CC2 implemented, Gemini reviewed cryptography, Codex reviewed code. This means there is no inter-model agreement data — each model did a different job, so their findings cannot be compared.
+The founder chose to prioritise building the persistence layer efficiently over running a clean distributed compute test. This was a deliberate engineering decision, not an oversight. The specific deviations:
+
+1. **No blind round.** The protocol requires all models to receive the same task and produce independent outputs. Instead, specialised subtasks were assigned: CC2 implemented, Gemini reviewed cryptography, Codex reviewed code. There is no inter-model agreement data — each model did a different job, so their findings cannot be compared.
 
 2. **No second round.** The protocol requires CC1 to synthesise blind round findings, pass them back to all models, and iterate. CC1 collected one round of outputs, applied fixes, and stopped.
 
-3. **No fresh Codex instance.** Codex carried context from the architecture confer into the code review, contaminating its independence.
+3. **No fresh Codex instance.** Codex carried context from the architecture confer into the code review, reducing its independence.
 
 4. **No formal convergence calculation.** CC1 declared completion because tests passed and findings were fixed. That is engineering judgement, not convergence under the formal model.
 
@@ -717,11 +719,11 @@ Phase 1: Codex proposed architecture; CC1↔Codex confered until convergence (1 
 
 The implementation is functionally correct. Three independent reviewers under CDSFL examined different aspects of it, and all findings were resolved. The code is cryptographically sound (Gemini verification), specification-compliant (Codex review), and comprehensively tested (CC2 tests + additional coverage from CC1).
 
-However, the process cannot be cited as evidence for or against the distributed compute protocol, because the protocol was not followed. It is a data point about a different thing: what happens when the manager optimises for engineering efficiency over protocol compliance.
+The process does not constitute a clean test of the distributed compute protocol. It is, however, a data point about something else: CDSFL held at the execution layer — all three constrained models produced rigorous, correct output — while the protocol deviation originated entirely from the unconstrained orchestration layer (the founder and the project manager, which does not receive the CDSFL system prompt). This observation about where CDSFL's boundaries lie in mixed-ability (human + machine) environments was not anticipated and warrants further investigation.
 
-#### Corrective Action
+#### Follow-Up
 
-A protocol document was written: [`bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`](../bench/DISTRIBUTED_COMPUTE_PROTOCOL.md). The persistence layer will be re-run under the correct protocol as a direct comparison.
+A protocol document was written to formalise the correct procedure: [`bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`](../bench/DISTRIBUTED_COMPUTE_PROTOCOL.md). The persistence layer will be re-run under the correct protocol as a direct comparison.
 
 **Raw data:** `bench/logs/persistence_cx_architecture.md`, `bench/logs/persistence_cx_confer1.md`, `bench/logs/persistence_cx_review.md`, `bench/logs/persistence_gemini_review.md`
 **Implementation:** `bench/verification_chain.py` (790 lines), `bench/tests/test_verification_chain.py` (1012 lines, 97 tests)

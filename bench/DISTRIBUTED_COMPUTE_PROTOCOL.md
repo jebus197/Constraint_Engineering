@@ -3,10 +3,10 @@
 Written: 2026-03-28T04:02:13Z
 Status: MANDATORY. CC1 follows this exactly. No shortcuts.
 
-This protocol was written because CC1 regressed from correct practice in the
-persistence layer build. The previous round (3-model confer on mathematical
-model fixes, commit 77a4a7f) followed the protocol correctly. The persistence
-layer build did not. This document exists so it cannot happen again.
+This protocol was written after the persistence layer build (2026-03-28) did
+not follow the distributed compute procedure. The previous round (3-model
+confer on mathematical model fixes, commit 77a4a7f) followed the protocol
+correctly. This document formalises the correct procedure for all future runs.
 
 ---
 
@@ -198,13 +198,15 @@ Phase 6: [ ] Implementation complete
 
 ---
 
-## Regression Note
+## Origin Note
 
-The persistence layer build (2026-03-28) collapsed this protocol into a
-single parallel dispatch with specialised subtasks. The output was
-functionally correct but the process was wrong. The 3-model confer on
-mathematical model fixes (2026-03-27, commit 77a4a7f) followed the protocol
-correctly. This document ensures CC1 does not regress again.
+The persistence layer build (2026-03-28) did not follow this protocol. The
+founder chose to prioritise an efficient build over a clean distributed
+compute test, assigning specialised subtasks instead of blind rounds. The
+output was functionally correct. The 3-model confer on mathematical model
+fixes (2026-03-27, commit 77a4a7f) followed the protocol correctly. This
+document formalises the correct procedure for all future distributed
+compute runs.
 
-The persistence layer will be re-run under this protocol in the morning.
-The dynamic management/load-balancing task will follow it from the start.
+The persistence layer will be re-run under this protocol alongside the
+dynamic management/load-balancing task.

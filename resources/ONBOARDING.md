@@ -33,8 +33,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   deferred design decisions and added manager selection function §7.11. Commit `77a4a7f`.
 - **Persistence layer BUILT (28 March 2026):** `bench/verification_chain.py` —
   790 lines, 97 tests, RFC 9162 Merkle trees, hash chains, optional Ed25519.
-  Output correct but process was a PARTIAL CONFOUND: manager split work into
-  specialised subtasks instead of running blind rounds. Documented as Experiment 10.
+  Output correct. Distributed compute protocol not followed — founder chose
+  efficient build over clean test. Documented as Experiment 10 (process observation).
   Protocol document written: `bench/DISTRIBUTED_COMPUTE_PROTOCOL.md`.
 - **Next:** Re-run persistence layer under correct protocol. Then dynamic
   management/load-balancing formalisation. Then Stage 2 full distributed compute test.

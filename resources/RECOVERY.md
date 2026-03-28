@@ -18,11 +18,12 @@ This is enough to resume most tasks.
 
 ## Current Pending Work (28 March 2026)
 
-Persistence layer BUILT (bench/verification_chain.py, 790 lines, 97 tests)
-but process was a PARTIAL CONFOUND — manager broke the distributed compute
-protocol by splitting into specialised subtasks instead of blind rounds.
-Output correct, process not citable as clean test. Documented as Experiment 10.
-Protocol document written: bench/DISTRIBUTED_COMPUTE_PROTOCOL.md.
+Persistence layer BUILT (bench/verification_chain.py, 790 lines, 97 tests).
+Distributed compute protocol was not followed — founder chose to prioritise
+efficient build over clean test. Specialised subtasks instead of blind rounds.
+Output correct, process not citable as clean distributed compute test but
+generated an observation about CDSFL boundaries in mixed-ability environments.
+Documented as Experiment 10. Protocol document: bench/DISTRIBUTED_COMPUTE_PROTOCOL.md.
 
 Next: (1) Re-run persistence layer under correct protocol. (2) Dynamic
 management/load-balancing formalisation using same protocol. (3) Stage 2
