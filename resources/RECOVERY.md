@@ -45,11 +45,19 @@ Documentation updated:
   cognitive modes, synthetic domain expert thesis (35471eb)
 - Shorthand fix: cy = continue, t = TTS only (35471eb)
 
+Experiment 13b COMPLETE + FULLY ANALYSED (29 March 2026): 4 rounds, 184
+findings parsed. 5/5 models survived. Terminated via CONVERGED. Full
+statistical analysis: Kruskal-Wallis H=44.74 (p<0.0001) on cross-model
+severity. Gemini (0.818) and Codex (0.785) produce highest-severity findings.
+Duane NHPP fit R²=0.9999. Models independently found 97 findings in 7/8 fix
+areas. Premature termination diagnosed via SymPy/Wolfram: decomposed dispatch
+× vocab saturation interaction (Heaps' law, β≈0.024). Full entry in
+EXPERIMENTAL_RESULTS.md. TTS: Exp13b_Full_Analysis_2026-03-29.txt.
+
 Next priorities:
-1. Monitor Experiment 13b to completion
-2. Analyse Exp13b results — did the fixes work?
-3. Confer plan still pending: resolve deferred math model items (A-D1 through A-D5)
-4. Outreach emails to industry specialists
+1. Recalibrate vocab saturation for Exp14 (τ 0.10→0.03-0.05, W 3→5)
+2. Resolve deferred math model items (A-D1 through A-D5)
+3. Outreach emails to industry specialists
 
 ## Standard Recovery (5 minutes)
 

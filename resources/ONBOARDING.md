@@ -59,11 +59,24 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Applied: per-model restart guard, max_rounds ceiling (30), vocab monotonic-decrease
   documentation. Per-model mu implemented and wired (CC2 approved HARD).
   177 tests. Logs: `bench/logs/experiment_13a/`.
-- **Experiment 13b IN PROGRESS (29 March 2026):** Second live orchestration
-  with all fixes active. Testing 7 predictions: vocab saturation fires,
-  fingerprints don't collapse, Gemini survives past R5, model restarts work,
-  kappa moves off zero, mu trends downward, total rounds < 19.
-- **Next:** Analyse Exp13b results. Resolve deferred math model items (A-D1–D5).
+- **Experiment 13b COMPLETE (29 March 2026):** Second live orchestration
+  with all fixes active. 4 rounds, 185 findings, ALL 5 models survived.
+  Terminated via CONVERGED (not MAX_ROUNDS). Vocab saturation fired correctly.
+  mu declined monotonically (65→15→7→0). Gemini survived all rounds (tau fix
+  worked). No model restarts needed (context fixes prevented blocking).
+  Vocabulary exhausted by Round 1 (2085→2113→2113 unique terms). Sharp
+  convergence: Round 3 had zero novelty and zero vocab growth. Investigation
+  needed: 4 rounds may be premature termination if similarity function is
+  too aggressive. Logs: `bench/logs/experiment_13b/`.
+- **Exp13b FULL ANALYSIS COMPLETE (29 March 2026):** 184 findings parsed and
+  analysed with SymPy, Wolfram, SciPy. Per-model severity hierarchy: Gemini
+  (0.818) > Codex (0.785) > ChatGPT (0.684) > CC2 (0.630) > DeepSeek (0.557).
+  Kruskal-Wallis H=44.74, p<0.0001. Duane NHPP fit R²=0.9999. Models
+  independently found issues in 7/8 fix areas (97 related findings). Premature
+  termination diagnosed: decomposed dispatch × vocab saturation threshold
+  interaction (Heaps' law). Recommended: τ 0.10→0.03-0.05, W 3→5.
+  Full write-up in EXPERIMENTAL_RESULTS.md.
+- **Next:** Resolve deferred math model items (A-D1–D5).
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
