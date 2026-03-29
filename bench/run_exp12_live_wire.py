@@ -76,7 +76,7 @@ INITIAL_FINGERPRINTS = {
 MODEL_SPECS = {
     "CC2": {"tau": 400.0, "L": 168000.0, "c": 0.015, "L_std": 0.0},      # Opus 4.6: ~200K context - 32K output
     "ChatGPT": {"tau": 200.0, "L": 96000.0, "c": 0.02, "L_std": 0.0},    # GPT-5.4: ~128K context - 32K output
-    "Gemini": {"tau": 150.0, "L": 968000.0, "c": 0.01, "L_std": 0.0},    # Gemini 3.1 Pro: ~1M context - 32K output
+    "Gemini": {"tau": 350.0, "L": 968000.0, "c": 0.01, "L_std": 0.0},    # Gemini 3.1 Pro: ~1M context - 32K output (tau raised: median latency ~250s)
     "DeepSeek": {"tau": 200.0, "L": 32000.0, "c": 0.01, "L_std": 0.0},   # DeepSeek Reasoner: ~64K context - 32K output
     "Codex": {"tau": 600.0, "L": 96000.0, "c": 0.02, "L_std": 10000.0},  # GPT-5.4 via CLI: ~128K context - 32K, uncertain
 }
@@ -720,14 +720,24 @@ def run_full_experiment():
             convergence_responses, convergence_findings, [], round_cost=round_cost,
             duration=sum(r.response_time for r in convergence_responses.values()),
         )
+        # Log novelty rate alongside mu and kappa
+        novelty = mgr.diminishing_returns.novelty_rate(round_idx - 1)
         _log(f"Round {round_idx} result: state={result.state}, "
              f"kappa={result.convergence_metric:.4f}, "
              f"mu={result.marginal_value:.4f}, "
+             f"novelty={novelty:.4f}, "
              f"converged={result.converged}, stop={result.stop}")
         if new_findings != convergence_findings:
             ds_count = len(new_findings) - len(convergence_findings)
             _log(f"  ({ds_count} DeepSeek findings excluded from convergence calc, "
                  f"included in master list)")
+
+        # Report immune response diagnoses
+        recent_diagnoses = mgr.health_monitor.all_diagnoses
+        if recent_diagnoses:
+            for diag in recent_diagnoses[-3:]:  # last 3 to avoid spam
+                _log(f"  [IMMUNE:{diag.severity}] {diag.detector}: {diag.pathology}")
+                _log(f"    → {diag.recommended_action}")
 
         round_idx += 1
 

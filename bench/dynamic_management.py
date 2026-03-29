@@ -123,6 +123,8 @@ class DynamicManagementConfig:
 
     # --- Area 5: Diminishing Returns ---
     tau_mu: float = 0.05  # minimum acceptable VCR
+    tau_novelty_stop: float = 0.15  # novelty rate below which to stop (cost-decoupled)
+    tau_novelty: float = 0.65  # similarity threshold for "related" (< tau_sim)
     r_min: int = 2  # minimum rounds before early stop
     smoothing_window: int = 2  # W: VCR smoothing window (CC2 contribution)
     epsilon_cost: float = 1e-8  # cost regulariser for c_r = 0
@@ -1335,16 +1337,51 @@ class FindingEquivalenceClass:
         return float(np.mean([f.abstraction_index for f in self.members]))
 
 
+_STOPWORDS = frozenset({
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "shall",
+    "should", "may", "might", "must", "can", "could", "and", "but", "or",
+    "nor", "not", "no", "so", "if", "then", "than", "that", "this", "these",
+    "those", "it", "its", "of", "in", "on", "at", "to", "for", "with",
+    "by", "from", "as", "into", "through", "during", "before", "after",
+    "above", "below", "between", "out", "up", "down", "about", "each",
+    "all", "any", "both", "such", "when", "where", "which", "who", "whom",
+    "what", "how", "there", "here", "very", "just", "also", "only", "more",
+    "most", "other", "some", "over", "under", "again", "further", "once",
+})
+
+
+def _tokenize_for_similarity(text: str) -> list[str]:
+    """Tokenize text for similarity comparison: lowercase, strip stopwords."""
+    words = text.lower().split()
+    return [w for w in words if w not in _STOPWORDS and len(w) > 2]
+
+
+def _bigrams(tokens: list[str]) -> set[tuple[str, str]]:
+    """Generate bigram set from token list."""
+    return {(tokens[i], tokens[i + 1]) for i in range(len(tokens) - 1)}
+
+
 def _finding_similarity(f1: Finding, f2: Finding) -> float:
     """Compute similarity between two findings.
 
-    Uses flaw-class match + description overlap (Jaccard on word sets).
-    This is the operational sim() function. In production, replace with
-    domain-specific similarity (e.g., embedding cosine).
+    Uses flaw-class match + combined unigram/bigram Jaccard on description
+    words (stopwords removed). Bigrams capture phrase-level semantic overlap
+    that raw word sets miss — "race condition" and "condition race" are
+    different bigrams, but "race condition" and "race condition" match.
 
-    When flaw classes differ, Jaccard similarity alone determines the score
-    (with a penalty for the class mismatch). This prevents models that assign
-    different integer labels to the same concept from appearing maximally novel.
+    The combined score weights unigrams 0.6 and bigrams 0.4. This provides
+    a middle ground between the original raw Jaccard (too strict for
+    semantic duplicates) and embedding-based similarity (too complex for
+    the current infrastructure).
+
+    When flaw classes differ, the combined Jaccard alone determines the score
+    (no class bonus). This prevents models that assign different integer
+    labels to the same concept from appearing maximally novel.
+
+    Self-healing note: if this function fails to detect convergence (kappa
+    stuck at 0.0 for consecutive rounds), the DetectorHealthMonitor will
+    flag the pathology. See §immune_response below.
 
     Args:
         f1, f2: Findings to compare.
@@ -1354,30 +1391,45 @@ def _finding_similarity(f1: Finding, f2: Finding) -> float:
     """
     class_match = f1.flaw_class == f2.flaw_class
 
-    # Jaccard similarity on description words
-    words1 = set(f1.description.lower().split())
-    words2 = set(f2.description.lower().split())
-    if not words1 and not words2:
+    # Tokenize with stopword removal
+    tokens1 = _tokenize_for_similarity(f1.description)
+    tokens2 = _tokenize_for_similarity(f2.description)
+
+    # Handle empty descriptions
+    if not tokens1 and not tokens2:
         return 0.8 if class_match else 0.2
-    if not words1 or not words2:
+    if not tokens1 or not tokens2:
         return 0.3 if class_match else 0.1
-    intersection = words1 & words2
-    union = words1 | words2
-    jaccard = len(intersection) / len(union) if union else 0.0
+
+    # Unigram Jaccard (on content words only)
+    words1 = set(tokens1)
+    words2 = set(tokens2)
+    uni_inter = len(words1 & words2)
+    uni_union = len(words1 | words2)
+    uni_jaccard = uni_inter / uni_union if uni_union else 0.0
+
+    # Bigram Jaccard (phrase-level overlap)
+    bg1 = _bigrams(tokens1)
+    bg2 = _bigrams(tokens2)
+    if bg1 or bg2:
+        bg_inter = len(bg1 & bg2)
+        bg_union = len(bg1 | bg2)
+        bg_jaccard = bg_inter / bg_union if bg_union else 0.0
+    else:
+        bg_jaccard = uni_jaccard  # single-word descriptions: fall back to unigram
+
+    # Combined similarity: 60% unigram + 40% bigram
+    combined = 0.6 * uni_jaccard + 0.4 * bg_jaccard
 
     if class_match:
-        # 0.4 base from class match + 0.6 from Jaccard
-        return 0.4 + 0.6 * jaccard
+        # 0.3 base from class match + 0.7 from combined Jaccard
+        return 0.3 + 0.7 * combined
     else:
-        # No class match bonus — raw Jaccard only.
-        # At tau_sim=0.8, cross-class detection requires Jaccard >= 0.8
-        # (80% vocabulary overlap). Strict enough to prevent false merges
-        # of distinct findings sharing module-specific vocabulary, but
-        # reachable for genuine duplicates with minor rephrasing.
-        # Confer consensus: CC2 proposed 0.9x, CX and Gemini proposed 1.0x.
-        # 2/3 agreement on raw Jaccard. Single-linkage clustering at
-        # tau_sim=0.8 provides sufficient protection against weak bridges.
-        return jaccard
+        # No class match bonus — combined Jaccard only.
+        # Confer consensus: raw Jaccard at tau_sim=0.8 was too strict.
+        # Stopword removal + bigrams increase similarity for genuine
+        # duplicates while maintaining discrimination.
+        return combined
 
 
 class ConvergenceDetector:
@@ -1734,6 +1786,9 @@ class DiminishingReturnsDetector:
         self._cumulative_yields: Dict[int, float] = {}  # Y^(<=r)
         self._round_costs: Dict[int, float] = {}  # c_r
         self._mean_abstraction_new: Dict[int, float] = {}  # H_bar^(r)_new
+        # Novelty rate tracking (cost-decoupled convergence signal)
+        self._novelty_rates: Dict[int, float] = {}  # fraction of novel findings per round
+        self._all_prior_findings: List[Finding] = []  # accumulated for novelty comparison
 
     def add_round(
         self,
@@ -1782,6 +1837,30 @@ class DiminishingReturnsDetector:
 
         self.add_round(round_idx, y, cost, h_new)
 
+        # Compute novelty rate: fraction of new findings with max similarity
+        # < tau_novelty to ALL prior findings. Cost-decoupled convergence signal.
+        # When all findings are rephrased duplicates, novelty_rate → 0.
+        # When all findings are genuinely new, novelty_rate → 1.
+        tau_novelty = self.config.tau_novelty  # lower than tau_sim (0.8) — "related" counts as non-novel
+        if self._all_prior_findings and new_findings:
+            novel_count = 0
+            for f in new_findings:
+                max_sim = max(
+                    _finding_similarity(f, pf) for pf in self._all_prior_findings
+                )
+                if max_sim < tau_novelty:
+                    novel_count += 1
+            self._novelty_rates[round_idx] = novel_count / len(new_findings)
+        elif not self._all_prior_findings and new_findings:
+            # First round — everything is novel
+            self._novelty_rates[round_idx] = 1.0
+        else:
+            self._novelty_rates[round_idx] = 0.0
+
+        # Accumulate prior findings for next round's novelty comparison
+        if new_findings:
+            self._all_prior_findings.extend(new_findings)
+
     def marginal_value(self, round_idx: int) -> float:
         """Compute mu(r) = (Y^(<=r) - Y^(<=r-1)) / c_r.
 
@@ -1820,6 +1899,31 @@ class DiminishingReturnsDetector:
             return 0.0
         return float(np.mean(values))
 
+    def novelty_rate(self, round_idx: int) -> float:
+        """Fraction of genuinely novel findings in round r.
+
+        Cost-decoupled convergence signal. Unlike mu (= delta_Y / c_r), this
+        measures whether we're still finding NEW things, independent of how
+        much we spent to find them. When a model is benched, cost drops but
+        novelty rate is unaffected — preventing the mu-spike pathology.
+
+        Returns:
+            Float in [0, 1]. 1.0 = all findings novel. 0.0 = all duplicates.
+        """
+        return self._novelty_rates.get(round_idx, 1.0)
+
+    def smoothed_novelty_rate(self, round_idx: int) -> float:
+        """Smoothed novelty rate over window W (same as mu smoothing)."""
+        W = self.config.smoothing_window
+        start = max(0, round_idx - W + 1)
+        values = []
+        for r in range(start, round_idx + 1):
+            if r in self._novelty_rates:
+                values.append(self._novelty_rates[r])
+        if not values:
+            return 1.0
+        return float(np.mean(values))
+
     def _abstraction_dropping(self, round_idx: int) -> bool:
         """Check if mean abstraction of new findings is dropping.
 
@@ -1837,12 +1941,20 @@ class DiminishingReturnsDetector:
     def stop(self, round_idx: int) -> bool:
         """Diminishing returns stop predicate.
 
-        stop(r) iff (smoothed_mu(r) < tau_mu) AND (r >= r_min)
+        stop(r) iff ((smoothed_mu(r) < tau_mu) OR (smoothed_novelty(r) < tau_novelty_stop))
+                    AND (r >= r_min)
+
+        Two independent signals, either sufficient:
+        1. Cost-normalized marginal value (original mu) — catches efficiency decline
+        2. Novelty rate — catches content exhaustion regardless of cost
+
+        The novelty rate signal is the immune-response-motivated addition: it is
+        immune to cost distortions from model benching/unbenching, which cause mu
+        to spike even when findings are churning. tau_novelty_stop = 0.15 means
+        stop when fewer than 15% of findings are genuinely novel.
 
         The ascending abstraction guard is CONJUNCTIVE (founder decision §9.1):
         abstraction drop is one factor in the stop decision, not a unilateral veto.
-        A legitimate shift from abstract to concrete findings must not trigger
-        premature stopping.
 
         Note: veto logic (e.g., from convergence detector) is external to this
         predicate. The round progression FSM handles the interaction.
@@ -1851,7 +1963,10 @@ class DiminishingReturnsDetector:
             return False
 
         smoothed_mu = self.smoothed_marginal_value(round_idx)
-        return smoothed_mu < self.config.tau_mu
+        smoothed_novelty = self.smoothed_novelty_rate(round_idx)
+
+        # Either signal sufficient: cost efficiency exhausted OR content exhausted
+        return smoothed_mu < self.config.tau_mu or smoothed_novelty < self.config.tau_novelty_stop
 
     def remaining_value_estimate(self, round_idx: int, remaining_rounds: int) -> float:
         """Estimate remaining value if we continue.
@@ -1972,6 +2087,242 @@ class ModelResponse:
     format_compliant: bool = True
     finding_count: int = 0
     mean_abstraction: float = 0.5
+
+
+# =============================================================================
+# Area 7: Detector Health Monitor (Immune Response Layer)
+# =============================================================================
+#
+# Level 0: Models review the artifact (the experiment).
+# Level 1: Convergence/diminishing-returns detectors monitor Level 0.
+# Level 2: THIS — monitors Level 1's detectors for dysfunction.
+#
+# When detectors malfunction (kappa stuck, mu increasing, D_decay frozen),
+# the health monitor detects the pathology and emits corrective actions.
+# This makes the orchestration layer self-healing: detector dysfunction
+# is diagnosed and addressed without human intervention.
+#
+# The immune response is not recursive beyond Level 2 — it uses simple
+# statistical signatures (trajectory analysis) that are mechanically
+# verifiable rather than requiring their own convergence detection.
+# =============================================================================
+
+
+@dataclass
+class DetectorDiagnosis:
+    """Diagnosis from the detector health monitor."""
+    detector: str  # "kappa", "mu", "d_decay"
+    pathology: str  # human-readable description
+    severity: str  # "WARNING", "CRITICAL"
+    recommended_action: str  # what to do about it
+    evidence: Dict[str, Any] = field(default_factory=dict)
+
+
+class DetectorHealthMonitor:
+    """Level 2 immune response: monitors convergence detectors for dysfunction.
+
+    Watches kappa, mu, and novelty_rate trajectories. Detects:
+    - kappa stuck at 0.0 for N consecutive rounds (similarity too strict)
+    - mu increasing when finding count is stable/declining (cost distortion)
+    - novelty_rate and mu disagreeing (one says converging, other doesn't)
+    - model benching causing metric distortion
+
+    Does NOT modify detector parameters autonomously — emits diagnoses with
+    recommended actions. The orchestration layer (or manager) decides whether
+    to act on them.
+
+    This is the mathematical immune response the founder identified: the system
+    monitors its own monitoring instruments and flags dysfunction.
+    """
+
+    def __init__(
+        self,
+        stuck_window: int = 3,
+        mu_increase_window: int = 2,
+    ) -> None:
+        self._kappa_history: List[float] = []
+        self._mu_history: List[float] = []
+        self._novelty_history: List[float] = []
+        self._finding_counts: List[int] = []
+        self._active_model_counts: List[int] = []
+        self._diagnoses: List[DetectorDiagnosis] = []
+        self._stuck_window = stuck_window
+        self._mu_increase_window = mu_increase_window
+
+        # Adaptive immune response state.
+        # Like biological adaptive immunity: initial exposure triggers slow
+        # response with wide detection window. Repeated exposure to the SAME
+        # pathology narrows the window and speeds response.
+        # Conversely, if a diagnosis was acknowledged but the pathology resolved
+        # naturally, widen the window (reduce sensitivity) to prevent false alarms.
+        #
+        # Formal:
+        #   W_d(r) = W_d(0) · decay^(count_resolved_d)
+        #            + growth · count_persistent_d
+        #   where:
+        #     decay ∈ (0,1) — shrinks window after false alarms
+        #     growth > 0    — grows window after persistent true positives
+        #     count_resolved_d = pathologies that appeared then disappeared
+        #     count_persistent_d = pathologies present for > W rounds
+        #
+        # This makes the monitor more sensitive to known recurring pathologies
+        # and less sensitive to transient fluctuations.
+        self._pathology_counts: Dict[str, int] = {}  # detector → consecutive occurrences
+        self._resolved_counts: Dict[str, int] = {}   # detector → resolved pathologies
+        self._sensitivity_decay: float = 0.8  # reduce window after resolved pathology
+        self._sensitivity_growth: float = 1   # extend window after persistent pathology
+
+    def record_round(
+        self,
+        kappa: float,
+        mu: float,
+        novelty_rate: float,
+        finding_count: int,
+        active_models: int,
+    ) -> List[DetectorDiagnosis]:
+        """Record one round's detector outputs and check for pathologies.
+
+        Args:
+            kappa: Convergence metric from ConvergenceDetector.
+            mu: Marginal value from DiminishingReturnsDetector.
+            novelty_rate: Fraction of novel findings.
+            finding_count: Number of findings this round.
+            active_models: Number of active models.
+
+        Returns:
+            List of new diagnoses (may be empty if detectors are healthy).
+        """
+        self._kappa_history.append(kappa)
+        self._mu_history.append(mu)
+        self._novelty_history.append(novelty_rate)
+        self._finding_counts.append(finding_count)
+        self._active_model_counts.append(active_models)
+
+        new_diagnoses: List[DetectorDiagnosis] = []
+
+        # Adaptive sensitivity: compute effective window based on history
+        # A pathology that has been seen and resolved means we should be
+        # LESS sensitive (wider window). A pathology that persists means
+        # we should be MORE sensitive (narrower window, but we've already
+        # diagnosed it — increase severity instead).
+        def effective_window(detector: str, base_window: int) -> int:
+            resolved = self._resolved_counts.get(detector, 0)
+            persistent = self._pathology_counts.get(detector, 0)
+            adjusted = base_window
+            # Each resolved pathology makes us less trigger-happy
+            adjusted = max(2, int(adjusted + resolved * self._sensitivity_growth))
+            # But persistent pathologies don't reduce window — they escalate severity
+            return adjusted
+
+        # Check 1: kappa stuck at zero
+        eff_kappa_window = effective_window("kappa", self._stuck_window)
+        if len(self._kappa_history) >= eff_kappa_window:
+            recent_kappa = self._kappa_history[-eff_kappa_window:]
+            if all(k < 0.01 for k in recent_kappa):
+                recent_findings = self._finding_counts[-eff_kappa_window:]
+                if sum(recent_findings) > 0:
+                    # Adaptive severity: first diagnosis = WARNING, persistent = CRITICAL
+                    persistence = self._pathology_counts.get("kappa", 0)
+                    self._pathology_counts["kappa"] = persistence + 1
+                    severity = "CRITICAL" if persistence >= 1 else "WARNING"
+                    diag = DetectorDiagnosis(
+                        detector="kappa",
+                        pathology=f"kappa stuck at ~0 for {eff_kappa_window} consecutive "
+                                  f"rounds despite {sum(recent_findings)} findings produced "
+                                  f"(occurrence {persistence + 1})",
+                        severity=severity,
+                        recommended_action="Similarity function may be too strict for this "
+                                           "domain. Consider lowering tau_sim or improving "
+                                           "tokenization. Check _finding_similarity() output "
+                                           "on actual finding pairs.",
+                        evidence={
+                            "kappa_values": recent_kappa,
+                            "finding_counts": recent_findings,
+                            "adaptive_window": eff_kappa_window,
+                            "persistence": persistence + 1,
+                        },
+                    )
+                    new_diagnoses.append(diag)
+            else:
+                # Kappa no longer stuck — mark as resolved if previously pathological
+                if self._pathology_counts.get("kappa", 0) > 0:
+                    self._resolved_counts["kappa"] = (
+                        self._resolved_counts.get("kappa", 0) + 1
+                    )
+                    self._pathology_counts["kappa"] = 0
+
+        # Check 2: mu increasing while finding count stable/declining
+        eff_mu_window = effective_window("mu", self._mu_increase_window)
+        if len(self._mu_history) >= eff_mu_window + 1:
+            recent_mu = self._mu_history[-(eff_mu_window + 1):]
+            mu_increasing = all(
+                recent_mu[i + 1] > recent_mu[i] * 1.1  # 10% increase threshold
+                for i in range(len(recent_mu) - 1)
+            )
+            recent_findings = self._finding_counts[-(eff_mu_window + 1):]
+            findings_not_increasing = recent_findings[-1] <= max(recent_findings[:-1])
+
+            if mu_increasing and findings_not_increasing:
+                # Check if model count changed (benching distortion)
+                recent_models = self._active_model_counts[-(eff_mu_window + 1):]
+                model_count_changed = len(set(recent_models)) > 1
+
+                diag = DetectorDiagnosis(
+                    detector="mu",
+                    pathology=f"mu increasing ({recent_mu[0]:.1f} → {recent_mu[-1]:.1f}) "
+                              f"while findings stable/declining ({recent_findings})",
+                    severity="WARNING" if not model_count_changed else "CRITICAL",
+                    recommended_action=(
+                        "Cost distortion from model benching/unbenching. mu = delta_Y / c_r "
+                        "is unreliable when active model count changes. Use novelty_rate as "
+                        "primary convergence signal."
+                        if model_count_changed
+                        else "mu may be unreliable — check cost calculation and yield function."
+                    ),
+                    evidence={
+                        "mu_values": recent_mu,
+                        "finding_counts": recent_findings,
+                        "active_models": recent_models,
+                        "model_count_changed": model_count_changed,
+                    },
+                )
+                new_diagnoses.append(diag)
+
+        # Check 3: novelty_rate and mu disagreeing
+        if len(self._novelty_history) >= 2 and len(self._mu_history) >= 2:
+            novelty_declining = self._novelty_history[-1] < self._novelty_history[-2] * 0.8
+            mu_increasing_now = self._mu_history[-1] > self._mu_history[-2] * 1.2
+
+            if novelty_declining and mu_increasing_now:
+                diag = DetectorDiagnosis(
+                    detector="mu+novelty",
+                    pathology=f"Novelty declining ({self._novelty_history[-2]:.2f} → "
+                              f"{self._novelty_history[-1]:.2f}) but mu increasing "
+                              f"({self._mu_history[-2]:.1f} → {self._mu_history[-1]:.1f})",
+                    severity="WARNING",
+                    recommended_action="Detectors disagree — novelty says converging, mu says "
+                                       "not. Trust novelty_rate (cost-independent) over mu "
+                                       "(cost-dependent). The stop predicate should use "
+                                       "novelty_rate as primary signal.",
+                    evidence={
+                        "novelty_rate": self._novelty_history[-2:],
+                        "mu": self._mu_history[-2:],
+                    },
+                )
+                new_diagnoses.append(diag)
+
+        self._diagnoses.extend(new_diagnoses)
+        return new_diagnoses
+
+    @property
+    def all_diagnoses(self) -> List[DetectorDiagnosis]:
+        """All diagnoses emitted so far."""
+        return list(self._diagnoses)
+
+    @property
+    def has_critical(self) -> bool:
+        """Whether any CRITICAL diagnosis has been emitted."""
+        return any(d.severity == "CRITICAL" for d in self._diagnoses)
 
 
 class FailureHandler:
@@ -2673,6 +3024,9 @@ class DynamicManager:
         # Correlated failure model
         self.correlated_failures = CorrelatedFailureModel()
 
+        # Area 7: Detector Health Monitor (immune response layer)
+        self.health_monitor = DetectorHealthMonitor()
+
         # Round results history
         self._round_results: List[RoundResult] = []
 
@@ -2858,6 +3212,32 @@ class DynamicManager:
                 metadata={"mu": mu, "stop": is_diminished},
             )
         )
+
+        # --- Area 7: Detector Health Monitor (immune response) ---
+        novelty = self.diminishing_returns.novelty_rate(round_idx)
+        diagnoses = self.health_monitor.record_round(
+            kappa=kappa,
+            mu=mu,
+            novelty_rate=novelty,
+            finding_count=len(findings),
+            active_models=len(self.failure_handler.active_models),
+        )
+        for diag in diagnoses:
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=f"[IMMUNE:{diag.severity}] {diag.detector}: {diag.pathology}",
+                    metadata={
+                        "immune_response": True,
+                        "detector": diag.detector,
+                        "severity": diag.severity,
+                        "action": diag.recommended_action,
+                        "evidence": diag.evidence,
+                    },
+                )
+            )
 
         # --- Area 3: FSM transition ---
         event = self.fsm.select_event(

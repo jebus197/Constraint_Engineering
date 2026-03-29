@@ -667,8 +667,11 @@ class TestFindingSimilarity:
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow")
         f2 = make_finding("f2", "m2", 0, 1, desc="buffer underflow")
         sim = _finding_similarity(f1, f2)
-        # Jaccard of {"buffer", "overflow"} and {"buffer", "underflow"} = 1/3
-        expected = 0.4 + 0.6 * (1.0 / 3.0)
+        # After stopword removal: tokens = ["buffer", "overflow"] vs ["buffer", "underflow"]
+        # Unigram Jaccard = 1/3, Bigram Jaccard = 0/2 = 0.0
+        # Combined = 0.6*(1/3) + 0.4*0.0 = 0.2
+        # Same class: 0.3 + 0.7 * 0.2 = 0.44
+        expected = 0.3 + 0.7 * (0.6 * (1.0 / 3.0) + 0.4 * 0.0)
         assert sim == pytest.approx(expected)
 
 
