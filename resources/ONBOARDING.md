@@ -54,8 +54,16 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   CC2 vocabulary novelty declined 23.9%→7.7% over 20 rounds (genuine
   diminishing returns, not churn). Fingerprint EMA collapses over 20 rounds
   (fix needed: windowed mean). Logs: `bench/logs/experiment_12/`.
-- **Next:** Implement vocabulary saturation stop signal, windowed fingerprint,
-  model restart logic. Launch Exp12 second run with all fixes active.
+- **Experiment 13a COMPLETE (29 March 2026):** Confer round — CC2 P-passed all
+  8 post-Exp12 fixes under full CDSFL. 4 approved, 3 modified, 1 deferred.
+  Applied: per-model restart guard, max_rounds ceiling (30), vocab monotonic-decrease
+  documentation. Per-model mu implemented and wired (CC2 approved HARD).
+  177 tests. Logs: `bench/logs/experiment_13a/`.
+- **Experiment 13b IN PROGRESS (29 March 2026):** Second live orchestration
+  with all fixes active. Testing 7 predictions: vocab saturation fires,
+  fingerprints don't collapse, Gemini survives past R5, model restarts work,
+  kappa moves off zero, mu trends downward, total rounds < 19.
+- **Next:** Analyse Exp13b results. Resolve deferred math model items (A-D1–D5).
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

@@ -21,28 +21,35 @@ This is enough to resume most tasks.
 
 ## Current Pending Work (29 March 2026)
 
-Experiment 12 COMPLETE (29 March 2026). First live orchestration of
-dynamic_management.py (3181 lines, 27 classes) — 20 rounds, 5 models, 809
-findings. Terminated at MAX_ROUNDS (not mathematical convergence).
+Experiment 12 COMPLETE. All fixes implemented and confer-reviewed.
+Experiment 13a (confer round) COMPLETE. Experiment 13b (live run) IN PROGRESS.
 
-Results summary:
-- Model attrition: 5 → 2 (Gemini benched R5, Codex blocked R13, ChatGPT blocked R17)
-- All 3 detectors broken: kappa=0.0 permanently, mu oscillated 34-48, stop never fired
-- CC2 workhorse: 337 findings, ~15/round, vocabulary novelty 23.9%→7.7%
-- ChatGPT only model with significant severity improvement (p=0.006)
-- Fingerprint EMA collapses all dimensions toward zero over 20 rounds
+Post-Exp12 fixes implemented (all committed, 177 tests passing):
+- Vocabulary saturation stop signal (d52526a)
+- Windowed fingerprint replacing EMA (d52526a)
+- Model restart logic — IT Crowd principle (9f3d9e4)
+- Adaptive decomposition per model (9f3d9e4)
+- Artifact-size-based max_rounds with ceiling of 30 (9f3d9e4, cd023d9)
+- Fingerprint blending on restart (806162a)
+- Per-model mu computation — CC2 approved HARD (c91d63c, f5b457e)
 
-Commits during session:
-- `f09081e` — Immune response layer + 3 detector fixes
-- `fdf7978` — Calibrate tau_novelty 0.65→0.40
-- `d6853ef` — Context windowing + adaptive decomposition
+Exp13a confer synthesis: 3 modifications applied, 4 approved, 1 deferred.
+- Fix 3: restart guard now per-model (cd023d9)
+- Fix 5: max_rounds ceiling of 30 (cd023d9)
+- Fix 1: monotonic-decrease documented (cd023d9)
+
+Documentation updated:
+- EXPERIMENTAL_RESULTS.md: Experiment 12 full write-up (35471eb)
+- FOUNDERS_NOTES.md: "The Live Wire" + biodiversity reassessment (35471eb)
+- README.md: extended to 29 March — dynamic management, live orchestration,
+  cognitive modes, synthetic domain expert thesis (35471eb)
+- Shorthand fix: cy = continue, t = TTS only (35471eb)
 
 Next priorities:
-1. Implement vocabulary saturation stop signal (similarity-independent)
-2. Replace fingerprint EMA with windowed mean (fix collapse)
-3. Implement model restart logic (IT Crowd principle — restart degraded models)
-4. Launch Exp12 second run with all fixes active
-5. Confer plan still pending: resolve deferred math model items (A-D1 through A-D5)
+1. Monitor Experiment 13b to completion
+2. Analyse Exp13b results — did the fixes work?
+3. Confer plan still pending: resolve deferred math model items (A-D1 through A-D5)
+4. Outreach emails to industry specialists
 
 ## Standard Recovery (5 minutes)
 
