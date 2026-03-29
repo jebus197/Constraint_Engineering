@@ -138,31 +138,96 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     """Extract structured findings from model response.
 
     Parses the FINDING_ID / SEVERITY / FLAW_CLASS / etc. format.
+    Case-insensitive. Handles common format variations:
+    - Markdown bold markers (**FINDING_ID**: ...)
+    - Underscores/hyphens (Finding_ID, Finding-ID, finding_id)
+    - Text flaw classes mapped to integers
+    - Various separator styles (: vs = vs -)
     Falls back to treating the entire response as a single finding if
     structured parsing fails — no model is penalised for format variation.
     """
     findings = []
     import re
 
+    # Flaw class mapping: both the prompt taxonomy (1=logic, 2=interface, etc.)
+    # and area-based names that models may use. Sorted by key length descending
+    # for longest-match-first semantics (CC2 recommendation).
+    FLAW_CLASS_MAP = {
+        # Prompt taxonomy terms (CX catch: models use these, not area names)
+        "documentation": 8, "performance": 7, "edge-case": 6, "edge_case": 6,
+        "correctness": 5, "completeness": 4, "notation": 3, "interface": 2,
+        "logic": 1,
+        # Area-based names models may use
+        "convergence_detection": 1, "convergence detection": 1, "convergence": 1,
+        "failure_handling": 2, "failure handling": 2, "failure": 2, "error": 2,
+        "role_assignment": 3, "role assignment": 3, "role": 3, "allocation": 3,
+        "load_balancing": 4, "load balancing": 4, "load": 4, "balance": 4,
+        "round_progression": 5, "round progression": 5, "round": 5, "fsm": 5,
+        "state_machine": 5, "state machine": 5,
+        "diminishing_returns": 6, "diminishing returns": 6, "diminishing": 6, "stop": 6,
+        "api": 7, "integration": 7,
+        "mathematical": 8, "invariant": 8, "formal": 8,
+        "resource_leak": 7, "resource leak": 7,
+    }
+
+    def _parse_flaw_class(text: str) -> int:
+        """Parse flaw class from text or integer.
+
+        Handles three formats (CX catch):
+        1. Bare integer: "5"
+        2. Integer with label: "5 (correctness)"
+        3. Text label: "convergence_detection"
+
+        For unknown text, uses deterministic hash (Gemini recommendation)
+        to ensure consistent mapping without corrupting metrics.
+        """
+        text = text.strip().strip("*").strip()
+        # Try bare integer first
+        try:
+            return max(1, min(8, int(text)))
+        except ValueError:
+            pass
+        # Try "5 (correctness)" format — extract leading integer
+        import re as _re
+        leading_int = _re.match(r'(\d+)\s*[\(\[]', text)
+        if leading_int:
+            return max(1, min(8, int(leading_int.group(1))))
+        # Text matching — longest match first (CC2 recommendation)
+        key = text.lower().strip()
+        # Sort by key length descending for longest-match-first
+        for map_key in sorted(FLAW_CLASS_MAP.keys(), key=len, reverse=True):
+            if map_key in key:
+                return FLAW_CLASS_MAP[map_key]
+        # Deterministic hash for unknown classes (Gemini recommendation)
+        # Ensures identical unknown classes get the same integer
+        return (abs(hash(key)) % 8) + 1
+
+    # Flexible FINDING_ID marker — case-insensitive, handles markdown bold,
+    # underscores, hyphens, and various separators
+    finding_id_pattern = r'\*{0,2}[Ff][Ii][Nn][Dd][Ii][Nn][Gg][\s_-]*[Ii][Dd]\*{0,2}\s*[:=\-]\s*'
+
     # Split on FINDING_ID markers
-    blocks = re.split(r'(?=FINDING_ID\s*:)', response)
+    blocks = re.split(rf'(?={finding_id_pattern})', response)
 
     for block in blocks:
         block = block.strip()
-        if not block or not block.startswith("FINDING_ID"):
+        if not block or not re.match(finding_id_pattern, block):
             continue
 
-        # Extract fields
-        fid_match = re.search(r'FINDING_ID\s*:\s*(.+?)(?:\n|$)', block)
-        sev_match = re.search(r'SEVERITY\s*:\s*([\d.]+)', block)
-        fc_match = re.search(r'FLAW_CLASS\s*:\s*(\d+)', block)
-        ai_match = re.search(r'ABSTRACTION_INDEX\s*:\s*([\d.]+)', block)
-        desc_match = re.search(r'DESCRIPTION\s*:\s*(.+?)(?=\n\s*(?:PROPOSED_FIX|VERIFIED|FINDING_ID|$))', block, re.DOTALL)
-        ver_match = re.search(r'VERIFIED\s*:\s*(TRUE|FALSE|true|false)', block)
+        # Extract fields — all case-insensitive, handle markdown bold and separator variants
+        fid_match = re.search(rf'{finding_id_pattern}(.+?)(?:\n|$)', block)
+        sev_match = re.search(r'\*{0,2}[Ss][Ee][Vv][Ee][Rr][Ii][Tt][Yy]\*{0,2}\s*[:=\-]\s*([\d.]+)', block)
+        fc_match = re.search(r'\*{0,2}[Ff][Ll][Aa][Ww][\s_-]*[Cc][Ll][Aa][Ss][Ss]\*{0,2}\s*[:=\-]\s*(.+?)(?:\n|$)', block)
+        ai_match = re.search(r'\*{0,2}[Aa][Bb][Ss][Tt][Rr][Aa][Cc][Tt][Ii][Oo][Nn][\s_-]*[Ii][Nn][Dd][Ee][Xx]\*{0,2}\s*[:=\-]\s*([\d.]+)', block)
+        desc_match = re.search(
+            r'\*{0,2}[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]\*{0,2}\s*[:=\-]\s*(.+?)(?=\n\s*(?:\*{0,2}(?:[Pp][Rr][Oo][Pp]|[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd])|$))',
+            block, re.DOTALL
+        )
+        ver_match = re.search(r'\*{0,2}[Vv][Ee][Rr][Ii][Ff][Ii][Ee][Dd]\*{0,2}\s*[:=\-]\s*(TRUE|FALSE|true|false|True|False)', block)
 
-        finding_id = fid_match.group(1).strip() if fid_match else f"F{len(findings)+1:03d}"
+        finding_id = fid_match.group(1).strip().strip("*") if fid_match else f"F{len(findings)+1:03d}"
         severity = float(sev_match.group(1)) if sev_match else 0.5
-        flaw_class = int(fc_match.group(1)) if fc_match else 1
+        flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
         description = desc_match.group(1).strip() if desc_match else block[:200]
         verified = ver_match.group(1).upper() == "TRUE" if ver_match else False
@@ -300,6 +365,87 @@ def run_blind_round(
     return responses, all_findings
 
 
+def _extract_area_code(artifact: str, area_idx: int) -> tuple[str, str]:
+    """Extract one area's full code + skeletal signatures of other areas.
+
+    Returns (focused_code, area_label).
+    """
+    import re as _re
+
+    AREAS = [
+        ("Role Assignment", ["class RoleAssignment", "class Role("]),
+        ("Load Balancing", ["class LoadBalancer", "class Task("]),
+        ("Round Progression / FSM", ["class RoundProgressionFSM", "class State("]),
+        ("Convergence Detection", ["class ConvergenceDetector", "class FindingEquivalenceClass"]),
+        ("Diminishing Returns", ["class DiminishingReturnsDetector"]),
+        ("Failure Handling + Manager", ["class FailureHandler", "class DynamicManager"]),
+    ]
+
+    area_label = AREAS[area_idx % len(AREAS)][0]
+    target_classes = AREAS[area_idx % len(AREAS)][1]
+    lines = artifact.split("\n")
+
+    # Find class boundaries
+    class_ranges = []
+    for i, line in enumerate(lines):
+        if _re.match(r'^class \w+', line):
+            class_ranges.append((i, line.strip()))
+
+    target_lines = set()
+    for start_idx, class_line in class_ranges:
+        is_target = any(marker in class_line for marker in target_classes)
+        end_idx = len(lines)
+        for next_start, _ in class_ranges:
+            if next_start > start_idx:
+                end_idx = next_start
+                break
+
+        if is_target:
+            for j in range(start_idx, end_idx):
+                target_lines.add(j)
+        else:
+            # Skeletal: class def + method signatures (Gemini/CX recommendation)
+            for j in range(start_idx, min(start_idx + 3, end_idx)):
+                target_lines.add(j)
+            for j in range(start_idx, end_idx):
+                stripped = lines[j].strip()
+                if stripped.startswith("def ") or stripped.startswith("async def "):
+                    target_lines.add(j)
+                    if j + 1 < end_idx and '"""' in lines[j + 1]:
+                        target_lines.add(j + 1)
+
+    # Module-level definitions (imports, config, dataclasses)
+    first_class = class_ranges[0][0] if class_ranges else len(lines)
+    for j in range(min(first_class, 200)):
+        target_lines.add(j)
+
+    focused = "\n".join(lines[j] for j in sorted(target_lines))
+    return focused, area_label
+
+
+def _deepseek_prior_findings(
+    all_findings: List[Finding], area_label: str
+) -> str:
+    """Filter prior findings relevant to a specific area for DeepSeek."""
+    area_keywords = {
+        "Role Assignment": ["role", "assignment", "pm", "col", "par", "player manager"],
+        "Load Balancing": ["load", "balance", "allocation", "task", "feasibility", "dispatch"],
+        "Round Progression / FSM": ["fsm", "state", "round", "transition", "terminal"],
+        "Convergence Detection": ["convergence", "kappa", "similarity", "equivalence", "novel"],
+        "Diminishing Returns": ["diminishing", "marginal", "yield", "stop", "vcr", "mu"],
+        "Failure Handling + Manager": ["failure", "timeout", "recovery", "fingerprint", "manager"],
+    }
+    keywords = area_keywords.get(area_label, [])
+    relevant = [f for f in all_findings
+                if any(kw in f.description.lower() for kw in keywords)]
+    return format_findings_for_context(relevant[:30]) if relevant else "(No prior findings for this area.)"
+
+
+# Models excluded from convergence/D_decay calculations due to
+# scope-limited dispatch (confer consensus: CC2/CX/Gemini all agreed).
+CONVERGENCE_EXCLUDED_MODELS = {"DeepSeek"}
+
+
 def run_adaptive_round(
     exp_config: ExperimentConfig,
     mgr: DynamicManager,
@@ -307,15 +453,17 @@ def run_adaptive_round(
     base_artifact: str,
     prior_findings_text: str,
     cdsfl_text: str,
+    all_prior_findings: Optional[List[Finding]] = None,
 ) -> tuple[Dict[str, ModelResponse], List[Finding]]:
-    """Phase 2+: Adaptive round — PM synthesises, tasks allocated by capability.
+    """Phase 2+: Adaptive round with DeepSeek task decomposition.
 
-    Each model gets a prompt that includes the artifact PLUS the prior
-    round's findings, and is asked to find what was missed.
+    Standard models get the full artifact + all prior findings.
+    DeepSeek gets one area's full code + skeletal signatures of other areas
+    + area-relevant prior findings only, rotating through 6 areas.
     """
     _log(f"=== ROUND {round_idx}: ADAPTIVE ===")
 
-    # Build the round prompt with prior context
+    # Standard prompt for non-DeepSeek models
     prompt = (
         f"You are in ROUND {round_idx} of a distributed compute P-pass.\n\n"
         f"The following findings were produced in prior rounds:\n\n"
@@ -357,18 +505,42 @@ def run_adaptive_round(
         if model_spec is None:
             continue
 
-        prompt_tokens = len(prompt) // 4
+        # DeepSeek: decomposed dispatch with focused area + skeletal context
+        if mc.label == "DeepSeek":
+            area_idx = (round_idx - 1) % 6
+            focused_code, area_label = _extract_area_code(base_artifact, area_idx)
+            ds_prior = _deepseek_prior_findings(
+                all_prior_findings or [], area_label
+            )
+            model_prompt = (
+                f"You are in ROUND {round_idx} of a distributed compute P-pass.\n"
+                f"You are reviewing AREA: {area_label}.\n\n"
+                f"Below is the full code for this area, plus skeletal signatures "
+                f"(class/method definitions only) of the other 5 areas for context.\n\n"
+                f"Prior findings relevant to this area:\n{ds_prior}\n\n"
+                f"Your task: find flaws in this area that prior reviewers missed. "
+                f"If you see potential cross-component issues, flag them but note "
+                f"they are unverified from your scope.\n\n"
+                f"Use the structured format (FINDING_ID, SEVERITY, FLAW_CLASS, "
+                f"ABSTRACTION_INDEX, DESCRIPTION, PROPOSED_FIX, VERIFIED).\n\n"
+                f"=== ARTIFACT: {area_label} ===\n\n"
+                f"{focused_code}\n\n"
+                f"=== END ARTIFACT ===\n\n"
+                f"Produce your findings now."
+            )
+            _log(f"  DeepSeek: decomposed — Area {area_idx+1}: {area_label} "
+                 f"({len(focused_code)} chars focused, {len(model_prompt)} chars total)")
+        else:
+            model_prompt = prompt
+
+        prompt_tokens = len(model_prompt) // 4
         feasible, p_feasible = mgr.check_dispatch_feasibility(model_spec, prompt_tokens)
         if not feasible:
             _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f})")
-            # Do NOT create a ModelResponse for blocked dispatches.
-            # Feasibility block is a prompt-sizing issue, not a model failure.
-            # Creating an empty response would trigger EMPTY failure detection
-            # and degrade the model's fingerprint for something it never attempted.
             continue
 
         try:
-            text, elapsed = dispatch_to_model(mc, prompt, cdsfl_text)
+            text, elapsed = dispatch_to_model(mc, model_prompt, cdsfl_text)
             _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
 
             findings = parse_findings(mc.label, round_idx, text)
@@ -395,6 +567,14 @@ def run_adaptive_round(
                     "round": round_idx,
                 },
             )
+
+            # Checkpoint after each successful model dispatch
+            save_checkpoint({
+                "current_round": round_idx,
+                "completed_models": list(responses.keys()),
+                "total_findings": len(all_findings),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
 
         except CircuitBreakerTripped as e:
             _log(f"  {mc.label}: CIRCUIT BREAKER — {e}")
@@ -520,20 +700,34 @@ def run_full_experiment():
         responses, new_findings = run_adaptive_round(
             exp_config, mgr, round_idx, artifact_text,
             findings_context, cdsfl_text,
+            all_prior_findings=all_findings,
         )
         all_findings.extend(new_findings)
 
         round_cost = sum(
             len(r.content) * 0.00001 for r in responses.values()
         )
+        # Filter out scope-limited models (DeepSeek) from convergence/D_decay
+        # calculations. Their findings are in all_findings for cross-reference
+        # but don't feed the termination decision (confer consensus).
+        convergence_findings = [
+            f for f in new_findings if f.model_id not in CONVERGENCE_EXCLUDED_MODELS
+        ]
+        convergence_responses = {
+            k: v for k, v in responses.items() if k not in CONVERGENCE_EXCLUDED_MODELS
+        }
         result = mgr.process_round(
-            responses, new_findings, [], round_cost=round_cost,
-            duration=sum(r.response_time for r in responses.values()),
+            convergence_responses, convergence_findings, [], round_cost=round_cost,
+            duration=sum(r.response_time for r in convergence_responses.values()),
         )
         _log(f"Round {round_idx} result: state={result.state}, "
              f"kappa={result.convergence_metric:.4f}, "
              f"mu={result.marginal_value:.4f}, "
              f"converged={result.converged}, stop={result.stop}")
+        if new_findings != convergence_findings:
+            ds_count = len(new_findings) - len(convergence_findings)
+            _log(f"  ({ds_count} DeepSeek findings excluded from convergence calc, "
+                 f"included in master list)")
 
         round_idx += 1
 

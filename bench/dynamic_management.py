@@ -1342,28 +1342,42 @@ def _finding_similarity(f1: Finding, f2: Finding) -> float:
     This is the operational sim() function. In production, replace with
     domain-specific similarity (e.g., embedding cosine).
 
+    When flaw classes differ, Jaccard similarity alone determines the score
+    (with a penalty for the class mismatch). This prevents models that assign
+    different integer labels to the same concept from appearing maximally novel.
+
     Args:
         f1, f2: Findings to compare.
 
     Returns:
         Similarity in [0, 1].
     """
-    if f1.flaw_class != f2.flaw_class:
-        return 0.0
+    class_match = f1.flaw_class == f2.flaw_class
 
     # Jaccard similarity on description words
     words1 = set(f1.description.lower().split())
     words2 = set(f2.description.lower().split())
     if not words1 and not words2:
-        # Same flaw class, no description — assume similar
-        return 0.8
+        return 0.8 if class_match else 0.2
     if not words1 or not words2:
-        return 0.3
+        return 0.3 if class_match else 0.1
     intersection = words1 & words2
     union = words1 | words2
     jaccard = len(intersection) / len(union) if union else 0.0
-    # Weighted: 0.4 from flaw-class match + 0.6 from Jaccard
-    return 0.4 + 0.6 * jaccard
+
+    if class_match:
+        # 0.4 base from class match + 0.6 from Jaccard
+        return 0.4 + 0.6 * jaccard
+    else:
+        # No class match bonus — raw Jaccard only.
+        # At tau_sim=0.8, cross-class detection requires Jaccard >= 0.8
+        # (80% vocabulary overlap). Strict enough to prevent false merges
+        # of distinct findings sharing module-specific vocabulary, but
+        # reachable for genuine duplicates with minor rephrasing.
+        # Confer consensus: CC2 proposed 0.9x, CX and Gemini proposed 1.0x.
+        # 2/3 agreement on raw Jaccard. Single-linkage clustering at
+        # tau_sim=0.8 provides sufficient protection against weak bridges.
+        return jaccard
 
 
 class ConvergenceDetector:
@@ -2862,6 +2876,15 @@ class DynamicManager:
             # Update failure handler's role map
             self.failure_handler.role_map = self.role_assignment.role_map
 
+        # --- Adaptive routing feedback: update live fingerprints ---
+        # CRITICAL: update fingerprints BEFORE appending the RoundResult.
+        # update_fingerprints() builds prior_findings from self._round_results.
+        # If the current round is already appended, every finding matches itself
+        # via similarity, driving D_decay to 1.0 regardless of actual duplication.
+        # CX identified this in the confer round (confidence 0.98).
+        if not self.fsm.is_terminal:
+            self.update_fingerprints(round_idx, findings, responses)
+
         result = RoundResult(
             round_idx=round_idx,
             findings=findings,
@@ -2876,14 +2899,6 @@ class DynamicManager:
             state=new_state,
         )
         self._round_results.append(result)
-
-        # --- Adaptive routing feedback: update live fingerprints ---
-        # This is the core feedback loop. After observing what each model
-        # actually produced, update its fingerprint so the next round's
-        # allocation reflects demonstrated capability. No model is excluded
-        # for being "weaker" — it gets tasks matched to its strengths.
-        if not self.fsm.is_terminal:
-            self.update_fingerprints(round_idx, findings, responses)
 
         return result
 
@@ -2932,11 +2947,10 @@ class DynamicManager:
             all_classes_this_round.add(f.flaw_class)
         total_classes = max(len(all_classes_this_round), 1)
 
-        # Prior findings for novelty calculation
-        prior_finding_ids: Set[str] = set()
+        # Prior findings for similarity-based duplicate detection
+        prior_findings: List[Finding] = []
         for prev_result in self._round_results:
-            for f in prev_result.findings:
-                prior_finding_ids.add(f.finding_id)
+            prior_findings.extend(prev_result.findings)
 
         for model_id in self.failure_handler.active_models:
             model_findings = findings_by_model.get(model_id, [])
@@ -2952,11 +2966,17 @@ class DynamicManager:
                     "C": 0.0,        # no classes covered
                 }
             else:
-                # D_decay: fraction of findings that are duplicates of prior rounds
-                if prior_finding_ids:
-                    duplicates = sum(
-                        1 for f in model_findings if f.finding_id in prior_finding_ids
-                    )
+                # D_decay: fraction of findings that are similar to prior rounds.
+                # Uses the same similarity function as convergence detection
+                # rather than finding_id string matching (which only catches
+                # coincidental label reuse, not actual content duplication).
+                if prior_findings:
+                    duplicates = 0
+                    for f in model_findings:
+                        for pf in prior_findings:
+                            if _finding_similarity(f, pf) >= self.config.tau_sim:
+                                duplicates += 1
+                                break
                     obs_d = duplicates / len(model_findings)
                 else:
                     obs_d = 0.0  # first round, nothing is duplicate

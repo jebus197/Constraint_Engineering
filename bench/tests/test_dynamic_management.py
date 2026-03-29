@@ -641,10 +641,21 @@ class TestFindingSimilarity:
         sim = _finding_similarity(f1, f2)
         assert sim == pytest.approx(0.8)
 
-    def test_different_class(self):
+    def test_different_class_same_desc(self):
+        """Different flaw class, identical description — raw Jaccard, no class bonus."""
         f1 = make_finding("f1", "m1", 0, 1, desc="overflow")
         f2 = make_finding("f2", "m1", 0, 2, desc="overflow")
-        assert _finding_similarity(f1, f2) == 0.0
+        sim = _finding_similarity(f1, f2)
+        # Raw Jaccard({"overflow"}, {"overflow"}) = 1.0 (no multiplier per confer consensus)
+        assert sim == pytest.approx(1.0)
+
+    def test_different_class_different_desc(self):
+        """Different flaw class, different description — near zero."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m1", 0, 2, desc="convergence timeout on shutdown")
+        sim = _finding_similarity(f1, f2)
+        # 0.8 * Jaccard with no overlap = 0.0
+        assert sim == pytest.approx(0.0)
 
     def test_same_class_identical_desc(self):
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
