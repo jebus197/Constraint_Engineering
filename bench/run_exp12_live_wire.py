@@ -447,6 +447,23 @@ def _deepseek_prior_findings(
 # decomposed dispatch due to context pressure (see run_adaptive_round).
 CONVERGENCE_EXCLUDED_MODELS = {"DeepSeek"}
 
+# Context pressure threshold (characters) at which a model is switched to
+# decomposed dispatch.  Lower than DeepSeek's 32K — this catches models
+# like Codex and ChatGPT before they hit feasibility blocking.
+DECOMPOSITION_CONTEXT_THRESHOLD = {
+    "DeepSeek": 0,       # always decomposed
+    "Codex": 60000,      # ~15K tokens
+    "ChatGPT": 80000,    # ~20K tokens — hit feasibility block at R17 in Exp12
+    "Gemini": 200000,    # ~50K tokens — 1M context, rarely needs decomposition
+    "CC2": 120000,       # ~30K tokens — 200K context, but decompose if extreme
+}
+
+# Model restart: track how many times each model has been restarted.
+# After feasibility block, instead of permanent exclusion, restart with
+# curated context (top findings by severity, deduplicated, capped).
+MAX_RESTARTS_PER_MODEL = 2  # prevent infinite restart loops
+RESTART_CONTEXT_CAP = 50  # max findings in restart context
+
 
 def run_adaptive_round(
     exp_config: ExperimentConfig,
@@ -508,20 +525,20 @@ def run_adaptive_round(
         if model_spec is None:
             continue
 
-        # Context-adaptive dispatch: models with small context windows or
-        # approaching feasibility limits get decomposed dispatch.
-        # Founder insight: "don't feed ALL context — drop and restart with
-        # most recent/relevant findings when overloaded. Decomposition should
-        # apply to ALL models where relevant."
+        # Context-adaptive dispatch: ANY model approaching context limits
+        # gets decomposed dispatch.  Thresholds per model from Exp12 data.
+        # Founder: "don't feed ALL context — decomposition should apply to
+        # ALL models where relevant.  Turn it off and back on again!"
         use_decomposition = False
-        if mc.label == "DeepSeek":
-            use_decomposition = True  # Always decomposed (32K window)
-        elif mc.label in ("Codex",):
-            # Codex has uncertain L — decompose when context is large
+        threshold = DECOMPOSITION_CONTEXT_THRESHOLD.get(mc.label, 100000)
+        if threshold == 0:
+            use_decomposition = True  # Always decomposed (e.g., DeepSeek)
+        else:
             all_context_chars = len(base_artifact) + len(prior_findings_text)
-            if all_context_chars > 60000:  # ~15K tokens — approaching Codex limit
+            if all_context_chars > threshold:
                 use_decomposition = True
-                _log(f"  {mc.label}: context={all_context_chars} chars, switching to decomposed dispatch")
+                _log(f"  {mc.label}: context={all_context_chars} chars > threshold={threshold}, "
+                     f"switching to decomposed dispatch")
 
         if use_decomposition:
             decomposed_models.add(mc.label)
@@ -554,8 +571,44 @@ def run_adaptive_round(
         prompt_tokens = len(model_prompt) // 4
         feasible, p_feasible = mgr.check_dispatch_feasibility(model_spec, prompt_tokens)
         if not feasible:
-            _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f})")
-            continue
+            # Model restart logic (IT Crowd principle): instead of permanent
+            # blocking, switch to decomposed dispatch with minimal context.
+            # This gives the model a "fresh start" with manageable context.
+            if not use_decomposition and restart_counts.get(mc.label, 0) < MAX_RESTARTS_PER_MODEL:
+                restart_counts[mc.label] = restart_counts.get(mc.label, 0) + 1
+                _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f}) → "
+                     f"RESTARTING with decomposed dispatch (restart #{restart_counts[mc.label]})")
+                # Switch to decomposed dispatch with minimal context
+                use_decomposition = True
+                decomposed_models.add(mc.label)
+                area_idx = (round_idx - 1) % 6
+                focused_code, area_label = _extract_area_code(base_artifact, area_idx)
+                # Minimal restart context: top findings by severity, capped
+                top_findings = sorted(all_prior_findings or [], key=lambda f: f.severity, reverse=True)
+                restart_context = format_findings_for_context(top_findings[:RESTART_CONTEXT_CAP])
+                model_prompt = (
+                    f"You are in ROUND {round_idx} of a distributed compute P-pass.\n"
+                    f"You are reviewing AREA: {area_label}.\n\n"
+                    f"Below is the full code for this area, plus skeletal signatures "
+                    f"of the other 5 areas for context.\n\n"
+                    f"Top prior findings (summary):\n{restart_context}\n\n"
+                    f"Your task: find flaws in this area that prior reviewers missed.\n\n"
+                    f"Use the structured format (FINDING_ID, SEVERITY, FLAW_CLASS, "
+                    f"ABSTRACTION_INDEX, DESCRIPTION, PROPOSED_FIX, VERIFIED).\n\n"
+                    f"=== ARTIFACT: {area_label} ===\n\n"
+                    f"{focused_code}\n\n"
+                    f"=== END ARTIFACT ===\n\n"
+                    f"Produce your findings now."
+                )
+                prompt_tokens = len(model_prompt) // 4
+                feasible, p_feasible = mgr.check_dispatch_feasibility(model_spec, prompt_tokens)
+                if not feasible:
+                    _log(f"  {mc.label}: still BLOCKED after restart (P={p_feasible:.3f}), skipping")
+                    continue
+            else:
+                reason = "max restarts reached" if restart_counts.get(mc.label, 0) >= MAX_RESTARTS_PER_MODEL else "already decomposed"
+                _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f}), {reason}")
+                continue
 
         try:
             text, elapsed = dispatch_to_model(mc, model_prompt, cdsfl_text)
@@ -698,26 +751,37 @@ def run_full_experiment():
     model_specs = build_model_specs(exp_config)
     _log(f"Model pool: {[m.model_id for m in model_specs]}")
 
+    # Load the artifact to review (needed for max_rounds scaling)
+    artifact_path = REPO_ROOT / "bench" / "dynamic_management.py"
+    artifact_text = artifact_path.read_text(encoding="utf-8")
+    artifact_lines = artifact_text.count('\n')
+
     # Initialise DynamicManager
     events: List[ManagerEvent] = []
     def on_event(event: ManagerEvent) -> None:
         events.append(event)
         _log(f"  [EVENT] {event.event_type.value}: {event.detail}")
 
+    # Scale max_rounds with artifact size (CC2 confer recommendation).
+    # ceil(lines/200) for this artifact gives ~16, aligning with where
+    # vocabulary novelty dropped below 10% in Exp12.  Minimum 10.
+    import math as _math
+    scaled_max_rounds = max(10, _math.ceil(artifact_lines / 200))
+
     dm_config = DynamicManagementConfig(
-        max_rounds=20,  # Let convergence and diminishing returns detectors decide
+        max_rounds=scaled_max_rounds,
         feasibility_threshold=0.90,
     )
     mgr = DynamicManager(model_specs, config=dm_config, event_callback=on_event)
 
+    # Model restart tracking (IT Crowd principle: turn it off and back on again)
+    restart_counts: Dict[str, int] = {m.model_id: 0 for m in model_specs}
+    blocked_models: Dict[str, int] = {}  # model_id → round when first blocked
+
     _log(f"Roles assigned: {mgr.role_assignment.role_map}")
     _log(f"PM: {mgr.role_assignment.pm_model_id}")
-
-    # Load the artifact to review
-    artifact_path = REPO_ROOT / "bench" / "dynamic_management.py"
-    artifact_text = artifact_path.read_text(encoding="utf-8")
     _log(f"Artifact: {artifact_path.name} ({len(artifact_text)} chars, "
-         f"{artifact_text.count(chr(10))} lines)")
+         f"{artifact_lines} lines) → max_rounds={scaled_max_rounds}")
 
     # Build blind round prompt
     blind_prompt = build_task_prompt(artifact_text)
@@ -773,12 +837,15 @@ def run_full_experiment():
             convergence_responses, convergence_findings, [], round_cost=round_cost,
             duration=sum(r.response_time for r in convergence_responses.values()),
         )
-        # Log novelty rate alongside mu and kappa
+        # Log all signals alongside each other for diagnostic comparison
         novelty = mgr.diminishing_returns.novelty_rate(round_idx - 1)
+        vocab_growth = mgr.diminishing_returns.vocab_growth_rate(round_idx - 1)
+        vocab_sat = mgr.diminishing_returns.vocab_saturated(round_idx - 1)
         _log(f"Round {round_idx} result: state={result.state}, "
              f"kappa={result.convergence_metric:.4f}, "
              f"mu={result.marginal_value:.4f}, "
              f"novelty={novelty:.4f}, "
+             f"vocab_growth={vocab_growth:.4f}{' [SATURATED]' if vocab_sat else ''}, "
              f"converged={result.converged}, stop={result.stop}")
         if new_findings != convergence_findings:
             excluded_count = len(new_findings) - len(convergence_findings)
@@ -805,6 +872,12 @@ def run_full_experiment():
     _log(f"  Total findings: {len(all_findings)}")
     _log(f"  Active models at end: {mgr.failure_handler.active_models}")
     _log(f"  Total events: {len(events)}")
+    _log(f"  Model restarts: {restart_counts}")
+    # Log final vocab stats
+    vocab_sizes = mgr.diminishing_returns._vocab_sizes
+    if vocab_sizes:
+        final_vocab = max(vocab_sizes.values())
+        _log(f"  Cumulative vocabulary: {final_vocab} unique terms")
 
     # Fingerprint evolution
     _log(f"\nFingerprint evolution:")
@@ -826,6 +899,12 @@ def run_full_experiment():
         "total_findings": len(all_findings),
         "active_models_at_end": sorted(mgr.failure_handler.active_models),
         "total_events": len(events),
+        "model_restarts": restart_counts,
+        "max_rounds_scaling": f"{artifact_lines} lines → {scaled_max_rounds} rounds",
+        "vocab_trajectory": {
+            str(r): {"size": s, "growth": round(mgr.diminishing_returns._vocab_growth_rates.get(r, 0), 4)}
+            for r, s in sorted(mgr.diminishing_returns._vocab_sizes.items())
+        },
         "fingerprint_evolution": {
             mid: {
                 "initial": {
