@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 28 March 2026
+Last updated: 29 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -43,8 +43,19 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   ChatGPT, Gemini, DeepSeek succeeded (4/5); Codex timed out (600s CLI limit).
   Phase 3: CC2 synthesis declared structural convergence in 1 round. Two SOFT
   design choices flagged for founder review. Logs: `bench/logs/experiment_11/`.
-- **Next:** Phase 6 (CC2 implements converged design as callable Python module).
-  Then UX build on the orchestration module.
+- **Experiment 12 COMPLETE (29 March 2026):** First live orchestration of
+  `dynamic_management.py` (3181 lines, 27 classes) — 20 rounds, 5 models,
+  809 findings. Terminated at MAX_ROUNDS (detectors broken). Three broken
+  detectors diagnosed and fixed mid-run: kappa (Jaccard too strict), mu (cost
+  distortion from model attrition), Gemini tau (threshold too aggressive).
+  Immune response layer (DetectorHealthMonitor) added. Context windowing,
+  adaptive decomposition, and novelty rate stop signal committed. Statistical
+  analysis: only ChatGPT severity shows significant improvement (p=0.006).
+  CC2 vocabulary novelty declined 23.9%→7.7% over 20 rounds (genuine
+  diminishing returns, not churn). Fingerprint EMA collapses over 20 rounds
+  (fix needed: windowed mean). Logs: `bench/logs/experiment_12/`.
+- **Next:** Implement vocabulary saturation stop signal, windowed fingerprint,
+  model restart logic. Launch Exp12 second run with all fixes active.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

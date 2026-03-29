@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 28 March 2026 20:56 UTC
+Last updated: 29 March 2026 06:46 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -12,37 +12,37 @@ session loss, compaction event, or fresh start with a new model instance.
 2. Run `git log --oneline -10` — what changed recently
 3. Run `git status` — any uncommitted work
 4. Check if bench test is running: `ps aux | grep run_round_robin`
-5. If resuming Experiment 11: read `bench/EXECUTION_PLAN_EXPERIMENT_11.md`
+5. If resuming Experiment 12 fixes: read `bench/logs/experiment_12/experiment_12_report.json`
 6. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
-7. For UX vision context: read `~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
+7. For Exp12 analysis: read `~/Desktop/Accessibility/Exp12_Final_Analysis_2026-03-29.txt`
+8. For UX vision context: read `~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
 
 This is enough to resume most tasks.
 
-## Current Pending Work (28 March 2026)
+## Current Pending Work (29 March 2026)
 
-Experiment 11 Phases 1–3 COMPLETE (28 March 2026). Five-model distributed
-compute test formalising dynamic management and load-balancing layer (6 areas:
-Role Assignment, Load Balancing, Round Progression, Convergence Detection,
-Diminishing Returns, Failure Handling).
+Experiment 12 COMPLETE (29 March 2026). First live orchestration of
+dynamic_management.py (3181 lines, 27 classes) — 20 rounds, 5 models, 809
+findings. Terminated at MAX_ROUNDS (not mathematical convergence).
 
-Phase 1: CC2 produced architecture plan + self-review (8 material + 8 minor
-revisions). Integrated into bench/logs/experiment_11/converged_plan.md.
+Results summary:
+- Model attrition: 5 → 2 (Gemini benched R5, Codex blocked R13, ChatGPT blocked R17)
+- All 3 detectors broken: kappa=0.0 permanently, mu oscillated 34-48, stop never fired
+- CC2 workhorse: 337 findings, ~15/round, vocabulary novelty 23.9%→7.7%
+- ChatGPT only model with significant severity improvement (p=0.006)
+- Fingerprint EMA collapses all dimensions toward zero over 20 rounds
 
-Phase 2 (blind round): CC2 (60,883 chars, 387s), ChatGPT (36,931 chars, 165s),
-Gemini (17,741 chars, 112s), DeepSeek (16,553 chars, 114s). All 4/4 structured
-fields. Codex timed out at 600s (CLI delivery limit on 21,681-char prompt).
-4/5 models succeeded — 4 architecturally diverse training pipelines represented.
+Commits during session:
+- `f09081e` — Immune response layer + 3 detector fixes
+- `fdf7978` — Calibrate tau_novelty 0.65→0.40
+- `d6853ef` — Context windowing + adaptive decomposition
 
-Phase 3 (synthesis): CC2 synthesised all 4 blind outputs (47,170 chars, 335s).
-Declared structural convergence in 1 round. Two SOFT design choices flagged
-for founder review. Phases 4-5 skipped per CC2 stop condition.
-
-Logs: bench/logs/experiment_11/ (21 files: preflight, phase1, phase2, phase3).
-
-Next: (1) Phase 6 — CC2 implements converged design as callable Python module.
-(2) CC1 runs tests on implementation. (3) Commit with attribution. (4) UX
-build on orchestration module (three surfaces: Orchestration Console, Registry
-Editor, Domain Config Manager).
+Next priorities:
+1. Implement vocabulary saturation stop signal (similarity-independent)
+2. Replace fingerprint EMA with windowed mean (fix collapse)
+3. Implement model restart logic (IT Crowd principle — restart degraded models)
+4. Launch Exp12 second run with all fixes active
+5. Confer plan still pending: resolve deferred math model items (A-D1 through A-D5)
 
 ## Standard Recovery (5 minutes)
 

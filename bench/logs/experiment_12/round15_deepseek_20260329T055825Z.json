@@ -1,0 +1,14 @@
+{
+  "timestamp": "20260329T055825Z",
+  "phase": "round15",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2404,
+  "response": "**FINDING_ID:** CC2_R15_F001  \n**SEVERITY:** 0.50  \n**FLAW_CLASS:** 4  \n**ABSTRACTION_INDEX:** 0.50  \n**DESCRIPTION:**  \nThe FSM's `max_round_idx = config.max_rounds - 1` assumes `max_rounds ≥ 2`. If `max_rounds = 1`, then `max_round_idx = 0`. After transitioning from BLIND to SYNTH to ROUND_1, the FSM will be in state `ROUND_1` with `k = 1`. The `valid_events()` for ROUND_1 includes `CONVERGED` and `DIMINISHED` but not `MAX` (since `k ≠ max_round_idx`). The only terminal transitions available are `CONVERGED` or `DIMINISHED`; if neither holds, the FSM deadlocks. The design expects at least one iterative round, so `max_rounds = 1` is invalid but not caught.  \n**PROPOSED_FIX:**  \nAdd validation in `__post_init__`:  \n```python\nassert self.config.max_rounds >= 2, \"max_rounds must be at least 2 (BLIND + ≥1 iterative round)\"\n```  \nAlternatively, adjust the FSM logic to handle `max_rounds = 1` as a special case (e.g., allow `MAX` in ROUND_1 when `max_round_idx = 0`).  \n**VERIFIED:** FALSE  \n\n**FINDING_ID:** CC2_R15_F002  \n**SEVERITY:** 0.30  \n**FLAW_CLASS:** 4  \n**ABSTRACTION_INDEX:** 0.50  \n**DESCRIPTION:**  \nThe `select_event()` method does not guard against being called when the FSM is already terminal. If the FSM is in TERMINAL state, `valid_events()` returns an empty list, so the checks for `Event.CONVERGED` and `Event.DIMINISHED` will fail. If `round_complete = True`, the method will return `Event.COMPLETE` (since `current_state` does not start with `\"ROUND_\"`), which is invalid in TERMINAL. This could lead to `transition()` raising a `ValueError` from an invalid event, but the caller should not be calling `select_event()` after termination.  \n**PROPOSED_FIX:**  \nAdd an early check in `select_event()`:  \n```python\nif self.is_terminal:\n    raise RuntimeError(\"FSM is terminal; no events applicable.\")\n```  \n**VERIFIED:** FALSE  \n\n**CROSS-COMPONENT NOTE:**  \nPrior findings CC2_F020 and CC2_F027 highlight that the FSM includes a SYNTH state but the manager (`DynamicManager`) lacks a synthesis step, and that `current_round` remains 0 during SYNTH while other subsystems may incorrectly interpret it as a round index. This is a cross‑component integration flaw: the FSM expects a synthesis phase that the manager does not implement, and the manager may misuse `current_round` during SYNTH. These issues are **unverified from the current scope** (Round Progression / FSM only).",
+  "metadata": {
+    "elapsed": 294.8,
+    "chars": 2404,
+    "findings_count": 2,
+    "round": 15
+  }
+}
