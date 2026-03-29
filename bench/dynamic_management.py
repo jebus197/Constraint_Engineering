@@ -124,7 +124,9 @@ class DynamicManagementConfig:
     # --- Area 5: Diminishing Returns ---
     tau_mu: float = 0.05  # minimum acceptable VCR
     tau_novelty_stop: float = 0.15  # novelty rate below which to stop (cost-decoupled)
-    tau_novelty: float = 0.65  # similarity threshold for "related" (< tau_sim)
+    tau_novelty: float = 0.40  # similarity threshold for "related" — calibrated from
+    # Exp12 R8 data: genuine duplicates (same function, same bug) score 0.40-0.56,
+    # different findings score 0.30-0.40. The gap is narrow, so 0.40 is conservative.
     r_min: int = 2  # minimum rounds before early stop
     smoothing_window: int = 2  # W: VCR smoothing window (CC2 contribution)
     epsilon_cost: float = 1e-8  # cost regulariser for c_r = 0
