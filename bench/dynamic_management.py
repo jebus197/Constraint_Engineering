@@ -130,6 +130,13 @@ class DynamicManagementConfig:
     r_min: int = 2  # minimum rounds before early stop
     smoothing_window: int = 2  # W: VCR smoothing window (CC2 contribution)
     epsilon_cost: float = 1e-8  # cost regulariser for c_r = 0
+    # Vocabulary saturation: similarity-independent stop signal.
+    # Measures growth rate of cumulative unique vocabulary terms.
+    # When growth rate drops below threshold for sustained_window consecutive
+    # rounds, the stop predicate fires.  This is immune to the Jaccard
+    # semantic-equivalence problem that defeated kappa and novelty_rate.
+    tau_vocab_growth: float = 0.10  # stop when vocab growth rate < 10%
+    vocab_sustained_window: int = 3  # require 3 consecutive rounds below threshold
 
     # --- Area 6: Failure Handling ---
     timeout_multiplier: float = 1.5  # Theta_r = eta * tau_m
@@ -149,6 +156,13 @@ class DynamicManagementConfig:
     # observation, 70% weight on prior. Lower values = more stable but slower
     # to adapt. Higher values = faster adaptation but noisier allocation.
     fingerprint_ema_alpha: float = 0.3
+    # Windowed fingerprint: if > 0, use windowed mean over last N rounds
+    # instead of EMA.  EMA collapses to ~0 over 20 rounds (Exp12 finding).
+    # Set to 5 for windowed mean; set to 0 to revert to EMA.
+    fingerprint_window: int = 5
+    # Minimum fingerprint signal: when all models fall below this on all
+    # dimensions, switch to round-robin allocation.
+    fingerprint_min_signal: float = 0.05
 
     # --- Role-specific baseline coefficients for expected performance ---
     # b_rho vectors for expected(m, r) = b_rho . q_m
@@ -1791,6 +1805,10 @@ class DiminishingReturnsDetector:
         # Novelty rate tracking (cost-decoupled convergence signal)
         self._novelty_rates: Dict[int, float] = {}  # fraction of novel findings per round
         self._all_prior_findings: List[Finding] = []  # accumulated for novelty comparison
+        # Vocabulary saturation tracking (similarity-independent stop signal)
+        self._cumulative_vocab: Set[str] = set()  # all unique terms seen
+        self._vocab_sizes: Dict[int, int] = {}  # cumulative vocab size per round
+        self._vocab_growth_rates: Dict[int, float] = {}  # growth rate per round
 
     def add_round(
         self,
@@ -1863,6 +1881,21 @@ class DiminishingReturnsDetector:
         if new_findings:
             self._all_prior_findings.extend(new_findings)
 
+        # Vocabulary saturation: count unique terms per round.
+        # Uses the same tokenizer as the similarity function — stopwords removed,
+        # minimum length 3.  This is similarity-independent: it measures how many
+        # NEW words appear, not whether findings are "similar" to prior ones.
+        prev_size = len(self._cumulative_vocab)
+        for f in new_findings:
+            tokens = _tokenize_for_similarity(f.description)
+            self._cumulative_vocab.update(tokens)
+        new_size = len(self._cumulative_vocab)
+        self._vocab_sizes[round_idx] = new_size
+        if prev_size > 0:
+            self._vocab_growth_rates[round_idx] = (new_size - prev_size) / prev_size
+        else:
+            self._vocab_growth_rates[round_idx] = 1.0  # first round = 100% growth
+
     def marginal_value(self, round_idx: int) -> float:
         """Compute mu(r) = (Y^(<=r) - Y^(<=r-1)) / c_r.
 
@@ -1926,6 +1959,31 @@ class DiminishingReturnsDetector:
             return 1.0
         return float(np.mean(values))
 
+    def vocab_growth_rate(self, round_idx: int) -> float:
+        """Vocabulary growth rate at round r.
+
+        Returns the fractional increase in cumulative unique terms.
+        1.0 = vocabulary doubled.  0.0 = no new terms.
+        Similarity-independent: immune to the Jaccard problem.
+        """
+        return self._vocab_growth_rates.get(round_idx, 1.0)
+
+    def vocab_saturated(self, round_idx: int) -> bool:
+        """Check if vocabulary growth is below threshold for sustained window.
+
+        Returns True when vocab_growth_rate < tau_vocab_growth for
+        vocab_sustained_window consecutive rounds.  This is the
+        similarity-independent stop signal from Exp12 analysis.
+        """
+        W = self.config.vocab_sustained_window
+        tau = self.config.tau_vocab_growth
+        if round_idx < W:
+            return False
+        for r in range(round_idx - W + 1, round_idx + 1):
+            if self._vocab_growth_rates.get(r, 1.0) >= tau:
+                return False
+        return True
+
     def _abstraction_dropping(self, round_idx: int) -> bool:
         """Check if mean abstraction of new findings is dropping.
 
@@ -1943,17 +2001,21 @@ class DiminishingReturnsDetector:
     def stop(self, round_idx: int) -> bool:
         """Diminishing returns stop predicate.
 
-        stop(r) iff ((smoothed_mu(r) < tau_mu) OR (smoothed_novelty(r) < tau_novelty_stop))
+        stop(r) iff ((smoothed_mu(r) < tau_mu)
+                     OR (smoothed_novelty(r) < tau_novelty_stop)
+                     OR vocab_saturated(r))
                     AND (r >= r_min)
 
-        Two independent signals, either sufficient:
-        1. Cost-normalized marginal value (original mu) — catches efficiency decline
+        Three independent signals, any sufficient:
+        1. Cost-normalized marginal value (mu) — catches efficiency decline
         2. Novelty rate — catches content exhaustion regardless of cost
+        3. Vocabulary saturation — similarity-independent exhaustion signal
 
-        The novelty rate signal is the immune-response-motivated addition: it is
-        immune to cost distortions from model benching/unbenching, which cause mu
-        to spike even when findings are churning. tau_novelty_stop = 0.15 means
-        stop when fewer than 15% of findings are genuinely novel.
+        Signal 3 was added after Experiment 12, where signals 1 and 2 both
+        failed: mu was distorted by model attrition costs, and novelty_rate
+        depended on the same Jaccard similarity that broke kappa.  Vocabulary
+        saturation measures raw term growth rate, which is immune to both
+        failure modes.
 
         The ascending abstraction guard is CONJUNCTIVE (founder decision §9.1):
         abstraction drop is one factor in the stop decision, not a unilateral veto.
@@ -1967,8 +2029,13 @@ class DiminishingReturnsDetector:
         smoothed_mu = self.smoothed_marginal_value(round_idx)
         smoothed_novelty = self.smoothed_novelty_rate(round_idx)
 
-        # Either signal sufficient: cost efficiency exhausted OR content exhausted
-        return smoothed_mu < self.config.tau_mu or smoothed_novelty < self.config.tau_novelty_stop
+        # Any signal sufficient: cost efficiency exhausted OR content exhausted
+        # OR vocabulary saturated
+        return (
+            smoothed_mu < self.config.tau_mu
+            or smoothed_novelty < self.config.tau_novelty_stop
+            or self.vocab_saturated(round_idx)
+        )
 
     def remaining_value_estimate(self, round_idx: int, remaining_rounds: int) -> float:
         """Estimate remaining value if we continue.
@@ -3379,13 +3446,28 @@ class DynamicManager:
             # Store round metrics
             self._round_metrics[model_id].append(obs)
 
-            # EMA update: new = alpha * observed + (1 - alpha) * old
-            new_fp = CapabilityFingerprint(
-                D_decay=alpha_ema * obs["D_decay"] + (1 - alpha_ema) * old_fp.D_decay,
-                v_bar=alpha_ema * obs["v_bar"] + (1 - alpha_ema) * old_fp.v_bar,
-                A=alpha_ema * obs["A"] + (1 - alpha_ema) * old_fp.A,
-                C=alpha_ema * obs["C"] + (1 - alpha_ema) * old_fp.C,
-            )
+            # Fingerprint update: windowed mean (default) or EMA (legacy).
+            # EMA with alpha=0.3 collapses all dimensions to ~0 over 20 rounds
+            # (Exp12 finding: 0.9 * 0.7^20 ≈ 0.0007).  Windowed mean over
+            # the last W rounds prevents this by only using recent observations.
+            window = self.config.fingerprint_window
+            if window > 0 and len(self._round_metrics[model_id]) > 0:
+                # Use windowed mean over last W observations
+                recent = self._round_metrics[model_id][-window:]
+                new_fp = CapabilityFingerprint(
+                    D_decay=sum(o["D_decay"] for o in recent) / len(recent),
+                    v_bar=sum(o["v_bar"] for o in recent) / len(recent),
+                    A=sum(o["A"] for o in recent) / len(recent),
+                    C=sum(o["C"] for o in recent) / len(recent),
+                )
+            else:
+                # Legacy EMA: new = alpha * observed + (1 - alpha) * old
+                new_fp = CapabilityFingerprint(
+                    D_decay=alpha_ema * obs["D_decay"] + (1 - alpha_ema) * old_fp.D_decay,
+                    v_bar=alpha_ema * obs["v_bar"] + (1 - alpha_ema) * old_fp.v_bar,
+                    A=alpha_ema * obs["A"] + (1 - alpha_ema) * old_fp.A,
+                    C=alpha_ema * obs["C"] + (1 - alpha_ema) * old_fp.C,
+                )
             self._live_fingerprints[model_id] = new_fp
 
         # Emit event with updated fingerprints

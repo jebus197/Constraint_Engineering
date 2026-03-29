@@ -1488,3 +1488,162 @@ class TestEdgeCases:
         mgr.failure_handler._active_models.clear()
         with pytest.raises(RuntimeError, match="No active models"):
             mgr.get_allocation([Task_factory("t1", 1000, 1)])
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VOCABULARY SATURATION STOP SIGNAL TESTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestVocabSaturation:
+    """Tests for vocabulary saturation stop signal (Exp12 fix)."""
+
+    @pytest.fixture
+    def config(self):
+        return DynamicManagementConfig(
+            tau_vocab_growth=0.10,
+            vocab_sustained_window=3,
+            r_min=2,
+        )
+
+    def test_vocab_growth_first_round(self, config):
+        """First round should have 100% growth."""
+        drd = DiminishingReturnsDetector(config)
+        findings = [
+            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "novel unique terms here"),
+        ]
+        drd.add_round_from_findings(0, findings, findings, 1.0)
+        assert drd.vocab_growth_rate(0) == 1.0
+
+    def test_vocab_growth_decreases(self, config):
+        """Vocabulary growth should decrease with repeated terms."""
+        drd = DiminishingReturnsDetector(config)
+        f0 = [make_finding("f1", "m1", 0, 1, 0.5, 0.5,
+                           "alpha beta gamma delta epsilon")]
+        drd.add_round_from_findings(0, f0, f0, 1.0)
+        # Second round: same terms, no growth
+        f1 = [make_finding("f2", "m1", 1, 1, 0.5, 0.5,
+                           "alpha beta gamma delta epsilon")]
+        drd.add_round_from_findings(1, f0 + f1, f1, 1.0)
+        assert drd.vocab_growth_rate(1) == 0.0
+
+    def test_vocab_growth_with_new_terms(self, config):
+        """Adding new terms should produce positive growth."""
+        drd = DiminishingReturnsDetector(config)
+        f0 = [make_finding("f1", "m1", 0, 1, 0.5, 0.5,
+                           "alpha beta gamma delta")]
+        drd.add_round_from_findings(0, f0, f0, 1.0)
+        f1 = [make_finding("f2", "m1", 1, 1, 0.5, 0.5,
+                           "epsilon zeta theta kappa")]
+        drd.add_round_from_findings(1, f0 + f1, f1, 1.0)
+        # 4 new terms out of 4 existing = 100% growth
+        assert drd.vocab_growth_rate(1) == 1.0
+
+    def test_vocab_saturated_requires_sustained_window(self, config):
+        """vocab_saturated should only fire after sustained_window rounds."""
+        drd = DiminishingReturnsDetector(config)
+        # Build up enough rounds with low growth
+        base_terms = "alpha beta gamma delta epsilon zeta theta kappa lambda"
+        f0 = [make_finding("f1", "m1", 0, 1, 0.5, 0.5, base_terms)]
+        drd.add_round_from_findings(0, f0, f0, 1.0)
+        # Rounds 1-4: repeat same terms (0% growth)
+        all_f = list(f0)
+        for r in range(1, 5):
+            fr = [make_finding(f"f{r+1}", "m1", r, 1, 0.5, 0.5, base_terms)]
+            all_f.extend(fr)
+            drd.add_round_from_findings(r, all_f, fr, 1.0)
+        # Round 2 should not be saturated (need 3 consecutive: 0,1,2 but round 0 is 100%)
+        assert not drd.vocab_saturated(2)
+        # Round 3 should be saturated (rounds 1,2,3 all have 0% growth)
+        assert drd.vocab_saturated(3)
+
+    def test_vocab_saturation_triggers_stop(self, config):
+        """Vocabulary saturation should trigger the stop predicate."""
+        drd = DiminishingReturnsDetector(config)
+        base_terms = "alpha beta gamma delta epsilon zeta theta kappa lambda"
+        f0 = [make_finding("f1", "m1", 0, 1, 0.5, 0.5, base_terms)]
+        drd.add_round_from_findings(0, f0, f0, 1.0)
+        all_f = list(f0)
+        for r in range(1, 5):
+            fr = [make_finding(f"f{r+1}", "m1", r, 1, 0.5, 0.5, base_terms)]
+            all_f.extend(fr)
+            # Give high yield so mu and novelty_rate don't trigger stop
+            drd.add_round_from_findings(r, all_f, fr, 0.001)
+        # stop should fire from vocabulary saturation even though mu is high
+        assert drd.stop(3)
+
+    def test_vocab_saturation_not_triggered_with_fresh_content(self, config):
+        """If new terms keep appearing, vocab saturation should not fire."""
+        drd = DiminishingReturnsDetector(config)
+        all_f = []
+        for r in range(5):
+            # Each round adds completely new terms
+            desc = " ".join(f"term{r}_{i}" for i in range(10))
+            fr = [make_finding(f"f{r}", "m1", r, 1, 0.5, 0.5, desc)]
+            all_f.extend(fr)
+            drd.add_round_from_findings(r, all_f, fr, 1.0)
+        assert not drd.vocab_saturated(4)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WINDOWED FINGERPRINT TESTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestWindowedFingerprint:
+    """Tests for windowed mean fingerprint update (replacing EMA)."""
+
+    @pytest.fixture
+    def config(self):
+        return DynamicManagementConfig(
+            fingerprint_window=3,  # 3-round window
+            fingerprint_ema_alpha=0.3,
+            max_rounds=20,
+        )
+
+    @pytest.fixture
+    def three_models(self):
+        return [
+            ModelSpec("m1", CapabilityFingerprint(0.2, 0.8, 0.7, 0.6), tau=100.0),
+            ModelSpec("m2", CapabilityFingerprint(0.3, 0.7, 0.6, 0.5), tau=100.0),
+            ModelSpec("m3", CapabilityFingerprint(0.1, 0.9, 0.8, 0.7), tau=100.0),
+        ]
+
+    def test_windowed_fingerprint_does_not_collapse(self, three_models, config):
+        """Windowed mean should not decay to zero over many rounds."""
+        mgr = DynamicManager(three_models, config)
+        # Simulate 15 rounds with consistent findings
+        for r in range(15):
+            findings = [
+                make_finding(f"f{r}_1", "m1", r, 1, 0.7, 0.6, f"finding {r} desc"),
+                make_finding(f"f{r}_2", "m2", r, 2, 0.5, 0.5, f"other {r} desc"),
+            ]
+            responses = {
+                "m1": ModelResponse("m1", r, "ok", 10.0,
+                                    finding_count=1, mean_abstraction=0.6),
+                "m2": ModelResponse("m2", r, "ok", 10.0,
+                                    finding_count=1, mean_abstraction=0.5),
+            }
+            mgr.update_fingerprints(r, findings, responses)
+
+        # After 15 rounds, fingerprints should reflect recent observations,
+        # NOT collapse to zero.
+        fp_m1 = mgr._live_fingerprints["m1"]
+        assert fp_m1.A > 0.3, f"A should not collapse: {fp_m1.A}"
+        assert fp_m1.C > 0.0, f"C should not collapse: {fp_m1.C}"
+
+    def test_ema_mode_when_window_zero(self, three_models):
+        """Setting fingerprint_window=0 should use legacy EMA."""
+        config = DynamicManagementConfig(fingerprint_window=0, fingerprint_ema_alpha=0.3)
+        mgr = DynamicManager(three_models, config)
+        findings = [
+            make_finding("f1", "m1", 0, 1, 0.7, 0.6, "test finding"),
+        ]
+        responses = {
+            "m1": ModelResponse("m1", 0, "ok", 10.0,
+                                finding_count=1, mean_abstraction=0.6),
+        }
+        mgr.update_fingerprints(0, findings, responses)
+        fp = mgr._live_fingerprints["m1"]
+        # EMA: new_A = 0.3 * 0.7 + 0.7 * 0.7 = 0.21 + 0.49 = 0.7
+        assert abs(fp.A - 0.7) < 0.01
