@@ -1,0 +1,390 @@
+{
+  "experiment": "12_live_wire",
+  "timestamp": "2026-03-29T01:11:54.845238+00:00",
+  "termination_reason": "MAX_ROUNDS",
+  "rounds": 6,
+  "total_findings": 237,
+  "active_models_at_end": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "total_events": 29,
+  "fingerprint_evolution": {
+    "CC2": {
+      "initial": {
+        "D_decay": 0.1,
+        "v_bar": 0.9,
+        "A": 0.85,
+        "C": 0.8
+      },
+      "final": {
+        "D_decay": 0.8487,
+        "v_bar": 0.1513,
+        "A": 0.5588,
+        "C": 0.3735
+      }
+    },
+    "Codex": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.85,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.8655,
+        "v_bar": 0.8944,
+        "A": 0.7717,
+        "C": 0.7318
+      }
+    },
+    "ChatGPT": {
+      "initial": {
+        "D_decay": 0.15,
+        "v_bar": 0.85,
+        "A": 0.8,
+        "C": 0.75
+      },
+      "final": {
+        "D_decay": 0.8571,
+        "v_bar": 0.7999,
+        "A": 0.7043,
+        "C": 0.958
+      }
+    },
+    "Gemini": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.75,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.8655,
+        "v_bar": 0.208,
+        "A": 0.4448,
+        "C": 0.4449
+      }
+    },
+    "DeepSeek": {
+      "initial": {
+        "D_decay": 0.25,
+        "v_bar": 0.75,
+        "A": 0.8,
+        "C": 0.65
+      },
+      "final": {
+        "D_decay": 0.494,
+        "v_bar": 0.1261,
+        "A": 0.1561,
+        "C": 0.1813
+      }
+    }
+  },
+  "round_results": [
+    {
+      "round": 0,
+      "state": "SYNTH",
+      "kappa": 0.0,
+      "mu": 24.5322,
+      "converged": false,
+      "stop": false,
+      "findings_count": 48,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 0,
+      "state": "ROUND_1",
+      "kappa": 0.0,
+      "mu": 60.4879,
+      "converged": false,
+      "stop": false,
+      "findings_count": 37,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 1,
+      "state": "ROUND_2",
+      "kappa": 0.0,
+      "mu": 73.0081,
+      "converged": false,
+      "stop": false,
+      "findings_count": 50,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 2,
+      "state": "ROUND_3",
+      "kappa": 0.434,
+      "mu": 58.4097,
+      "converged": false,
+      "stop": false,
+      "findings_count": 30,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 3,
+      "state": "ROUND_4",
+      "kappa": 0.4008,
+      "mu": 51.7361,
+      "converged": false,
+      "stop": false,
+      "findings_count": 36,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 4,
+      "state": "TERMINAL",
+      "kappa": 0.4544,
+      "mu": 66.7813,
+      "converged": false,
+      "stop": false,
+      "findings_count": 36,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    }
+  ],
+  "event_log": [
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 48 findings",
+      "timestamp": 1671515.806640291
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1671515.821537875
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=24.5322, stop=False",
+      "timestamp": 1671515.823083791
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1671515.823903291
+    },
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 0,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1672209.783011791
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 37 findings",
+      "timestamp": 1672209.783456
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1672209.789681916
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=60.4879, stop=False",
+      "timestamp": 1672209.792672458
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1672209.793590583
+    },
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 1,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1672834.008240458
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Processing round 1 with 50 findings",
+      "timestamp": 1672834.008414291
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1672834.026784375
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "mu=73.0081, stop=False",
+      "timestamp": 1672834.03194575
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1672834.032824083
+    },
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 2,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1673509.193997333
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 2,
+      "detail": "Processing round 2 with 30 findings",
+      "timestamp": 1673509.194182041
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "kappa=0.4340, converged=False",
+      "timestamp": 1673509.216256666
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "mu=58.4097, stop=False",
+      "timestamp": 1673509.22052725
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 2,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1673509.220974125
+    },
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 3,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1674274.645349458
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 3,
+      "detail": "Processing round 3 with 36 findings",
+      "timestamp": 1674274.64561075
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 3,
+      "detail": "kappa=0.4008, converged=False",
+      "timestamp": 1674274.697065333
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 3,
+      "detail": "mu=51.7361, stop=False",
+      "timestamp": 1674274.704511958
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 3,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1674274.704905583
+    },
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 4,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1675115.20671525
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 4,
+      "detail": "Processing round 4 with 36 findings",
+      "timestamp": 1675115.206865416
+    },
+    {
+      "type": "TIMEOUT",
+      "model": "Gemini",
+      "round": 5,
+      "detail": "Response time 294.6s > threshold 225.0s",
+      "timestamp": 1675115.210401458
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 4,
+      "detail": "kappa=0.4544, converged=False",
+      "timestamp": 1675115.258724916
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 4,
+      "detail": "mu=66.7813, stop=False",
+      "timestamp": 1675115.269995458
+    }
+  ]
+}

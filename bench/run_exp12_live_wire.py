@@ -69,13 +69,16 @@ INITIAL_FINGERPRINTS = {
     "Codex": CapabilityFingerprint(D_decay=0.20, v_bar=0.80, A=0.85, C=0.70),
 }
 
-# Codex has uncertain token limit via CLI delivery
+# L = input context window minus 32K reserved for output generation.
+# This is the token budget available for the PROMPT (system + user).
+# Prior config used max_output_tokens (32768) for L — wrong semantics.
+# Codex retains L_std because CLI delivery mechanism has uncertain limits.
 MODEL_SPECS = {
-    "CC2": {"tau": 400.0, "L": 32768.0, "c": 0.015, "L_std": 0.0},
-    "ChatGPT": {"tau": 200.0, "L": 32768.0, "c": 0.02, "L_std": 0.0},
-    "Gemini": {"tau": 150.0, "L": 32768.0, "c": 0.01, "L_std": 0.0},
-    "DeepSeek": {"tau": 150.0, "L": 32768.0, "c": 0.01, "L_std": 0.0},
-    "Codex": {"tau": 600.0, "L": 32768.0, "c": 0.02, "L_std": 5000.0},
+    "CC2": {"tau": 400.0, "L": 168000.0, "c": 0.015, "L_std": 0.0},      # Opus 4.6: ~200K context - 32K output
+    "ChatGPT": {"tau": 200.0, "L": 96000.0, "c": 0.02, "L_std": 0.0},    # GPT-5.4: ~128K context - 32K output
+    "Gemini": {"tau": 150.0, "L": 968000.0, "c": 0.01, "L_std": 0.0},    # Gemini 3.1 Pro: ~1M context - 32K output
+    "DeepSeek": {"tau": 200.0, "L": 32000.0, "c": 0.01, "L_std": 0.0},   # DeepSeek Reasoner: ~64K context - 32K output
+    "Codex": {"tau": 600.0, "L": 96000.0, "c": 0.02, "L_std": 10000.0},  # GPT-5.4 via CLI: ~128K context - 32K, uncertain
 }
 
 
@@ -239,14 +242,8 @@ def run_blind_round(
         _log(f"  {mc.label}: feasibility P={p_feasible:.3f}, dispatch={'YES' if feasible else 'BLOCKED'}")
 
         if not feasible:
-            # Record as a timeout-like response for the failure handler
-            responses[mc.label] = ModelResponse(
-                model_id=mc.label,
-                text="",
-                elapsed=0.0,
-                timed_out=True,
-                parse_error=False,
-            )
+            # Do NOT create a ModelResponse for blocked dispatches.
+            # Feasibility block != model failure. See adaptive round comment.
             continue
 
         # Dispatch
@@ -254,18 +251,24 @@ def run_blind_round(
             text, elapsed = dispatch_to_model(mc, prompt, cdsfl_text)
             _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
 
-            responses[mc.label] = ModelResponse(
-                model_id=mc.label,
-                text=text,
-                elapsed=elapsed,
-                timed_out=False,
-                parse_error=False,
-            )
-
             # Parse findings
             findings = parse_findings(mc.label, 0, text)
             all_findings.extend(findings)
             _log(f"  {mc.label}: {len(findings)} findings parsed")
+
+            responses[mc.label] = ModelResponse(
+                model_id=mc.label,
+                round_idx=0,
+                content=text,
+                response_time=elapsed,
+                parseable=len(findings) > 0,
+                format_compliant=True,
+                finding_count=len(findings),
+                mean_abstraction=(
+                    sum(f.abstraction_index for f in findings) / len(findings)
+                    if findings else 0.5
+                ),
+            )
 
             # Save output
             save_output(
@@ -286,14 +289,13 @@ def run_blind_round(
             _log(f"  {mc.label}: ERROR — {e}")
             responses[mc.label] = ModelResponse(
                 model_id=mc.label,
-                text="",
-                elapsed=0.0,
-                timed_out="timeout" in str(e).lower(),
-                parse_error=False,
+                round_idx=0,
+                content="",
+                response_time=mc.timeout + 1.0 if "timeout" in str(e).lower() else 0.0,
             )
 
     _log(f"Blind round complete: {len(all_findings)} total findings from "
-         f"{sum(1 for r in responses.values() if r.text)} models")
+         f"{sum(1 for r in responses.values() if r.content)} models")
 
     return responses, all_findings
 
@@ -359,24 +361,29 @@ def run_adaptive_round(
         feasible, p_feasible = mgr.check_dispatch_feasibility(model_spec, prompt_tokens)
         if not feasible:
             _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f})")
-            responses[mc.label] = ModelResponse(
-                model_id=mc.label, text="", elapsed=0.0,
-                timed_out=True, parse_error=False,
-            )
+            # Do NOT create a ModelResponse for blocked dispatches.
+            # Feasibility block is a prompt-sizing issue, not a model failure.
+            # Creating an empty response would trigger EMPTY failure detection
+            # and degrade the model's fingerprint for something it never attempted.
             continue
 
         try:
             text, elapsed = dispatch_to_model(mc, prompt, cdsfl_text)
             _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
 
-            responses[mc.label] = ModelResponse(
-                model_id=mc.label, text=text, elapsed=elapsed,
-                timed_out=False, parse_error=False,
-            )
-
             findings = parse_findings(mc.label, round_idx, text)
             all_findings.extend(findings)
             _log(f"  {mc.label}: {len(findings)} findings parsed")
+
+            responses[mc.label] = ModelResponse(
+                model_id=mc.label, round_idx=round_idx, content=text,
+                response_time=elapsed, parseable=len(findings) > 0,
+                format_compliant=True, finding_count=len(findings),
+                mean_abstraction=(
+                    sum(f.abstraction_index for f in findings) / len(findings)
+                    if findings else 0.5
+                ),
+            )
 
             save_output(
                 LOGS_DIR, f"round{round_idx}", mc.label, prompt[:200] + "...",
@@ -395,12 +402,12 @@ def run_adaptive_round(
         except Exception as e:
             _log(f"  {mc.label}: ERROR — {e}")
             responses[mc.label] = ModelResponse(
-                model_id=mc.label, text="", elapsed=0.0,
-                timed_out="timeout" in str(e).lower(), parse_error=False,
+                model_id=mc.label, round_idx=round_idx, content="",
+                response_time=mc.timeout + 1.0 if "timeout" in str(e).lower() else 0.0,
             )
 
     _log(f"Round {round_idx} complete: {len(all_findings)} findings from "
-         f"{sum(1 for r in responses.values() if r.text)} models")
+         f"{sum(1 for r in responses.values() if r.content)} models")
 
     return responses, all_findings
 
@@ -423,6 +430,30 @@ def format_findings_for_context(findings: List[Finding]) -> str:
     return "\n".join(lines)
 
 
+CHECKPOINT_PATH = LOGS_DIR / "checkpoint.json"
+
+
+def save_checkpoint(data: Dict[str, Any]) -> None:
+    """Save experiment state to disk after each dispatch."""
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    CHECKPOINT_PATH.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False, default=str),
+        encoding="utf-8",
+    )
+    _log(f"  [CHECKPOINT] Saved ({len(data.get('completed_models', []))} models, "
+         f"round {data.get('current_round', 0)})")
+
+
+def load_checkpoint() -> Optional[Dict[str, Any]]:
+    """Load checkpoint if it exists."""
+    if CHECKPOINT_PATH.exists():
+        data = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
+        _log(f"  [CHECKPOINT] Resumed from round {data.get('current_round', 0)}, "
+             f"{len(data.get('completed_models', []))} models completed")
+        return data
+    return None
+
+
 def run_full_experiment():
     """Run the full Live Wire experiment."""
     source_env()
@@ -443,7 +474,7 @@ def run_full_experiment():
         _log(f"  [EVENT] {event.event_type.value}: {event.detail}")
 
     dm_config = DynamicManagementConfig(
-        max_rounds=5,
+        max_rounds=20,  # Let convergence and diminishing returns detectors decide
         feasibility_threshold=0.90,
     )
     mgr = DynamicManager(model_specs, config=dm_config, event_callback=on_event)
@@ -466,13 +497,13 @@ def run_full_experiment():
 
     # Process through DynamicManager
     round_cost = sum(
-        len(r.text) * 0.00001 for r in responses.values()  # rough cost estimate
+        len(r.content) * 0.00001 for r in responses.values()  # rough cost estimate
     )
     result = mgr.process_round(
         responses, findings, [], round_cost=round_cost,
-        duration=sum(r.elapsed for r in responses.values()),
+        duration=sum(r.response_time for r in responses.values()),
     )
-    _log(f"Round 0 result: state={result.state.value}, "
+    _log(f"Round 0 result: state={result.state}, "
          f"kappa={result.convergence_metric:.4f}, "
          f"mu={result.marginal_value:.4f}, "
          f"converged={result.converged}, stop={result.stop}")
@@ -493,13 +524,13 @@ def run_full_experiment():
         all_findings.extend(new_findings)
 
         round_cost = sum(
-            len(r.text) * 0.00001 for r in responses.values()
+            len(r.content) * 0.00001 for r in responses.values()
         )
         result = mgr.process_round(
             responses, new_findings, [], round_cost=round_cost,
-            duration=sum(r.elapsed for r in responses.values()),
+            duration=sum(r.response_time for r in responses.values()),
         )
-        _log(f"Round {round_idx} result: state={result.state.value}, "
+        _log(f"Round {round_idx} result: state={result.state}, "
              f"kappa={result.convergence_metric:.4f}, "
              f"mu={result.marginal_value:.4f}, "
              f"converged={result.converged}, stop={result.stop}")
@@ -555,7 +586,7 @@ def run_full_experiment():
         "round_results": [
             {
                 "round": rr.round_idx,
-                "state": rr.state.value,
+                "state": rr.state,
                 "kappa": round(rr.convergence_metric, 4),
                 "mu": round(rr.marginal_value, 4),
                 "converged": rr.converged,
