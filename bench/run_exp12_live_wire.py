@@ -578,6 +578,21 @@ def run_adaptive_round(
                 restart_counts[mc.label] = restart_counts.get(mc.label, 0) + 1
                 _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f}) → "
                      f"RESTARTING with decomposed dispatch (restart #{restart_counts[mc.label]})")
+                # Blend fingerprint: 50% initial + 50% pre-block (CC2 recommendation).
+                # Gives the manager a reasonable prior while allowing adaptation.
+                initial_fp = INITIAL_FINGERPRINTS.get(mc.label)
+                pre_block_fp = mgr._live_fingerprints.get(mc.label)
+                if initial_fp and pre_block_fp:
+                    from dynamic_management import CapabilityFingerprint as _CFP
+                    blended = _CFP(
+                        D_decay=0.5 * initial_fp.D_decay + 0.5 * pre_block_fp.D_decay,
+                        v_bar=0.5 * initial_fp.v_bar + 0.5 * pre_block_fp.v_bar,
+                        A=0.5 * initial_fp.A + 0.5 * pre_block_fp.A,
+                        C=0.5 * initial_fp.C + 0.5 * pre_block_fp.C,
+                    )
+                    mgr._live_fingerprints[mc.label] = blended
+                    mgr._round_metrics[mc.label].clear()  # reset windowed history
+                    _log(f"  {mc.label}: fingerprint blended (A={blended.A:.3f}, C={blended.C:.3f})")
                 # Switch to decomposed dispatch with minimal context
                 use_decomposition = True
                 decomposed_models.add(mc.label)
