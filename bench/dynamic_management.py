@@ -1974,6 +1974,16 @@ class DiminishingReturnsDetector:
         Returns True when vocab_growth_rate < tau_vocab_growth for
         vocab_sustained_window consecutive rounds.  This is the
         similarity-independent stop signal from Exp12 analysis.
+
+        NOTE (CC2 confer, Exp13a): The proportional growth rate
+        (new - old) / old is a monotonically decreasing function of
+        cumulative vocabulary size, even if the absolute number of new
+        terms per round is constant.  This means the signal is biased
+        toward firing in later rounds.  For 10-20 round experiments
+        this is acceptable and even desirable (sublinear growth SHOULD
+        trigger stop).  For experiments exceeding ~30 rounds on very
+        large artifacts, consider switching to an absolute-count floor
+        (e.g., min_new_terms=5) or log-scaled growth rate.
         """
         W = self.config.vocab_sustained_window
         tau = self.config.tau_vocab_growth

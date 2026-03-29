@@ -574,7 +574,7 @@ def run_adaptive_round(
             # Model restart logic (IT Crowd principle): instead of permanent
             # blocking, switch to decomposed dispatch with minimal context.
             # This gives the model a "fresh start" with manageable context.
-            if not use_decomposition and restart_counts.get(mc.label, 0) < MAX_RESTARTS_PER_MODEL:
+            if mc.label not in decomposed_models and restart_counts.get(mc.label, 0) < MAX_RESTARTS_PER_MODEL:
                 restart_counts[mc.label] = restart_counts.get(mc.label, 0) + 1
                 _log(f"  {mc.label}: feasibility BLOCKED (P={p_feasible:.3f}) → "
                      f"RESTARTING with decomposed dispatch (restart #{restart_counts[mc.label]})")
@@ -781,7 +781,10 @@ def run_full_experiment():
     # ceil(lines/200) for this artifact gives ~16, aligning with where
     # vocabulary novelty dropped below 10% in Exp12.  Minimum 10.
     import math as _math
-    scaled_max_rounds = max(10, _math.ceil(artifact_lines / 200))
+    # Budget cap, not convergence criterion.  The real stop comes from
+    # vocab saturation (Fix 1) or per-model mu (Fix 7).  Ceiling of 30
+    # prevents runaway costs on large artifacts (CC2 confer recommendation).
+    scaled_max_rounds = max(10, min(_math.ceil(artifact_lines / 200), 30))
 
     dm_config = DynamicManagementConfig(
         max_rounds=scaled_max_rounds,

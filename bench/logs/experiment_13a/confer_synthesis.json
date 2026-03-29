@@ -1,0 +1,19 @@
+{
+  "experiment": "13a",
+  "date": "2026-03-29T09:30:00+01:00",
+  "task": "Confer round on Experiment 12 post-experiment fixes",
+  "models_reviewed": ["CC2 (Opus 4.6)", "CX (Codex GPT-5.4, previous round)"],
+  "system_prompt": "cdsfl_core_formal.md",
+  "fixes_reviewed": 8,
+  "verdicts": {
+    "fix_1_vocab_saturation": {"cc2": "MODIFY (SOFT, 0.82)", "action": "APPLIED"},
+    "fix_2_windowed_fingerprint": {"cc2": "APPROVE (HARD, 0.90)", "action": "KEPT AS-IS"},
+    "fix_3_model_restart": {"cc2": "MODIFY (HARD, 0.85)", "action": "APPLIED"},
+    "fix_4_adaptive_decomposition": {"cc2": "MODIFY (SOFT, 0.78)", "action": "DEFERRED"},
+    "fix_5_max_rounds_scaling": {"cc2": "MODIFY (SOFT, 0.80)", "action": "APPLIED"},
+    "fix_6_fingerprint_blending": {"cc2": "APPROVE (SOFT, 0.85)", "action": "KEPT AS-IS"},
+    "fix_7_per_model_mu": {"cc2": "APPROVE (HARD, 0.88)", "action": "DEFERRED - implement before Exp13b"},
+    "fix_8_embedding_similarity": {"cc2": "APPROVE (SOFT, 0.85)", "action": "DEFERRED - long term"}
+  },
+  "summary": "3 modifications applied (Fixes 1, 3, 5). 4 approved as-is. 1 deferred. No rejections."
+}
