@@ -63,12 +63,24 @@ confirmed ascending (5 independent signals). TTS exports:
 Exp13b_What_The_Models_Found, Exp13b_Context_Novelty_Methodology,
 Self_Adaptive_CDSFL (all 2026-03-29).
 
-Next priorities:
-1. Implement Phase A: wire per-model registry into orchestrator
-2. Implement Phase B: close immune feedback loop (Tier 1 auto-adjustment)
-3. Recalibrate vocab saturation for Exp14 (τ 0.10→0.03-0.05, W 3→5)
-4. Resolve deferred math model items (A-D1 through A-D5)
-5. Outreach emails to industry specialists
+EXPERIMENT 14 PLAN APPROVED (29 March 2026, 20:55 BST):
+Full context gathered from all 12 TTS files (Exp12 through Exp13b + self-adaptive).
+Execution sequence:
+1. Doc sweep: mirror TTS to docs/experimental_notes/, check staleness
+2. Phase A: wire per-model registry Layer 4 TOML into orchestrator
+3. Phase B: close immune feedback loop — apply_diagnosis() in DynamicManager
+4. Phase C: per-model prompt adaptation — DeepSeek verification fix via registry
+5. Phase D: area-level vocabulary tracking (replaces global, fixes decomposition interaction)
+6. Phase E: dispatch health monitoring — 3 new pathology types in DetectorHealthMonitor
+7. Recalibrate: τ_vocab_growth 0.10→0.04, vocab_sustained_window 3→5
+8. Run tests, commit, push
+9. Launch Experiment 14: dynamic_management.py, 5 models, focus Areas 4-7
+10. 7 falsifiable predictions: >8 rounds, DeepSeek verification improves,
+    pre-decompose DeepSeek, all 5 survive, immune loop fires, >36 Area 4-7
+    findings, ascending abstraction holds
+
+Then: resolve deferred math model items (A-D1 through A-D5)
+Then: outreach to Michael Cox (MIDCA) when bench data is in hand
 
 ## Standard Recovery (5 minutes)
 

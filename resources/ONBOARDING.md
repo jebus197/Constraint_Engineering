@@ -86,7 +86,16 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   peers). Three new immune layer pathology types designed (dispatch false
   positive, verification miscalibration, cross-model contradiction).
   Implementation roadmap: Phases A-E. TTS exports on Desktop.
-- **Next:** Resolve deferred math model items (A-D1–D5).
+- **Experiment 14 PLAN APPROVED (29 March 2026):** Implement self-adaptive
+  fixes (Phases A–E), then run against dynamic_management.py with all 5 models
+  targeting Areas 4–7 (undertested detector/immune code). Phase A: wire per-model
+  registry Layer 4 into orchestrator. Phase B: close immune feedback loop
+  (apply_diagnosis()). Phase C: per-model prompt adaptation (DeepSeek verification
+  fix). Phase D: area-level vocabulary tracking (replaces global). Phase E:
+  dispatch health monitoring (3 new pathology types). Recalibrate τ_vocab 0.10→0.04,
+  W 3→5. 7 falsifiable predictions registered. Predicted termination: rounds 8–15.
+- **Next:** Execute Experiment 14 plan (doc sweep → Phases A–E → run).
+  Then: resolve deferred math model items (A-D1–D5).
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
