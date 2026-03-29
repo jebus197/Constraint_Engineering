@@ -441,8 +441,10 @@ def _deepseek_prior_findings(
     return format_findings_for_context(relevant[:30]) if relevant else "(No prior findings for this area.)"
 
 
-# Models excluded from convergence/D_decay calculations due to
+# Models always excluded from convergence/D_decay calculations due to
 # scope-limited dispatch (confer consensus: CC2/CX/Gemini all agreed).
+# Additional models may be dynamically excluded when they switch to
+# decomposed dispatch due to context pressure (see run_adaptive_round).
 CONVERGENCE_EXCLUDED_MODELS = {"DeepSeek"}
 
 
@@ -484,6 +486,7 @@ def run_adaptive_round(
 
     responses: Dict[str, ModelResponse] = {}
     all_findings: List[Finding] = []
+    decomposed_models: set[str] = set()  # Track which models used decomposed dispatch
 
     # Get allocation from the manager (uses live fingerprints)
     _log(f"  Live fingerprints:")
@@ -505,11 +508,26 @@ def run_adaptive_round(
         if model_spec is None:
             continue
 
-        # DeepSeek: decomposed dispatch with focused area + skeletal context
+        # Context-adaptive dispatch: models with small context windows or
+        # approaching feasibility limits get decomposed dispatch.
+        # Founder insight: "don't feed ALL context — drop and restart with
+        # most recent/relevant findings when overloaded. Decomposition should
+        # apply to ALL models where relevant."
+        use_decomposition = False
         if mc.label == "DeepSeek":
+            use_decomposition = True  # Always decomposed (32K window)
+        elif mc.label in ("Codex",):
+            # Codex has uncertain L — decompose when context is large
+            all_context_chars = len(base_artifact) + len(prior_findings_text)
+            if all_context_chars > 60000:  # ~15K tokens — approaching Codex limit
+                use_decomposition = True
+                _log(f"  {mc.label}: context={all_context_chars} chars, switching to decomposed dispatch")
+
+        if use_decomposition:
+            decomposed_models.add(mc.label)
             area_idx = (round_idx - 1) % 6
             focused_code, area_label = _extract_area_code(base_artifact, area_idx)
-            ds_prior = _deepseek_prior_findings(
+            area_prior = _deepseek_prior_findings(
                 all_prior_findings or [], area_label
             )
             model_prompt = (
@@ -517,7 +535,7 @@ def run_adaptive_round(
                 f"You are reviewing AREA: {area_label}.\n\n"
                 f"Below is the full code for this area, plus skeletal signatures "
                 f"(class/method definitions only) of the other 5 areas for context.\n\n"
-                f"Prior findings relevant to this area:\n{ds_prior}\n\n"
+                f"Prior findings relevant to this area:\n{area_prior}\n\n"
                 f"Your task: find flaws in this area that prior reviewers missed. "
                 f"If you see potential cross-component issues, flag them but note "
                 f"they are unverified from your scope.\n\n"
@@ -528,7 +546,7 @@ def run_adaptive_round(
                 f"=== END ARTIFACT ===\n\n"
                 f"Produce your findings now."
             )
-            _log(f"  DeepSeek: decomposed — Area {area_idx+1}: {area_label} "
+            _log(f"  {mc.label}: decomposed — Area {area_idx+1}: {area_label} "
                  f"({len(focused_code)} chars focused, {len(model_prompt)} chars total)")
         else:
             model_prompt = prompt
@@ -589,16 +607,49 @@ def run_adaptive_round(
     _log(f"Round {round_idx} complete: {len(all_findings)} findings from "
          f"{sum(1 for r in responses.values() if r.content)} models")
 
-    return responses, all_findings
+    return responses, all_findings, decomposed_models
 
 
-def format_findings_for_context(findings: List[Finding]) -> str:
-    """Format findings as text for inclusion in next round's prompt."""
+def format_findings_for_context(
+    findings: List[Finding],
+    max_findings: int = 150,
+    recency_rounds: int = 3,
+) -> str:
+    """Format findings as text for inclusion in next round's prompt.
+
+    Context windowing: instead of dumping ALL findings (which grows linearly
+    and exceeds context windows), include:
+    1. All findings from the most recent `recency_rounds` rounds
+    2. Top-severity findings from earlier rounds, up to `max_findings` total
+
+    This prevents context bloat while preserving the most valuable signal:
+    recent findings (for duplication avoidance) and high-severity findings
+    (for quality benchmarking). The founder identified this as essential when
+    Codex feasibility dropped to P=0.963 at Round 10 of Experiment 12.
+    """
     if not findings:
         return "(No findings from prior rounds.)"
 
-    lines = []
-    for f in findings:
+    if len(findings) <= max_findings:
+        # Small enough to include everything
+        selected = findings
+    else:
+        # Determine the most recent round index
+        max_round = max(f.round_idx for f in findings)
+        recent_cutoff = max(0, max_round - recency_rounds + 1)
+
+        # Split into recent and older
+        recent = [f for f in findings if f.round_idx >= recent_cutoff]
+        older = [f for f in findings if f.round_idx < recent_cutoff]
+
+        # Fill remaining slots with highest-severity older findings
+        remaining_slots = max(0, max_findings - len(recent))
+        older_sorted = sorted(older, key=lambda f: f.severity, reverse=True)
+        selected = recent + older_sorted[:remaining_slots]
+
+    lines = [f"(Showing {len(selected)} of {len(findings)} total findings: "
+             f"most recent rounds + highest severity from earlier rounds)\n"]
+    for f in selected:
         lines.append(
             f"FINDING_ID: {f.finding_id}\n"
             f"  SEVERITY: {f.severity:.2f}\n"
@@ -697,7 +748,7 @@ def run_full_experiment():
         _log(f"\n{'='*60}")
         findings_context = format_findings_for_context(all_findings)
 
-        responses, new_findings = run_adaptive_round(
+        responses, new_findings, decomposed_this_round = run_adaptive_round(
             exp_config, mgr, round_idx, artifact_text,
             findings_context, cdsfl_text,
             all_prior_findings=all_findings,
@@ -707,14 +758,16 @@ def run_full_experiment():
         round_cost = sum(
             len(r.content) * 0.00001 for r in responses.values()
         )
-        # Filter out scope-limited models (DeepSeek) from convergence/D_decay
-        # calculations. Their findings are in all_findings for cross-reference
-        # but don't feed the termination decision (confer consensus).
+        # Filter out scope-limited models from convergence/D_decay calculations.
+        # This includes both statically excluded models (DeepSeek) and any model
+        # that was dynamically switched to decomposed dispatch this round
+        # (e.g., Codex when context exceeded threshold).
+        excluded_this_round = CONVERGENCE_EXCLUDED_MODELS | decomposed_this_round
         convergence_findings = [
-            f for f in new_findings if f.model_id not in CONVERGENCE_EXCLUDED_MODELS
+            f for f in new_findings if f.model_id not in excluded_this_round
         ]
         convergence_responses = {
-            k: v for k, v in responses.items() if k not in CONVERGENCE_EXCLUDED_MODELS
+            k: v for k, v in responses.items() if k not in excluded_this_round
         }
         result = mgr.process_round(
             convergence_responses, convergence_findings, [], round_cost=round_cost,
@@ -728,9 +781,12 @@ def run_full_experiment():
              f"novelty={novelty:.4f}, "
              f"converged={result.converged}, stop={result.stop}")
         if new_findings != convergence_findings:
-            ds_count = len(new_findings) - len(convergence_findings)
-            _log(f"  ({ds_count} DeepSeek findings excluded from convergence calc, "
-                 f"included in master list)")
+            excluded_count = len(new_findings) - len(convergence_findings)
+            excluded_names = sorted(excluded_this_round & set(r.model_id for r in new_findings if hasattr(r, 'model_id')))
+            if not excluded_names:
+                excluded_names = sorted(excluded_this_round)
+            _log(f"  ({excluded_count} findings from {', '.join(excluded_names)} excluded "
+                 f"from convergence calc, included in master list)")
 
         # Report immune response diagnoses
         recent_diagnoses = mgr.health_monitor.all_diagnoses
