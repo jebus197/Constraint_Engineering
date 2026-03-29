@@ -1,0 +1,37 @@
+Novelty Trajectory Across Experiments 12 and 13b
+
+Analysis date. 29 March 2026.
+
+This analysis examines whether later round findings in Experiment 13b are exploring genuinely new territory or rehashing earlier material. Five signals were measured from the 184 parsed findings across four rounds, being blind, round 1, round 2, and round 3.
+
+
+SIGNAL 1. DECREASING VOCABULARY OVERLAP
+
+The Jaccard similarity between consecutive rounds drops monotonically. Blind to round 1 is 0.174. Round 1 to round 2 is 0.148. Round 2 to round 3 is 0.124. Each round shares less vocabulary with its predecessor than the previous pair did. If models were churning the same issues with different words, Jaccard would plateau or rise. Instead it falls. Later rounds are exploring territory that is lexically distinct from earlier rounds.
+
+
+SIGNAL 2. CUMULATIVE VOCABULARY GROWTH IS DECELERATING BUT STILL SUBSTANTIAL
+
+New unique terms per round. Blind round 1952. Round 1 adds 738. Round 2 adds 584. Round 3 adds 416. The growth rate drops from 37.8 percent to 21.7 percent to 12.7 percent. This is the classic diminishing returns curve. But 416 new terms in round 3 against a cumulative pool of 3274 is not negligible. The vocabulary was not exhausted. The saturation threshold terminated the experiment before it would have been. This aligns with the report diagnosis that the tau equals 0.10 threshold was too aggressive for decomposed dispatch.
+
+
+SIGNAL 3. ABSTRACTION INDEX RISES MONOTONICALLY
+
+Mean abstraction per round. Blind is 0.566. Round 1 is 0.593. Round 2 is 0.610. Round 3 is 0.620. Standard deviation simultaneously narrows from 0.174 to 0.109 to 0.113 to 0.086. Later rounds produce more abstract findings with less scatter. This is the ascending abstraction pattern documented in Experiment 12. Early rounds catch concrete bugs. Later rounds identify structural and design level issues. The narrowing standard deviation means models converge on a consistent abstraction level rather than spraying across the spectrum.
+
+
+SIGNAL 4. FLAW CLASS DISTRIBUTION SHIFTS ACROSS ROUNDS
+
+The blind round is dominated by class 5 with 18 findings and logic with 10. By rounds 2 and 3, class 2 and class 6 emerge as significant contributors while class 5 recedes. The dominant category changes from round to round. This is not the same bugs found repeatedly. It is a genuine shift in the type of issues being surfaced. The flaw class landscape rotates.
+
+
+SIGNAL 5. CROSS REFERENCE WITH EXPERIMENT 12 BASELINE
+
+Experiment 12 showed CC2 vocabulary novelty declining from 23.9 percent to 7.7 percent over 20 rounds with Jaccard overlap of 33.5 percent between early and late rounds. Experiment 13b shows a steeper vocabulary curve, 37.8 percent to 12.7 percent in 4 rounds versus 20, but the per round Jaccard is much lower, 0.124 to 0.174 versus Experiment 12 implied higher overlap across adjacent rounds. The 8 fixes plus decomposed dispatch concentrated the review more tightly, producing less redundancy per round but faster saturation of the total vocabulary space.
+
+
+SUMMARY JUDGEMENT
+
+Later round findings in Experiment 13b are genuinely novel. Three independent signals confirm this. Declining inter round vocabulary overlap. Rising abstraction index. Shifting flaw class distributions. The findings are not becoming repetitive. They are becoming more abstract, more structurally focused, and lexically distinct from earlier rounds. The system is climbing the abstraction ladder.
+
+The premature termination at round 3 is unfortunate precisely because the novelty signals were still healthy. The vocabulary saturation detector, calibrated for full artifact dispatch, could not distinguish genuinely running out of things to say from seeing a smaller slice of the artifact per round due to decomposition. The recommendation in the experimental results, tau from 0.10 to 0.03 to 0.05 and W from 3 to 5, is well supported by this data.

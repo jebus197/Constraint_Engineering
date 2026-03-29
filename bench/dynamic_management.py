@@ -61,6 +61,7 @@ from typing import (
     Union,
 )
 
+import logging
 import numpy as np
 from numpy.typing import NDArray
 
@@ -135,8 +136,13 @@ class DynamicManagementConfig:
     # When growth rate drops below threshold for sustained_window consecutive
     # rounds, the stop predicate fires.  This is immune to the Jaccard
     # semantic-equivalence problem that defeated kappa and novelty_rate.
-    tau_vocab_growth: float = 0.10  # stop when vocab growth rate < 10%
-    vocab_sustained_window: int = 3  # require 3 consecutive rounds below threshold
+    # Recalibrated for Exp14: Exp13b showed premature termination at round 4
+    # because decomposed dispatch (~629 lines/model/round) produces much less
+    # new vocabulary per round than full-artifact dispatch.  Heaps' law β≈0.024
+    # means vocabulary was effectively exhausted by the blind round alone.
+    # Lowered from 0.10 to 0.04, window from 3 to 5.
+    tau_vocab_growth: float = 0.04  # stop when vocab growth rate < 4%
+    vocab_sustained_window: int = 5  # require 5 consecutive rounds below threshold
 
     # --- Area 6: Failure Handling ---
     timeout_multiplier: float = 1.5  # Theta_r = eta * tau_m
@@ -150,6 +156,19 @@ class DynamicManagementConfig:
 
     # --- Correlated failure model (Codex timeout addition) ---
     default_vulnerability: float = 0.0  # v_ij default (no correlation)
+
+    # --- Self-adaptive CDSFL (Exp14: Phases A-E) ---
+    # Per-model prompt directives loaded from registry Layer 4 TOML.
+    # Dict mapping model_id → additional prompt text prepended to CDSFL.
+    per_model_directives: Dict[str, str] = field(default_factory=dict)
+    # Immune feedback loop: whether apply_diagnosis() can auto-adjust params.
+    immune_feedback_enabled: bool = True
+    # Damping: minimum rounds between adjustments to the same parameter.
+    immune_damping_rounds: int = 2
+    # Maximum characters of per-model prompt modifications (corruption cascade guard).
+    max_per_model_directive_chars: int = 500
+    # Pre-decompose models that had false-positive blocking in prior experiments.
+    pre_decompose_models: Set[str] = field(default_factory=set)
 
     # --- Live fingerprint update (adaptive routing feedback loop) ---
     # EMA smoothing factor for fingerprint updates. 0.3 = 30% weight on new
@@ -1810,9 +1829,17 @@ class DiminishingReturnsDetector:
         self._novelty_rates: Dict[int, float] = {}  # fraction of novel findings per round
         self._all_prior_findings: List[Finding] = []  # accumulated for novelty comparison
         # Vocabulary saturation tracking (similarity-independent stop signal)
-        self._cumulative_vocab: Set[str] = set()  # all unique terms seen
+        self._cumulative_vocab: Set[str] = set()  # all unique terms seen (global)
         self._vocab_sizes: Dict[int, int] = {}  # cumulative vocab size per round
         self._vocab_growth_rates: Dict[int, float] = {}  # growth rate per round
+        # Phase D (Exp14): Per-area vocabulary tracking.
+        # Eliminates the decomposed-dispatch × global-vocab interaction that
+        # caused premature termination in Exp13b.  Each area maintains its own
+        # cumulative vocabulary.  Stop fires when ALL active areas are saturated.
+        self._area_vocab: Dict[str, Set[str]] = {}  # area_id → cumulative terms
+        self._area_vocab_sizes: Dict[str, Dict[int, int]] = {}  # area → {round → size}
+        self._area_vocab_growth: Dict[str, Dict[int, float]] = {}  # area → {round → rate}
+        self._area_active_rounds: Dict[str, Set[int]] = {}  # area → rounds where it was reviewed
 
     def add_round(
         self,
@@ -1899,6 +1926,38 @@ class DiminishingReturnsDetector:
             self._vocab_growth_rates[round_idx] = (new_size - prev_size) / prev_size
         else:
             self._vocab_growth_rates[round_idx] = 1.0  # first round = 100% growth
+
+        # Phase D (Exp14): Per-area vocabulary tracking.
+        # Group findings by area (using flaw_class as area proxy) and track
+        # vocabulary growth per area.  This eliminates the decomposed-dispatch
+        # interaction: under decomposition, each model reviews one area per round,
+        # so global vocab saturates fast even when individual areas still have
+        # novelty.  The stop signal uses area-level saturation instead.
+        area_findings: Dict[str, List[Finding]] = {}
+        for f in new_findings:
+            area_key = str(f.flaw_class)
+            area_findings.setdefault(area_key, []).append(f)
+
+        for area_key, a_findings in area_findings.items():
+            if area_key not in self._area_vocab:
+                self._area_vocab[area_key] = set()
+                self._area_vocab_sizes[area_key] = {}
+                self._area_vocab_growth[area_key] = {}
+                self._area_active_rounds[area_key] = set()
+
+            self._area_active_rounds[area_key].add(round_idx)
+            prev_area_size = len(self._area_vocab[area_key])
+            for f in a_findings:
+                tokens = _tokenize_for_similarity(f.description)
+                self._area_vocab[area_key].update(tokens)
+            new_area_size = len(self._area_vocab[area_key])
+            self._area_vocab_sizes[area_key][round_idx] = new_area_size
+            if prev_area_size > 0:
+                self._area_vocab_growth[area_key][round_idx] = (
+                    (new_area_size - prev_area_size) / prev_area_size
+                )
+            else:
+                self._area_vocab_growth[area_key][round_idx] = 1.0
 
     def marginal_value(self, round_idx: int) -> float:
         """Compute mu(r) = (Y^(<=r) - Y^(<=r-1)) / c_r.
@@ -2073,9 +2132,13 @@ class DiminishingReturnsDetector:
     def vocab_saturated(self, round_idx: int) -> bool:
         """Check if vocabulary growth is below threshold for sustained window.
 
-        Returns True when vocab_growth_rate < tau_vocab_growth for
-        vocab_sustained_window consecutive rounds.  This is the
-        similarity-independent stop signal from Exp12 analysis.
+        Phase D (Exp14): When area-level tracking is available, uses per-area
+        saturation.  Stop fires only when ALL areas that were active in the
+        last W rounds have growth below threshold.  This eliminates the
+        decomposed-dispatch × global-vocab interaction from Exp13b.
+
+        Falls back to global vocab tracking when no area data exists (e.g.
+        blind round where areas are not yet differentiated).
 
         NOTE (CC2 confer, Exp13a): The proportional growth rate
         (new - old) / old is a monotonically decreasing function of
@@ -2091,6 +2154,31 @@ class DiminishingReturnsDetector:
         tau = self.config.tau_vocab_growth
         if round_idx < W:
             return False
+
+        # Phase D: Per-area saturation check (preferred).
+        if self._area_vocab:
+            # Find areas active in the last W rounds.
+            recent_range = set(range(round_idx - W + 1, round_idx + 1))
+            active_areas = [
+                area for area, rounds in self._area_active_rounds.items()
+                if rounds & recent_range  # intersection: area was active recently
+            ]
+            if active_areas:
+                for area in active_areas:
+                    # Check if this area has sustained low growth over its
+                    # active rounds within the window.
+                    area_rounds_in_window = sorted(
+                        self._area_active_rounds[area] & recent_range
+                    )
+                    if len(area_rounds_in_window) < max(1, W // 2):
+                        # Area wasn't active enough in window — not saturated
+                        return False
+                    for r in area_rounds_in_window:
+                        if self._area_vocab_growth.get(area, {}).get(r, 1.0) >= tau:
+                            return False  # This area still has novelty
+                return True  # All active areas are saturated
+
+        # Fallback: global vocab tracking (pre-Phase D behaviour).
         for r in range(round_idx - W + 1, round_idx + 1):
             if self._vocab_growth_rates.get(r, 1.0) >= tau:
                 return False
@@ -2491,6 +2579,115 @@ class DetectorHealthMonitor:
                     },
                 )
                 new_diagnoses.append(diag)
+
+        self._diagnoses.extend(new_diagnoses)
+        return new_diagnoses
+
+    # --- Phase E (Exp14): Dispatch health monitoring ---
+    # Three new pathology types for operational health, not just detector health.
+
+    def check_dispatch_health(
+        self,
+        dispatch_blocks: Dict[str, List[int]],
+        dispatch_successes: Dict[str, List[int]],
+        verification_rates: Dict[str, List[float]],
+        round_idx: int,
+    ) -> List[DetectorDiagnosis]:
+        """Check for dispatch and verification pathologies.
+
+        Called after each round by DynamicManager.  Detects:
+        - Dispatch false positive: model blocked then succeeded via decomposition
+        - Verification miscalibration: model's self-verification diverges from peers
+        - Cross-model verification contradiction: model reports FALSE on finding
+          corroborated TRUE by peers (requires finding-level data, handled separately)
+
+        Args:
+            dispatch_blocks: model_id → list of rounds where model was blocked.
+            dispatch_successes: model_id → list of rounds where model succeeded
+                after being blocked in a prior round.
+            verification_rates: model_id → list of per-round verification rates.
+            round_idx: Current round index.
+
+        Returns:
+            List of new diagnoses (may be empty).
+        """
+        new_diagnoses: List[DetectorDiagnosis] = []
+
+        # Pathology 4: Dispatch false positive.
+        # A model was blocked in round R but succeeded in round R+1 via decomposition.
+        for model_id, blocks in dispatch_blocks.items():
+            successes = dispatch_successes.get(model_id, [])
+            for block_round in blocks:
+                if any(s > block_round for s in successes):
+                    # Already diagnosed this block?
+                    key = f"dispatch_fp_{model_id}_{block_round}"
+                    if key not in self._pathology_counts:
+                        self._pathology_counts[key] = 1
+                        diag = DetectorDiagnosis(
+                            detector="dispatch",
+                            pathology=(
+                                f"Dispatch false positive: {model_id} blocked "
+                                f"at round {block_round} but succeeded later "
+                                f"via decomposition"
+                            ),
+                            severity="WARNING",
+                            recommended_action=(
+                                f"Pre-decompose {model_id} in future blind rounds "
+                                f"to prevent false-positive blocking."
+                            ),
+                            evidence={
+                                "model_id": model_id,
+                                "blocked_round": block_round,
+                                "success_rounds": [s for s in successes if s > block_round],
+                            },
+                        )
+                        new_diagnoses.append(diag)
+
+        # Pathology 5: Verification miscalibration.
+        # A model's mean verification rate is >2σ below the population mean.
+        all_rates: List[float] = []
+        model_means: Dict[str, float] = {}
+        for model_id, rates in verification_rates.items():
+            if rates:
+                m = sum(rates) / len(rates)
+                model_means[model_id] = m
+                all_rates.extend(rates)
+
+        if len(model_means) >= 3 and all_rates:
+            pop_mean = sum(all_rates) / len(all_rates)
+            pop_std = (sum((r - pop_mean) ** 2 for r in all_rates) / len(all_rates)) ** 0.5
+            if pop_std > 0.01:  # avoid division by near-zero
+                for model_id, m in model_means.items():
+                    z_score = (m - pop_mean) / pop_std
+                    if z_score < -2.0:
+                        # Check if already diagnosed
+                        key = f"verif_miscal_{model_id}"
+                        persistence = self._pathology_counts.get(key, 0)
+                        self._pathology_counts[key] = persistence + 1
+                        severity = "CRITICAL" if persistence >= 1 else "WARNING"
+
+                        diag = DetectorDiagnosis(
+                            detector="verification",
+                            pathology=(
+                                f"Verification miscalibration: {model_id} mean "
+                                f"verification rate {m:.2f} is {abs(z_score):.1f}σ "
+                                f"below population mean {pop_mean:.2f}"
+                            ),
+                            severity=severity,
+                            recommended_action=(
+                                f"Flag VERIFIED field for {model_id} as unreliable. "
+                                f"Add per-model directive to re-examine verification."
+                            ),
+                            evidence={
+                                "model_id": model_id,
+                                "model_mean": m,
+                                "population_mean": pop_mean,
+                                "population_std": pop_std,
+                                "z_score": z_score,
+                                "occurrence": persistence + 1,
+                            },
+                        )
+                        new_diagnoses.append(diag)
 
         self._diagnoses.extend(new_diagnoses)
         return new_diagnoses
@@ -3223,6 +3420,33 @@ class DynamicManager:
             m.model_id: [] for m in self.models
         }
 
+        # --- Phase A: Per-model registry policies ---
+        # Load Layer 4 TOML per model via cdsfl_registry.  The registry
+        # enforces monotonicity: per-model layers cannot weaken HARD
+        # constraints from the universal layer.
+        self._per_model_policies: Dict[str, Dict[str, Any]] = {}
+        self._load_per_model_policies()
+
+        # --- Phase B: Immune feedback loop state ---
+        # Tracks which parameters were last adjusted and when, to enforce
+        # the damping rule (no param adjusted more than once per N rounds).
+        self._immune_adjustments: List[Dict[str, Any]] = []
+        # Log of all parameter adjustments for auditability.
+        self._adjustment_log: List[Dict[str, Any]] = []
+
+        # --- Phase E: Dispatch health tracking ---
+        # Records dispatch blocking events per model for false-positive detection.
+        self._dispatch_blocks: Dict[str, List[int]] = {
+            m.model_id: [] for m in self.models
+        }
+        self._dispatch_successes_after_block: Dict[str, List[int]] = {
+            m.model_id: [] for m in self.models
+        }
+        # Per-model verification rates for miscalibration detection.
+        self._per_model_verification: Dict[str, List[float]] = {
+            m.model_id: [] for m in self.models
+        }
+
     def get_allocation(
         self, tasks: Sequence[Task]
     ) -> Tuple[Allocation, float, bool]:
@@ -3434,6 +3658,43 @@ class DynamicManager:
                     },
                 )
             )
+            # Phase B: Close the feedback loop — apply diagnosis automatically.
+            self.apply_diagnosis(diag, round_idx)
+
+        # --- Phase E: Per-model verification tracking ---
+        from collections import defaultdict as _defaultdict
+        _vr_by_model: Dict[str, List[bool]] = _defaultdict(list)
+        for f in findings:
+            _vr_by_model[f.model_id].append(f.verified)
+        for mid, vlist in _vr_by_model.items():
+            rate = sum(vlist) / len(vlist) if vlist else 0.0
+            self.record_model_verification_rate(mid, rate)
+
+        # --- Phase E: Dispatch health monitoring ---
+        dispatch_diagnoses = self.health_monitor.check_dispatch_health(
+            self._dispatch_blocks,
+            self._dispatch_successes_after_block,
+            self._per_model_verification,
+            round_idx,
+        )
+        for diag in dispatch_diagnoses:
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=f"[IMMUNE:{diag.severity}] {diag.detector}: {diag.pathology}",
+                    metadata={
+                        "immune_response": True,
+                        "detector": diag.detector,
+                        "severity": diag.severity,
+                        "action": diag.recommended_action,
+                        "evidence": diag.evidence,
+                    },
+                )
+            )
+            # Close the feedback loop for dispatch diagnoses too.
+            self.apply_diagnosis(diag, round_idx)
 
         # --- Area 3: FSM transition ---
         event = self.fsm.select_event(
@@ -3641,6 +3902,199 @@ class DynamicManager:
                     L_std=m.L_std,
                 ))
         return live_models
+
+    # --- Phase A: Per-model registry wiring ---
+
+    def _load_per_model_policies(self) -> None:
+        """Load Layer 4 TOML configs for each model via the CDSFL registry.
+
+        The registry enforces monotonicity: per-model modifications cannot
+        weaken HARD constraints from the universal layer.  If the registry
+        is unavailable (e.g. running outside the bench directory), logs a
+        warning and continues with empty policies.
+        """
+        try:
+            from bench.cdsfl_registry.registry import load_effective_policy
+        except ImportError:
+            try:
+                from cdsfl_registry.registry import load_effective_policy
+            except ImportError:
+                logging.warning(
+                    "CDSFL registry not available — per-model policies disabled"
+                )
+                return
+
+        # Map model_id to registry model config name.
+        # Convention: model_id uses hyphens, TOML filenames use underscores.
+        for model in self.models:
+            config_name = model.model_id.replace("-", "_").replace(".", "_")
+            try:
+                policy = load_effective_policy(
+                    domain="code",  # dynamic_management.py is code review
+                    model=config_name,
+                )
+                self._per_model_policies[model.model_id] = policy
+
+                # Extract per-model directives if present.
+                model_section = policy.get("model", {})
+                directive = model_section.get("adaptive_directive", "")
+                if directive and len(directive) <= self.config.max_per_model_directive_chars:
+                    self.config.per_model_directives[model.model_id] = directive
+
+            except FileNotFoundError:
+                logging.debug(f"No registry config for model {model.model_id}")
+            except Exception as e:
+                logging.warning(
+                    f"Failed to load policy for {model.model_id}: {e}"
+                )
+
+    def get_model_directive(self, model_id: str) -> str:
+        """Return any per-model prompt directive for adaptive dispatch.
+
+        Returns empty string if no directive exists for this model.
+        This is used by the orchestrator to prepend model-specific
+        instructions to the CDSFL system prompt.
+        """
+        return self.config.per_model_directives.get(model_id, "")
+
+    # --- Phase B: Immune feedback loop ---
+
+    def apply_diagnosis(
+        self,
+        diagnosis: DetectorDiagnosis,
+        round_idx: int,
+    ) -> Optional[Dict[str, Any]]:
+        """Act on an immune layer diagnosis by adjusting parameters.
+
+        Tier 1 only: bounded numerical parameter adjustments.  Every
+        adjustment is logged with timestamp, trigger, old/new values,
+        and evidence.  Damping rule: no parameter adjusted more than
+        once every immune_damping_rounds rounds.
+
+        Args:
+            diagnosis: The diagnosis from DetectorHealthMonitor.
+            round_idx: Current round index.
+
+        Returns:
+            Dict describing the adjustment made, or None if no action taken.
+        """
+        if not self.config.immune_feedback_enabled:
+            return None
+
+        # Check damping: was this parameter adjusted recently?
+        for adj in self._immune_adjustments:
+            if (adj["detector"] == diagnosis.detector
+                    and round_idx - adj["round"] < self.config.immune_damping_rounds):
+                return None  # Too soon — damping prevents oscillation
+
+        adjustment = None
+
+        if diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
+            # kappa stuck at zero → lower similarity threshold
+            old_val = self.config.tau_sim
+            new_val = max(0.3, old_val - 0.1)  # bounded: never below 0.3
+            if new_val != old_val:
+                self.config.tau_sim = new_val
+                adjustment = {
+                    "parameter": "tau_sim",
+                    "old": old_val,
+                    "new": new_val,
+                    "reason": diagnosis.pathology,
+                }
+
+        elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
+            # Vocab saturation fired too early → lower threshold
+            old_val = self.config.tau_vocab_growth
+            new_val = max(0.01, old_val * 0.5)  # halve, bounded at 1%
+            if new_val != old_val:
+                self.config.tau_vocab_growth = new_val
+                adjustment = {
+                    "parameter": "tau_vocab_growth",
+                    "old": old_val,
+                    "new": new_val,
+                    "reason": diagnosis.pathology,
+                }
+
+        elif diagnosis.detector == "dispatch" and "false_positive" in diagnosis.pathology.lower():
+            # Dispatch false positive → pre-decompose this model
+            model_id = diagnosis.evidence.get("model_id", "")
+            if model_id and model_id not in self.config.pre_decompose_models:
+                self.config.pre_decompose_models.add(model_id)
+                adjustment = {
+                    "parameter": "pre_decompose_models",
+                    "old": "not in set",
+                    "new": f"added {model_id}",
+                    "reason": diagnosis.pathology,
+                }
+
+        elif diagnosis.detector == "verification" and "miscalibration" in diagnosis.pathology.lower():
+            # Verification miscalibration → add per-model directive
+            model_id = diagnosis.evidence.get("model_id", "")
+            if model_id and model_id not in self.config.per_model_directives:
+                directive = (
+                    "Your self-verification output has been consistently "
+                    "miscalibrated in prior rounds. For each finding, "
+                    "re-examine the actual code location cited and explicitly "
+                    "confirm whether the issue exists before marking "
+                    "VERIFIED TRUE or FALSE."
+                )
+                if len(directive) <= self.config.max_per_model_directive_chars:
+                    self.config.per_model_directives[model_id] = directive
+                    adjustment = {
+                        "parameter": "per_model_directives",
+                        "old": "none",
+                        "new": f"added directive for {model_id}",
+                        "reason": diagnosis.pathology,
+                    }
+
+        if adjustment:
+            record = {
+                **adjustment,
+                "detector": diagnosis.detector,
+                "round": round_idx,
+                "severity": diagnosis.severity,
+                "timestamp": time.time(),
+            }
+            self._immune_adjustments.append(record)
+            self._adjustment_log.append(record)
+
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=(
+                        f"[IMMUNE:ADAPT] {adjustment['parameter']}: "
+                        f"{adjustment['old']} → {adjustment['new']} "
+                        f"(triggered by {diagnosis.detector})"
+                    ),
+                    metadata={"immune_adaptation": True, **record},
+                )
+            )
+
+        return adjustment
+
+    # --- Phase E: Dispatch health tracking ---
+
+    def record_dispatch_block(self, model_id: str, round_idx: int) -> None:
+        """Record that a model was blocked from dispatch this round."""
+        if model_id in self._dispatch_blocks:
+            self._dispatch_blocks[model_id].append(round_idx)
+
+    def record_dispatch_success_after_block(self, model_id: str, round_idx: int) -> None:
+        """Record that a previously blocked model succeeded (via decomposition)."""
+        if model_id in self._dispatch_successes_after_block:
+            self._dispatch_successes_after_block[model_id].append(round_idx)
+
+    def record_model_verification_rate(self, model_id: str, rate: float) -> None:
+        """Record a model's self-verification rate for this round."""
+        if model_id in self._per_model_verification:
+            self._per_model_verification[model_id].append(rate)
+
+    @property
+    def adjustment_log(self) -> List[Dict[str, Any]]:
+        """Full audit trail of immune feedback parameter adjustments."""
+        return list(self._adjustment_log)
 
     @property
     def round_results(self) -> List[RoundResult]:

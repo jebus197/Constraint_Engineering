@@ -4,7 +4,7 @@
 [model]
 name = "gemini-3.1-pro"
 alias = "gemini"
-timeout = 150
+timeout = 350  # Raised from 150: Exp12 showed median latency ~250s, old threshold always triggered
 
 [protocol]
 # Gemini needs explicit JSON schema in prompt for reliable structured output.

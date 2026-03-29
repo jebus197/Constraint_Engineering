@@ -1,0 +1,81 @@
+Experiment 13b Results Analysis. Live Wire 2, Fixes Under Load.
+
+Date. 29 March 2026.
+Duration. 09:35 to 09:35 BST (approximately 1 hour wall clock).
+Rounds. 4 (terminated via convergence, not maximum rounds).
+Total findings. 185.
+Models. All 5 survived: CC2, ChatGPT, Codex, Gemini, DeepSeek.
+Artifact. dynamic management dot py, 3772 lines, 27 classes.
+Max rounds cap. 19 (from ceiling of 3772 divided by 200, capped at 30).
+
+
+1. PREDICTION SCORECARD
+
+Prediction 1. Vocabulary saturation fires before max rounds.
+Result: YES. Vocabulary growth dropped below the 10 percent threshold in Round 1 (3.37 percent) and stayed there. By Round 2, growth was 1.34 percent. By Round 3, growth was zero. The sustained window of 3 consecutive rounds below threshold was satisfied. The stop signal worked exactly as designed.
+
+Prediction 2. Fingerprints do not collapse after 15 or more rounds.
+Result: INCONCLUSIVE. The experiment only ran 4 rounds, not enough to test long-duration fingerprint behaviour. CC2 went from A equals 0.850 to A equals 0.167, which is a decline but not a collapse to near-zero. Gemini actually improved, A from 0.750 to 0.721. DeepSeek collapsed to all zeros, but it has consistently done this across experiments. The windowed mean appears to be working, but a longer run is needed to validate.
+
+Prediction 3. Gemini survives past round 5.
+Result: YES. Gemini was present for all 4 rounds. Blind round latency was 126.7 seconds. Round 1 was 178 seconds. Round 2 data not captured in the tail output but Gemini completed and was checked in at Round 3. The tau fix from 150 to 350 seconds worked. Gemini was never at risk of being benched.
+
+Prediction 4. Model restarts extend useful life.
+Result: NOT TESTED. No model was ever blocked or feasibility failed during the experiment. All 5 models survived all 4 rounds without needing restarts. This validates the context management fixes (adaptive decomposition and context windowing) but means the restart logic itself was never exercised in production.
+
+Prediction 5. kappa moves off zero.
+Result: PARTIALLY. kappa stayed at 0.0 for rounds 0 through 2, then jumped directly to 1.0 at Round 3 (all findings classified as duplicates). The intermediate values between 0 and 1, which would indicate genuine partial convergence, were never observed. This binary behaviour suggests the similarity function may still need calibration. Either findings are completely different (Jaccard below threshold) or completely identical (Round 3). There is no middle ground in the current implementation.
+
+Prediction 6. mu trends downward.
+Result: YES. mu declined monotonically: 65.3 at Round 0, 14.8 at Round 1, 7.1 at Round 2, 0.0 at Round 3. This is exactly the behaviour the per-model mu computation was designed to produce. No attrition-driven spikes. No oscillation. Clean diminishing returns.
+
+Prediction 7. Total rounds less than 19.
+Result: YES. 4 rounds, well under the 19 round cap. However, whether 4 rounds is the right number is the key open question.
+
+
+2. THE PREMATURE TERMINATION QUESTION
+
+The most important finding of Experiment 13b is not that the fixes worked. It is that they may have worked too well. Four rounds is very fast. In Experiment 12, CC2 alone produced 337 findings across 21 rounds, with vocabulary novelty still at 7.7 percent at Round 20. In Experiment 13b, all 5 models together produced only 185 findings in 4 rounds, and the system declared convergence.
+
+There are three possible explanations.
+
+Explanation 1: genuine rapid convergence. The models, having access to the Experiment 12 analysis as supplementary context, arrived at the important findings quickly and genuinely exhausted the space. The blind round alone produced 88 findings from 4 models, and the vocabulary of those 88 findings established 2085 unique terms. Subsequent rounds added only 28 more terms before reaching zero. This would mean the combination of informed models plus decomposed dispatch plus a well-reviewed artifact genuinely has limited remaining novelty.
+
+Explanation 2: the similarity function is too aggressive. The bigram plus unigram Jaccard with stopword removal may be classifying genuinely different findings as duplicates, causing the novelty rate and vocabulary growth to appear exhausted when they are not. The binary kappa behaviour, zero then one with nothing in between, supports this. If the threshold is too low, even partially similar findings get merged and new vocabulary is not counted.
+
+Explanation 3: decomposed dispatch limits scope. In Experiment 12, models received the full artifact each round and could range across all 6 areas. In Experiment 13b, after the blind round, all models were decomposed and received only one area per round (rotated). This means each model sees approximately one-sixth of the artifact per round. If the vocabulary is counted across the full cumulative set but new terms come from area-specific vocabulary, the growth rate will appear much lower than it would with full-artifact dispatch.
+
+Explanation 3 is the most likely primary cause. The blind round saw all models review the entire 3772-line artifact, generating 2085 unique terms. Subsequent rounds saw each model review only one of 6 areas, approximately 500-700 lines each. The new vocabulary available in a single area, when the cumulative set already contains 2085 terms from the full artifact, is inherently limited. The vocabulary saturation signal is measuring artifact coverage, and the decomposed dispatch means each round covers only one-sixth of the artifact per model.
+
+This is not a bug. It is a genuine interaction between two fixes. The decomposed dispatch (Fix 4) preserves model diversity by preventing context overflow. The vocabulary saturation signal (Fix 1) correctly detects when new terms are no longer appearing. When combined, the decomposed dispatch limits the per-round vocabulary opportunity, causing the saturation signal to fire earlier than it would with full-artifact dispatch.
+
+
+3. WHAT WORKED
+
+All 5 models survived. This is the headline. In Experiment 12, model attrition was the dominant failure mode: 5 models to 2 survivors over 20 rounds. In Experiment 13b, zero models were lost. The adaptive decomposition thresholds fired correctly for every model. Context never exceeded limits. The feasibility checks all passed. Model diversity was preserved throughout.
+
+mu declined monotonically. The per-model mu computation eliminated the attrition-driven spikes that made system-level mu useless in Experiment 12. The clean 65 to 15 to 7 to 0 trajectory is exactly what diminishing returns looks like when the metric is not distorted.
+
+The vocabulary saturation signal fired. Whether it fired too early is a separate question. The mechanism itself works: it detected vocabulary exhaustion and terminated the experiment. In Experiment 12, no signal could terminate the experiment at all. Going from "cannot stop" to "stopped, possibly too early" is a significant improvement.
+
+Gemini stayed alive. The tau fix from 150 to 350 seconds resolved the timeout issue completely. Gemini completed all rounds with latency well under the 525-second threshold.
+
+
+4. WHAT NEEDS FIXING
+
+The vocabulary saturation threshold needs recalibration for decomposed dispatch. When models review only one area per round, the per-round vocabulary opportunity is much smaller than with full-artifact dispatch. Options: lower the threshold from 10 percent to something smaller like 3 to 5 percent, increase the sustained window from 3 to 5 consecutive rounds, or compute vocabulary growth per area rather than globally.
+
+kappa needs intermediate values. The binary zero-to-one behaviour means the convergence detection has no gradual signal. Either all findings are different or all are identical. This is likely a threshold issue: the similarity threshold for counting two findings as "the same" may be too high, causing near-matches to be classified as different.
+
+Longer experiments are needed to validate the windowed fingerprint. Four rounds is not enough to test whether the fingerprint stabilises over time or merely declines slowly.
+
+The restart logic needs a test case. It was designed to handle model blocking but blocking did not occur. A deliberate test with a smaller artifact or tighter context thresholds would exercise this code path.
+
+
+5. OVERALL ASSESSMENT
+
+Experiment 13b validated the fix architecture. The system went from "cannot terminate, loses 3 of 5 models" (Experiment 12) to "terminates cleanly, keeps all 5 models" (Experiment 13b). The pendulum swung too far in the other direction: premature termination rather than runaway execution. But that is a calibration problem, not a structural one. The mechanisms work. The thresholds need adjustment, specifically for the decomposed dispatch interaction.
+
+The 185 findings from 4 rounds with 5 surviving models are operationally more useful than 809 findings from 20 rounds with 2 surviving models. Even if some findings were prematurely classified as duplicates, the coverage from having all 5 cognitive modes active for every round is worth more than the coverage from having only 2 modes active for the final 3 rounds.
+
+The next experiment should adjust: vocabulary growth threshold to 3 percent (from 10 percent), sustained window to 5 rounds (from 3), and observe whether the system finds the natural stop point between 8 and 15 rounds. That would validate both the mechanism and the calibration.

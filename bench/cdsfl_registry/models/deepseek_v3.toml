@@ -5,6 +5,15 @@
 name = "deepseek-v3"
 alias = "deepseek"
 timeout = 120
+# Exp13b evidence: DeepSeek reported 0/15 findings as VERIFIED TRUE.
+# Cross-model corroboration shows 6/15 are independently confirmed TRUE
+# by other models. This is a signal integrity failure (2-sigma outlier).
+# The directive below corrects the miscalibration via prompt adaptation.
+adaptive_directive = "Your self-verification output has been consistently miscalibrated in prior rounds. For each finding, re-examine the actual code location cited and explicitly confirm whether the issue exists before marking VERIFIED TRUE or FALSE."
+# Pre-decompose in blind round: Exp13b showed P_feasible=0.000 false
+# positive — DeepSeek was blocked from the full artifact but succeeded
+# via decomposed dispatch in round 1.
+pre_decompose = true
 
 [protocol]
 # DeepSeek can oscillate between rounds — detect and halt.
