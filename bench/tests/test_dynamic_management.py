@@ -1647,3 +1647,61 @@ class TestWindowedFingerprint:
         fp = mgr._live_fingerprints["m1"]
         # EMA: new_A = 0.3 * 0.7 + 0.7 * 0.7 = 0.21 + 0.49 = 0.7
         assert abs(fp.A - 0.7) < 0.01
+
+
+class TestPerModelMu:
+    """Per-model mu computation (Exp13a confer, CC2 approved HARD).
+
+    Eliminates cost distortion from model attrition that broke system-level
+    mu in Experiment 12.
+    """
+
+    def test_per_model_mu_basic(self):
+        """Per-model mu computes marginal value per model independently."""
+        det = DiminishingReturnsDetector(DynamicManagementConfig())
+        f1 = make_finding("f1", "m1", 0, 1, 0.8, 0.7, "finding by model 1")
+        f2 = make_finding("f2", "m2", 0, 1, 0.6, 0.5, "finding by model 2")
+        det.add_model_round("m1", 0, [f1], cost=1.0)
+        det.add_model_round("m2", 0, [f2], cost=1.0)
+        mu_m1 = det.per_model_mu("m1", 0)
+        mu_m2 = det.per_model_mu("m2", 0)
+        assert mu_m1 > 0
+        assert mu_m2 > 0
+        assert mu_m1 != mu_m2  # different findings → different mu
+
+    def test_per_model_mu_attrition_resistant(self):
+        """System mu should not spike when a model is lost."""
+        det = DiminishingReturnsDetector(DynamicManagementConfig())
+        # Round 0: both models active
+        f1 = make_finding("f1", "m1", 0, 1, 0.8, 0.7, "m1 finding round 0")
+        f2 = make_finding("f2", "m2", 0, 1, 0.6, 0.5, "m2 finding round 0")
+        det.add_model_round("m1", 0, [f1], cost=1.0)
+        det.add_model_round("m2", 0, [f2], cost=1.0)
+        agg_r0 = det.aggregate_per_model_mu(0)
+        # Round 1: only m1 active (m2 lost)
+        f3 = make_finding("f3", "m1", 1, 1, 0.7, 0.6, "m1 finding round 1")
+        det.add_model_round("m1", 1, [f3], cost=1.0)
+        agg_r1 = det.aggregate_per_model_mu(1)
+        # Per-model aggregation should NOT spike just because m2 is gone
+        assert agg_r1 <= agg_r0 * 2, f"Aggregate mu should not spike on attrition: r0={agg_r0}, r1={agg_r1}"
+
+    def test_aggregate_uses_max(self):
+        """Aggregate should use max across models (conservative: continue if any model delivers)."""
+        det = DiminishingReturnsDetector(DynamicManagementConfig())
+        f1 = make_finding("f1", "m1", 0, 1, 0.9, 0.8, "high value")
+        f2 = make_finding("f2", "m2", 0, 1, 0.2, 0.1, "low value")
+        det.add_model_round("m1", 0, [f1], cost=1.0)
+        det.add_model_round("m2", 0, [f2], cost=1.0)
+        agg = det.aggregate_per_model_mu(0)
+        mu_m1 = det.per_model_mu("m1", 0)
+        assert abs(agg - mu_m1) < 0.001, "Aggregate should equal max model mu"
+
+    def test_fallback_to_system_mu(self):
+        """When no per-model data exists, fall back to system-level mu."""
+        det = DiminishingReturnsDetector(DynamicManagementConfig())
+        det.add_round(0, 10.0, 2.0)
+        det.add_round(1, 18.0, 2.0)
+        # No add_model_round calls → should use system mu
+        agg = det.aggregate_per_model_mu(1)
+        system_mu = det.marginal_value(1)
+        assert abs(agg - system_mu) < 0.001

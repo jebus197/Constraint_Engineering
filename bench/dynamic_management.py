@@ -1798,10 +1798,14 @@ class DiminishingReturnsDetector:
 
     def __init__(self, config: DynamicManagementConfig) -> None:
         self.config = config
-        # Per-round data
+        # Per-round data (system-level)
         self._cumulative_yields: Dict[int, float] = {}  # Y^(<=r)
         self._round_costs: Dict[int, float] = {}  # c_r
         self._mean_abstraction_new: Dict[int, float] = {}  # H_bar^(r)_new
+        # Per-model data (Exp13a confer: per-model mu eliminates cost
+        # distortion from model attrition.  CC2 approved as HARD.)
+        self._per_model_yields: Dict[str, Dict[int, float]] = {}  # model → {round → cumulative_yield}
+        self._per_model_costs: Dict[str, Dict[int, float]] = {}  # model → {round → cost}
         # Novelty rate tracking (cost-decoupled convergence signal)
         self._novelty_rates: Dict[int, float] = {}  # fraction of novel findings per round
         self._all_prior_findings: List[Finding] = []  # accumulated for novelty comparison
@@ -1916,20 +1920,118 @@ class DiminishingReturnsDetector:
 
         return delta_y / c_r
 
+    def add_model_round(
+        self,
+        model_id: str,
+        round_idx: int,
+        findings: Sequence[Finding],
+        cost: float,
+    ) -> None:
+        """Register per-model round data for per-model mu computation.
+
+        Per-model mu eliminates the cost distortion from model attrition
+        that broke system-level mu in Exp12 (CC2 confer, approved HARD).
+
+        Args:
+            model_id: Model identifier.
+            round_idx: Round index r.
+            findings: Findings produced by this model in round r.
+            cost: Cost of dispatching this model in round r (1.0 per model).
+        """
+        if model_id not in self._per_model_yields:
+            self._per_model_yields[model_id] = {}
+            self._per_model_costs[model_id] = {}
+
+        # Cumulative yield for this model
+        prev_yield = 0.0
+        if round_idx > 0:
+            # Find the most recent round this model participated in
+            for r in range(round_idx - 1, -1, -1):
+                if r in self._per_model_yields[model_id]:
+                    prev_yield = self._per_model_yields[model_id][r]
+                    break
+
+        if findings:
+            h_bar = float(np.mean([f.abstraction_index for f in findings]))
+            y = len(findings) * h_bar
+        else:
+            y = 0.0
+
+        self._per_model_yields[model_id][round_idx] = prev_yield + y
+        self._per_model_costs[model_id][round_idx] = cost
+
+    def per_model_mu(self, model_id: str, round_idx: int) -> float:
+        """Per-model marginal value: delta_Y_m / c_m.
+
+        Independent of other models' costs, eliminating the attrition
+        distortion that broke system-level mu in Exp12.
+        """
+        if model_id not in self._per_model_yields:
+            return 0.0
+        if round_idx not in self._per_model_yields[model_id]:
+            return 0.0
+
+        y_r = self._per_model_yields[model_id][round_idx]
+        # Find previous yield for this model
+        y_prev = 0.0
+        for r in range(round_idx - 1, -1, -1):
+            if r in self._per_model_yields[model_id]:
+                y_prev = self._per_model_yields[model_id][r]
+                break
+
+        c_r = self._per_model_costs[model_id].get(round_idx, 0.0)
+        delta_y = y_r - y_prev
+
+        if c_r <= self.config.epsilon_cost:
+            return float("inf") if delta_y > 0 else 0.0
+        return delta_y / c_r
+
+    def aggregate_per_model_mu(self, round_idx: int) -> float:
+        """Aggregate per-model mu via maximum across active models.
+
+        Max aggregation means the system continues as long as ANY single
+        model is still delivering value.  This is the conservative (correct)
+        bias: premature stopping is worse than one extra round.
+
+        Returns system-level marginal value if no per-model data exists
+        (backward compatibility).
+        """
+        if not self._per_model_yields:
+            # Fallback to system-level mu
+            if round_idx in self._cumulative_yields:
+                return self.marginal_value(round_idx)
+            return 0.0
+
+        mus = []
+        for model_id in self._per_model_yields:
+            if round_idx in self._per_model_yields[model_id]:
+                mu = self.per_model_mu(model_id, round_idx)
+                if math.isfinite(mu):
+                    mus.append(mu)
+        return max(mus) if mus else 0.0
+
     def smoothed_marginal_value(self, round_idx: int) -> float:
         """Compute smoothed VCR over window W.
 
         Average mu(r) over the last W rounds to prevent premature stopping
         from a single noisy round. (CC2 contribution.)
+
+        Uses per-model mu aggregation when per-model data is available,
+        falling back to system-level mu for backward compatibility.
         """
         W = self.config.smoothing_window
         start = max(0, round_idx - W + 1)
         values = []
         for r in range(start, round_idx + 1):
-            if r in self._cumulative_yields:
-                mv = self.marginal_value(r)
-                if math.isfinite(mv):
-                    values.append(mv)
+            if self._per_model_yields:
+                # Use per-model aggregation (Exp13a fix)
+                mu = self.aggregate_per_model_mu(r)
+            elif r in self._cumulative_yields:
+                mu = self.marginal_value(r)
+            else:
+                continue
+            if math.isfinite(mu):
+                values.append(mu)
         if not values:
             return 0.0
         return float(np.mean(values))
