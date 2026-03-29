@@ -56,7 +56,19 @@ from dynamic_management import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "experiment_12"
+_DEFAULT_EXPERIMENT = "12"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "experiment_12"  # reset by _set_experiment()
+
+
+def _set_experiment(label: str) -> None:
+    """Set the experiment label, updating LOGS_DIR and related paths."""
+    global LOGS_DIR, CHECKPOINT_PATH, _EXPERIMENT_LABEL
+    _EXPERIMENT_LABEL = label
+    LOGS_DIR = REPO_ROOT / "bench" / "logs" / f"experiment_{label}"
+    CHECKPOINT_PATH = LOGS_DIR / "checkpoint.json"
+
+
+_EXPERIMENT_LABEL = _DEFAULT_EXPERIMENT
 
 # Initial fingerprints from Experiment 11 Phase 2 observations.
 # These are estimates based on output characteristics — the management
@@ -206,16 +218,48 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # underscores, hyphens, and various separators
     finding_id_pattern = r'\*{0,2}[Ff][Ii][Nn][Dd][Ii][Nn][Gg][\s_-]*[Ii][Dd]\*{0,2}\s*[:=\-]\s*'
 
+    # Bare finding ID pattern — ChatGPT outputs "F001\nSEVERITY: ..." without
+    # the "FINDING_ID:" prefix. Match lines that are just F followed by digits,
+    # optionally with markdown bold or trailing colon.
+    bare_fid_pattern = r'^\*{0,2}(F\d{2,4})\*{0,2}\s*:?\s*$'
+
     # Split on FINDING_ID markers
     blocks = re.split(rf'(?={finding_id_pattern})', response)
 
+    # If the primary split found no FINDING_ID markers, try bare F### format
+    # (ChatGPT outputs "F001\nSEVERITY: ..." without "FINDING_ID:" prefix).
+    matched_primary = [b for b in blocks if b.strip() and re.match(finding_id_pattern, b.strip())]
+    use_bare = False
+    if len(matched_primary) == 0:
+        # Split on lines that are just "F001" (bare finding IDs).
+        # Use re.MULTILINE so ^ matches line starts.
+        bare_blocks = re.split(r'(?m)(?=^\*{0,2}F\d{2,4}\*{0,2}\s*:?\s*$)', response)
+        matched_bare = [b for b in bare_blocks if b.strip()
+                        and re.match(r'\*{0,2}F\d{2,4}\*{0,2}\s*:?\s*', b.strip().split('\n')[0])]
+        if len(matched_bare) > 0:
+            blocks = bare_blocks
+            use_bare = True
+
     for block in blocks:
         block = block.strip()
-        if not block or not re.match(finding_id_pattern, block):
+        if not block:
             continue
+
+        first_line = block.split('\n')[0].strip()
+        if use_bare:
+            bare_match = re.match(r'\*{0,2}(F\d{2,4})\*{0,2}\s*:?\s*$', first_line)
+            if not bare_match:
+                continue
+        else:
+            if not re.match(finding_id_pattern, block):
+                continue
+            bare_match = None
 
         # Extract fields — all case-insensitive, handle markdown bold and separator variants
         fid_match = re.search(rf'{finding_id_pattern}(.+?)(?:\n|$)', block)
+        # For bare format, use the bare match for finding ID
+        if not fid_match and bare_match:
+            fid_match = bare_match
         sev_match = re.search(r'\*{0,2}[Ss][Ee][Vv][Ee][Rr][Ii][Tt][Yy]\*{0,2}\s*[:=\-]\s*([\d.]+)', block)
         fc_match = re.search(r'\*{0,2}[Ff][Ll][Aa][Ww][\s_-]*[Cc][Ll][Aa][Ss][Ss]\*{0,2}\s*[:=\-]\s*(.+?)(?:\n|$)', block)
         ai_match = re.search(r'\*{0,2}[Aa][Bb][Ss][Tt][Rr][Aa][Cc][Tt][Ii][Oo][Nn][\s_-]*[Ii][Nn][Dd][Ee][Xx]\*{0,2}\s*[:=\-]\s*([\d.]+)', block)
@@ -225,7 +269,10 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         )
         ver_match = re.search(r'\*{0,2}[Vv][Ee][Rr][Ii][Ff][Ii][Ee][Dd]\*{0,2}\s*[:=\-]\s*(TRUE|FALSE|true|false|True|False)', block)
 
-        finding_id = fid_match.group(1).strip().strip("*") if fid_match else f"F{len(findings)+1:03d}"
+        if fid_match:
+            finding_id = fid_match.group(1).strip().strip("*")
+        else:
+            finding_id = f"F{len(findings)+1:03d}"
         severity = float(sev_match.group(1)) if sev_match else 0.5
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
@@ -307,9 +354,63 @@ def run_blind_round(
         _log(f"  {mc.label}: feasibility P={p_feasible:.3f}, dispatch={'YES' if feasible else 'BLOCKED'}")
 
         if not feasible:
-            # Do NOT create a ModelResponse for blocked dispatches.
-            # Feasibility block != model failure. See adaptive round comment.
-            continue
+            # Check if this model should be pre-decomposed instead of blocked.
+            # DeepSeek (threshold=0) can never fit the full artifact but works
+            # fine with decomposed dispatch — blocking it is a false positive.
+            threshold = DECOMPOSITION_CONTEXT_THRESHOLD.get(mc.label, 100000)
+            if threshold == 0 or len(prompt) > threshold:
+                area_idx = 0  # Blind round: start with Area 1
+                focused_code, area_label = _extract_area_code(prompt, area_idx)
+                decomposed_prompt = (
+                    f"You are in ROUND 0 (blind round) of a distributed compute P-pass.\n"
+                    f"The full artifact is too large for your context window, so you are "
+                    f"reviewing AREA: {area_label}.\n\n"
+                    f"Below is the full code for this area, plus skeletal signatures "
+                    f"(class/method definitions only) of the other 5 areas for context.\n\n"
+                    f"Your task: find all flaws you can identify in this area.\n\n"
+                    f"Use the structured format (FINDING_ID, SEVERITY, FLAW_CLASS, "
+                    f"ABSTRACTION_INDEX, DESCRIPTION, PROPOSED_FIX, VERIFIED).\n\n"
+                    f"=== ARTIFACT: {area_label} ===\n\n"
+                    f"{focused_code}\n\n"
+                    f"=== END ARTIFACT ===\n\n"
+                    f"Produce your findings now."
+                )
+                _log(f"  {mc.label}: BLOCKED → pre-decomposed blind dispatch "
+                     f"(Area 1: {area_label}, {len(focused_code)} chars focused)")
+                # Re-check feasibility with decomposed prompt
+                decomp_tokens = len(decomposed_prompt) // 4
+                d_feasible, d_p = mgr.check_dispatch_feasibility(model_spec, decomp_tokens)
+                if not d_feasible:
+                    _log(f"  {mc.label}: still infeasible after decomposition (P={d_p:.3f}), skipping")
+                    continue
+                try:
+                    text, elapsed = dispatch_to_model(mc, decomposed_prompt, cdsfl_text)
+                    _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s (decomposed blind)")
+                    findings = parse_findings(mc.label, 0, text)
+                    all_findings.extend(findings)
+                    _log(f"  {mc.label}: {len(findings)} findings parsed")
+                    responses[mc.label] = ModelResponse(
+                        model_id=mc.label, round_idx=0, content=text,
+                        response_time=elapsed, parseable=len(findings) > 0,
+                        format_compliant=True, finding_count=len(findings),
+                        mean_abstraction=(
+                            sum(f.abstraction_index for f in findings) / len(findings)
+                            if findings else 0.5
+                        ),
+                    )
+                    save_output(
+                        LOGS_DIR, "blind_decomposed", mc.label,
+                        decomposed_prompt[:200] + "...", text,
+                        metadata={"elapsed": round(elapsed, 1), "chars": len(text),
+                                  "findings_count": len(findings), "round": 0,
+                                  "area": area_label, "decomposed": True},
+                    )
+                except Exception as e:
+                    _log(f"  {mc.label}: decomposed blind dispatch FAILED: {e}")
+                continue
+            else:
+                # Genuinely infeasible and not a decomposition candidate
+                continue
 
         # Dispatch
         try:
@@ -841,10 +942,17 @@ def run_full_experiment():
             len(r.content) * 0.00001 for r in responses.values()
         )
         # Filter out scope-limited models from convergence/D_decay calculations.
-        # This includes both statically excluded models (DeepSeek) and any model
-        # that was dynamically switched to decomposed dispatch this round
-        # (e.g., Codex when context exceeded threshold).
-        excluded_this_round = CONVERGENCE_EXCLUDED_MODELS | decomposed_this_round
+        # Only statically excluded models (DeepSeek — permanently scope-limited)
+        # are excluded. Dynamically decomposed models still contribute valid
+        # findings for convergence detection.
+        #
+        # Bug fix (Exp14a): previously, dynamically decomposed models were also
+        # excluded. When ALL models are decomposed (large artifact + accumulated
+        # context), the convergence detector received zero findings, causing
+        # trivial convergence (kappa=1.0, mu=0.0 on empty set). The detector
+        # declared CONVERGED after 2 consecutive empty rounds — not because
+        # findings converged, but because it had no input.
+        excluded_this_round = CONVERGENCE_EXCLUDED_MODELS.copy()
         convergence_findings = [
             f for f in new_findings if f.model_id not in excluded_this_round
         ]
@@ -910,7 +1018,7 @@ def run_full_experiment():
 
     # Save final report
     report = {
-        "experiment": "12_live_wire",
+        "experiment": f"{_EXPERIMENT_LABEL}_live_wire",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "termination_reason": mgr.fsm.termination_reason.value if mgr.fsm.termination_reason else None,
         "rounds": round_idx,
@@ -965,7 +1073,7 @@ def run_full_experiment():
         ],
     }
 
-    report_path = LOGS_DIR / "experiment_12_report.json"
+    report_path = LOGS_DIR / f"experiment_{_EXPERIMENT_LABEL}_report.json"
     report_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=False, default=str),
         encoding="utf-8",
@@ -974,9 +1082,24 @@ def run_full_experiment():
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else "full"
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="CDSFL Live Wire Experiment Runner",
+    )
+    parser.add_argument(
+        "mode", nargs="?", default="full",
+        choices=["preflight", "blind", "full"],
+        help="Run mode (default: full)",
+    )
+    parser.add_argument(
+        "--experiment", "-e", default=_DEFAULT_EXPERIMENT,
+        help="Experiment label for logs directory and report naming "
+             "(default: 12). E.g. --experiment 14 → logs/experiment_14/",
+    )
+    args = parser.parse_args()
+    _set_experiment(args.experiment)
 
-    if mode == "preflight":
+    if args.mode == "preflight":
         source_env()
         from experiment_11_orchestrator import run_preflight
         config = load_default_config()
@@ -989,10 +1112,8 @@ if __name__ == "__main__":
         )
         sys.exit(0 if all_pass else 1)
 
-    elif mode in ("blind", "full"):
+    elif args.mode in ("blind", "full"):
         run_full_experiment()
-
     else:
-        print(f"Unknown mode: {mode}")
-        print("Usage: python3 run_exp12_live_wire.py [preflight|blind|full]")
+        parser.print_help()
         sys.exit(1)

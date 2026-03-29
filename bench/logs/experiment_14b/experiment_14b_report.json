@@ -1,0 +1,357 @@
+{
+  "experiment": "14b_live_wire",
+  "timestamp": "2026-03-29T22:45:38.773151+00:00",
+  "termination_reason": "FAILURE",
+  "rounds": 4,
+  "total_findings": 150,
+  "active_models_at_end": [
+    "CC2",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "total_events": 26,
+  "model_restarts": {
+    "CC2": 0,
+    "Codex": 0,
+    "ChatGPT": 0,
+    "Gemini": 0,
+    "DeepSeek": 0
+  },
+  "max_rounds_scaling": "4226 lines → 22 rounds",
+  "vocab_trajectory": {
+    "0": {
+      "size": 2495,
+      "growth": 0.0649
+    },
+    "1": {
+      "size": 2673,
+      "growth": 0.0713
+    },
+    "2": {
+      "size": 2830,
+      "growth": 0.0587
+    }
+  },
+  "fingerprint_evolution": {
+    "CC2": {
+      "initial": {
+        "D_decay": 0.1,
+        "v_bar": 0.9,
+        "A": 0.85,
+        "C": 0.8
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.0,
+        "A": 0.1667,
+        "C": 0.3333
+      }
+    },
+    "Codex": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.85,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.1667,
+        "v_bar": 0.6667,
+        "A": 0.5158,
+        "C": 0.5556
+      }
+    },
+    "ChatGPT": {
+      "initial": {
+        "D_decay": 0.15,
+        "v_bar": 0.85,
+        "A": 0.8,
+        "C": 0.75
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.3333,
+        "A": 0.2267,
+        "C": 0.25
+      }
+    },
+    "Gemini": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.75,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.0,
+        "v_bar": 0.3333,
+        "A": 0.8067,
+        "C": 0.7083
+      }
+    },
+    "DeepSeek": {
+      "initial": {
+        "D_decay": 0.25,
+        "v_bar": 0.75,
+        "A": 0.8,
+        "C": 0.65
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.0,
+        "A": 0.1,
+        "C": 0.0417
+      }
+    }
+  },
+  "round_results": [
+    {
+      "round": 0,
+      "state": "SYNTH",
+      "kappa": 0.0,
+      "mu": 56.3788,
+      "converged": false,
+      "stop": false,
+      "findings_count": 101,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 0,
+      "state": "ROUND_1",
+      "kappa": 0.0,
+      "mu": 24.7207,
+      "converged": false,
+      "stop": false,
+      "findings_count": 6,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 1,
+      "state": "ROUND_2",
+      "kappa": 0.0,
+      "mu": 25.4281,
+      "converged": false,
+      "stop": false,
+      "findings_count": 7,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 2,
+      "state": "TERMINAL",
+      "kappa": 0.0,
+      "mu": 25.5635,
+      "converged": false,
+      "stop": false,
+      "findings_count": 9,
+      "active_models": [
+        "CC2",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    }
+  ],
+  "event_log": [
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 0,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1750345.906939458
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 101 findings",
+      "timestamp": 1750426.877480916
+    },
+    {
+      "type": "EMPTY",
+      "model": "Codex",
+      "round": 0,
+      "detail": "Empty or null response",
+      "timestamp": 1750426.88459325
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1750427.146498958
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=56.3788, stop=False",
+      "timestamp": 1750427.152542416
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1750427.153402166
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 6 findings",
+      "timestamp": 1751028.741538208
+    },
+    {
+      "type": "EMPTY",
+      "model": "CC2",
+      "round": 1,
+      "detail": "Empty or null response",
+      "timestamp": 1751028.741600208
+    },
+    {
+      "type": "EMPTY",
+      "model": "ChatGPT",
+      "round": 1,
+      "detail": "Empty or null response",
+      "timestamp": 1751028.747871625
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1751028.750195291
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=24.7207, stop=False",
+      "timestamp": 1751028.780133166
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1751028.803292041
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Processing round 1 with 7 findings",
+      "timestamp": 1751920.748514583
+    },
+    {
+      "type": "EMPTY",
+      "model": "CC2",
+      "round": 2,
+      "detail": "Empty or null response",
+      "timestamp": 1751920.750287541
+    },
+    {
+      "type": "EMPTY",
+      "model": "ChatGPT",
+      "round": 2,
+      "detail": "Empty or null response",
+      "timestamp": 1751920.759064958
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1751920.768186625
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "mu=25.4281, stop=False",
+      "timestamp": 1751920.804108666
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "[IMMUNE:WARNING] kappa: kappa stuck at ~0 for 3 consecutive rounds despite 114 findings produced (occurrence 1)",
+      "timestamp": 1751920.80486625
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "[IMMUNE:ADAPT] tau_sim: 0.8 → 0.7000000000000001 (triggered by kappa)",
+      "timestamp": 1751920.805394958
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1751920.8342175
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 2,
+      "detail": "Processing round 2 with 9 findings",
+      "timestamp": 1752739.118714208
+    },
+    {
+      "type": "EMPTY",
+      "model": "CC2",
+      "round": 3,
+      "detail": "Empty or null response",
+      "timestamp": 1752739.118834916
+    },
+    {
+      "type": "EMPTY",
+      "model": "ChatGPT",
+      "round": 3,
+      "detail": "Empty or null response",
+      "timestamp": 1752739.128752375
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1752739.149465666
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "mu=25.5635, stop=False",
+      "timestamp": 1752739.194960958
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "[IMMUNE:CRITICAL] kappa: kappa stuck at ~0 for 3 consecutive rounds despite 22 findings produced (occurrence 2)",
+      "timestamp": 1752739.195056541
+    }
+  ]
+}

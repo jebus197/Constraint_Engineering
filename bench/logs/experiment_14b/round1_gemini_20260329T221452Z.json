@@ -1,0 +1,14 @@
+{
+  "timestamp": "20260329T221452Z",
+  "phase": "round1",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 1462,
+  "response": "```yaml\nFINDING_ID: CDSFL_Role_F001\nSEVERITY: 0.88\nFLAW_CLASS: 1\nABSTRACTION: 0.65\nVERIFIED: FALSE\nDESCRIPTION: >\n  `RoleAssignment.reassign()` introduces strict non-determinism into the round progression, directly violating the framework's deterministic acyclic requirements. It derives `remaining_ids` from `active_models`, which is a `Set[str]` (either passed by the caller or generated natively via `set(self.role_map.keys())`). Because Python 3.3+ employs hash randomization by default, iterating over this set populates the `col_scores` dictionary in a randomized, non-reproducible order. When `max(col_scores, key=lambda mid: col_scores[mid])` evaluates the highest scoring COL candidate, ties in capability scores are broken by picking the first encountered maximum. For homogeneous models (or dynamically identical scores after penalty/decay), the FSM will pick a completely random COL across different process executions. This critically bypasses the rigorous `_tie_break_key` lexicographic fallback that was properly utilized during initialization in `assign()`.\nPROPOSED_FIX: >\n  Mirror the deterministic tie-breaking logic from initial assignment. Sort `remaining_ids` lexicographically to strip set-iteration entropy, and update the maximum selection to explicitly use the tie-breaker:\n  `best_col_id = max(col_scores.keys(), key=lambda mid: (col_scores[mid], RoleAssignment._tie_break_key(next(m for m in self._models if m.model_id == mid))))`\n```",
+  "metadata": {
+    "elapsed": 210.2,
+    "chars": 1462,
+    "findings_count": 1,
+    "round": 1
+  }
+}

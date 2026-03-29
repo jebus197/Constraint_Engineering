@@ -217,6 +217,22 @@ class DynamicManagementConfig:
             raise ValueError(
                 f"feasibility_threshold must be in (0, 1], got {self.feasibility_threshold}"
             )
+        # Exp14 fix (ChatGPT F006, sev 0.89, triple-corroborated):
+        # Comprehensive bounds checks for all bounded thresholds.
+        if not (0.0 < self.tau_sim <= 1.0):
+            raise ValueError(f"tau_sim must be in (0, 1], got {self.tau_sim}")
+        if not (0.0 < self.tau_vocab_growth <= 1.0):
+            raise ValueError(f"tau_vocab_growth must be in (0, 1], got {self.tau_vocab_growth}")
+        if not (0.0 <= self.eta_veto <= 1.0):
+            raise ValueError(f"eta_veto must be in [0, 1], got {self.eta_veto}")
+        if self.epsilon_conv <= 0:
+            raise ValueError(f"epsilon_conv must be > 0, got {self.epsilon_conv}")
+        if self.vocab_sustained_window < 1:
+            raise ValueError(f"vocab_sustained_window must be >= 1, got {self.vocab_sustained_window}")
+        if self.immune_damping_rounds < 0:
+            raise ValueError(f"immune_damping_rounds must be >= 0, got {self.immune_damping_rounds}")
+        if self.max_per_model_directive_chars < 0:
+            raise ValueError(f"max_per_model_directive_chars must be >= 0, got {self.max_per_model_directive_chars}")
 
     def get_alpha(self, role: Role) -> NDArray[np.float64]:
         """Return the capability weight vector for a given role."""
@@ -500,6 +516,7 @@ class RoleAssignment:
         self,
         round_idx: int,
         active_models: Optional[Set[str]] = None,
+        live_fingerprints: Optional[Dict[str, "CapabilityFingerprint"]] = None,
     ) -> Dict[str, Role]:
         """Reassign COL/PAR roles between rounds. PM is never reassigned (HARD C3).
 
@@ -509,6 +526,11 @@ class RoleAssignment:
         Args:
             round_idx: Current round index (for failure history).
             active_models: Set of active model IDs. If None, all models active.
+            live_fingerprints: Optional live-updated fingerprints from
+                DynamicManager._live_fingerprints.  When provided, models
+                are scored with current performance data rather than initial
+                estimates.  (Exp14 fix: 5 findings, triple-corroborated,
+                sev 0.90 — reassign used stale initial fingerprints.)
 
         Returns:
             Updated role_map (also updates self.role_map in place).
@@ -516,8 +538,24 @@ class RoleAssignment:
         if active_models is None:
             active_models = set(self.role_map.keys())
 
+        # Use live fingerprints when available (Exp14 fix)
+        models_for_scoring = list(self._models)
+        if live_fingerprints:
+            models_for_scoring = []
+            for m in self._models:
+                if m.model_id in live_fingerprints:
+                    # Create a copy with updated fingerprint
+                    updated = ModelSpec(
+                        model_id=m.model_id,
+                        fingerprint=live_fingerprints[m.model_id],
+                        tau=m.tau, L=m.L, c=m.c, L_std=m.L_std,
+                    )
+                    models_for_scoring.append(updated)
+                else:
+                    models_for_scoring.append(m)
+
         pool_max = self._compute_pool_max(
-            [m for m in self._models if m.model_id in active_models]
+            [m for m in models_for_scoring if m.model_id in active_models]
         )
 
         # PM stays locked
@@ -533,7 +571,7 @@ class RoleAssignment:
         # Compute COL scores with failure-history penalty
         col_scores: Dict[str, float] = {}
         for mid in remaining_ids:
-            model = next((m for m in self._models if m.model_id == mid), None)
+            model = next((m for m in models_for_scoring if m.model_id == mid), None)
             if model is None:
                 continue
             base_score = self._capability_score(model, Role.COL, pool_max, self._config)
@@ -1678,13 +1716,15 @@ class ConvergenceDetector:
     def kappa_adopt(self, round_idx: int) -> float:
         """Adoption stabilisation metric.
 
-        kappa_adopt(r) = 1 - Delta_r
+        kappa_adopt(r) = clamp(1 - Delta_r, 0, 1)
 
         where Delta_r is the adoption delta from the existing schema.
-        Returns value in [0, 1].
+        Returns value in [0, 1].  Clamped to prevent negative kappa or
+        values > 1 when adoption_delta is outside [0, 1] (Exp14 fix:
+        ChatGPT F005, sev 0.90).
         """
         delta = self._adoption_deltas.get(round_idx, 0.0)
-        return 1.0 - delta
+        return max(0.0, min(1.0, 1.0 - delta))
 
     def kappa(self, round_idx: int) -> float:
         """Combined convergence metric.
@@ -2170,9 +2210,14 @@ class DiminishingReturnsDetector:
                     area_rounds_in_window = sorted(
                         self._area_active_rounds[area] & recent_range
                     )
-                    if len(area_rounds_in_window) < max(1, W // 2):
-                        # Area wasn't active enough in window — not saturated
-                        return False
+                    # Exp14 fix (CC2 F032, sev 0.70): Under 6-area rotation,
+                    # each area appears every ~6 rounds.  W//2 (=2 for W=5)
+                    # is unreachable with rotation.  Require at least 1 active
+                    # round in the window — if even that one round showed low
+                    # growth, the area is saturated from its perspective.
+                    if len(area_rounds_in_window) < 1:
+                        # Area wasn't active at all in window — skip, not block
+                        continue
                     for r in area_rounds_in_window:
                         if self._area_vocab_growth.get(area, {}).get(r, 1.0) >= tau:
                             return False  # This area still has novelty
@@ -2524,8 +2569,11 @@ class DetectorHealthMonitor:
         eff_mu_window = effective_window("mu", self._mu_increase_window)
         if len(self._mu_history) >= eff_mu_window + 1:
             recent_mu = self._mu_history[-(eff_mu_window + 1):]
+            # Exp14 fix (CC2 F027, sev 0.75): multiplying a negative mu by 1.1
+            # makes it MORE negative, not less — the comparison would be wrong.
+            # Use absolute increase check instead.
             mu_increasing = all(
-                recent_mu[i + 1] > recent_mu[i] * 1.1  # 10% increase threshold
+                recent_mu[i + 1] > recent_mu[i] + abs(recent_mu[i]) * 0.1
                 for i in range(len(recent_mu) - 1)
             )
             recent_findings = self._finding_counts[-(eff_mu_window + 1):]
@@ -2556,6 +2604,14 @@ class DetectorHealthMonitor:
                     },
                 )
                 new_diagnoses.append(diag)
+            else:
+                # mu no longer pathological — mark resolved (Exp14 fix:
+                # CC2 14b F033, sev 0.55 — resolved_counts only for kappa)
+                if self._pathology_counts.get("mu", 0) > 0:
+                    self._resolved_counts["mu"] = (
+                        self._resolved_counts.get("mu", 0) + 1
+                    )
+                    self._pathology_counts["mu"] = 0
 
         # Check 3: novelty_rate and mu disagreeing
         if len(self._novelty_history) >= 2 and len(self._mu_history) >= 2:
@@ -3502,6 +3558,9 @@ class DynamicManager:
                     metadata={"p_feasible": p, "task_load": task_load},
                 )
             )
+            # Wire into Phase E dispatch health tracking (Exp14 fix:
+            # ChatGPT F003, sev 0.94 — record_dispatch_block was never called)
+            self.record_dispatch_block(model.model_id, self.fsm.current_round)
         elif p < 0.99 and model.L_std > 0:
             self.event_stream.emit(
                 ManagerEvent(
@@ -3608,16 +3667,34 @@ class DynamicManager:
 
         # Per-model mu: group findings by model and register each model's
         # contribution independently (Exp13a, CC2 approved HARD).
+        # Exp14 fix (CC2 F013/F015, sev 0.75): cost is now proportional to
+        # each model's response content, not uniformly divided.  A model that
+        # produced 10K chars of output should bear more cost than one that
+        # produced 2K chars.  Uniform division distorts per-model mu when
+        # output sizes vary (which they always do — CC2 ~38K, Gemini ~5K).
         from collections import defaultdict
         per_model_findings: Dict[str, List[Finding]] = defaultdict(list)
         for f in new_findings_flat:
             per_model_findings[f.model_id].append(f)
         active = self.failure_handler.active_models
-        per_model_cost = round_cost / max(len(active), 1)
+        # Weight cost by response content length
+        total_content = sum(
+            len(responses.get(mid, ModelResponse(
+                model_id=mid, round_idx=round_idx, content="",
+                response_time=0, parseable=False, format_compliant=False,
+                finding_count=0, mean_abstraction=0,
+            )).content)
+            for mid in active
+        )
         for model_id in active:
             model_findings = per_model_findings.get(model_id, [])
+            resp = responses.get(model_id)
+            if total_content > 0 and resp:
+                model_cost = round_cost * len(resp.content) / total_content
+            else:
+                model_cost = round_cost / max(len(active), 1)
             self.diminishing_returns.add_model_round(
-                model_id, round_idx, model_findings, per_model_cost
+                model_id, round_idx, model_findings, model_cost
             )
 
         mu = self.diminishing_returns.marginal_value(round_idx) if round_idx in self.diminishing_returns._cumulative_yields else 0.0
@@ -3708,7 +3785,8 @@ class DynamicManager:
         # --- Area 1: Role reassignment (if continuing) ---
         if not self.fsm.is_terminal:
             self.role_assignment.reassign(
-                round_idx, self.failure_handler.active_models
+                round_idx, self.failure_handler.active_models,
+                live_fingerprints=self._live_fingerprints,
             )
             # Update failure handler's role map
             self.failure_handler.role_map = self.role_assignment.role_map
@@ -4003,6 +4081,12 @@ class DynamicManager:
                 }
 
         elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
+            # NOTE (Exp14 finding, ChatGPT F023, sev 0.70): This handler is
+            # currently unreachable — no diagnosis with detector="vocab_saturation"
+            # is generated by DetectorHealthMonitor. The vocab saturation signal
+            # comes from DiminishingReturnsDetector.vocab_saturated(). To wire
+            # this up, DetectorHealthMonitor would need to watch vocab_growth_rate
+            # and diagnose premature saturation. Kept for future wiring.
             # Vocab saturation fired too early → lower threshold
             old_val = self.config.tau_vocab_growth
             new_val = max(0.01, old_val * 0.5)  # halve, bounded at 1%
@@ -4015,7 +4099,7 @@ class DynamicManager:
                     "reason": diagnosis.pathology,
                 }
 
-        elif diagnosis.detector == "dispatch" and "false_positive" in diagnosis.pathology.lower():
+        elif diagnosis.detector == "dispatch" and "false positive" in diagnosis.pathology.lower():
             # Dispatch false positive → pre-decompose this model
             model_id = diagnosis.evidence.get("model_id", "")
             if model_id and model_id not in self.config.pre_decompose_models:
@@ -4026,6 +4110,18 @@ class DynamicManager:
                     "new": f"added {model_id}",
                     "reason": diagnosis.pathology,
                 }
+
+        elif diagnosis.detector == "mu+novelty" and "disagree" in diagnosis.pathology.lower():
+            # mu+novelty disagreement → trust novelty over mu.
+            # No parameter to adjust — this is an advisory to the stop predicate.
+            # Record the diagnosis for the orchestrator to act on.
+            # (Exp14 fix: CC2 F030, sev 0.55 — handler was missing)
+            adjustment = {
+                "parameter": "stop_signal_priority",
+                "old": "mu+novelty combined",
+                "new": "novelty_rate preferred (mu unreliable)",
+                "reason": diagnosis.pathology,
+            }
 
         elif diagnosis.detector == "verification" and "miscalibration" in diagnosis.pathology.lower():
             # Verification miscalibration → add per-model directive

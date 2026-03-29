@@ -1,0 +1,289 @@
+{
+  "experiment": "12_live_wire",
+  "timestamp": "2026-03-29T21:38:02.690815+00:00",
+  "termination_reason": "CONVERGED",
+  "rounds": 4,
+  "total_findings": 150,
+  "active_models_at_end": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "total_events": 16,
+  "model_restarts": {
+    "CC2": 0,
+    "Codex": 0,
+    "ChatGPT": 0,
+    "Gemini": 0,
+    "DeepSeek": 0
+  },
+  "max_rounds_scaling": "4226 lines → 22 rounds",
+  "vocab_trajectory": {
+    "0": {
+      "size": 1636,
+      "growth": 0.0315
+    },
+    "1": {
+      "size": 1636,
+      "growth": 0.0
+    },
+    "2": {
+      "size": 1636,
+      "growth": 0.0
+    }
+  },
+  "fingerprint_evolution": {
+    "CC2": {
+      "initial": {
+        "D_decay": 0.1,
+        "v_bar": 0.9,
+        "A": 0.85,
+        "C": 0.8
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.0,
+        "A": 0.1667,
+        "C": 0.3333
+      }
+    },
+    "Codex": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.85,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.3333,
+        "A": 0.2669,
+        "C": 0.25
+      }
+    },
+    "ChatGPT": {
+      "initial": {
+        "D_decay": 0.15,
+        "v_bar": 0.85,
+        "A": 0.8,
+        "C": 0.75
+      },
+      "final": {
+        "D_decay": 0.3333,
+        "v_bar": 0.0,
+        "A": 0.1,
+        "C": 0.0417
+      }
+    },
+    "Gemini": {
+      "initial": {
+        "D_decay": 0.2,
+        "v_bar": 0.8,
+        "A": 0.75,
+        "C": 0.7
+      },
+      "final": {
+        "D_decay": 0.1667,
+        "v_bar": 0.3333,
+        "A": 0.5011,
+        "C": 0.4583
+      }
+    },
+    "DeepSeek": {
+      "initial": {
+        "D_decay": 0.25,
+        "v_bar": 0.75,
+        "A": 0.8,
+        "C": 0.65
+      },
+      "final": {
+        "D_decay": 0.5,
+        "v_bar": 0.0,
+        "A": 0.0,
+        "C": 0.0
+      }
+    }
+  },
+  "round_results": [
+    {
+      "round": 0,
+      "state": "SYNTH",
+      "kappa": 0.0,
+      "mu": 42.0127,
+      "converged": false,
+      "stop": false,
+      "findings_count": 56,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 0,
+      "state": "ROUND_1",
+      "kappa": 0.0,
+      "mu": 8.755,
+      "converged": false,
+      "stop": false,
+      "findings_count": 6,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 1,
+      "state": "ROUND_2",
+      "kappa": 1.0,
+      "mu": 0.0,
+      "converged": false,
+      "stop": false,
+      "findings_count": 0,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    },
+    {
+      "round": 2,
+      "state": "TERMINAL",
+      "kappa": 1.0,
+      "mu": 0.0,
+      "converged": true,
+      "stop": true,
+      "findings_count": 0,
+      "active_models": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ]
+    }
+  ],
+  "event_log": [
+    {
+      "type": "DISPATCH_BLOCKED",
+      "model": "DeepSeek",
+      "round": 0,
+      "detail": "P(feasible)=0.000 < threshold=0.9",
+      "timestamp": 1746031.775989166
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 56 findings",
+      "timestamp": 1746031.776352125
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1746031.865361958
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=42.0127, stop=False",
+      "timestamp": 1746031.866931291
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1746031.867313625
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Processing round 0 with 6 findings",
+      "timestamp": 1746789.82036825
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "kappa=0.0000, converged=False",
+      "timestamp": 1746789.822430791
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 0,
+      "detail": "mu=8.7550, stop=False",
+      "timestamp": 1746789.8397005
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 0,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1746789.854406625
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Processing round 1 with 0 findings",
+      "timestamp": 1747769.498477375
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "kappa=1.0000, converged=False",
+      "timestamp": 1747769.499116416
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 1,
+      "detail": "mu=0.0000, stop=False",
+      "timestamp": 1747769.503839
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 1,
+      "detail": "Fingerprints updated from observed performance",
+      "timestamp": 1747769.506050708
+    },
+    {
+      "type": "ROUND_COMPLETE",
+      "model": "system",
+      "round": 2,
+      "detail": "Processing round 2 with 0 findings",
+      "timestamp": 1748683.121225625
+    },
+    {
+      "type": "CONVERGENCE_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "kappa=1.0000, converged=True",
+      "timestamp": 1748683.121961333
+    },
+    {
+      "type": "STOP_CHECK",
+      "model": "system",
+      "round": 2,
+      "detail": "mu=0.0000, stop=True",
+      "timestamp": 1748683.1303775
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+[20:37:59] Model pool: ['CC2', 'Codex', 'ChatGPT', 'Gemini', 'DeepSeek']
+[20:37:59] Roles assigned: {'CC2': <Role.PM: 'PM'>, 'ChatGPT': <Role.COL: 'COL'>, 'Codex': <Role.PAR: 'PAR'>, 'Gemini': <Role.PAR: 'PAR'>, 'DeepSeek': <Role.PAR: 'PAR'>}
+[20:37:59] PM: CC2
+[20:37:59] Artifact: dynamic_management.py (166473 chars, 4226 lines) → max_rounds=22
+[20:37:59] Blind prompt: 167275 chars
+[20:37:59] === PHASE 1: BLIND ROUND ===
+[20:37:59]   CC2: feasibility P=1.000, dispatch=YES
+[20:37:59] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:41:49]   [openrouter:anthropic/claude-opus-4-6] done (229.6s, 38073 chars)
+[20:41:49]   CC2: 38073 chars, 230.1s
+[20:41:49]   CC2: 35 findings parsed
+[20:41:49]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/blind_cc2_20260329T204149Z.json
+[20:41:49]   Codex: feasibility P=1.000, dispatch=YES
+[20:41:49] Dispatching to Codex (gpt-5.4) via codex_exec...
+[20:49:23]   [codex] done (453.7s, 10760 chars)
+[20:49:23]   Codex: 10760 chars, 453.7s
+[20:49:23]   Codex: 14 findings parsed
+[20:49:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/blind_codex_20260329T204923Z.json
+[20:49:23]   ChatGPT: feasibility P=1.000, dispatch=YES
+[20:49:23] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[20:50:56]   [openrouter:openai/gpt-5.4] done (93.0s, 22639 chars)
+[20:50:56]   ChatGPT: 22639 chars, 93.0s
+[20:50:56]   ChatGPT: 1 findings parsed
+[20:50:56]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/blind_chatgpt_20260329T205056Z.json
+[20:50:56]   Gemini: feasibility P=1.000, dispatch=YES
+[20:50:56] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+WARNING:google_genai._api_client:Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[20:53:51]   [gemini:gemini-3.1-pro-preview] done (174.2s, 5481 chars)
+[20:53:51]   Gemini: 5481 chars, 175.1s
+[20:53:51]   Gemini: 6 findings parsed
+[20:53:51]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/blind_gemini_20260329T205351Z.json
+[20:53:51]   [EVENT] DISPATCH_BLOCKED: P(feasible)=0.000 < threshold=0.9
+[20:53:51]   DeepSeek: feasibility P=0.000, dispatch=BLOCKED
+[20:53:51] Blind round complete: 56 total findings from 4 models
+[20:53:51]   [EVENT] ROUND_COMPLETE: Processing round 0 with 56 findings
+[20:53:51]   [EVENT] CONVERGENCE_CHECK: kappa=0.0000, converged=False
+[20:53:51]   [EVENT] STOP_CHECK: mu=42.0127, stop=False
+[20:53:51]   [EVENT] ROUND_COMPLETE: Fingerprints updated from observed performance
+[20:53:51] Round 0 result: state=SYNTH, kappa=0.0000, mu=42.0127, converged=False, stop=False
+[20:53:51] 
+============================================================
+[20:53:51] === ROUND 1: ADAPTIVE ===
+[20:53:51]   Live fingerprints:
+[20:53:51]     CC2 (PM): D=0.000 v=0.000 A=0.500 C=1.000
+[20:53:51]     Codex (PAR): D=0.000 v=1.000 A=0.801 C=0.750
+[20:53:51]     ChatGPT (COL): D=0.000 v=0.000 A=0.300 C=0.125
+[20:53:51]     Gemini (PAR): D=0.000 v=1.000 A=0.675 C=0.375
+[20:53:51]     DeepSeek (PAR): D=0.500 v=0.000 A=0.000 C=0.000
+[20:53:51]   CC2: context=190369 chars > threshold=120000, switching to decomposed dispatch
+[20:53:51]   CC2: decomposed — Area 1: Role Assignment (27639 chars focused, 35876 chars total)
+[20:53:51] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:54:43]   [openrouter:anthropic/claude-opus-4-6] done (51.6s, 7783 chars)
+[20:54:43]   CC2: 7783 chars, 51.6s
+[20:54:43]   CC2: 7 findings parsed
+[20:54:43]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round1_cc2_20260329T205443Z.json
+[20:54:43]   [CHECKPOINT] Saved (1 models, round 1)
+[20:54:43]   Codex: context=190369 chars > threshold=60000, switching to decomposed dispatch
+[20:54:43]   Codex: decomposed — Area 1: Role Assignment (27639 chars focused, 35876 chars total)
+[20:54:43] Dispatching to Codex (gpt-5.4) via codex_exec...
+[21:00:25]   [codex] done (342.4s, 7695 chars)
+[21:00:25]   Codex: 7695 chars, 342.4s
+[21:00:25]   Codex: 6 findings parsed
+[21:00:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round1_codex_20260329T210025Z.json
+[21:00:25]   [CHECKPOINT] Saved (2 models, round 1)
+[21:00:25]   ChatGPT: context=190369 chars > threshold=80000, switching to decomposed dispatch
+[21:00:25]   ChatGPT: decomposed — Area 1: Role Assignment (27639 chars focused, 35876 chars total)
+[21:00:25] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[21:00:57]   [openrouter:openai/gpt-5.4] done (31.7s, 8313 chars)
+[21:00:57]   ChatGPT: 8313 chars, 31.7s
+[21:00:57]   ChatGPT: 9 findings parsed
+[21:00:57]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round1_chatgpt_20260329T210057Z.json
+[21:00:57]   [CHECKPOINT] Saved (3 models, round 1)
+[21:00:57] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+WARNING:google_genai._api_client:Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[21:03:50]   [gemini:gemini-3.1-pro-preview] done (173.5s, 4927 chars)
+[21:03:50]   Gemini: 4927 chars, 173.6s
+[21:03:50]   Gemini: 6 findings parsed
+[21:03:50]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round1_gemini_20260329T210350Z.json
+[21:03:50]   [CHECKPOINT] Saved (4 models, round 1)
+[21:03:50]   DeepSeek: decomposed — Area 1: Role Assignment (27639 chars focused, 35876 chars total)
+[21:03:50] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[21:06:29]   [deepseek:deepseek-reasoner] done (158.6s, 5548 chars)
+[21:06:29]   DeepSeek: 5548 chars, 158.6s
+[21:06:29]   DeepSeek: 6 findings parsed
+[21:06:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round1_deepseek_20260329T210629Z.json
+[21:06:29]   [CHECKPOINT] Saved (5 models, round 1)
+[21:06:29] Round 1 complete: 34 findings from 5 models
+[21:06:29]   [EVENT] ROUND_COMPLETE: Processing round 0 with 6 findings
+[21:06:29]   [EVENT] CONVERGENCE_CHECK: kappa=0.0000, converged=False
+[21:06:29]   [EVENT] STOP_CHECK: mu=8.7550, stop=False
+[21:06:29]   [EVENT] ROUND_COMPLETE: Fingerprints updated from observed performance
+[21:06:29] Round 1 result: state=ROUND_1, kappa=0.0000, mu=8.7550, novelty=1.0000, vocab_growth=0.0315, converged=False, stop=False
+[21:06:29]   (28 findings from CC2, ChatGPT, Codex, DeepSeek excluded from convergence calc, included in master list)
+[21:06:29] 
+============================================================
+[21:06:29] === ROUND 2: ADAPTIVE ===
+[21:06:29]   Live fingerprints:
+[21:06:29]     CC2 (PM): D=0.250 v=0.000 A=0.250 C=0.500
+[21:06:29]     Codex (PAR): D=0.250 v=0.500 A=0.400 C=0.375
+[21:06:29]     ChatGPT (COL): D=0.250 v=0.000 A=0.150 C=0.062
+[21:06:29]     Gemini (PAR): D=0.000 v=0.500 A=0.752 C=0.688
+[21:06:29]     DeepSeek (PAR): D=0.500 v=0.000 A=0.000 C=0.000
+[21:06:29]   CC2: context=204369 chars > threshold=120000, switching to decomposed dispatch
+[21:06:29]   CC2: decomposed — Area 2: Load Balancing (30311 chars focused, 39630 chars total)
+[21:06:29] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[21:07:22]   [openrouter:anthropic/claude-opus-4-6] done (53.1s, 7782 chars)
+[21:07:22]   CC2: 7782 chars, 53.1s
+[21:07:22]   CC2: 7 findings parsed
+[21:07:22]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round2_cc2_20260329T210722Z.json
+[21:07:22]   [CHECKPOINT] Saved (1 models, round 2)
+[21:07:22]   Codex: context=204369 chars > threshold=60000, switching to decomposed dispatch
+[21:07:22]   Codex: decomposed — Area 2: Load Balancing (30311 chars focused, 39630 chars total)
+[21:07:22] Dispatching to Codex (gpt-5.4) via codex_exec...
+[21:14:36]   [codex] done (434.4s, 7212 chars)
+[21:14:36]   Codex: 7212 chars, 434.4s
+[21:14:36]   Codex: 6 findings parsed
+[21:14:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round2_codex_20260329T211436Z.json
+[21:14:36]   [CHECKPOINT] Saved (2 models, round 2)
+[21:14:36]   ChatGPT: context=204369 chars > threshold=80000, switching to decomposed dispatch
+[21:14:36]   ChatGPT: decomposed — Area 2: Load Balancing (30311 chars focused, 39630 chars total)
+[21:14:36] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[21:15:07]   [openrouter:openai/gpt-5.4] done (30.1s, 8053 chars)
+[21:15:07]   ChatGPT: 8053 chars, 30.1s
+[21:15:07]   ChatGPT: 8 findings parsed
+[21:15:07]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round2_chatgpt_20260329T211507Z.json
+[21:15:07]   [CHECKPOINT] Saved (3 models, round 2)
+[21:15:07]   Gemini: context=204369 chars > threshold=200000, switching to decomposed dispatch
+[21:15:07]   Gemini: decomposed — Area 2: Load Balancing (30311 chars focused, 39630 chars total)
+[21:15:07] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+WARNING:google_genai._api_client:Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[21:19:19]   [gemini:gemini-3.1-pro-preview] done (252.1s, 3664 chars)
+[21:19:19]   Gemini: 3664 chars, 252.2s
+[21:19:19]   Gemini: 3 findings parsed
+[21:19:19]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round2_gemini_20260329T211919Z.json
+[21:19:19]   [CHECKPOINT] Saved (4 models, round 2)
+[21:19:19]   DeepSeek: decomposed — Area 2: Load Balancing (30311 chars focused, 39630 chars total)
+[21:19:19] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[21:22:49]   [deepseek:deepseek-reasoner] done (209.7s, 7969 chars)
+[21:22:49]   DeepSeek: 7969 chars, 209.7s
+[21:22:49]   DeepSeek: 8 findings parsed
+[21:22:49]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round2_deepseek_20260329T212249Z.json
+[21:22:49]   [CHECKPOINT] Saved (5 models, round 2)
+[21:22:49] Round 2 complete: 32 findings from 5 models
+[21:22:49]   [EVENT] ROUND_COMPLETE: Processing round 1 with 0 findings
+[21:22:49]   [EVENT] CONVERGENCE_CHECK: kappa=1.0000, converged=False
+[21:22:49]   [EVENT] STOP_CHECK: mu=0.0000, stop=False
+[21:22:49]   [EVENT] ROUND_COMPLETE: Fingerprints updated from observed performance
+[21:22:49] Round 2 result: state=ROUND_2, kappa=1.0000, mu=0.0000, novelty=0.0000, vocab_growth=0.0000, converged=False, stop=False
+[21:22:49]   (32 findings from CC2, ChatGPT, Codex, DeepSeek, Gemini excluded from convergence calc, included in master list)
+[21:22:49] 
+============================================================
+[21:22:49] === ROUND 3: ADAPTIVE ===
+[21:22:49]   Live fingerprints:
+[21:22:49]     CC2 (PM): D=0.333 v=0.000 A=0.167 C=0.333
+[21:22:49]     Codex (PAR): D=0.333 v=0.333 A=0.267 C=0.250
+[21:22:49]     ChatGPT (COL): D=0.333 v=0.000 A=0.100 C=0.042
+[21:22:49]     Gemini (PAR): D=0.167 v=0.333 A=0.501 C=0.458
+[21:22:49]     DeepSeek (PAR): D=0.500 v=0.000 A=0.000 C=0.000
+[21:22:49]   CC2: context=217857 chars > threshold=120000, switching to decomposed dispatch
+[21:22:49]   CC2: decomposed — Area 3: Round Progression / FSM (24906 chars focused, 38339 chars total)
+[21:22:49] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[21:24:04]   [openrouter:anthropic/claude-opus-4-6] done (75.6s, 11937 chars)
+[21:24:04]   CC2: 11937 chars, 75.7s
+[21:24:04]   CC2: 8 findings parsed
+[21:24:04]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round3_cc2_20260329T212404Z.json
+[21:24:04]   [CHECKPOINT] Saved (1 models, round 3)
+[21:24:04]   Codex: context=217857 chars > threshold=60000, switching to decomposed dispatch
+[21:24:04]   Codex: decomposed — Area 3: Round Progression / FSM (24906 chars focused, 38339 chars total)
+[21:24:04] Dispatching to Codex (gpt-5.4) via codex_exec...
+[21:30:29]   [codex] done (385.1s, 6577 chars)
+[21:30:29]   Codex: 6577 chars, 385.1s
+[21:30:29]   Codex: 5 findings parsed
+[21:30:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round3_codex_20260329T213029Z.json
+[21:30:29]   [CHECKPOINT] Saved (2 models, round 3)
+[21:30:29]   ChatGPT: context=217857 chars > threshold=80000, switching to decomposed dispatch
+[21:30:29]   ChatGPT: decomposed — Area 3: Round Progression / FSM (24906 chars focused, 38339 chars total)
+[21:30:29] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[21:31:01]   [openrouter:openai/gpt-5.4] done (31.4s, 8692 chars)
+[21:31:01]   ChatGPT: 8692 chars, 31.4s
+[21:31:01]   ChatGPT: 8 findings parsed
+[21:31:01]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round3_chatgpt_20260329T213101Z.json
+[21:31:01]   [CHECKPOINT] Saved (3 models, round 3)
+[21:31:01]   Gemini: context=217857 chars > threshold=200000, switching to decomposed dispatch
+[21:31:01]   Gemini: decomposed — Area 3: Round Progression / FSM (24906 chars focused, 38339 chars total)
+[21:31:01] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+WARNING:google_genai._api_client:Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[21:34:57]   [gemini:gemini-3.1-pro-preview] done (235.9s, 2642 chars)
+[21:34:57]   Gemini: 2642 chars, 236.0s
+[21:34:57]   Gemini: 2 findings parsed
+[21:34:57]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round3_gemini_20260329T213457Z.json
+[21:34:57]   [CHECKPOINT] Saved (4 models, round 3)
+[21:34:57]   DeepSeek: decomposed — Area 3: Round Progression / FSM (24906 chars focused, 38339 chars total)
+[21:34:57] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[21:38:02]   [deepseek:deepseek-reasoner] done (185.3s, 5463 chars)
+[21:38:02]   DeepSeek: 5463 chars, 185.3s
+[21:38:02]   DeepSeek: 5 findings parsed
+[21:38:02]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/round3_deepseek_20260329T213802Z.json
+[21:38:02]   [CHECKPOINT] Saved (5 models, round 3)
+[21:38:02] Round 3 complete: 28 findings from 5 models
+[21:38:02]   [EVENT] ROUND_COMPLETE: Processing round 2 with 0 findings
+[21:38:02]   [EVENT] CONVERGENCE_CHECK: kappa=1.0000, converged=True
+[21:38:02]   [EVENT] STOP_CHECK: mu=0.0000, stop=True
+[21:38:02] Round 3 result: state=TERMINAL, kappa=1.0000, mu=0.0000, novelty=0.0000, vocab_growth=0.0000, converged=True, stop=True
+[21:38:02]   (28 findings from CC2, ChatGPT, Codex, DeepSeek, Gemini excluded from convergence calc, included in master list)
+[21:38:02] 
+============================================================
+[21:38:02] EXPERIMENT COMPLETE
+[21:38:02]   Termination: TerminationReason.CONVERGED
+[21:38:02]   Rounds: 4
+[21:38:02]   Total findings: 150
+[21:38:02]   Active models at end: {'Gemini', 'CC2', 'DeepSeek', 'ChatGPT', 'Codex'}
+[21:38:02]   Total events: 16
+[21:38:02]   Model restarts: {'CC2': 0, 'Codex': 0, 'ChatGPT': 0, 'Gemini': 0, 'DeepSeek': 0}
+[21:38:02]   Cumulative vocabulary: 1636 unique terms
+[21:38:02] 
+Fingerprint evolution:
+[21:38:02]   CC2:
+[21:38:02]     Initial: D=0.100 v=0.900 A=0.850 C=0.800
+[21:38:02]     Final:   D=0.333 v=0.000 A=0.167 C=0.333
+[21:38:02]   ChatGPT:
+[21:38:02]     Initial: D=0.150 v=0.850 A=0.800 C=0.750
+[21:38:02]     Final:   D=0.333 v=0.000 A=0.100 C=0.042
+[21:38:02]   Codex:
+[21:38:02]     Initial: D=0.200 v=0.800 A=0.850 C=0.700
+[21:38:02]     Final:   D=0.333 v=0.333 A=0.267 C=0.250
+[21:38:02]   DeepSeek:
+[21:38:02]     Initial: D=0.250 v=0.750 A=0.800 C=0.650
+[21:38:02]     Final:   D=0.500 v=0.000 A=0.000 C=0.000
+[21:38:02]   Gemini:
+[21:38:02]     Initial: D=0.200 v=0.800 A=0.750 C=0.700
+[21:38:02]     Final:   D=0.167 v=0.333 A=0.501 C=0.458
+[21:38:02] 
+Report saved to /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_12/experiment_12_report.json
