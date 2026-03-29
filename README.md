@@ -148,7 +148,35 @@ On 27 March 2026, the CDSFL mathematical model was subjected to its own distribu
 
 The most unexpected finding was not mathematical. The project manager model — which coordinated the review but did not operate under the CDSFL framework — was able to evaluate reasoning it could not have generated, because the framework-guided models produced output in a structured format that separated verdict from evidence, evidence from proposed change, and proposed change from self-criticism. This suggests the framework may function as a **communication protocol** as much as an analytical protocol: it makes high-quality analysis accessible to decision-makers who cannot perform the analysis themselves, provided they can follow a structured argument. Whether this generalises to human decision-makers is a [falsifiable prediction](docs/EXPERIMENTAL_RESULTS.md) that has not yet been tested.
 
-Full experimental data, including methodology, raw results, and caveats, is recorded in [`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md). The distributed compute round is documented in the [white paper](PAPER.md) (Part XIV) and discussed in the [founder's notes](docs/FOUNDERS_NOTES.md). The broader implications — for mixed human-AI teams, for non-specialist decision-makers, and for the framework's role as a transparency mechanism — are explored in the [extended rationale](docs/EXTENDED_RATIONALE.md).
+## Four cognitive modes and the dynamic management layer
+
+When four models independently formalised six areas of the CDSFL management layer (28 March 2026), operating under identical system prompts with no sight of each other's work, the outputs diverged not in quality but in kind.
+
+One model generated and falsified in a single coupled process — the self-objections appeared inline, not as an afterthought. Another found the operational gaps: every unique contribution addressed a failure mode the mathematical formulation alone would miss. A third compressed — achieving the highest reduction property density relative to output length, consistently seeking mathematical tightness, sometimes at the expense of robustness. A fourth was the only model that visibly self-corrected mid-output — six times, once per area — arriving at the consensus by trying something simple, recognising why it was insufficient, and correcting. The most clearly Popperian process in the group, by a model that looked weakest on raw metrics.
+
+These four cognitive modes — deep architecture, engineering pragmatism, mathematical compression, and iterative refinement — appear to be complementary rather than redundant. The dynamic management layer (`bench/dynamic_management.py`, ~3,400 lines, 27 classes) was built from the converged output of this experiment. It implements adaptive routing: each model receives work matched to its demonstrated strengths, based on a four-dimensional capability fingerprint (decay rate, verification score, total findings, coverage) that updates from observed performance rather than declared capability. The design principle is older than computing: there is no such thing as a useless contributor, only a misallocated one.
+
+## Live orchestration: Experiment 12
+
+On 29 March 2026, the dynamic management layer managed itself for the first time. Five models reviewed their own management code — 3,181 lines — through the system those classes implement. Twenty rounds. 809 findings. And every convergence detector broke.
+
+The convergence metric sat at zero for every round because lexical similarity cannot detect that two different phrasings describe the same finding. The marginal value metric oscillated because losing a model to context overflow reduced round cost while finding count held steady — the system interpreted attrition as improved productivity. The stop predicate never fired. Five models started; only two survived to round 20, the rest progressively blocked by context accumulation. The experiment ran to its arbitrary limit because no instrument could terminate it.
+
+Despite the broken termination, the experiment produced genuinely useful data. The dominant model (337 findings, all 21 rounds) showed vocabulary novelty declining from 23.9% to 7.7% — genuine diminishing returns confirmed by cross-round vocabulary overlap analysis showing two-thirds of late-round terminology absent from early rounds. Not churn. Genuine exploration of progressively more marginal territory. The only statistically significant quality trend across eight tests was one model's severity improvement (p=0.006), which has a critical confound: it received richer context in later rounds, so the improvement may be environment-mediated rather than intrinsic. The self-improvement prediction — that models improve under CDSFL — is not confirmed by this data. What is confirmed is that the *system's output* improves across rounds, through accumulated context rather than model capability change. CDSFL improves the input to each model, and the model responds accordingly. Whether that is a weaker or stronger claim than intrinsic improvement is a matter of perspective.
+
+The experiment's most valuable output was the diagnosis: three independent convergence detectors, each designed from different mathematical principles, all failed simultaneously for different reasons. Seven fixes were formalised and committed: a vocabulary saturation stop signal (similarity-independent), a windowed fingerprint replacing the collapsing exponential moving average, model restart logic, per-model adaptive decomposition, artifact-size-based round scaling, and an immune response layer that monitors the health of the detection instruments themselves. Whether these fixes work is the subject of Experiment 13.
+
+## Toward the configured synthetic domain expert
+
+The project's trajectory, viewed across 15 days and 12 experiments, is not toward a better chatbot. It is toward a **configured synthetic domain expert**: a system whose competence arises from the joint action of encoded method, iterative expert interaction, self-monitoring, computational verification, policy governance, and cryptographic accountability.
+
+That phrase requires unpacking. Method without verification is unverified discipline. Verification without method is calculation without direction. Both without governance are unbounded. All three without decay diagnostics cannot tell analysis from churn. None of them without accountability produce durable responsibility. These are not independent improvements. They are a stack, and the competence claim is distributed across the stack rather than residing in any single layer.
+
+The distinction from conventional AI tooling is structural. A chatbot gives output and leaves the user to decide whether it sounds right. A system built on this architecture produces a decay curve, a verification score, a coverage metric, a trust trajectory, and a permanent record — so that the user is not left relying only on rhetoric or intuition. The centre of gravity shifts from plausible performance to measurable analytical behaviour. Whether that shift justifies the engineering cost is an empirical question. The experiments are designed to answer it.
+
+The deeper hypothesis is that **expertise itself can become a tradable engineered artefact**. If expert encodings — methodology, domain standards, failure recognitions, review preferences, escalation logic — can be captured in portable configurations, benchmarked against a shared harness, cryptographically anchored, and improved over time, then the critical unit is no longer only model weights. It is a composed system of method plus verification plus governance. The marginal cost of new domain competence shifts from "who has the biggest model?" toward "who can encode, test, refine, and combine expertise most effectively?" Whether that shift is real or aspirational is precisely what the next round of experiments will test.
+
+Full experimental data, including methodology, raw results, and caveats, is recorded in [`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md). The distributed compute rounds are documented in the [white paper](PAPER.md) (Part XIV) and discussed in the [founder's notes](docs/FOUNDERS_NOTES.md). The broader implications — for mixed human-AI teams, for non-specialist decision-makers, and for the framework's role as a transparency mechanism — are explored in the [extended rationale](docs/EXTENDED_RATIONALE.md).
 
 ## What this repository contains
 
@@ -158,8 +186,11 @@ Full experimental data, including methodology, raw results, and caveats, is reco
 - **[`docs/MATHEMATICAL_APPENDIX.md`](docs/MATHEMATICAL_APPENDIX.md)** — mathematical extensions and calibration path
 - **[`docs/FOUNDERS_NOTES.md`](docs/FOUNDERS_NOTES.md)** — design intent, programme logic, and open questions
 - **[`docs/EXPERIMENTAL_RESULTS.md`](docs/EXPERIMENTAL_RESULTS.md)** — empirical results, including null findings and failures
-- **`bench/`** — benchmark harness, evaluation pipeline, and experiment design
-- **`bench/directives/`** — domain-specific constraint configurations
+- **`bench/`** — benchmark harness, evaluation pipeline, experiment design, and dynamic management layer
+- **`bench/dynamic_management.py`** — dynamic management and load-balancing layer (~3,400 lines, 27 classes)
+- **`bench/run_exp12_live_wire.py`** — live orchestration engine for multi-model experiments
+- **`bench/verification_chain.py`** — tamper-evident persistence layer (RFC 9162 Merkle trees, hash chains, optional Ed25519)
+- **`bench/directives/`** — domain-specific constraint configurations (10 domains, 28 directive files)
 - **`bench/cdsfl_registry/`** — Constraint Editor (CE): hierarchical policy engine for configuration governance
 - **[`configs/`](configs/)** — domain expert configurations: portable, reusable cognitive encodings with examples and templates (see [`configs/README.md`](configs/README.md))
 - **[`resources/`](resources/)** — project onboarding and recovery: everything needed to pick up the project from scratch, reproduce results, or attempt to refute them (see [`resources/ONBOARDING.md`](resources/ONBOARDING.md))
@@ -213,4 +244,4 @@ The deeper hypothesis is that parts of scientific and engineering method can be 
 
 MIT licensed. See [LICENSE](LICENSE).
 
-*CDSFL v1.0. March 2026.*
+*CDSFL v1.1. 29 March 2026. 12 experiments, 5 models, ~3,400 lines of management infrastructure, 173 tests.*

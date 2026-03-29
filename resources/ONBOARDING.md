@@ -186,7 +186,8 @@ universal methodology, domain-specific directives, user personalisation.
 
 The founder uses single-letter shorthand:
 - `y` = yes/approved
-- `t` = continue
+- `cy` = continue
+- `t` = export to TTS accessibility file
 - `d` = discuss before proceeding
 - `p` = run P-pass (falsify)
 - `e` = extrapolate beyond immediate domain
@@ -196,7 +197,6 @@ The founder uses single-letter shorthand:
 - `rr` = full recovery (re-read all resources, rebuild context from scratch)
 - `rs` = restore state (full recovery: rebuild context from all sources)
 - `re` = external research (web search, arXiv, Semantic Scholar, Sci-Hub)
-- `t` = export to TTS accessibility file
 - `sv` = save state (Open Brain + update recovery resources + commit + push)
 
 These compose: `p d e` = falsify, discuss, extrapolate. `c p a d` = confer

@@ -803,4 +803,144 @@ The underlying principle: there is no such thing as a useless system. Codex time
 
 ---
 
+### Experiment 12: Live Wire — First Live Orchestration of the Dynamic Management Layer
+
+**Date:** 29 March 2026
+**Models:** CC2 (Opus 4.6), ChatGPT (GPT-4o), Codex (GPT-5.4), DeepSeek (V3.2), Gemini (3.1 Pro)
+**Orchestrator:** CC1 (Opus 4.6) via `run_exp12_live_wire.py`
+**Artifact:** `bench/dynamic_management.py` (3,181 lines, 27 classes)
+**System prompt:** `cdsfl_core_formal.md` for all models
+**Rounds:** 20 (terminated at MAX_ROUNDS, not convergence)
+**Total findings:** 809
+
+#### Design
+
+The first live orchestration of the dynamic management layer built in Experiment 11. Five models reviewed the 3,181-line `dynamic_management.py` under full CDSFL, with the dynamic management layer itself managing their allocation, convergence detection, and failure handling — the code reviewing itself through the system it implements.
+
+Protocol: blind first round (all models independently), then iterative confer rounds with prior findings context. Structured JSON output with severity, abstraction, constraint classification, and verifiable claims. Convergence detection via three metrics: kappa (set-theoretic convergence), mu (marginal value/cost), and novelty rate.
+
+#### Model Performance
+
+| Model | Rounds | Findings | Severity (mean) | Abstraction (mean) | Status |
+|-------|--------|----------|-----------------|--------------------:|--------|
+| CC2 (Opus 4.6) | 21 | 337 | 0.707 | 0.658 | Survived |
+| ChatGPT (GPT-4o) | 17 | 193 | 0.664→0.804 | 0.737 | Blocked R17 |
+| Codex (GPT-5.4) | 13 | 72 | 0.791 | — | Blocked R13 |
+| DeepSeek (V3.2) | 21 | 185 | sparse | — | Survived (decomposed) |
+| Gemini (3.1 Pro) | 6 | 22 | 0.857 | — | Benched R5 |
+
+**CC2** was the workhorse: present all 21 rounds, stabilising at ~15 findings/round from R3, declining to 12–14 in final rounds. No statistically significant severity or abstraction trends. Vocabulary novelty declined from 23.9% (R1) to 7.7% (R20) — genuine diminishing returns, not exhaustion.
+
+**ChatGPT** was the only model showing statistically significant severity improvement: slope +0.004/round, p=0.006. Severity rose from 0.664 (blind round) to 0.804 (R14 peak). Blocked at R17 when context exceeded feasibility threshold.
+
+**Codex** had the highest individual severity mean (0.791) and the sharpest convergence: finding count declined from 16 (blind) to 3 (R12). This is the desired behaviour — fewer but higher quality findings — but was cut short by context blocking at R13.
+
+**DeepSeek** survived all 21 rounds via area decomposition (6 areas dispatched individually). 185 findings. Severity data sparse — many responses did not parse severity fields. Fingerprint collapsed entirely (all four dimensions near zero by R20).
+
+**Gemini** was benched at R5 by the failure handler. Tau was set to 150s, threshold 225s. Actual median latency ~250s. It was always going to fail. Only 22 findings across 6 rounds, but the highest average severity (0.857) — insufficient data to assess trends.
+
+#### Three Broken Detectors
+
+All three convergence detectors failed during Experiment 12. This is the experiment's most operationally significant finding.
+
+**kappa (set-theoretic convergence):** Zero for every round across 20 rounds. Jaccard similarity on finding descriptions uses exact word matches. Two descriptions of the same bug using different vocabulary score near-zero similarity. Technical text with diverse phrasing defeats word-level Jaccard. The committed fix adds stopword removal and bigram overlap (60% unigram + 40% bigram). Long-term fix: embedding-based similarity.
+
+**mu (marginal value/cost):** Oscillated between 34 and 48 without trending downward. The metric is defined as Δ(yield)/cost_per_round. When Gemini was benched at R5, round cost dropped but finding count stayed similar (remaining models compensated). Lower cost with similar yield = higher mu. The system interpreted losing a model as becoming more productive. Same pattern repeated when Codex was blocked (R13) and ChatGPT was blocked (R17). Proposed fix: per-model mu computation, aggregate via maximum.
+
+**Stop predicate (overall):** Neither kappa nor mu came close to firing. The novelty rate stop signal was not active in this run because it was committed as a fix during the experiment. The experiment ran to its arbitrary 20-round limit because no detector could terminate it.
+
+#### Fingerprint EMA Collapse
+
+The capability fingerprint uses an exponential moving average (α=0.3) to update four dimensions: D_decay, v_bar, A, C. Over 20 rounds, this causes all models' fingerprints to collapse toward zero.
+
+Mathematically: initial_value × 0.7^r. After 20 rounds: 0.9 × 0.7²⁰ ≈ 0.0007. When per-round observations are noisy or occasionally zero, the fingerprint decays toward zero regardless of actual model quality. CC2's v_bar collapsed from 0.9 to 0.0007. DeepSeek's fingerprint collapsed entirely — all four dimensions near 0.001. The fingerprint cannot meaningfully distinguish models after ~10 rounds.
+
+Fix committed: windowed mean over last 5 rounds, replacing EMA. When all models fall below a minimum signal threshold, switch to round-robin assignment.
+
+#### Statistical Analysis
+
+Eight trend tests (severity and abstraction slopes for CC2, ChatGPT, Codex, DeepSeek) using linear regression:
+
+| Model | Metric | Slope | p-value | Significant? |
+|-------|--------|-------|---------|--------------|
+| CC2 | Severity | +0.001 | 0.46 | No |
+| CC2 | Abstraction | −0.002 | 0.29 | No |
+| ChatGPT | Severity | +0.004 | 0.006 | Marginal* |
+| ChatGPT | Abstraction | +0.001 | 0.74 | No |
+| Codex | Severity | +0.003 | 0.31 | No |
+| DeepSeek | Severity | sparse | — | Insufficient data |
+| Gemini | Severity | — | — | Insufficient data |
+
+*ChatGPT severity marginally fails Bonferroni correction for 8 simultaneous tests (threshold 0.00625 vs observed 0.006). Critical confound: ChatGPT received increasingly rich prior findings context in later rounds. The improvement may be context-mediated rather than intrinsic.
+
+**Self-improvement prediction reassessment:** With 9 rounds of data, two trends had appeared significant — ChatGPT severity (p=0.046) and CC2 abstraction (p=0.045). With the full 20 rounds, CC2 abstraction lost significance entirely (p=0.29). This is a textbook illustration of why small-sample significance should be treated cautiously. The self-improvement prediction is not confirmed. One of eight tests shows marginal significance with a known confound. The quality ratchet is better described as environment-mediated improvement — CDSFL improves the input to each model — rather than model self-improvement.
+
+#### Vocabulary Novelty Analysis
+
+CC2 vocabulary novelty trajectory (% new terms per round): 23.9, 19.4, 20.3, 17.1, 14.9, 17.6, 14.0, 16.4, 15.6, 12.5, 12.6, 9.8, 5.9, 9.0, 8.4, 10.4, 12.8, 10.7, 9.8, 7.7.
+
+Three phases visible: high novelty (R1–4, >17%), moderate (R5–11, 12–18%), low (R12–20, 6–13%).
+
+CC2 early rounds (R1–3) vs late rounds (R18–20): 33.5% Jaccard overlap. Two-thirds of vocabulary in late rounds was not present in early rounds — 284 unique terms appeared in late rounds that were absent from early rounds. **CC2 was not churning.** It was producing genuinely different content with declining novelty.
+
+Cross-model vocabulary overlap (Jaccard, all rounds): Codex 15.9%, DeepSeek 24.3%, ChatGPT 28.4%. Codex explored the most distinct territory.
+
+A stop threshold of 10% vocabulary novelty sustained for 3 consecutive rounds would have terminated at approximately R14–15, saving 5–6 rounds of diminishing returns while capturing ~90% of unique vocabulary. This metric is similarity-function-independent — it counts new vocabulary terms against the cumulative set, avoiding the semantic equivalence problem that defeated kappa.
+
+#### Model Attrition
+
+Five models started. Two survived to R20. Attrition timeline:
+- R5: Gemini benched (timeout threshold too aggressive)
+- R13: Codex blocked (context exceeded feasibility)
+- R17: ChatGPT blocked (context exceeded feasibility)
+
+Progressive loss of model diversity is the opposite of what the experiment design intended. The biodiversity hypothesis holds that different models find different classes of issues. Losing models means losing coverage.
+
+#### Immune Response Layer
+
+The DetectorHealthMonitor — a Level 2 adaptive immune response watching the Level 1 detectors — was committed mid-experiment (f09081e). It monitors detector health by tracking whether detectors are producing meaningful signal, and flags when detectors are broken rather than when the underlying process has converged. This distinguishes "the experiment should stop" from "the instruments are broken."
+
+#### Mid-Experiment Fixes
+
+Three commits were made during the live experiment in response to observed pathologies:
+
+| Commit | Fix | Round |
+|--------|-----|-------|
+| `f09081e` | Immune response layer + 3 detector fixes (kappa similarity, mu guard, Gemini tau) | ~R9 |
+| `fdf7978` | Calibrate tau_novelty 0.65→0.40 (data-driven from observed rates) | ~R11 |
+| `d6853ef` | Context windowing + adaptive decomposition for all models | ~R14 |
+
+#### Post-Experiment Fixes
+
+Four commits implementing the lessons formalised from the full 20-round analysis:
+
+| Commit | Fix |
+|--------|-----|
+| `12f1cb8` | Experiment 12 logs + recovery resources |
+| `d52526a` | Vocabulary saturation stop signal + windowed fingerprint (8 new tests) |
+| `9f3d9e4` | Model restart logic, adaptive decomposition for all models, artifact-size-based max_rounds |
+| `806162a` | Fingerprint blending on model restart |
+
+#### Lessons Formalised
+
+1. Lexical similarity is insufficient for semantic duplicate detection. Root cause of kappa failure. Short-term: vocabulary saturation. Long-term: embedding-based similarity.
+2. Cost-coupled metrics break under model attrition. Per-model metrics required.
+3. EMA with fixed alpha decays to zero over long experiments. Windowed statistics required.
+4. Context accumulation is the primary model killer. Context windowing, decomposition, and restart all necessary.
+5. Model diversity is fragile. Benching/blocking decisions must be conservative.
+6. Vocabulary novelty provides a robust, similarity-independent stop signal.
+7. Twenty rounds is approximately correct for ~3,000-line artifact; should scale with artifact size (ceil(lines/200), minimum 10).
+8. Self-improvement prediction requires controlled experiment (with/without prior context) to resolve the confound.
+
+#### Key Insight
+
+The experiment's most valuable output was not the 809 findings. It was the diagnostic: three independent convergence detectors, each designed from different mathematical principles, all failed simultaneously for different reasons. Convergence detection is harder than the analytical process it monitors. The detection layer requires its own falsification cycle — which is what Experiment 13 will provide.
+
+**Raw data:** `bench/logs/experiment_12/experiment_12_report.json`, `bench/logs/experiment_12/round_*.json`
+**Orchestrator:** `bench/run_exp12_live_wire.py`
+**Implementation (post-fixes):** `bench/dynamic_management.py` (~3,400 lines), `bench/tests/test_dynamic_management.py` (~1,600 lines, 173 tests)
+**Analysis:** `~/Desktop/Accessibility/Exp12_Final_Analysis_2026-03-29.txt`
+
+---
+
 *Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*
