@@ -54,10 +54,21 @@ areas. Premature termination diagnosed via SymPy/Wolfram: decomposed dispatch
 × vocab saturation interaction (Heaps' law, β≈0.024). Full entry in
 EXPERIMENTAL_RESULTS.md. TTS: Exp13b_Full_Analysis_2026-03-29.txt.
 
+Self-adaptive CDSFL analysis COMPLETE (29 March 2026): Three-tier architecture
+P-passed. DeepSeek dual pathology: dispatch blocking + verification
+miscalibration (0% verified, 6/15 corroborated TRUE by peers, 2σ outlier).
+Three new immune pathology types designed. Registry Layer 4 (per-model TOML)
+exists but not wired — Phase A. Implementation: Phases A-E. Novelty trajectory
+confirmed ascending (5 independent signals). TTS exports:
+Exp13b_What_The_Models_Found, Exp13b_Context_Novelty_Methodology,
+Self_Adaptive_CDSFL (all 2026-03-29).
+
 Next priorities:
-1. Recalibrate vocab saturation for Exp14 (τ 0.10→0.03-0.05, W 3→5)
-2. Resolve deferred math model items (A-D1 through A-D5)
-3. Outreach emails to industry specialists
+1. Implement Phase A: wire per-model registry into orchestrator
+2. Implement Phase B: close immune feedback loop (Tier 1 auto-adjustment)
+3. Recalibrate vocab saturation for Exp14 (τ 0.10→0.03-0.05, W 3→5)
+4. Resolve deferred math model items (A-D1 through A-D5)
+5. Outreach emails to industry specialists
 
 ## Standard Recovery (5 minutes)
 

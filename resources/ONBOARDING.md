@@ -76,6 +76,16 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   termination diagnosed: decomposed dispatch × vocab saturation threshold
   interaction (Heaps' law). Recommended: τ 0.10→0.03-0.05, W 3→5.
   Full write-up in EXPERIMENTAL_RESULTS.md.
+- **SELF-ADAPTIVE CDSFL ANALYSIS COMPLETE (29 March 2026):** P-passed three-tier
+  self-adaptation architecture. Tier 1: bounded parameter adaptation via immune
+  layer. Tier 2: per-model prompt adaptation via existing registry Layer 4 (TOML
+  files exist, not wired). Tier 3: structural adaptation (future). Five failure
+  modes falsified (oscillation, overfitting, gaming, corruption cascade,
+  comparability loss). DeepSeek dual pathology identified: dispatch blocking +
+  verification miscalibration (0% self-verified, 6/15 corroborated TRUE by
+  peers). Three new immune layer pathology types designed (dispatch false
+  positive, verification miscalibration, cross-model contradiction).
+  Implementation roadmap: Phases A-E. TTS exports on Desktop.
 - **Next:** Resolve deferred math model items (A-D1–D5).
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
