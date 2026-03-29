@@ -3381,6 +3381,21 @@ class DynamicManager:
         self.diminishing_returns.add_round_from_findings(
             round_idx, cum_findings_flat, new_findings_flat, round_cost
         )
+
+        # Per-model mu: group findings by model and register each model's
+        # contribution independently (Exp13a, CC2 approved HARD).
+        from collections import defaultdict
+        per_model_findings: Dict[str, List[Finding]] = defaultdict(list)
+        for f in new_findings_flat:
+            per_model_findings[f.model_id].append(f)
+        active = self.failure_handler.active_models
+        per_model_cost = round_cost / max(len(active), 1)
+        for model_id in active:
+            model_findings = per_model_findings.get(model_id, [])
+            self.diminishing_returns.add_model_round(
+                model_id, round_idx, model_findings, per_model_cost
+            )
+
         mu = self.diminishing_returns.marginal_value(round_idx) if round_idx in self.diminishing_returns._cumulative_yields else 0.0
         is_diminished = self.diminishing_returns.stop(round_idx)
 
