@@ -324,8 +324,9 @@ def call_gemini(
             connect=30.0, read=float(timeout), write=30.0, pool=30.0,
         ))
         client = genai.Client(api_key=api_key, http_options={"client": _http_client})
-    except (ImportError, TypeError):
-        # Fallback: if httpx not available or Client doesn't accept http_options
+    except (ImportError, TypeError, ValueError) as _exc:
+        # Fallback: if httpx not available, Client doesn't accept http_options,
+        # or Pydantic ValidationError on newer genai versions
         client = genai.Client(api_key=api_key)
 
     last_error = None
