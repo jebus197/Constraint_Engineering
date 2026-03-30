@@ -1,64 +1,84 @@
-CDSFL Round Robin Smoke Test Results
-2026-03-21
+# CDSFL Round Robin Smoke Test Results
 
-OVERVIEW
+**Date:** 2026-03-21
 
-The round robin smoke test ran one frontier task, ft-001 Monotone Subsequence Bound Tightening, across four experimental conditions. Three AI models participated. Opus 4.6 acted as orchestrator and arbiter. Gemini 3.1 Pro Preview and Codex 5.3 acted as independent reviewers.
+---
 
-The four conditions test two variables independently. Structure, meaning the formal CDSFL framework. And guidance, meaning domain expert input. This gives a two by two grid. Control has neither structure nor guidance. HIL has guidance but no structure. CDSFL has structure but no guidance. CDSFL plus HIL has both.
+## Overview
 
+The round robin smoke test ran one frontier task — ft-001: Monotone Subsequence Bound Tightening — across four experimental conditions. Three AI models participated. Opus 4.6 acted as orchestrator and arbiter. Gemini 3.1 Pro Preview and Codex 5.3 acted as independent reviewers.
 
-FINDINGS BY CONDITION
+The four conditions test two variables independently: **structure** (the formal CDSFL framework) and **guidance** (domain expert input). This gives a 2×2 grid:
 
-Control found 19 issues with no structure and no guidance. However, qualitative analysis shows these are largely repetitive. Rounds three through five rehash rounds one and two with the same complaints reworded. The proof is missing. The proof is omitted. The proof is not shown. This is churn, not depth.
+| Condition | Structure | Guidance |
+|---|---|---|
+| Control | No | No |
+| HIL | No | Yes |
+| CDSFL | Yes | No |
+| CDSFL + HIL | Yes | Yes |
 
-HIL found only 2 issues. Expert guidance narrowed the search so much that structural problems were missed entirely. High confidence at 0.93 but very low coverage.
+---
 
-CDSFL found 10 issues. The formal framework catches things the expert guidance misses, but without domain knowledge it includes minor findings and cannot prioritise effectively. Average confidence 0.88.
+## Findings by Condition
 
-CDSFL plus HIL found 27 issues. 17 critical severity, 10 major, zero minor. Average confidence 0.95, the highest of all conditions. This is the strongest result by every quality measure.
+**Control** found 19 issues with no structure and no guidance. However, qualitative analysis shows these are largely repetitive. Rounds 3 through 5 rehash rounds 1 and 2 with the same complaints reworded: "The proof is missing. The proof is omitted. The proof is not shown." This is churn, not depth.
 
+**HIL** found only 2 issues. Expert guidance narrowed the search so much that structural problems were missed entirely. High confidence at 0.93 but very low coverage.
 
-THE INTERACTION EFFECT
+**CDSFL** found 10 issues. The formal framework catches things the expert guidance misses, but without domain knowledge it includes minor findings and cannot prioritise effectively. Average confidence 0.88.
 
-The combination of framework plus guidance produces more than the sum of its parts. CDSFL alone found 10. HIL alone found 2. Together they found 27. That is more than 10 plus 2 equals 12.
+**CDSFL + HIL** found 27 issues: 17 critical severity, 10 major, zero minor. Average confidence 0.95, the highest of all conditions. This is the strongest result by every quality measure.
 
-Under CDSFL plus HIL, confer rounds produce genuinely novel findings rather than repeating earlier ones. Round three identified label pair uniqueness proof not at full rigour. Round four found pigeonhole arithmetic off by one conclusion unverified. Round five found submission not self contained, relies on unavailable external reference. Each round goes deeper, not wider.
+---
 
-Under control, rounds three through five just repeat rounds one and two in different words.
+## The Interaction Effect
 
+The combination of framework plus guidance produces more than the sum of its parts:
 
-METHODOLOGY ACTIVATES DORMANT CAPABILITY
+- CDSFL alone: 10
+- HIL alone: 2
+- Together: 27 — more than 10 + 2 = 12
 
-Gemini contributed zero to three findings under control, CDSFL, and HIL conditions. Under CDSFL plus HIL it contributed nine substantive findings, including domain specific catches. Must not use by construction to bypass structural proofs. Must not conflate subsequence with contiguous substring.
+Under CDSFL + HIL, confer rounds produce genuinely novel findings rather than repeating earlier ones:
+- Round 3 identified: "label pair uniqueness proof not at full rigour"
+- Round 4 found: "pigeonhole arithmetic off-by-one conclusion unverified"
+- Round 5 found: "submission not self-contained, relies on unavailable external reference"
 
-The methodology transforms a weaker model from producing nothing useful to producing targeted, domain specific analysis. This is the most interesting qualitative finding of the smoke test.
+Each round goes deeper, not wider. Under control, rounds 3 through 5 just repeat rounds 1 and 2 in different words.
 
+---
 
-WHAT THIS DOES NOT MEAN
+## Methodology Activates Dormant Capability
 
-This is one task from one domain. Mathematics. It is not statistically significant by any measure.
+Gemini contributed zero to three findings under Control, CDSFL, and HIL conditions. Under CDSFL + HIL it contributed nine substantive findings, including domain-specific catches:
 
-All three models have this problem in their training data. The Erdos Szekeres theorem is textbook material. Near ceiling generation is expected and uninformative for capability claims.
+- "Must not use by-construction to bypass structural proofs"
+- "Must not conflate subsequence with contiguous substring"
 
-Opus 4.6 generates solutions and acts as arbiter. Its blind spots may propagate through the chain.
+The methodology transforms a weaker model from producing nothing useful to producing targeted, domain-specific analysis. **This is the most interesting qualitative finding of the smoke test.**
 
-The results are encouraging. They do not say stop. They also do not say conclusive. The full 25 task run is required.
+---
 
+## What This Does Not Mean
 
-FALSIFIABLE QUESTIONS GENERATED
+- This is one task from one domain (mathematics). It is not statistically significant by any measure.
+- All three models have this problem in their training data. The Erdos-Szekeres theorem is textbook material. Near-ceiling generation is expected and uninformative for capability claims.
+- Opus 4.6 generates solutions and acts as arbiter. Its blind spots may propagate through the chain.
 
-One. Does the CDSFL plus HIL advantage persist on problems not in training data? This is the specialist gap. Only humans can supply genuinely novel test cases.
+The results are encouraging. They do not say "stop." They also do not say "conclusive." The full 25-task run is required.
 
-Two. Does the methodology activates dormant capability effect replicate with other weak models?
+---
 
-Three. Is the depth not churn property of confer rounds specific to CDSFL plus HIL, or does any structured iterative methodology produce it?
+## Falsifiable Questions Generated
 
-Four. At what ensemble size do additional architectures stop producing novel findings?
+1. Does the CDSFL + HIL advantage persist on problems not in training data? This is the specialist gap — only humans can supply genuinely novel test cases.
+2. Does the "methodology activates dormant capability" effect replicate with other weak models?
+3. Is the "depth not churn" property of confer rounds specific to CDSFL + HIL, or does any structured iterative methodology produce it?
+4. At what ensemble size do additional architectures stop producing novel findings?
+5. Does the depth advantage hold in non-mathematical domains where hard constraint is less precisely defined?
 
-Five. Does the depth advantage hold in non mathematical domains where hard constraint is less precisely defined?
+---
 
+## Next Step
 
-NEXT STEP
-
-Full run approved. 25 tasks across 4 conditions equals 100 runs. Estimated 20 to 30 hours with checkpoint and resume across sessions.
+Full run approved. 25 tasks × 4 conditions = 100 runs. Estimated 20–30 hours with checkpoint and resume across sessions.

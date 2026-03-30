@@ -1,81 +1,96 @@
-CDSFL Mathematical Framework. Plain English Version.
-27 March 2026
+# CDSFL Mathematical Framework — Plain English Version
 
-WHAT WE BUILT AND WHY IT MATTERS
+**27 March 2026**
 
-Over 13 days, we built a set of mathematical tools that measure how well AI models think. Not what they produce, but how they produce it. The difference matters because a model that produces a correct answer by luck looks the same as one that produces a correct answer by rigorous analysis, until you look at the process.
+---
+
+## What We Built and Why It Matters
+
+Over 13 days, we built a set of mathematical tools that measure how well AI models think. Not what they produce, but how they produce it. The difference matters because a model that produces a correct answer by luck looks the same as one that produces a correct answer by rigorous analysis — until you look at the process.
 
 The tools measure seven things. Here is what each one does in plain language.
 
+---
 
-1. HOW FAST DOES THE ANALYSIS RUN OUT OF THINGS TO FIND?
+## 1. How Fast Does the Analysis Run Out of Things to Find?
 
 Imagine you are searching a house for lost keys. At first you find lots of things in obvious places. Then you check less obvious places and find fewer things. Eventually you have checked everywhere and find nothing. The rate at which you stop finding things tells you whether you are genuinely searching or just going through the motions.
 
 If a model produces 5 findings, then 3, then 2, then 1, then 0, it is genuinely exhausting the problem. The easy issues are found first. The harder ones take longer. Eventually nothing remains. That is a decay curve. It looks like a ball rolling up a hill, where each push gets you less distance.
 
-If a model produces 2 findings, then 2, then 2, then 2, then 2, it is not genuinely searching. It is producing output because it was asked to, regardless of whether there is anything left to find. That is a flat line. We call it churn.
+If a model produces 2 findings, then 2, then 2, then 2, then 2, it is not genuinely searching. It is producing output because it was asked to, regardless of whether there is anything left to find. That is a flat line. We call it **churn**.
 
-The mathematical tool (called the Duane model) measures the steepness of this curve. A steep curve means genuine work. A flat curve means churn. We can now tell the difference mathematically, not just by guessing.
+The mathematical tool (called the **Duane model**) measures the steepness of this curve. A steep curve means genuine work. A flat curve means churn. We can now tell the difference mathematically, not just by guessing.
 
+---
 
-2. IS THE MODEL THINKING FOR ITSELF, OR JUST COPYING?
+## 2. Is the Model Thinking for Itself, or Just Copying?
 
 When five models review the same work, we show them each other's findings after the first round. This is like colleagues sharing notes in a meeting. The question is whether each model uses the others' work to deepen its own analysis (genuine collaboration) or whether it just copies what the others said (deference).
 
-The adoption delta measures this. It looks at what a model found on its own (before seeing others' work) and what it found after seeing others' work. If it dropped all its own findings and adopted the other model's findings, it capitulated. If it kept its own findings and added new ones inspired by the others, it collaborated. The number goes from 0 (completely independent) to 1 (completely copied).
+The **adoption delta** measures this. It looks at what a model found on its own (before seeing others' work) and what it found after seeing others' work. If it dropped all its own findings and adopted the other model's findings, it capitulated. If it kept its own findings and added new ones inspired by the others, it collaborated. The number goes from 0 (completely independent) to 1 (completely copied).
 
+---
 
-3. WHEN MODELS AGREE, IS IT BECAUSE THEY ARE RIGHT OR BECAUSE THEY ARE POLITE?
+## 3. When Models Agree, Is It Because They Are Right or Because They Are Polite?
 
 Agreement between models could mean they all found the same real issue (genuine consensus). Or it could mean they are all agreeing with each other to be helpful, even when they have not independently verified anything (sycophantic convergence).
 
-The objective alignment score checks this. When models converge on new findings during discussion, it asks the computer algebra system (SymPy) whether those findings are mathematically correct. If the agreed-upon findings are verified as correct, the consensus is genuine. If the agreed-upon findings are unverified or wrong, the consensus is sycophantic. The models are agreeing to be agreeable, not because they are right.
+The **objective alignment score** checks this. When models converge on new findings during discussion, it asks the computer algebra system (SymPy) whether those findings are mathematically correct. If the agreed-upon findings are verified as correct, the consensus is genuine. If the agreed-upon findings are unverified or wrong, the consensus is sycophantic — the models are agreeing to be agreeable, not because they are right.
 
+---
 
-4. ARE THE FINDINGS REAL?
+## 4. Are the Findings Real?
 
-Not all findings are equal. A finding that a mathematical proof contains a wrong step, verified by SymPy, is certain. A finding that a design "might have issues," with no evidence, is speculative. The severity score combines three things: how critical the issue is (hard constraint versus soft preference), how confident the model is (self-reported), and whether SymPy verified it (true, false, or could not check).
+Not all findings are equal. A finding that a mathematical proof contains a wrong step, verified by SymPy, is certain. A finding that a design "might have issues," with no evidence, is speculative. The **severity score** combines three things: how critical the issue is (hard constraint versus soft preference), how confident the model is (self-reported), and whether SymPy verified it (true, false, or could not check).
 
 A finding that is classified as a hard constraint violation, with high confidence, and verified by SymPy, gets a high severity score. A finding that is a soft preference, with low confidence, and unverified, gets a low score. A finding that SymPy proved wrong gets a severity of zero, regardless of how confident the model was. Debunked claims are worthless.
 
+---
 
-5. HOW CAPABLE IS EACH MODEL?
+## 5. How Capable Is Each Model?
 
-The capability fingerprint combines four measurements. How fast the analysis converges (the decay rate). What fraction of findings are verified as correct (the verification score). How many genuine findings were produced in total. What fraction of the real issues in the problem were caught (coverage).
+The **capability fingerprint** combines four measurements:
+
+- How fast the analysis converges (the decay rate)
+- What fraction of findings are verified as correct (the verification score)
+- How many genuine findings were produced in total
+- What fraction of the real issues in the problem were caught (coverage)
 
 No single number is enough. A model can find lots of things (high count) that are mostly wrong (low verification). A model can find very few things (low count) that are all correct (high verification). The four numbers together give a complete picture.
 
+---
 
-6. HOW FAST IS THE TEAM IMPROVING?
+## 6. How Fast Is the Team Improving?
 
-The original formula (called G-n) predicts how much new information each additional review round contributes. The first round finds the most. Each subsequent round finds less. The rate of decrease depends on how independent the reviewers are (if they all think alike, diminishing returns come fast) and how good they are (better reviewers exhaust the problem faster).
+The original formula (called **G-n**) predicts how much new information each additional review round contributes. The first round finds the most. Each subsequent round finds less. The rate of decrease depends on how independent the reviewers are (if they all think alike, diminishing returns come fast) and how good they are (better reviewers exhaust the problem faster).
 
 This formula predicted the decay curves before we observed them. When the bench data confirmed the prediction, it validated both the formula and the methodology.
 
+---
 
-7. HOW DIFFERENT ARE THE MODELS FROM EACH OTHER?
+## 7. How Different Are the Models from Each Other?
 
-If all five models find exactly the same things, having five models adds no value over having one. The diversity measure checks how much overlap there is between models' finding sets. High overlap means low diversity (the models are redundant). Low overlap means high diversity (each model finds different things).
+If all five models find exactly the same things, having five models adds no value over having one. The **diversity measure** checks how much overlap there is between models' finding sets. High overlap means low diversity (the models are redundant). Low overlap means high diversity (each model finds different things).
 
 This matters because the whole point of using multiple models is that different architectures catch different errors. If they all catch the same errors, the extra cost produces no extra value.
 
+---
 
-WHY THIS MATTERS BEYOND OUR PROJECT
+## Why This Matters Beyond Our Project
 
-These seven tools together measure the process of analytical reasoning. Not just for AI models, but potentially for any analytical process. A team of human engineers reviewing a design produces the same kind of data: findings per round, convergence rate, inter-reviewer agreement, finding severity. The mathematics applies regardless of whether the reviewers are human or machine.
+These seven tools together measure the process of analytical reasoning — not just for AI models, but potentially for any analytical process. A team of human engineers reviewing a design produces the same kind of data: findings per round, convergence rate, inter-reviewer agreement, finding severity. The mathematics applies regardless of whether the reviewers are human or machine.
 
 The deeper observation is that these tools measure what Karl Popper described philosophically. Popper said science advances through bold conjectures that are then rigorously tested. The easy-to-refute conjectures fall first. The ones that survive severe testing are corroborated. Our decay curve measures exactly this process: easy-to-find errors are found first (bold conjectures fail), harder errors are found later (severe testing), and eventually nothing more is found (corroboration of what remains).
 
 Popper expressed this in words. We expressed it in mathematics. The mathematics does not replace the philosophy. It makes the philosophy measurable. And measurements are what science needs to advance.
 
+---
 
-WHAT WE DO NOT YET KNOW
+## What We Do Not Yet Know
 
-Whether the mathematical tools produce better outcomes in practice. The tools measure the process. Whether measuring the process improves it is an empirical question that the bench test is designed to answer.
-
-Whether the measurements transfer to human analytical work. The tools were developed for AI models. Whether they apply to human cognition requires separate testing.
-
-Whether the domain-specific parameters (expected decay rates, severity distributions, convergence thresholds) are stable enough to serve as expert configurations. This requires more data than one bench run provides.
+- Whether the mathematical tools produce better outcomes in practice. The tools measure the process. Whether measuring the process improves it is an empirical question that the bench test is designed to answer.
+- Whether the measurements transfer to human analytical work. The tools were developed for AI models. Whether they apply to human cognition requires separate testing.
+- Whether the domain-specific parameters (expected decay rates, severity distributions, convergence thresholds) are stable enough to serve as expert configurations. This requires more data than one bench run provides.
 
 These are honest unknowns. The framework is a measurement tool. Whether the measurements are useful is the next question, not this one.

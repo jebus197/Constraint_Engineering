@@ -1,46 +1,118 @@
-CDSFL Gemini Extended P-Pass Module 1 of 5 -- run_benchmark.py (Core Benchmark Runner)
-Date: 2026-03-18
-Model: Gemini (via gemini CLI)
-Scope: API callers, section extraction, prompt templates, execution modes
+# CDSFL Gemini Extended P-Pass — Module 1 of 5
 
-Module 1 Review Findings
+**Scope:** `run_benchmark.py` (Core Benchmark Runner)
+**Date:** 2026-03-18
+**Model:** Gemini (via gemini CLI)
+**Areas reviewed:** API callers, section extraction, prompt templates, execution modes
 
-1. Category: Logic (Regex), Severity: CRITICAL, Affected Function: _extract_section (lines 351-386)
-   The stop_pattern regex is flawed. It requires a newline before the next label and specifically checks for whitespace after the colon. This means the extraction will only stop if the next label is followed by specific whitespace patterns. If a model outputs text on the same line as the label (for example, "REVISED_ANSWER: The answer...") or immediately on the next line without an empty line, the lookahead fails to match, and the extraction consumes the next section's content. This causes critical section leakage where ISSUES_FOUND will often contain the REVISED_ANSWER.
-   STATUS: Already fixed in earlier rounds. Current pattern handles same-line content correctly.
+---
 
-2. Category: CLI/Integration, Severity: HIGH, Affected Function: main (lines 1060-1150)
-   The codex provider is fully implemented in the PROVIDERS dictionary but is missing from the choices list for the --provider argument in main(). This prevents users from selecting the Codex provider via the CLI.
-   STATUS: Already fixed. Codex is in the choices list.
+## Module 1 Review Findings
 
-3. Category: CLI/Integration, Severity: HIGH, Affected Function: main (lines 1076-1085)
-   New execution modes (adaptive, placebo, cross_model) are implemented as functions but are not added to the --mode choices in main(). These high-value Phase 2 features are currently "orphaned code" that cannot be triggered by the benchmark runner's primary entry point.
-   STATUS: Already fixed. All modes are in the choices list.
+### Finding 1
+**Category:** Logic (Regex)
+**Severity:** CRITICAL
+**Affected Function:** `_extract_section` (lines 351–386)
 
-4. Category: Reliability, Severity: HIGH, Affected Functions: run_experimental / run_extended (lines 438-572)
-   The AdaptiveThrottle logic (lines 582-648) is implemented but is only utilized in the orphaned run_adaptive function. The primary benchmark paths reachable via the CLI (run_experimental and run_extended) call _call_with_retry directly and bypass the adaptive throttle. This makes the harness highly susceptible to rate-limiting failures on providers with tight quotas (for example, Gemini, Anthropic Tier 1) during large runs.
-   STATUS: Known limitation. Standalone CLI paths use retry-only; Phase 2 orchestrator uses throttle via run_adaptive. Acceptable for current use.
+The `stop_pattern` regex is flawed. It requires a newline before the next label and specifically checks for whitespace after the colon. This means the extraction will only stop if the next label is followed by specific whitespace patterns. If a model outputs text on the same line as the label (e.g., `REVISED_ANSWER: The answer...`) or immediately on the next line without an empty line, the lookahead fails to match, and the extraction consumes the next section's content. This causes critical section leakage where `ISSUES_FOUND` will often contain the `REVISED_ANSWER`.
 
-5. Category: Logic (Heuristic), Severity: MEDIUM, Affected Function: classify_issue_severity (lines 651-690)
-   The severity classifier checks if a line starts with list markers (dash, asterisk, numbered lists, and similar) but does not call .lstrip(). Consequently, it ignores indented list items, which are standard in LLM-generated issue lists. This results in under-counting or misclassifying findings as "trivial" because they don't match the marker check.
-   STATUS: Already fixed. lstrip() added before marker check.
+**STATUS:** Already fixed in earlier rounds. Current pattern handles same-line content correctly.
 
-6. Category: Portability, Severity: MEDIUM, Affected Function: confer_diminishing_returns (lines 726-868)
-   The confer mechanism contains hardcoded paths to external project directories (Project_Genesis) and assumes a specific directory structure on the host machine (lines 728, 742, 743). This will cause immediate infra-failures (DEFERRED_INFRA) for any user other than the original author, effectively disabling the adaptive termination consensus.
-   STATUS: Known limitation. Flagged across multiple review rounds. Acceptable for single-developer Phase 2 experiment. Would need environment variable configuration for distribution.
+---
 
-7. Category: Consistency, Severity: MEDIUM, Affected Functions: run_experimental vs run_adaptive
-   There is a discrepancy in data output: run_adaptive (and other Phase 2 modes) includes severity_counts in each pass record, whereas run_experimental and run_extended do not. This inconsistency makes it difficult to perform unified downstream analysis of issue density across different benchmark conditions.
-   STATUS: FIXED in this round. severity_counts now added to run_experimental and run_extended pass records.
+### Finding 2
+**Category:** CLI/Integration
+**Severity:** HIGH
+**Affected Function:** `main` (lines 1060–1150)
 
-8. Category: Logic (Cross-Model), Severity: LOW, Affected Function: run_cross_model (lines 923-1011)
-   The isolated adversarial pass is only executed if len(passes) is less than max_passes. Since the preceding loop runs exactly 4 times (the length of pass_sequence), the critical isolated falsification pass is skipped entirely if the user sets max_passes to 3 or 4.
-   STATUS: By design. max_passes constrains total passes including adversarial. Phase 2 constrains max_passes to 3-5. At max_passes=5, all 4 modular + 1 adversarial run correctly.
+The `codex` provider is fully implemented in the `PROVIDERS` dictionary but is missing from the choices list for the `--provider` argument in `main()`. This prevents users from selecting the Codex provider via the CLI.
 
-9. Category: Maintainability, Severity: LOW, Affected Function: estimate_call_cost (lines 1014-1035)
-   This function is defined but never called within the script, nor is it passed as a callback to the orphaned run_adaptive mode from any reachable path.
-   STATUS: Not a bug. estimate_call_cost is imported and used by run_phase2.py.
+**STATUS:** Already fixed. Codex is in the choices list.
 
-10. Category: Security/Resources, Severity: LOW, Affected Function: call_codex (lines 300-343)
-    If subprocess.run raises an OSError (for example, if the codex command is not found), the temporary file created via NamedTemporaryFile(delete=False) is never unlinked, leading to a minor accumulation of empty temporary files in the temporary directory.
-    STATUS: Already fixed. Both FileNotFoundError and OSError handlers now clean up temp files.
+---
+
+### Finding 3
+**Category:** CLI/Integration
+**Severity:** HIGH
+**Affected Function:** `main` (lines 1076–1085)
+
+New execution modes (`adaptive`, `placebo`, `cross_model`) are implemented as functions but are not added to the `--mode` choices in `main()`. These high-value Phase 2 features are currently "orphaned code" that cannot be triggered by the benchmark runner's primary entry point.
+
+**STATUS:** Already fixed. All modes are in the choices list.
+
+---
+
+### Finding 4
+**Category:** Reliability
+**Severity:** HIGH
+**Affected Functions:** `run_experimental` / `run_extended` (lines 438–572)
+
+The `AdaptiveThrottle` logic (lines 582–648) is implemented but is only utilised in the orphaned `run_adaptive` function. The primary benchmark paths reachable via the CLI (`run_experimental` and `run_extended`) call `_call_with_retry` directly and bypass the adaptive throttle. This makes the harness highly susceptible to rate-limiting failures on providers with tight quotas (e.g., Gemini, Anthropic Tier 1) during large runs.
+
+**STATUS:** Known limitation. Standalone CLI paths use retry-only; Phase 2 orchestrator uses throttle via `run_adaptive`. Acceptable for current use.
+
+---
+
+### Finding 5
+**Category:** Logic (Heuristic)
+**Severity:** MEDIUM
+**Affected Function:** `classify_issue_severity` (lines 651–690)
+
+The severity classifier checks if a line starts with list markers (dash, asterisk, numbered lists, etc.) but does not call `.lstrip()`. Consequently, it ignores indented list items, which are standard in LLM-generated issue lists. This results in under-counting or misclassifying findings as "trivial" because they don't match the marker check.
+
+**STATUS:** Already fixed. `lstrip()` added before marker check.
+
+---
+
+### Finding 6
+**Category:** Portability
+**Severity:** MEDIUM
+**Affected Function:** `confer_diminishing_returns` (lines 726–868)
+
+The confer mechanism contains hardcoded paths to external project directories (`Project_Genesis`) and assumes a specific directory structure on the host machine (lines 728, 742, 743). This will cause immediate infra-failures (`DEFERRED_INFRA`) for any user other than the original author, effectively disabling the adaptive termination consensus.
+
+**STATUS:** Known limitation. Flagged across multiple review rounds. Acceptable for single-developer Phase 2 experiment. Would need environment variable configuration for distribution.
+
+---
+
+### Finding 7
+**Category:** Consistency
+**Severity:** MEDIUM
+**Affected Functions:** `run_experimental` vs `run_adaptive`
+
+There is a discrepancy in data output: `run_adaptive` (and other Phase 2 modes) includes `severity_counts` in each pass record, whereas `run_experimental` and `run_extended` do not. This inconsistency makes it difficult to perform unified downstream analysis of issue density across different benchmark conditions.
+
+**STATUS:** FIXED in this round. `severity_counts` now added to `run_experimental` and `run_extended` pass records.
+
+---
+
+### Finding 8
+**Category:** Logic (Cross-Model)
+**Severity:** LOW
+**Affected Function:** `run_cross_model` (lines 923–1011)
+
+The isolated adversarial pass is only executed if `len(passes) < max_passes`. Since the preceding loop runs exactly 4 times (the length of `pass_sequence`), the critical isolated falsification pass is skipped entirely if the user sets `max_passes` to 3 or 4.
+
+**STATUS:** By design. `max_passes` constrains total passes including adversarial. Phase 2 constrains `max_passes` to 3–5. At `max_passes=5`, all 4 modular + 1 adversarial run correctly.
+
+---
+
+### Finding 9
+**Category:** Maintainability
+**Severity:** LOW
+**Affected Function:** `estimate_call_cost` (lines 1014–1035)
+
+This function is defined but never called within the script, nor is it passed as a callback to the orphaned `run_adaptive` mode from any reachable path.
+
+**STATUS:** Not a bug. `estimate_call_cost` is imported and used by `run_phase2.py`.
+
+---
+
+### Finding 10
+**Category:** Security/Resources
+**Severity:** LOW
+**Affected Function:** `call_codex` (lines 300–343)
+
+If `subprocess.run` raises an `OSError` (e.g., if the `codex` command is not found), the temporary file created via `NamedTemporaryFile(delete=False)` is never unlinked, leading to a minor accumulation of empty temporary files in the temporary directory.
+
+**STATUS:** Already fixed. Both `FileNotFoundError` and `OSError` handlers now clean up temp files.

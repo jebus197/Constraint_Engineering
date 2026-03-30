@@ -1,85 +1,92 @@
-What The Models Found in Experiment 13b. Plain English Summary.
+# What the Models Found in Experiment 13b: Plain English Summary
 
-Date. 29 March 2026.
+**Date:** 29 March 2026
 
+---
 
-WHAT HAPPENED
+## What Happened
 
-We ran our dynamic management code through five different AI models and asked them all to find problems with it. The code is about 3800 lines long and manages how the models work together during reviews. This was the second time we ran this test. The first time, Experiment 12, we lost three of the five models during the run and the system never figured out when to stop. This time, all five models survived and the system stopped on its own after four rounds.
+We ran our dynamic management code through five different AI models and asked them all to find problems with it. The code is about 3800 lines long and manages how the models work together during reviews. This was the second time we ran this test. The first time — Experiment 12 — we lost three of the five models during the run and the system never figured out when to stop. This time, all five models survived and the system stopped on its own after four rounds.
 
 The five models produced 184 separate findings. Each finding is a specific problem in the code, with a description, a severity score, and a proposed fix.
 
+---
 
-WHO FOUND WHAT
+## Who Found What
 
-CC2, which is Claude, produced 60 findings. It cast the widest net, covering every part of the code. Its findings started at moderate severity and got more serious as the rounds went on. This is a good sign. It means CC2 is not just repeating itself. It is digging deeper each round.
+**CC2 (Claude)** produced 60 findings. It cast the widest net, covering every part of the code. Its findings started at moderate severity and got more serious as the rounds went on. This is a good sign — it means CC2 is not just repeating itself. It is digging deeper each round.
 
-ChatGPT produced 62 findings, the most of any model. After the opening round it settled into a steady rhythm of exactly 8 findings per round. Its single best finding was the most important discovery of the entire experiment. It found that when the system reassigns roles to models based on how they are performing, the reassignment code is looking at the original capabilities of each model, not their current live performance. The adaptive routing loop, which is supposed to adjust in real time, is not actually adapting at all.
+**ChatGPT** produced 62 findings, the most of any model. After the opening round it settled into a steady rhythm of exactly 8 findings per round. Its single best finding was the most important discovery of the entire experiment. It found that when the system reassigns roles to models based on how they are performing, the reassignment code is looking at the original capabilities of each model, not their current live performance. The adaptive routing loop, which is supposed to adjust in real time, is not actually adapting at all.
 
-Codex produced 26 findings, fewer than the others, but at much higher severity. Every single one of its findings was self-verified as correct. Codex does not waste shots. When it says something is wrong, it is almost certainly right. It found that the system claims to handle critical tasks by assigning them to all available models for redundancy, but then excludes the project manager model from the assignment, making it impossible to achieve the redundancy it promises.
+**Codex** produced 26 findings, fewer than the others, but at much higher severity. Every single one of its findings was self-verified as correct. Codex does not waste shots. When it says something is wrong, it is almost certainly right. It found that the system claims to handle critical tasks by assigning them to all available models for redundancy, but then excludes the project manager model from the assignment, making it impossible to achieve the redundancy it promises.
 
-DeepSeek produced 15 findings. It was blocked from the first round because the system calculated it could not handle the full 3800 lines. It joined in round 1 once the system started breaking the code into smaller pieces. All of its findings were marked as unverified, which appears to be a quirk of how DeepSeek reports rather than a sign of low quality. It found genuine issues like inconsistent tie-breaking in role assignment.
+**DeepSeek** produced 15 findings. It was blocked from the first round because the system calculated it could not handle the full 3800 lines. It joined in round 1 once the system started breaking the code into smaller pieces. All of its findings were marked as unverified, which appears to be a quirk of how DeepSeek reports rather than a sign of low quality. It found genuine issues like inconsistent tie-breaking in role assignment.
 
-Gemini produced 21 findings at the highest average severity of any model. Its round 1 performance was exceptional: 10 findings averaging 0.86 out of 1.0. Gemini found that the novelty rate metric, which is supposed to measure how many new issues are being found, was calculating its percentage wrong. It also found that the vocabulary tracker, which measures whether new terminology is appearing, was accidentally dependent on the similarity function it was designed to replace.
+**Gemini** produced 21 findings at the highest average severity of any model. Its round 1 performance was exceptional — 10 findings averaging 0.86 out of 1.0. Gemini found that the novelty rate metric, which is supposed to measure how many new issues are being found, was calculating its percentage wrong. It also found that the vocabulary tracker, which measures whether new terminology is appearing, was accidentally dependent on the similarity function it was designed to replace.
 
+---
 
-THE TEN MOST SERIOUS PROBLEMS FOUND
+## The Ten Most Serious Problems Found
 
-1. The adaptive routing feedback loop does not work. The system updates model performance in real time but the role assignment code ignores those updates and uses the original frozen values. Found by ChatGPT. Severity 0.96.
+1. **The adaptive routing feedback loop does not work.** The system updates model performance in real time but the role assignment code ignores those updates and uses the original frozen values. Found by ChatGPT. Severity 0.96.
 
-2. The novelty rate inflates to 100 percent every round because it divides by new findings instead of cumulative findings. The number reported in the logs is misleading. Found by Gemini. Severity 0.96.
+2. **The novelty rate inflates to 100% every round** because it divides by new findings instead of cumulative findings. The number reported in the logs is misleading. Found by Gemini. Severity 0.96.
 
-3. When a task is marked critical, the system tries to assign it to all available models for safety. But it excludes the project manager model from assignments, so if there are three models it asks for three but only two are eligible. Found by Codex. Severity 0.95.
+3. **When a task is marked critical, the system tries to assign it to all available models for safety.** But it excludes the project manager model from assignments, so if there are three models it asks for three but only two are eligible. Found by Codex. Severity 0.95.
 
-4. The round progression state machine silently throws away all findings and measurements collected during the initial synthesis phase when it moves to the first round. Found by Gemini. Severity 0.95.
+4. **The round progression state machine silently throws away all findings and measurements** collected during the initial synthesis phase when it moves to the first round. Found by Gemini. Severity 0.95.
 
-5. The cognitive yield calculation, which measures the total value of findings, incorrectly counts duplicate findings in its total. This inflates the yield number. Found by Gemini. Severity 0.95.
+5. **The cognitive yield calculation, which measures the total value of findings, incorrectly counts duplicate findings in its total.** This inflates the yield number. Found by Gemini. Severity 0.95.
 
-6. The failure handler sends the wrong event type when it detects a format violation. It sends a malformed output event instead of a format violation event. Downstream systems cannot tell the difference between garbled output and output that is readable but in the wrong format. Found by ChatGPT. Severity 0.93.
+6. **The failure handler sends the wrong event type when it detects a format violation.** It sends a malformed output event instead of a format violation event. Downstream systems cannot tell the difference between garbled output and output in the wrong format. Found by ChatGPT. Severity 0.93.
 
-7. The load balancer forces a task assignment even when it would overload a model beyond its capacity. It logs a warning but continues anyway, which defeats the purpose of having capacity limits. Found by Codex. Severity 0.93.
+7. **The load balancer forces a task assignment even when it would overload a model beyond its capacity.** It logs a warning but continues anyway, which defeats the purpose of having capacity limits. Found by Codex. Severity 0.93.
 
-8. The documentation says the system uses an ascending abstraction guard to prevent stopping too early when findings are getting deeper. The code does not actually check this. The guard is documented but not enforced. Found by ChatGPT. Severity 0.92.
+8. **The documentation says the system uses an ascending abstraction guard to prevent stopping too early when findings are getting deeper.** The code does not actually check this. The guard is documented but not enforced. Found by ChatGPT. Severity 0.92.
 
-9. The correlated failure calculator assumes models fail independently and then adds a correlation boost. But for models that genuinely are independent, it overestimates the probability of joint failure, which makes the system too cautious about dispatching models together. Found by Gemini. Severity 0.92.
+9. **The correlated failure calculator assumes models fail independently and then adds a correlation boost.** But for models that genuinely are independent, it overestimates the probability of joint failure, making the system too cautious about dispatching models together. Found by Gemini. Severity 0.92.
 
-10. The load balancer recalculates which models are eligible for each task every single time it is called, even though the eligibility depends on model specifications that do not change during a round. This is wasteful and could slow down large experiments. Found by Codex. Severity 0.92.
+10. **The load balancer recalculates which models are eligible for each task every single time it is called**, even though eligibility depends on model specifications that do not change during a round. This is wasteful and could slow down large experiments. Found by Codex. Severity 0.92.
 
+---
 
-WHAT THE FIXES DID
+## What the Fixes Did
 
 Before Experiment 13b, we applied eight fixes based on what went wrong in Experiment 12. The models were not told about these fixes. They reviewed the code fresh, including the fix code itself. We then checked whether the models independently found problems in the same areas the fixes address.
 
 They did. 97 of the 184 findings relate to areas covered by the fixes. The fingerprinting code attracted 56 findings on its own, meaning the models found many more issues in that area than the single fix addressed. The vocabulary saturation code attracted 9 findings. The restart logic attracted 12. The round scaling attracted 15.
 
-Only one fix area, the adaptive decomposition logic, received no related findings. Everything else the fixes targeted, the models independently confirmed as problematic.
+Only one fix area — the adaptive decomposition logic — received no related findings. Everything else the fixes targeted, the models independently confirmed as problematic.
 
+---
 
-WHY IT STOPPED SO EARLY
+## Why It Stopped So Early
 
 The system stopped after four rounds when it was designed to run up to nineteen. This is the most important open question.
 
-Here is what happened. In the first round, all models reviewed the entire 3800 lines. They collectively produced 2085 unique technical terms. In subsequent rounds, each model reviewed only about 630 lines, which is one sixth of the total code. From those 630 lines, the models could only add 28 new terms to the existing vocabulary of 2085. That is a growth rate of 1.3 percent, well below the 10 percent threshold that triggers the stop signal.
+Here is what happened. In the first round, all models reviewed the entire 3800 lines. They collectively produced 2085 unique technical terms. In subsequent rounds, each model reviewed only about 630 lines — one sixth of the total code. From those 630 lines, the models could only add 28 new terms to the existing vocabulary of 2085. That is a growth rate of 1.3%, well below the 10% threshold that triggers the stop signal.
 
 The stop signal did exactly what it was designed to do. It measured vocabulary growth and found it had flatlined. But the reason it flatlined was not that the models had run out of things to say. It was that each model was only seeing a small slice of the code, and the vocabulary from that small slice was already present in the cumulative vocabulary from the first round when everyone saw everything.
 
 Think of it like this. You read an entire book and write down every unusual word. Then someone gives you one chapter and asks you to find new words. Most of the words in that chapter were already in your list from reading the whole book. That does not mean the chapter has nothing new to teach you. It means you are measuring the wrong thing.
 
-The fix is straightforward. Lower the threshold from 10 percent to somewhere between 3 and 5 percent, and require more consecutive rounds below the threshold before stopping. With those adjustments the system should run between 8 and 15 rounds, which is closer to the natural stopping point.
+The fix is straightforward. Lower the threshold from 10% to somewhere between 3 and 5%, and require more consecutive rounds below the threshold before stopping. With those adjustments the system should run between 8 and 15 rounds, which is closer to the natural stopping point.
 
+---
 
-HOW THE MODELS COMPARE
+## How the Models Compare
 
 The statistical tests confirm that the five models are genuinely different from each other in what they find. The difference in severity between models is highly statistically significant.
 
-Gemini and Codex find the most serious problems. They are also the two models that died first in Experiment 12 because of technical limitations, timeouts and context overflow. Fixing those limitations meant keeping the two strongest critics alive for the entire experiment. That is the single most important result. Losing models does not just reduce how many findings you get. It removes the models that find the most important problems.
+Gemini and Codex find the most serious problems. They are also the two models that died first in Experiment 12 because of technical limitations — timeouts and context overflow. Fixing those limitations meant keeping the two strongest critics alive for the entire experiment. **That is the single most important result.** Losing models does not just reduce how many findings you get. It removes the models that find the most important problems.
 
 CC2 and ChatGPT find more issues at moderate severity. They provide breadth. DeepSeek provides an independent perspective at lower volume.
 
-All five models together, with balanced contribution, produce better results than any subset. The Shannon entropy measure, which captures how evenly models contribute, was 0.91 out of a maximum of 1.0. That means no single model dominated. In Experiment 12, evenness was lower because the late rounds were dominated by just two models.
+All five models together, with balanced contribution, produce better results than any subset. The Shannon entropy measure (which captures how evenly models contribute) was 0.91 out of a maximum of 1.0. That means no single model dominated. In Experiment 12, evenness was lower because the late rounds were dominated by just two models.
 
+---
 
-WHAT THIS MEANS
+## What This Means
 
 The fix architecture works. Every structural fix performed as designed. The vocabulary signal fired. The cost metric declined cleanly. The timeout fix kept Gemini alive. All five models contributed. The only problem is that the stop threshold needs adjusting for the way we now break the code into smaller pieces for each model.
 

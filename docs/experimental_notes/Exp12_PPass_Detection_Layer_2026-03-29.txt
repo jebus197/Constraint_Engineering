@@ -1,72 +1,80 @@
-Experiment 12 P-Pass Assessment: Detection Layer and Lessons Learned
-2026-03-29
+# Experiment 12 P-Pass Assessment: Detection Layer and Lessons Learned
 
-This assessment covers seven items from Experiment 12, a 20-round multi-model code review of dynamic management dot py under CDSFL orchestration. Five models started. Only CC2 and DeepSeek survived to round 20. 809 findings were produced. The experiment terminated on the maximum round limit, not on mathematical convergence. None of the three stop signals (kappa, mu, novelty rate) fired.
+**Date:** 2026-03-29
 
+This assessment covers seven items from Experiment 12, a 20-round multi-model code review of `dynamic_management.py` under CDSFL orchestration. Five models started. Only CC2 and DeepSeek survived to round 20. 809 findings were produced. The experiment terminated on the maximum round limit, not on mathematical convergence. None of the three stop signals (kappa, mu, novelty rate) fired.
 
-ITEM 1. FINGERPRINT EMA COLLAPSE
+---
 
-Verdict: Modify. Hard constraint.
+## Item 1: Fingerprint EMA Collapse
 
-The exponential moving average formula with alpha equals 0.3 causes all fingerprint dimensions to collapse toward zero over 20 rounds. Starting from 0.9, the value reaches 0.0007 after 20 rounds of near-zero observations. This is mathematically exact. The value after r rounds equals the initial value times 0.7 to the power of r, plus a weighted sum of observations. When observations trend toward zero, the fingerprint becomes useless for allocation decisions.
+**Verdict: Modify. Hard constraint.**
+
+The exponential moving average formula with alpha = 0.3 causes all fingerprint dimensions to collapse toward zero over 20 rounds. Starting from 0.9, the value reaches 0.0007 after 20 rounds of near-zero observations. This is mathematically exact. The value after `r` rounds equals the initial value times 0.7 to the power of `r`, plus a weighted sum of observations. When observations trend toward zero, the fingerprint becomes useless for allocation decisions.
 
 The proposed fix of adding floor values is partially correct but masks genuine degradation. A model producing zero-quality output should score near zero. The right fix is to replace the EMA with a windowed mean over the last 5 rounds, which prevents ancient initial values from dominating. Additionally, add a fallback mode for role assignment: when all models' fingerprints fall below a minimum signal threshold, switch to round-robin assignment rather than trying to differentiate models with numerically degenerate values.
 
+---
 
-ITEM 2. SELF-IMPROVEMENT PREDICTION
+## Item 2: Self-Improvement Prediction
 
-Verdict: Modify. Hard constraint because wrong claims about model behaviour would misguide future experiment design.
+**Verdict: Modify. Hard constraint** — wrong claims about model behaviour would misguide future experiment design.
 
-The original prediction rested on CC2 abstraction improvement (p equals 0.045 at round 9) and ChatGPT severity improvement. With full 20-round data, CC2 abstraction has p equals 0.29. Falsified. The earlier significance was a textbook case of inflation from small samples. ChatGPT severity has p equals 0.0065. This survives at the standard alpha equals 0.05 level but marginally fails Bonferroni correction for 8 simultaneous tests (threshold 0.00625).
+The original prediction rested on CC2 abstraction improvement (p = 0.045 at round 9) and ChatGPT severity improvement. With full 20-round data, CC2 abstraction has p = 0.29. **Falsified.** The earlier significance was a textbook case of inflation from small samples. ChatGPT severity has p = 0.0065. This survives at the standard alpha = 0.05 level but marginally fails Bonferroni correction for 8 simultaneous tests (threshold 0.00625).
 
-More importantly, even if ChatGPT severity improvement is real, it has a critical confound. ChatGPT receives increasingly rich prior-findings context in later rounds. The observed improvement could be context-mediated, meaning the CDSFL system improves the model's environment rather than the model improving itself. The model restart mechanism proposed in item 3 would test this: restart ChatGPT with minimal context and observe whether severity drops.
+More importantly, even if ChatGPT severity improvement is real, it has a critical confound. ChatGPT receives increasingly rich prior-findings context in later rounds. The observed improvement could be context-mediated — the CDSFL system improves the model's environment rather than the model improving itself. The model restart mechanism proposed in Item 3 would test this: restart ChatGPT with minimal context and observe whether severity drops.
 
-The prediction should be downgraded to "context-mediated quality improvement observed in one model on one dimension, not yet distinguished from intrinsic capability change."
+The prediction should be downgraded to: "context-mediated quality improvement observed in one model on one dimension, not yet distinguished from intrinsic capability change."
 
+---
 
-ITEM 3. MODEL RESTART LOGIC
+## Item 3: Model Restart Logic
 
-Verdict: Approve. Soft constraint.
+**Verdict: Approve. Soft constraint.**
 
 Codex was blocked at round 13 and ChatGPT at round 17, both due to context accumulation. Permanent blocking wastes remaining capability. Restarting with a fresh instance and curated minimal context (top findings by severity, deduplicated) is operationally sound and equivalent to the adaptive decomposition already implemented for DeepSeek.
 
-One addition: on restart, blend the fingerprint 50 percent initial plus 50 percent pre-block rather than keeping the decayed fingerprint or fully resetting. This gives the manager a reasonable prior while allowing adaptation.
+One addition: on restart, blend the fingerprint 50% initial + 50% pre-block rather than keeping the decayed fingerprint or fully resetting. This gives the manager a reasonable prior while allowing adaptation.
 
+---
 
-ITEM 4. STOP CONDITION INADEQUACY
+## Item 4: Stop Condition Inadequacy
 
-Verdict: Modify. Hard constraint.
+**Verdict: Modify. Hard constraint.**
 
 All three stop signals failed because they share a root cause: the similarity function (Jaccard on word bags) cannot detect semantic equivalence. "The EMA update causes fingerprint decay" and "fingerprint values collapse due to exponential moving average" score low similarity despite being the same finding. Kappa stays at zero. Novelty rate asymptotes at 0.826 because most findings appear lexically novel even when semantically redundant. Mu oscillates due to cost distortion from model attrition.
 
-The proposed fix adds a vocabulary saturation metric as the primary stop signal. Track unique technical terms across all findings. Compute vocabulary growth rate as the fraction of new terms per round. When growth rate drops below 0.05 for several consecutive rounds, the models are recycling concepts regardless of phrasing. This is similarity-independent.
+The proposed fix adds a **vocabulary saturation metric** as the primary stop signal. Track unique technical terms across all findings. Compute vocabulary growth rate as the fraction of new terms per round. When growth rate drops below 0.05 for several consecutive rounds, the models are recycling concepts regardless of phrasing. This is similarity-independent.
 
 Additional signals: per-model novelty rate (not aggregate), and a scaled round cap as a function of artifact size. The stop predicate becomes a compound condition: vocabulary saturation and per-model novelty low, or smoothed mu below threshold and round count exceeds the scaled maximum.
 
 The vocabulary saturation metric measures what the models are thinking about, not just what words they use in individual findings.
 
+---
 
-ITEM 5. ARTIFACT SIZE SCALING
+## Item 5: Artifact Size Scaling
 
-Verdict: Modify. Soft constraint.
+**Verdict: Modify. Soft constraint.**
 
-At 0.254 findings per line over 809 findings, the artifact is not obviously over-reviewed in aggregate. Scaling max rounds with artifact size is reasonable as a safety bound: max rounds equals the maximum of 10 or the ceiling of lines divided by 200. For a 3181-line file, this gives 16 rounds.
+At 0.254 findings per line over 809 findings, the artifact is not obviously over-reviewed in aggregate. Scaling max rounds with artifact size is reasonable as a safety bound: max rounds = max(10, ceiling(lines / 200)). For a 3181-line file, this gives 16 rounds.
 
 Do not decompose for all models by default. The existing adaptive decomposition already switches models to decomposed dispatch when their feasibility drops below threshold. Generalise this to all models rather than making it DeepSeek-specific, but keep full-artifact analysis as the default so cross-component findings remain possible.
 
+---
 
-ITEM 6. MU COST DISTORTION
+## Item 6: Mu Cost Distortion
 
-Verdict: Approve. Hard constraint.
+**Verdict: Approve. Hard constraint.**
 
 The distortion is precise. When the active model set shrinks, cost drops but finding count drops less (remaining models compensate), so the mu ratio rises. This makes aggregate mu useless as a convergence signal when model composition changes.
 
 Per-model mu is the correct fix. For each active model, compute mu as that model's marginal yield divided by that model's cost. The aggregate stop signal uses the maximum per-model mu: if any single model is still producing high-value findings, continue. This is immune to composition changes because each model's ratio is computed independently.
 
+---
 
-ITEM 7. CHURN ASSESSMENT
+## Item 7: Churn Assessment
 
-Verdict: Modify, pending data. Hard constraint because churn detection determines whether experiment output is trustworthy.
+**Verdict: Modify, pending data. Hard constraint** — churn detection determines whether experiment output is trustworthy.
 
 CC2 produced 15 findings per round for 18 consecutive rounds. The consistency is suspicious. Genuine analysis should show a declining finding rate. However, 270 findings across 3181 lines at 0.085 findings per line is not obviously excessive for a 27-class, 6-area module.
 
@@ -76,29 +84,30 @@ Supporting evidence for the churn hypothesis: CC2's v-bar collapsed to 0.0007 wh
 
 Do not declare churn or productivity until the vocabulary analysis completes. Add the vocabulary saturation metric to the next run so this question is automatically answered. Also compute CC2's per-model Duane gamma: gamma below 1 means convergent analysis, gamma at or above 1 means churn.
 
+---
 
-OVERALL ASSESSMENT
+## Overall Assessment
 
-What Experiment 12 proved.
+### What Experiment 12 proved
 
-First, the dynamic management layer functions correctly in live conditions. Role assignment, load balancing, failure handling, and the finite state machine all worked as designed.
+1. The dynamic management layer functions correctly in live conditions. Role assignment, load balancing, failure handling, and the finite state machine all worked as designed.
 
-Second, the detection layer is fundamentally broken for long-running experiments because it depends on a similarity function that cannot detect semantic equivalence. This is the single root cause behind kappa permanently at zero, mu oscillation, and novelty rate asymptoting at 0.826.
+2. The detection layer is fundamentally broken for long-running experiments because it depends on a similarity function that cannot detect semantic equivalence. This is the single root cause behind kappa permanently at zero, mu oscillation, and novelty rate asymptoting at 0.826.
 
-Third, model attrition is a first-order effect. Losing 3 of 5 models over 20 rounds means late findings are dominated by two models' biases. The restart mechanism and adaptive decomposition are essential for long runs.
+3. Model attrition is a first-order effect. Losing 3 of 5 models over 20 rounds means late findings are dominated by two models' biases. The restart mechanism and adaptive decomposition are essential for long runs.
 
-Fourth, the self-improvement prediction is partially falsified. Only ChatGPT severity survives, and even that is confounded by context accumulation.
+4. The self-improvement prediction is partially falsified. Only ChatGPT severity survives, and even that is confounded by context accumulation.
 
-Fifth, EMA fingerprints are unsuitable for long experiments. The windowed mean replacement is straightforward.
+5. EMA fingerprints are unsuitable for long experiments. The windowed mean replacement is straightforward.
 
-What should change for the next run, in priority order.
+### Priority order for the next run
 
-Priority 1: Replace EMA with windowed mean for fingerprints.
-Priority 2: Implement vocabulary saturation metric as primary stop signal.
-Priority 3: Implement per-model mu to replace aggregate mu.
-Priority 4: Add model restart logic for blocked models.
-Priority 5: Scale max rounds with artifact size.
-Priority 6: Instrument per-model Duane gamma to answer the churn question.
-Priority 7, longer term: embedding-based similarity to fix the root cause of detection failure.
+- **Priority 1:** Replace EMA with windowed mean for fingerprints.
+- **Priority 2:** Implement vocabulary saturation metric as primary stop signal.
+- **Priority 3:** Implement per-model mu to replace aggregate mu.
+- **Priority 4:** Add model restart logic for blocked models.
+- **Priority 5:** Scale max rounds with artifact size.
+- **Priority 6:** Instrument per-model Duane gamma to answer the churn question.
+- **Priority 7 (longer term):** Embedding-based similarity to fix the root cause of detection failure.
 
 Items 1, 4, and 6 are highest priority because they address the fact that the experiment currently cannot detect its own termination condition. Without these, the next run will also hit the maximum round limit.

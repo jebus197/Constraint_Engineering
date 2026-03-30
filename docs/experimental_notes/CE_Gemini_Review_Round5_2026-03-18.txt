@@ -1,8 +1,9 @@
-CE Gemini Review Round 5 (Final)
-2026-03-18T21:45:00+00:00
-Model: Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
-Input: Pre-fix run_benchmark.py (908 lines) + current run_phase2.py (1005 lines)
-Context: Final round, explicit diminishing returns assessment requested
+# CE Gemini Review — Round 5 (Final)
+
+**Date:** 2026-03-18T21:45:00+00:00
+**Model:** Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
+**Input:** Pre-fix `run_benchmark.py` (908 lines) + current `run_phase2.py` (1005 lines)
+**Context:** Final round, explicit diminishing returns assessment requested
 
 Full unfiltered Gemini output below.
 
@@ -10,29 +11,45 @@ Full unfiltered Gemini output below.
 
 Diminishing returns have been reached for structural and logic-flow defects within the provided scripts. However, a final adversarial review focusing on reproducibility, state-synchronization, and orchestration timing reveals three novel findings that were previously anchored away from by the focus on cost caps and atomic writes.
 
-Round 5 Novel Findings
+---
 
-1. Domain Directive Manifest Bypass (Category: Reproducibility)
+## Round 5 Novel Findings
 
-The implementation of the Run Manifest (Fix 1 in run_phase2.py) is flawed regarding domain-specific directives. While the manifest hashes the universal directives (CDSFL_DIRECTIVES), it does not hash the contents of the directives/ directory or the domain-specific files.
+### 1. Domain Directive Manifest Bypass
 
-Impact: If a user modifies a domain-specific instruction (e.g., directives/structural/safety_codes.txt) and resumes a benchmark with --resume, the manifest hash remains identical. The checkpoint logic will see the tasks as "done" and skip them, resulting in a "successful" run that contains stale results based on old directives. This silently breaks the reproducibility guarantee of the manifest system.
+- **Category:** Reproducibility
 
-2. Partial Orchestration Validation in Preflight (Category: Ordering/Starvation)
+The implementation of the Run Manifest (Fix 1 in `run_phase2.py`) is flawed regarding domain-specific directives. While the manifest hashes the universal directives (`CDSFL_DIRECTIVES`), it does not hash the contents of the `directives/` directory or the domain-specific files.
 
-The Preflight Pilot (Fix 5 in run_phase2.py) is designed to validate infrastructure, but it only tests a single, "cheapest" provider. Furthermore, it explicitly bypasses the confer threshold by using confer_after=99.
+**Impact:** If a user modifies a domain-specific instruction (e.g., `directives/structural/safety_codes.txt`) and resumes a benchmark with `--resume`, the manifest hash remains identical. The checkpoint logic will see the tasks as "done" and skip them, resulting in a "successful" run that contains stale results based on old directives. This silently breaks the reproducibility guarantee of the manifest system.
 
-Impact: If the benchmark uses multiple providers (e.g., OpenAI and Anthropic) and the cdsfl-confer CLI assessor is improperly configured or missing from the path, the preflight will PASS (since it only tests one provider and avoids the confer logic). The failure will only trigger hours later when the main loop hits a confer threshold on a different provider. This leads to "starvation" of the expensive frontier run by avoidable orchestration failures.
+---
 
-3. Cross-Model Cost Attribution Skew (Category: Determinism/Accounting)
+### 2. Partial Orchestration Validation in Preflight
+
+- **Category:** Ordering/Starvation
+
+The Preflight Pilot (Fix 5 in `run_phase2.py`) is designed to validate infrastructure, but it only tests a single, "cheapest" provider. Furthermore, it explicitly bypasses the confer threshold by using `confer_after=99`.
+
+**Impact:** If the benchmark uses multiple providers (e.g., OpenAI and Anthropic) and the `cdsfl-confer` CLI assessor is improperly configured or missing from the path, the preflight will PASS (since it only tests one provider and avoids the confer logic). The failure will only trigger hours later when the main loop hits a confer threshold on a different provider. This leads to "starvation" of the expensive frontier run by avoidable orchestration failures.
+
+---
+
+### 3. Cross-Model Cost Attribution Skew
+
+- **Category:** Determinism/Accounting
 
 In Schema C runs, the script calculates costs by splitting the total response length 50/50 between two models:
 
+```python
 cost_a = estimate_call_cost(config_a["provider"], ..., total_resp // 2)
 cost_b = estimate_call_cost(config_b["provider"], ..., total_resp // 2)
+```
 
-Impact: This assumes both models (e.g., a "reasoning" model and a "scout" model) are equally verbose and have identical pricing. In reality, a reasoning model (like o4-mini) may produce significantly more internal tokens or use a different pricing tier. This creates non-deterministic cost ledger entries that depend on the pairing rather than actual resource consumption, potentially causing the cost cap to trip prematurely or too late for specific providers.
+**Impact:** This assumes both models (e.g., a "reasoning" model and a "scout" model) are equally verbose and have identical pricing. In reality, a reasoning model (like `o4-mini`) may produce significantly more internal tokens or use a different pricing tier. This creates non-deterministic cost ledger entries that depend on the pairing rather than actual resource consumption, potentially causing the cost cap to trip prematurely or too late for specific providers.
 
-Recommendation
+---
 
-Beyond these findings, I confirm diminishing returns. The scripts have reached a high level of robustness regarding the primary failure modes (atomic writes, cost control, and checkpointing). Further iterative analysis is unlikely to yield high-impact novel defects. I recommend stopping at Round 5.
+## Recommendation
+
+Beyond these findings, diminishing returns are confirmed. The scripts have reached a high level of robustness regarding the primary failure modes (atomic writes, cost control, and checkpointing). Further iterative analysis is unlikely to yield high-impact novel defects. Stopping at Round 5 is recommended.

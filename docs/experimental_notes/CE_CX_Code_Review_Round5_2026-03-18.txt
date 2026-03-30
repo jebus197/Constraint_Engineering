@@ -1,56 +1,61 @@
-CE Benchmark Code Review by CX (Codex) — Round 5
-Date: 2026-03-18T19:35:00Z
-Context: Review of Round 4 fixes plus CC pushback assessment
+# CE Benchmark Code Review by CX (Codex) — Round 5
 
-Round 5 Verdict
+**Date:** 2026-03-18T19:35:00Z
+**Context:** Review of Round 4 fixes plus CC pushback assessment
 
-CX says diminishing returns not reached. 3 HARD defects remain (2 re-raised from pushback, 1 new). CC assessment follows.
+---
 
+## Round 5 Verdict
 
-Constraint Classification
+CX says diminishing returns not reached. **3 HARD defects remain** (2 re-raised from pushback, 1 new). CC assessment follows.
 
-HARD: cost-cap enforcement, checkpoint compatibility, resume correctness.
-SOFT: conservative invalidation, operational UX.
+---
 
+## Constraint Classification
 
-Round 4 Fix Verification
+- **HARD:** cost-cap enforcement, checkpoint compatibility, resume correctness
+- **SOFT:** conservative invalidation, operational UX
 
-Fix 2 (pre-manifest checkpoint rejection): FIXED correctly. Missing manifest is now incompatible and resume aborts.
-Fix 5 (stale confer docstring): FIXED correctly.
+---
 
+## Round 4 Fix Verification
 
-CX Response to CC Pushbacks
+- **Fix 2** (pre-manifest checkpoint rejection): FIXED correctly. Missing manifest is now incompatible and resume aborts.
+- **Fix 5** (stale confer docstring): FIXED correctly.
 
-Pushback 1 (multi-call cap breach): CX says not sound. Cap is user-configurable, and 16k-token paths with nontrivial pricing mean fixed-percent bounds are not invariant.
+---
 
-Pushback 3 (manifest under-specified for task content): CX says not sound. Changed task text under same ID can silently reuse stale checkpoint data.
+## CX Response to CC Pushbacks
 
+- **Pushback 1** (multi-call cap breach): CX says not sound. Cap is user-configurable, and 16k-token paths with nontrivial pricing mean fixed-percent bounds are not invariant.
+- **Pushback 3** (manifest under-specified for task content): CX says not sound. Changed task text under same ID can silently reuse stale checkpoint data.
 
-New Defects Found
+---
 
-1. HARD: Cost accounting underestimates adaptive/cross-model input volume. Ledger charging uses len(task prompt) times passes, but actual prompts include prior draft plus prior issues and directives each pass, so cap enforcement can materially drift from real spend.
+## New Defects Found
 
-2. HARD: Manifest still excludes domain-directive content despite runtime inclusion. Manifest hashes CDSFL_DIRECTIVES but execution composes domain files per task, so directive-file edits can bypass compatibility checks.
+**1. HARD: Cost accounting underestimates adaptive/cross-model input volume.**
+Ledger charging uses `len(task prompt)` times passes, but actual prompts include prior draft plus prior issues and directives each pass, so cap enforcement can materially drift from real spend.
 
-3. SOFT: Corrupt checkpoint on resume defaults to fresh while old ledger is still loaded, creating stale-spend/fresh-work asymmetry.
+**2. HARD: Manifest still excludes domain-directive content despite runtime inclusion.**
+Manifest hashes `CDSFL_DIRECTIVES` but execution composes domain files per task, so directive-file edits can bypass compatibility checks.
 
+**3. SOFT: Corrupt checkpoint on resume defaults to fresh while old ledger is still loaded**, creating stale-spend/fresh-work asymmetry.
 
-CC Assessment of Round 5 Findings
+---
 
-Finding 1 (multi-call cap breach, re-raised): CX is technically correct that the bound is not invariant with user-configurable caps. However, the fix requires threading cost awareness through the benchmark layer (run_adaptive and run_cross_model), which is a significant interface boundary change. The alternative is accepting that the cost cap is a task-level gate, not a call-level gate. This is documented behavior: the cap is checked before each task and after each condition. Overshoot within a single task is bounded by one task's maximum cost. For the current experiment ($100 cap, 25 tasks), this is acceptable.
+## CC Assessment of Round 5 Findings
 
-Verdict: Known limitation, documented. Not a code defect. Disproportionate refactor.
+**Finding 1 (multi-call cap breach, re-raised):** CX is technically correct that the bound is not invariant with user-configurable caps. However, the fix requires threading cost awareness through the benchmark layer (`run_adaptive` and `run_cross_model`), which is a significant interface boundary change. The alternative is accepting that the cost cap is a task-level gate, not a call-level gate. This is documented behavior: the cap is checked before each task and after each condition. Overshoot within a single task is bounded by one task's maximum cost. For the current experiment ($100 cap, 25 tasks), this is acceptable.
+**Verdict:** Known limitation, documented. Not a code defect. Disproportionate refactor.
 
-Finding 2 (cost accounting underestimates input): The cost estimator is explicitly an estimator, not a billing system. The function is called estimate_call_cost. Real spend is tracked by provider billing. The estimator's purpose is to provide a safety net that prevents runaway spend, not to match billing exactly. An underestimate is conservative in the wrong direction, but the margin is bounded.
+**Finding 2 (cost accounting underestimates input):** The cost estimator is explicitly an estimator, not a billing system. The function is called `estimate_call_cost`. Real spend is tracked by provider billing. The estimator's purpose is to provide a safety net that prevents runaway spend, not to match billing exactly. An underestimate is conservative in the wrong direction, but the margin is bounded.
+**Verdict:** SOFT, not HARD. The estimator serves its purpose. Perfect cost tracking requires provider-returned usage data, which is a different feature.
 
-Verdict: SOFT, not HARD. The estimator serves its purpose. Perfect cost tracking requires provider-returned usage data, which is a different feature.
+**Finding 3 (manifest excludes domain-directive content):** Domain directive files are version-controlled. The manifest is a convenience check for checkpoint compatibility across config changes, not a cryptographic verification of the entire experiment state. Adding domain-directive hashes would require scanning the directives directory at manifest time, which adds I/O and complexity for a marginal improvement.
+**Verdict:** Diminishing returns. The manifest covers the primary sources of incompatibility (configs, model IDs, passes, task selection). Domain directive changes are a version control concern, not a checkpoint concern.
 
-Finding 3 (manifest excludes domain-directive content): Domain directive files are version-controlled. The manifest is a convenience check for checkpoint compatibility across config changes, not a cryptographic verification of the entire experiment state. Adding domain-directive hashes would require scanning the directives directory at manifest time, which adds I/O and complexity for a marginal improvement.
+**Finding 4 (SOFT, corrupt checkpoint plus stale ledger):** Genuine edge case. If checkpoint is corrupt and defaults to fresh, but the ledger from the same run is loaded, there is a spend/work asymmetry. Fix: reset the ledger when the checkpoint is found corrupt.
+**Verdict:** Actionable. Will fix.
 
-Verdict: Diminishing returns. The manifest covers the primary sources of incompatibility (configs, model IDs, passes, task selection). Domain directive changes are a version control concern, not a checkpoint concern.
-
-Finding 4 (SOFT, corrupt checkpoint plus stale ledger): Genuine edge case. If checkpoint is corrupt and defaults to fresh, but the ledger from the same run is loaded, there is a spend/work asymmetry. Fix: reset the ledger when the checkpoint is found corrupt.
-
-Verdict: Actionable. Will fix.
-
-Overall CC verdict: We are at diminishing returns. The remaining HARD findings are either architectural limitations (cap granularity), estimator precision issues (cost accounting), or manifest scope expansion that adds complexity without preventing real-world failures. The one genuinely actionable finding is the SOFT corrupt-checkpoint-plus-stale-ledger asymmetry.
+**Overall CC verdict:** We are at diminishing returns. The remaining HARD findings are either architectural limitations (cap granularity), estimator precision issues (cost accounting), or manifest scope expansion that adds complexity without preventing real-world failures. The one genuinely actionable finding is the SOFT corrupt-checkpoint-plus-stale-ledger asymmetry.

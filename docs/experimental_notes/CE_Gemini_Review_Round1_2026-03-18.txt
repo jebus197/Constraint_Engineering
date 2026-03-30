@@ -1,13 +1,14 @@
-CE Gemini Review Round 1
-2026-03-18T21:30:57+00:00
-Model: Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
-Input: Pre-fix run_benchmark.py (908 lines, from git HEAD) + current run_phase2.py (1005 lines)
+# CE Gemini Review — Round 1
+
+**Date:** 2026-03-18T21:30:57+00:00
+**Model:** Gemini (via gemini CLI v0.29.5, gemini-3-pro-preview)
+**Input:** Pre-fix `run_benchmark.py` (908 lines, from git HEAD) + current `run_phase2.py` (1005 lines)
 
 Full unfiltered Gemini output below.
 
 ---
 
-Summary of Major Defects
+## Summary of Major Defects
 
 1. CRITICAL: Missing Core Functions and Constants
 2. HIGH: API Provider Mismatch (Unsupported Providers)
@@ -18,82 +19,133 @@ Summary of Major Defects
 7. MEDIUM: Checkpoint Manifest Over-Strictness
 8. MEDIUM: Type Error in Result Reporting Logic
 
-Detailed Findings
+---
 
-1. Missing Core Functions and Constants
+## Detailed Findings
 
-File: run_phase2.py (Imports block)
-Severity: CRITICAL
-Bug: The orchestrator imports several critical symbols from run_benchmark.py that are not defined in that file.
-Specifics: PLACEBO_DIRECTIVES, AdaptiveThrottle, estimate_call_cost, make_throttle, run_adaptive, run_cross_model, and run_placebo are all missing from File 1.
-Impact: The system will fail with an ImportError immediately upon execution of run_phase2.py.
-Fix: Ensure run_benchmark.py contains the complete implementation of the adaptive pass logic, cost estimation, and throttle management.
+### 1. Missing Core Functions and Constants
 
-2. API Provider Mismatch (Unsupported Providers)
+- **File:** `run_phase2.py` (Imports block)
+- **Severity:** CRITICAL
 
-File: run_benchmark.py (line 330) and run_phase2.py (lines 142, 155)
-Severity: HIGH
-Bug: run_phase2.py defines configurations using providers (openai-reasoning, groq) that are not present in the PROVIDERS registry of run_benchmark.py.
-Impact: When attempting to run o4-mini or llama-4-scout, the script will crash with a KeyError in run_control or run_adaptive when attempting to look up the caller function.
-Fix: Add call_groq and call_openai_reasoning (or map them to existing OpenAI callers) to the PROVIDERS dictionary in run_benchmark.py.
+**Bug:** The orchestrator imports several critical symbols from `run_benchmark.py` that are not defined in that file.
 
-3. Draft Pollution and Context Recursion
+**Specifics:** `PLACEBO_DIRECTIVES`, `AdaptiveThrottle`, `estimate_call_cost`, `make_throttle`, `run_adaptive`, `run_cross_model`, and `run_placebo` are all missing from File 1.
 
-File: run_benchmark.py (line 532, 608)
-Severity: HIGH
-Bug: If a model fails to output the expected REVISED_ANSWER tag, the code falls back to using the entire raw response as the draft for the next pass: current_draft = extracted_revision or response.
-Trigger: An LLM fails to follow formatting constraints or includes conversational filler before the tag.
-Impact: The next pass receives a "draft" containing metadata, previous issues, and system instructions. This leads to a recursive "prompt injection" effect where the context window is rapidly filled with garbage, causing the model to lose the original task context and fail the benchmark.
-Fix: Implement a strict fallback. If extraction fails, either retry the call or use the initial_answer (if Pass 1) or the previous current_draft instead of the raw, tag-polluted response.
+**Impact:** The system will fail with an `ImportError` immediately upon execution of `run_phase2.py`.
 
-4. Lack of Transient Error Recovery
+**Fix:** Ensure `run_benchmark.py` contains the complete implementation of the adaptive pass logic, cost estimation, and throttle management.
 
-File: run_phase2.py (line 895)
-Severity: HIGH
-Bug: While the code detects "Fatal" errors (quota/billing), it does not catch or retry transient errors (503 Service Unavailable, 504 Timeout).
-Trigger: A single network glitch or provider timeout during a 100-task run.
-Impact: The script crashes and terminates. While the checkpoint allows manual resumption, a large-scale benchmark should be robust enough to handle transient API flickers without operator intervention.
-Fix: Wrap run_task_conditions in a retry loop with exponential backoff for non-fatal exceptions.
+---
 
-5. Gemini Safety Filter Crash Path
+### 2. API Provider Mismatch (Unsupported Providers)
 
-File: run_benchmark.py (line 294)
-Severity: MEDIUM
-Bug: call_gemini directly returns response.text without checking safety or candidate status.
-Trigger: A task prompt triggers Gemini's internal safety filters (e.g., a cybersecurity or medical task).
-Impact: The Google SDK raises a ValueError: The response has no text when safety filters block the response. This crashes the entire harness.
-Fix: Wrap the response.text access in a try/except block or check response.candidates first. Return a standardized error string or "BLOCKED" instead of crashing.
+- **File:** `run_benchmark.py` (line 330) and `run_phase2.py` (lines 142, 155)
+- **Severity:** HIGH
 
-6. Inaccurate Cost/Token Attribution in Schema C
+**Bug:** `run_phase2.py` defines configurations using providers (`openai-reasoning`, `groq`) that are not present in the `PROVIDERS` registry of `run_benchmark.py`.
 
-File: run_phase2.py (line 768-769)
-Severity: MEDIUM
-Bug: Cost estimation for cross-model review uses a crude total_resp // 2 split and a hardcoded 3 pass multiplier for prompt costs.
-Impact: Spend tracking in the CostLedger will be significantly inaccurate. If Model A is more verbose than Model B, Model B will be over-billed and Model A under-billed. More importantly, using len(task["prompt"]) * 3 ignores the actual number of passes performed.
-Fix: Track individual response lengths for both models during the run_cross_model loop and use the actual pass count for prompt cost calculation.
+**Impact:** When attempting to run `o4-mini` or `llama-4-scout`, the script will crash with a `KeyError` in `run_control` or `run_adaptive` when attempting to look up the caller function.
 
-7. Checkpoint Manifest Over-Strictness
+**Fix:** Add `call_groq` and `call_openai_reasoning` (or map them to existing OpenAI callers) to the `PROVIDERS` dictionary in `run_benchmark.py`.
 
-File: run_phase2.py (line 190, 411)
-Severity: MEDIUM
-Bug: The manifest hash includes the list of task_ids.
-Trigger: A user runs 100 tasks, it crashes at task 90, and the user tries to resume with only the remaining 10 tasks via --task-ids.
-Impact: The manifest hash changes, causing the script to reject the checkpoint as "incompatible." The user is forced to re-run the first 90 tasks (wasting money) or manually hack the checkpoint.json file.
-Fix: Remove the specific list of task_ids from the manifest hash. The checkpoint logic already handles task-level skips correctly.
+---
 
-8. Type Error in Result Reporting Logic
+### 3. Draft Pollution and Context Recursion
 
-File: run_phase2.py (line 955)
-Severity: MEDIUM
-Bug: The deferred items report assumes all entries in checkpoint.completed are results from adaptive passes containing a status key.
-Trigger: Completion of a run that includes control conditions.
-Impact: Results from run_control (File 1, line 440) do not contain a status key. This may cause the report generator to fail or produce a report where every control run is incorrectly flagged or skipped.
-Fix: Filter by result.get("condition") == "experimental" or check for the existence of the key before access.
+- **File:** `run_benchmark.py` (line 532, 608)
+- **Severity:** HIGH
 
-9. Off-by-One in Extended Pass Count
+**Bug:** If a model fails to output the expected `REVISED_ANSWER` tag, the code falls back to using the entire raw response as the draft for the next pass: `current_draft = extracted_revision or response`.
 
-File: run_benchmark.py (line 553)
-Severity: LOW
-Bug: modular_count = max(num_passes - 1, 1).
-Impact: If a user requests --passes 1 in extended mode, the script runs 1 modular pass AND 1 isolated pass (Total 2). The user's constraint is violated.
-Fix: Change logic to modular_count = num_passes - 1 and wrap the isolated pass in an if num_passes > 0 check, or enforce passes >= 2 in the parser.
+**Trigger:** An LLM fails to follow formatting constraints or includes conversational filler before the tag.
+
+**Impact:** The next pass receives a "draft" containing metadata, previous issues, and system instructions. This leads to a recursive "prompt injection" effect where the context window is rapidly filled with garbage, causing the model to lose the original task context and fail the benchmark.
+
+**Fix:** Implement a strict fallback. If extraction fails, either retry the call or use the `initial_answer` (if Pass 1) or the previous `current_draft` instead of the raw, tag-polluted response.
+
+---
+
+### 4. Lack of Transient Error Recovery
+
+- **File:** `run_phase2.py` (line 895)
+- **Severity:** HIGH
+
+**Bug:** While the code detects "Fatal" errors (quota/billing), it does not catch or retry transient errors (503 Service Unavailable, 504 Timeout).
+
+**Trigger:** A single network glitch or provider timeout during a 100-task run.
+
+**Impact:** The script crashes and terminates. While the checkpoint allows manual resumption, a large-scale benchmark should be robust enough to handle transient API flickers without operator intervention.
+
+**Fix:** Wrap `run_task_conditions` in a retry loop with exponential backoff for non-fatal exceptions.
+
+---
+
+### 5. Gemini Safety Filter Crash Path
+
+- **File:** `run_benchmark.py` (line 294)
+- **Severity:** MEDIUM
+
+**Bug:** `call_gemini` directly returns `response.text` without checking safety or candidate status.
+
+**Trigger:** A task prompt triggers Gemini's internal safety filters (e.g., a cybersecurity or medical task).
+
+**Impact:** The Google SDK raises a `ValueError: The response has no text` when safety filters block the response. This crashes the entire harness.
+
+**Fix:** Wrap the `response.text` access in a `try/except` block or check `response.candidates` first. Return a standardized error string or `"BLOCKED"` instead of crashing.
+
+---
+
+### 6. Inaccurate Cost/Token Attribution in Schema C
+
+- **File:** `run_phase2.py` (lines 768–769)
+- **Severity:** MEDIUM
+
+**Bug:** Cost estimation for cross-model review uses a crude `total_resp // 2` split and a hardcoded 3-pass multiplier for prompt costs.
+
+**Impact:** Spend tracking in the `CostLedger` will be significantly inaccurate. If Model A is more verbose than Model B, Model B will be over-billed and Model A under-billed. More importantly, using `len(task["prompt"]) * 3` ignores the actual number of passes performed.
+
+**Fix:** Track individual response lengths for both models during the `run_cross_model` loop and use the actual pass count for prompt cost calculation.
+
+---
+
+### 7. Checkpoint Manifest Over-Strictness
+
+- **File:** `run_phase2.py` (lines 190, 411)
+- **Severity:** MEDIUM
+
+**Bug:** The manifest hash includes the list of `task_ids`.
+
+**Trigger:** A user runs 100 tasks, it crashes at task 90, and the user tries to resume with only the remaining 10 tasks via `--task-ids`.
+
+**Impact:** The manifest hash changes, causing the script to reject the checkpoint as "incompatible." The user is forced to re-run the first 90 tasks (wasting money) or manually hack the `checkpoint.json` file.
+
+**Fix:** Remove the specific list of `task_ids` from the manifest hash. The checkpoint logic already handles task-level skips correctly.
+
+---
+
+### 8. Type Error in Result Reporting Logic
+
+- **File:** `run_phase2.py` (line 955)
+- **Severity:** MEDIUM
+
+**Bug:** The deferred items report assumes all entries in `checkpoint.completed` are results from adaptive passes containing a `status` key.
+
+**Trigger:** Completion of a run that includes control conditions.
+
+**Impact:** Results from `run_control` (File 1, line 440) do not contain a `status` key. This may cause the report generator to fail or produce a report where every control run is incorrectly flagged or skipped.
+
+**Fix:** Filter by `result.get("condition") == "experimental"` or check for the existence of the key before access.
+
+---
+
+### 9. Off-by-One in Extended Pass Count
+
+- **File:** `run_benchmark.py` (line 553)
+- **Severity:** LOW
+
+**Bug:** `modular_count = max(num_passes - 1, 1)`.
+
+**Impact:** If a user requests `--passes 1` in extended mode, the script runs 1 modular pass AND 1 isolated pass (total 2). The user's constraint is violated.
+
+**Fix:** Change logic to `modular_count = num_passes - 1` and wrap the isolated pass in an `if num_passes > 0` check, or enforce `passes >= 2` in the parser.

@@ -1,49 +1,57 @@
-Context Management, Novelty, and What This Says About CDSFL.
+# Context Management, Novelty, and What This Says About CDSFL
 
-Date. 29 March 2026.
-Protocol. P-pass, analyse, extrapolate, discuss.
+**Date:** 29 March 2026
+**Protocol:** P-pass, analyse, extrapolate, discuss.
 
+---
 
-PART 1. CONTEXT MANAGEMENT. WHAT EXISTS AND WHAT IS MISSING.
+## Part 1: Context Management — What Exists and What Is Missing
 
 You asked whether we already have a way to ensure models receive sufficient context without overwhelming them. The short answer is: partly. The longer answer is that what we have is a static scaffolding, and what we need is a living system.
 
-What currently exists. Fix 2 replaced the exponential moving average with a windowed mean, so fingerprints no longer collapse to zero over long experiments. Fix 3 added model restart with fingerprint blending, so a model that gets stuck can be rebooted with a fresh context and a blended memory of its prior performance. Fix 4 introduced per-model decomposition thresholds: CC2 decomposes at 120,000 characters, ChatGPT at 80,000, Codex at 60,000, DeepSeek at zero (always decompose). The feasibility probability check uses the normal distribution to estimate whether a task fits within a model's token limit, accounting for uncertainty.
+**What currently exists.** Fix 2 replaced the exponential moving average with a windowed mean, so fingerprints no longer collapse to zero over long experiments. Fix 3 added model restart with fingerprint blending, so a model that gets stuck can be rebooted with a fresh context and a blended memory of its prior performance. Fix 4 introduced per-model decomposition thresholds: CC2 decomposes at 120,000 characters, ChatGPT at 80,000, Codex at 60,000, DeepSeek at zero (always decompose). The feasibility probability check uses the normal distribution to estimate whether a task fits within a model's token limit, accounting for uncertainty.
 
-What is missing. None of these mechanisms learn from what happens. If DeepSeek gets blocked in the blind round but succeeds via decomposition in round 1, nothing in the system notices this pattern and adjusts. The decomposition thresholds are hardcoded numbers, not derived from the model specifications. There is no cumulative context budget tracker that watches how much context each model has accumulated across rounds and flags when it is approaching danger. The immune layer, which was designed to watch for systemic dysfunction, does not monitor dispatch decisions at all. It watches the convergence detectors (kappa, mu, novelty) but ignores the dispatcher.
+**What is missing.** None of these mechanisms learn from what happens. If DeepSeek gets blocked in the blind round but succeeds via decomposition in round 1, nothing in the system notices this pattern and adjusts. The decomposition thresholds are hardcoded numbers, not derived from the model specifications. There is no cumulative context budget tracker that watches how much context each model has accumulated across rounds and flags when it is approaching danger. The immune layer, which was designed to watch for systemic dysfunction, does not monitor dispatch decisions at all. It watches the convergence detectors (kappa, mu, novelty) but ignores the dispatcher.
 
-What needs to happen. Three things. First, derive decomposition thresholds from the model's actual context window (ModelSpec.L) with a safety margin, rather than hardcoding. This was already identified in Experiment 13a as a deferred modification. Second, extend the immune layer to monitor dispatch events. When a model is blocked and later recovers via decomposition, that should be recorded as a false positive blocking, and the system should learn to pre-decompose for that model in future blind rounds. Third, implement per-model cumulative context tracking. The context grew from 145,000 characters in the blind round to 207,000 characters by round 3. That trajectory needs monitoring. When the growth rate suggests a model will hit its limit within two rounds, the system should pre-emptively decompose or reduce context before the model fails.
+**What needs to happen.** Three things:
+
+1. Derive decomposition thresholds from the model's actual context window (`ModelSpec.L`) with a safety margin, rather than hardcoding. This was already identified in Experiment 13a as a deferred modification.
+2. Extend the immune layer to monitor dispatch events. When a model is blocked and later recovers via decomposition, that should be recorded as a false-positive blocking, and the system should learn to pre-decompose for that model in future blind rounds.
+3. Implement per-model cumulative context tracking. The context grew from 145,000 characters in the blind round to 207,000 characters by round 3. That trajectory needs monitoring. When the growth rate suggests a model will hit its limit within two rounds, the system should pre-emptively decompose or reduce context before the model fails.
 
 These are not in the current fix pipeline except for the first item. The second and third items are new requirements revealed by Experiment 13b.
 
+---
 
-PART 2. THE BARREL SCRAPING PROBLEM.
+## Part 2: The Barrel Scraping Problem
 
 You raised the possibility that we might eventually run out of meaningful problems for the models to find. This is a real concern, and the answer has two parts.
 
-Part one: we are not there yet. The immune layer (Areas 6 and 7 in the dynamic management code) was never the focused target of decomposed dispatch. In Experiment 13b, the three decomposed rounds targeted Role Assignment, Load Balancing, and Round Progression. The detectors, the immune layer, and the DynamicManager integration code were only reviewed during the blind round, when each model saw the full 3,800 lines without focused attention. Only 4 findings directly targeted the immune layer, and 12 mentioned monitoring or diagnosis. For an area of this complexity, that is minimal coverage. A dedicated experiment targeting Areas 4 through 7 would almost certainly produce substantial new findings.
+**Part one: we are not there yet.** The immune layer (Areas 6 and 7 in the dynamic management code) was never the focused target of decomposed dispatch. In Experiment 13b, the three decomposed rounds targeted Role Assignment, Load Balancing, and Round Progression. The detectors, the immune layer, and the DynamicManager integration code were only reviewed during the blind round, when each model saw the full 3,800 lines without focused attention. Only 4 findings directly targeted the immune layer, and 12 mentioned monitoring or diagnosis. For an area of this complexity, that is minimal coverage. A dedicated experiment targeting Areas 4 through 7 would almost certainly produce substantial new findings.
 
-Part two: when we do approach exhaustion on this artifact, the correct next move is exactly what you described. Turn the finalised mathematical model against the code that implements it. This creates a new problem space: not "find bugs in this code" but "verify that this code correctly implements the formal specification." The mathematical model in cdsfl_core_formal.md defines convergence conditions, constraint classifications, fingerprint algebra, and cost functions. The dynamic management code implements all of these. Verifying the mapping between specification and implementation is a different cognitive task than code review, and it generates a different class of findings. No experiment has done this yet.
+**Part two: when we do approach exhaustion** on this artifact, the correct next move is exactly what you described. Turn the finalised mathematical model against the code that implements it. This creates a new problem space: not "find bugs in this code" but "verify that this code correctly implements the formal specification." The mathematical model in `cdsfl_core_formal.md` defines convergence conditions, constraint classifications, fingerprint algebra, and cost functions. The dynamic management code implements all of these. Verifying the mapping between specification and implementation is a different cognitive task than code review, and it generates a different class of findings. No experiment has done this yet.
 
 Moreover, a full distributed compute round where all five models simultaneously review the immune layer under CDSFL would be testing the immune system with itself. The self-referential nature of that exercise is precisely what makes it a rich problem space. The models would be looking for flaws in the code that monitors them for flaws. Any finding they produce is evidence that the monitoring is incomplete. The absence of findings would be evidence (not proof) that the monitoring is sufficient.
 
+---
 
-PART 3. ARE FINDINGS BECOMING INCREASINGLY NOVEL?
+## Part 3: Are Findings Becoming Increasingly Novel?
 
 Yes, and there are five independent signals confirming this.
 
-Signal one. Vocabulary overlap between consecutive rounds is declining. The Jaccard similarity drops from 0.174 (blind to round 1) to 0.148 (round 1 to round 2) to 0.124 (round 2 to round 3). Each round shares less vocabulary with its predecessor. If models were churning the same issues with different words, Jaccard would plateau or rise. It falls.
+- **Signal 1.** Vocabulary overlap between consecutive rounds is declining. The Jaccard similarity drops from 0.174 (blind to round 1) to 0.148 (round 1 to round 2) to 0.124 (round 2 to round 3). Each round shares less vocabulary with its predecessor. If models were churning the same issues with different words, Jaccard would plateau or rise. It falls.
 
-Signal two. Abstraction index rises monotonically. Mean abstraction goes from 0.566 in the blind round to 0.593, 0.610, and 0.620. Standard deviation simultaneously narrows from 0.174 to 0.086. Later rounds find more abstract issues with greater precision.
+- **Signal 2.** Abstraction index rises monotonically. Mean abstraction goes from 0.566 in the blind round to 0.593, 0.610, and 0.620. Standard deviation simultaneously narrows from 0.174 to 0.086. Later rounds find more abstract issues with greater precision.
 
-Signal three. Flaw class distribution rotates. The blind round is dominated by class 5 and logic. By round 3, class 2 and class 6 have emerged as significant categories. The type of problem being found changes with each round.
+- **Signal 3.** Flaw class distribution rotates. The blind round is dominated by class 5 and logic. By round 3, class 2 and class 6 have emerged as significant categories. The type of problem being found changes with each round.
 
-Signal four. Cumulative vocabulary growth is decelerating but still substantial. Round 3 added 416 new unique terms to a cumulative pool of 3,274. That is 12.7 percent growth. The vocabulary was not exhausted. The saturation threshold terminated the experiment prematurely.
+- **Signal 4.** Cumulative vocabulary growth is decelerating but still substantial. Round 3 added 416 new unique terms to a cumulative pool of 3,274. That is 12.7% growth. The vocabulary was not exhausted. The saturation threshold terminated the experiment prematurely.
 
-Signal five. Severity profile shifts. High-severity findings (0.8 or above) accounted for 30 percent of blind-round findings but 38 percent of round 1 findings. The proportion of serious issues rises before falling in round 3. This is consistent with the ascending abstraction pattern: deeper issues tend to be more serious.
+- **Signal 5.** Severity profile shifts. High-severity findings (0.8 or above) accounted for 30% of blind-round findings but 38% of round 1 findings. The proportion of serious issues rises before falling in round 3. This is consistent with the ascending abstraction pattern: deeper issues tend to be more serious.
 
+---
 
-PART 4. THE PROBLEM SPACE ITSELF IS NOVEL.
+## Part 4: The Problem Space Itself Is Novel
 
 This is the point you made that goes beyond individual findings to what the findings collectively represent. The dynamic management layer implements concepts that do not exist in standard software engineering. There is no established benchmark for adaptive multi-model orchestration with live fingerprinting, convergence detection, and an immune response layer. The models' training data contains vanishingly little code like this.
 
@@ -53,8 +61,9 @@ When models review the dynamic management layer, they are reasoning from first p
 
 This is why 56 findings targeted fingerprinting (a concept with no precedent in conventional software), 20 targeted the convergence detectors (which are the research itself), and 44 targeted role assignment (dynamic multi-model roles in a live system). These are not standard code review categories. They are categories that the models had to invent in order to classify what they were finding.
 
+---
 
-PART 5. WHAT THIS SAYS ABOUT CDSFL ITSELF.
+## Part 5: What This Says About CDSFL Itself
 
 Here is the potentially profound observation, and I want to be precise about it.
 
@@ -64,66 +73,72 @@ This is a genuine feedback loop between a methodology and its implementation. Th
 
 The evidence for this is concrete. Experiment 12 identified three broken detectors and several model management failures. Post-Experiment 12 fixes addressed these. Experiment 13b verified that the fixes worked (all models survived, monotonic mu, clean termination) and produced 184 new findings, 97 of which independently validated the fix areas while the remaining 87 opened new areas. The system's analytical capacity improved between experiments because of what the previous experiment found.
 
-This is not the same as general-purpose self-improvement. It is bounded. The improvement is specific to the tool's ability to run this particular methodology on this particular class of artifact. It does not generalise to arbitrary tasks. It does not compound without limit. The Duane NHPP fit (gamma equals negative 1.1, meaning genuine diminishing returns) confirms that each cycle of improvement yields less than the previous one.
+This is not the same as general-purpose self-improvement. It is bounded. The improvement is specific to the tool's ability to run this particular methodology on this particular class of artifact. It does not generalise to arbitrary tasks. It does not compound without limit. The Duane NHPP fit (gamma = -1.1, meaning genuine diminishing returns) confirms that each cycle of improvement yields less than the previous one.
 
 But within those bounds, the cycle is real. Each experiment genuinely improves the infrastructure for the next experiment. The improvement is measurable. The findings are falsifiable. The diminishing returns are quantified.
 
-P-pass on this claim.
+### P-pass on this claim
 
-HARD constraint. The claim must be falsifiable. What would disprove it? If Experiment 14, run with the recalibrated thresholds and any new fixes from this analysis, produced no novel findings in the immune layer or detector areas, that would be evidence against the claim. If the models' findings in successive experiments converged to zero novel territory (not just fewer findings, but zero genuinely new areas), the self-improvement loop would be exhausted.
+- **HARD constraint.** The claim must be falsifiable. What would disprove it? If Experiment 14, run with recalibrated thresholds and any new fixes from this analysis, produced no novel findings in the immune layer or detector areas, that would be evidence against the claim. If the models' findings in successive experiments converged to zero novel territory (not just fewer findings, but zero genuinely new areas), the self-improvement loop would be exhausted.
 
-HARD constraint. The improvement must be measurable. It is. Experiment 12: 2 of 5 models surviving, MAX_ROUNDS termination, broken detectors. Experiment 13b: 5 of 5 models surviving, CONVERGED termination, monotonic mu. The delta is quantified.
+- **HARD constraint.** The improvement must be measurable. It is. Experiment 12: 2 of 5 models surviving, MAX_ROUNDS termination, broken detectors. Experiment 13b: 5 of 5 models surviving, CONVERGED termination, monotonic mu. The delta is quantified.
 
-SOFT constraint. The improvement must compound. This is where the claim gets weaker. The Duane NHPP gamma of negative 1.1 means each round yields less. Across experiments, we should expect similar decay. The self-improvement loop is real but it converges. It does not produce unbounded gains.
+- **SOFT constraint.** The improvement must compound. This is where the claim gets weaker. The Duane NHPP gamma of -1.1 means each round yields less. Across experiments, we should expect similar decay. The self-improvement loop is real but it converges. It does not produce unbounded gains.
 
-Verdict. The feedback loop between CDSFL methodology and its operational infrastructure is real, measurable, and bounded. Three experiments support it. The loop will converge, but it has not converged yet. The immune layer and detector code are undertested areas where the next iteration should yield substantial findings.
+**Verdict.** The feedback loop between CDSFL methodology and its operational infrastructure is real, measurable, and bounded. Three experiments support it. The loop will converge, but it has not converged yet. The immune layer and detector code are undertested areas where the next iteration should yield substantial findings.
 
+---
 
-PART 6. DEEPSEEK AND THE IMMUNE LAYER.
+## Part 6: DeepSeek and the Immune Layer
 
 DeepSeek has two distinct pathologies, not one.
 
-The first is dispatch blocking. DeepSeek was blocked in the blind round because the feasibility check calculated zero probability of fitting the full artifact into its context window. It then succeeded via decomposed dispatch in all three subsequent rounds. The system blocked a capable model and nothing learned from the mistake. The immune layer should monitor dispatch blocking events, recognise when a blocked model later succeeds, and flag the blocking as a false positive.
+**The first is dispatch blocking.** DeepSeek was blocked in the blind round because the feasibility check calculated zero probability of fitting the full artifact into its context window. It then succeeded via decomposed dispatch in all three subsequent rounds. The system blocked a capable model and nothing learned from the mistake. The immune layer should monitor dispatch blocking events, recognise when a blocked model later succeeds, and flag the blocking as a false positive.
 
-The second pathology is more serious. DeepSeek reports every single one of its 15 findings as VERIFIED FALSE. Every one. The other four models report verification rates between 88 and 100 percent. DeepSeek reports zero percent. It is two standard deviations below the population mean.
+**The second pathology is more serious.** DeepSeek reports every single one of its 15 findings as VERIFIED FALSE. Every one. The other four models report verification rates between 88 and 100%. DeepSeek reports zero percent. It is two standard deviations below the population mean.
 
 This matters because 6 of those 15 findings are corroborated by other models. Other models found the same issues and reported them as VERIFIED TRUE. DeepSeek found the same issues and reported them as VERIFIED FALSE. The findings are real. The self-assessment is wrong.
 
-Here are the corroborated examples. DeepSeek found that the pool max normalisation changes when models are removed, making capability scores stale. CC2 found the same issue and verified it. DeepSeek found a cross-component risk where role reassignment depends on an active models set that is not synchronised with the failure handler. CC2 found a related issue and verified it. DeepSeek found that the FSM allows COMPLETE events from SYNTH state regardless of max rounds. ChatGPT found a matching issue and verified it. DeepSeek found that select event does not validate that its returned event is in valid events. CC2 found a related issue and verified it.
+**Corroborated examples:**
+- DeepSeek found that pool max normalisation changes when models are removed, making capability scores stale. CC2 found the same issue and verified it.
+- DeepSeek found a cross-component risk where role reassignment depends on an active models set not synchronised with the failure handler. CC2 found a related issue and verified it.
+- DeepSeek found that the FSM allows COMPLETE events from SYNTH state regardless of max rounds. ChatGPT found a matching issue and verified it.
+- DeepSeek found that `select_event` does not validate that its returned event is in `valid_events`. CC2 found a related issue and verified it.
 
-In all six cases, the corroborating model reports TRUE. DeepSeek reports FALSE. The evidence from peers contradicts the self-assessment.
+In all six cases, the corroborating model reports TRUE. DeepSeek reports FALSE. The evidence from peers contradicts the self-assessment. This is not a cautious model being conservative. This is a broken self-assessment signal. Any downstream system that filters on VERIFIED TRUE would silently discard every DeepSeek finding, including the six that are independently confirmed by other models.
 
-This is not a cautious model being conservative. This is a broken self-assessment signal. Any downstream system that filters on VERIFIED TRUE would silently discard every DeepSeek finding, including the six that are independently confirmed by other models.
+### Three new immune layer pathology types needed
 
-The immune layer should detect three new pathology types to handle both DeepSeek problems and any similar issues from other models.
+- **Pathology 4: Dispatch false positive.** A model is blocked but later succeeds via decomposition. The system should learn to pre-decompose for that model in future blind rounds rather than blocking it entirely.
 
-Pathology four: dispatch false positive. A model is blocked but later succeeds via decomposition. The system should learn to pre-decompose for that model in future blind rounds rather than blocking it entirely.
+- **Pathology 5: Verification miscalibration.** A model's self-verification rate diverges significantly from the population mean. When one model reports 0% and the rest report 88–100%, that is a detectable outlier. The immune layer should flag the VERIFIED field for that model as unreliable.
 
-Pathology five: verification miscalibration. A model's self-verification rate diverges significantly from the population mean. When one model reports 0 percent and the rest report 88 to 100 percent, that is a detectable outlier. The immune layer should flag the VERIFIED field for that model as unreliable.
+- **Pathology 6: Cross-model verification contradiction.** A model reports FALSE on a finding that another model corroborates as TRUE. This requires the immune layer to cross-reference findings across models — which it currently cannot do. The convergence detector attempts similarity matching but uses word-bag Jaccard, which is known to be broken. The immune layer would need either the deferred embedding similarity or a simpler keyword-overlap heuristic to detect contradictions.
 
-Pathology six: cross-model verification contradiction. A model reports FALSE on a finding that another model corroborates as TRUE. This requires the immune layer to cross-reference findings across models, which it currently cannot do. The convergence detector attempts similarity matching but uses word-bag Jaccard, which is known to be broken. The immune layer would need either the deferred embedding similarity or a simpler keyword-overlap heuristic to detect contradictions.
+The third of these is the most architecturally significant. It requires the immune layer to reason about the content of findings, not just their metadata. That is a qualitative expansion of the immune layer's role — from monitoring detector signals to monitoring the analytical output itself. All three pathology types fit naturally into the existing `DetectorHealthMonitor` architecture. The extension is conceptual, not mechanical.
 
-The third of these is the most architecturally significant. It requires the immune layer to reason about the content of findings, not just their metadata. That is a qualitative expansion of the immune layer's role. It moves from monitoring detector signals to monitoring the analytical output itself.
+---
 
-All three pathology types fit naturally into the existing DetectorHealthMonitor architecture, which already has pathology counting, severity escalation, and adaptive sensitivity windows. The extension is conceptual, not mechanical. The question is whether the immune layer should be responsible for signal integrity across models, not just detector health within the system. The answer, based on this evidence, is yes.
+## Extrapolation
 
+**What generalises.** The feedback loop between a methodology and its operational infrastructure is not unique to CDSFL. Any methodology that operates through a tool can exhibit this pattern. Test-driven development improves when the test framework improves. Static analysis improves when the analysis engine improves. What is unusual about CDSFL is that the methodology explicitly includes multi-model diversity, falsification, and convergence detection, which makes the feedback loop more visible and more measurable than in traditional methodologies.
 
-EXTRAPOLATION.
+**Boundary conditions.** The feedback loop requires that the methodology's own infrastructure be a valid target for the methodology. This is true for CDSFL (code reviewing code review infrastructure) but would not be true for, say, a chemical synthesis methodology (the lab equipment is not itself a chemical compound). The self-referential property is domain-specific.
 
-What generalises. The feedback loop between a methodology and its operational infrastructure is not unique to CDSFL. Any methodology that operates through a tool can exhibit this pattern. Test-driven development improves when the test framework improves. Static analysis improves when the analysis engine improves. What is unusual about CDSFL is that the methodology explicitly includes multi-model diversity, falsification, and convergence detection, which makes the feedback loop more visible and more measurable than in traditional methodologies.
+**New falsifiable questions:**
+1. Does the immune layer's coverage improve measurably after a dedicated CDSFL round targeting Areas 6 and 7? Directly testable.
+2. Does adding dispatch monitoring to the immune layer reduce false-positive blocking rates in subsequent experiments? Also testable.
+3. At what point does the feedback loop converge — meaning an experiment targeting the infrastructure produces no novel findings above the severity threshold? This is the termination condition for the loop itself, and we have not reached it.
 
-Boundary conditions. The feedback loop requires that the methodology's own infrastructure be a valid target for the methodology. This is true for CDSFL (code reviewing code review infrastructure) but would not be true for, say, a chemical synthesis methodology (the lab equipment is not itself a chemical compound). The self-referential property is domain-specific.
+---
 
-New falsifiable questions. First: does the immune layer's coverage improve measurably after a dedicated CDSFL round targeting Areas 6 and 7? This is directly testable. Second: does adding dispatch monitoring to the immune layer reduce false-positive blocking rates in subsequent experiments? Also testable. Third: at what point does the feedback loop converge, meaning an experiment targeting the infrastructure produces no novel findings above the severity threshold? This is the termination condition for the loop itself, and we have not reached it.
-
-
-DISCUSSION.
+## Discussion
 
 Five threads, brought together.
 
 The context management question is partly solved and partly not. The static scaffolding (decomposition thresholds, windowed fingerprints, restart logic) exists. The dynamic feedback loop (immune layer monitoring dispatch, learning from outcomes, adjusting thresholds) does not exist yet and should be built. This is not a minor addition. It extends the immune layer's scope from detector health to operational health.
 
-The barrel-scraping question has a clear answer. We are not there yet, and when we get there, the correct move is to pivot from code review to specification verification. Turn the mathematical model against the implementation. That creates a new problem space that is genuinely different from bug-hunting.
+The barrel-scraping question has a clear answer. We are not there yet, and when we get there, the correct move is to pivot from code review to specification verification. Turn the mathematical model against the implementation. That creates a new problem space genuinely different from bug-hunting.
 
 The novelty question is answered by five convergent signals. Findings are becoming more novel, more abstract, and more precisely targeted. The system terminated too early. Recalibrating the threshold and running a longer experiment will confirm whether this trend continues.
 
@@ -131,4 +146,4 @@ The methodology question is the deepest one. CDSFL reviews its own infrastructur
 
 The DeepSeek question points to a specific architectural improvement. The immune layer should monitor dispatch decisions, not just convergence detectors. This is a natural extension of its existing design.
 
-Next steps for Experiment 14 should be: recalibrate vocab saturation threshold, add dispatch monitoring to the immune layer, and run a dedicated round against Areas 4 through 7 (the undertested detector and immune code). If the novelty signals hold over 8 to 15 rounds, the ascending-abstraction claim moves from suggestive to confirmed.
+**Next steps for Experiment 14:** recalibrate vocab saturation threshold, add dispatch monitoring to the immune layer, and run a dedicated round against Areas 4–7 (the undertested detector and immune code). If the novelty signals hold over 8–15 rounds, the ascending-abstraction claim moves from suggestive to confirmed.

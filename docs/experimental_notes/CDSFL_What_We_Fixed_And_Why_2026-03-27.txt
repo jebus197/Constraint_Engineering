@@ -1,63 +1,73 @@
-WHAT WE JUST DID TO THE MATHEMATICAL MODEL AND WHY IT MATTERS.
+# What We Just Did to the Mathematical Model and Why It Matters
 
-Date. 27 March 2026.
+**Date:** 27 March 2026
 
+---
 
-WHAT HAPPENED.
+## What Happened
 
-I sent the entire CDSFL mathematical model to Gemini 3.1 Pro and asked it to assess four specific areas where I had flagged uncertainty. These were not random concerns. They came from my own study of the model after you challenged me to prove I understood it. Gemini came back with assessments of all four, plus one bonus finding it spotted independently. I then ran an Extended P-pass on everything Gemini said. Four modular passes, one per issue, and one monolithic pass asking whether the whole thing actually hangs together as a system. I corrected Gemini on three points. Gemini conceded all three. Full convergence in two rounds. No churn. No chatbot padding.
+I sent the entire CDSFL mathematical model to Gemini 3.1 Pro and asked it to assess four specific areas where I had flagged uncertainty. These were not random concerns — they came from my own study of the model after you challenged me to prove I understood it. Gemini came back with assessments of all four, plus one bonus finding it spotted independently. I then ran an Extended P-pass on everything Gemini said: four modular passes (one per issue) and one monolithic pass asking whether the whole thing actually hangs together as a system. I corrected Gemini on three points. Gemini conceded all three. Full convergence in two rounds. No churn. No chatbot padding.
 
-Three changes went into the Mathematical Appendix. Two are genuine fixes. One is a notation cleanup. Here is what each one does and why it matters.
+Three changes went into the Mathematical Appendix. Two are genuine fixes. One is a notation cleanup.
 
+---
 
-FIX ONE. THE STOP RECOMMENDATION GUARD.
+## Fix One: The Stop Recommendation Guard
 
-The problem. The Online Total Value Estimator, called V hat, is the part of the model that tells you whether to keep analysing or stop. It watches how fast you are finding things and predicts how much value is left. If the finding rate drops, it says you are running out of things to find and recommends stopping.
+**The problem.** The Online Total Value Estimator (V-hat) is the part of the model that tells you whether to keep analysing or stop. It watches how fast you are finding things and predicts how much value is left. If the finding rate drops, it says you are running out of things to find and recommends stopping.
 
-But there is a specific pattern where this goes wrong. Sometimes an analyst finds a burst of surface-level issues, then goes quiet for a while, and then produces a single deep structural insight. This is bimodal discovery. Surface findings followed by a gap followed by a deep finding. The Duane decay model, which measures finding rates, fits 17 out of 18 bench test runs. The one exception was exactly this bimodal pattern.
+But there is a specific pattern where this goes wrong. Sometimes an analyst finds a burst of surface-level issues, then goes quiet for a while, and then produces a single deep structural insight. This is bimodal discovery — surface findings, followed by a gap, followed by a deep finding. The Duane decay model (which measures finding rates) fits 17 out of 18 bench test runs. The one exception was exactly this bimodal pattern.
 
-During the quiet gap, V hat sees the finding rate dropping and says stop. But the analyst is not exhausted. They are deepening. The model already has a concept for this. It is called ascending abstraction. Section 7.3 defines it as the condition where finding count is decreasing but the depth of each finding is increasing. When that is happening, total cognitive yield can still be rising even though fewer things are being found.
+During the quiet gap, V-hat sees the finding rate dropping and says stop. But the analyst is not exhausted — they are deepening. The model already has a concept for this: **ascending abstraction** (Section 7.3 defines it as the condition where finding count is decreasing but the depth of each finding is increasing). When that is happening, total cognitive yield can still be rising even though fewer things are being found.
 
-The fix is simple. V hat is not allowed to recommend stopping while ascending abstraction is active. One sentence. If the depth of findings is still increasing, do not trust the count-based estimator to tell you the analysis is finished. This prevents premature termination during exactly the kind of deep analytical work you most want to preserve.
+**The fix.** V-hat is not allowed to recommend stopping while ascending abstraction is active. One sentence. If the depth of findings is still increasing, do not trust the count-based estimator to tell you the analysis is finished. This prevents premature termination during exactly the kind of deep analytical work you most want to preserve.
 
-V hat itself is not changed. It remains a correct count-based estimator. The fix is a protocol guard that says when to listen to it and when not to.
+V-hat itself is not changed — it remains a correct count-based estimator. The fix is a protocol guard that says when to listen to it and when not to.
 
+---
 
-FIX TWO. THE SYCOPHANCY DETECTOR ON NON-MATHEMATICAL CLAIMS.
+## Fix Two: The Sycophancy Detector on Non-Mathematical Claims
 
-The problem. The Objective Alignment metric, called O sub A, detects sycophancy. When two models confer and agree on something they did not both find independently, O sub A checks whether that agreement is genuine by asking whether the agreed-upon claims are computationally verified. If SymPy confirms them, the agreement is genuine. If not, it might be the models just agreeing to agree.
+**The problem.** The Objective Alignment metric (O_A) detects sycophancy. When two models confer and agree on something they did not both find independently, O_A checks whether that agreement is genuine by asking whether the agreed-upon claims are computationally verified. If SymPy confirms them, the agreement is genuine. If not, it might be the models just agreeing to agree.
 
-The formula is: O sub A equals the number of verified findings in the newly converged set divided by the total newly converged set.
+The formula is: O_A = (number of verified findings in the newly converged set) / (total newly converged set).
 
-Here is where it breaks on non-mathematical claims. If the models converge on societal implications, architectural insights, or design decisions, SymPy cannot verify any of them. Zero findings in the converged set are verifiable. So O sub A equals zero divided by the total, which equals zero. That means zero objective alignment. The sycophancy score then calculates as if all the convergence is sycophantic.
+Here is where it breaks on non-mathematical claims. If the models converge on societal implications, architectural insights, or design decisions, SymPy cannot verify any of them. Zero findings in the converged set are verifiable. So O_A = 0 / total = 0. That means zero objective alignment. The sycophancy score then calculates as if all the convergence is sycophantic.
 
-That is a false positive. The models might be converging on genuinely good ideas, but because the ideas are not mathematical, the metric flags them as sycophantic by default. This is the opposite of what Gemini initially claimed. Gemini said the metric masks sycophancy. I showed it actually over-reports sycophancy on non-mathematical claims. Gemini conceded.
+That is a **false positive**. The models might be converging on genuinely good ideas, but because the ideas are not mathematical, the metric flags them as sycophantic by default. This is the opposite of what Gemini initially claimed (Gemini said the metric masks sycophancy — I showed it actually over-reports sycophancy on non-mathematical claims. Gemini conceded).
 
-The fix is a guard condition. When fewer than two findings in the converged set are computationally verifiable, O sub A is undefined. The system does not produce a sycophancy score from it. Instead, independence assessment falls back to the Adoption Delta alone. The Adoption Delta measures how much a model changed its mind after seeing the other's work. It does not depend on SymPy. It works on any domain.
+**The fix.** A guard condition: when fewer than two findings in the converged set are computationally verifiable, O_A is **undefined**. The system does not produce a sycophancy score from it. Instead, independence assessment falls back to the Adoption Delta alone. The Adoption Delta measures how much a model changed its mind after seeing the other's work — it does not depend on SymPy and works on any domain.
 
-This matters because the most dangerous sycophancy happens on exactly the claims where O sub A cannot help, societal and strategic claims where there is no computational ground truth. The fix ensures the framework does not produce a misleading signal in those domains. It says I cannot measure this particular thing here, rather than producing a number that looks like a measurement but is not.
+This matters because the most dangerous sycophancy happens on exactly the claims where O_A cannot help: societal and strategic claims where there is no computational ground truth. The fix ensures the framework does not produce a misleading signal in those domains. It says "I cannot measure this particular thing here" rather than producing a number that looks like a measurement but is not.
 
+---
 
-FIX THREE. THE MULTI-VERIFIER FORMULA NOTATION.
+## Fix Three: The Multi-Verifier Formula Notation
 
-The problem. Section 7.8 describes how multiple verification methods, SymPy, dimensional analysis, and numerical spot-checking, combine their evidence about whether a finding is correct. The formula was written as L total equals the sum of w sub i times L sub i. This notation is ambiguous. If you read L sub i as the binary output of the verifier, zero or one, then multiplying the weight by zero when the verifier says falsified would zero out the penalty. The negative evidence would vanish. SymPy's veto power would be broken.
+**The problem.** Section 7.8 describes how multiple verification methods (SymPy, dimensional analysis, and numerical spot-checking) combine their evidence about whether a finding is correct. The formula was written as `L_total = Σ w_i * L_i`. This notation is ambiguous. If you read L_i as the binary output of the verifier (0 or 1), then multiplying the weight by zero when the verifier says "falsified" would zero out the penalty. The negative evidence would vanish. SymPy's veto power would be broken.
 
-Gemini flagged this as a mathematical error. I showed it is not. The verification evidence proves the formula was applied correctly. When SymPy falsifies and the others verify, the severity score comes out at 0.272, which is below the 0.5 threshold. If the veto were broken, that number would be above 0.5. The surrounding text in the appendix clearly describes conditional weight selection: use the positive weight when verified, use the negative weight when falsified. The formula was correctly applied even though the notation was unclear.
+Gemini flagged this as a mathematical error. I showed it is not. The verification evidence proves the formula was applied correctly. When SymPy falsifies and the others verify, the severity score comes out at 0.272 — below the 0.5 threshold. If the veto were broken, that number would be above 0.5. The surrounding text in the appendix clearly describes conditional weight selection: use the positive weight when verified, use the negative weight when falsified. The formula was correctly applied even though the notation was unclear.
 
-But unclear notation is still worth fixing. The new formula makes it self-contained. L total equals the sum across all verifiers of L sub i times the positive log-likelihood ratio plus one minus L sub i times the negative log-likelihood ratio. When L sub i is one, verified, the positive term survives and the negative term zeroes out. When L sub i is zero, falsified, the negative term survives and the positive term zeroes out. The conditional is now encoded in the formula itself, not in the prose around it. Same semantics. Same veto property. No ambiguity.
+But unclear notation is still worth fixing. **The new formula** makes it self-contained:
 
+`L_total = Σ [ L_i * (positive log-likelihood ratio) + (1 - L_i) * (negative log-likelihood ratio) ]`
 
-WHAT WAS CONFIRMED AS SOFT.
+When L_i = 1 (verified), the positive term survives and the negative term zeroes out. When L_i = 0 (falsified), the negative term survives and the positive term zeroes out. The conditional is now encoded in the formula itself, not in the prose around it. Same semantics. Same veto property. No ambiguity.
+
+---
+
+## What Was Confirmed as Soft
 
 Two issues were confirmed as not needing fixes.
 
-The H(x) calibration values. The Abstraction Index has four parameters all set to 1.0. This is arbitrary but does not matter. Because the formula is multiplicative with positive factors, any positive weights preserve the ordering of findings from shallow to deep. The 33.4 times discrimination ratio would change numerically with different weights but the model's ability to rank findings correctly would not. No fix needed until empirical calibration data from human-ranked examples exists.
+**The H(x) calibration values.** The Abstraction Index has four parameters all set to 1.0. This is arbitrary but does not matter. Because the formula is multiplicative with positive factors, any positive weights preserve the ordering of findings from shallow to deep. The 33.4× discrimination ratio would change numerically with different weights but the model's ability to rank findings correctly would not. No fix needed until empirical calibration data from human-ranked examples exists.
 
-The integration between the detection models and the cognitive measurement framework. Gemini initially said this was a genuine weakness because the machine detection probability p sub ik is static and disconnected from the cognitive metrics. I showed three explicit connection points. First, the Bayesian posterior expertise E star feeds back into the human detection probability in G sub n. Second, the capability fingerprint provides empirical estimates of p sub ik at calibration time. Third, the Duane model classifies whether analysis is genuine or churn, which determines whether detection parameters are meaningful. The two halves of the model are complementary by design, coverage and cognitive quality, not a single unified equation. Gemini accepted this.
+**The integration between detection models and the cognitive measurement framework.** Gemini initially said this was a genuine weakness because the machine detection probability p_ik is static and disconnected from the cognitive metrics. I showed three explicit connection points: (1) the Bayesian posterior expertise E* feeds back into the human detection probability in G_n; (2) the capability fingerprint provides empirical estimates of p_ik at calibration time; (3) the Duane model classifies whether analysis is genuine or churn, which determines whether detection parameters are meaningful. The two halves of the model are complementary by design — coverage and cognitive quality — not a single unified equation. Gemini accepted this.
 
+---
 
-WHAT THIS MEANS FOR THE MODEL.
+## What This Means for the Model
 
-The mathematical model is now tighter. Two real failure modes are guarded against. The notation is unambiguous. No core equations changed. No predictions changed. The model's structure, its layered reduction properties, its falsifiability, its substrate agnosticism, all remain exactly as they were.
+The mathematical model is now tighter. Two real failure modes are guarded against. The notation is unambiguous. No core equations changed. No predictions changed. The model's structure — its layered reduction properties, its falsifiability, its substrate agnosticism — all remain exactly as they were.
 
 The Extended P-pass worked as designed. Gemini found real issues. I corrected Gemini where it was wrong. Gemini conceded without resistance. Full convergence in two rounds. This is what structured disagreement is supposed to look like. Not a fight. Not capitulation. Two analytical systems engaging seriously with each other's work and arriving at a result neither would have reached alone.

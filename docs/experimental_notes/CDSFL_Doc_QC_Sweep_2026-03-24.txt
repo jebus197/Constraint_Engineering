@@ -1,169 +1,179 @@
-CDSFL Documentation Quality Control Sweep
-24 March 2026
+# CDSFL Documentation Quality Control Sweep
 
-Files reviewed.
-1. docs/FOUNDERS_NOTES.md
-2. docs/EXPERIMENTAL_RESULTS.md
-3. PAPER.md
+**24 March 2026**
 
-Timestamp. 2026-03-24T17:53:09+00:00
+**Timestamp:** 2026-03-24T17:53:09+00:00
 
+**Files reviewed:**
+1. `docs/FOUNDERS_NOTES.md`
+2. `docs/EXPERIMENTAL_RESULTS.md`
+3. `PAPER.md`
 
-CATEGORY 1. STALE MODEL COUNTS
+---
 
-Finding 1.
-File. FOUNDERS_NOTES.md, line 151.
-Text. Does the three-model topology outperform any monoculture or two-model subset?
-Problem. Says "three-model topology." The current setup uses 5 models. This should say "five-model topology."
-Suggested fix. Replace "three-model" with "five-model."
+## Category 1: Stale Model Counts
 
-Finding 2.
-File. PAPER.md, line 10 (Abstract).
-Text. Empirical third-party validation has been conducted: three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed the methodology...
-Problem. Two issues here. First, "three independent vendor models" is stale. The current setup uses 5 models from 4 vendors (Anthropic, OpenAI x2, Google, DeepSeek). Second, and more importantly, this is an overclaim about external validation. See Category 3 below.
-Suggested fix. Update the model count and vendor list to reflect the current 5-model setup, and reframe as internal multi-model review, not third-party validation. See Category 3.
+**Finding 1**
+- File: `FOUNDERS_NOTES.md`, line 151
+- Text: "Does the three-model topology outperform any monoculture or two-model subset?"
+- Problem: Says "three-model topology." The current setup uses 5 models. This should say "five-model topology."
+- Suggested fix: Replace "three-model" with "five-model."
 
-Finding 3.
-File. PAPER.md, lines 781-783 (Part XII, Schema Competition).
-Text. Its three conditions (control, experimental, calibration) can test any methodology...
-Problem. Says "three conditions." The current design has 4 conditions in a 2x2 factorial: Control, HIL, CDSFL, CDSFL+HIL. This is stale.
-Suggested fix. Replace "three conditions (control, experimental, calibration)" with "four conditions (Control, HIL, CDSFL, CDSFL+HIL)" or reference the 2x2 factorial design.
+**Finding 2**
+- File: `PAPER.md`, line 10 (Abstract)
+- Text: "Empirical third-party validation has been conducted: three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed the methodology..."
+- Problem: Two issues. First, "three independent vendor models" is stale — the current setup uses 5 models from 4 vendors (Anthropic, OpenAI ×2, Google, DeepSeek). Second, this is an overclaim about external validation. See Category 3 below.
+- Suggested fix: Update the model count and vendor list to reflect the current 5-model setup, and reframe as internal multi-model review, not third-party validation. See Category 3.
 
-Finding 4.
-File. PAPER.md, lines 793-794 (Part XII, Schema Competition).
-Text. The benchmark harness, the schema-agnostic evaluation protocol, the three-condition experimental design...
-Problem. Says "three-condition experimental design." Should be four-condition or 2x2 factorial.
-Suggested fix. Replace "the three-condition experimental design" with "the four-condition experimental design" or "the 2x2 factorial design."
+**Finding 3**
+- File: `PAPER.md`, lines 781–783 (Part XII, Schema Competition)
+- Text: "Its three conditions (control, experimental, calibration) can test any methodology..."
+- Problem: Says "three conditions." The current design has 4 conditions in a 2×2 factorial: Control, HIL, CDSFL, CDSFL+HIL. This is stale.
+- Suggested fix: Replace "three conditions (control, experimental, calibration)" with "four conditions (Control, HIL, CDSFL, CDSFL+HIL)" or reference the 2×2 factorial design.
 
-Finding 5.
-File. FOUNDERS_NOTES.md, line 87.
-Text. The benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol...
-Problem. Same as above. Says "three-condition" where it should say four-condition.
-Suggested fix. Replace "the three-condition experimental design" with "the four-condition experimental design" or "the 2x2 factorial design."
+**Finding 4**
+- File: `PAPER.md`, lines 793–794 (Part XII, Schema Competition)
+- Text: "The benchmark harness, the schema-agnostic evaluation protocol, the three-condition experimental design..."
+- Problem: Says "three-condition experimental design." Should be four-condition or 2×2 factorial.
+- Suggested fix: Replace "the three-condition experimental design" with "the four-condition experimental design" or "the 2×2 factorial design."
 
-Finding 6.
-File. FOUNDERS_NOTES.md, line 114.
-Text. ...the benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol...
-Problem. Same stale "three-condition" reference.
-Suggested fix. Same as above.
+**Finding 5**
+- File: `FOUNDERS_NOTES.md`, line 87
+- Text: "The benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol..."
+- Problem: Same as above. Says "three-condition" where it should say four-condition.
+- Suggested fix: Replace "the three-condition experimental design" with "the four-condition experimental design" or "the 2×2 factorial design."
 
+**Finding 6**
+- File: `FOUNDERS_NOTES.md`, line 114
+- Text: "...the benchmark harness, the three-condition experimental design, the schema-agnostic evaluation protocol..."
+- Problem: Same stale "three-condition" reference.
+- Suggested fix: Same as above.
 
-CATEGORY 2. STALE CONDITION COUNTS
+---
 
-See Findings 3, 4, 5, and 6 above, which all reference "three conditions" when the design is now a 2x2 factorial with four conditions.
+## Category 2: Stale Condition Counts
 
+See Findings 3, 4, 5, and 6 above, which all reference "three conditions" when the design is now a 2×2 factorial with four conditions.
 
-CATEGORY 3. OVERCLAIMS ABOUT EXTERNAL VALIDATION
+---
 
-Finding 7.
-File. PAPER.md, line 10 (Abstract).
-Text. Empirical third-party validation has been conducted: three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed the methodology and its implementation under shared falsification protocol...
-Problem. This claims "empirical third-party validation" and describes the models as "three independent vendor models." These are not independent third parties. They are AI models operated by the same founder under the same direction. Different vendor models working together under one person's orchestration is multi-model review, not third-party validation. Third-party validation requires an independent party with no involvement in the project. The framework has NOT been externally validated.
-Suggested fix. Replace "Empirical third-party validation has been conducted" with something like "Multi-model adversarial review has been conducted internally." Replace "three independent vendor models" with "five models from four vendors." Add a qualifier that this is internal review, not external validation.
+## Category 3: Overclaims About External Validation
 
-Finding 8.
-File. FOUNDERS_NOTES.md, line 23.
-Text. ...each iteration had external validation (testbench results, real-world application).
-Problem. Testbench results and real-world application by the same founder are not "external validation." External validation requires an independent party. This is self-testing and self-application.
-Suggested fix. Replace "external validation" with "empirical feedback" or "empirical testing" or "testable outcomes." The distinction matters: the testbench results are empirical data, not external validation.
+**Finding 7**
+- File: `PAPER.md`, line 10 (Abstract)
+- Text: "Empirical third-party validation has been conducted: three independent vendor models (Anthropic Claude, Google Gemini, OpenAI GPT) reviewed the methodology and its implementation under shared falsification protocol..."
+- Problem: This claims "empirical third-party validation" and describes the models as "three independent vendor models." These are not independent third parties — they are AI models operated by the same founder under the same direction. Different vendor models working together under one person's orchestration is **multi-model review**, not third-party validation. Third-party validation requires an independent party with no involvement in the project. The framework has NOT been externally validated.
+- Suggested fix: Replace "Empirical third-party validation has been conducted" with something like "Multi-model adversarial review has been conducted internally." Replace "three independent vendor models" with "five models from four vendors." Add a qualifier that this is internal review, not external validation.
 
-Finding 9.
-File. FOUNDERS_NOTES.md, line 133.
-Text. ...distinguished from circular reasoning by external validation at each iteration.
-Problem. Same issue. The "external validation" referenced here is the testbench and real-world application, both conducted by the same practitioner. This is empirical testing, not external validation.
-Suggested fix. Replace "external validation" with "empirical testing against external outcomes."
+**Finding 8**
+- File: `FOUNDERS_NOTES.md`, line 23
+- Text: "...each iteration had external validation (testbench results, real-world application)."
+- Problem: Testbench results and real-world application by the same founder are not "external validation." External validation requires an independent party. This is self-testing and self-application.
+- Suggested fix: Replace "external validation" with "empirical feedback" or "empirical testing" or "testable outcomes."
 
-Finding 10.
-File. PAPER.md, line 10 (Abstract, continued).
-Text. ...identifying 44 issues across 18 review rounds, with heterogeneous architectures finding defects that homogeneous review missed.
-Problem. While factually accurate about what happened, the framing as "third-party validation" in the preceding sentence makes this read as if an independent party confirmed the methodology works. The 44 issues were found during internal development, not during external review.
-Suggested fix. This text is fine on its own. The fix is to correct the framing sentence before it (Finding 7).
+**Finding 9**
+- File: `FOUNDERS_NOTES.md`, line 133
+- Text: "...distinguished from circular reasoning by external validation at each iteration."
+- Problem: Same issue. The "external validation" referenced here is the testbench and real-world application, both conducted by the same practitioner. This is empirical testing, not external validation.
+- Suggested fix: Replace "external validation" with "empirical testing against external outcomes."
 
+**Finding 10**
+- File: `PAPER.md`, line 10 (Abstract, continued)
+- Text: "...identifying 44 issues across 18 review rounds, with heterogeneous architectures finding defects that homogeneous review missed."
+- Problem: While factually accurate about what happened, the framing as "third-party validation" in the preceding sentence makes this read as if an independent party confirmed the methodology works. The 44 issues were found during internal development, not during external review.
+- Suggested fix: This text is fine on its own. The fix is to correct the framing sentence before it (Finding 7).
 
-CATEGORY 4. STALE EXPERIMENTAL DESIGN DESCRIPTIONS
+---
 
-Finding 11.
-File. EXPERIMENTAL_RESULTS.md, lines 63-66 (Experiment 2 Design).
-Text. Three conditions per task: 1. Control, 2. Prompt Engineering (PE), 3. CDSFL.
-Problem. This describes a 3-condition design (Control, PE, CDSFL) which was the Experiment 2 design. This is not stale per se since it is documenting a specific historical experiment. However, the "Planned Experiments" section (Experiment 3, line 207) still references this same 3-condition design: "Conditions: Control, PE, CDSFL (as per diagnostic design)." Experiment 3 should presumably use the updated 4-condition 2x2 factorial design.
-Suggested fix. Review whether Experiment 3 (the planned full Gemini frontier run) should be updated to use the 4-condition design. If so, update line 207.
+## Category 4: Stale Experimental Design Descriptions
 
-Finding 12.
-File. EXPERIMENTAL_RESULTS.md, lines 213-214 (Experiment 4).
-Text. Models: Opus 4.6 (orchestrator/arbiter), Gemini 3.1 Pro Preview (SDK), Codex 5.3 / GPT-5.3-codex (codex exec CLI).
-Problem. Lists only 3 models. The current setup uses 5 models. DeepSeek V3.2 and ChatGPT 5.4 are missing from this description. Later smoke test data (line 458 onwards) already includes DeepSeek, and PAPER.md Part X-A lists all 5 models. This experiment description is stale.
-Suggested fix. Update the model list to include all 5 models: Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4.
+**Finding 11**
+- File: `EXPERIMENTAL_RESULTS.md`, lines 63–66 (Experiment 2 Design)
+- Text: "Three conditions per task: 1. Control, 2. Prompt Engineering (PE), 3. CDSFL."
+- Problem: This describes a 3-condition design which was the Experiment 2 design. This is not stale per se since it is documenting a specific historical experiment. However, the "Planned Experiments" section (Experiment 3, line 207) still references this same 3-condition design: "Conditions: Control, PE, CDSFL (as per diagnostic design)." Experiment 3 should presumably use the updated 4-condition 2×2 factorial design.
+- Suggested fix: Review whether Experiment 3 (the planned full Gemini frontier run) should be updated to use the 4-condition design. If so, update line 207.
 
-Finding 13.
-File. EXPERIMENTAL_RESULTS.md, line 226.
-Text. Topology: Opus 4.6 orchestrates. Gemini 3.1 Pro and Codex 5.3 review independently (blind round 1), then confer (rounds 2-5, each sees the other's findings).
-Problem. Describes a 2-reviewer confer topology (Gemini and Codex). The current design uses 5-reviewer confer where each reviewer sees the other four's findings (as described in PAPER.md line 643). Also, Opus is described as orchestrator/arbiter only, but the current design has Opus as both orchestrator AND reviewer (PAPER.md line 621).
-Suggested fix. Update to reflect the 5-model topology where Opus is both orchestrator and reviewer, and all 5 models participate in confer rounds.
+**Finding 12**
+- File: `EXPERIMENTAL_RESULTS.md`, lines 213–214 (Experiment 4)
+- Text: "Models: Opus 4.6 (orchestrator/arbiter), Gemini 3.1 Pro Preview (SDK), Codex 5.3 / GPT-5.3-codex (codex exec CLI)."
+- Problem: Lists only 3 models. The current setup uses 5 models. DeepSeek V3.2 and ChatGPT 5.4 are missing from this description. Later smoke test data (line 458 onwards) already includes DeepSeek, and `PAPER.md` Part X-A lists all 5 models. This experiment description is stale.
+- Suggested fix: Update the model list to include all 5 models: Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4.
 
-Finding 14.
-File. EXPERIMENTAL_RESULTS.md, line 504.
-Text. CC (Opus 4.6) added as third reviewer in blind and confer rounds (was orchestrator/arbiter only, insufficient for biodiversity testing with only one genuine analyst).
-Problem. This records the change to add Opus as a reviewer, making 3 reviewers. But the current design has 5 reviewers. This note is from an intermediate state. The surrounding text should be updated to reflect the final 5-reviewer topology, or a subsequent note should document the addition of ChatGPT 5.4 and the full 5-model setup.
-Suggested fix. Add a note documenting the further evolution to 5 reviewers, or update the design description to reflect the final state.
+**Finding 13**
+- File: `EXPERIMENTAL_RESULTS.md`, line 226
+- Text: "Topology: Opus 4.6 orchestrates. Gemini 3.1 Pro and Codex 5.3 review independently (blind round 1), then confer (rounds 2–5, each sees the other's findings)."
+- Problem: Describes a 2-reviewer confer topology (Gemini and Codex). The current design uses 5-reviewer confer where each reviewer sees the other four's findings (as described in `PAPER.md` line 643). Also, Opus is described as orchestrator/arbiter only, but the current design has Opus as both orchestrator AND reviewer (`PAPER.md` line 621).
+- Suggested fix: Update to reflect the 5-model topology where Opus is both orchestrator and reviewer, and all 5 models participate in confer rounds.
 
-Finding 15.
-File. PAPER.md, lines 641-643 (Review Protocol, Control and HIL).
-Text. Control and HIL: All five models review the solution independently in round 1 (blind). In rounds 2-5, each model is re-prompted with its OWN prior findings only...
-Problem. This correctly describes the current 5-model design for Control and HIL as self-iteration only. Good, no issue here. However, it conflicts with the EXPERIMENTAL_RESULTS.md description of Experiment 4 (Finding 13), which still describes the old 2-reviewer topology.
-Suggested fix. The fix is in EXPERIMENTAL_RESULTS.md, not PAPER.md.
+**Finding 14**
+- File: `EXPERIMENTAL_RESULTS.md`, line 504
+- Text: "CC (Opus 4.6) added as third reviewer in blind and confer rounds (was orchestrator/arbiter only, insufficient for biodiversity testing with only one genuine analyst)."
+- Problem: This records the change to add Opus as a reviewer, making 3 reviewers. But the current design has 5 reviewers. This note is from an intermediate state.
+- Suggested fix: Add a note documenting the further evolution to 5 reviewers, or update the design description to reflect the final state.
 
+**Finding 15**
+- File: `PAPER.md`, lines 641–643 (Review Protocol, Control and HIL)
+- Text: "Control and HIL: All five models review the solution independently in round 1 (blind). In rounds 2–5, each model is re-prompted with its OWN prior findings only..."
+- Problem: This correctly describes the current 5-model design for Control and HIL as self-iteration only. No issue here. However, it conflicts with the `EXPERIMENTAL_RESULTS.md` description of Experiment 4 (Finding 13), which still describes the old 2-reviewer topology.
+- Suggested fix: The fix is in `EXPERIMENTAL_RESULTS.md`, not `PAPER.md`.
 
-CATEGORY 5. OTHER ACCURACY ISSUES
+---
 
-Finding 16.
-File. FOUNDERS_NOTES.md, line 335.
-Text. The gradient runs exactly as predicted: Control < CDSFL < CDSFL+HIL.
-Problem. The actual data on lines 330-333 shows: Control=10, HIL=2, CDSFL=29, CDSFL+HIL=43. The stated gradient omits HIL. A complete gradient statement would be: HIL < Control < CDSFL < CDSFL+HIL. The fact that HIL (2) is lower than Control (10) is notable and deserves inclusion, not omission, since it was discussed elsewhere as a finding (expert guidance alone narrows too aggressively).
-Suggested fix. Either state the full gradient "HIL < Control < CDSFL < CDSFL+HIL" or explicitly note that HIL is omitted from this gradient statement and why.
+## Category 5: Other Accuracy Issues
 
-Finding 17.
-File. PAPER.md, line 1033.
-Text. ...reduces exactly to C(n) = 1 minus (1 minus p) to the n from Part III.
-Problem. The corroboration model C(n) is introduced in Part II (Section 2.1), not Part III. Part III is "The Human Role: Manual Constraint Bounding."
-Suggested fix. Change "from Part III" to "from Part II" or "from Section 2.1."
+**Finding 16**
+- File: `FOUNDERS_NOTES.md`, line 335
+- Text: "The gradient runs exactly as predicted: Control < CDSFL < CDSFL+HIL."
+- Problem: The actual data on lines 330–333 shows: Control=10, HIL=2, CDSFL=29, CDSFL+HIL=43. The stated gradient omits HIL. A complete gradient statement would be: HIL < Control < CDSFL < CDSFL+HIL. The fact that HIL (2) is lower than Control (10) is notable and deserves inclusion, not omission, since it was discussed elsewhere as a finding.
+- Suggested fix: Either state the full gradient "HIL < Control < CDSFL < CDSFL+HIL" or explicitly note that HIL is omitted from this gradient statement and why.
 
-Finding 18.
-File. PAPER.md, lines 567-570 (Part X, Test Design).
-Text. 90 technical prompts across ten domains... 10 per domain.
-Problem. The text says 90 prompts across 10 domains, which would be 9 per domain, not 10. But "10 per domain" is stated. Either the total is 100 (10 domains times 10) or there are 9 per domain. The numbers are inconsistent.
-Suggested fix. Clarify whether the total is 90 (9 per domain) or 100 (10 per domain). If 10 domains times 10 prompts, the total should be 100.
+**Finding 17**
+- File: `PAPER.md`, line 1033
+- Text: "...reduces exactly to C(n) = 1 − (1 − p)^n from Part III."
+- Problem: The corroboration model C(n) is introduced in Part II (Section 2.1), not Part III. Part III is "The Human Role: Manual Constraint Bounding."
+- Suggested fix: Change "from Part III" to "from Part II" or "from Section 2.1."
 
-Finding 19.
-File. EXPERIMENTAL_RESULTS.md, lines 233-234 (Smoke Test heading).
-Text. Gemini model: Initial run with Gemini 3 (CLI), comparison run with Gemini 3.1 Pro Preview (SDK).
-Problem. The text says "Gemini 3 (CLI)" but the user specified that the experimental design references "Gemini CLI instead of SDK" as a stale element. This heading correctly documents the historical state, but the broader Experiment 4 design description (line 213) does not mention the CLI-to-SDK migration as a corrected issue.
-Suggested fix. Minor. The Smoke Test section documents this adequately. No action needed unless the main Experiment 4 design description is updated.
+**Finding 18**
+- File: `PAPER.md`, lines 567–570 (Part X, Test Design)
+- Text: "90 technical prompts across ten domains... 10 per domain."
+- Problem: The text says 90 prompts across 10 domains, which would be 9 per domain, not 10. But "10 per domain" is stated. Either the total is 100 (10 × 10) or there are 9 per domain. The numbers are inconsistent.
+- Suggested fix: Clarify whether the total is 90 (9 per domain) or 100 (10 per domain).
 
-Finding 20.
-File. FOUNDERS_NOTES.md, line 345.
-Text. The full bench test of 26 tasks will determine whether this pattern holds at scale.
-Problem. Earlier in the same file (line 142) and in PAPER.md (line 813), the task count is consistently stated as 25 frontier tasks. The "26" appears to be an off-by-one error.
-Suggested fix. Change "26 tasks" to "25 tasks" unless the task set was genuinely expanded to 26.
+**Finding 19**
+- File: `EXPERIMENTAL_RESULTS.md`, lines 233–234 (Smoke Test heading)
+- Text: "Gemini model: Initial run with Gemini 3 (CLI), comparison run with Gemini 3.1 Pro Preview (SDK)."
+- Problem: The text says "Gemini 3 (CLI)" but the experimental design references "Gemini CLI instead of SDK" as a stale element. This heading correctly documents the historical state, but the broader Experiment 4 design description (line 213) does not mention the CLI-to-SDK migration as a corrected issue.
+- Suggested fix: Minor. The Smoke Test section documents this adequately. No action needed unless the main Experiment 4 design description is updated.
 
-Finding 21.
-File. PAPER.md, line 568.
-Text. 90 technical prompts across ten domains... 10 per domain.
-Problem. Same as Finding 18. Additionally, later in the paper (line 869), the text says "90 domain tasks, 25 frontier tasks." If there are 90 domain tasks and 25 frontier tasks, that is 115 total. The relationship between the 90 domain tasks and the 25 frontier tasks needs clarification. Are the 25 frontier tasks a subset of the 90, or additional?
-Suggested fix. Clarify whether the 25 frontier tasks are drawn from the 90, or are a separate set.
+**Finding 20**
+- File: `FOUNDERS_NOTES.md`, line 345
+- Text: "The full bench test of 26 tasks will determine whether this pattern holds at scale."
+- Problem: Earlier in the same file (line 142) and in `PAPER.md` (line 813), the task count is consistently stated as 25 frontier tasks. The "26" appears to be an off-by-one error.
+- Suggested fix: Change "26 tasks" to "25 tasks" unless the task set was genuinely expanded to 26.
 
+**Finding 21**
+- File: `PAPER.md`, line 568
+- Text: "90 technical prompts across ten domains... 10 per domain."
+- Problem: Same as Finding 18. Additionally, later in the paper (line 869), the text says "90 domain tasks, 25 frontier tasks." If there are 90 domain tasks and 25 frontier tasks, that is 115 total. The relationship between the 90 domain tasks and the 25 frontier tasks needs clarification — are the 25 frontier tasks a subset of the 90, or additional?
+- Suggested fix: Clarify whether the 25 frontier tasks are drawn from the 90, or are a separate set.
 
-SUMMARY OF ALL FINDINGS
+---
 
-Stale model counts (should be 5 models). Findings 1, 2, 12, 13, 14.
-Stale condition counts (should be 4 conditions). Findings 3, 4, 5, 6, 11.
-Overclaims about external validation. Findings 7, 8, 9, 10.
-Stale experimental design descriptions. Findings 11, 12, 13, 14, 15.
-Other accuracy issues. Findings 16, 17, 18, 20, 21.
+## Summary of All Findings
 
-Total findings. 21.
+| Category | Findings |
+|---|---|
+| Stale model counts (should be 5 models) | 1, 2, 12, 13, 14 |
+| Stale condition counts (should be 4 conditions) | 3, 4, 5, 6, 11 |
+| Overclaims about external validation | 7, 8, 9, 10 |
+| Stale experimental design descriptions | 11, 12, 13, 14, 15 |
+| Other accuracy issues | 16, 17, 18, 20, 21 |
 
-Priority ranking.
-Critical (misrepresents the project to readers). Findings 7, 8, 9 (external validation overclaims).
-High (factual inaccuracy in numbers). Findings 1, 2, 3, 4, 5, 6, 12, 13, 18, 20.
-Medium (stale intermediate descriptions). Findings 11, 14, 15, 16, 17, 21.
-Low (minor or contextual). Findings 10, 19.
+**Total findings: 21**
+
+### Priority Ranking
+
+- **Critical** (misrepresents the project to readers): Findings 7, 8, 9 (external validation overclaims)
+- **High** (factual inaccuracy in numbers): Findings 1, 2, 3, 4, 5, 6, 12, 13, 18, 20
+- **Medium** (stale intermediate descriptions): Findings 11, 14, 15, 16, 17, 21
+- **Low** (minor or contextual): Findings 10, 19

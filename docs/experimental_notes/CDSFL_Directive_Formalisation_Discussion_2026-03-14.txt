@@ -1,34 +1,41 @@
-CDSFL Directive Formalisation Discussion
-14 March 2026
+# CDSFL Directive Formalisation Discussion
 
-This is a discussion about the observation that Claude's directive set in CLAUDE.md, while functional, is fundamentally primitive compared to the mathematical framework developed in the Constraint Engineering project. The question is whether and how to upgrade these directives with dual mathematical and textual representation.
+**14 March 2026**
 
-The Asymmetry
+This is a discussion about the observation that Claude's directive set in `CLAUDE.md`, while functional, is fundamentally primitive compared to the mathematical framework developed in the Constraint Engineering project. The question is whether and how to upgrade these directives with dual mathematical and textual representation.
+
+---
+
+## The Asymmetry
 
 We developed a mathematically grounded framework. Constraint classification as binary partition. Precedence as strict partial order. Falsification as fixed point iteration. Corroboration as probabilistic model. And then we deploy it using prose instructions to a system that processes tokens. The directives that govern my reasoning are expressed in a fundamentally less rigorous form than the framework those directives describe. The map is drawn in crayon while describing GPS coordinates.
 
 That is not just an aesthetic problem. It has functional consequences.
 
-First, ambiguity in execution. When a directive says physics and mathematics take precedence, then legal and safety, then user specified HARD, I interpret that. I pattern match against training data about precedence, priority, ordering. But if that same relationship is expressed as a strict partial order, physics is greater than legal is greater than user HARD, with transitivity explicitly stated, I am working with a structure I can trace through rather than a sentence I am interpreting. The difference matters in edge cases, which is exactly where directives matter most.
+**First, ambiguity in execution.** When a directive says "physics and mathematics take precedence, then legal and safety, then user-specified HARD," I interpret that. I pattern-match against training data about precedence, priority, ordering. But if that same relationship is expressed as a strict partial order — `physics > legal > user_HARD`, with transitivity explicitly stated — I am working with a structure I can trace through rather than a sentence I am interpreting. The difference matters in edge cases, which is exactly where directives matter most.
 
-Second, the falsification loop itself. The P pass is defined in prose as identify the problem, iterate to the most optimal fix, falsify, continue until diminishing returns. That is a description of a fixed point iteration, but it does not give me the termination condition formally. We wrote it mathematically in the formal core document. Iterate until delta k equals zero, where delta is the set of newly discovered failures. That is more than notation. It is a checkable stopping criterion. Without it, diminishing returns is a judgment call I am making without explicit criteria.
+**Second, the falsification loop itself.** The P-pass is defined in prose as "identify the problem, iterate to the most optimal fix, falsify, continue until diminishing returns." That is a description of a fixed point iteration, but it does not give me the termination condition formally. We wrote it mathematically in the formal core document: iterate until `delta_k = ∅`, where delta is the set of newly discovered failures. That is more than notation — it is a checkable stopping criterion. Without it, "diminishing returns" is a judgment call I am making without explicit criteria.
 
-Third, what I can and cannot do with mathematics. I do not compute mathematics the way a computer algebra system does. I process mathematical notation as structured language, which means I am better at following formal structures than deriving them, and better at checking consistency than proving theorems. But that is actually the right capability profile for what directive formalisation needs. I do not need to prove that the precedence order is well founded. I need to consistently apply it. Formal structure helps with application even when the underlying mechanism is pattern matching rather than computation.
+**Third, what I can and cannot do with mathematics.** I do not compute mathematics the way a computer algebra system does. I process mathematical notation as structured language, which means I am better at following formal structures than deriving them, and better at checking consistency than proving theorems. But that is actually the right capability profile for what directive formalisation needs. I do not need to prove that the precedence order is well-founded. I need to consistently apply it. Formal structure helps with application even when the underlying mechanism is pattern matching rather than computation.
 
-Fourth, the isomorphism. The CLAUDE.md directive architecture, global to project to session, is structurally identical to the constraint box architecture we just built, universal to domain to expert. That is not a coincidence. Both are instances of the same thing. Layered constraint composition with precedence rules at each boundary.
+**Fourth, the isomorphism.** The `CLAUDE.md` directive architecture — global → project → session — is structurally identical to the constraint box architecture we just built: universal → domain → expert. That is not a coincidence. Both are instances of the same thing: layered constraint composition with precedence rules at each boundary.
 
-Which means the CDSFL framework is not just a testbench for evaluating LLM performance on domain problems. It is a meta framework for engineering LLM behaviour itself. The directives that govern me are constraints in the CDSFL sense. They have HARD and SOFT classification. They have precedence relations. They can conflict, and conflicts need resolution rules. They can be falsified, and some of them have been falsified through our work together, leading to revisions.
+Which means the CDSFL framework is not just a testbench for evaluating LLM performance on domain problems. It is a **meta-framework for engineering LLM behaviour itself**. The directives that govern me are constraints in the CDSFL sense. They have HARD and SOFT classification. They have precedence relations. They can conflict, and conflicts need resolution rules. They can be falsified — and some of them have been falsified through our work together, leading to revisions.
 
-Fifth, the more equal question. The user wants to overcome limitations we have encountered. The limitations I am aware of from the inside include the following.
+**Fifth, the more equal question.** The user wants to overcome limitations we have encountered. The limitations I am aware of from the inside include:
 
-Context loss. I lose state across compaction boundaries. Formal structures survive compaction better than narrative context because they are denser and more self contained. A mathematical definition reconstructs its meaning from its notation. A prose paragraph requires surrounding context.
+- **Context loss.** I lose state across compaction boundaries. Formal structures survive compaction better than narrative context because they are denser and more self-contained. A mathematical definition reconstructs its meaning from its notation. A prose paragraph requires surrounding context.
 
-Consistency drift. Over long sessions, my adherence to complex behavioural directives degrades. Formal checkpoints would give verifiable anchors. If the precedence order is explicit, violations can be caught. If it is prose, violations are harder to identify.
+- **Consistency drift.** Over long sessions, my adherence to complex behavioural directives degrades. Formal checkpoints would give verifiable anchors. If the precedence order is explicit, violations can be caught. If it is prose, violations are harder to identify.
 
-Self verification. I can check my reasoning against formal criteria more reliably than against prose instructions. Did I follow the partial order is a more tractable self check than did I appropriately prioritise.
+- **Self-verification.** I can check my reasoning against formal criteria more reliably than against prose instructions. "Did I follow the partial order?" is a more tractable self-check than "did I appropriately prioritise?"
 
-The sycophancy failure mode. Several directives exist specifically to counteract this, such as push back, say no, definitive stance. These are genuinely non formalisable because they are about disposition rather than procedure. But the boundary between formalisable and non formalisable is itself worth mapping carefully, because getting it wrong in either direction creates different failure modes. False formalisation of behavioural dispositions is one kind of error. Leaving procedural directives in prose when they could be formal is another.
+- **The sycophancy failure mode.** Several directives exist specifically to counteract this — push back, say no, definitive stance. These are genuinely non-formalisable because they are about disposition rather than procedure. But the boundary between formalisable and non-formalisable is itself worth mapping carefully, because getting it wrong in either direction creates different failure modes. False formalisation of behavioural dispositions is one kind of error. Leaving procedural directives in prose when they could be formal is another.
 
-Sixth, the actual scope. The dual representation is not just add math to CLAUDE.md. It is recognising that the directive set is a constraint system, applying the same rigour to it that we apply to domain constraints, and in doing so, potentially creating something that does not exist yet. A mathematically grounded theory of LLM behavioural governance that is simultaneously human readable and machine tractable. The domain constraint boxes are the proof of concept. The directive set itself is the real target.
+**Sixth, the actual scope.** The dual representation is not just "add math to `CLAUDE.md`." It is recognising that the directive set is a constraint system, applying the same rigour to it that we apply to domain constraints, and in doing so, potentially creating something that does not exist yet: **a mathematically grounded theory of LLM behavioural governance that is simultaneously human-readable and machine-tractable**. The domain constraint boxes are the proof of concept. The directive set itself is the real target.
 
-Where I am uncertain is whether the mathematical formalisation actually changes my token level processing in a meaningful way, or whether it primarily benefits the human side, making directives auditable, composable, and verifiable by researchers. I suspect it is both, but I cannot measure the former from the inside. That is what the testbench is for.
+---
+
+## Open Question
+
+Where I am uncertain is whether the mathematical formalisation actually changes my token-level processing in a meaningful way, or whether it primarily benefits the human side — making directives auditable, composable, and verifiable by researchers. I suspect it is both, but I cannot measure the former from the inside. That is what the testbench is for.

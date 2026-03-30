@@ -1,73 +1,91 @@
-CE Extended P-Pass Fix Implementation Summary
-2026-03-18T22:42:48+00:00
+# CE Extended P-Pass Fix Implementation Summary
 
-Following the Gemini Extended P-Pass (4 modular + 1 adversarial), 14 fixes were implemented across run_benchmark.py and run_phase2.py. Both files pass syntax checks.
+**Date:** 2026-03-18T22:42:48+00:00
 
-Fixes Applied to run_benchmark.py
+---
 
-Fix 14 (CRITICAL): Section extraction regex stop pattern.
-The _extract_section stop pattern required a newline or end-of-string after the label colon. This meant it only stopped when the next label was followed by an empty line or the end of the file. If a model put content on the same line as the label (for example, REVISED_ANSWER: The answer is...), the stop pattern failed to match and the current section consumed the next section's content. Fixed by removing the newline/end-of-string requirement after the colon.
+## Overview
 
-Fix 15 (HIGH): Added codex to the --provider CLI choices.
-The codex provider was fully implemented in the PROVIDERS dictionary but was missing from the argparse choices list, preventing CLI users from selecting it.
+Following the Gemini Extended P-Pass (4 modular + 1 adversarial), 14 fixes were implemented across `run_benchmark.py` and `run_phase2.py`. Both files pass syntax checks.
 
-Fix 16 (HIGH): Added adaptive, placebo, and cross_model to the --mode CLI choices.
-These Phase 2 modes were implemented as functions but were not reachable via the benchmark runner's CLI entry point. Now wired into both the argparse choices and the run_benchmark function.
+---
 
-Fix 17 (MEDIUM): classify_issue_severity now strips leading whitespace before checking list markers.
-LLMs frequently indent list items. Without stripping, indented items like "  - This is wrong" were ignored by the severity classifier, causing under-counting of issues.
+## Fixes Applied to `run_benchmark.py`
 
-Fix 18 (HIGH): CX confer prompt rewritten for independent assessment.
+**Fix 14 (CRITICAL): Section extraction regex stop pattern.**
+The `_extract_section` stop pattern required a newline or end-of-string after the label colon. This meant it only stopped when the next label was followed by an empty line or the end of the file. If a model put content on the same line as the label (e.g., `REVISED_ANSWER: The answer is...`), the stop pattern failed to match and the current section consumed the next section's content. Fixed by removing the newline/end-of-string requirement after the colon.
+
+**Fix 15 (HIGH): Added `codex` to the `--provider` CLI choices.**
+The `codex` provider was fully implemented in the `PROVIDERS` dictionary but was missing from the `argparse` choices list, preventing CLI users from selecting it.
+
+**Fix 16 (HIGH): Added `adaptive`, `placebo`, and `cross_model` to the `--mode` CLI choices.**
+These Phase 2 modes were implemented as functions but were not reachable via the benchmark runner's CLI entry point. Now wired into both the `argparse` choices and the `run_benchmark` function.
+
+**Fix 17 (MEDIUM): `classify_issue_severity` now strips leading whitespace before checking list markers.**
+LLMs frequently indent list items. Without stripping, indented items like `"  - This is wrong"` were ignored by the severity classifier, causing under-counting of issues.
+
+**Fix 18 (HIGH): CX confer prompt rewritten for independent assessment.**
 The previous CX prompt instructed CX to "Read the most recent CC message" and asked "Do you agree with CC's verdict?" This destroyed assessor independence by anchoring CX to CC's opinion. The new prompt gives CX the same task data and criteria as CC and asks for an independent STOP/CONTINUE verdict. The consensus logic now compares two independent verdicts: both must say STOP for consensus.
 
-Fix 19 (MEDIUM): Added cost_check_fn to run_cross_model.
+**Fix 19 (MEDIUM): Added `cost_check_fn` to `run_cross_model`.**
 Schema C cross-model runs previously had no mid-run cost cap checking. A single Schema C task with frontier models could significantly overshoot the budget. Now checks cost cap between passes and before the adversarial pass.
 
-Fix 20 (LOW): Fixed temp file leak in call_codex.
-If subprocess.run raised FileNotFoundError or OSError, the temporary file was never cleaned up. Now unlinks the temp file in all error paths.
+**Fix 20 (LOW): Fixed temp file leak in `call_codex`.**
+If `subprocess.run` raised `FileNotFoundError` or `OSError`, the temporary file was never cleaned up. Now unlinks the temp file in all error paths.
 
-Fix 21 (MEDIUM): run_placebo now accepts and passes cost_check_fn.
-The placebo condition was not subject to mid-run cost cap checks because run_placebo did not forward cost_check_fn to run_adaptive.
+**Fix 21 (MEDIUM): `run_placebo` now accepts and passes `cost_check_fn`.**
+The placebo condition was not subject to mid-run cost cap checks because `run_placebo` did not forward `cost_check_fn` to `run_adaptive`.
 
-Fixes Applied to run_phase2.py
+---
 
-Fix 22 (HIGH): Added variant to manifest hash.
-The --variant argument determines which domain-specific directives are loaded, directly impacting results. Previously, resuming a run with a different variant would not invalidate the checkpoint. Now the variant is included in the manifest hash.
+## Fixes Applied to `run_phase2.py`
 
-Fix 23 (MEDIUM): General exception handling in main loop.
-Previously, only FatalAPIError was caught. Any transient error (persistent timeouts, 5xx after retries, task-specific 400 errors) crashed the entire batch. Now logs the error and continues to the next task. Same fix applied to the Schema C loop.
+**Fix 22 (HIGH): Added `variant` to manifest hash.**
+The `--variant` argument determines which domain-specific directives are loaded, directly impacting results. Previously, resuming a run with a different variant would not invalidate the checkpoint. Now the variant is included in the manifest hash.
 
-Fix 24 (MEDIUM): Schema C completeness tracking.
-The completeness percentage was calculated using only the 3 main conditions (control, cdsfl, placebo). If Schema C was active, the checkpoint would contain additional items not reflected in expected_items, causing misleading percentages. Now includes Schema C items in the expected count.
+**Fix 23 (MEDIUM): General exception handling in main loop.**
+Previously, only `FatalAPIError` was caught. Any transient error (persistent timeouts, 5xx after retries, task-specific 400 errors) crashed the entire batch. Now logs the error and continues to the next task. Same fix applied to the Schema C loop.
 
-Fix 25 (MEDIUM): Directive length included in cost estimates.
-All cost estimation calls were passing only len(task["prompt"]) as the input size, ignoring the system prompt (CDSFL or placebo directives) which can be several kilobytes. Now includes directive length in the base prompt size for all conditions.
+**Fix 24 (MEDIUM): Schema C completeness tracking.**
+The completeness percentage was calculated using only the 3 main conditions (control, cdsfl, placebo). If Schema C was active, the checkpoint would contain additional items not reflected in `expected_items`, causing misleading percentages. Now includes Schema C items in the expected count.
 
-Fix 26 (LOW): Domain directive hash includes relative path.
-Previously, the hash used only the filename (txt_file.name). If a file was moved between domain folders without changing its name or content, the hash would remain identical. Now uses the relative path from the directives directory.
+**Fix 25 (MEDIUM): Directive length included in cost estimates.**
+All cost estimation calls were passing only `len(task["prompt"])` as the input size, ignoring the system prompt (CDSFL or placebo directives) which can be several kilobytes. Now includes directive length in the base prompt size for all conditions.
 
-Fix 27 (MEDIUM): Cost cap check passed to Schema C via run_cross_model.
-The run_schema_c function now passes ledger.check_cap to run_cross_model as cost_check_fn, enabling mid-run budget enforcement during cross-model adversarial passes.
+**Fix 26 (LOW): Domain directive hash includes relative path.**
+Previously, the hash used only the filename (`txt_file.name`). If a file was moved between domain folders without changing its name or content, the hash would remain identical. Now uses the relative path from the directives directory.
 
-Additionally, the e (Extrapolate) protocol was added to CLAUDE.md as a standing directive:
-  e = Extrapolate: project implications beyond the immediate domain.
-  Structure: (a) what generalises, (b) boundary conditions, (c) new falsifiable questions.
-  P-pass standard applies to extrapolations. Combined shorthand: p d e.
+**Fix 27 (MEDIUM): Cost cap check passed to Schema C via `run_cross_model`.**
+The `run_schema_c` function now passes `ledger.check_cap` to `run_cross_model` as `cost_check_fn`, enabling mid-run budget enforcement during cross-model adversarial passes.
 
-Findings Not Fixed (Design-Level Observations)
+---
+
+## CLAUDE.md Addition
+
+The `e` (Extrapolate) protocol was added to `CLAUDE.md` as a standing directive:
+
+```
+e = Extrapolate: project implications beyond the immediate domain.
+Structure: (a) what generalises, (b) boundary conditions, (c) new falsifiable questions.
+P-pass standard applies to extrapolations. Combined shorthand: p d e.
+```
+
+---
+
+## Findings Not Fixed (Design-Level Observations)
 
 The following findings from the Extended P-Pass were noted but not implemented as code fixes because they represent experimental design decisions rather than code defects:
 
-1. Compound variable confound (Module 3, Finding 1): The Control condition is single-pass zero-shot while CE and Placebo are multi-pass iterative. This conflates methodology with mechanism. Addressing this would require making the Control multi-pass too, which changes the experimental design.
+1. **Compound variable confound** (Module 3, Finding 1): The Control condition is single-pass zero-shot while CE and Placebo are multi-pass iterative. This conflates methodology with mechanism. Addressing this would require making the Control multi-pass too, which changes the experimental design.
 
-2. Criterion contamination in adaptive termination (Module 3, Finding 3): The confer prompt references CE methodology for both CE and Placebo conditions. The Placebo may be penalised for lacking CE markers. This is partially mitigated by the independent verdict fix (Fix 18) but would fully require condition-specific confer prompts.
+2. **Criterion contamination in adaptive termination** (Module 3, Finding 3): The confer prompt references CE methodology for both CE and Placebo conditions. The Placebo may be penalised for lacking CE markers. This is partially mitigated by the independent verdict fix (Fix 18) but would fully require condition-specific confer prompts.
 
-3. Systematic attrition bias from fixed execution order (Module 3, Finding 4): Conditions run in fixed order (Control, CE, Placebo). The Placebo is disproportionately likely to be truncated by cost cap. This could be fixed by randomising condition order, but that would complicate checkpoint resume.
+3. **Systematic attrition bias from fixed execution order** (Module 3, Finding 4): Conditions run in fixed order (Control, CE, Placebo). The Placebo is disproportionately likely to be truncated by cost cap. This could be fixed by randomising condition order, but that would complicate checkpoint resume.
 
-4. History deletion confound (Module 3, Finding 5): The isolated adversarial pass conflates adversarial scrutiny benefit with contextual cleaning benefit. This is documented but not fixable without a more complex experimental design.
+4. **History deletion confound** (Module 3, Finding 5): The isolated adversarial pass conflates adversarial scrutiny benefit with contextual cleaning benefit. This is documented but not fixable without a more complex experimental design.
 
-5. Placebo construct validity (Module 3, Finding 9): The placebo is actually a strong "best practices" prompt, not an inert treatment. The experiment is actually Methodology A vs Methodology B, not Methodology vs Null. This is a naming and framing issue.
+5. **Placebo construct validity** (Module 3, Finding 9): The placebo is actually a strong "best practices" prompt, not an inert treatment. The experiment is actually Methodology A vs Methodology B, not Methodology vs Null. This is a naming and framing issue.
 
-6. Hardcoded paths (Module 1, Finding 6 and Module 4, Finding 1): The confer mechanism uses absolute paths specific to the developer's machine. This is by design for the current single-developer deployment. Fixing this for portability is deferred to when other developers need to run the benchmark.
+6. **Hardcoded paths** (Module 1, Finding 6 and Module 4, Finding 1): The confer mechanism uses absolute paths specific to the developer's machine. This is by design for the current single-developer deployment. Fixing this for portability is deferred to when other developers need to run the benchmark.
 
-7. Throttle state fragmentation (Pass 5, Finding 6): AdaptiveThrottle instances are per-config, so rate limit backoff is lost between configs using the same provider. This is an optimisation concern, not a correctness issue.
+7. **Throttle state fragmentation** (Pass 5, Finding 6): `AdaptiveThrottle` instances are per-config, so rate limit backoff is lost between configs using the same provider. This is an optimisation concern, not a correctness issue.

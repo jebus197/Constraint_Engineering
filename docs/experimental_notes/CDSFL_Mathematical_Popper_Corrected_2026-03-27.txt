@@ -1,75 +1,85 @@
-Mathematical Popper, Corrected After Adversarial Review
-27 March 2026
+# Mathematical Popper — Corrected After Adversarial Review
 
-WHAT HAPPENED
+**27 March 2026**
+
+---
+
+## What Happened
 
 Claude Code proposed that the CDSFL decay curve is "Popper expressed mathematically." Codex 5.3 ran an adversarial P-pass and demolished the strong claim. This document records the original claim, the attack, and the corrected position.
 
+---
 
-THE ORIGINAL CLAIM
+## The Original Claim
 
-The decay curve f(n), which measures how finding rates change over iterative review rounds, was proposed as a mathematical expression of Popper's falsification process. D measures falsification efficiency. v bar measures test severity in Mayo's sense. Different domains produce different characteristic curves. These curves could be encoded as mathematical parameters in domain expert configurations, making Popper machine-addressable.
+The decay curve f(n) — which measures how finding rates change over iterative review rounds — was proposed as a mathematical expression of Popper's falsification process:
 
+- D measures falsification efficiency
+- v-bar measures test severity in Mayo's sense
+- Different domains produce different characteristic curves
+- These curves could be encoded as mathematical parameters in domain expert configurations, making Popper machine-addressable
 
-THE ATTACK (CODEX 5.3)
+---
 
-Codex identified five critical failures in the strong claim.
+## The Attack (Codex 5.3)
 
-First, the simple geometric formula is wrong for the full process. Real falsification involves changing hypotheses, revision creating new errors, and adaptive test severity. A fixed stock, constant probability model is a toy that does not capture what Popper actually described.
+Codex identified **five critical failures** in the strong claim.
 
-Second, Mayo's severity does not map cleanly to v bar multiplied by coverage. Severity in Mayo's framework attaches to a specific test, a specific result, and a specific inference. It depends on relevant error probabilities and the actual testing context. Averaging it across a round and multiplying by coverage loses the structure that makes Mayo's criterion meaningful. Popperian severity and Mayoian severity are also not formally the same thing.
+**First, the simple geometric formula is wrong for the full process.** Real falsification involves changing hypotheses, revision creating new errors, and adaptive test severity. A fixed-stock, constant-probability model is a toy that does not capture what Popper actually described.
 
-Third, "mathematical Popper" is an overclaim. What we have is a defect discovery or reliability growth model with Popperian language wrapped around it. Popper's core method includes bold conjecture, risky prediction, attempted refutation, rival theory comparison, and revision after failure. The curve only summarises how fast a population of detectable errors disappears. That may be a useful engineering metric but it is not a mathematical reconstruction of Popper's philosophy.
+**Second, Mayo's severity does not map cleanly to v-bar × coverage.** Severity in Mayo's framework attaches to a specific test, a specific result, and a specific inference. It depends on relevant error probabilities and the actual testing context. Averaging it across a round and multiplying by coverage loses the structure that makes Mayo's criterion meaningful. Popperian severity and Mayoian severity are also not formally the same thing.
 
-Fourth, the domain curve predictions are empirical claims without data. Mathematics being bimodal, engineering being uniform, and code being multi-modal are not consequences of any formula. They are hypotheses that require data to support or refute. Within domain variation from tools, coverage, and debugging quality may be larger than between domain variation.
+**Third, "mathematical Popper" is an overclaim.** What we have is a defect discovery or reliability growth model with Popperian language wrapped around it. Popper's core method includes bold conjecture, risky prediction, attempted refutation, rival theory comparison, and revision after failure. The curve only summarises how fast a population of detectable errors disappears. That may be a useful engineering metric but it is not a mathematical reconstruction of Popper's philosophy.
 
-Fifth, multiple specific conditions would disprove the connection entirely. If non-Popperian testing produces the same curve families as Popperian testing, the curve is not measuring falsification. If models that ignore Popper entirely predict the data as well or better, the Popper connection is unnecessary. If iterative revision regularly causes resets, rebounds, or new error introduction, then one monotone decay curve is the wrong process model.
+**Fourth, the domain curve predictions are empirical claims without data.** Mathematics being bimodal, engineering being uniform, and code being multi-modal are not consequences of any formula. They are hypotheses that require data to support or refute. Within-domain variation from tools, coverage, and debugging quality may be larger than between-domain variation.
 
+**Fifth, multiple specific conditions would disprove the connection entirely:**
+- If non-Popperian testing produces the same curve families as Popperian testing, the curve is not measuring falsification.
+- If models that ignore Popper entirely predict the data as well or better, the Popper connection is unnecessary.
+- If iterative revision regularly causes resets, rebounds, or new error introduction, then one monotone decay curve is the wrong process model.
 
-THE CORRECTED POSITION
+---
+
+## The Corrected Position
 
 The honest claim, surviving the adversarial attack, is more modest but defensible.
 
-The decay curve is a necessary condition for genuine analysis. A flat curve indicates churn. A decaying curve indicates a real analytical process exhausting a finite error space. This diagnostic value is robust and was not challenged by Codex.
+**The decay curve is a necessary condition for genuine analysis.** A flat curve indicates churn. A decaying curve indicates a real analytical process exhausting a finite error space. This diagnostic value is robust and was not challenged by Codex.
 
-However, the decay curve is not a sufficient condition for Popperian falsification specifically. Any competent review process operating on a finite artifact will produce a decaying curve, whether the reviewer is following Popper's philosophy or simply working through a checklist. The curve measures competent review, not Popper's philosophy specifically.
+**However, the decay curve is not a sufficient condition for Popperian falsification specifically.** Any competent review process operating on a finite artifact will produce a decaying curve, whether the reviewer is following Popper's philosophy or simply working through a checklist. The curve measures competent review, not Popper's philosophy specifically.
 
-The connection to Popper is inspirational and motivational, not mathematical and formal. Popper's philosophy motivated the CDSFL protocol design. The decay curve measures whether the protocol produces genuine analysis. But the curve itself is not "Popper expressed mathematically." It is a defect discovery metric that works regardless of the philosophical framework motivating the review.
+**The connection to Popper is inspirational and motivational, not mathematical and formal.** Popper's philosophy motivated the CDSFL protocol design. The decay curve measures whether the protocol produces genuine analysis. But the curve itself is not "Popper expressed mathematically." It is a defect discovery metric that works regardless of the philosophical framework motivating the review.
 
 The honest framing: CDSFL operationalises Popper's falsification as a structured review protocol. The decay curve measures whether the protocol produces genuine analysis. The curve is inspired by Popper but is not a formal mathematical reconstruction of his philosophy. It is a practical engineering metric.
 
+---
 
-WHAT SURVIVES
+## What Survives
 
-The decay curve as a churn diagnostic survives completely. Flat curves indicate non-genuine output. Decaying curves indicate genuine analysis. This is useful regardless of whether you call it Popper or call it defect discovery.
+- **The decay curve as a churn diagnostic survives completely.** Flat curves indicate non-genuine output. Decaying curves indicate genuine analysis. This is useful regardless of whether you call it Popper or call it defect discovery.
+- **The domain expert config concept survives but with weaker grounding.** Expected curve shapes can be encoded as domain parameters for diagnostic purposes: "if your curve is flat on this type of task, you are probably churning." But claiming the shapes are domain-intrinsic properties is premature without empirical data. The bench test will produce the first dataset to test this.
+- **The practical value of CDSFL is unaffected.** The protocol produces measurably better results than unstructured review, as shown by the bench test gradient. Whether this is because of Popper or because of structured distributed compute is a separate question. Both explanations are compatible with the data.
 
-The domain expert config concept survives but with weaker grounding. Expected curve shapes can be encoded as domain parameters for diagnostic purposes: "if your curve is flat on this type of task, you are probably churning." But claiming the shapes are domain-intrinsic properties is premature without empirical data. The bench test will produce the first dataset to test this.
+---
 
-The practical value of CDSFL is unaffected. The protocol produces measurably better results than unstructured review, as shown by the bench test gradient. Whether this is because of Popper or because of structured distributed compute is a separate question. Both explanations are compatible with the data.
+## What Does Not Survive
 
+- **"Mathematical Popper" as a label.** It overclaims.
+- **The simple geometric formula as a faithful model of the process.** Codex's general form with per-error, per-round detection probabilities is more honest.
+- **The clean mapping from Mayo's severity to v-bar × C.** This oversimplifies Mayo's framework.
+- **The assertion that domain curves are intrinsic mathematical signatures.** They are hypotheses requiring data.
 
-WHAT DOES NOT SURVIVE
+---
 
-"Mathematical Popper" as a label. It overclaims.
+## Falsifiable Questions That Survive
 
-The simple geometric formula as a faithful model of the process. Codex's general form with per-error, per-round detection probabilities is more honest.
+1. Does CDSFL produce qualitatively different curve shapes than Control, or just higher amplitudes of the same shape? Different shapes would suggest the methodology changes the analytical process itself. Same shapes at different scales would suggest it just amplifies existing model behaviour.
+2. Does the general form with per-error, per-round detection probabilities fit the bench data better than the simple geometric? If yes, the process is more complex than the simple model claims.
+3. Do domain-specific curve shapes actually exist in the data? The bench test spans 10 domains across 26 tasks. If mathematics, engineering, and code tasks produce statistically distinguishable curve families, the domain-specificity claim has evidence. If within-domain variation exceeds between-domain variation, it fails.
+4. Does Popper-motivated testing, under CDSFL, produce curves distinguishable from non-Popper testing under Control? This is the key test. If the curves differ in shape (not just amplitude), the Popperian methodology contributes something beyond generic competent review. If they differ only in amplitude, the methodology contributes quantity but the process is the same.
 
-The clean mapping from Mayo's severity to v bar times C. This oversimplifies Mayo's framework.
+---
 
-The assertion that domain curves are intrinsic mathematical signatures. They are hypotheses requiring data.
+## Process Note
 
-
-FALSIFIABLE QUESTIONS THAT SURVIVE
-
-One. Does CDSFL produce qualitatively different curve shapes than Control, or just higher amplitudes of the same shape? Different shapes would suggest the methodology changes the analytical process itself. Same shapes at different scales would suggest it just amplifies existing model behaviour.
-
-Two. Does the general form with per-error, per-round detection probabilities fit the bench data better than the simple geometric? If yes, the process is more complex than the simple model claims.
-
-Three. Do domain-specific curve shapes actually exist in the data? The bench test spans 10 domains across 26 tasks. If mathematics, engineering, and code tasks produce statistically distinguishable curve families, the domain specificity claim has evidence. If within-domain variation exceeds between-domain variation, it fails.
-
-Four. Does Popper-motivated testing, under CDSFL, produce curves distinguishable from non-Popper testing under Control? This is the key test. If the curves differ in shape (not just amplitude), the Popperian methodology contributes something beyond generic competent review. If they differ only in amplitude, the methodology contributes quantity but the process is the same.
-
-
-PROCESS NOTE
-
-This correction was produced by the CDSFL adversarial protocol itself. Claude Code proposed a claim. Codex 5.3 attacked it. The claim was revised to survive the attack. The corrected position is weaker but honest. This is exactly how the methodology is supposed to work. The fact that it works on its own theoretical claims, not just on code and proofs, is itself evidence that the protocol has value beyond its original intended scope.
+This correction was produced by the CDSFL adversarial protocol itself. Claude Code proposed a claim. Codex 5.3 attacked it. The claim was revised to survive the attack. The corrected position is weaker but honest. This is exactly how the methodology is supposed to work. The fact that it works on its own theoretical claims — not just on code and proofs — is itself evidence that the protocol has value beyond its original intended scope.
