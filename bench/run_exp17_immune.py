@@ -214,131 +214,135 @@ def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Prompts
+# Prompts — 4 independent tasks per round
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_r0a_prompt(code: str, interface_summary: str,
-                     math_appendix: str, verification_chain: str) -> str:
-    """Round 0A: blind discovery. No prior findings."""
-    return (
-        "You are in ROUND 0A (BLIND DISCOVERY) of Experiment 17: Immune + Load "
-        "Balancing + Persistence Layer Validation.\n\n"
-        "You are operating UNDER CDSFL (your system prompt). Apply P-pass to the "
-        "code and mathematical model below.\n\n"
-        "## Analytical Boundary\n"
-        "FOUR test articles under review:\n"
-        "1. IMMUNE RESPONSE LAYER: DetectorDiagnosis, DetectorHealthMonitor, "
-        "FailureHandler, _REMEDIATION_CHAINS, process_round() immune integration, "
-        "apply_diagnosis(), _apply_transform(), and immune config parameters.\n"
-        "2. LOAD BALANCING: LoadBalancer, RoleAssignment, _solve_greedy(), "
-        "feasibility_probability(), capability scoring, role allocation.\n"
-        "3. MATHEMATICAL MODEL: MATHEMATICAL_APPENDIX.md — verify that the code "
-        "implements the formulas correctly. Cross-reference the traceability table.\n"
-        "4. PERSISTENCE LAYER: verification_chain.py — hash chains, Merkle trees, "
-        "Ed25519 signing, epoch sealing, inclusion proofs. This code has only had "
-        "a single blind pass (Exp 10) and has never been through distributed "
-        "compute review.\n\n"
-        "The rest of dynamic_management.py (convergence detection, diminishing "
-        "returns, FSM) is context — review interfaces but focus findings on the "
-        "four areas above.\n\n"
-        "## Interface Summary\n"
-        f"{interface_summary}\n\n"
-        "## Output Format\n"
-        "For each finding:\n"
-        "  FINDING_ID: F001 (etc.)\n"
-        "  SEVERITY: 0.0–1.0\n"
-        "  FLAW_CLASS: 1=logic, 2=interface, 3=notation, 4=completeness, "
-        "5=correctness, 6=edge-case, 7=performance, 8=documentation\n"
-        "  ABSTRACTION_INDEX: 0.0–1.0 (0=surface, 1=architectural)\n"
-        "  DESCRIPTION: what is wrong and why\n"
-        "  PROPOSED_FIX: specific fix\n"
-        "  VERIFIED: TRUE/FALSE\n\n"
-        "This is a BLIND round. Find everything you can. No prior findings are "
-        "provided — your independent perspective is the point.\n\n"
-        "=== ARTIFACT 1: dynamic_management.py ===\n\n"
-        f"{code}\n\n"
-        "=== END ARTIFACT 1 ===\n\n"
-        "=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-        f"{math_appendix}\n\n"
-        "=== END ARTIFACT 2 ===\n\n"
-        "=== ARTIFACT 3: verification_chain.py ===\n\n"
-        f"{verification_chain}\n\n"
-        "=== END ARTIFACT 3 ===\n\n"
-        "Produce your findings now."
+FINDING_FORMAT = (
+    "## Output Format\n"
+    "For each finding:\n"
+    "  FINDING_ID: {prefix}F001 (etc.)\n"
+    "  SEVERITY: 0.0–1.0\n"
+    "  FLAW_CLASS: 1=logic, 2=interface, 3=notation, 4=completeness, "
+    "5=correctness, 6=edge-case, 7=performance, 8=documentation\n"
+    "  ABSTRACTION_INDEX: 0.0–1.0 (0=surface, 1=architectural)\n"
+    "  DESCRIPTION: what is wrong and why\n"
+    "  PROPOSED_FIX: specific fix\n"
+    "  VERIFIED: TRUE/FALSE\n\n"
+)
+
+# Task definitions: (task_key, id_prefix, description, artifact_builder)
+TASKS = [
+    ("immune", "IM_", "Immune Response Layer"),
+    ("loadbalancing", "LB_", "Load Balancing"),
+    ("persistence", "VC_", "Persistence Layer (verification chain)"),
+    ("mathmodel", "MM_", "Mathematical Model Consistency"),
+]
+
+
+def _build_task_prompt(task_key: str, round_label: str, round_type: str,
+                       code: str, math_appendix: str,
+                       verification_chain: str,
+                       interface_summary: str,
+                       prior_findings_text: str = "",
+                       convergent_text: str = "") -> str:
+    """Build a focused prompt for one of the 4 tasks."""
+    prefix = {t[0]: t[1] for t in TASKS}[task_key]
+    task_desc = {t[0]: t[2] for t in TASKS}[task_key]
+
+    preamble = (
+        f"You are in {round_label} of Experiment 17 — "
+        f"TASK: {task_desc}.\n\n"
+        f"You are operating UNDER CDSFL (your system prompt). Apply P-pass.\n\n"
     )
 
+    if round_type == "blind":
+        preamble += "This is a BLIND round. No prior findings provided.\n\n"
+    elif round_type == "seeded" and prior_findings_text:
+        preamble += (
+            f"Prior findings from earlier rounds:\n\n{prior_findings_text}\n\n"
+        )
+        if convergent_text:
+            preamble += (
+                "Additionally, Experiment 15 produced CONVERGENT FINDINGS:\n\n"
+                f"{convergent_text}\n\n"
+                "VALIDATE applied fixes. CHALLENGE no-fix-needed decisions. "
+                "Find what was MISSED.\n\n"
+            )
+    elif round_type == "adaptive" and prior_findings_text:
+        preamble += (
+            f"Prior findings for this task:\n\n{prior_findings_text}\n\n"
+            "Find what was MISSED. Do not repeat known findings.\n\n"
+        )
 
-def build_r0b_prompt(code: str, r0a_findings_text: str,
-                     convergent_findings_text: str,
-                     math_appendix: str,
-                     verification_chain: str) -> str:
-    """Round 0B: seeded validation with convergent findings from Exp 15."""
-    return (
-        "You are in ROUND 0B (SEEDED VALIDATION) of Experiment 17.\n\n"
-        "Scope: immune layer + load balancing + persistence layer + mathematical "
-        "model consistency.\n\n"
-        "In Round 0A, the following findings were produced independently:\n\n"
-        f"{r0a_findings_text}\n\n"
-        "Additionally, Experiment 15 produced 6 CONVERGENT FINDINGS (independently "
-        "identified by 2+ models). 4 were fixed, 2 confirmed no-fix-needed:\n\n"
-        f"{convergent_findings_text}\n\n"
-        "Your task:\n"
-        "1. VALIDATE the 4 applied fixes — are they correct? Do they fully resolve "
-        "   the issues?\n"
-        "2. CHALLENGE the 2 no-fix-needed decisions — is the rationale sound?\n"
-        "3. IDENTIFY what Round 0A missed that the convergent findings caught, "
-        "   and vice versa.\n"
-        "4. Find any REMAINING issues not covered by either set — especially in "
-        "   load balancing, persistence layer, and mathematical model consistency.\n\n"
-        "Use the same structured format (FINDING_ID, SEVERITY, etc.).\n\n"
-        "=== ARTIFACT 1: dynamic_management.py ===\n\n"
-        f"{code}\n\n"
-        "=== END ARTIFACT 1 ===\n\n"
-        "=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-        f"{math_appendix}\n\n"
-        "=== END ARTIFACT 2 ===\n\n"
-        "=== ARTIFACT 3: verification_chain.py ===\n\n"
-        f"{verification_chain}\n\n"
-        "=== END ARTIFACT 3 ===\n\n"
-        "Produce your findings now."
-    )
+    # Task-specific boundary and artifact
+    if task_key == "immune":
+        boundary = (
+            "## Analytical Boundary\n"
+            "IMMUNE RESPONSE LAYER: DetectorDiagnosis, DetectorHealthMonitor, "
+            "FailureHandler, _REMEDIATION_CHAINS, process_round() immune "
+            "integration, apply_diagnosis(), _apply_transform(), and immune "
+            "config parameters.\n\n"
+            "The rest of dynamic_management.py is context — focus findings "
+            "on immune behaviour.\n\n"
+        )
+        if interface_summary:
+            boundary += f"## Interface Summary\n{interface_summary}\n\n"
+        artifact = (
+            f"=== ARTIFACT: dynamic_management.py ===\n\n{code}\n\n"
+            f"=== END ARTIFACT ===\n\n"
+        )
 
+    elif task_key == "loadbalancing":
+        boundary = (
+            "## Analytical Boundary\n"
+            "LOAD BALANCING: LoadBalancer, RoleAssignment, _solve_greedy(), "
+            "feasibility_probability(), capability scoring, role allocation, "
+            "task decomposition, model selection.\n\n"
+            "The rest of dynamic_management.py is context — focus findings "
+            "on load balancing correctness and efficiency.\n\n"
+        )
+        artifact = (
+            f"=== ARTIFACT: dynamic_management.py ===\n\n{code}\n\n"
+            f"=== END ARTIFACT ===\n\n"
+        )
 
-def build_adaptive_prompt(code: str, round_idx: int,
-                          prior_findings_text: str,
-                          math_appendix: str,
-                          verification_chain: str) -> str:
-    """Adaptive round prompt."""
-    return (
-        f"You are in ROUND {round_idx} of Experiment 17 (adaptive round).\n\n"
-        f"Scope: immune layer + load balancing + persistence layer + mathematical "
-        f"model.\n\n"
-        f"Prior findings from all rounds:\n\n{prior_findings_text}\n\n"
-        f"Focus on the IMMUNE RESPONSE LAYER (DetectorDiagnosis, "
-        f"DetectorHealthMonitor, FailureHandler, apply_diagnosis, process_round "
-        f"immune integration), LOAD BALANCING (LoadBalancer, RoleAssignment, "
-        f"_solve_greedy, feasibility_probability), PERSISTENCE LAYER "
-        f"(verification_chain.py hash chains, Merkle trees, Ed25519 signing), "
-        f"and MATHEMATICAL MODEL consistency (MATHEMATICAL_APPENDIX.md vs code).\n\n"
-        f"Find what was MISSED. Do not repeat known findings. Focus on:\n"
-        f"- Flaws prior rounds did not catch\n"
-        f"- Deeper analysis of superficially noted issues\n"
-        f"- Cross-cutting concerns between immune, load balancing, and persistence\n"
-        f"- Mathematical model vs code discrepancies\n"
-        f"- Edge cases in immune behaviour, load allocation, and chain integrity\n\n"
-        f"Use the structured format (FINDING_ID, SEVERITY, etc.).\n"
-        f"If you find nothing new, state that explicitly.\n\n"
-        f"=== ARTIFACT 1: dynamic_management.py ===\n\n"
-        f"{code}\n\n"
-        f"=== END ARTIFACT 1 ===\n\n"
-        f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-        f"{math_appendix}\n\n"
-        f"=== END ARTIFACT 2 ===\n\n"
-        f"=== ARTIFACT 3: verification_chain.py ===\n\n"
-        f"{verification_chain}\n\n"
-        f"=== END ARTIFACT 3 ===\n\n"
-        f"Produce your findings now."
-    )
+    elif task_key == "persistence":
+        boundary = (
+            "## Analytical Boundary\n"
+            "PERSISTENCE LAYER: verification_chain.py — hash chains, Merkle "
+            "trees, Ed25519 signing, epoch sealing, inclusion proofs. This "
+            "code has only had a single blind pass (Experiment 10) and has "
+            "never been through distributed compute review. Give it the "
+            "same rigour you would give production cryptographic code.\n\n"
+        )
+        artifact = (
+            f"=== ARTIFACT: verification_chain.py ===\n\n"
+            f"{verification_chain}\n\n"
+            f"=== END ARTIFACT ===\n\n"
+        )
+
+    elif task_key == "mathmodel":
+        boundary = (
+            "## Analytical Boundary\n"
+            "MATHEMATICAL MODEL: MATHEMATICAL_APPENDIX.md — verify internal "
+            "mathematical consistency. Also cross-reference against the code "
+            "in dynamic_management.py to verify that formulas are implemented "
+            "correctly. Flag any discrepancies between model and code.\n\n"
+        )
+        artifact = (
+            f"=== ARTIFACT 1: MATHEMATICAL_APPENDIX.md ===\n\n"
+            f"{math_appendix}\n\n"
+            f"=== END ARTIFACT 1 ===\n\n"
+            f"=== ARTIFACT 2: dynamic_management.py (for cross-reference) ===\n\n"
+            f"{code}\n\n"
+            f"=== END ARTIFACT 2 ===\n\n"
+        )
+
+    else:
+        raise ValueError(f"Unknown task_key: {task_key}")
+
+    fmt = FINDING_FORMAT.format(prefix=prefix)
+    return preamble + boundary + fmt + artifact + "Produce your findings now."
 
 
 def _extract_convergent_findings() -> str:
@@ -674,91 +678,103 @@ def run_experiment() -> Dict[str, Any]:
     _log(f"Manifest frozen: {head_hash[:8]}")
 
     all_findings: List[Finding] = []
+    per_task_findings: Dict[str, List[Finding]] = {t[0]: [] for t in TASKS}
     round_results: List[Dict[str, Any]] = []
+    convergent_text = _extract_convergent_findings()
+
+    def _dispatch_all_tasks(round_label: str, round_type: str,
+                            round_idx: int, phase_prefix: str) -> int:
+        """Dispatch all 4 tasks to all models for one round. Returns total findings."""
+        round_total = 0
+        round_entry: Dict[str, Any] = {"round": round_label}
+
+        for task_key, id_prefix, task_desc, in [(t[0], t[1], t[2]) for t in TASKS]:
+            _log(f"\n--- {round_label}: {task_desc} ---")
+
+            prior_text = format_findings_for_context(per_task_findings[task_key])
+            prompt = _build_task_prompt(
+                task_key, round_label, round_type,
+                code, math_appendix, verification_chain, interface_summary,
+                prior_findings_text=prior_text,
+                convergent_text=convergent_text if round_type == "seeded" else "",
+            )
+            _log(f"  Prompt: {len(prompt)} chars")
+
+            task_findings, task_responses = _dispatch_round(
+                exp_config, mgr, prompt, cdsfl_text, code,
+                f"{phase_prefix}_{task_key}", round_idx,
+            )
+            per_task_findings[task_key].extend(task_findings)
+            all_findings.extend(task_findings)
+            round_entry[task_key] = len(task_findings)
+            round_total += len(task_findings)
+            _log(f"  {task_desc}: {len(task_findings)} findings from "
+                 f"{len(task_responses)} models")
+
+        round_entry["total"] = round_total
+        round_results.append(round_entry)
+        return round_total
 
     # ── ROUND 0A: Blind Discovery ──
-    _log("\n=== ROUND 0A: BLIND DISCOVERY ===")
-    r0a_prompt = build_r0a_prompt(code, interface_summary, math_appendix, verification_chain)
-    _log(f"Prompt: {len(r0a_prompt)} chars")
+    _log("\n=== ROUND 0A: BLIND DISCOVERY (4 tasks × 5 models) ===")
+    r0a_total = _dispatch_all_tasks("ROUND 0A (BLIND)", "blind", 0, "r0a")
+    _log(f"\nRound 0A total: {r0a_total} findings across 4 tasks")
 
-    r0a_findings, r0a_responses = _dispatch_round(
-        exp_config, mgr, r0a_prompt, cdsfl_text, code, "r0a", 0,
-    )
-    all_findings.extend(r0a_findings)
-    round_results.append({
-        "round": "0A", "findings": len(r0a_findings),
-        "models": len(r0a_responses),
-    })
-    _log(f"Round 0A: {len(r0a_findings)} findings from {len(r0a_responses)} models")
-
-    # Process through DynamicManager
-    r0a_model_responses = _build_model_responses(r0a_responses, 0)
-    if r0a_model_responses:
-        result = mgr.process_round(r0a_model_responses, r0a_findings, tasks, round_cost=1.0)
+    # Process through DynamicManager (combined findings)
+    r0a_all = all_findings[:]
+    r0a_model_responses = _build_model_responses(
+        {"combined": "R0A combined"}, 0)  # simplified — DM gets finding list
+    if r0a_all:
+        result = mgr.process_round(r0a_model_responses, r0a_all, tasks, round_cost=1.0)
         _record_telemetry(telemetry, mgr, result, 0)
 
     # ── ROUND 0B: Seeded Validation ──
-    _log("\n=== ROUND 0B: SEEDED VALIDATION ===")
-    r0a_text = format_findings_for_context(r0a_findings)
-    convergent_text = _extract_convergent_findings()
-    r0b_prompt = build_r0b_prompt(code, r0a_text, convergent_text, math_appendix, verification_chain)
-    _log(f"Prompt: {len(r0b_prompt)} chars")
+    _log("\n=== ROUND 0B: SEEDED VALIDATION (4 tasks × 5 models) ===")
+    r0b_total = _dispatch_all_tasks("ROUND 0B (SEEDED)", "seeded", 1, "r0b")
+    _log(f"\nRound 0B total: {r0b_total} findings across 4 tasks")
 
-    r0b_findings, r0b_responses = _dispatch_round(
-        exp_config, mgr, r0b_prompt, cdsfl_text, code, "r0b", 1,
-    )
-    all_findings.extend(r0b_findings)
-    round_results.append({
-        "round": "0B", "findings": len(r0b_findings),
-        "models": len(r0b_responses),
-    })
-    _log(f"Round 0B: {len(r0b_findings)} findings from {len(r0b_responses)} models")
-
+    r0b_findings = all_findings[len(r0a_all):]
     if r0b_findings:
-        r0b_model_responses = _build_model_responses(r0b_responses, 1)
+        r0b_model_responses = _build_model_responses(
+            {"combined": "R0B combined"}, 1)
         if r0b_model_responses:
-            result = mgr.process_round(r0b_model_responses, r0b_findings, tasks, round_cost=1.0)
+            result = mgr.process_round(r0b_model_responses, r0b_findings,
+                                       tasks, round_cost=1.0)
             _record_telemetry(telemetry, mgr, result, 1)
 
     # ── ADAPTIVE ROUNDS ──
     for round_idx in range(2, MAX_ROUNDS):
         elapsed_total = time.monotonic() - experiment_start
         if elapsed_total > WALL_CLOCK_CAP_S:
-            _log(f"\n  WALL-CLOCK CAP reached ({elapsed_total:.0f}s > {WALL_CLOCK_CAP_S}s)")
+            _log(f"\n  WALL-CLOCK CAP reached ({elapsed_total:.0f}s > "
+                 f"{WALL_CLOCK_CAP_S}s)")
+            _log(f"  Pausing for review — all findings saved to {LOGS_DIR}")
             break
 
-        _log(f"\n=== ROUND {round_idx}: ADAPTIVE ===")
+        _log(f"\n=== ROUND {round_idx}: ADAPTIVE (4 tasks × 5 models) ===")
 
         # Check DynamicManager stop condition
         if mgr.diminishing_returns.stop(round_idx - 1):
             _log(f"  DynamicManager stop() fired at round {round_idx}")
-            _log(f"  Reason: exhaustion={True}, abstraction_ok="
-                 f"{mgr.diminishing_returns._abstraction_dropping(round_idx - 1)}")
+            _log(f"  Mathematical stop: exhaustion AND abstraction_ok")
             break
 
-        prior_text = format_findings_for_context(all_findings)
-        adaptive_prompt = build_adaptive_prompt(code, round_idx, prior_text, math_appendix, verification_chain)
-        _log(f"Prompt: {len(adaptive_prompt)} chars")
+        pre_count = len(all_findings)
+        rn_total = _dispatch_all_tasks(
+            f"ROUND {round_idx} (ADAPTIVE)", "adaptive", round_idx,
+            f"round{round_idx}")
+        _log(f"\nRound {round_idx}: {rn_total} findings across 4 tasks")
 
-        rn_findings, rn_responses = _dispatch_round(
-            exp_config, mgr, adaptive_prompt, cdsfl_text, code,
-            f"round{round_idx}", round_idx,
-        )
-        all_findings.extend(rn_findings)
-        round_results.append({
-            "round": round_idx, "findings": len(rn_findings),
-            "models": len(rn_responses),
-        })
-        _log(f"Round {round_idx}: {len(rn_findings)} findings from {len(rn_responses)} models")
-
+        rn_findings = all_findings[pre_count:]
         if rn_findings:
-            rn_model_responses = _build_model_responses(rn_responses, round_idx)
+            rn_model_responses = _build_model_responses(
+                {"combined": f"R{round_idx} combined"}, round_idx)
             if rn_model_responses:
-                result = mgr.process_round(rn_model_responses, rn_findings, tasks, round_cost=1.0)
+                result = mgr.process_round(rn_model_responses, rn_findings,
+                                           tasks, round_cost=1.0)
                 _record_telemetry(telemetry, mgr, result, round_idx)
         else:
-            _log(f"  No findings in round {round_idx} — checking if stop")
-            # No findings = likely convergence
+            _log(f"  Zero findings across all 4 tasks — convergence reached")
             break
 
     # ── Summary ──
@@ -944,8 +960,8 @@ def _record_telemetry(
     adjustments = getattr(mgr, '_immune_adjustments', [])
     recent_adjustments = adjustments[-5:] if adjustments else []
 
-    # Allocation warnings
-    warnings = getattr(mgr.load_balancer, '_allocation_warnings', [])
+    # Allocation warnings (LoadBalancer is constructed locally in DM, not stored)
+    warnings = getattr(mgr, '_allocation_warnings', [])
 
     telemetry.record(
         round_idx=round_idx,
