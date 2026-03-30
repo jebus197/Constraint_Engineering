@@ -1705,3 +1705,333 @@ class TestPerModelMu:
         agg = det.aggregate_per_model_mu(1)
         system_mu = det.marginal_value(1)
         assert abs(agg - system_mu) < 0.001
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AREA 7b: AUTONOMOUS REMEDIATION (Exp15)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from bench.dynamic_management import DetectorDiagnosis, DetectorHealthMonitor
+
+
+class TestDetectorHealthMonitorExp15:
+    """Tests for Exp15 autonomous remediation: new detectors, chains, verification."""
+
+    def test_vocab_growth_tracking(self):
+        """Health monitor records vocab growth rates."""
+        hm = DetectorHealthMonitor()
+        hm.record_vocab_growth(0.15)
+        hm.record_vocab_growth(0.10)
+        assert len(hm._vocab_growth_history) == 2
+        assert hm._vocab_growth_history[0] == 0.15
+
+    def test_model_failure_detection_single(self):
+        """Single failure does not trigger diagnosis."""
+        hm = DetectorHealthMonitor()
+        diag = hm.record_model_round("CC2", 0, failed=True)
+        assert diag is None  # one failure = no diagnosis
+
+    def test_model_failure_detection_consecutive(self):
+        """Two consecutive failures triggers WARNING."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("CC2", 0, failed=True)
+        diag = hm.record_model_round("CC2", 0, failed=True)
+        assert diag is not None
+        assert diag.detector == "model_failure"
+        assert diag.severity == "WARNING"
+        assert "CC2" in diag.pathology
+
+    def test_model_failure_detection_three_critical(self):
+        """Three consecutive failures escalates to CRITICAL."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("CC2", 0, failed=True)
+        hm.record_model_round("CC2", 0, failed=True)
+        diag = hm.record_model_round("CC2", 0, failed=True)
+        assert diag is not None
+        assert diag.severity == "CRITICAL"
+
+    def test_model_failure_resets_on_success(self):
+        """Successful round resets consecutive failure count."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("CC2", 0, failed=True)
+        hm.record_model_round("CC2", 5, failed=False)  # success resets
+        diag = hm.record_model_round("CC2", 0, failed=True)
+        assert diag is None  # only 1 failure since reset
+
+    def test_findings_decline_detection(self):
+        """Declining findings for 3 rounds triggers diagnosis."""
+        hm = DetectorHealthMonitor()
+        # Need 4 rounds of data (we check the last 3)
+        for counts in [30, 25, 18, 10]:
+            hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                            finding_count=counts, active_models=5)
+        # Last 3 are [25, 18, 10] — declining with drop > 5
+        diags = [d for d in hm._diagnoses if d.detector == "findings_decline"]
+        assert len(diags) == 1
+        assert "declining" in diags[0].pathology.lower()
+
+    def test_findings_decline_not_triggered_by_noise(self):
+        """Small declines (< 5 total) don't trigger diagnosis."""
+        hm = DetectorHealthMonitor()
+        for counts in [10, 9, 8, 7]:
+            hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                            finding_count=counts, active_models=5)
+        diags = [d for d in hm._diagnoses if d.detector == "findings_decline"]
+        assert len(diags) == 0  # drop is only 2 (9→7)
+
+    def test_vocab_saturation_detection(self):
+        """Low vocab growth for 3+ rounds triggers vocab_saturation diagnosis."""
+        hm = DetectorHealthMonitor()
+        # Need 3 rounds of data with low vocab growth
+        for i in range(3):
+            hm.record_vocab_growth(0.02)  # below 0.04 threshold
+            hm.record_round(kappa=0.5, mu=10.0, novelty_rate=0.5,
+                            finding_count=10, active_models=5)
+        diags = [d for d in hm._diagnoses if d.detector == "vocab_saturation"]
+        assert len(diags) == 1
+        assert "premature" in diags[0].pathology.lower()
+
+    def test_remediation_state_tracking(self):
+        """set_remediation_state correctly records state for verification."""
+        hm = DetectorHealthMonitor()
+        hm.set_remediation_state("kappa_stuck", chain_idx=0,
+                                  applied_round=3, metric_at_apply=0.0,
+                                  target_metric="kappa")
+        state = hm._remediation_state["kappa_stuck"]
+        assert state["chain_idx"] == 0
+        assert state["applied_round"] == 3
+        assert state["target_metric"] == "kappa"
+
+    def test_remediation_outcome_verification_success(self):
+        """Successful remediation is detected and logged."""
+        hm = DetectorHealthMonitor()
+        hm.set_remediation_state("kappa_stuck", chain_idx=0,
+                                  applied_round=0, metric_at_apply=0.0,
+                                  target_metric="kappa",
+                                  verification_window=2)
+        # Record 3 rounds (applied at 0, verify after window=2)
+        hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                         finding_count=10, active_models=5)
+        hm.record_round(kappa=0.3, mu=10.0, novelty_rate=1.0,
+                         finding_count=10, active_models=5)
+        diags = hm.record_round(kappa=0.5, mu=10.0, novelty_rate=1.0,
+                                 finding_count=10, active_models=5)
+        outcome_diags = [d for d in diags if d.detector == "remediation_outcome"]
+        assert len(outcome_diags) == 1
+        assert "SUCCESSFUL" in outcome_diags[0].pathology
+        assert len(hm._remediation_log) == 1
+        assert hm._remediation_log[0]["improved"] is True
+
+    def test_remediation_outcome_verification_failure(self):
+        """Failed remediation triggers escalation."""
+        hm = DetectorHealthMonitor()
+        hm.set_remediation_state("kappa_stuck", chain_idx=0,
+                                  applied_round=0, metric_at_apply=0.0,
+                                  target_metric="kappa",
+                                  verification_window=2)
+        # Record 3 rounds with no improvement — outcome fires on round 2
+        all_diags = []
+        for _ in range(3):
+            diags = hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                                     finding_count=10, active_models=5)
+            all_diags.extend(diags)
+        outcome_diags = [d for d in all_diags
+                         if d.detector == "remediation_outcome"]
+        assert len(outcome_diags) == 1
+        assert "INEFFECTIVE" in outcome_diags[0].pathology
+        # Chain index should have been incremented for escalation
+        assert hm._remediation_state["kappa_stuck"]["chain_idx"] == 1
+
+    def test_remediation_log_accumulates(self):
+        """Remediation log tracks all attempts."""
+        hm = DetectorHealthMonitor()
+        hm.set_remediation_state("test", chain_idx=0,
+                                  applied_round=0, metric_at_apply=5.0,
+                                  target_metric="finding_count",
+                                  verification_window=1)
+        hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                         finding_count=10, active_models=5)
+        hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
+                         finding_count=8, active_models=5)
+        log = hm.remediation_log
+        assert len(log) == 1
+        assert log[0]["pathology"] == "test"
+        assert log[0]["value_now"] == 8.0
+
+
+class TestRemediationChains:
+    """Tests for the remediation chain system in DynamicManager."""
+
+    def _make_manager(self):
+        """Create a minimal DynamicManager for remediation testing."""
+        config = DynamicManagementConfig(immune_feedback_enabled=True,
+                                         immune_damping_rounds=0)
+        models = [
+            ModelSpec(model_id="m1", fingerprint=CapabilityFingerprint(0.1, 0.9, 0.8, 0.8)),
+            ModelSpec(model_id="m2", fingerprint=CapabilityFingerprint(0.2, 0.8, 0.7, 0.7)),
+        ]
+        return DynamicManager(config=config, models=models)
+
+    def test_kappa_chain_step_0(self):
+        """Kappa stuck diagnosis triggers tau_sim reduction."""
+        mgr = self._make_manager()
+        old_tau = mgr.config.tau_sim
+        diag = DetectorDiagnosis(
+            detector="kappa",
+            pathology="kappa stuck at ~0 for 3 rounds",
+            severity="WARNING",
+            recommended_action="lower tau_sim",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj is not None
+        assert adj["parameter"] == "tau_sim"
+        assert mgr.config.tau_sim == old_tau - 0.1
+
+    def test_kappa_chain_escalation(self):
+        """When chain step 0 fails, escalation uses step 1."""
+        mgr = self._make_manager()
+        # Simulate: step 0 was tried and failed (chain_idx escalated to 1)
+        mgr.health_monitor._remediation_state["kappa_stuck"] = {
+            "chain_idx": 1, "applied_round": 0,
+            "metric_at_apply": 0.0, "target_metric": "kappa",
+            "verification_window": 2,
+        }
+        old_tau = mgr.config.tau_sim
+        diag = DetectorDiagnosis(
+            detector="kappa",
+            pathology="kappa stuck at ~0 for 3 rounds",
+            severity="CRITICAL",
+            recommended_action="lower tau_sim more",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=5)
+        assert adj is not None
+        assert mgr.config.tau_sim == old_tau - 0.1  # step 1 also lowers by 0.1
+
+    def test_kappa_chain_exhaustion(self):
+        """When all chain steps exhausted, immune reports exhaustion."""
+        mgr = self._make_manager()
+        # Set chain_idx beyond the chain length
+        chain_len = len(mgr._REMEDIATION_CHAINS["kappa_stuck"])
+        mgr.health_monitor._remediation_state["kappa_stuck"] = {
+            "chain_idx": chain_len, "applied_round": 0,
+            "metric_at_apply": 0.0, "target_metric": "kappa",
+            "verification_window": 2,
+        }
+        diag = DetectorDiagnosis(
+            detector="kappa",
+            pathology="kappa stuck at ~0",
+            severity="CRITICAL",
+            recommended_action="n/a",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=10)
+        assert adj is None  # chain exhausted, no fix applied
+        # Check exhaustion event was emitted
+        exhaustion = [e for e in mgr.event_stream._all_events
+                      if "EXHAUSTED" in (e.detail or "")]
+        assert len(exhaustion) == 1
+
+    def test_findings_decline_deferred(self):
+        """Findings decline is classified as DEFER — queued for human review."""
+        mgr = self._make_manager()
+        diag = DetectorDiagnosis(
+            detector="findings_decline",
+            pathology="findings declining for 3 rounds",
+            severity="WARNING",
+            recommended_action="add synthesis directive",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj is None  # DEFER — not applied
+        assert len(mgr.pending_remediations) == 1
+        assert mgr.pending_remediations[0]["chain_key"] == "findings_decline"
+        assert mgr.pending_remediations[0]["status"] == "PENDING"
+
+    def test_deferred_remediation_approve(self):
+        """Approved deferred remediation gets applied."""
+        mgr = self._make_manager()
+        diag = DetectorDiagnosis(
+            detector="findings_decline",
+            pathology="findings declining for 3 rounds",
+            severity="WARNING",
+            recommended_action="add synthesis directive",
+        )
+        mgr.apply_diagnosis(diag, round_idx=0)
+        assert len(mgr.pending_remediations) == 1
+        adj = mgr.approve_deferred_remediation(0)
+        assert adj is not None
+        assert "m1" in mgr.config.per_model_directives
+        assert mgr._deferred_remediations[0]["status"] == "APPROVED"
+        assert len(mgr.pending_remediations) == 0
+
+    def test_deferred_remediation_reject(self):
+        """Rejected deferred remediation is not applied."""
+        mgr = self._make_manager()
+        diag = DetectorDiagnosis(
+            detector="findings_decline",
+            pathology="findings declining for 3 rounds",
+            severity="WARNING",
+            recommended_action="add synthesis directive",
+        )
+        mgr.apply_diagnosis(diag, round_idx=0)
+        result = mgr.reject_deferred_remediation(0)
+        assert result is True
+        assert mgr._deferred_remediations[0]["status"] == "REJECTED"
+        assert "m1" not in mgr.config.per_model_directives
+
+    def test_model_failure_adds_pre_decompose(self):
+        """Model failure adds model to pre-decompose set."""
+        mgr = self._make_manager()
+        diag = DetectorDiagnosis(
+            detector="model_failure",
+            pathology="m1 has failed 3 consecutive rounds",
+            severity="CRITICAL",
+            recommended_action="pre-decompose m1",
+            evidence={"model_id": "m1"},
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj is not None
+        assert "m1" in mgr.config.pre_decompose_models
+
+    def test_damping_prevents_oscillation(self):
+        """Damping prevents the same fix being applied too quickly."""
+        config = DynamicManagementConfig(immune_feedback_enabled=True,
+                                         immune_damping_rounds=3)
+        models = [
+            ModelSpec(model_id="m1", fingerprint=CapabilityFingerprint(0.1, 0.9, 0.8, 0.8)),
+        ]
+        mgr = DynamicManager(config=config, models=models)
+        diag = DetectorDiagnosis(
+            detector="kappa", pathology="kappa stuck",
+            severity="WARNING", recommended_action="lower tau_sim",
+        )
+        adj1 = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj1 is not None
+        adj2 = mgr.apply_diagnosis(diag, round_idx=1)
+        assert adj2 is None  # damped — only 1 round since last adjustment
+
+    def test_vocab_saturation_halves_threshold(self):
+        """Vocab saturation diagnosis halves tau_vocab_growth."""
+        mgr = self._make_manager()
+        old_val = mgr.config.tau_vocab_growth
+        diag = DetectorDiagnosis(
+            detector="vocab_saturation",
+            pathology="premature vocab saturation",
+            severity="WARNING",
+            recommended_action="lower threshold",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj is not None
+        assert mgr.config.tau_vocab_growth == pytest.approx(old_val * 0.5)
+
+    def test_immune_disabled_skips_remediation(self):
+        """When immune feedback is disabled, no remediation occurs."""
+        config = DynamicManagementConfig(immune_feedback_enabled=False)
+        models = [
+            ModelSpec(model_id="m1", fingerprint=CapabilityFingerprint(0.1, 0.9, 0.8, 0.8)),
+        ]
+        mgr = DynamicManager(config=config, models=models)
+        diag = DetectorDiagnosis(
+            detector="kappa", pathology="kappa stuck",
+            severity="WARNING", recommended_action="lower tau_sim",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        assert adj is None

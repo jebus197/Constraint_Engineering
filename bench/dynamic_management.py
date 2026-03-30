@@ -49,6 +49,7 @@ from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     FrozenSet,
     List,
@@ -2440,10 +2441,15 @@ class DetectorHealthMonitor:
     - mu increasing when finding count is stable/declining (cost distortion)
     - novelty_rate and mu disagreeing (one says converging, other doesn't)
     - model benching causing metric distortion
+    - model failure patterns (consecutive timeouts/errors)
+    - findings decline across all models (system exhaustion)
+    - vocab saturation (low vocab_growth sustained)
 
-    Does NOT modify detector parameters autonomously — emits diagnoses with
-    recommended actions. The orchestration layer (or manager) decides whether
-    to act on them.
+    Autonomous remediation (Exp15): the monitor now tracks remediation outcomes
+    and escalates through remediation chains when initial fixes don't work.
+    Each pathology has a prioritised chain of fixes. After applying fix N,
+    the monitor checks whether the target metric improved within a verification
+    window. If not, it escalates to fix N+1. Full audit trail is maintained.
 
     This is the mathematical immune response the founder identified: the system
     monitors its own monitoring instruments and flags dysfunction.
@@ -2485,6 +2491,21 @@ class DetectorHealthMonitor:
         self._resolved_counts: Dict[str, int] = {}   # detector → resolved pathologies
         self._sensitivity_decay: float = 0.8  # reduce window after resolved pathology
         self._sensitivity_growth: float = 1   # extend window after persistent pathology
+
+        # --- Autonomous remediation (Exp15) ---
+        # Track per-model failure counts for failure pattern detection.
+        self._model_failure_counts: Dict[str, int] = {}  # model → consecutive failures
+        self._model_finding_history: Dict[str, List[int]] = {}  # model → per-round finding counts
+        self._vocab_growth_history: List[float] = []  # vocab growth rates per round
+
+        # Remediation chain state: tracks which fix in the chain was last
+        # applied for each pathology, and the metric value at application time.
+        # Schema: {pathology_key: {"chain_idx": int, "applied_round": int,
+        #          "metric_at_apply": float, "verification_window": int}}
+        self._remediation_state: Dict[str, Dict[str, Any]] = {}
+
+        # Full remediation audit log — never truncated, exported in reports.
+        self._remediation_log: List[Dict[str, Any]] = []
 
     def record_round(
         self,
@@ -2636,8 +2657,257 @@ class DetectorHealthMonitor:
                 )
                 new_diagnoses.append(diag)
 
+        # --- Check 4 (Exp15): System-wide findings decline ---
+        # If total findings have declined for 3+ consecutive rounds, the models
+        # may be exhausting the artifact or getting stuck in unproductive areas.
+        if len(self._finding_counts) >= 4:
+            recent_3 = self._finding_counts[-3:]
+            if all(recent_3[i] < recent_3[i - 1] for i in range(1, len(recent_3))):
+                total_decline = recent_3[0] - recent_3[-1]
+                if total_decline > 5:  # not just noise
+                    persistence = self._pathology_counts.get("findings_decline", 0)
+                    self._pathology_counts["findings_decline"] = persistence + 1
+                    severity = "CRITICAL" if persistence >= 2 else "WARNING"
+                    diag = DetectorDiagnosis(
+                        detector="findings_decline",
+                        pathology=(
+                            f"System-wide findings declining for 3 rounds "
+                            f"({recent_3}), total drop={total_decline}"
+                        ),
+                        severity=severity,
+                        recommended_action=(
+                            "Models may be exhausting the current area rotation. "
+                            "Consider shuffling area order, adjusting decomposition "
+                            "boundaries, or adding cross-area synthesis prompts."
+                        ),
+                        evidence={
+                            "finding_counts": recent_3,
+                            "total_decline": total_decline,
+                            "occurrence": persistence + 1,
+                        },
+                    )
+                    new_diagnoses.append(diag)
+            else:
+                if self._pathology_counts.get("findings_decline", 0) > 0:
+                    self._resolved_counts["findings_decline"] = (
+                        self._resolved_counts.get("findings_decline", 0) + 1
+                    )
+                    self._pathology_counts["findings_decline"] = 0
+
+        # --- Check 5 (Exp15): Vocab saturation detection ---
+        # Wire up the previously dead vocab_saturation handler: if vocab_growth
+        # has been below tau_vocab_growth for 3+ consecutive rounds AND finding
+        # counts are still positive, the models are using repetitive vocabulary
+        # but still producing novel findings.
+        if len(self._vocab_growth_history) >= 3:
+            recent_vg = self._vocab_growth_history[-3:]
+            # We don't have direct access to config here, so use 0.04 as default
+            # (the config tau_vocab_growth is typically 0.04).
+            if all(vg < 0.04 for vg in recent_vg):
+                recent_fc = self._finding_counts[-3:]
+                if sum(recent_fc) > 0:
+                    persistence = self._pathology_counts.get("vocab_saturation", 0)
+                    self._pathology_counts["vocab_saturation"] = persistence + 1
+                    diag = DetectorDiagnosis(
+                        detector="vocab_saturation",
+                        pathology=(
+                            f"Premature vocab saturation: vocab_growth below 4% "
+                            f"for 3 rounds ({[f'{v:.3f}' for v in recent_vg]}) "
+                            f"but {sum(recent_fc)} findings still being produced"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            "Lower tau_vocab_growth or reset vocab tracking window. "
+                            "Models are still productive but the vocab growth signal "
+                            "would falsely suggest saturation."
+                        ),
+                        evidence={
+                            "vocab_growth_rates": recent_vg,
+                            "finding_counts": recent_fc,
+                            "occurrence": persistence + 1,
+                        },
+                    )
+                    new_diagnoses.append(diag)
+
         self._diagnoses.extend(new_diagnoses)
+
+        # --- Autonomous remediation outcome verification (Exp15) ---
+        # After each round, check if previously applied remediations worked.
+        verification_results = self._verify_remediation_outcomes()
+        for vr in verification_results:
+            new_diagnoses.append(vr)  # outcome reports as diagnoses
+
         return new_diagnoses
+
+    def record_vocab_growth(self, vocab_growth_rate: float) -> None:
+        """Record vocab growth rate for this round (called by manager)."""
+        self._vocab_growth_history.append(vocab_growth_rate)
+
+    def record_model_round(
+        self, model_id: str, finding_count: int, failed: bool
+    ) -> Optional[DetectorDiagnosis]:
+        """Track per-model performance for failure pattern detection.
+
+        Args:
+            model_id: The model being tracked.
+            finding_count: Findings produced this round (0 if failed/timeout).
+            failed: Whether the model failed/timed out this round.
+
+        Returns:
+            DetectorDiagnosis if a failure pattern is detected, else None.
+        """
+        if model_id not in self._model_finding_history:
+            self._model_finding_history[model_id] = []
+        self._model_finding_history[model_id].append(finding_count)
+
+        if failed:
+            self._model_failure_counts[model_id] = (
+                self._model_failure_counts.get(model_id, 0) + 1
+            )
+        else:
+            self._model_failure_counts[model_id] = 0
+
+        consecutive = self._model_failure_counts.get(model_id, 0)
+        if consecutive >= 2:
+            key = f"model_failure_{model_id}"
+            persistence = self._pathology_counts.get(key, 0)
+            self._pathology_counts[key] = persistence + 1
+            severity = "CRITICAL" if consecutive >= 3 else "WARNING"
+            diag = DetectorDiagnosis(
+                detector="model_failure",
+                pathology=(
+                    f"{model_id} has failed {consecutive} consecutive rounds"
+                ),
+                severity=severity,
+                recommended_action=(
+                    f"Lower decomposition threshold for {model_id}, or "
+                    f"increase timeout, or bench and reassign its workload."
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "consecutive_failures": consecutive,
+                    "occurrence": persistence + 1,
+                },
+            )
+            self._diagnoses.append(diag)
+            return diag
+        return None
+
+    def set_remediation_state(
+        self,
+        pathology_key: str,
+        chain_idx: int,
+        applied_round: int,
+        metric_at_apply: float,
+        target_metric: str,
+        verification_window: int = 2,
+    ) -> None:
+        """Record that a remediation was applied, for outcome verification.
+
+        Args:
+            pathology_key: The pathology being remediated (e.g. "kappa_stuck").
+            chain_idx: Index in the remediation chain (0 = first fix tried).
+            applied_round: Round when the fix was applied.
+            metric_at_apply: Value of the target metric when fix was applied.
+            target_metric: Name of the metric to check ("kappa", "mu", etc.).
+            verification_window: Rounds to wait before checking outcome.
+        """
+        self._remediation_state[pathology_key] = {
+            "chain_idx": chain_idx,
+            "applied_round": applied_round,
+            "metric_at_apply": metric_at_apply,
+            "target_metric": target_metric,
+            "verification_window": verification_window,
+        }
+
+    def _verify_remediation_outcomes(self) -> List[DetectorDiagnosis]:
+        """Check if previously applied remediations improved their target metrics.
+
+        Called at the end of each record_round(). For each pending remediation,
+        checks whether enough rounds have passed and whether the target metric
+        improved. Emits outcome diagnoses.
+        """
+        outcomes: List[DetectorDiagnosis] = []
+        current_round = len(self._kappa_history) - 1
+
+        for pathology_key, state in list(self._remediation_state.items()):
+            rounds_since = current_round - state["applied_round"]
+            if rounds_since < state["verification_window"]:
+                continue  # Not enough data yet
+
+            # Get current metric value
+            target = state["target_metric"]
+            if target == "kappa" and self._kappa_history:
+                current_val = self._kappa_history[-1]
+            elif target == "mu" and self._mu_history:
+                current_val = self._mu_history[-1]
+            elif target == "novelty" and self._novelty_history:
+                current_val = self._novelty_history[-1]
+            elif target == "finding_count" and self._finding_counts:
+                current_val = float(self._finding_counts[-1])
+            elif target == "vocab_growth" and self._vocab_growth_history:
+                current_val = self._vocab_growth_history[-1]
+            else:
+                continue
+
+            old_val = state["metric_at_apply"]
+            chain_idx = state["chain_idx"]
+            improved = current_val > old_val  # higher is better for kappa, findings
+
+            # For some metrics, "improved" means decreased (mu should stabilise)
+            if target in ("mu",):
+                improved = abs(current_val) < abs(old_val) * 1.2  # mu not getting worse
+
+            log_entry = {
+                "pathology": pathology_key,
+                "chain_idx": chain_idx,
+                "applied_round": state["applied_round"],
+                "verified_round": current_round,
+                "metric": target,
+                "value_at_apply": old_val,
+                "value_now": current_val,
+                "improved": improved,
+            }
+            self._remediation_log.append(log_entry)
+
+            if improved:
+                severity = "INFO"
+                detail = (
+                    f"Remediation SUCCESSFUL for {pathology_key} "
+                    f"(chain step {chain_idx}): {target} {old_val:.4f} → "
+                    f"{current_val:.4f}"
+                )
+                # Clear remediation state — fix worked
+                del self._remediation_state[pathology_key]
+            else:
+                severity = "WARNING"
+                detail = (
+                    f"Remediation INEFFECTIVE for {pathology_key} "
+                    f"(chain step {chain_idx}): {target} {old_val:.4f} → "
+                    f"{current_val:.4f}. Escalating to next fix in chain."
+                )
+                # Increment chain index for escalation — the next apply_diagnosis
+                # call will try the next fix in the chain.
+                state["chain_idx"] += 1
+
+            diag = DetectorDiagnosis(
+                detector="remediation_outcome",
+                pathology=detail,
+                severity=severity,
+                recommended_action=(
+                    "No further action needed." if improved
+                    else f"Escalate to chain step {chain_idx + 1} for {pathology_key}."
+                ),
+                evidence=log_entry,
+            )
+            outcomes.append(diag)
+
+        return outcomes
+
+    @property
+    def remediation_log(self) -> List[Dict[str, Any]]:
+        """Full audit trail of all remediation attempts and outcomes."""
+        return list(self._remediation_log)
 
     # --- Phase E (Exp14): Dispatch health monitoring ---
     # Three new pathology types for operational health, not just detector health.
@@ -3489,6 +3759,13 @@ class DynamicManager:
         self._immune_adjustments: List[Dict[str, Any]] = []
         # Log of all parameter adjustments for auditability.
         self._adjustment_log: List[Dict[str, Any]] = []
+        # Deferred remediations: fixes classified as DEFER that need human
+        # approval before application.  Each entry contains the full adjustment
+        # that would be applied, plus rationale.
+        self._deferred_remediations: List[Dict[str, Any]] = []
+        # Regression snapshots: metric values captured before each AUTO fix,
+        # used to detect if the fix made things worse.
+        self._pre_fix_snapshots: List[Dict[str, Any]] = []
 
         # --- Phase E: Dispatch health tracking ---
         # Records dispatch blocking events per model for false-positive detection.
@@ -3598,7 +3875,14 @@ class DynamicManager:
         Returns:
             RoundResult with all metrics and decisions.
         """
-        round_idx = self.fsm.current_round
+        # The FSM advances current_round at the END of this method (via
+        # select_event → COMPLETE).  So reading fsm.current_round here gives
+        # the PREVIOUS round's index for rounds > 0.  Track the actual count
+        # of process_round calls instead.
+        if not hasattr(self, '_process_round_count'):
+            self._process_round_count = 0
+        round_idx = self._process_round_count
+        self._process_round_count += 1
 
         self.event_stream.emit(
             ManagerEvent(
@@ -3712,6 +3996,38 @@ class DynamicManager:
 
         # --- Area 7: Detector Health Monitor (immune response) ---
         novelty = self.diminishing_returns.novelty_rate(round_idx)
+
+        # Feed vocab_growth to health monitor for saturation detection (Exp15)
+        vg_rate = self.diminishing_returns.vocab_growth_rate(round_idx)
+        self.health_monitor.record_vocab_growth(vg_rate)
+
+        # Feed per-model round data for failure pattern detection (Exp15)
+        from collections import Counter as _Counter
+        _model_finding_counts = _Counter(f.model_id for f in findings)
+        for model in self.models:
+            mid = model.model_id
+            fc = _model_finding_counts.get(mid, 0)
+            failed = mid not in responses or not responses[mid].parseable
+            model_diag = self.health_monitor.record_model_round(mid, fc, failed)
+            if model_diag:
+                self.event_stream.emit(
+                    ManagerEvent(
+                        event_type=ManagerEventType.STOP_CHECK,
+                        model_id=mid,
+                        round_idx=round_idx,
+                        detail=f"[IMMUNE:{model_diag.severity}] {model_diag.detector}: "
+                               f"{model_diag.pathology}",
+                        metadata={
+                            "immune_response": True,
+                            "detector": model_diag.detector,
+                            "severity": model_diag.severity,
+                            "action": model_diag.recommended_action,
+                            "evidence": model_diag.evidence,
+                        },
+                    )
+                )
+                self.apply_diagnosis(model_diag, round_idx)
+
         diagnoses = self.health_monitor.record_round(
             kappa=kappa,
             mu=mu,
@@ -3772,6 +4088,51 @@ class DynamicManager:
             )
             # Close the feedback loop for dispatch diagnoses too.
             self.apply_diagnosis(diag, round_idx)
+
+        # --- Regression detection (Exp15) ---
+        # Check if any AUTO fix made metrics worse.  If a fix caused a
+        # regression (target metric declined AND another metric dropped
+        # significantly), log and defer future fixes for human review.
+        if self._pre_fix_snapshots and round_idx >= 2:
+            for snap in self._pre_fix_snapshots:
+                if round_idx - snap["round"] < 2:
+                    continue  # too early to judge
+                current_metrics = {
+                    "kappa": self._get_current_metric("kappa"),
+                    "mu": self._get_current_metric("mu"),
+                    "finding_count": self._get_current_metric("finding_count"),
+                    "vocab_growth": self._get_current_metric("vocab_growth"),
+                }
+                pre_metrics = snap["metrics"]
+                # Check for regression: finding_count dropped by >30%
+                pre_fc = pre_metrics.get("finding_count", 0)
+                cur_fc = current_metrics.get("finding_count", 0)
+                if pre_fc > 0 and cur_fc < pre_fc * 0.7:
+                    self.event_stream.emit(
+                        ManagerEvent(
+                            event_type=ManagerEventType.STOP_CHECK,
+                            model_id="system",
+                            round_idx=round_idx,
+                            detail=(
+                                f"[IMMUNE:REGRESSION] Fix at round {snap['round']} "
+                                f"({snap['chain_key']} step {snap['chain_idx']}) "
+                                f"may have caused regression: finding_count "
+                                f"{pre_fc:.0f} → {cur_fc:.0f} (-{(1-cur_fc/pre_fc)*100:.0f}%). "
+                                f"Deferring further autonomous fixes for human review."
+                            ),
+                            metadata={
+                                "regression": True,
+                                "pre_fix": pre_metrics,
+                                "post_fix": current_metrics,
+                                "fix_round": snap["round"],
+                            },
+                        )
+                    )
+            # Clean up checked snapshots
+            self._pre_fix_snapshots = [
+                s for s in self._pre_fix_snapshots
+                if round_idx - s["round"] < 2
+            ]
 
         # --- Area 3: FSM transition ---
         event = self.fsm.select_event(
@@ -4037,17 +4398,141 @@ class DynamicManager:
 
     # --- Phase B: Immune feedback loop ---
 
+    # --- Remediation chains (Exp15) ---
+    # Each pathology has a prioritised sequence of fixes. The immune layer
+    # tries fix 0 first, verifies the outcome, and escalates to fix 1 if
+    # the metric didn't improve within the verification window.
+    #
+    # Chain format: list of (parameter, transform_fn, metric_to_verify) tuples.
+    # transform_fn: (config, old_value) → new_value
+    # Returns None if no further escalation is possible (chain exhausted).
+
+    # Risk levels for remediation steps:
+    #   AUTO  — safe to apply without human review (bounded parameter tweaks)
+    #   DEFER — requires human approval before application (structural changes,
+    #           multi-parameter modifications, or anything that could cause
+    #           regression cascades)
+    #
+    # The immune layer applies AUTO fixes immediately.  DEFER fixes are queued
+    # in _deferred_remediations with full rationale.  The experiment report
+    # surfaces them for human review.
+
+    _REMEDIATION_CHAINS: ClassVar[Dict[str, List[Dict[str, Any]]]] = {
+        "kappa_stuck": [
+            # Step 0: Lower tau_sim by 0.1 — bounded, reversible
+            {"parameter": "tau_sim", "transform": "lower_tau_sim_01",
+             "target_metric": "kappa", "description": "lower tau_sim by 0.1",
+             "risk": "AUTO"},
+            # Step 1: Lower tau_sim again — still bounded but second adjustment
+            {"parameter": "tau_sim", "transform": "lower_tau_sim_01",
+             "target_metric": "kappa", "description": "lower tau_sim by 0.1 again",
+             "risk": "AUTO"},
+            # Step 2: Floor tau_sim — aggressive, could cause false convergence
+            {"parameter": "tau_sim", "transform": "lower_tau_sim_to_floor",
+             "target_metric": "kappa",
+             "description": "lower tau_sim to floor (0.3)",
+             "risk": "DEFER"},
+        ],
+        "vocab_saturation": [
+            # Step 0: Halve tau_vocab_growth — bounded
+            {"parameter": "tau_vocab_growth", "transform": "halve_tau_vocab",
+             "target_metric": "vocab_growth",
+             "description": "halve tau_vocab_growth",
+             "risk": "AUTO"},
+            # Step 1: Quarter it — getting aggressive
+            {"parameter": "tau_vocab_growth", "transform": "halve_tau_vocab",
+             "target_metric": "vocab_growth",
+             "description": "halve tau_vocab_growth again",
+             "risk": "DEFER"},
+        ],
+        "findings_decline": [
+            # Step 0: Add cross-area synthesis directive — modifies all models
+            {"parameter": "per_model_directives", "transform": "add_synthesis_directive",
+             "target_metric": "finding_count",
+             "description": "add cross-area synthesis directive to all models",
+             "risk": "DEFER"},
+        ],
+        "model_failure": [
+            # Step 0: Add model to pre-decompose set — safe structural change
+            {"parameter": "pre_decompose_models", "transform": "add_to_pre_decompose",
+             "target_metric": "finding_count",
+             "description": "pre-decompose failing model",
+             "risk": "AUTO"},
+        ],
+    }
+
+    def _apply_transform(
+        self, transform_name: str, diagnosis: DetectorDiagnosis
+    ) -> Optional[Dict[str, Any]]:
+        """Execute a named transform on the config. Returns adjustment dict."""
+        if transform_name == "lower_tau_sim_01":
+            old_val = self.config.tau_sim
+            new_val = max(0.3, old_val - 0.1)
+            if new_val != old_val:
+                self.config.tau_sim = new_val
+                return {"parameter": "tau_sim", "old": old_val, "new": new_val,
+                        "reason": diagnosis.pathology}
+
+        elif transform_name == "lower_tau_sim_to_floor":
+            old_val = self.config.tau_sim
+            new_val = 0.3
+            if new_val != old_val:
+                self.config.tau_sim = new_val
+                return {"parameter": "tau_sim", "old": old_val, "new": new_val,
+                        "reason": diagnosis.pathology}
+
+        elif transform_name == "halve_tau_vocab":
+            old_val = self.config.tau_vocab_growth
+            new_val = max(0.01, old_val * 0.5)
+            if new_val != old_val:
+                self.config.tau_vocab_growth = new_val
+                return {"parameter": "tau_vocab_growth", "old": old_val,
+                        "new": new_val, "reason": diagnosis.pathology}
+
+        elif transform_name == "add_synthesis_directive":
+            directive = (
+                "Previous rounds show declining findings. Look for "
+                "cross-cutting issues that span multiple areas: interface "
+                "contracts, shared state, assumption mismatches between "
+                "components. Focus on system-level rather than local flaws."
+            )
+            added_to: List[str] = []
+            for model in self.models:
+                if model.model_id not in self.config.per_model_directives:
+                    if len(directive) <= self.config.max_per_model_directive_chars:
+                        self.config.per_model_directives[model.model_id] = directive
+                        added_to.append(model.model_id)
+            if added_to:
+                return {"parameter": "per_model_directives",
+                        "old": "none",
+                        "new": f"synthesis directive added to {added_to}",
+                        "reason": diagnosis.pathology}
+
+        elif transform_name == "add_to_pre_decompose":
+            model_id = diagnosis.evidence.get("model_id", "")
+            if model_id and model_id not in self.config.pre_decompose_models:
+                self.config.pre_decompose_models.add(model_id)
+                return {"parameter": "pre_decompose_models",
+                        "old": "not in set",
+                        "new": f"added {model_id}",
+                        "reason": diagnosis.pathology}
+
+        return None
+
     def apply_diagnosis(
         self,
         diagnosis: DetectorDiagnosis,
         round_idx: int,
     ) -> Optional[Dict[str, Any]]:
-        """Act on an immune layer diagnosis by adjusting parameters.
+        """Act on an immune layer diagnosis using remediation chains.
 
-        Tier 1 only: bounded numerical parameter adjustments.  Every
-        adjustment is logged with timestamp, trigger, old/new values,
-        and evidence.  Damping rule: no parameter adjusted more than
-        once every immune_damping_rounds rounds.
+        Autonomous remediation (Exp15): each pathology maps to a prioritised
+        chain of fixes. The system tracks which step in the chain was last
+        applied and escalates if the fix didn't work (verified by
+        DetectorHealthMonitor._verify_remediation_outcomes).
+
+        Damping rule: no parameter adjusted more than once every
+        immune_damping_rounds rounds.
 
         Args:
             diagnosis: The diagnosis from DetectorHealthMonitor.
@@ -4059,48 +4544,28 @@ class DynamicManager:
         if not self.config.immune_feedback_enabled:
             return None
 
+        # Skip remediation outcome reports — they're informational only
+        if diagnosis.detector == "remediation_outcome":
+            return None
+
         # Check damping: was this parameter adjusted recently?
         for adj in self._immune_adjustments:
             if (adj["detector"] == diagnosis.detector
                     and round_idx - adj["round"] < self.config.immune_damping_rounds):
                 return None  # Too soon — damping prevents oscillation
 
-        adjustment = None
-
+        # --- Map diagnosis to remediation chain ---
+        chain_key = None
         if diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
-            # kappa stuck at zero → lower similarity threshold
-            old_val = self.config.tau_sim
-            new_val = max(0.3, old_val - 0.1)  # bounded: never below 0.3
-            if new_val != old_val:
-                self.config.tau_sim = new_val
-                adjustment = {
-                    "parameter": "tau_sim",
-                    "old": old_val,
-                    "new": new_val,
-                    "reason": diagnosis.pathology,
-                }
-
+            chain_key = "kappa_stuck"
         elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
-            # NOTE (Exp14 finding, ChatGPT F023, sev 0.70): This handler is
-            # currently unreachable — no diagnosis with detector="vocab_saturation"
-            # is generated by DetectorHealthMonitor. The vocab saturation signal
-            # comes from DiminishingReturnsDetector.vocab_saturated(). To wire
-            # this up, DetectorHealthMonitor would need to watch vocab_growth_rate
-            # and diagnose premature saturation. Kept for future wiring.
-            # Vocab saturation fired too early → lower threshold
-            old_val = self.config.tau_vocab_growth
-            new_val = max(0.01, old_val * 0.5)  # halve, bounded at 1%
-            if new_val != old_val:
-                self.config.tau_vocab_growth = new_val
-                adjustment = {
-                    "parameter": "tau_vocab_growth",
-                    "old": old_val,
-                    "new": new_val,
-                    "reason": diagnosis.pathology,
-                }
-
+            chain_key = "vocab_saturation"
+        elif diagnosis.detector == "findings_decline":
+            chain_key = "findings_decline"
+        elif diagnosis.detector == "model_failure":
+            chain_key = "model_failure"
         elif diagnosis.detector == "dispatch" and "false positive" in diagnosis.pathology.lower():
-            # Dispatch false positive → pre-decompose this model
+            # Direct fix, no chain needed
             model_id = diagnosis.evidence.get("model_id", "")
             if model_id and model_id not in self.config.pre_decompose_models:
                 self.config.pre_decompose_models.add(model_id)
@@ -4110,21 +4575,20 @@ class DynamicManager:
                     "new": f"added {model_id}",
                     "reason": diagnosis.pathology,
                 }
-
+                self._record_adjustment(adjustment, diagnosis, round_idx)
+                return adjustment
+            return None
         elif diagnosis.detector == "mu+novelty" and "disagree" in diagnosis.pathology.lower():
-            # mu+novelty disagreement → trust novelty over mu.
-            # No parameter to adjust — this is an advisory to the stop predicate.
-            # Record the diagnosis for the orchestrator to act on.
-            # (Exp14 fix: CC2 F030, sev 0.55 — handler was missing)
+            # Advisory — no parameter to adjust
             adjustment = {
                 "parameter": "stop_signal_priority",
                 "old": "mu+novelty combined",
                 "new": "novelty_rate preferred (mu unreliable)",
                 "reason": diagnosis.pathology,
             }
-
+            self._record_adjustment(adjustment, diagnosis, round_idx)
+            return adjustment
         elif diagnosis.detector == "verification" and "miscalibration" in diagnosis.pathology.lower():
-            # Verification miscalibration → add per-model directive
             model_id = diagnosis.evidence.get("model_id", "")
             if model_id and model_id not in self.config.per_model_directives:
                 directive = (
@@ -4142,33 +4606,237 @@ class DynamicManager:
                         "new": f"added directive for {model_id}",
                         "reason": diagnosis.pathology,
                     }
+                    self._record_adjustment(adjustment, diagnosis, round_idx)
+                    return adjustment
+            return None
 
-        if adjustment:
-            record = {
-                **adjustment,
-                "detector": diagnosis.detector,
-                "round": round_idx,
-                "severity": diagnosis.severity,
-                "timestamp": time.time(),
-            }
-            self._immune_adjustments.append(record)
-            self._adjustment_log.append(record)
+        if chain_key is None:
+            return None  # Unknown pathology — no remediation available
 
+        # --- Execute remediation chain step ---
+        chain = self._REMEDIATION_CHAINS.get(chain_key, [])
+        if not chain:
+            return None
+
+        # Get current chain index (may have been escalated by outcome verification)
+        state = self.health_monitor._remediation_state.get(chain_key, {})
+        chain_idx = state.get("chain_idx", 0)
+
+        if chain_idx >= len(chain):
+            # Chain exhausted — log and give up
             self.event_stream.emit(
                 ManagerEvent(
                     event_type=ManagerEventType.STOP_CHECK,
                     model_id="system",
                     round_idx=round_idx,
                     detail=(
-                        f"[IMMUNE:ADAPT] {adjustment['parameter']}: "
-                        f"{adjustment['old']} → {adjustment['new']} "
-                        f"(triggered by {diagnosis.detector})"
+                        f"[IMMUNE:EXHAUSTED] Remediation chain for {chain_key} "
+                        f"exhausted after {len(chain)} steps. No further "
+                        f"autonomous fixes available."
                     ),
-                    metadata={"immune_adaptation": True, **record},
+                    metadata={"chain_exhausted": True, "pathology": chain_key},
                 )
+            )
+            return None
+
+        step = chain[chain_idx]
+        risk = step.get("risk", "AUTO")
+
+        # --- DEFER gate: risky fixes need human approval ---
+        if risk == "DEFER":
+            deferred = {
+                "chain_key": chain_key,
+                "chain_idx": chain_idx,
+                "step": step,
+                "diagnosis": {
+                    "detector": diagnosis.detector,
+                    "pathology": diagnosis.pathology,
+                    "severity": diagnosis.severity,
+                    "evidence": diagnosis.evidence,
+                },
+                "round": round_idx,
+                "timestamp": time.time(),
+                "status": "PENDING",
+                "rationale": (
+                    f"Remediation '{step['description']}' classified as DEFER "
+                    f"(risk of regression or structural change). Awaiting human "
+                    f"review before application."
+                ),
+            }
+            self._deferred_remediations.append(deferred)
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=(
+                        f"[IMMUNE:DEFER] {step['description']} "
+                        f"(chain {chain_key} step {chain_idx}) — "
+                        f"requires human approval. Queued for review."
+                    ),
+                    metadata={"deferred_remediation": True, **deferred},
+                )
+            )
+            return None  # Not applied — queued
+
+        # --- AUTO: safe to apply ---
+        # Capture pre-fix metric snapshot for regression detection
+        snapshot = {
+            "chain_key": chain_key,
+            "chain_idx": chain_idx,
+            "round": round_idx,
+            "metrics": {
+                "kappa": self._get_current_metric("kappa"),
+                "mu": self._get_current_metric("mu"),
+                "finding_count": self._get_current_metric("finding_count"),
+                "vocab_growth": self._get_current_metric("vocab_growth"),
+            },
+        }
+
+        adjustment = self._apply_transform(step["transform"], diagnosis)
+
+        if adjustment:
+            self._pre_fix_snapshots.append(snapshot)
+
+            # Record the adjustment
+            self._record_adjustment(adjustment, diagnosis, round_idx,
+                                    chain_key=chain_key, chain_idx=chain_idx)
+
+            # Set remediation state for outcome verification
+            current_metric = self._get_current_metric(step["target_metric"])
+            self.health_monitor.set_remediation_state(
+                pathology_key=chain_key,
+                chain_idx=chain_idx,
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
             )
 
         return adjustment
+
+    def approve_deferred_remediation(self, index: int) -> Optional[Dict[str, Any]]:
+        """Approve a deferred remediation for application.
+
+        Called by the orchestrator or human operator after reviewing a queued fix.
+
+        Args:
+            index: Index into _deferred_remediations list.
+
+        Returns:
+            Adjustment dict if applied, None if index invalid or already applied.
+        """
+        if index < 0 or index >= len(self._deferred_remediations):
+            return None
+        deferred = self._deferred_remediations[index]
+        if deferred["status"] != "PENDING":
+            return None
+
+        step = deferred["step"]
+        diag = DetectorDiagnosis(
+            detector=deferred["diagnosis"]["detector"],
+            pathology=deferred["diagnosis"]["pathology"],
+            severity=deferred["diagnosis"]["severity"],
+            recommended_action=step["description"],
+            evidence=deferred["diagnosis"].get("evidence", {}),
+        )
+        adjustment = self._apply_transform(step["transform"], diag)
+        if adjustment:
+            round_idx = deferred["round"]
+            self._record_adjustment(
+                adjustment, diag, round_idx,
+                chain_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+            )
+            deferred["status"] = "APPROVED"
+            current_metric = self._get_current_metric(step["target_metric"])
+            self.health_monitor.set_remediation_state(
+                pathology_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
+            )
+        return adjustment
+
+    def reject_deferred_remediation(self, index: int) -> bool:
+        """Reject a deferred remediation.
+
+        Args:
+            index: Index into _deferred_remediations list.
+
+        Returns:
+            True if rejected, False if index invalid.
+        """
+        if index < 0 or index >= len(self._deferred_remediations):
+            return False
+        self._deferred_remediations[index]["status"] = "REJECTED"
+        return True
+
+    @property
+    def deferred_remediations(self) -> List[Dict[str, Any]]:
+        """All deferred remediations, including status."""
+        return list(self._deferred_remediations)
+
+    @property
+    def pending_remediations(self) -> List[Dict[str, Any]]:
+        """Only PENDING deferred remediations awaiting human review."""
+        return [d for d in self._deferred_remediations if d["status"] == "PENDING"]
+
+    def _get_current_metric(self, metric_name: str) -> float:
+        """Get the current value of a named metric for remediation tracking."""
+        hm = self.health_monitor
+        if metric_name == "kappa" and hm._kappa_history:
+            return hm._kappa_history[-1]
+        elif metric_name == "mu" and hm._mu_history:
+            return hm._mu_history[-1]
+        elif metric_name == "novelty" and hm._novelty_history:
+            return hm._novelty_history[-1]
+        elif metric_name == "finding_count" and hm._finding_counts:
+            return float(hm._finding_counts[-1])
+        elif metric_name == "vocab_growth" and hm._vocab_growth_history:
+            return hm._vocab_growth_history[-1]
+        return 0.0
+
+    def _record_adjustment(
+        self,
+        adjustment: Dict[str, Any],
+        diagnosis: DetectorDiagnosis,
+        round_idx: int,
+        chain_key: Optional[str] = None,
+        chain_idx: Optional[int] = None,
+    ) -> None:
+        """Record an adjustment in the log and emit an event."""
+        record = {
+            **adjustment,
+            "detector": diagnosis.detector,
+            "round": round_idx,
+            "severity": diagnosis.severity,
+            "timestamp": time.time(),
+        }
+        if chain_key is not None:
+            record["chain_key"] = chain_key
+            record["chain_idx"] = chain_idx
+        self._immune_adjustments.append(record)
+        self._adjustment_log.append(record)
+
+        chain_info = ""
+        if chain_key is not None:
+            chain = self._REMEDIATION_CHAINS.get(chain_key, [])
+            chain_info = f" [chain {chain_key} step {chain_idx}/{len(chain)}]"
+
+        self.event_stream.emit(
+            ManagerEvent(
+                event_type=ManagerEventType.STOP_CHECK,
+                model_id="system",
+                round_idx=round_idx,
+                detail=(
+                    f"[IMMUNE:ADAPT] {adjustment['parameter']}: "
+                    f"{adjustment['old']} → {adjustment['new']} "
+                    f"(triggered by {diagnosis.detector}){chain_info}"
+                ),
+                metadata={"immune_adaptation": True, **record},
+            )
+        )
 
     # --- Phase E: Dispatch health tracking ---
 

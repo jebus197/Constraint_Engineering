@@ -123,7 +123,7 @@ def load_default_config() -> ExperimentConfig:
             role="participant",
             system_prompt_path=str(cdsfl_path),
             max_tokens=32768,
-            timeout=300,
+            timeout=600,  # Exp15: increased from 300 — Reasoner does chain-of-thought
             max_retries=3,
         ),
     ]
@@ -368,9 +368,24 @@ def call_deepseek(
     if not api_key:
         raise RuntimeError("DEEPSEEK_API_KEY not set")
 
+    # DeepSeek Reasoner can hold connections open for very long during
+    # chain-of-thought.  Use explicit httpx timeout with a hard total
+    # timeout to prevent indefinite hangs (Exp15 fix: Round 4 hang).
+    try:
+        import httpx
+        http_timeout = httpx.Timeout(
+            connect=30.0,
+            read=float(timeout),
+            write=30.0,
+            pool=30.0,
+        )
+    except ImportError:
+        http_timeout = timeout
+
     client = openai.OpenAI(
         api_key=api_key,
         base_url="https://api.deepseek.com",
+        timeout=http_timeout,
     )
 
     messages: list[dict[str, str]] = []

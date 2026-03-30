@@ -161,6 +161,10 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     findings = []
     import re
 
+    # Strip markdown bold markers before parsing — CC2 uses **SEVERITY:** format
+    # where the colon is inside the bold markers, breaking field extraction.
+    response = re.sub(r'\*{2,}', '', response)
+
     # Flaw class mapping: both the prompt taxonomy (1=logic, 2=interface, etc.)
     # and area-based names that models may use. Sorted by key length descending
     # for longest-match-first semantics (CC2 recommendation).
@@ -411,6 +415,57 @@ def run_blind_round(
             else:
                 # Genuinely infeasible and not a decomposition candidate
                 continue
+
+        # Pre-emptive decomposition: even if feasible, decompose when prompt
+        # exceeds threshold.  Codex passes feasibility (GPT-5.4 context is large)
+        # but `codex exec` CLI times out on 172K char prompts.
+        threshold = DECOMPOSITION_CONTEXT_THRESHOLD.get(mc.label, 100000)
+        if threshold > 0 and len(prompt) > threshold:
+            area_idx = 0
+            focused_code, area_label = _extract_area_code(prompt, area_idx)
+            decomposed_prompt = (
+                f"You are in ROUND 0 (blind round) of a distributed compute P-pass.\n"
+                f"The full artifact is too large for efficient review, so you are "
+                f"reviewing AREA: {area_label}.\n\n"
+                f"Below is the full code for this area, plus skeletal signatures "
+                f"(class/method definitions only) of the other 5 areas for context.\n\n"
+                f"Your task: find all flaws you can identify in this area.\n\n"
+                f"Use the structured format (FINDING_ID, SEVERITY, FLAW_CLASS, "
+                f"ABSTRACTION_INDEX, DESCRIPTION, PROPOSED_FIX, VERIFIED).\n\n"
+                f"=== ARTIFACT: {area_label} ===\n\n"
+                f"{focused_code}\n\n"
+                f"=== END ARTIFACT ===\n\n"
+                f"Produce your findings now."
+            )
+            _log(f"  {mc.label}: context={len(prompt)} chars > threshold={threshold}, "
+                 f"pre-emptive decomposed blind dispatch (Area 1: {area_label}, "
+                 f"{len(focused_code)} chars focused)")
+            try:
+                text, elapsed = dispatch_to_model(mc, decomposed_prompt, cdsfl_text)
+                _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s (decomposed blind)")
+                findings = parse_findings(mc.label, 0, text)
+                all_findings.extend(findings)
+                _log(f"  {mc.label}: {len(findings)} findings parsed")
+                responses[mc.label] = ModelResponse(
+                    model_id=mc.label, round_idx=0, content=text,
+                    response_time=elapsed, parseable=len(findings) > 0,
+                    format_compliant=True, finding_count=len(findings),
+                    mean_abstraction=(
+                        sum(f.abstraction_index for f in findings) / len(findings)
+                        if findings else 0.5
+                    ),
+                )
+                save_output(
+                    LOGS_DIR, "blind_decomposed", mc.label,
+                    decomposed_prompt[:200] + "...", text,
+                    metadata={"elapsed": round(elapsed, 1), "chars": len(text),
+                              "findings_count": len(findings), "round": 0,
+                              "area": area_label, "decomposed": True,
+                              "reason": "pre-emptive (prompt > threshold)"},
+                )
+            except Exception as e:
+                _log(f"  {mc.label}: pre-emptive decomposed dispatch FAILED: {e}")
+            continue
 
         # Dispatch
         try:
