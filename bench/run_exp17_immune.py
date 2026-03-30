@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""Experiment 17: Immune Response Layer Validation.
+"""Experiment 17: Immune + Load Balancing + Persistence Layer Validation.
 
-Executes the APPROVED Experiment 17 plan (reviewed by 5 models in Exp 16).
-Full `dynamic_management.py` as test article, analytical boundary = immune subsystem.
+Executes the APPROVED Experiment 17 plan (reviewed by 5 models in Exp 16),
+expanded to include load balancing and the persistence layer (verification_chain.py)
+which only received a single blind pass in Experiment 10.
+
+Test articles:
+  1. dynamic_management.py (immune + load balancing)
+  2. MATHEMATICAL_APPENDIX.md (mathematical model)
+  3. verification_chain.py (persistence / verification chain)
 
 Key design decisions from Experiment 16 convergence:
 - Full file delivery (not extracted lines) — unanimous
 - Split Round 0: R0A blind + R0B seeded validation — 4/5
 - Independent stop caps: round 10 + wall-clock 4h — 3/5
 - Behaviour-based success criteria — 4/5
-- DeepSeek decomposition into 3 immune sub-areas — unanimous
+- DeepSeek decomposition into 5 sub-areas — unanimous (expanded from 3)
 - Mandatory round-level telemetry — 3/5
 - Fault injection scenarios before live experiment — 4/5
 
@@ -86,12 +92,15 @@ LOGS_DIR = REPO_ROOT / "bench" / "logs" / f"experiment_{EXPERIMENT}"
 MAX_ROUNDS = 10
 WALL_CLOCK_CAP_S = 4 * 3600  # 4 hours
 
-# DeepSeek immune sub-area decomposition (Exp 16: unanimous)
-IMMUNE_AREAS = [
+# DeepSeek sub-area decomposition (Exp 16: unanimous, expanded for LB + persistence)
+REVIEW_AREAS = [
     ("Detection", ["DetectorDiagnosis", "DetectorHealthMonitor"]),
     ("Response", ["FailureHandler"]),
     ("Integration", ["process_round", "apply_diagnosis", "_apply_transform",
                       "_REMEDIATION_CHAINS", "immune_feedback_enabled"]),
+    ("LoadBalancing", ["LoadBalancer", "RoleAssignment", "_solve_greedy",
+                       "feasibility_probability"]),
+    ("Persistence", []),  # verification_chain.py — separate file, handled specially
 ]
 
 # Convergent findings for R0B seeded validation
@@ -101,6 +110,8 @@ CONVERGENT_FINDINGS_PATH = REPO_ROOT / "bench" / "logs" / "experiment_17_plan.md
 INTERFACE_SUMMARY_PATH = REPO_ROOT / "bench" / "logs" / "experiment_17_interface_summary.md"
 TRACEABILITY_PATH = REPO_ROOT / "bench" / "logs" / "experiment_17_traceability.md"
 TEST_ARTICLE_PATH = REPO_ROOT / "bench" / "dynamic_management.py"
+MATH_APPENDIX_PATH = REPO_ROOT / "docs" / "MATHEMATICAL_APPENDIX.md"
+VERIFICATION_CHAIN_PATH = REPO_ROOT / "bench" / "verification_chain.py"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -156,12 +167,13 @@ class RoundTelemetry:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
-    """Extract one immune sub-area's code + skeletal context.
+    """Extract one review sub-area's code + skeletal context.
 
     Areas: Detection (DetectorDiagnosis + DetectorHealthMonitor),
-    Response (FailureHandler), Integration (process_round + apply_diagnosis).
+    Response (FailureHandler), Integration (process_round + apply_diagnosis),
+    LoadBalancing (LoadBalancer + RoleAssignment).
     """
-    area_name, markers = IMMUNE_AREAS[area_idx % len(IMMUNE_AREAS)]
+    area_name, markers = REVIEW_AREAS[area_idx % len(REVIEW_AREAS)]
     lines = code.split("\n")
 
     # Find all class/function boundaries
@@ -205,19 +217,30 @@ def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
 # Prompts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_r0a_prompt(code: str, interface_summary: str) -> str:
+def build_r0a_prompt(code: str, interface_summary: str,
+                     math_appendix: str, verification_chain: str) -> str:
     """Round 0A: blind discovery. No prior findings."""
     return (
-        "You are in ROUND 0A (BLIND DISCOVERY) of Experiment 17: Immune Response "
-        "Layer Validation.\n\n"
+        "You are in ROUND 0A (BLIND DISCOVERY) of Experiment 17: Immune + Load "
+        "Balancing + Persistence Layer Validation.\n\n"
         "You are operating UNDER CDSFL (your system prompt). Apply P-pass to the "
-        "immune subsystem code below.\n\n"
+        "code and mathematical model below.\n\n"
         "## Analytical Boundary\n"
-        "Focus on the IMMUNE RESPONSE LAYER: DetectorDiagnosis, DetectorHealthMonitor, "
+        "FOUR test articles under review:\n"
+        "1. IMMUNE RESPONSE LAYER: DetectorDiagnosis, DetectorHealthMonitor, "
         "FailureHandler, _REMEDIATION_CHAINS, process_round() immune integration, "
         "apply_diagnosis(), _apply_transform(), and immune config parameters.\n"
-        "The rest of the file is context — review interfaces but do not produce "
-        "findings about non-immune components unless they affect immune behaviour.\n\n"
+        "2. LOAD BALANCING: LoadBalancer, RoleAssignment, _solve_greedy(), "
+        "feasibility_probability(), capability scoring, role allocation.\n"
+        "3. MATHEMATICAL MODEL: MATHEMATICAL_APPENDIX.md — verify that the code "
+        "implements the formulas correctly. Cross-reference the traceability table.\n"
+        "4. PERSISTENCE LAYER: verification_chain.py — hash chains, Merkle trees, "
+        "Ed25519 signing, epoch sealing, inclusion proofs. This code has only had "
+        "a single blind pass (Exp 10) and has never been through distributed "
+        "compute review.\n\n"
+        "The rest of dynamic_management.py (convergence detection, diminishing "
+        "returns, FSM) is context — review interfaces but focus findings on the "
+        "four areas above.\n\n"
         "## Interface Summary\n"
         f"{interface_summary}\n\n"
         "## Output Format\n"
@@ -232,18 +255,28 @@ def build_r0a_prompt(code: str, interface_summary: str) -> str:
         "  VERIFIED: TRUE/FALSE\n\n"
         "This is a BLIND round. Find everything you can. No prior findings are "
         "provided — your independent perspective is the point.\n\n"
-        "=== ARTIFACT: dynamic_management.py ===\n\n"
+        "=== ARTIFACT 1: dynamic_management.py ===\n\n"
         f"{code}\n\n"
-        "=== END ARTIFACT ===\n\n"
+        "=== END ARTIFACT 1 ===\n\n"
+        "=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+        f"{math_appendix}\n\n"
+        "=== END ARTIFACT 2 ===\n\n"
+        "=== ARTIFACT 3: verification_chain.py ===\n\n"
+        f"{verification_chain}\n\n"
+        "=== END ARTIFACT 3 ===\n\n"
         "Produce your findings now."
     )
 
 
 def build_r0b_prompt(code: str, r0a_findings_text: str,
-                     convergent_findings_text: str) -> str:
+                     convergent_findings_text: str,
+                     math_appendix: str,
+                     verification_chain: str) -> str:
     """Round 0B: seeded validation with convergent findings from Exp 15."""
     return (
         "You are in ROUND 0B (SEEDED VALIDATION) of Experiment 17.\n\n"
+        "Scope: immune layer + load balancing + persistence layer + mathematical "
+        "model consistency.\n\n"
         "In Round 0A, the following findings were produced independently:\n\n"
         f"{r0a_findings_text}\n\n"
         "Additionally, Experiment 15 produced 6 CONVERGENT FINDINGS (independently "
@@ -255,34 +288,55 @@ def build_r0b_prompt(code: str, r0a_findings_text: str,
         "2. CHALLENGE the 2 no-fix-needed decisions — is the rationale sound?\n"
         "3. IDENTIFY what Round 0A missed that the convergent findings caught, "
         "   and vice versa.\n"
-        "4. Find any REMAINING issues not covered by either set.\n\n"
+        "4. Find any REMAINING issues not covered by either set — especially in "
+        "   load balancing, persistence layer, and mathematical model consistency.\n\n"
         "Use the same structured format (FINDING_ID, SEVERITY, etc.).\n\n"
-        "=== ARTIFACT: dynamic_management.py ===\n\n"
+        "=== ARTIFACT 1: dynamic_management.py ===\n\n"
         f"{code}\n\n"
-        "=== END ARTIFACT ===\n\n"
+        "=== END ARTIFACT 1 ===\n\n"
+        "=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+        f"{math_appendix}\n\n"
+        "=== END ARTIFACT 2 ===\n\n"
+        "=== ARTIFACT 3: verification_chain.py ===\n\n"
+        f"{verification_chain}\n\n"
+        "=== END ARTIFACT 3 ===\n\n"
         "Produce your findings now."
     )
 
 
 def build_adaptive_prompt(code: str, round_idx: int,
-                          prior_findings_text: str) -> str:
+                          prior_findings_text: str,
+                          math_appendix: str,
+                          verification_chain: str) -> str:
     """Adaptive round prompt."""
     return (
         f"You are in ROUND {round_idx} of Experiment 17 (adaptive round).\n\n"
+        f"Scope: immune layer + load balancing + persistence layer + mathematical "
+        f"model.\n\n"
         f"Prior findings from all rounds:\n\n{prior_findings_text}\n\n"
         f"Focus on the IMMUNE RESPONSE LAYER (DetectorDiagnosis, "
         f"DetectorHealthMonitor, FailureHandler, apply_diagnosis, process_round "
-        f"immune integration).\n\n"
+        f"immune integration), LOAD BALANCING (LoadBalancer, RoleAssignment, "
+        f"_solve_greedy, feasibility_probability), PERSISTENCE LAYER "
+        f"(verification_chain.py hash chains, Merkle trees, Ed25519 signing), "
+        f"and MATHEMATICAL MODEL consistency (MATHEMATICAL_APPENDIX.md vs code).\n\n"
         f"Find what was MISSED. Do not repeat known findings. Focus on:\n"
         f"- Flaws prior rounds did not catch\n"
         f"- Deeper analysis of superficially noted issues\n"
-        f"- Cross-cutting concerns with other subsystems\n"
-        f"- Edge cases in immune behaviour\n\n"
+        f"- Cross-cutting concerns between immune, load balancing, and persistence\n"
+        f"- Mathematical model vs code discrepancies\n"
+        f"- Edge cases in immune behaviour, load allocation, and chain integrity\n\n"
         f"Use the structured format (FINDING_ID, SEVERITY, etc.).\n"
         f"If you find nothing new, state that explicitly.\n\n"
-        f"=== ARTIFACT: dynamic_management.py ===\n\n"
+        f"=== ARTIFACT 1: dynamic_management.py ===\n\n"
         f"{code}\n\n"
-        f"=== END ARTIFACT ===\n\n"
+        f"=== END ARTIFACT 1 ===\n\n"
+        f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+        f"{math_appendix}\n\n"
+        f"=== END ARTIFACT 2 ===\n\n"
+        f"=== ARTIFACT 3: verification_chain.py ===\n\n"
+        f"{verification_chain}\n\n"
+        f"=== END ARTIFACT 3 ===\n\n"
         f"Produce your findings now."
     )
 
@@ -545,7 +599,7 @@ def run_layer1_preflight() -> bool:
 def run_experiment() -> Dict[str, Any]:
     """Run full Experiment 17."""
     experiment_start = time.monotonic()
-    _log(f"=== EXPERIMENT 17: IMMUNE RESPONSE LAYER VALIDATION ===")
+    _log(f"=== EXPERIMENT 17: IMMUNE + LOAD BALANCING LAYER VALIDATION ===")
     _log(f"Logs: {LOGS_DIR}")
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -563,13 +617,31 @@ def run_experiment() -> Dict[str, Any]:
         interface_summary = INTERFACE_SUMMARY_PATH.read_text(encoding="utf-8")
         _log(f"Interface summary: {len(interface_summary)} chars")
 
+    # Load mathematical appendix (test article 2)
+    math_appendix = ""
+    if MATH_APPENDIX_PATH.exists():
+        math_appendix = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
+        _log(f"Mathematical appendix: {len(math_appendix)} chars, "
+             f"{len(math_appendix.splitlines())} lines")
+    else:
+        _log("WARNING: MATHEMATICAL_APPENDIX.md not found")
+
+    # Load verification chain (test article 3)
+    verification_chain = ""
+    if VERIFICATION_CHAIN_PATH.exists():
+        verification_chain = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
+        _log(f"Verification chain: {len(verification_chain)} chars, "
+             f"{len(verification_chain.splitlines())} lines")
+    else:
+        _log("WARNING: verification_chain.py not found")
+
     # Build DynamicManager
     model_specs = build_model_specs(exp_config)
     dm_config = DynamicManagementConfig(
         immune_feedback_enabled=True,
         immune_damping_rounds=2,  # Exp 16 consensus (median)
     )
-    tasks = [Task(task_id="immune_layer", token_demand=len(code) // 4,
+    tasks = [Task(task_id="immune_lb_math", token_demand=len(code) // 4,
                   flaw_class=1, criticality=0.8)]
     mgr = DynamicManager(model_specs, dm_config)
 
@@ -585,8 +657,13 @@ def run_experiment() -> Dict[str, Any]:
         "experiment": EXPERIMENT,
         "commit": head_hash,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "test_article": str(TEST_ARTICLE_PATH),
+        "test_articles": [
+            str(TEST_ARTICLE_PATH), str(MATH_APPENDIX_PATH),
+            str(VERIFICATION_CHAIN_PATH),
+        ],
         "test_article_lines": len(code.splitlines()),
+        "math_appendix_lines": len(math_appendix.splitlines()),
+        "verification_chain_lines": len(verification_chain.splitlines()),
         "models": [{"label": m.label, "model_id": m.model_id, "api": m.api}
                    for m in exp_config.models if m.role != "collator"],
         "config": {"immune_feedback_enabled": True, "immune_damping_rounds": 2,
@@ -601,7 +678,7 @@ def run_experiment() -> Dict[str, Any]:
 
     # ── ROUND 0A: Blind Discovery ──
     _log("\n=== ROUND 0A: BLIND DISCOVERY ===")
-    r0a_prompt = build_r0a_prompt(code, interface_summary)
+    r0a_prompt = build_r0a_prompt(code, interface_summary, math_appendix, verification_chain)
     _log(f"Prompt: {len(r0a_prompt)} chars")
 
     r0a_findings, r0a_responses = _dispatch_round(
@@ -624,7 +701,7 @@ def run_experiment() -> Dict[str, Any]:
     _log("\n=== ROUND 0B: SEEDED VALIDATION ===")
     r0a_text = format_findings_for_context(r0a_findings)
     convergent_text = _extract_convergent_findings()
-    r0b_prompt = build_r0b_prompt(code, r0a_text, convergent_text)
+    r0b_prompt = build_r0b_prompt(code, r0a_text, convergent_text, math_appendix, verification_chain)
     _log(f"Prompt: {len(r0b_prompt)} chars")
 
     r0b_findings, r0b_responses = _dispatch_round(
@@ -660,7 +737,7 @@ def run_experiment() -> Dict[str, Any]:
             break
 
         prior_text = format_findings_for_context(all_findings)
-        adaptive_prompt = build_adaptive_prompt(code, round_idx, prior_text)
+        adaptive_prompt = build_adaptive_prompt(code, round_idx, prior_text, math_appendix, verification_chain)
         _log(f"Prompt: {len(adaptive_prompt)} chars")
 
         rn_findings, rn_responses = _dispatch_round(
@@ -728,20 +805,53 @@ def _dispatch_round(
 
         # DeepSeek decomposition
         if mc.label == "DeepSeek":
-            area_idx = round_idx % len(IMMUNE_AREAS)
-            focused, area_name = _extract_immune_area(full_code, area_idx)
-            model_prompt = (
-                f"You are reviewing the IMMUNE SUBSYSTEM, specifically the "
-                f"{area_name} sub-area.\n\n"
-                f"The full artifact has been decomposed for your context window. "
-                f"Below is the {area_name} code plus skeletal context.\n\n"
-                + prompt.split("=== ARTIFACT")[0]  # Take the preamble
-                + f"=== ARTIFACT: {area_name} ===\n\n"
-                f"{focused}\n\n"
-                f"=== END ARTIFACT ===\n\n"
-                f"Produce your findings now."
-            )
-            _log(f"  DeepSeek: decomposed → {area_name} ({len(focused)} chars)")
+            area_idx = round_idx % len(REVIEW_AREAS)
+            area_name = REVIEW_AREAS[area_idx % len(REVIEW_AREAS)][0]
+            preamble = prompt.split("=== ARTIFACT")[0]
+            math_text = ""
+            if MATH_APPENDIX_PATH.exists():
+                math_text = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
+
+            if area_name == "Persistence":
+                # Persistence area = verification_chain.py (separate file)
+                vc_text = ""
+                if VERIFICATION_CHAIN_PATH.exists():
+                    vc_text = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
+                model_prompt = (
+                    f"You are reviewing the PERSISTENCE LAYER "
+                    f"(verification_chain.py) — hash chains, Merkle trees, "
+                    f"Ed25519 signing, epoch sealing. This code has only had "
+                    f"a single blind pass and has never been through distributed "
+                    f"compute review.\n\n"
+                    + preamble
+                    + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
+                    f"{vc_text}\n\n"
+                    f"=== END ARTIFACT 1 ===\n\n"
+                    f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+                    f"{math_text}\n\n"
+                    f"=== END ARTIFACT 2 ===\n\n"
+                    f"Produce your findings now."
+                )
+                _log(f"  DeepSeek: decomposed → {area_name} ({len(vc_text)} chars)")
+            else:
+                # Extract from dynamic_management.py
+                focused, area_name = _extract_immune_area(full_code, area_idx)
+                model_prompt = (
+                    f"You are reviewing the {area_name} sub-area (immune + load "
+                    f"balancing + persistence layer validation).\n\n"
+                    f"The full code artifact has been decomposed for your context "
+                    f"window. Below is the {area_name} code plus skeletal context, "
+                    f"plus the full mathematical appendix for cross-reference.\n\n"
+                    + preamble
+                    + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
+                    f"{focused}\n\n"
+                    f"=== END ARTIFACT 1 ===\n\n"
+                    f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+                    f"{math_text}\n\n"
+                    f"=== END ARTIFACT 2 ===\n\n"
+                    f"Produce your findings now."
+                )
+                _log(f"  DeepSeek: decomposed → {area_name} ({len(focused)} chars)")
         else:
             model_prompt = prompt
 
