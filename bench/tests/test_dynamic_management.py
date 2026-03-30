@@ -2035,3 +2035,467 @@ class TestRemediationChains:
         )
         adj = mgr.apply_diagnosis(diag, round_idx=0)
         assert adj is None
+
+
+class TestSelfAdaptiveImmuneLayer:
+    """Level 3: self-adaptive immune layer tests (Exp15b)."""
+
+    def test_remediation_outcome_tracking(self):
+        """record_remediation_outcome feeds the self-performance tracker."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, True, 0.0, 0.3)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        assert len(hm._remediation_outcomes) == 2
+        assert hm.remediation_success_rate == 0.5
+
+    def test_remediation_success_rate_default(self):
+        """No data → success rate defaults to 1.0 (assume healthy)."""
+        hm = DetectorHealthMonitor()
+        assert hm.remediation_success_rate == 1.0
+
+    def test_natural_resolution_tracking(self):
+        """Natural resolutions feed the false positive tracker."""
+        hm = DetectorHealthMonitor()
+        # Simulate kappa pathology appearing then resolving
+        for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        hm.record_natural_resolution("kappa")
+        assert len(hm._false_positive_history) == 1
+        assert hm._false_positive_history[0]["detector"] == "kappa"
+
+    def test_chain_exhaustion_tracking(self):
+        """Chain exhaustions feed the exhaustion tracker."""
+        hm = DetectorHealthMonitor()
+        hm.record_chain_exhaustion("kappa_stuck")
+        assert len(hm._chain_exhaustion_history) == 1
+
+    def test_step_effectiveness_tracking(self):
+        """Per-step effectiveness is tracked correctly."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, True, 0.0, 0.3)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.record_remediation_outcome("kappa_stuck", 1, True, 0.0, 0.5)
+        assert hm._step_effectiveness["kappa_stuck"][0] == {"success": 1, "fail": 1}
+        assert hm._step_effectiveness["kappa_stuck"][1] == {"success": 1, "fail": 0}
+
+    def test_recommended_chain_start_default(self):
+        """No history → start at step 0."""
+        hm = DetectorHealthMonitor()
+        assert hm.recommended_chain_start("kappa_stuck") == 0
+
+    def test_recommended_chain_start_skip_ineffective(self):
+        """If step 0 has 2+ failures and 0 successes, skip to step 1."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.record_remediation_outcome("kappa_stuck", 1, True, 0.0, 0.5)
+        assert hm.recommended_chain_start("kappa_stuck") == 1
+
+    def test_recommended_chain_start_keeps_working_step(self):
+        """If step 0 has any successes, don't skip it."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, True, 0.0, 0.3)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        assert hm.recommended_chain_start("kappa_stuck") == 0
+
+    def test_p_pass_no_contraindications(self):
+        """P-pass approves with no history."""
+        hm = DetectorHealthMonitor()
+        proceed, rationale = hm.p_pass_remediation(
+            "kappa_stuck", 0, "lower tau_sim by 0.1", 0.0, "kappa"
+        )
+        assert proceed is True
+        assert "PASS" in rationale
+
+    def test_p_pass_rejects_historically_failed(self):
+        """P-pass rejects a transform that has failed 3+ times."""
+        hm = DetectorHealthMonitor()
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        proceed, rationale = hm.p_pass_remediation(
+            "kappa_stuck", 0, "lower tau_sim by 0.1", 0.0, "kappa"
+        )
+        assert proceed is False
+        assert "REJECT" in rationale
+
+    def test_p_pass_skips_when_improving(self):
+        """P-pass skips intervention when metric is already improving."""
+        hm = DetectorHealthMonitor()
+        # Simulate kappa improving over 3 rounds
+        hm._kappa_history = [0.0, 0.1, 0.2]
+        proceed, rationale = hm.p_pass_remediation(
+            "kappa_stuck", 0, "lower tau_sim by 0.1", 0.2, "kappa"
+        )
+        assert proceed is False
+        assert "SKIP" in rationale
+
+    def test_p_pass_warns_mixed_results(self):
+        """P-pass warns but proceeds when step has mixed results."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, True, 0.0, 0.3)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        proceed, rationale = hm.p_pass_remediation(
+            "kappa_stuck", 0, "lower tau_sim by 0.1", 0.0, "kappa"
+        )
+        assert proceed is True
+        assert "WARN" in rationale
+
+    def test_self_diagnose_low_success_rate(self):
+        """Self-diagnosis detects low remediation success rate."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        # Need 5+ rounds of data for self-diagnosis
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        # Record 3 failures, 0 successes
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        diags = hm.self_diagnose()
+        assert any(d.detector == "self_diagnosis" for d in diags)
+        assert hm._stuck_window == 4  # widened from 3
+
+    def test_self_diagnose_bounded_window(self):
+        """Self-adjustment never exceeds 2x original window."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        # First self-diagnose: 3 → 4
+        hm.self_diagnose()
+        assert hm._stuck_window == 4
+        # Force another by adding more failures
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.self_diagnose()
+        assert hm._stuck_window == 5
+        # One more should hit the cap at 6 (2 × 3)
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.self_diagnose()
+        assert hm._stuck_window == 6  # 2x original
+        # Beyond cap — should not increase further
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.self_diagnose()
+        assert hm._stuck_window == 6  # capped
+
+    def test_self_diagnose_high_false_positives(self):
+        """Self-diagnosis detects high false positive rate."""
+        hm = DetectorHealthMonitor()
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        # Record enough natural resolutions to push rate > 0.5
+        hm.record_natural_resolution("kappa")
+        hm.record_natural_resolution("mu")
+        hm.record_natural_resolution("findings_decline")
+        old_decay = hm._sensitivity_decay
+        diags = hm.self_diagnose()
+        fp_diags = [d for d in diags if "false positive" in d.pathology.lower()]
+        assert len(fp_diags) >= 1
+        assert hm._sensitivity_decay > old_decay  # reduced sensitivity
+
+    def test_self_diagnose_chain_exhaustion(self):
+        """Self-diagnosis reports chain exhaustion as CRITICAL."""
+        hm = DetectorHealthMonitor()
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        hm.record_chain_exhaustion("kappa_stuck")
+        hm.record_chain_exhaustion("kappa_stuck")
+        diags = hm.self_diagnose()
+        exhaust_diags = [d for d in diags if "exhaustion" in d.pathology.lower()]
+        assert len(exhaust_diags) >= 1
+        assert exhaust_diags[0].severity == "CRITICAL"
+
+    def test_self_diagnosis_summary(self):
+        """self_diagnosis_summary returns all performance metrics."""
+        hm = DetectorHealthMonitor()
+        hm.record_remediation_outcome("kappa_stuck", 0, True, 0.0, 0.3)
+        summary = hm.self_diagnosis_summary
+        assert "remediation_success_rate" in summary
+        assert "false_positive_rate" in summary
+        assert "chain_exhaustion_rate" in summary
+        assert "step_effectiveness" in summary
+        assert summary["total_remediations"] == 1
+
+    def test_self_adjustment_log_persists(self):
+        """Self-adjustments are logged for audit trail."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.self_diagnose()
+        assert len(hm.self_adjustment_log) >= 1
+        assert hm.self_adjustment_log[0]["trigger"] == "low_remediation_success_rate"
+
+    def test_verify_outcomes_feeds_self_tracker(self):
+        """_verify_remediation_outcomes feeds record_remediation_outcome."""
+        hm = DetectorHealthMonitor()
+        # Set up remediation state
+        hm.set_remediation_state("kappa_stuck", 0, 0, 0.0, "kappa", verification_window=1)
+        # Record 2 rounds to trigger verification
+        hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        hm.record_round(0.3, 10.0, 0.5, 10, 3)  # kappa improved
+        assert len(hm._remediation_outcomes) == 1
+        assert hm._remediation_outcomes[0]["success"] is True
+
+    def test_natural_resolution_fed_on_kappa_resolve(self):
+        """When kappa pathology resolves without active remediation, it's a false positive."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        # Trigger kappa pathology
+        for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        assert hm._pathology_counts.get("kappa", 0) >= 1
+        # Now resolve it (kappa > 0.01) without active remediation
+        hm.record_round(0.5, 10.0, 0.5, 10, 3)
+        assert len(hm._false_positive_history) == 1
+
+    def test_chain_skip_in_apply_diagnosis(self):
+        """apply_diagnosis skips historically ineffective chain steps."""
+        config = DynamicManagementConfig(immune_feedback_enabled=True,
+                                         immune_damping_rounds=0)
+        models = [
+            ModelSpec(model_id="m1",
+                      fingerprint=CapabilityFingerprint(0.1, 0.9, 0.8, 0.8)),
+        ]
+        mgr = DynamicManager(config=config, models=models)
+        # Record step 0 as historically ineffective
+        mgr.health_monitor.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        mgr.health_monitor.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+
+        diag = DetectorDiagnosis(
+            detector="kappa", pathology="kappa stuck",
+            severity="WARNING", recommended_action="lower tau_sim",
+        )
+        mgr.apply_diagnosis(diag, round_idx=0)
+        # The chain_skip event should be in the event stream
+        events = [e for e in mgr.event_stream._all_events
+                  if e.metadata and e.metadata.get("chain_skip")]
+        assert len(events) >= 1
+
+    def test_p_pass_rejects_auto_fix_escalates(self):
+        """P-pass rejection of a step escalates to the next step in the chain."""
+        config = DynamicManagementConfig(immune_feedback_enabled=True,
+                                         immune_damping_rounds=0)
+        models = [
+            ModelSpec(model_id="m1",
+                      fingerprint=CapabilityFingerprint(0.1, 0.9, 0.8, 0.8)),
+        ]
+        mgr = DynamicManager(config=config, models=models)
+        # Record step 0 as 3x failed → P-pass will reject step 0
+        for _ in range(3):
+            mgr.health_monitor.record_remediation_outcome(
+                "kappa_stuck", 0, False, 0.0, 0.0
+            )
+
+        old_tau = mgr.config.tau_sim
+        diag = DetectorDiagnosis(
+            detector="kappa", pathology="kappa stuck",
+            severity="WARNING", recommended_action="lower tau_sim",
+        )
+        adj = mgr.apply_diagnosis(diag, round_idx=0)
+        # Step 0 skipped by simplest-sufficient, step 1 tried instead
+        # Step 1 is also AUTO (lower_tau_sim_01), so P-pass runs on it
+        p_pass_events = [e for e in mgr.event_stream._all_events
+                         if e.metadata and e.metadata.get("p_pass")]
+        assert len(p_pass_events) >= 1
+        # Step 1 has no failure history so P-pass should approve
+        assert any(e.metadata.get("proceed") for e in p_pass_events)
+
+    def test_self_diagnose_wired_into_record_round(self):
+        """self_diagnose is called as part of record_round."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        # Build enough data for self-diagnosis to trigger
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        for i in range(6):
+            diags = hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        # Self-diagnosis should have fired within record_round
+        self_diags = [d for d in diags if d.detector == "self_diagnosis"]
+        assert len(self_diags) >= 1
+
+
+class TestExtendedPPassImmune:
+    """Extended P-pass for multi-modular immune layer fixes."""
+
+    def test_single_module_uses_standard_ppass(self):
+        """Single-module transforms use standard (lightweight) P-pass."""
+        hm = DetectorHealthMonitor()
+        # lower_tau_sim_01 is NOT in _MULTI_MODULAR_TRANSFORMS
+        assert not hm._is_multi_modular("kappa_stuck", 0, "lower_tau_sim_01")
+        proceed, rationale = hm.p_pass_remediation(
+            "kappa_stuck", 0, "lower tau_sim",
+            0.0, "kappa",
+            transform_name="lower_tau_sim_01",
+        )
+        assert proceed is True
+        # Standard P-pass says "P-pass PASS" not "Extended P-pass"
+        assert "P-pass PASS" in rationale
+        assert "Extended" not in rationale
+
+    def test_multi_module_uses_extended_ppass(self):
+        """Multi-modular transforms use extended P-pass."""
+        hm = DetectorHealthMonitor()
+        assert hm._is_multi_modular("findings_decline", 0, "add_synthesis_directive")
+        proceed, rationale = hm.p_pass_remediation(
+            "findings_decline", 0, "add synthesis directive",
+            10.0, "finding_count",
+            transform_name="add_synthesis_directive",
+            affected_models=["m1", "m2", "m3"],
+        )
+        # Extended P-pass should have run
+        assert "Extended P-pass" in rationale
+
+    def test_extended_ppass_cascade_risk(self):
+        """Extended P-pass detects cascade risk for 3+ model fixes."""
+        hm = DetectorHealthMonitor()
+        proceed, rationale = hm._extended_p_pass_remediation(
+            "findings_decline", 0, "add synthesis directive",
+            10.0, "finding_count",
+            affected_models=["m1", "m2", "m3", "m4"],
+        )
+        # Should warn about cascade risk (4 models)
+        assert "cascade" in rationale.lower() or "WARN" in rationale
+
+    def test_extended_ppass_over_specification(self):
+        """Extended P-pass flags over-specification for rare pathologies."""
+        hm = DetectorHealthMonitor()
+        # Pathology only seen 1 time but fix affects 4 models
+        hm._pathology_counts["findings_decline"] = 1
+        proceed, rationale = hm._extended_p_pass_remediation(
+            "findings_decline", 0, "add synthesis directive",
+            10.0, "finding_count",
+            affected_models=["m1", "m2", "m3", "m4"],
+        )
+        assert "over_specification" in rationale.lower() or "WARN" in rationale
+
+    def test_extended_ppass_suggests_simplification(self):
+        """Extended P-pass suggests targeting worst performers only."""
+        hm = DetectorHealthMonitor()
+        hm._pathology_counts["findings_decline"] = 1
+        # Set up model histories so we can identify worst performers
+        hm._model_finding_history = {
+            "m1": [10, 8, 5],
+            "m2": [15, 12, 11],
+            "m3": [2, 1, 0],
+            "m4": [8, 6, 4],
+        }
+        hm._model_failure_counts = {"m3": 2}
+        proceed, rationale = hm._extended_p_pass_remediation(
+            "findings_decline", 0, "add synthesis directive",
+            10.0, "finding_count",
+            affected_models=["m1", "m2", "m3", "m4"],
+        )
+        # Should have suggested simplification
+        assert proceed is True  # SOFT failures only → proceed with warn
+
+    def test_extended_ppass_clean_pass(self):
+        """Extended P-pass passes cleanly when no issues found."""
+        hm = DetectorHealthMonitor()
+        # Small number of affected models, pathology well-established
+        hm._pathology_counts["findings_decline"] = 5
+        proceed, rationale = hm._extended_p_pass_remediation(
+            "findings_decline", 0, "add synthesis directive",
+            10.0, "finding_count",
+            affected_models=["m1", "m2"],  # Only 2 models, not multi-trigger
+        )
+        assert proceed is True
+        assert "PASS" in rationale
+
+    def test_self_adjustment_ppass_approves_coherent(self):
+        """Self-adjustment P-pass approves coherent parameter changes."""
+        hm = DetectorHealthMonitor(stuck_window=3, mu_increase_window=2)
+        proceed, rationale = hm._p_pass_self_adjustment(
+            trigger="low_remediation_success_rate",
+            adjustments={
+                "stuck_window": (3, 4),
+                "mu_window": (2, 3),
+            },
+            success_rate=0.2,
+        )
+        assert proceed is True
+        assert "PASS" in rationale
+
+    def test_self_adjustment_ppass_rejects_contradictory(self):
+        """Self-adjustment P-pass rejects contradictory parameter changes."""
+        hm = DetectorHealthMonitor(stuck_window=5, mu_increase_window=4)
+        # One parameter widening, another narrowing — contradictory
+        proceed, rationale = hm._p_pass_self_adjustment(
+            trigger="low_remediation_success_rate",
+            adjustments={
+                "stuck_window": (5, 6),   # widening
+                "mu_window": (4, 3),       # narrowing
+            },
+            success_rate=0.2,
+        )
+        assert proceed is False
+        assert "contradiction" in rationale.lower()
+
+    def test_self_adjustment_ppass_warns_cumulative_risk(self):
+        """Self-adjustment P-pass warns on cumulative window widening."""
+        hm = DetectorHealthMonitor(stuck_window=3, mu_increase_window=2)
+        # Both already above original
+        hm._stuck_window = 5
+        hm._mu_increase_window = 3
+        proceed, rationale = hm._p_pass_self_adjustment(
+            trigger="low_remediation_success_rate",
+            adjustments={
+                "stuck_window": (5, 6),
+                "mu_window": (3, 4),
+            },
+            success_rate=0.1,
+        )
+        # Should warn about cumulative risk but still proceed (SOFT)
+        assert proceed is True
+        assert "cumulative" in rationale.lower() or "WARN" in rationale
+
+    def test_self_diagnose_iterates_to_simplest(self):
+        """self_diagnose tries both, then stuck_only, then mu_only."""
+        hm = DetectorHealthMonitor(stuck_window=3, mu_increase_window=2)
+        # Both already near bound — "both" will fail, "stuck_only" should work
+        hm._stuck_window = 5  # near 2×3=6 bound
+        hm._mu_increase_window = 3  # near 2×2=4 bound
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+
+        diags = hm.self_diagnose()
+        self_diags = [d for d in diags if d.detector == "self_diagnosis"]
+        assert len(self_diags) >= 1
+        # Should have applied the simplest sufficient candidate
+        evidence = self_diags[0].evidence
+        if isinstance(evidence, dict):
+            candidate = evidence.get("candidate", "")
+            # Either "both" or a simpler variant succeeded
+            assert candidate in ("both", "stuck_only", "mu_only")
+
+    def test_self_diagnose_defers_when_all_rejected(self):
+        """When all candidates are P-pass rejected, defer to human."""
+        hm = DetectorHealthMonitor(stuck_window=3, mu_increase_window=2)
+        # Both at 2× bound — no room to widen
+        hm._stuck_window = 6
+        hm._mu_increase_window = 4
+        for i in range(6):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        for _ in range(3):
+            hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+
+        diags = hm.self_diagnose()
+        self_diags = [d for d in diags if d.detector == "self_diagnosis"]
+        # Should have a diagnosis but no adjustment (all at bounds)
+        assert len(self_diags) >= 1
+
+    def test_identify_worst_performers(self):
+        """_identify_worst_performers correctly ranks models."""
+        hm = DetectorHealthMonitor()
+        hm._model_finding_history = {
+            "good": [10, 12, 15],
+            "bad": [2, 1, 0],
+            "medium": [5, 5, 5],
+        }
+        hm._model_failure_counts = {"bad": 3, "good": 0, "medium": 0}
+        worst = hm._identify_worst_performers(["good", "bad", "medium"], 2)
+        assert "bad" in worst
+        assert "good" not in worst

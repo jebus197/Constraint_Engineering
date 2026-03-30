@@ -2507,6 +2507,43 @@ class DetectorHealthMonitor:
         # Full remediation audit log — never truncated, exported in reports.
         self._remediation_log: List[Dict[str, Any]] = []
 
+        # --- Level 3: Self-adaptive immune layer (Exp15b) ---
+        # The immune layer monitors its OWN performance and adjusts its own
+        # parameters when it detects calibration failures. This is the second-
+        # order feedback loop: detect → remediate → verify → self-assess →
+        # self-adjust → repeat.
+        #
+        # Tracked metrics:
+        #   - remediation_success_rate: fraction of applied fixes that improved
+        #     their target metric (rolling window)
+        #   - false_positive_rate: pathologies detected that resolved WITHOUT
+        #     intervention (natural resolution ÷ total detections)
+        #   - chain_exhaustion_rate: fraction of pathology encounters where the
+        #     entire chain was exhausted without improvement
+        #   - step_effectiveness: per-chain-step success counts, used to learn
+        #     which steps to skip (simplest-sufficient preference)
+        #
+        # Self-diagnosis triggers:
+        #   - If remediation_success_rate < 0.3 for 3+ rounds → detection is
+        #     miscalibrated (too sensitive), widen detection windows
+        #   - If false_positive_rate > 0.5 for 3+ rounds → reduce sensitivity
+        #   - If chain_exhaustion_rate > 0.5 → chains need extension or
+        #     pathology needs reclassification
+        #
+        # All self-adjustments are logged and P-passed (lightweight: predict
+        # expected metric direction, verify after verification_window rounds).
+
+        self._remediation_outcomes: List[Dict[str, Any]] = []  # {success: bool, ...}
+        self._false_positive_history: List[Dict[str, Any]] = []  # natural resolutions
+        self._chain_exhaustion_history: List[Dict[str, Any]] = []
+        # Per chain-step effectiveness: {chain_key: {step_idx: {success: N, fail: N}}}
+        self._step_effectiveness: Dict[str, Dict[int, Dict[str, int]]] = {}
+        self._self_adjustment_log: List[Dict[str, Any]] = []
+        self._self_diagnosis_history: List[Dict[str, Any]] = []
+        # Track the original parameter values for bounded self-adjustment
+        self._original_stuck_window = stuck_window
+        self._original_mu_window = mu_increase_window
+
     def record_round(
         self,
         kappa: float,
@@ -2584,6 +2621,9 @@ class DetectorHealthMonitor:
                     self._resolved_counts["kappa"] = (
                         self._resolved_counts.get("kappa", 0) + 1
                     )
+                    # Level 3: if no active remediation, this was a natural resolution
+                    if "kappa_stuck" not in self._remediation_state:
+                        self.record_natural_resolution("kappa")
                     self._pathology_counts["kappa"] = 0
 
         # Check 2: mu increasing while finding count stable/declining
@@ -2632,6 +2672,8 @@ class DetectorHealthMonitor:
                     self._resolved_counts["mu"] = (
                         self._resolved_counts.get("mu", 0) + 1
                     )
+                    if "mu_distortion" not in self._remediation_state:
+                        self.record_natural_resolution("mu")
                     self._pathology_counts["mu"] = 0
 
         # Check 3: novelty_rate and mu disagreeing
@@ -2692,6 +2734,8 @@ class DetectorHealthMonitor:
                     self._resolved_counts["findings_decline"] = (
                         self._resolved_counts.get("findings_decline", 0) + 1
                     )
+                    if "findings_decline" not in self._remediation_state:
+                        self.record_natural_resolution("findings_decline")
                     self._pathology_counts["findings_decline"] = 0
 
         # --- Check 5 (Exp15): Vocab saturation detection ---
@@ -2736,6 +2780,12 @@ class DetectorHealthMonitor:
         verification_results = self._verify_remediation_outcomes()
         for vr in verification_results:
             new_diagnoses.append(vr)  # outcome reports as diagnoses
+
+        # --- Level 3: Self-diagnosis (Exp15b) ---
+        # Check the immune layer's own performance and self-adjust if needed.
+        self_diags = self.self_diagnose()
+        for sd in self_diags:
+            new_diagnoses.append(sd)
 
         return new_diagnoses
 
@@ -2870,6 +2920,11 @@ class DetectorHealthMonitor:
             }
             self._remediation_log.append(log_entry)
 
+            # Feed Level 3 self-performance tracker
+            self.record_remediation_outcome(
+                pathology_key, chain_idx, improved, old_val, current_val
+            )
+
             if improved:
                 severity = "INFO"
                 detail = (
@@ -2908,6 +2963,914 @@ class DetectorHealthMonitor:
     def remediation_log(self) -> List[Dict[str, Any]]:
         """Full audit trail of all remediation attempts and outcomes."""
         return list(self._remediation_log)
+
+    # --- Level 3: Self-adaptive immune layer (Exp15b) ---
+
+    def record_remediation_outcome(
+        self,
+        pathology_key: str,
+        chain_idx: int,
+        success: bool,
+        metric_before: float,
+        metric_after: float,
+    ) -> None:
+        """Record whether a remediation actually worked (for self-assessment).
+
+        Called by _verify_remediation_outcomes when a verdict is reached.
+        Feeds the self-performance tracker.
+        """
+        entry = {
+            "pathology": pathology_key,
+            "chain_idx": chain_idx,
+            "success": success,
+            "metric_before": metric_before,
+            "metric_after": metric_after,
+            "round": len(self._kappa_history) - 1,
+        }
+        self._remediation_outcomes.append(entry)
+
+        # Update per-step effectiveness
+        if pathology_key not in self._step_effectiveness:
+            self._step_effectiveness[pathology_key] = {}
+        if chain_idx not in self._step_effectiveness[pathology_key]:
+            self._step_effectiveness[pathology_key][chain_idx] = {"success": 0, "fail": 0}
+        key = "success" if success else "fail"
+        self._step_effectiveness[pathology_key][chain_idx][key] += 1
+
+    def record_natural_resolution(self, detector: str) -> None:
+        """Record that a pathology resolved without intervention.
+
+        Called when _pathology_counts > 0 transitions to 0 AND no remediation
+        was active for that pathology. This is a false positive (or at least
+        a self-resolving transient).
+        """
+        self._false_positive_history.append({
+            "detector": detector,
+            "round": len(self._kappa_history) - 1,
+        })
+
+    def record_chain_exhaustion(self, chain_key: str) -> None:
+        """Record that a remediation chain was fully exhausted."""
+        self._chain_exhaustion_history.append({
+            "chain_key": chain_key,
+            "round": len(self._kappa_history) - 1,
+        })
+
+    @property
+    def remediation_success_rate(self) -> float:
+        """Rolling success rate of applied remediations (last 10)."""
+        recent = self._remediation_outcomes[-10:]
+        if not recent:
+            return 1.0  # No data → assume healthy
+        return sum(1 for r in recent if r["success"]) / len(recent)
+
+    @property
+    def false_positive_rate(self) -> float:
+        """Ratio of natural resolutions to total detections (last 10 rounds)."""
+        current_round = len(self._kappa_history) - 1
+        window = 10
+        start_round = max(0, current_round - window)
+
+        total_detections = sum(
+            1 for d in self._diagnoses
+            if hasattr(d, 'evidence') and isinstance(d.evidence, dict)
+            and d.detector not in ("remediation_outcome",)
+        )
+        natural_resolutions = sum(
+            1 for fp in self._false_positive_history
+            if fp["round"] >= start_round
+        )
+        if total_detections == 0:
+            return 0.0
+        return min(1.0, natural_resolutions / max(1, total_detections))
+
+    @property
+    def chain_exhaustion_rate(self) -> float:
+        """Fraction of recent pathology encounters that exhausted their chain."""
+        recent_outcomes = self._remediation_outcomes[-10:]
+        recent_exhaustions = self._chain_exhaustion_history[-5:]
+        total = len(recent_outcomes) + len(recent_exhaustions)
+        if total == 0:
+            return 0.0
+        return len(recent_exhaustions) / max(1, total)
+
+    def recommended_chain_start(self, chain_key: str) -> int:
+        """Return the recommended starting step for a chain based on history.
+
+        Simplest-sufficient preference: if step 0 has never succeeded for this
+        pathology but step 1 has, skip step 0 next time. This prevents wasting
+        rounds on fixes that historically don't work.
+
+        Conservative: requires at least 2 failures before skipping a step.
+        """
+        if chain_key not in self._step_effectiveness:
+            return 0
+        steps = self._step_effectiveness[chain_key]
+        last_skipped = -1
+        for idx in sorted(steps.keys()):
+            stats = steps[idx]
+            total = stats["success"] + stats["fail"]
+            if total >= 2 and stats["fail"] >= 2 and stats["success"] == 0:
+                last_skipped = idx
+                continue  # Skip this step — historically ineffective
+            return idx
+        # All known steps were ineffective — start at the next one
+        return last_skipped + 1 if last_skipped >= 0 else 0
+
+    # --- Multi-modular fix classification ---
+    # Transforms that affect multiple independent components (models, detection
+    # windows, cross-area parameters) require extended P-pass. Single-parameter
+    # transforms get the standard lightweight P-pass.
+    _MULTI_MODULAR_TRANSFORMS: ClassVar[Set[str]] = {
+        "add_synthesis_directive",    # affects per_model_directives for ALL models
+    }
+
+    # Self-diagnosis adjustments are always multi-modular because they change
+    # detection parameters (stuck_window, mu_window) AND remediation behaviour
+    # (sensitivity_decay) simultaneously — cross-module interaction risk.
+    _MULTI_MODULAR_SELF_ADJUSTMENTS: ClassVar[Set[str]] = {
+        "low_remediation_success_rate",   # adjusts stuck_window + mu_window
+        "high_false_positive_rate",       # adjusts sensitivity_decay
+    }
+
+    def _is_multi_modular(
+        self, chain_key: str, chain_idx: int, transform_name: str
+    ) -> bool:
+        """Classify whether a fix is multi-modular (requires extended P-pass).
+
+        Multi-modular = the fix changes 3+ independent components with their
+        own constraint sets. Per the CLAUDE.md extended P-pass trigger:
+        "multi-module work with three or more distinct components that have
+        independent constraint sets."
+
+        Returns True if extended P-pass is required.
+        """
+        if transform_name in self._MULTI_MODULAR_TRANSFORMS:
+            return True
+        # Self-diagnosis adjustments that touch multiple detection parameters
+        # are classified in self_diagnose() directly.
+        return False
+
+    def p_pass_remediation(
+        self,
+        chain_key: str,
+        chain_idx: int,
+        transform_description: str,
+        current_metric: float,
+        target_metric: str,
+        transform_name: str = "",
+        affected_models: Optional[List[str]] = None,
+    ) -> Tuple[bool, str]:
+        """P-pass a proposed remediation before application.
+
+        Routes to standard P-pass (single-module) or extended P-pass
+        (multi-modular) based on fix classification.
+
+        Standard P-pass: 3 checks (history, trend, regression risk).
+        Extended P-pass: modular passes per affected component + adversarial
+        cross-component pass + iterate toward simplest sufficient solution.
+
+        Args:
+            chain_key: Pathology being remediated.
+            chain_idx: Step in the remediation chain.
+            transform_description: Human-readable description.
+            current_metric: Current value of the target metric.
+            target_metric: Name of the metric to check.
+            transform_name: Internal transform name (for modularity check).
+            affected_models: List of model IDs affected (for multi-modular).
+
+        Returns:
+            (proceed: bool, rationale: str)
+        """
+        if self._is_multi_modular(chain_key, chain_idx, transform_name):
+            return self._extended_p_pass_remediation(
+                chain_key, chain_idx, transform_description,
+                current_metric, target_metric,
+                affected_models=affected_models or [],
+            )
+        return self._standard_p_pass_remediation(
+            chain_key, chain_idx, transform_description,
+            current_metric, target_metric,
+        )
+
+    def _standard_p_pass_remediation(
+        self,
+        chain_key: str,
+        chain_idx: int,
+        transform_description: str,
+        current_metric: float,
+        target_metric: str,
+    ) -> Tuple[bool, str]:
+        """Standard (lightweight) P-pass for single-module fixes.
+
+        Checks:
+        1. Has this exact transform failed before for this pathology? (history)
+        2. Is the current metric already improving? (intervention may be unnecessary)
+        3. Is there a known regression risk? (step effectiveness data)
+
+        Returns:
+            (proceed: bool, rationale: str)
+        """
+        # Check 1: Historical effectiveness
+        if chain_key in self._step_effectiveness:
+            step_stats = self._step_effectiveness[chain_key].get(chain_idx, {})
+            total = step_stats.get("success", 0) + step_stats.get("fail", 0)
+            if total >= 3 and step_stats.get("success", 0) == 0:
+                return (False, (
+                    f"P-pass REJECT: {transform_description} has failed "
+                    f"{step_stats['fail']}/{total} times for {chain_key}. "
+                    f"Historical evidence against effectiveness."
+                ))
+
+        # Check 2: Is the metric already trending in the right direction?
+        history = self._get_metric_history(target_metric)
+        if len(history) >= 3:
+            recent_3 = history[-3:]
+            # For most metrics, increasing is good
+            if target_metric in ("mu",):
+                improving = all(
+                    abs(recent_3[i]) <= abs(recent_3[i - 1]) * 1.05
+                    for i in range(1, len(recent_3))
+                )
+            else:
+                improving = all(
+                    recent_3[i] >= recent_3[i - 1] * 0.95
+                    for i in range(1, len(recent_3))
+                )
+            if improving:
+                return (False, (
+                    f"P-pass SKIP: {target_metric} already improving "
+                    f"({[f'{v:.3f}' for v in recent_3]}). Intervention "
+                    f"may be unnecessary — let natural trend continue."
+                ))
+
+        # Check 3: Known regression risk from step effectiveness
+        if chain_key in self._step_effectiveness:
+            step_stats = self._step_effectiveness[chain_key].get(chain_idx, {})
+            fail_count = step_stats.get("fail", 0)
+            success_count = step_stats.get("success", 0)
+            if fail_count > 0 and success_count > 0:
+                rate = success_count / (success_count + fail_count)
+                if rate < 0.4:
+                    return (True, (
+                        f"P-pass WARN: {transform_description} has mixed "
+                        f"results ({success_count}/{success_count + fail_count} "
+                        f"success rate). Proceeding with caution."
+                    ))
+
+        return (True, (
+            f"P-pass PASS: {transform_description} — no historical "
+            f"contraindications."
+        ))
+
+    def _extended_p_pass_remediation(
+        self,
+        chain_key: str,
+        chain_idx: int,
+        transform_description: str,
+        current_metric: float,
+        target_metric: str,
+        affected_models: Optional[List[str]] = None,
+        max_iterations: int = 3,
+    ) -> Tuple[bool, str]:
+        """Extended P-pass for multi-modular fixes.
+
+        Follows the extended P-pass protocol from CLAUDE.md:
+        1. Modular passes: check each affected component independently
+        2. Adversarial pass: check for cross-component contradictions
+        3. Iterate toward simplest sufficient solution
+
+        The adversarial pass examines the combined effect of the fix across
+        all affected modules, looking for:
+        - Contradictory parameter movements (one module needs X up, another
+          needs X down)
+        - Cascade risk (fixing one module destabilises another)
+        - Over-specification (fix is more complex than necessary)
+
+        Converges when:
+        - All HARD constraints satisfied (no contradictions, no cascade risk)
+        - Two consecutive passes produce no new above-threshold failures
+        - Or max_iterations reached (diminishing returns)
+
+        Args:
+            chain_key: Pathology being remediated.
+            chain_idx: Step in the remediation chain.
+            transform_description: Human-readable description.
+            current_metric: Current value of the target metric.
+            target_metric: Name of the metric to check.
+            affected_models: List of model IDs affected by this fix.
+            max_iterations: Maximum P-pass iterations (default 3).
+
+        Returns:
+            (proceed: bool, rationale: str) with full pass report.
+        """
+        pass_reports: List[str] = []
+        all_failures: List[str] = []
+        models = affected_models or []
+
+        for iteration in range(max_iterations):
+            iteration_failures: List[str] = []
+
+            # --- Modular passes: one per affected component ---
+
+            # Module 1: Target metric check (same as standard P-pass check 1+3)
+            if chain_key in self._step_effectiveness:
+                step_stats = self._step_effectiveness[chain_key].get(chain_idx, {})
+                total = step_stats.get("success", 0) + step_stats.get("fail", 0)
+                if total >= 3 and step_stats.get("success", 0) == 0:
+                    iteration_failures.append(
+                        f"Module:target_metric — {transform_description} has "
+                        f"failed {step_stats['fail']}/{total} times"
+                    )
+
+            # Module 2: Natural trend check (same as standard check 2)
+            history = self._get_metric_history(target_metric)
+            if len(history) >= 3:
+                recent_3 = history[-3:]
+                if target_metric in ("mu",):
+                    improving = all(
+                        abs(recent_3[i]) <= abs(recent_3[i - 1]) * 1.05
+                        for i in range(1, len(recent_3))
+                    )
+                else:
+                    improving = all(
+                        recent_3[i] >= recent_3[i - 1] * 0.95
+                        for i in range(1, len(recent_3))
+                    )
+                if improving:
+                    iteration_failures.append(
+                        f"Module:trend — {target_metric} already improving "
+                        f"({[f'{v:.3f}' for v in recent_3]}), intervention "
+                        f"may be counterproductive"
+                    )
+
+            # Module 3: Per-model impact assessment (multi-modular specific)
+            # For fixes affecting multiple models, check whether any model
+            # has been adversely affected by similar past fixes.
+            if models:
+                for mid in models:
+                    model_history = self._model_finding_history.get(mid, [])
+                    if len(model_history) >= 3:
+                        recent = model_history[-3:]
+                        # If model's finding count has been declining, adding
+                        # directives may further suppress output
+                        if all(recent[i] < recent[i - 1]
+                               for i in range(1, len(recent)) if recent[i - 1] > 0):
+                            iteration_failures.append(
+                                f"Module:model_{mid} — findings declining "
+                                f"({recent}), additional directives may "
+                                f"further suppress output"
+                            )
+
+            # Module 4: Detection parameter coherence (for self-adjustments)
+            # Check that current detection parameters aren't already at
+            # bounds or in contradiction with each other
+            if self._stuck_window >= self._original_stuck_window * 2:
+                iteration_failures.append(
+                    f"Module:detection — stuck_window already at maximum "
+                    f"({self._stuck_window}), further widening impossible"
+                )
+
+            # --- Adversarial pass: cross-component interactions ---
+            # This pass examines the combined effect, not individual modules.
+            # "Focus on cross-module interactions, shared assumptions, and
+            # emergent contradictions that component-level review would miss."
+
+            adversarial_failures: List[str] = []
+
+            # Cross-check 1: Does the fix create contradictory signals?
+            # E.g., lowering a threshold to increase sensitivity while
+            # simultaneously widening a window to decrease sensitivity.
+            if (chain_key in ("findings_decline",)
+                    and self._stuck_window > self._original_stuck_window):
+                adversarial_failures.append(
+                    f"Adversarial:contradiction — adding synthesis directives "
+                    f"to compensate for findings decline, but detection window "
+                    f"is already widened ({self._stuck_window} > "
+                    f"{self._original_stuck_window}). These work against each "
+                    f"other: wider window delays detection, synthesis directive "
+                    f"attempts to accelerate production."
+                )
+
+            # Cross-check 2: Cascade risk — will this fix trigger another
+            # pathology? E.g., adding directives to all models increases
+            # prompt length, which may push models past decomposition
+            # thresholds, causing more decomposed dispatches, which changes
+            # the finding distribution.
+            if models and len(models) >= 3:
+                # Affecting 3+ models simultaneously has cascade risk
+                adversarial_failures.append(
+                    f"Adversarial:cascade — fix affects {len(models)} models "
+                    f"simultaneously. Prompt length increase may trigger "
+                    f"decomposition threshold crossings."
+                )
+
+            # Cross-check 3: Over-specification — is the fix more complex
+            # than necessary? If the pathology has been seen fewer than 3
+            # times, a multi-model fix may be premature.
+            pathology_occurrence = self._pathology_counts.get(
+                chain_key.replace("_stuck", "").replace("_saturation", ""),
+                0,
+            )
+            if pathology_occurrence < 3 and models and len(models) >= 3:
+                adversarial_failures.append(
+                    f"Adversarial:over_specification — pathology only observed "
+                    f"{pathology_occurrence} times, but fix affects "
+                    f"{len(models)} models. Simpler targeted fix may suffice."
+                )
+
+            iteration_failures.extend(adversarial_failures)
+
+            # --- Convergence check ---
+            pass_report = (
+                f"Extended P-pass iteration {iteration + 1}/{max_iterations}: "
+                f"{len(iteration_failures)} failures "
+                f"({len(adversarial_failures)} adversarial)"
+            )
+            pass_reports.append(pass_report)
+            all_failures.extend(iteration_failures)
+
+            if not iteration_failures:
+                # Clean pass — converged
+                return (True, (
+                    f"Extended P-pass PASS ({iteration + 1} iterations): "
+                    f"{transform_description}. "
+                    + "; ".join(pass_reports)
+                ))
+
+            # Check for diminishing returns: if this iteration found the
+            # same failures as the previous one, stop (no new information)
+            if iteration > 0:
+                prev_count = len(pass_reports) - 1
+                # Compare failure signatures
+                current_sigs = set(f.split(" — ")[0] for f in iteration_failures)
+                prev_failures_for_sig = all_failures[:-len(iteration_failures)]
+                prev_sigs = set(f.split(" — ")[0] for f in prev_failures_for_sig) if prev_failures_for_sig else set()
+                new_failures = current_sigs - prev_sigs
+                if not new_failures:
+                    # Two consecutive passes, no new failures — early stop
+                    break
+
+            # --- Simplest-sufficient iteration ---
+            # If adversarial pass found over-specification, try to simplify.
+            # For multi-model fixes: suggest applying to fewer models.
+            # This is the "iterate to simplest sufficient" requirement.
+            if any("over_specification" in f for f in adversarial_failures):
+                # Cannot actually simplify the transform here (that's the
+                # caller's job), but we can signal what simplification looks like
+                if models and len(models) > 1:
+                    # Suggest applying to worst-performing models only
+                    worst_models = self._identify_worst_performers(models, 2)
+                    if worst_models and len(worst_models) < len(models):
+                        pass_reports.append(
+                            f"Simplification candidate: apply only to "
+                            f"{worst_models} instead of all {len(models)} models"
+                        )
+
+        # --- Final verdict ---
+        # Separate HARD failures (contradictions, cascade) from SOFT (trend, mixed)
+        hard_failures = [f for f in all_failures
+                         if f.startswith("Adversarial:contradiction")
+                         or f.startswith("Module:target_metric")]
+        soft_failures = [f for f in all_failures if f not in hard_failures]
+
+        if hard_failures:
+            return (False, (
+                f"Extended P-pass REJECT ({len(pass_reports)} iterations, "
+                f"{len(hard_failures)} HARD failures): "
+                f"{transform_description}. "
+                + "; ".join(hard_failures[:3])  # Limit report length
+            ))
+
+        # SOFT failures only — proceed with warning
+        return (True, (
+            f"Extended P-pass WARN ({len(pass_reports)} iterations, "
+            f"{len(soft_failures)} SOFT failures): "
+            f"{transform_description}. "
+            + "; ".join(soft_failures[:3])
+        ))
+
+    def _identify_worst_performers(
+        self, model_ids: List[str], top_n: int
+    ) -> List[str]:
+        """Identify the N worst-performing models for targeted remediation.
+
+        Used by extended P-pass to suggest simplest-sufficient fix scope.
+        Ranks by: lowest recent finding count, highest failure count.
+        """
+        scores: List[Tuple[str, float]] = []
+        for mid in model_ids:
+            history = self._model_finding_history.get(mid, [])
+            failures = self._model_failure_counts.get(mid, 0)
+            recent_avg = sum(history[-3:]) / max(len(history[-3:]), 1) if history else 0
+            # Lower score = worse performer
+            score = recent_avg - failures * 5
+            scores.append((mid, score))
+        scores.sort(key=lambda x: x[1])
+        return [mid for mid, _ in scores[:top_n]]
+
+    def _p_pass_self_adjustment(
+        self,
+        trigger: str,
+        adjustments: Dict[str, Tuple[Any, Any]],
+        success_rate: float = 0.0,
+        max_iterations: int = 3,
+    ) -> Tuple[bool, str]:
+        """Extended P-pass for immune layer self-adjustments.
+
+        Multi-modular self-adjustments (e.g. changing stuck_window AND
+        mu_window together) require the extended protocol:
+        1. Modular pass per adjusted parameter
+        2. Adversarial pass: cross-parameter contradiction check
+        3. Iterate toward simplest sufficient
+
+        Args:
+            trigger: What triggered this self-adjustment.
+            adjustments: {param_name: (old_value, new_value)}.
+            success_rate: Current remediation success rate (context).
+            max_iterations: Max P-pass iterations.
+
+        Returns:
+            (proceed: bool, rationale: str)
+        """
+        pass_reports: List[str] = []
+
+        for iteration in range(max_iterations):
+            failures: List[str] = []
+
+            # --- Modular passes: one per adjusted parameter ---
+            for param, (old_val, new_val) in adjustments.items():
+                if old_val == new_val:
+                    continue  # No change — skip
+
+                # Check: is this parameter already at its bound?
+                if param == "stuck_window":
+                    if new_val >= self._original_stuck_window * 2:
+                        failures.append(
+                            f"Module:{param} — at maximum bound "
+                            f"({new_val} >= {self._original_stuck_window * 2})"
+                        )
+                elif param == "mu_window":
+                    if new_val >= self._original_mu_window * 2:
+                        failures.append(
+                            f"Module:{param} — at maximum bound "
+                            f"({new_val} >= {self._original_mu_window * 2})"
+                        )
+
+                # Check: has this adjustment been tried before and failed?
+                past_adjustments = [
+                    h for h in self._self_diagnosis_history
+                    if h.get("trigger") == trigger
+                    and h.get("adjustment", {}).get(param, {}).get("new") == new_val
+                ]
+                if len(past_adjustments) >= 2:
+                    # Same value tried 2+ times — diminishing returns
+                    failures.append(
+                        f"Module:{param} — value {new_val} tried "
+                        f"{len(past_adjustments)} times previously"
+                    )
+
+            # --- Adversarial pass: cross-parameter interactions ---
+            active_adjustments = {
+                k: v for k, v in adjustments.items() if v[0] != v[1]
+            }
+            if len(active_adjustments) >= 2:
+                # Cross-check: are the adjustments working in the same
+                # direction? Both widening windows is coherent. One widening
+                # and one narrowing would be contradictory.
+                directions = {}
+                for param, (old_val, new_val) in active_adjustments.items():
+                    if isinstance(old_val, (int, float)):
+                        directions[param] = "widen" if new_val > old_val else "narrow"
+
+                unique_directions = set(directions.values())
+                if len(unique_directions) > 1:
+                    failures.append(
+                        f"Adversarial:contradiction — parameters moving in "
+                        f"opposite directions: {directions}. This creates "
+                        f"incoherent detection behaviour."
+                    )
+
+                # Cross-check: cumulative window widening may mask real
+                # pathologies. If both windows are already above original
+                # (i.e. old_val > original), further widening is high-risk.
+                all_already_above = True
+                for param, (old_val, new_val) in active_adjustments.items():
+                    if param == "stuck_window" and old_val <= self._original_stuck_window:
+                        all_already_above = False
+                    elif param == "mu_window" and old_val <= self._original_mu_window:
+                        all_already_above = False
+                if all_already_above and len(active_adjustments) >= 2:
+                    failures.append(
+                        f"Adversarial:cumulative_risk — all detection windows "
+                        f"already above original values. Further widening may "
+                        f"mask genuine pathologies."
+                    )
+
+            pass_report = (
+                f"Self-adjustment P-pass iteration {iteration + 1}: "
+                f"{len(failures)} failures"
+            )
+            pass_reports.append(pass_report)
+
+            if not failures:
+                return (True, (
+                    f"Self-adjustment extended P-pass PASS "
+                    f"({iteration + 1} iterations). "
+                    + "; ".join(pass_reports)
+                ))
+
+            # Early stop: same failures as previous iteration
+            if iteration > 0 and pass_reports[-1] == pass_reports[-2]:
+                break
+
+        # Verdict: HARD failures (contradictions) reject, SOFT warn
+        hard = [f for f in failures if "contradiction" in f]
+        if hard:
+            return (False, (
+                f"Self-adjustment extended P-pass REJECT: "
+                + "; ".join(hard)
+            ))
+        return (True, (
+            f"Self-adjustment extended P-pass WARN "
+            f"({len(pass_reports)} iterations, {len(failures)} SOFT): "
+            + "; ".join(failures[:2])
+        ))
+
+    def _get_metric_history(self, metric_name: str) -> List[float]:
+        """Get the history list for a named metric."""
+        if metric_name == "kappa":
+            return self._kappa_history
+        elif metric_name == "mu":
+            return self._mu_history
+        elif metric_name == "novelty":
+            return self._novelty_history
+        elif metric_name == "finding_count":
+            return [float(f) for f in self._finding_counts]
+        elif metric_name == "vocab_growth":
+            return self._vocab_growth_history
+        return []
+
+    def self_diagnose(self) -> List[DetectorDiagnosis]:
+        """Level 3 meta-diagnosis: check the immune layer's own performance.
+
+        Called at the end of record_round(). Detects:
+        - Low remediation success rate → detection miscalibration
+        - High false positive rate → over-sensitive detection windows
+        - High chain exhaustion rate → chains need extension
+
+        Applies self-corrections and P-passes them.
+        """
+        diagnoses: List[DetectorDiagnosis] = []
+        current_round = len(self._kappa_history) - 1
+
+        if current_round < 5:
+            return diagnoses  # Too early for meaningful self-assessment
+
+        # --- Self-check 1: Remediation success rate ---
+        # This is a MULTI-MODULAR self-adjustment: it changes stuck_window
+        # (kappa detection) AND mu_increase_window (mu detection) — two
+        # independent detection modules. Extended P-pass required.
+        success_rate = self.remediation_success_rate
+        if len(self._remediation_outcomes) >= 3 and success_rate < 0.3:
+            old_stuck = self._stuck_window
+            old_mu = self._mu_increase_window
+
+            max_stuck = self._original_stuck_window * 2
+            max_mu = self._original_mu_window * 2
+
+            new_stuck = min(max_stuck, self._stuck_window + 1)
+            new_mu = min(max_mu, self._mu_increase_window + 1)
+
+            can_adjust = (new_stuck != old_stuck) or (new_mu != old_mu)
+            if not can_adjust:
+                # At bounds — can't widen further, defer to human
+                diag = DetectorDiagnosis(
+                    detector="self_diagnosis",
+                    pathology=(
+                        f"Immune layer self-assessment: success rate "
+                        f"{success_rate:.1%} but detection windows at "
+                        f"maximum bounds (stuck={old_stuck}, mu={old_mu})"
+                    ),
+                    severity="CRITICAL",
+                    recommended_action=(
+                        "DEFER to human: detection windows at 2× original "
+                        "bounds. Manual parameter tuning or chain extension "
+                        "needed."
+                    ),
+                    evidence={
+                        "success_rate": success_rate,
+                        "stuck_window": old_stuck,
+                        "mu_window": old_mu,
+                        "bounds": {
+                            "stuck_max": max_stuck,
+                            "mu_max": max_mu,
+                        },
+                        "round": current_round,
+                    },
+                )
+                diagnoses.append(diag)
+            if can_adjust:
+                # Extended P-pass on the self-adjustment before applying.
+                # Iterate toward simplest sufficient: try adjusting both,
+                # then only one, then neither.
+                candidates = []
+                if new_stuck != old_stuck and new_mu != old_mu:
+                    candidates.append(("both", new_stuck, new_mu))
+                    candidates.append(("stuck_only", new_stuck, old_mu))
+                    candidates.append(("mu_only", old_stuck, new_mu))
+                elif new_stuck != old_stuck:
+                    candidates.append(("stuck_only", new_stuck, old_mu))
+                else:
+                    candidates.append(("mu_only", old_stuck, new_mu))
+
+                applied = False
+                for label, cand_stuck, cand_mu in candidates:
+                    # Run extended P-pass on this candidate
+                    proceed, rationale = self._p_pass_self_adjustment(
+                        trigger="low_remediation_success_rate",
+                        adjustments={
+                            "stuck_window": (old_stuck, cand_stuck),
+                            "mu_window": (old_mu, cand_mu),
+                        },
+                        success_rate=success_rate,
+                    )
+                    if proceed:
+                        if cand_stuck != old_stuck:
+                            self._stuck_window = cand_stuck
+                        if cand_mu != old_mu:
+                            self._mu_increase_window = cand_mu
+
+                        entry = {
+                            "trigger": "low_remediation_success_rate",
+                            "success_rate": success_rate,
+                            "candidate": label,
+                            "p_pass_rationale": rationale,
+                            "adjustment": {
+                                "stuck_window": {"old": old_stuck, "new": cand_stuck},
+                                "mu_window": {"old": old_mu, "new": cand_mu},
+                            },
+                            "round": current_round,
+                            "rationale": (
+                                f"Remediation success rate {success_rate:.1%} < 30%. "
+                                f"Widening detection windows ({label})."
+                            ),
+                        }
+                        self._self_adjustment_log.append(entry)
+                        self._self_diagnosis_history.append(entry)
+
+                        diag = DetectorDiagnosis(
+                            detector="self_diagnosis",
+                            pathology=(
+                                f"Immune layer self-assessment: remediation success "
+                                f"rate {success_rate:.1%} indicates detection "
+                                f"miscalibration"
+                            ),
+                            severity="WARNING",
+                            recommended_action=(
+                                f"Self-adjusted ({label}): stuck_window "
+                                f"{old_stuck}→{cand_stuck}, mu_window "
+                                f"{old_mu}→{cand_mu}. {rationale}"
+                            ),
+                            evidence=entry,
+                        )
+                        diagnoses.append(diag)
+                        applied = True
+                        break  # Simplest sufficient found
+
+                if not applied:
+                    # All candidates P-pass rejected — log but don't adjust
+                    diag = DetectorDiagnosis(
+                        detector="self_diagnosis",
+                        pathology=(
+                            f"Immune layer self-assessment: success rate "
+                            f"{success_rate:.1%} but all self-adjustments "
+                            f"rejected by extended P-pass"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            "DEFER to human: immune layer cannot find a safe "
+                            "self-adjustment. Manual parameter tuning needed."
+                        ),
+                        evidence={
+                            "success_rate": success_rate,
+                            "candidates_tried": len(candidates),
+                            "round": current_round,
+                        },
+                    )
+                    diagnoses.append(diag)
+
+        # --- Self-check 2: High false positive rate ---
+        # Single-module (sensitivity_decay only) — standard P-pass sufficient.
+        fp_rate = self.false_positive_rate
+        if len(self._false_positive_history) >= 2 and fp_rate > 0.5:
+            old_decay = self._sensitivity_decay
+            new_decay = min(0.95, old_decay + 0.05)
+
+            if new_decay != old_decay:
+                # Standard P-pass: check if sensitivity is already improving
+                fp_improving = (
+                    len(self._self_diagnosis_history) >= 2
+                    and any(
+                        h.get("trigger") == "high_false_positive_rate"
+                        and h.get("false_positive_rate", 1.0) > fp_rate
+                        for h in self._self_diagnosis_history[-2:]
+                    )
+                )
+                if fp_improving:
+                    # Trend is already improving — skip intervention
+                    diag = DetectorDiagnosis(
+                        detector="self_diagnosis",
+                        pathology=(
+                            f"Immune layer: false positive rate {fp_rate:.1%} "
+                            f"still > 50% but trending down — skipping "
+                            f"further sensitivity reduction"
+                        ),
+                        severity="INFO",
+                        recommended_action="No action — natural trend improving.",
+                        evidence={"fp_rate": fp_rate, "round": current_round},
+                    )
+                    diagnoses.append(diag)
+                else:
+                    self._sensitivity_decay = new_decay
+                    entry = {
+                        "trigger": "high_false_positive_rate",
+                        "false_positive_rate": fp_rate,
+                        "adjustment": {
+                            "sensitivity_decay": {"old": old_decay, "new": new_decay},
+                        },
+                        "round": current_round,
+                        "rationale": (
+                            f"False positive rate {fp_rate:.1%} > 50%. "
+                            f"Reducing detection sensitivity "
+                            f"(decay {old_decay}→{new_decay})."
+                        ),
+                    }
+                    self._self_adjustment_log.append(entry)
+                    self._self_diagnosis_history.append(entry)
+
+                    diag = DetectorDiagnosis(
+                        detector="self_diagnosis",
+                        pathology=(
+                            f"Immune layer self-assessment: false positive rate "
+                            f"{fp_rate:.1%} indicates over-sensitive detection"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Self-adjusted: sensitivity_decay "
+                            f"{old_decay}→{new_decay}"
+                        ),
+                        evidence=entry,
+                    )
+                    diagnoses.append(diag)
+
+        # --- Self-check 3: Chain exhaustion rate ---
+        exhaust_rate = self.chain_exhaustion_rate
+        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5:
+            diag = DetectorDiagnosis(
+                detector="self_diagnosis",
+                pathology=(
+                    f"Immune layer self-assessment: chain exhaustion rate "
+                    f"{exhaust_rate:.1%} — remediation chains too short "
+                    f"or pathologies need reclassification"
+                ),
+                severity="CRITICAL",
+                recommended_action=(
+                    "DEFER to human: extend remediation chains or redefine "
+                    "pathology classification. The immune layer cannot "
+                    "self-generate new chain steps."
+                ),
+                evidence={
+                    "exhaustion_rate": exhaust_rate,
+                    "recent_exhaustions": self._chain_exhaustion_history[-5:],
+                    "round": current_round,
+                },
+            )
+            diagnoses.append(diag)
+
+        return diagnoses
+
+    @property
+    def self_adjustment_log(self) -> List[Dict[str, Any]]:
+        """Full audit trail of self-adjustments to immune layer parameters."""
+        return list(self._self_adjustment_log)
+
+    @property
+    def self_diagnosis_summary(self) -> Dict[str, Any]:
+        """Summary of immune layer self-performance metrics."""
+        return {
+            "remediation_success_rate": self.remediation_success_rate,
+            "false_positive_rate": self.false_positive_rate,
+            "chain_exhaustion_rate": self.chain_exhaustion_rate,
+            "total_remediations": len(self._remediation_outcomes),
+            "total_false_positives": len(self._false_positive_history),
+            "total_chain_exhaustions": len(self._chain_exhaustion_history),
+            "self_adjustments": len(self._self_adjustment_log),
+            "step_effectiveness": {
+                k: {str(idx): stats for idx, stats in v.items()}
+                for k, v in self._step_effectiveness.items()
+            },
+        }
 
     # --- Phase E (Exp14): Dispatch health monitoring ---
     # Three new pathology types for operational health, not just detector health.
@@ -4622,8 +5585,30 @@ class DynamicManager:
         state = self.health_monitor._remediation_state.get(chain_key, {})
         chain_idx = state.get("chain_idx", 0)
 
+        # Level 3: Simplest-sufficient preference — skip historically
+        # ineffective early steps.
+        if chain_idx == 0:
+            recommended_start = self.health_monitor.recommended_chain_start(chain_key)
+            if recommended_start > chain_idx:
+                self.event_stream.emit(
+                    ManagerEvent(
+                        event_type=ManagerEventType.STOP_CHECK,
+                        model_id="system",
+                        round_idx=round_idx,
+                        detail=(
+                            f"[IMMUNE:LEARN] Skipping chain {chain_key} "
+                            f"steps 0-{recommended_start - 1} (historically "
+                            f"ineffective). Starting at step {recommended_start}."
+                        ),
+                        metadata={"chain_skip": True, "chain_key": chain_key,
+                                  "skipped_to": recommended_start},
+                    )
+                )
+                chain_idx = recommended_start
+
         if chain_idx >= len(chain):
-            # Chain exhausted — log and give up
+            # Chain exhausted — log and feed Level 3 tracker
+            self.health_monitor.record_chain_exhaustion(chain_key)
             self.event_stream.emit(
                 ManagerEvent(
                     event_type=ManagerEventType.STOP_CHECK,
@@ -4678,6 +5663,42 @@ class DynamicManager:
                 )
             )
             return None  # Not applied — queued
+
+        # --- Level 3: P-pass the remediation before applying ---
+        # For multi-modular fixes (e.g. add_synthesis_directive → all models),
+        # this routes to the extended P-pass with modular + adversarial passes.
+        current_metric_val = self._get_current_metric(step["target_metric"])
+        affected_model_ids = [m.model_id for m in self.models]
+        proceed, rationale = self.health_monitor.p_pass_remediation(
+            chain_key, chain_idx, step["description"],
+            current_metric_val, step["target_metric"],
+            transform_name=step.get("transform", ""),
+            affected_models=affected_model_ids,
+        )
+        self.event_stream.emit(
+            ManagerEvent(
+                event_type=ManagerEventType.STOP_CHECK,
+                model_id="system",
+                round_idx=round_idx,
+                detail=f"[IMMUNE:P-PASS] {rationale}",
+                metadata={"p_pass": True, "proceed": proceed,
+                          "chain_key": chain_key, "chain_idx": chain_idx},
+            )
+        )
+        if not proceed:
+            # P-pass rejected — escalate to next step
+            state = self.health_monitor._remediation_state.get(chain_key, {})
+            if state:
+                state["chain_idx"] = chain_idx + 1
+            else:
+                self.health_monitor._remediation_state[chain_key] = {
+                    "chain_idx": chain_idx + 1,
+                    "applied_round": round_idx,
+                    "metric_at_apply": current_metric_val,
+                    "target_metric": step["target_metric"],
+                    "verification_window": 2,
+                }
+            return None
 
         # --- AUTO: safe to apply ---
         # Capture pre-fix metric snapshot for regression detection
