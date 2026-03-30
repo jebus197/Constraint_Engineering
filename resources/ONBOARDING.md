@@ -113,7 +113,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
     f_del, decomposition yield bounds η_dec, format yield φ_i. Combined:
     q_ik = f_del · φ_i · d_ik · p_ik. All reduce to existing when factors=1.
   - Immune layer: 3 new detectors (parser yield anomaly, monotonic decline,
-    cost-per-finding spike). 253 tests passing (19 new).
+    cost-per-finding spike). [253 tests](../bench/TEST_COVERAGE.md) passing (19 new).
 - **Immune persistence + Policy Engine PLANNED (30 March 2026):** JSON-based
   cross-experiment memory for immune layer (est. 150 lines). Policy Engine
   consolidation of remediation chains, registry TOML, inline heuristics.

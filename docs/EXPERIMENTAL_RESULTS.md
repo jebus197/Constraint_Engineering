@@ -2,7 +2,7 @@
 
 **Status:** Active — results recorded as experiments complete.
 
-This document is the canonical record of all empirical testing of the CDSFL methodology. Each experiment is recorded with full methodology, raw data references, and findings — including null results and failures. Nothing is omitted.
+This document is the canonical record of all empirical testing of the CDSFL methodology. Each experiment is recorded with full methodology, raw data references, and findings — including null results and failures. Nothing is omitted. For detailed test coverage of the management layer, see [bench/TEST_COVERAGE.md](../bench/TEST_COVERAGE.md).
 
 ---
 

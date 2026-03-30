@@ -244,4 +244,4 @@ The deeper hypothesis is that parts of scientific and engineering method can be 
 
 MIT licensed. See [LICENSE](LICENSE).
 
-*CDSFL v1.1. 29 March 2026. 12 experiments, 5 models, ~3,400 lines of management infrastructure, 173 tests.*
+*CDSFL v1.1. 30 March 2026. 15 experiments, 5 models, ~6,100 lines of management infrastructure, [253 tests](bench/TEST_COVERAGE.md).*
