@@ -119,9 +119,25 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   consolidation of remediation chains, registry TOML, inline heuristics.
   Deferred until Exp15/16 iteration stabilises immune layer shape. Plan:
   `docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt`.
-- **Next:** Complete Experiment 15 Run 3. Iterate on findings. Run Experiment
-  16 if new failure modes emerge. Then: build immune persistence + PE. Then:
-  full bench run. Deferred math model items (A-D1–D5) remain open.
+- **STOPPING CRITERION (founder-defined, 30 March 2026):** Everything wired
+  and fully operational to the extent that the bench produces meaningful
+  results without wasted compute on broken detectors, format failures, or
+  premature termination. Bench Run 2 must be a legitimate scientific
+  experiment, not a debugging session. We stop iterating on the methodology
+  when we can show the bench produces meaningful results. Occam's razor
+  applies: simplest sufficient solution at every level. The wider community
+  will have far greater compute to refine further.
+- **META-TRAJECTORY:** Problem space is shrinking across experiments. Exp12
+  found structural failures (broken detectors). Exp13 found calibration
+  errors (one threshold). Exp14 found design gaps (not broken code). Exp15
+  found edge cases (format divergence, CoT budget). Each iteration finds less
+  fundamental problems. The methodology is converging on itself. Experiment
+  numbering must auto-increment from logs directory (currently hardcoded).
+- **Next:** Complete Experiment 15 Run 3. Iterate on findings. Run further
+  experiments only if new failure modes emerge that would waste bench compute.
+  Then: build immune persistence + PE. Then: wire verification chain into live
+  pipeline. Then: full bench run (Bench Run 2). Deferred math model items
+  (A-D1–D5) remain open but are not blocking the bench.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

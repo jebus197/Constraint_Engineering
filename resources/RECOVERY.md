@@ -47,12 +47,25 @@ FAILURE MODE ANALYSIS COMPLETE (30 March 2026):
 
 ROADMAP (founder-approved 30 March 2026):
 1. Complete Exp15 Run 3 iteration
-2. Run Experiment 16 if new failure modes emerge
+2. Further experiments ONLY if new failure modes would waste bench compute
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
-5. Full bench run with accumulated immune memory
-6. Resolve deferred math model items (A-D1 through A-D5)
+5. Wire verification chain into live pipeline
+6. Full bench run (Bench Run 2) — the finish line
+7. Deferred math model items (A-D1 through A-D5) — not blocking bench
 Plan: docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt
+
+STOPPING CRITERION (founder-defined 30 March 2026):
+"Everything wired and fully operational to an extent that we can turn it
+against the bench without wasted effort. We stop when we can show the bench
+produces meaningful results." Occam's razor: simplest sufficient at every
+level. Do not over-engineer. Community has more compute to refine later.
+
+META-TRAJECTORY: Problem space shrinking across experiments.
+Exp12=structural breaks, Exp13=calibration, Exp14=design gaps, Exp15=edge
+cases. Each iteration finds less fundamental problems. Methodology converging
+on itself. Infinite iteration trap acknowledged — stop when it works as
+specified, not when every edge case is handled.
 
 ## Standard Recovery (5 minutes)
 
