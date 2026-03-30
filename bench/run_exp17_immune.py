@@ -93,7 +93,8 @@ MAX_ROUNDS = 10
 WALL_CLOCK_CAP_S = 4 * 3600  # 4 hours
 
 # Sub-area decomposition (Exp 16: unanimous, expanded for LB + persistence)
-# Used by DeepSeek (always decomposed) and any model in pre_decompose_models.
+# Used by DeepSeek (always decomposed) and any model in pre_decompose_models
+# when task-level extraction exceeds SUBAREA_ESCALATION_CHARS.
 REVIEW_AREAS = [
     ("Detection", ["DetectorDiagnosis", "DetectorHealthMonitor"]),
     ("Response", ["FailureHandler"]),
@@ -103,6 +104,26 @@ REVIEW_AREAS = [
                        "feasibility_probability"]),
     ("Persistence", []),  # verification_chain.py — separate file, handled specially
 ]
+
+# Per-task sub-area maps: used for sub-area escalation when task-level
+# decomposition is still too large for a model (CC2 confer finding F002+F005).
+# Immune uses REVIEW_AREAS. Mathmodel needs its own sub-areas because
+# MATHEMATICAL_APPENDIX.md (55K) pushes the decomposed prompt to ~110K.
+TASK_SUBAREAS = {
+    "immune": REVIEW_AREAS,
+    "mathmodel": [
+        ("Config", ["DynamicManagementConfig"]),
+        ("Convergence", ["ConvergenceDetector", "FindingEquivalenceClass"]),
+        ("DiminishingReturns", ["DiminishingReturnsDetector"]),
+    ],
+    # loadbalancing (42K) and persistence (27K) are small enough — no sub-areas needed
+}
+
+# Threshold for sub-area escalation: if task-level decomposition exceeds this,
+# fall back to sub-area rotation. Model-specific via throughput gate when
+# available; this is the static fallback (CC2 confer: should be model-specific,
+# but the throughput gate handles that dynamically).
+SUBAREA_ESCALATION_CHARS = 80_000
 
 # Task-level extraction markers: which classes/functions belong to each task.
 # Used for prompt decomposition — extracts focused code + skeletal context.
@@ -126,6 +147,48 @@ TASK_MARKERS = {
     ],
     # persistence uses verification_chain.py directly — no extraction from DM needed
 }
+
+# ─── Throughput tracking (CC2 confer F004+F006) ────────────────────────
+# In-memory: accumulate (prompt_chars, elapsed_seconds) per model.
+# Median-of-last-3 for robustness to outliers (Codex R2=254s, R3=timeout).
+# Used by post-decomposition feasibility check.
+_throughput_observations: Dict[str, List[tuple]] = {}  # model_label -> [(chars, secs)]
+
+
+def _record_throughput(model_label: str, prompt_chars: int, elapsed_secs: float) -> None:
+    """Record a dispatch observation for throughput estimation."""
+    if elapsed_secs > 0:
+        _throughput_observations.setdefault(model_label, []).append(
+            (prompt_chars, elapsed_secs))
+
+
+def _estimate_throughput(model_label: str) -> Optional[float]:
+    """Estimate chars/second for a model using median of last 3 observations.
+
+    Returns None if fewer than 2 observations (use ModelSpec.tau as prior).
+    """
+    obs = _throughput_observations.get(model_label, [])
+    if len(obs) < 2:
+        return None
+    recent = obs[-3:]  # last 3
+    rates = [chars / secs for chars, secs in recent if secs > 0]
+    if not rates:
+        return None
+    rates.sort()
+    mid = len(rates) // 2
+    return rates[mid]  # median
+
+
+def _effective_capacity(model_label: str, timeout: float) -> Optional[int]:
+    """Estimate max prompt chars a model can process within its timeout.
+
+    Returns None if insufficient throughput data.
+    """
+    tp = _estimate_throughput(model_label)
+    if tp is None:
+        return None
+    return int(tp * timeout)
+
 
 # Convergent findings for R0B seeded validation
 CONVERGENT_FINDINGS_PATH = REPO_ROOT / "bench" / "logs" / "experiment_17_plan.md"
@@ -897,14 +960,79 @@ def _find_cached(phase_label: str, model_label: str) -> Optional[str]:
 RESUME_MODE = False
 
 
+def _build_subarea_prompt(
+    preamble: str, full_code: str, math_text: str,
+    task_key: str, mc_label: str, round_idx: int,
+) -> tuple[str, bool]:
+    """Build a sub-area rotation prompt for models that need smaller input.
+
+    Uses TASK_SUBAREAS (or REVIEW_AREAS for immune) to split the task into
+    sub-areas and rotate by round_idx. Falls back to REVIEW_AREAS if no
+    task-specific sub-areas are defined.
+
+    CC2 confer F005: this is the escalation path when task-level decomposition
+    is still too large for a model.
+    """
+    subareas = TASK_SUBAREAS.get(task_key, REVIEW_AREAS)
+    area_idx = round_idx % len(subareas)
+    area_name, markers = subareas[area_idx]
+
+    if area_name == "Persistence":
+        vc_text = ""
+        if VERIFICATION_CHAIN_PATH.exists():
+            vc_text = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
+        model_prompt = (
+            f"You are reviewing the PERSISTENCE LAYER "
+            f"(verification_chain.py) — hash chains, Merkle trees, "
+            f"Ed25519 signing, epoch sealing.\n\n"
+            + preamble
+            + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
+            f"{vc_text}\n\n"
+            f"=== END ARTIFACT 1 ===\n\n"
+            f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+            f"{math_text}\n\n"
+            f"=== END ARTIFACT 2 ===\n\n"
+            f"Produce your findings now."
+        )
+        _log(f"  {mc_label}: sub-area → {area_name} ({len(vc_text)} chars)")
+    else:
+        focused = _extract_code_area(full_code, markers, area_name)
+        model_prompt = (
+            f"You are reviewing the {area_name} sub-area of {task_key}.\n\n"
+            f"The full code artifact has been decomposed for your context "
+            f"window. Below is the {area_name} code plus skeletal context.\n\n"
+            + preamble
+            + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
+            f"{focused}\n\n"
+            f"=== END ARTIFACT 1 ===\n\n"
+        )
+        # Add math appendix for mathmodel sub-areas and immune sub-areas
+        if task_key in ("mathmodel", "immune"):
+            model_prompt += (
+                f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+                f"{math_text}\n\n"
+                f"=== END ARTIFACT 2 ===\n\n"
+            )
+        model_prompt += "Produce your findings now."
+        _log(f"  {mc_label}: sub-area → {area_name} ({len(focused)} chars)")
+    return model_prompt, True
+
+
 def _build_decomposed_prompt(
     prompt: str, full_code: str, task_key: str,
     mc_label: str, round_idx: int,
+    max_chars: int = 0,
 ) -> tuple[str, bool]:
     """Build a decomposed prompt for a model that needs smaller input.
 
-    For DeepSeek: uses REVIEW_AREAS sub-area rotation (one area per round).
-    For other decomposed models: uses TASK_MARKERS task-level extraction.
+    For DeepSeek: always uses sub-area rotation (REVIEW_AREAS/TASK_SUBAREAS).
+    For other decomposed models: tries task-level extraction first. If the
+    result exceeds max_chars (or SUBAREA_ESCALATION_CHARS), escalates to
+    sub-area rotation (CC2 confer F002+F005).
+
+    Args:
+        max_chars: Max prompt chars. 0 = use SUBAREA_ESCALATION_CHARS.
+                   Set from throughput-derived effective_capacity when available.
 
     Returns (model_prompt, was_decomposed).
     """
@@ -912,53 +1040,14 @@ def _build_decomposed_prompt(
     math_text = ""
     if MATH_APPENDIX_PATH.exists():
         math_text = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
+    threshold = max_chars if max_chars > 0 else SUBAREA_ESCALATION_CHARS
 
-    # DeepSeek: sub-area rotation within each task
+    # DeepSeek: always sub-area rotation
     if mc_label == "DeepSeek":
-        area_idx = round_idx % len(REVIEW_AREAS)
-        area_name = REVIEW_AREAS[area_idx][0]
+        return _build_subarea_prompt(
+            preamble, full_code, math_text, task_key, mc_label, round_idx)
 
-        if area_name == "Persistence":
-            vc_text = ""
-            if VERIFICATION_CHAIN_PATH.exists():
-                vc_text = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
-            model_prompt = (
-                f"You are reviewing the PERSISTENCE LAYER "
-                f"(verification_chain.py) — hash chains, Merkle trees, "
-                f"Ed25519 signing, epoch sealing. This code has only had "
-                f"a single blind pass and has never been through distributed "
-                f"compute review.\n\n"
-                + preamble
-                + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
-                f"{vc_text}\n\n"
-                f"=== END ARTIFACT 1 ===\n\n"
-                f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-                f"{math_text}\n\n"
-                f"=== END ARTIFACT 2 ===\n\n"
-                f"Produce your findings now."
-            )
-            _log(f"  {mc_label}: decomposed → {area_name} ({len(vc_text)} chars)")
-        else:
-            focused, area_name = _extract_immune_area(full_code, area_idx)
-            model_prompt = (
-                f"You are reviewing the {area_name} sub-area (immune + load "
-                f"balancing + persistence layer validation).\n\n"
-                f"The full code artifact has been decomposed for your context "
-                f"window. Below is the {area_name} code plus skeletal context, "
-                f"plus the full mathematical appendix for cross-reference.\n\n"
-                + preamble
-                + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
-                f"{focused}\n\n"
-                f"=== END ARTIFACT 1 ===\n\n"
-                f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-                f"{math_text}\n\n"
-                f"=== END ARTIFACT 2 ===\n\n"
-                f"Produce your findings now."
-            )
-            _log(f"  {mc_label}: decomposed → {area_name} ({len(focused)} chars)")
-        return model_prompt, True
-
-    # Other decomposed models: task-level extraction
+    # Other decomposed models: try task-level first
     focused = _extract_task_area(full_code, task_key)
     if focused is None:
         # Task doesn't use DM code (persistence) — use original prompt
@@ -975,7 +1064,6 @@ def _build_decomposed_prompt(
         f"{focused}\n\n"
         f"=== END ARTIFACT 1 ===\n\n"
     )
-    # Math model task also needs the appendix
     if task_key == "mathmodel":
         model_prompt += (
             f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
@@ -983,6 +1071,14 @@ def _build_decomposed_prompt(
             f"=== END ARTIFACT 2 ===\n\n"
         )
     model_prompt += "Produce your findings now."
+
+    # Sub-area escalation: if task-level result is too large, escalate
+    if len(model_prompt) > threshold and task_key in TASK_SUBAREAS:
+        _log(f"  {mc_label}: task-level {task_key} = {len(model_prompt)} chars "
+             f"> threshold {threshold} — escalating to sub-area rotation")
+        return _build_subarea_prompt(
+            preamble, full_code, math_text, task_key, mc_label, round_idx)
+
     _log(f"  {mc_label}: decomposed → {task_desc} ({len(focused)} chars)")
     return model_prompt, True
 
@@ -1025,33 +1121,53 @@ def _dispatch_round(
                 _log(f"  {mc.label}: {len(model_findings)} findings (from cache)")
                 continue
 
+        # Throughput-derived effective capacity for this model (CC2 F004+F006)
+        eff_cap = _effective_capacity(mc.label, mc.timeout)
+
         # Dynamic decomposition check
         decomposed = False
+        max_chars = eff_cap if eff_cap else 0
         if _should_decompose(mc.label, mgr):
             model_prompt, decomposed = _build_decomposed_prompt(
-                prompt, full_code, task_key, mc.label, round_idx)
+                prompt, full_code, task_key, mc.label, round_idx,
+                max_chars=max_chars)
         else:
             model_prompt = prompt
 
-        # Pre-dispatch feasibility gate (uses DynamicManager.check_dispatch_feasibility)
+        # Pre-dispatch feasibility gate — fires for ALL prompts, including
+        # decomposed ones (CC2 confer F005: removed `not decomposed` guard).
+        # Context-window check via DynamicManager, then throughput check.
         model_spec = _find_model_spec(mgr, mc.label)
-        if model_spec and not decomposed:
+        if model_spec:
             token_est = len(model_prompt) // 4
             ok, p_feasible = mgr.check_dispatch_feasibility(model_spec, token_est)
             if not ok:
-                _log(f"  {mc.label}: DISPATCH BLOCKED — P(feasible)={p_feasible:.3f}, "
-                     f"prompt ~{token_est} tokens. Auto-decomposing.")
-                # Immune layer already recorded the block via check_dispatch_feasibility.
-                # Auto-decompose this model for this dispatch.
+                _log(f"  {mc.label}: DISPATCH BLOCKED (context window) — "
+                     f"P(feasible)={p_feasible:.3f}, ~{token_est} tokens. "
+                     f"Auto-decomposing.")
                 model_prompt, decomposed = _build_decomposed_prompt(
-                    prompt, full_code, task_key, mc.label, round_idx)
-                # Add to pre_decompose_models so future rounds decompose automatically
+                    prompt, full_code, task_key, mc.label, round_idx,
+                    max_chars=max_chars)
                 mgr.config.pre_decompose_models.add(mc.label)
-                _log(f"  {mc.label}: added to pre_decompose_models for future rounds")
+                _log(f"  {mc.label}: added to pre_decompose_models")
+            # Throughput check: even if context-window is fine, the model
+            # may not complete within its timeout at observed throughput.
+            elif eff_cap and len(model_prompt) > eff_cap:
+                _log(f"  {mc.label}: THROUGHPUT WARNING — prompt {len(model_prompt)} "
+                     f"chars > effective capacity {eff_cap} chars. Escalating.")
+                model_prompt, decomposed = _build_decomposed_prompt(
+                    prompt, full_code, task_key, mc.label, round_idx,
+                    max_chars=eff_cap)
+                if not decomposed:
+                    mgr.config.pre_decompose_models.add(mc.label)
+                    _log(f"  {mc.label}: added to pre_decompose_models")
 
         try:
             text, elapsed = dispatch_to_model(mc, model_prompt, cdsfl_text)
             _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
+
+            # Record throughput observation (CC2 confer F004)
+            _record_throughput(mc.label, len(model_prompt), elapsed)
 
             model_findings = parse_findings(mc.label, round_idx, text)
             findings.extend(model_findings)
@@ -1104,8 +1220,8 @@ def _report_dispatch_failure(
     remediation chain can add the model to pre_decompose_models.
     """
     diagnosis = DetectorDiagnosis(
-        detector="dispatch_watchdog",
-        pathology=f"Dispatch failure for {model_label}: {detail}",
+        detector="model_failure",
+        pathology=f"{model_label} has failed dispatch: {detail}",
         severity="WARNING",
         recommended_action="add_to_pre_decompose",
         evidence={"model_id": model_label, "round": round_idx},
