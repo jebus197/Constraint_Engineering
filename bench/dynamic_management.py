@@ -2496,6 +2496,8 @@ class DetectorHealthMonitor:
         # Track per-model failure counts for failure pattern detection.
         self._model_failure_counts: Dict[str, int] = {}  # model → consecutive failures
         self._model_finding_history: Dict[str, List[int]] = {}  # model → per-round finding counts
+        self._model_response_times: Dict[str, List[float]] = {}  # model → per-round response times
+        self._model_response_chars: Dict[str, List[int]] = {}  # model → per-round response char counts
         self._vocab_growth_history: List[float] = []  # vocab growth rates per round
 
         # Remediation chain state: tracks which fix in the chain was last
@@ -2794,21 +2796,38 @@ class DetectorHealthMonitor:
         self._vocab_growth_history.append(vocab_growth_rate)
 
     def record_model_round(
-        self, model_id: str, finding_count: int, failed: bool
-    ) -> Optional[DetectorDiagnosis]:
+        self,
+        model_id: str,
+        finding_count: int,
+        failed: bool,
+        response_time: float = 0.0,
+        response_chars: int = 0,
+    ) -> List[DetectorDiagnosis]:
         """Track per-model performance for failure pattern detection.
 
         Args:
             model_id: The model being tracked.
             finding_count: Findings produced this round (0 if failed/timeout).
             failed: Whether the model failed/timed out this round.
+            response_time: Seconds taken to produce the response.
+            response_chars: Number of characters in the raw response.
 
         Returns:
-            DetectorDiagnosis if a failure pattern is detected, else None.
+            List of DetectorDiagnosis (may be empty if no pathology detected).
         """
         if model_id not in self._model_finding_history:
             self._model_finding_history[model_id] = []
         self._model_finding_history[model_id].append(finding_count)
+
+        if model_id not in self._model_response_times:
+            self._model_response_times[model_id] = []
+        self._model_response_times[model_id].append(response_time)
+
+        if model_id not in self._model_response_chars:
+            self._model_response_chars[model_id] = []
+        self._model_response_chars[model_id].append(response_chars)
+
+        results: List[DetectorDiagnosis] = []
 
         if failed:
             self._model_failure_counts[model_id] = (
@@ -2817,6 +2836,7 @@ class DetectorHealthMonitor:
         else:
             self._model_failure_counts[model_id] = 0
 
+        # --- Consecutive failure detection (existing) ---
         consecutive = self._model_failure_counts.get(model_id, 0)
         if consecutive >= 2:
             key = f"model_failure_{model_id}"
@@ -2840,8 +2860,135 @@ class DetectorHealthMonitor:
                 },
             )
             self._diagnoses.append(diag)
-            return diag
-        return None
+            results.append(diag)
+
+        # --- Parser yield anomaly detection (Exp15 FM4) ---
+        # Detects: large response but zero parsed findings → format divergence.
+        # Formal: |raw_chars(i)| > τ_chars ∧ φ_i < τ_φ (§2 of appendix).
+        tau_chars = 2000  # substantive response threshold
+        if response_chars > tau_chars and finding_count == 0 and not failed:
+            key = f"parser_yield_{model_id}"
+            persistence = self._pathology_counts.get(key, 0)
+            self._pathology_counts[key] = persistence + 1
+            diag = DetectorDiagnosis(
+                detector="parser_yield",
+                pathology=(
+                    f"{model_id}: {response_chars} chars produced but "
+                    f"0 findings parsed (φ=0). Format divergence likely."
+                ),
+                severity="WARNING" if persistence < 1 else "CRITICAL",
+                recommended_action=(
+                    f"Re-extract findings from {model_id} response using "
+                    f"format-adaptive parser. Check if model uses non-standard "
+                    f"finding ID format (e.g. bold markdown vs FINDING_ID prefix)."
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "response_chars": response_chars,
+                    "finding_count": finding_count,
+                    "format_yield": 0.0,
+                    "occurrence": persistence + 1,
+                },
+            )
+            self._diagnoses.append(diag)
+            results.append(diag)
+
+        # --- Monotonic decline detection (Exp15 FM3) ---
+        # Detects: model finding count declining for 3+ consecutive rounds.
+        # Indicates the model is entering a low-productivity attractor.
+        history = self._model_finding_history.get(model_id, [])
+        if len(history) >= 3:
+            recent_3 = history[-3:]
+            if (recent_3[0] > recent_3[1] > recent_3[2]) and recent_3[0] > 0:
+                total_decline = recent_3[0] - recent_3[2]
+                if total_decline >= 3:  # not just noise (e.g. 7→5→3)
+                    key = f"monotonic_decline_{model_id}"
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    diag = DetectorDiagnosis(
+                        detector="monotonic_decline",
+                        pathology=(
+                            f"{model_id}: findings declining monotonically "
+                            f"for 3 rounds ({recent_3}), drop={total_decline}"
+                        ),
+                        severity="WARNING" if persistence < 2 else "CRITICAL",
+                        recommended_action=(
+                            f"Model {model_id} entering low-productivity attractor. "
+                            f"Adjust prompt strategy, shuffle area order, or bench "
+                            f"temporarily and reassign workload."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "finding_counts": recent_3,
+                            "total_decline": total_decline,
+                            "occurrence": persistence + 1,
+                        },
+                    )
+                    self._diagnoses.append(diag)
+                    results.append(diag)
+            else:
+                # Decline broken — resolve if previously pathological
+                key = f"monotonic_decline_{model_id}"
+                if self._pathology_counts.get(key, 0) > 0:
+                    self._resolved_counts[key] = (
+                        self._resolved_counts.get(key, 0) + 1
+                    )
+                    if key not in self._remediation_state:
+                        self.record_natural_resolution(key)
+                    self._pathology_counts[key] = 0
+
+        # --- Cost-per-finding spike detection (Exp15 FM5) ---
+        # Detects: response_time / findings > 2σ of model's historical mean.
+        # Indicates efficiency collapse (high compute, low yield).
+        times = self._model_response_times.get(model_id, [])
+        findings_hist = self._model_finding_history.get(model_id, [])
+        if (
+            len(times) >= 3
+            and response_time > 0
+            and finding_count > 0
+        ):
+            # Compute cost-per-finding for rounds where model produced findings
+            cpf_history = []
+            for t, f in zip(times[:-1], findings_hist[:-1]):
+                if f > 0 and t > 0:
+                    cpf_history.append(t / f)
+
+            if len(cpf_history) >= 2:
+                current_cpf = response_time / finding_count
+                mean_cpf = sum(cpf_history) / len(cpf_history)
+                variance = sum((x - mean_cpf) ** 2 for x in cpf_history) / len(cpf_history)
+                std_cpf = variance ** 0.5
+
+                if std_cpf > 0 and current_cpf > mean_cpf + 2 * std_cpf:
+                    key = f"cpf_spike_{model_id}"
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    diag = DetectorDiagnosis(
+                        detector="cpf_spike",
+                        pathology=(
+                            f"{model_id}: cost-per-finding {current_cpf:.1f}s "
+                            f"exceeds 2σ (mean={mean_cpf:.1f}s, σ={std_cpf:.1f}s)"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Model {model_id} efficiency collapse: spending "
+                            f"{current_cpf:.0f}s per finding vs historical "
+                            f"{mean_cpf:.0f}s. Consider reducing prompt complexity, "
+                            f"adjusting decomposition, or benching temporarily."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "current_cpf": current_cpf,
+                            "mean_cpf": mean_cpf,
+                            "std_cpf": std_cpf,
+                            "threshold": mean_cpf + 2 * std_cpf,
+                            "occurrence": persistence + 1,
+                        },
+                    )
+                    self._diagnoses.append(diag)
+                    results.append(diag)
+
+        return results
 
     def set_remediation_state(
         self,
@@ -4971,8 +5118,8 @@ class DynamicManager:
             mid = model.model_id
             fc = _model_finding_counts.get(mid, 0)
             failed = mid not in responses or not responses[mid].parseable
-            model_diag = self.health_monitor.record_model_round(mid, fc, failed)
-            if model_diag:
+            model_diags = self.health_monitor.record_model_round(mid, fc, failed)
+            for model_diag in model_diags:
                 self.event_stream.emit(
                     ManagerEvent(
                         event_type=ManagerEventType.STOP_CHECK,

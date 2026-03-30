@@ -113,6 +113,72 @@ d_ik values require per-class, per-reviewer empirical measurement. This is more 
 - Use scalar d_i as default
 - Override to d_ik only for flaw classes where there is evidence of class-specific correlation (e.g., two reviewers who share the same API documentation have high overlap for interface errors but not for logic errors)
 
+### Delivery Feasibility Factor (f_del)
+
+The structured model implicitly assumes that every pass i produces a parseable response. In practice, model-architecture-specific constraints can cause a pass to produce zero usable output even when the model is functioning correctly. The primary observed mechanism is chain-of-thought budget exhaustion: models that allocate a shared output token budget between invisible reasoning and visible content can consume the entire budget on reasoning, producing a valid API response with empty content.
+
+Define the delivery feasibility factor for model i:
+
+> **f_del(i) = P(|response_i| > 0 | budget_i, arch_i)**
+
+where budget_i is the max_tokens allocation and arch_i encodes architecture-specific output constraints (e.g., shared CoT budget, output length limits).
+
+The effective detection probability becomes:
+
+> q_ik = f_del(i) · d_ik · p_ik
+
+When f_del(i) = 1 (all responses parseable), this reduces to the existing model.
+
+**Estimation:** f_del can be estimated empirically from the ratio of non-empty responses to total API calls for each model, stratified by budget allocation. For models with CoT architectures, f_del is a decreasing function of prompt complexity (more complex prompts → more reasoning → higher probability of budget exhaustion).
+
+**Calibration from Experiment 15:** DeepSeek Reasoner with max_tokens=32768 showed f_del ≈ 0.8 (1 budget exhaustion in 5 rounds). Reducing max_tokens to 16384 with retry-on-empty is the operational mitigation; the formal model captures the residual risk. (Added during failure mode analysis, 30 March 2026.)
+
+### Decomposition Yield Bounds (η_dec)
+
+When a model's context or output capacity is insufficient for the full artifact, the orchestrator decomposes the task into area-specific sub-prompts. The implicit assumption is that decomposition preserves or improves detection: Σ_a |F_decomposed(a)| ≥ |F_full|. Experiment 15 falsified this for Gemini 3.1 Pro: full-artifact review produced 6 findings; decomposed review produced 1.
+
+Define the decomposition yield ratio for model i:
+
+> **η_dec(i) = |F_decomposed(i)| / |F_full(i)|**
+
+When η_dec(i) < 1, decomposition is counter-productive for model i. The effective detection probability under decomposition becomes:
+
+> q_ik^dec = η_dec(i) · d_ik · p_ik
+
+This introduces a testable prediction: for each model, there exists a context threshold below which decomposition improves yield (η_dec > 1) and above which it degrades yield (η_dec < 1). The optimal decomposition threshold is model-specific and should be calibrated empirically.
+
+**Interaction with f_del:** For models where decomposition is applied specifically to avoid budget exhaustion, η_dec and f_del are coupled. The orchestrator should choose the strategy that maximises f_del · η_dec, not f_del alone. A model that produces 6 findings with f_del=0.8 (expected yield: 4.8) outperforms the same model decomposed with f_del=1.0 but η_dec=0.17 (expected yield: 1.0).
+
+**Reduction property:** When η_dec(i) = 1 for all i (decomposition neither helps nor hurts), the model reduces to the existing formulation. (Added during failure mode analysis, 30 March 2026.)
+
+### Format Yield and Inter-Model Convergence (φ_i)
+
+The inter-model convergence metrics (kappa_set, kappa_rate, kappa_adopt) defined in the operational layer compute agreement over the set of parsed findings per model. When a model produces findings in a format the parser does not recognise, |F_parsed(i)| = 0 even though the model produced substantive output. This creates a specification error: the convergence metric treats the model as having found nothing, and inter-model agreement (kappa) computes over incomplete sets.
+
+Define the format yield for model i:
+
+> **φ_i = |F_parsed(i)| / |F_actual(i)|**
+
+where |F_actual(i)| is the count of genuine findings in the model's raw output (regardless of format compliance) and |F_parsed(i)| is what the parser extracts.
+
+The convergence metric should operate on the effective finding set:
+
+> **F_eff(i) = F_parsed(i) ∪ F_rescued(i)**
+
+where F_rescued(i) are findings recovered by format-adaptive re-extraction when φ_i < 1 is detected. The detection condition is:
+
+> **|raw_chars(i)| > τ_chars ∧ φ_i < τ_φ**
+
+where τ_chars is a minimum response size threshold (indicating the model produced substantive output) and τ_φ is the minimum acceptable format yield (typically 0.5).
+
+**Relationship to f_del:** f_del captures whether the model produces any output at all; φ captures whether produced output is parseable. The two are sequential: first f_del determines if there is a response, then φ determines if the response is usable. The combined effective detection probability is:
+
+> q_ik = f_del(i) · φ_i · d_ik · p_ik
+
+When both f_del(i) = 1 and φ_i = 1, this reduces to the existing model.
+
+**Calibration from Experiment 15:** DeepSeek Reasoner used `**F001**` format (bold markdown IDs) instead of the expected `FINDING_ID: F001` text format. Raw output: 9738 chars, 14 actual findings, 0 parsed findings → φ = 0. This is a pure format divergence, not a detection failure — the model's analytical capability was intact. (Added during failure mode analysis, 30 March 2026.)
+
 ---
 
 ## 3. Parameter Uncertainty
@@ -206,6 +272,9 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | Emergence (§8.2) | Formalised, empirical evidence from 3-arch review | 3-architecture review validates; full bench test pending | Measure Y_composite vs max(Y_i) across all conditions |
 | Metacognition (§8.1) | Protocol defined, MIDCA mapping established | Advisory implementation; mandatory pending API access | Measure pre/post feedback γ and v̄ changes |
 | Substrate agnosticism (§8.4) | Prediction stated | Not tested (requires human trials) | Design human-team protocol experiment |
+| f_del (delivery feasibility) | Well-defined, reduces to existing when f_del=1 | Exp15: DeepSeek f_del≈0.8 at 32K tokens | Calibrate per-model f_del from API response data |
+| η_dec (decomposition yield) | Well-defined, reduces to existing when η_dec=1 | Exp15: Gemini η_dec≈0.17 (6→1 findings) | Measure per-model η_dec across decomposition thresholds |
+| φ_i (format yield) | Well-defined, sequential with f_del | Exp15: DeepSeek φ=0 (14 actual, 0 parsed) | Implement format-adaptive re-extraction |
 
 ---
 

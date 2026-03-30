@@ -1728,16 +1728,16 @@ class TestDetectorHealthMonitorExp15:
     def test_model_failure_detection_single(self):
         """Single failure does not trigger diagnosis."""
         hm = DetectorHealthMonitor()
-        diag = hm.record_model_round("CC2", 0, failed=True)
-        assert diag is None  # one failure = no diagnosis
+        diags = hm.record_model_round("CC2", 0, failed=True)
+        assert len(diags) == 0  # one failure = no diagnosis
 
     def test_model_failure_detection_consecutive(self):
         """Two consecutive failures triggers WARNING."""
         hm = DetectorHealthMonitor()
         hm.record_model_round("CC2", 0, failed=True)
-        diag = hm.record_model_round("CC2", 0, failed=True)
-        assert diag is not None
-        assert diag.detector == "model_failure"
+        diags = hm.record_model_round("CC2", 0, failed=True)
+        assert len(diags) >= 1
+        diag = [d for d in diags if d.detector == "model_failure"][0]
         assert diag.severity == "WARNING"
         assert "CC2" in diag.pathology
 
@@ -1746,8 +1746,9 @@ class TestDetectorHealthMonitorExp15:
         hm = DetectorHealthMonitor()
         hm.record_model_round("CC2", 0, failed=True)
         hm.record_model_round("CC2", 0, failed=True)
-        diag = hm.record_model_round("CC2", 0, failed=True)
-        assert diag is not None
+        diags = hm.record_model_round("CC2", 0, failed=True)
+        assert len(diags) >= 1
+        diag = [d for d in diags if d.detector == "model_failure"][0]
         assert diag.severity == "CRITICAL"
 
     def test_model_failure_resets_on_success(self):
@@ -1755,8 +1756,9 @@ class TestDetectorHealthMonitorExp15:
         hm = DetectorHealthMonitor()
         hm.record_model_round("CC2", 0, failed=True)
         hm.record_model_round("CC2", 5, failed=False)  # success resets
-        diag = hm.record_model_round("CC2", 0, failed=True)
-        assert diag is None  # only 1 failure since reset
+        diags = hm.record_model_round("CC2", 0, failed=True)
+        failure_diags = [d for d in diags if d.detector == "model_failure"]
+        assert len(failure_diags) == 0  # only 1 failure since reset
 
     def test_findings_decline_detection(self):
         """Declining findings for 3 rounds triggers diagnosis."""
@@ -2499,3 +2501,237 @@ class TestExtendedPPassImmune:
         worst = hm._identify_worst_performers(["good", "bad", "medium"], 2)
         assert "bad" in worst
         assert "good" not in worst
+
+
+class TestParserYieldDetector:
+    """Tests for parser yield anomaly detection (Exp15 FM4)."""
+
+    def test_parser_yield_no_trigger_normal(self):
+        """Normal response with findings does not trigger."""
+        hm = DetectorHealthMonitor()
+        diags = hm.record_model_round(
+            "CC2", 7, failed=False, response_time=120.0, response_chars=15000
+        )
+        yield_diags = [d for d in diags if d.detector == "parser_yield"]
+        assert len(yield_diags) == 0
+
+    def test_parser_yield_no_trigger_small_response(self):
+        """Small response with 0 findings is not anomalous (model may have failed)."""
+        hm = DetectorHealthMonitor()
+        diags = hm.record_model_round(
+            "CC2", 0, failed=False, response_time=10.0, response_chars=500
+        )
+        yield_diags = [d for d in diags if d.detector == "parser_yield"]
+        assert len(yield_diags) == 0
+
+    def test_parser_yield_no_trigger_on_failure(self):
+        """Failed model with large response does not trigger (already handled)."""
+        hm = DetectorHealthMonitor()
+        diags = hm.record_model_round(
+            "CC2", 0, failed=True, response_time=120.0, response_chars=10000
+        )
+        yield_diags = [d for d in diags if d.detector == "parser_yield"]
+        assert len(yield_diags) == 0
+
+    def test_parser_yield_triggers_format_divergence(self):
+        """Large response + 0 parsed findings → format divergence detected."""
+        hm = DetectorHealthMonitor()
+        diags = hm.record_model_round(
+            "DeepSeek", 0, failed=False, response_time=180.0, response_chars=9738
+        )
+        yield_diags = [d for d in diags if d.detector == "parser_yield"]
+        assert len(yield_diags) == 1
+        assert "DeepSeek" in yield_diags[0].pathology
+        assert "9738 chars" in yield_diags[0].pathology
+        assert yield_diags[0].severity == "WARNING"
+        assert yield_diags[0].evidence["format_yield"] == 0.0
+
+    def test_parser_yield_escalates_on_repeat(self):
+        """Repeated format divergence escalates to CRITICAL."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round(
+            "DeepSeek", 0, failed=False, response_time=180.0, response_chars=9000
+        )
+        diags = hm.record_model_round(
+            "DeepSeek", 0, failed=False, response_time=200.0, response_chars=12000
+        )
+        yield_diags = [d for d in diags if d.detector == "parser_yield"]
+        assert len(yield_diags) == 1
+        assert yield_diags[0].severity == "CRITICAL"
+
+    def test_parser_yield_independent_per_model(self):
+        """Parser yield tracked independently per model."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round(
+            "DeepSeek", 0, failed=False, response_time=180.0, response_chars=9000
+        )
+        diags = hm.record_model_round(
+            "CC2", 0, failed=False, response_time=120.0, response_chars=8000
+        )
+        cc2_yield = [d for d in diags if d.detector == "parser_yield"]
+        assert len(cc2_yield) == 1
+        assert cc2_yield[0].severity == "WARNING"  # first for CC2
+
+
+class TestMonotonicDeclineDetector:
+    """Tests for monotonic decline detection (Exp15 FM3)."""
+
+    def test_no_trigger_insufficient_data(self):
+        """Need 3 rounds to detect decline."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Gemini", 6, failed=False, response_time=100.0)
+        diags = hm.record_model_round("Gemini", 3, failed=False, response_time=120.0)
+        decline_diags = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(decline_diags) == 0
+
+    def test_no_trigger_non_monotonic(self):
+        """Non-monotonic pattern does not trigger."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Gemini", 6, failed=False)
+        hm.record_model_round("Gemini", 3, failed=False)
+        diags = hm.record_model_round("Gemini", 5, failed=False)  # up again
+        decline_diags = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(decline_diags) == 0
+
+    def test_no_trigger_small_decline(self):
+        """Decline < 3 is noise, not pathological."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Gemini", 5, failed=False)
+        hm.record_model_round("Gemini", 4, failed=False)
+        diags = hm.record_model_round("Gemini", 3, failed=False)  # drop=2
+        decline_diags = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(decline_diags) == 0
+
+    def test_triggers_on_significant_decline(self):
+        """3-round monotonic decline with drop ≥ 3 triggers WARNING."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Gemini", 8, failed=False)
+        hm.record_model_round("Gemini", 5, failed=False)
+        diags = hm.record_model_round("Gemini", 2, failed=False)  # drop=6
+        decline_diags = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(decline_diags) == 1
+        assert decline_diags[0].severity == "WARNING"
+        assert "Gemini" in decline_diags[0].pathology
+        assert decline_diags[0].evidence["total_decline"] == 6
+
+    def test_escalates_on_persistence(self):
+        """Persistent decline (continued without recovery) escalates to CRITICAL."""
+        hm = DetectorHealthMonitor()
+        # Sustained decline where each 3-round window has drop ≥ 3:
+        # [20, 15, 10] → drop=10, occurrence 1
+        hm.record_model_round("Gemini", 20, failed=False)
+        hm.record_model_round("Gemini", 15, failed=False)
+        hm.record_model_round("Gemini", 10, failed=False)
+        # [15, 10, 5] → drop=10, occurrence 2
+        hm.record_model_round("Gemini", 5, failed=False)
+        # [10, 5, 1] → drop=9, occurrence 3 → CRITICAL (persistence ≥ 2)
+        diags = hm.record_model_round("Gemini", 1, failed=False)
+        decline_diags = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(decline_diags) == 1
+        assert decline_diags[0].severity == "CRITICAL"
+
+    def test_resolves_on_recovery(self):
+        """Recovery from decline marks pathology as resolved."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Gemini", 10, failed=False)
+        hm.record_model_round("Gemini", 6, failed=False)
+        hm.record_model_round("Gemini", 2, failed=False)  # triggers
+        # Recovery
+        diags = hm.record_model_round("Gemini", 7, failed=False)
+        key = "monotonic_decline_Gemini"
+        assert hm._pathology_counts.get(key, 0) == 0
+        assert hm._resolved_counts.get(key, 0) >= 1
+
+    def test_independent_per_model(self):
+        """Decline tracked independently per model."""
+        hm = DetectorHealthMonitor()
+        # Gemini declining
+        hm.record_model_round("Gemini", 10, failed=False)
+        hm.record_model_round("Gemini", 6, failed=False)
+        hm.record_model_round("Gemini", 2, failed=False)
+        # CC2 stable
+        hm.record_model_round("CC2", 8, failed=False)
+        hm.record_model_round("CC2", 8, failed=False)
+        diags = hm.record_model_round("CC2", 8, failed=False)
+        cc2_decline = [d for d in diags if d.detector == "monotonic_decline"]
+        assert len(cc2_decline) == 0
+
+
+class TestCostPerFindingSpikeDetector:
+    """Tests for cost-per-finding spike detection (Exp15 FM5)."""
+
+    def test_no_trigger_insufficient_data(self):
+        """Need ≥ 3 rounds with findings to compute statistics."""
+        hm = DetectorHealthMonitor()
+        hm.record_model_round("Codex", 5, failed=False, response_time=100.0)
+        diags = hm.record_model_round("Codex", 5, failed=False, response_time=110.0)
+        cpf_diags = [d for d in diags if d.detector == "cpf_spike"]
+        assert len(cpf_diags) == 0
+
+    def test_no_trigger_stable_cpf(self):
+        """Stable cost-per-finding does not trigger (zero variance → no σ)."""
+        hm = DetectorHealthMonitor()
+        for _ in range(5):
+            hm.record_model_round("Codex", 5, failed=False, response_time=100.0)
+        diags = hm.record_model_round("Codex", 5, failed=False, response_time=110.0)
+        cpf_diags = [d for d in diags if d.detector == "cpf_spike"]
+        assert len(cpf_diags) == 0
+
+    def test_no_trigger_zero_findings(self):
+        """Zero findings round does not compute CPF (avoid division by zero)."""
+        hm = DetectorHealthMonitor()
+        # Use varied baselines to produce non-zero σ
+        for t in [90.0, 100.0, 110.0, 95.0, 105.0]:
+            hm.record_model_round("Codex", 5, failed=False, response_time=t)
+        diags = hm.record_model_round("Codex", 0, failed=False, response_time=400.0)
+        cpf_diags = [d for d in diags if d.detector == "cpf_spike"]
+        assert len(cpf_diags) == 0
+
+    def test_triggers_on_spike(self):
+        """CPF spike beyond 2σ triggers WARNING."""
+        hm = DetectorHealthMonitor()
+        # Establish varied baseline: ~18-22s per finding (non-zero σ)
+        for t in [90.0, 100.0, 110.0, 95.0, 105.0]:
+            hm.record_model_round("Codex", 5, failed=False, response_time=t)
+        # Spike: 456s for 3 findings = 152s/finding vs baseline ~20s/finding
+        diags = hm.record_model_round(
+            "Codex", 3, failed=False, response_time=456.0
+        )
+        cpf_diags = [d for d in diags if d.detector == "cpf_spike"]
+        assert len(cpf_diags) == 1
+        assert cpf_diags[0].severity == "WARNING"
+        assert "Codex" in cpf_diags[0].pathology
+        assert cpf_diags[0].evidence["current_cpf"] > cpf_diags[0].evidence["threshold"]
+
+    def test_no_trigger_moderate_variation(self):
+        """Moderate CPF increase within 2σ does not trigger."""
+        hm = DetectorHealthMonitor()
+        # Wide-variance baseline: 50-200s for 5 findings = 10-40s/finding
+        # Mean=20, σ≈11.4, threshold≈42.8 → 25s/finding well within
+        times = [50.0, 100.0, 200.0, 70.0, 80.0]
+        for t in times:
+            hm.record_model_round("Codex", 5, failed=False, response_time=t)
+        # Within 2σ: 125s for 5 findings = 25s/finding
+        diags = hm.record_model_round("Codex", 5, failed=False, response_time=125.0)
+        cpf_diags = [d for d in diags if d.detector == "cpf_spike"]
+        assert len(cpf_diags) == 0
+
+    def test_independent_per_model(self):
+        """CPF spike tracked independently per model."""
+        hm = DetectorHealthMonitor()
+        # CC2 baseline (varied)
+        for t in [90.0, 100.0, 110.0, 95.0, 105.0]:
+            hm.record_model_round("CC2", 10, failed=False, response_time=t)
+        # Codex baseline (varied, different scale)
+        for t in [180.0, 200.0, 220.0, 190.0, 210.0]:
+            hm.record_model_round("Codex", 5, failed=False, response_time=t)
+        # CC2 spikes (500s for 2 findings = 250s/finding vs ~10s baseline)
+        diags_cc2 = hm.record_model_round(
+            "CC2", 2, failed=False, response_time=500.0
+        )
+        # Codex normal
+        diags_codex = hm.record_model_round(
+            "Codex", 5, failed=False, response_time=210.0
+        )
+        assert len([d for d in diags_cc2 if d.detector == "cpf_spike"]) == 1
+        assert len([d for d in diags_codex if d.detector == "cpf_spike"]) == 0
