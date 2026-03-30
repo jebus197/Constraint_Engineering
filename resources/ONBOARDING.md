@@ -155,9 +155,33 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
   traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
   Independent stop caps (round 10, wall-clock 4h). Ready to execute.
-- **Next:** `python3 bench/run_exp17_immune.py run` — execute Experiment 17.
-  Then: immune persistence + PE. Then: Bench Run 2. Deferred math model items
-  (A-D1–D5) remain open but are not blocking the bench.
+- **Experiment 17 IN PROGRESS (30 March 2026, `e11b4a2`):** Live run under
+  nohup (PID 3114). R0A blind (172 findings) and R0B seeded (189 findings)
+  complete. Now in adaptive rounds. Dynamic decomposition generalised from
+  DeepSeek-only to all models via `pre_decompose_models` + immune remediation
+  chain. Codex pre-seeded (370-556s at full prompt → manageable with focused
+  prompts). Pre-dispatch feasibility gate via DynamicManager. Dispatch failures
+  feed back to immune layer via `_report_dispatch_failure()`. CC2 auto-decomposed
+  by immune layer during adaptive rounds — dynamic decomposition working as
+  designed. 5 immune diagnoses, 1 recovery, 1 adjustment recorded.
+- **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
+  `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
+  Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
+  first, player_manager last as arbitrator). Attributed findings with
+  `[source: model_id]`. Three output types: NOVEL, VALIDATION, CHALLENGE.
+  Position-aware prompts (first reviewer, confer, arbitrator). Inherits
+  decomposition and feasibility gate from Exp 17. Pending: preflight + canary
+  test before launch. Launches after Exp 17 findings are collated and integrated.
+- **Whole Body Architecture designed (30 March 2026):** Design note at
+  `docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.txt`.
+  Three communication layers: nervous system (dispatch sequencing), circulatory
+  system (attributed finding flow), endocrine system (adaptive pacing signals).
+  Four phases — Exp 18 implements Phases 1 (attributed findings) and 2
+  (sequential dispatch). Phases 3 (multi-step pacing) and 4 (closed-loop
+  feedback) are future work.
+- **Next:** Monitor Exp 17 completion → collate findings → integrate fixes →
+  test Exp 18 runner → launch Exp 18. Then: immune persistence + PE. Then:
+  Bench Run 2. Deferred math model items (A-D1–D5) remain open but not blocking.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
@@ -196,6 +220,8 @@ Constraint_Engineering/
     MATHEMATICAL_APPENDIX.md  -- Mathematical extensions
   bench/
     run_round_robin.py        -- Main bench test orchestrator (~3500 lines)
+    run_exp17_immune.py       -- Exp 17: immune + LB live validation runner
+    run_exp18_confer.py       -- Exp 18: sequential confer runner (Whole Body)
     cdsfl_registry/           -- Constraint Editor (CE) policy engine
       registry.py             -- 5-layer hierarchical merge with monotonicity
       refinements.py          -- Independence-aware confirmation, tuple canon

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 March 2026 07:14 UTC
+Last updated: 30 March 2026 17:05 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,49 +21,40 @@ This is enough to resume most tasks.
 
 ## Current Pending Work (30 March 2026)
 
-Experiments 12, 13a, 13b, 14 ALL COMPLETE. See ONBOARDING.md for details.
+Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 15 Run 3 COMPLETE + LAYER 1 FIXES (30 March 2026, `148f80d`):
-- 286 findings across 7 rounds, 5 models. Parser recovered +18 (tuple format).
-- CX confer: 7 findings, 4 applied (DOTALL, fences, proposed_fix, watchdog).
-- 4 convergent findings resolved. 350 tests passing.
+EXPERIMENT 17 IN PROGRESS (30 March 2026, `e11b4a2`):
+- Running under nohup (PID 3114). R0A blind (172 findings) + R0B seeded
+  (189 findings) COMPLETE. Now in adaptive rounds.
+- Dynamic decomposition generalised: all models via pre_decompose_models +
+  immune remediation chain. Codex pre-seeded. CC2 auto-decomposed by immune
+  layer during adaptive rounds — system working as designed.
+- Monitor: `tail -20 bench/logs/experiment_17/run_output_r5.log`
 
-EXPERIMENT 16 COMPLETE (30 March 2026, `881cf43`):
-- 5-model CDSFL review of Exp 17 plan. 54 findings, 45 improvements.
-- 11 convergent themes resolved: full file delivery, split blind round,
-  independent stop caps, behaviour-based success criteria, fault injection,
-  mandatory telemetry, SymPy for math ops, dependency-aware fix DAG.
-- All 4 open questions resolved. Plan APPROVED for execution.
-- Collation report: bench/logs/experiment_16/experiment_16_collation_report.md
+EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
+- bench/run_exp18_confer.py — sequential confer (Whole Body Phase 1+2).
+- Attributed findings, fingerprint dispatch ordering, NOVEL/VALIDATION/CHALLENGE.
+- Pending: preflight + canary, then launch after Exp 17 collation.
 
-EXPERIMENT 17 PREREQUISITES COMPLETE (30 March 2026, `e59f522`):
-- Runner: bench/run_exp17_immune.py (R0A blind + R0B seeded + adaptive)
-- 4 canary tests passing (empty response, false positive, cascade, oscillation)
-- 5 Layer 1 preflight tests passing
-- Round-level telemetry, DeepSeek decomposition, interface summary, traceability
-- Independent stop caps: round 10 + wall-clock 4h
-- Execute: python3 bench/run_exp17_immune.py run
+WHOLE BODY ARCHITECTURE DESIGNED (30 March 2026):
+- docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.txt
+- Nervous (dispatch sequencing), circulatory (attributed findings), endocrine
+  (adaptive pacing). Exp 18 = Phases 1+2. Phases 3+4 = future.
 
 ROADMAP (30 March 2026):
-1. Experiment 17: execute (runner ready, `e59f522`)
+1. Monitor Exp 17 → collate findings → integrate fixes
+2. Test + launch Experiment 18 (sequential confer)
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
 5. Wire verification chain into live pipeline
 6. Full bench run (Bench Run 2) — the finish line
 7. Deferred math model items (A-D1 through A-D5) — not blocking bench
-Plan: docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt
 
-STOPPING CRITERION (founder-defined 30 March 2026):
-"Everything wired and fully operational to an extent that we can turn it
-against the bench without wasted effort. We stop when we can show the bench
-produces meaningful results." Occam's razor: simplest sufficient at every
-level. Do not over-engineer. Community has more compute to refine later.
+STOPPING CRITERION (founder-defined): "Everything wired and fully operational
+to an extent that we can turn it against the bench without wasted effort."
 
-META-TRAJECTORY: Problem space shrinking across experiments.
-Exp12=structural breaks, Exp13=calibration, Exp14=design gaps, Exp15=edge
-cases. Each iteration finds less fundamental problems. Methodology converging
-on itself. Infinite iteration trap acknowledged — stop when it works as
-specified, not when every edge case is handled.
+META-TRAJECTORY: Exp12=structural, Exp13=calibration, Exp14=design gaps,
+Exp15=edge cases, Exp16=plan review, Exp17=immune+LB live, Exp18=confer.
 
 ## Standard Recovery (5 minutes)
 
