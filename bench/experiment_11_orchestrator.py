@@ -176,9 +176,23 @@ def call_openrouter(
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY not set")
 
+    # Explicit httpx timeout prevents indefinite hangs when TCP connections
+    # drop to CLOSED state (Exp15 fix: PID 39633 hung for >1 hour).
+    try:
+        import httpx
+        http_timeout = httpx.Timeout(
+            connect=30.0,
+            read=float(timeout),
+            write=30.0,
+            pool=30.0,
+        )
+    except ImportError:
+        http_timeout = timeout
+
     client = openai.OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
+        timeout=http_timeout,
     )
 
     messages: list[dict[str, str]] = []
@@ -302,7 +316,17 @@ def call_gemini(
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY / GOOGLE_API_KEY not set")
 
-    client = genai.Client(api_key=api_key)
+    # Google genai uses httpx internally. Set explicit request timeout
+    # to prevent indefinite hangs on dead TCP connections (Exp15 fix).
+    try:
+        import httpx as _httpx
+        _http_client = _httpx.Client(timeout=_httpx.Timeout(
+            connect=30.0, read=float(timeout), write=30.0, pool=30.0,
+        ))
+        client = genai.Client(api_key=api_key, http_options={"client": _http_client})
+    except (ImportError, TypeError):
+        # Fallback: if httpx not available or Client doesn't accept http_options
+        client = genai.Client(api_key=api_key)
 
     last_error = None
     for attempt in range(1, max_retries + 1):

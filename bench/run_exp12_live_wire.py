@@ -56,13 +56,32 @@ from dynamic_management import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-_DEFAULT_EXPERIMENT = "12"
+def _next_experiment_number() -> str:
+    """Auto-increment: scan bench/logs/experiment_* and return max+1."""
+    import re as _re
+    logs_root = REPO_ROOT / "bench" / "logs"
+    max_num = 0
+    if logs_root.exists():
+        for d in logs_root.iterdir():
+            m = _re.match(r'experiment_(\d+)$', d.name)
+            if m:
+                max_num = max(max_num, int(m.group(1)))
+    return str(max_num + 1)
+
+_DEFAULT_EXPERIMENT = "auto"  # "auto" = next available number
 LOGS_DIR = REPO_ROOT / "bench" / "logs" / "experiment_12"  # reset by _set_experiment()
 
 
 def _set_experiment(label: str) -> None:
-    """Set the experiment label, updating LOGS_DIR and related paths."""
+    """Set the experiment label, updating LOGS_DIR and related paths.
+
+    If label is "auto", auto-increments from existing experiment directories.
+    Uses exist_ok=False on mkdir to catch races (CX finding 6).
+    """
     global LOGS_DIR, CHECKPOINT_PATH, _EXPERIMENT_LABEL
+    if label == "auto":
+        label = _next_experiment_number()
+        _log(f"Auto-assigned experiment number: {label}")
     _EXPERIMENT_LABEL = label
     LOGS_DIR = REPO_ROOT / "bench" / "logs" / f"experiment_{label}"
     CHECKPOINT_PATH = LOGS_DIR / "checkpoint.json"
@@ -164,6 +183,67 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # Strip markdown bold markers before parsing — CC2 uses **SEVERITY:** format
     # where the colon is inside the bold markers, breaking field extraction.
     response = re.sub(r'\*{2,}', '', response)
+
+    # Strip triple-backtick code fences — Gemini wraps entire responses in
+    # ```text ... ``` blocks, preventing all downstream pattern matching.
+    # CX fix: allow optional leading whitespace (indented fences in lists/blockquotes)
+    response = re.sub(r'^\s*```\w*\s*\n?', '', response, flags=re.MULTILINE)
+    response = re.sub(r'^\s*```\s*$', '', response, flags=re.MULTILINE)
+
+    # ── Tuple-format parser ──────────────────────────────────────────
+    # Models (especially Gemini/ChatGPT) emit findings as tuples:
+    #   (F001, 0.9, 5, 0.8, "description", "fix", TRUE)
+    # or with prefixed IDs:
+    #   (LB_R2_F001, 0.88, 5, 0.42, "description", "fix", "TRUE")
+    # Try this format first; if it finds findings, return them directly.
+    # Two variants: TRUE with or without surrounding quotes.
+    # CX P-pass: DOTALL removed — tuples are single-line; DOTALL risks
+    # cross-line slurping on unmatched quotes. Escaped-quote handling added.
+    tuple_pattern_quoted = re.compile(
+        r'\(([A-Z0-9_]*F\d{2,4}),\s*'       # finding ID (digits allowed in prefix)
+        r'([\d.]+),\s*'                       # severity
+        r'(\d+),\s*'                          # flaw class
+        r'([\d.]+),\s*'                       # abstraction index
+        r'"([^"]*(?:\\"[^"]*)*)"\s*,\s*'     # description (escaped-quote safe)
+        r'"([^"]*(?:\\"[^"]*)*)"\s*,\s*'     # proposed fix (escaped-quote safe)
+        r'"(TRUE|FALSE|True|False|true|false)"\s*\)',  # verified (quoted)
+    )
+    tuple_pattern_bare = re.compile(
+        r'\(([A-Z0-9_]*F\d{2,4}),\s*'       # finding ID (digits allowed in prefix)
+        r'([\d.]+),\s*'                       # severity
+        r'(\d+),\s*'                          # flaw class
+        r'([\d.]+),\s*'                       # abstraction index
+        r'"([^"]*(?:\\"[^"]*)*)"\s*,\s*'     # description (escaped-quote safe)
+        r'"([^"]*(?:\\"[^"]*)*)"\s*,\s*'     # proposed fix (escaped-quote safe)
+        r'(TRUE|FALSE|True|False|true|false)\s*\)',  # verified (bare)
+    )
+    # Try quoted first (ChatGPT), then bare (Gemini)
+    tuple_pattern = tuple_pattern_quoted
+    tuple_matches = list(tuple_pattern_quoted.finditer(response))
+    if not tuple_matches:
+        tuple_matches = list(tuple_pattern_bare.finditer(response))
+    if tuple_matches:
+        for m in tuple_matches:
+            fid = m.group(1).strip()
+            severity = max(0.0, min(1.0, float(m.group(2))))
+            flaw_class = max(1, min(8, int(m.group(3))))
+            abstraction = max(0.0, min(1.0, float(m.group(4))))
+            description = m.group(5).replace('\\"', '"')
+            proposed_fix = m.group(6).replace('\\"', '"')
+            verified = m.group(7).upper() == "TRUE"
+            findings.append(Finding(
+                finding_id=f"{model_id}_{fid}",
+                model_id=model_id,
+                round_idx=round_idx,
+                flaw_class=flaw_class,
+                severity=severity,
+                abstraction_index=abstraction,
+                description=description,
+                proposed_fix=proposed_fix,
+                verified=verified,
+            ))
+        return findings
+    # ── End tuple-format parser ──────────────────────────────────────
 
     # Flaw class mapping: both the prompt taxonomy (1=logic, 2=interface, etc.)
     # and area-based names that models may use. Sorted by key length descending
@@ -272,6 +352,10 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             block, re.DOTALL
         )
         ver_match = re.search(r'\*{0,2}[Vv][Ee][Rr][Ii][Ff][Ii][Ee][Dd]\*{0,2}\s*[:=\-]\s*(TRUE|FALSE|true|false|True|False)', block)
+        fix_match = re.search(
+            r'\*{0,2}[Pp][Rr][Oo][Pp][Oo][Ss][Ee][Dd][\s_-]*[Ff][Ii][Xx]\*{0,2}\s*[:=\-]\s*(.+?)(?=\n\s*(?:\*{0,2}(?:[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd])|$))',
+            block, re.DOTALL
+        )
 
         if fid_match:
             finding_id = fid_match.group(1).strip().strip("*")
@@ -281,6 +365,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
         description = desc_match.group(1).strip() if desc_match else block[:200]
+        proposed_fix = fix_match.group(1).strip() if fix_match else ""
         verified = ver_match.group(1).upper() == "TRUE" if ver_match else False
 
         # Clamp values
@@ -296,6 +381,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             severity=severity,
             abstraction_index=abstraction,
             description=description,
+            proposed_fix=proposed_fix,
             verified=verified,
         ))
 
@@ -315,16 +401,69 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     return findings
 
 
+def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue):
+    """Worker function for multiprocessing watchdog."""
+    try:
+        response = dispatch(model_config, prompt, cdsfl_text)
+        result_queue.put(("ok", response))
+    except Exception as e:
+        result_queue.put(("error", e))
+
+
 def dispatch_to_model(
     model_config: ModelConfig,
     prompt: str,
     cdsfl_text: str,
+    wall_clock_limit: float = 0,
 ) -> tuple[str, float]:
-    """Dispatch prompt to model, return (response_text, elapsed_seconds)."""
+    """Dispatch prompt to model, return (response_text, elapsed_seconds).
+
+    CX finding 5: Two-layer resilience.
+    Layer 1: httpx timeouts on each API client (already applied).
+    Layer 2: multiprocessing watchdog — if the process exceeds wall_clock_limit
+    seconds, it is forcibly terminated. Catches stuck sockets, GIL-holding
+    C-extension blocks, and any other failure that httpx timeouts miss.
+    Default wall_clock_limit = model timeout * 2 (generous; the httpx timeout
+    should fire first in normal operation).
+    """
+    import multiprocessing as mp
+
+    if wall_clock_limit <= 0:
+        wall_clock_limit = model_config.timeout * 2
+
     t0 = time.monotonic()
-    response = dispatch(model_config, prompt, cdsfl_text)
+    result_queue = mp.Queue()
+    proc = mp.Process(
+        target=_dispatch_worker,
+        args=(model_config, prompt, cdsfl_text, result_queue),
+        daemon=True,
+    )
+    proc.start()
+    proc.join(timeout=wall_clock_limit)
     elapsed = time.monotonic() - t0
-    return response, elapsed
+
+    if proc.is_alive():
+        _log(f"  {model_config.label}: WATCHDOG — process exceeded {wall_clock_limit:.0f}s wall clock, terminating")
+        proc.terminate()
+        proc.join(timeout=5)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(timeout=2)
+        raise TimeoutError(
+            f"{model_config.label} dispatch exceeded wall-clock limit "
+            f"({wall_clock_limit:.0f}s). Process forcibly terminated."
+        )
+
+    if result_queue.empty():
+        raise RuntimeError(
+            f"{model_config.label} dispatch process exited without result "
+            f"(exit code {proc.exitcode})"
+        )
+
+    status, payload = result_queue.get_nowait()
+    if status == "error":
+        raise payload
+    return payload, elapsed
 
 
 def run_blind_round(
@@ -1160,7 +1299,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--experiment", "-e", default=_DEFAULT_EXPERIMENT,
         help="Experiment label for logs directory and report naming "
-             "(default: 12). E.g. --experiment 14 → logs/experiment_14/",
+             "(default: auto = next available number). "
+             "E.g. --experiment 14 → logs/experiment_14/",
     )
     args = parser.parse_args()
     _set_experiment(args.experiment)

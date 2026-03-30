@@ -363,6 +363,7 @@ class Finding:
     severity: float  # Sev(f) in [0, 1]
     abstraction_index: float  # H(f) in [0, 1]
     description: str = ""
+    proposed_fix: str = ""  # Model's proposed fix (CX: was parsed but discarded)
     verified: bool = False  # Whether finding was independently verified (SymPy, etc.)
 
 
@@ -615,6 +616,12 @@ class RoleAssignment:
             if mid not in new_map:
                 new_map[mid] = Role.PAR
 
+        # Persist updated COL scores back to capability_scores
+        # (Exp15 convergent finding: scores were computed but discarded)
+        for mid, score in col_scores.items():
+            if mid in self.capability_scores:
+                self.capability_scores[mid][Role.COL.value] = score
+
         self.role_map = new_map
         return new_map
 
@@ -793,6 +800,7 @@ class LoadBalancer:
         self.config = config
         self._model_idx = {m.model_id: i for i, m in enumerate(self.models)}
         self._task_idx = {t.task_id: i for i, t in enumerate(self.tasks)}
+        self._allocation_warnings: List[str] = []  # Exp15 fix: feasibility warnings
 
     def _admissibility_mask(self) -> NDArray[np.int_]:
         """Compute role admissibility matrix ell^adm_{jm}.
@@ -961,6 +969,18 @@ class LoadBalancer:
                     current_loads[m_idx] / limits[m_idx] if limits[m_idx] > 0 else float("inf")
                 )
             )
+
+            # Exp15 fix: upfront feasibility check before allocation attempt
+            feasible_count = sum(
+                1 for m_idx in admissible
+                if current_loads[m_idx] + demands[j] <= limits[m_idx]
+            )
+            if feasible_count < target:
+                # Log degraded allocation — target can't be fully met
+                self._allocation_warnings.append(
+                    f"Task {self.tasks[j].task_id}: target={target}, "
+                    f"feasible={feasible_count}/{len(admissible)} admissible"
+                )
 
             assigned = 0
             for m_idx in admissible:
@@ -2231,18 +2251,22 @@ class DiminishingReturnsDetector:
         return True
 
     def _abstraction_dropping(self, round_idx: int) -> bool:
-        """Check if mean abstraction of new findings is dropping.
+        """Check if mean abstraction of new findings is NOT ascending.
 
-        H_bar^(r)_new < H_bar^(r-1)_new
+        H_bar^(r)_new <= H_bar^(r-1)_new
+
+        Returns True when abstraction is flat or dropping (ok to stop).
+        Returns False when abstraction is RISING (models finding higher-level
+        issues — don't stop yet).
 
         This is used as a CONJUNCTIVE factor (founder decision), not a
-        disjunctive veto. A drop in abstraction is one signal among several.
+        disjunctive veto.
         """
         if round_idx < 1:
             return False
         h_curr = self._mean_abstraction_new.get(round_idx, 0.5)
         h_prev = self._mean_abstraction_new.get(round_idx - 1, 0.5)
-        return h_curr < h_prev
+        return h_curr <= h_prev
 
     def stop(self, round_idx: int) -> bool:
         """Diminishing returns stop predicate.
@@ -2275,13 +2299,22 @@ class DiminishingReturnsDetector:
         smoothed_mu = self.smoothed_marginal_value(round_idx)
         smoothed_novelty = self.smoothed_novelty_rate(round_idx)
 
-        # Any signal sufficient: cost efficiency exhausted OR content exhausted
-        # OR vocabulary saturated
-        return (
+        # Any exhaustion signal sufficient: cost efficiency exhausted OR
+        # content exhausted OR vocabulary saturated
+        exhaustion = (
             smoothed_mu < self.config.tau_mu
             or smoothed_novelty < self.config.tau_novelty_stop
             or self.vocab_saturated(round_idx)
         )
+
+        # Ascending abstraction guard (CONJUNCTIVE, founder decision §9.1):
+        # If abstraction is still rising, models may be finding higher-level
+        # issues — don't stop yet even if exhaustion signals fire.
+        # _abstraction_dropping returns True when H_bar is decreasing (ok to stop).
+        # At round 0-1 the guard is permissive (not enough data to judge).
+        abstraction_ok = round_idx <= 1 or self._abstraction_dropping(round_idx)
+
+        return exhaustion and abstraction_ok
 
     def remaining_value_estimate(self, round_idx: int, remaining_rounds: int) -> float:
         """Estimate remaining value if we continue.
@@ -4764,8 +4797,9 @@ class RoundResult:
     converged: bool
     stop: bool
     failures: Dict[str, Optional[FailureType]]
-    active_models: Set[str]
-    state: str
+    recovery_actions: Dict[str, str] = field(default_factory=dict)  # model_id -> action name (Exp15 fix)
+    active_models: Set[str] = field(default_factory=set)
+    state: str = ""
 
 
 class DynamicManager:
@@ -5005,6 +5039,7 @@ class DynamicManager:
 
         # --- Area 6: Failure detection ---
         failures: Dict[str, Optional[FailureType]] = {}
+        recovery_actions: Dict[str, str] = {}  # Exp15 fix: propagate to RoundResult
         critical_failure = False
 
         for model_id, response in responses.items():
@@ -5015,6 +5050,7 @@ class DynamicManager:
                 action = self.failure_handler.get_recovery(
                     model_id, round_idx, failure_type
                 )
+                recovery_actions[model_id] = action.value
                 self.role_assignment.record_failure(model_id, True)
 
                 if action == RecoveryAction.ABORT:
@@ -5281,6 +5317,7 @@ class DynamicManager:
             converged=is_converged,
             stop=is_diminished,
             failures=failures,
+            recovery_actions=recovery_actions,
             active_models=self.failure_handler.active_models,
             state=new_state,
         )
