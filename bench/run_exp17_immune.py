@@ -1110,7 +1110,7 @@ def _report_dispatch_failure(
         recommended_action="add_to_pre_decompose",
         evidence={"model_id": model_label, "round": round_idx},
     )
-    adjustment = mgr.failure_handler.apply_diagnosis(diagnosis, round_idx)
+    adjustment = mgr.apply_diagnosis(diagnosis, round_idx)
     if adjustment:
         _log(f"  IMMUNE: {model_label} → {adjustment}")
     else:
