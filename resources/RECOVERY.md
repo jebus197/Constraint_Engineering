@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 March 2026 06:13 UTC
+Last updated: 30 March 2026 06:45 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -26,19 +26,18 @@ Experiments 12, 13a, 13b, 14 ALL COMPLETE. See ONBOARDING.md for details.
 EXPERIMENT 15 Run 3 COMPLETE + LAYER 1 FIXES (30 March 2026, `148f80d`):
 - 286 findings across 7 rounds, 5 models. Parser recovered +18 (tuple format).
 - CX confer: 7 findings, 4 applied (DOTALL, fences, proposed_fix, watchdog).
-- 4 convergent findings resolved:
-  1. Ascending abstraction guard wired into stop() (conjunctive)
-  2. reassign() COL scores persisted to capability_scores
-  3. recovery_actions field on RoundResult, propagated from get_recovery()
-  4. _solve_greedy() upfront feasibility check + allocation warnings
-- Process resilience: httpx timeouts + multiprocessing watchdog
-- Dynamic experiment numbering: auto-increment from logs/experiment_*
-- 350 tests passing.
-- Experiment 17 plan drafted: bench/logs/experiment_17_plan.md
+- 4 convergent findings resolved. 350 tests passing.
+
+EXPERIMENT 16 COMPLETE (30 March 2026, `881cf43`):
+- 5-model CDSFL review of Exp 17 plan. 54 findings, 45 improvements.
+- 11 convergent themes resolved: full file delivery, split blind round,
+  independent stop caps, behaviour-based success criteria, fault injection,
+  mandatory telemetry, SymPy for math ops, dependency-aware fix DAG.
+- All 4 open questions resolved. Plan APPROVED for execution.
+- Collation report: bench/logs/experiment_16/experiment_16_collation_report.md
 
 ROADMAP (30 March 2026):
-1. Experiment 16: models review Exp 17 plan under CDSFL
-2. Experiment 17: execute validated plan against immune + load balancing layer
+1. Experiment 17: execute validated plan against immune layer
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
 5. Wire verification chain into live pipeline

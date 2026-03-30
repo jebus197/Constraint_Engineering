@@ -142,9 +142,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Process resilience: httpx timeouts + multiprocessing watchdog. Dynamic
   experiment numbering (auto-increment). 350 tests. Experiment 17 plan
   drafted (immune + load balancing layer validation).
-- **Next:** Experiment 16 (models review Exp 17 plan under CDSFL). Then
-  Experiment 17 (execute validated plan against immune + load balancing layer).
-  Then: immune persistence + PE. Then: Bench Run 2. Deferred math model items
+- **Experiment 16 COMPLETE (30 March 2026, `881cf43`):** 5-model CDSFL review
+  of Exp 17 plan. 54 P-pass findings, 45 proposed improvements. 11 convergent
+  themes resolved: full file delivery (not extract), split blind round (R0A+R0B),
+  independent stop caps, behaviour-based success criteria, fault injection
+  scenarios, mandatory telemetry, SymPy for math ops, dependency-aware fix DAG,
+  DeepSeek decomposition, load balancing separate with interface contracts.
+  All 4 open questions resolved. Plan status: APPROVED.
+- **Next:** Experiment 17 (execute validated plan against immune layer). Then:
+  immune persistence + PE. Then: Bench Run 2. Deferred math model items
   (A-D1–D5) remain open but are not blocking the bench.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
