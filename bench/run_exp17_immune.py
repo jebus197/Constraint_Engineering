@@ -802,6 +802,36 @@ def run_experiment() -> Dict[str, Any]:
     return report
 
 
+def _find_cached(phase_label: str, model_label: str) -> Optional[str]:
+    """Check if we already have a saved response for this phase+model.
+
+    Returns the response text if found, None otherwise.
+    Used by --resume to skip already-completed dispatches.
+    """
+    import glob
+    # Normalise label for filename matching (lowercase)
+    label_lower = model_label.lower()
+    pattern = str(LOGS_DIR / f"{phase_label}_{label_lower}_*.json")
+    matches = glob.glob(pattern)
+    if not matches:
+        return None
+    # Use most recent match
+    matches.sort()
+    try:
+        data = json.loads(Path(matches[-1]).read_text(encoding="utf-8"))
+        text = data.get("response", "")
+        if text:
+            _log(f"  {model_label}: CACHED ({len(text)} chars from {Path(matches[-1]).name})")
+            return text
+    except (json.JSONDecodeError, KeyError):
+        pass
+    return None
+
+
+# Whether to use cached results (set by --resume flag)
+RESUME_MODE = False
+
+
 def _dispatch_round(
     exp_config: ExperimentConfig,
     mgr: DynamicManager,
@@ -818,6 +848,16 @@ def _dispatch_round(
     for mc in exp_config.models:
         if mc.role == "collator":
             continue
+
+        # Resume: check for cached response before dispatching
+        if RESUME_MODE:
+            cached = _find_cached(phase_label, mc.label)
+            if cached:
+                model_findings = parse_findings(mc.label, round_idx, cached)
+                findings.extend(model_findings)
+                responses[mc.label] = cached
+                _log(f"  {mc.label}: {len(model_findings)} findings (from cache)")
+                continue
 
         # DeepSeek decomposition
         if mc.label == "DeepSeek":
@@ -979,9 +1019,11 @@ def _record_telemetry(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
+    global RESUME_MODE
     source_env()
 
     mode = sys.argv[1] if len(sys.argv) > 1 else "run"
+    RESUME_MODE = "--resume" in sys.argv
 
     if mode == "preflight":
         # Model connectivity + Layer 1 acceptance
@@ -995,7 +1037,17 @@ def main():
         ok = run_canary_tests()
         sys.exit(0 if ok else 1)
 
-    elif mode == "run":
+    elif mode in ("run", "resume"):
+        if mode == "resume":
+            RESUME_MODE = True
+
+        if RESUME_MODE:
+            _log("=== RESUME MODE: will use cached responses where available ===")
+            # Count existing files
+            import glob
+            existing = glob.glob(str(LOGS_DIR / "r0*_*.json"))
+            _log(f"  Found {len(existing)} cached response files in {LOGS_DIR}")
+
         # Full sequence: Layer 1 preflight → canary → experiment
         _log("Phase 1: Layer 1 preflight")
         if not run_layer1_preflight():
@@ -1023,7 +1075,10 @@ def main():
              f"across {len(report['rounds'])} rounds.")
 
     else:
-        print(f"Usage: {sys.argv[0]} [preflight|canary|run]")
+        print(f"Usage: {sys.argv[0]} [preflight|canary|run|resume]")
+        print(f"  run     — full experiment from scratch")
+        print(f"  resume  — resume from cached responses (skips completed dispatches)")
+        print(f"  run --resume  — same as resume")
         sys.exit(1)
 
 
