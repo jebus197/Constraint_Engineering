@@ -23,13 +23,11 @@ This is enough to resume most tasks.
 
 Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 17 IN PROGRESS (30 March 2026, `e11b4a2`):
-- Running under nohup (PID 3114). R0A blind (172 findings) + R0B seeded
-  (189 findings) COMPLETE. Now in adaptive rounds.
-- Dynamic decomposition generalised: all models via pre_decompose_models +
-  immune remediation chain. Codex pre-seeded. CC2 auto-decomposed by immune
-  layer during adaptive rounds — system working as designed.
-- Monitor: `tail -20 bench/logs/experiment_17/run_output_r5.log`
+EXPERIMENT 17 PAUSED (30 March 2026, `c33bd40`):
+- Crashed Round 3 (Codex timeout → _report_dispatch_failure called
+  mgr.failure_handler.apply_diagnosis, but method is on DynamicManager).
+  Fixed in `c33bd40`. 522 findings saved (R0A:172, R0B:189, R2:150, R3:11).
+  All cached in 121 JSON files — resumable: `python3 bench/run_exp17_immune.py resume`
 
 EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
 - bench/run_exp18_confer.py — sequential confer (Whole Body Phase 1+2).
