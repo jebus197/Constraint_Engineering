@@ -41,9 +41,16 @@ WHOLE BODY ARCHITECTURE DESIGNED (30 March 2026):
 - Nervous (dispatch sequencing), circulatory (attributed findings), endocrine
   (adaptive pacing). Exp 18 = Phases 1+2. Phases 3+4 = future.
 
+CX PROMPT EFFICIENCY CONFER COMPLETE (30 March 2026, `4e3b6ef`):
+- CX burns 155K tokens on 78 tool calls investigating codebase instead of
+  producing findings. Fix: 6-field standard confer packet with embedded code.
+  78% token reduction proven. Pending implementation in orchestrators.
+- Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.txt`
+
 ROADMAP (30 March 2026):
-1. Monitor Exp 17 → collate findings → integrate fixes
-2. Test + launch Experiment 18 (sequential confer)
+1. Implement confer packet fixes in orchestrators
+2. Resume Exp 17 → collate findings → integrate fixes
+3. Test + launch Experiment 18 (sequential confer)
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
 5. Wire verification chain into live pipeline

@@ -180,7 +180,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Four phases — Exp 18 implements Phases 1 (attributed findings) and 2
   (sequential dispatch). Phases 3 (multi-step pacing) and 4 (closed-loop
   feedback) are future work.
-- **Next:** Monitor Exp 17 completion → collate findings → integrate fixes →
+- **CX prompt efficiency confer COMPLETE (30 March 2026, `4e3b6ef`):** CX
+  burns context on codebase investigation (78 tool calls, 155K tokens) instead
+  of producing findings. Root cause: confer prompts don't embed code. Converged
+  on 6-field standard confer packet (review target, code extracts, interaction
+  surface, verified facts, explicit unknowns, adversarial brief). Plus stdin
+  piping, `--output-schema`, persistent briefing. Evidence: 78% token reduction
+  (155K→33K) with more findings (5→6). Pending implementation in orchestrators.
+  Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.txt`.
+- **Next:** Implement confer packet fixes → resume Exp 17 → collate findings →
   test Exp 18 runner → launch Exp 18. Then: immune persistence + PE. Then:
   Bench Run 2. Deferred math model items (A-D1–D5) remain open but not blocking.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
