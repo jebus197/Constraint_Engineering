@@ -155,15 +155,16 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
   traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
   Independent stop caps (round 10, wall-clock 4h). Ready to execute.
-- **Experiment 17 IN PROGRESS (30 March 2026, `e11b4a2`):** Live run under
-  nohup (PID 3114). R0A blind (172 findings) and R0B seeded (189 findings)
-  complete. Now in adaptive rounds. Dynamic decomposition generalised from
-  DeepSeek-only to all models via `pre_decompose_models` + immune remediation
-  chain. Codex pre-seeded (370-556s at full prompt → manageable with focused
-  prompts). Pre-dispatch feasibility gate via DynamicManager. Dispatch failures
-  feed back to immune layer via `_report_dispatch_failure()`. CC2 auto-decomposed
-  by immune layer during adaptive rounds — dynamic decomposition working as
-  designed. 5 immune diagnoses, 1 recovery, 1 adjustment recorded.
+- **Experiment 17 PAUSED (30 March 2026, `8c46696`):** Crashed Round 3 (Codex
+  timeout → apply_diagnosis call on wrong class, fixed `c33bd40`). 522 findings
+  saved (R0A:172, R0B:189, R2:150, R3:11). All cached in 121 JSON files —
+  resumable: `python3 bench/run_exp17_immune.py resume`. Post-crash confer round
+  (CC2 + CX + CC1, `8c46696`): 8 converged fixes — detector key mismatch
+  (CX critical: "dispatch_watchdog" → "model_failure"), sub-area escalation
+  for mathmodel (110K not 54K), feasibility gate now checks ALL prompts,
+  in-memory throughput tracking (median-of-3), throughput-derived max_chars.
+  immune: 112K→12-93K sub-area, mathmodel: 110K→15-34K sub-area. 350 tests.
+  Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.txt`.
 - **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model

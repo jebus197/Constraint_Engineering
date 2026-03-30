@@ -23,11 +23,13 @@ This is enough to resume most tasks.
 
 Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 17 PAUSED (30 March 2026, `c33bd40`):
-- Crashed Round 3 (Codex timeout → _report_dispatch_failure called
-  mgr.failure_handler.apply_diagnosis, but method is on DynamicManager).
-  Fixed in `c33bd40`. 522 findings saved (R0A:172, R0B:189, R2:150, R3:11).
-  All cached in 121 JSON files — resumable: `python3 bench/run_exp17_immune.py resume`
+EXPERIMENT 17 PAUSED (30 March 2026, `8c46696`):
+- Crashed Round 3 (Codex timeout). Two bugs fixed: apply_diagnosis wrong
+  class (`c33bd40`), then 8-fix confer round (`8c46696`) — detector key
+  mismatch, sub-area escalation, throughput model, feasibility gate fix.
+  522 findings saved (R0A:172, R0B:189, R2:150, R3:11), 121 JSON files.
+  Resumable: `python3 bench/run_exp17_immune.py resume`
+- Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.txt`
 
 EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
 - bench/run_exp18_confer.py — sequential confer (Whole Body Phase 1+2).
