@@ -133,10 +133,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   found edge cases (format divergence, CoT budget). Each iteration finds less
   fundamental problems. The methodology is converging on itself. Experiment
   numbering must auto-increment from logs directory (currently hardcoded).
-- **Next:** Complete Experiment 15 Run 3. Iterate on findings. Run further
-  experiments only if new failure modes emerge that would waste bench compute.
-  Then: build immune persistence + PE. Then: wire verification chain into live
-  pipeline. Then: full bench run (Bench Run 2). Deferred math model items
+- **Experiment 15 Run 3 COMPLETE + Layer 1 fixes (30 March 2026, `148f80d`):**
+  286 findings across 7 rounds (5 models). Parser fix recovered +18 findings
+  (Gemini/ChatGPT tuple format). CX confer produced 7 findings, 4 applied.
+  4 convergent findings from multi-model agreement resolved: ascending
+  abstraction guard wired into stop(), reassign() scores persisted, recovery
+  actions propagated to RoundResult, _solve_greedy() feasibility pre-check.
+  Process resilience: httpx timeouts + multiprocessing watchdog. Dynamic
+  experiment numbering (auto-increment). 350 tests. Experiment 17 plan
+  drafted (immune + load balancing layer validation).
+- **Next:** Experiment 16 (models review Exp 17 plan under CDSFL). Then
+  Experiment 17 (execute validated plan against immune + load balancing layer).
+  Then: immune persistence + PE. Then: Bench Run 2. Deferred math model items
   (A-D1–D5) remain open but are not blocking the bench.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full

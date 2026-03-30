@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 March 2026 02:50 UTC
+Last updated: 30 March 2026 06:13 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -23,31 +23,22 @@ This is enough to resume most tasks.
 
 Experiments 12, 13a, 13b, 14 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 15 IN PROGRESS (30 March 2026):
-- Live wire: dynamic_management.py (~6,100 lines), 5 models, self-adaptive
-  immune layer (Level 3) active.
-- Run 3 in progress (Round 1, 21 findings). Runs 1-2 killed by DeepSeek
-  circuit breaker — fixed mid-experiment.
-- Commits this session:
-  - c67ed97: Self-adaptive immune layer with extended P-pass (Level 3)
-  - 27e3622: Autonomous remediation engine + human-in-the-loop safety gate
-  - aa89585: CircuitBreakerTripped catch (no longer kills experiment)
-  - 5058d29: DeepSeek empty response retry with halved max_tokens
-  - df52e85: Dual-track failure mode fixes (§2 math model + 3 new detectors)
-- 253 tests passing.
+EXPERIMENT 15 Run 3 COMPLETE + LAYER 1 FIXES (30 March 2026, `148f80d`):
+- 286 findings across 7 rounds, 5 models. Parser recovered +18 (tuple format).
+- CX confer: 7 findings, 4 applied (DOTALL, fences, proposed_fix, watchdog).
+- 4 convergent findings resolved:
+  1. Ascending abstraction guard wired into stop() (conjunctive)
+  2. reassign() COL scores persisted to capability_scores
+  3. recovery_actions field on RoundResult, propagated from get_recovery()
+  4. _solve_greedy() upfront feasibility check + allocation warnings
+- Process resilience: httpx timeouts + multiprocessing watchdog
+- Dynamic experiment numbering: auto-increment from logs/experiment_*
+- 350 tests passing.
+- Experiment 17 plan drafted: bench/logs/experiment_17_plan.md
 
-FAILURE MODE ANALYSIS COMPLETE (30 March 2026):
-6 failure modes classified from Exp15 evidence:
-1. Kappa on empty sets (math model: φ_i format yield)
-2. CoT budget exhaustion (math model: f_del + immune: already fixed)
-3. Cascade degradation (immune: monotonic decline detector)
-4. Parser format divergence (immune: parser yield anomaly detector)
-5. Efficiency collapse (immune: cost-per-finding spike detector)
-6. Decomposition overshoot (math model: η_dec decomposition yield bounds)
-
-ROADMAP (founder-approved 30 March 2026):
-1. Complete Exp15 Run 3 iteration
-2. Further experiments ONLY if new failure modes would waste bench compute
+ROADMAP (30 March 2026):
+1. Experiment 16: models review Exp 17 plan under CDSFL
+2. Experiment 17: execute validated plan against immune + load balancing layer
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
 5. Wire verification chain into live pipeline
