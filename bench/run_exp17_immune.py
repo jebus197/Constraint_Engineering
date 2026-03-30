@@ -92,7 +92,8 @@ LOGS_DIR = REPO_ROOT / "bench" / "logs" / f"experiment_{EXPERIMENT}"
 MAX_ROUNDS = 10
 WALL_CLOCK_CAP_S = 4 * 3600  # 4 hours
 
-# DeepSeek sub-area decomposition (Exp 16: unanimous, expanded for LB + persistence)
+# Sub-area decomposition (Exp 16: unanimous, expanded for LB + persistence)
+# Used by DeepSeek (always decomposed) and any model in pre_decompose_models.
 REVIEW_AREAS = [
     ("Detection", ["DetectorDiagnosis", "DetectorHealthMonitor"]),
     ("Response", ["FailureHandler"]),
@@ -102,6 +103,29 @@ REVIEW_AREAS = [
                        "feasibility_probability"]),
     ("Persistence", []),  # verification_chain.py — separate file, handled specially
 ]
+
+# Task-level extraction markers: which classes/functions belong to each task.
+# Used for prompt decomposition — extracts focused code + skeletal context.
+TASK_MARKERS = {
+    "immune": [
+        "DetectorDiagnosis", "DetectorHealthMonitor", "FailureHandler",
+        "FailureType", "RecoveryAction", "FailureRecord",
+        "CorrelatedFailureModel", "_REMEDIATION_CHAINS",
+        "apply_diagnosis", "_apply_transform", "immune_feedback_enabled",
+    ],
+    "loadbalancing": [
+        "LoadBalancer", "RoleAssignment", "Allocation", "Role",
+        "_solve_greedy", "feasibility_probability", "dispatch_check",
+        "CapabilityFingerprint", "ModelSpec", "Task",
+    ],
+    "mathmodel": [
+        # Math model task cross-references code against MATHEMATICAL_APPENDIX.md.
+        # Extract config (constants/formulas) + convergence + diminishing returns.
+        "DynamicManagementConfig", "ConvergenceDetector",
+        "DiminishingReturnsDetector", "FindingEquivalenceClass",
+    ],
+    # persistence uses verification_chain.py directly — no extraction from DM needed
+}
 
 # Convergent findings for R0B seeded validation
 CONVERGENT_FINDINGS_PATH = REPO_ROOT / "bench" / "logs" / "experiment_17_plan.md"
@@ -139,8 +163,8 @@ class RoundTelemetry:
             "round": round_idx,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "diagnoses": [
-                {"pathology": d.pathology, "severity": d.severity,
-                 "detail": d.detail, "recommended_action": d.recommended_action}
+                {"detector": d.detector, "pathology": d.pathology,
+                 "severity": d.severity, "recommended_action": d.recommended_action}
                 for d in diagnoses
             ],
             "recovery_actions": recovery_actions,
@@ -163,28 +187,30 @@ class RoundTelemetry:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# DeepSeek immune decomposition
+# Code extraction / decomposition
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
-    """Extract one review sub-area's code + skeletal context.
+def _extract_code_area(code: str, markers: List[str],
+                       area_label: str = "") -> str:
+    """Extract code matching markers + skeletal context from dynamic_management.py.
 
-    Areas: Detection (DetectorDiagnosis + DetectorHealthMonitor),
-    Response (FailureHandler), Integration (process_round + apply_diagnosis),
-    LoadBalancing (LoadBalancer + RoleAssignment).
+    Used for both DeepSeek sub-area decomposition and task-level decomposition
+    for any model in pre_decompose_models.
+
+    Returns focused code: target classes/functions in full, everything else
+    reduced to definition + docstring only, plus first 200 lines (module config).
     """
-    area_name, markers = REVIEW_AREAS[area_idx % len(REVIEW_AREAS)]
     lines = code.split("\n")
 
-    # Find all class/function boundaries
+    # Find all class/function boundaries (top-level classes, class methods)
     boundaries = []
     for i, line in enumerate(lines):
         stripped = line.strip()
         if re.match(r'^class \w+', stripped) or re.match(r'^    def \w+', stripped):
             boundaries.append((i, stripped))
 
-    target_lines = set()
-    context_lines = set()
+    target_lines: set = set()
+    context_lines: set = set()
 
     for start_idx, defn in boundaries:
         # Find end of this block
@@ -209,8 +235,41 @@ def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
         context_lines.add(j)
 
     all_lines = target_lines | context_lines
-    focused = "\n".join(lines[j] for j in sorted(all_lines))
+    return "\n".join(lines[j] for j in sorted(all_lines))
+
+
+def _extract_immune_area(code: str, area_idx: int) -> tuple[str, str]:
+    """Extract one DeepSeek review sub-area. Delegates to _extract_code_area."""
+    area_name, markers = REVIEW_AREAS[area_idx % len(REVIEW_AREAS)]
+    focused = _extract_code_area(code, markers, area_name)
     return focused, area_name
+
+
+def _extract_task_area(code: str, task_key: str) -> Optional[str]:
+    """Extract task-relevant code from dynamic_management.py for decomposed dispatch.
+
+    Returns focused code for the task, or None if the task doesn't need
+    extraction from DM (e.g. persistence uses verification_chain.py).
+    """
+    markers = TASK_MARKERS.get(task_key)
+    if markers is None:
+        return None
+    return _extract_code_area(code, markers, task_key)
+
+
+def _should_decompose(model_label: str, mgr: DynamicManager) -> bool:
+    """Check if a model should receive decomposed (smaller) prompts.
+
+    DeepSeek is always decomposed (Exp 16 unanimous).
+    Codex is pre-seeded: observed R0A latencies (370-556s) at full prompt
+    size are consistently 3-10x slower than other models due to CLI overhead.
+    Decomposition reduces this to manageable levels.
+    Other models are decomposed if the immune layer added them to
+    pre_decompose_models (via model_failure remediation chain).
+    """
+    if model_label == "DeepSeek":
+        return True
+    return model_label in mgr.config.pre_decompose_models
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -644,6 +703,11 @@ def run_experiment() -> Dict[str, Any]:
     dm_config = DynamicManagementConfig(
         immune_feedback_enabled=True,
         immune_damping_rounds=2,  # Exp 16 consensus (median)
+        # Pre-seed Codex for decomposition: observed R0A latencies 370-556s
+        # at full prompt size vs 50-150s for other models. CLI overhead makes
+        # full-artifact dispatch impractical. Immune layer can add more models
+        # dynamically via model_failure remediation chain.
+        pre_decompose_models={"Codex"},
     )
     tasks = [Task(task_id="immune_lb_math", token_demand=len(code) // 4,
                   flaw_class=1, criticality=0.8)]
@@ -703,6 +767,7 @@ def run_experiment() -> Dict[str, Any]:
             task_findings, task_responses = _dispatch_round(
                 exp_config, mgr, prompt, cdsfl_text, code,
                 f"{phase_prefix}_{task_key}", round_idx,
+                task_key=task_key,
             )
             per_task_findings[task_key].extend(task_findings)
             all_findings.extend(task_findings)
@@ -832,6 +897,96 @@ def _find_cached(phase_label: str, model_label: str) -> Optional[str]:
 RESUME_MODE = False
 
 
+def _build_decomposed_prompt(
+    prompt: str, full_code: str, task_key: str,
+    mc_label: str, round_idx: int,
+) -> tuple[str, bool]:
+    """Build a decomposed prompt for a model that needs smaller input.
+
+    For DeepSeek: uses REVIEW_AREAS sub-area rotation (one area per round).
+    For other decomposed models: uses TASK_MARKERS task-level extraction.
+
+    Returns (model_prompt, was_decomposed).
+    """
+    preamble = prompt.split("=== ARTIFACT")[0]
+    math_text = ""
+    if MATH_APPENDIX_PATH.exists():
+        math_text = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
+
+    # DeepSeek: sub-area rotation within each task
+    if mc_label == "DeepSeek":
+        area_idx = round_idx % len(REVIEW_AREAS)
+        area_name = REVIEW_AREAS[area_idx][0]
+
+        if area_name == "Persistence":
+            vc_text = ""
+            if VERIFICATION_CHAIN_PATH.exists():
+                vc_text = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
+            model_prompt = (
+                f"You are reviewing the PERSISTENCE LAYER "
+                f"(verification_chain.py) — hash chains, Merkle trees, "
+                f"Ed25519 signing, epoch sealing. This code has only had "
+                f"a single blind pass and has never been through distributed "
+                f"compute review.\n\n"
+                + preamble
+                + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
+                f"{vc_text}\n\n"
+                f"=== END ARTIFACT 1 ===\n\n"
+                f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+                f"{math_text}\n\n"
+                f"=== END ARTIFACT 2 ===\n\n"
+                f"Produce your findings now."
+            )
+            _log(f"  {mc_label}: decomposed → {area_name} ({len(vc_text)} chars)")
+        else:
+            focused, area_name = _extract_immune_area(full_code, area_idx)
+            model_prompt = (
+                f"You are reviewing the {area_name} sub-area (immune + load "
+                f"balancing + persistence layer validation).\n\n"
+                f"The full code artifact has been decomposed for your context "
+                f"window. Below is the {area_name} code plus skeletal context, "
+                f"plus the full mathematical appendix for cross-reference.\n\n"
+                + preamble
+                + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
+                f"{focused}\n\n"
+                f"=== END ARTIFACT 1 ===\n\n"
+                f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+                f"{math_text}\n\n"
+                f"=== END ARTIFACT 2 ===\n\n"
+                f"Produce your findings now."
+            )
+            _log(f"  {mc_label}: decomposed → {area_name} ({len(focused)} chars)")
+        return model_prompt, True
+
+    # Other decomposed models: task-level extraction
+    focused = _extract_task_area(full_code, task_key)
+    if focused is None:
+        # Task doesn't use DM code (persistence) — use original prompt
+        return prompt, False
+
+    task_desc = {t[0]: t[2] for t in TASKS}.get(task_key, task_key)
+    model_prompt = (
+        f"You are reviewing {task_desc}.\n\n"
+        f"The full code artifact has been decomposed to focus on the "
+        f"relevant classes and functions. Below is the focused code plus "
+        f"skeletal context from dynamic_management.py.\n\n"
+        + preamble
+        + f"=== ARTIFACT 1: {task_desc} (from dynamic_management.py) ===\n\n"
+        f"{focused}\n\n"
+        f"=== END ARTIFACT 1 ===\n\n"
+    )
+    # Math model task also needs the appendix
+    if task_key == "mathmodel":
+        model_prompt += (
+            f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
+            f"{math_text}\n\n"
+            f"=== END ARTIFACT 2 ===\n\n"
+        )
+    model_prompt += "Produce your findings now."
+    _log(f"  {mc_label}: decomposed → {task_desc} ({len(focused)} chars)")
+    return model_prompt, True
+
+
 def _dispatch_round(
     exp_config: ExperimentConfig,
     mgr: DynamicManager,
@@ -840,10 +995,21 @@ def _dispatch_round(
     full_code: str,
     phase_label: str,
     round_idx: int,
+    task_key: str = "",
 ) -> tuple[List[Finding], Dict[str, str]]:
-    """Dispatch prompt to all models, return (findings, {label: response_text})."""
+    """Dispatch prompt to all models, return (findings, {label: response_text}).
+
+    Dynamic decomposition: models in mgr.config.pre_decompose_models (or
+    DeepSeek, always) receive focused code extraction instead of the full
+    artifact. Pre-dispatch feasibility check gates dispatch via
+    mgr.check_dispatch_feasibility(). Timeouts are reported to the immune
+    layer as model_failure pathologies.
+    """
     findings: List[Finding] = []
     responses: Dict[str, str] = {}
+
+    # Estimate prompt token count (rough: 1 token ≈ 4 chars)
+    prompt_tokens_est = len(prompt) // 4
 
     for mc in exp_config.models:
         if mc.role == "collator":
@@ -859,57 +1025,29 @@ def _dispatch_round(
                 _log(f"  {mc.label}: {len(model_findings)} findings (from cache)")
                 continue
 
-        # DeepSeek decomposition
-        if mc.label == "DeepSeek":
-            area_idx = round_idx % len(REVIEW_AREAS)
-            area_name = REVIEW_AREAS[area_idx % len(REVIEW_AREAS)][0]
-            preamble = prompt.split("=== ARTIFACT")[0]
-            math_text = ""
-            if MATH_APPENDIX_PATH.exists():
-                math_text = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
-
-            if area_name == "Persistence":
-                # Persistence area = verification_chain.py (separate file)
-                vc_text = ""
-                if VERIFICATION_CHAIN_PATH.exists():
-                    vc_text = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
-                model_prompt = (
-                    f"You are reviewing the PERSISTENCE LAYER "
-                    f"(verification_chain.py) — hash chains, Merkle trees, "
-                    f"Ed25519 signing, epoch sealing. This code has only had "
-                    f"a single blind pass and has never been through distributed "
-                    f"compute review.\n\n"
-                    + preamble
-                    + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
-                    f"{vc_text}\n\n"
-                    f"=== END ARTIFACT 1 ===\n\n"
-                    f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-                    f"{math_text}\n\n"
-                    f"=== END ARTIFACT 2 ===\n\n"
-                    f"Produce your findings now."
-                )
-                _log(f"  DeepSeek: decomposed → {area_name} ({len(vc_text)} chars)")
-            else:
-                # Extract from dynamic_management.py
-                focused, area_name = _extract_immune_area(full_code, area_idx)
-                model_prompt = (
-                    f"You are reviewing the {area_name} sub-area (immune + load "
-                    f"balancing + persistence layer validation).\n\n"
-                    f"The full code artifact has been decomposed for your context "
-                    f"window. Below is the {area_name} code plus skeletal context, "
-                    f"plus the full mathematical appendix for cross-reference.\n\n"
-                    + preamble
-                    + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
-                    f"{focused}\n\n"
-                    f"=== END ARTIFACT 1 ===\n\n"
-                    f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
-                    f"{math_text}\n\n"
-                    f"=== END ARTIFACT 2 ===\n\n"
-                    f"Produce your findings now."
-                )
-                _log(f"  DeepSeek: decomposed → {area_name} ({len(focused)} chars)")
+        # Dynamic decomposition check
+        decomposed = False
+        if _should_decompose(mc.label, mgr):
+            model_prompt, decomposed = _build_decomposed_prompt(
+                prompt, full_code, task_key, mc.label, round_idx)
         else:
             model_prompt = prompt
+
+        # Pre-dispatch feasibility gate (uses DynamicManager.check_dispatch_feasibility)
+        model_spec = _find_model_spec(mgr, mc.label)
+        if model_spec and not decomposed:
+            token_est = len(model_prompt) // 4
+            ok, p_feasible = mgr.check_dispatch_feasibility(model_spec, token_est)
+            if not ok:
+                _log(f"  {mc.label}: DISPATCH BLOCKED — P(feasible)={p_feasible:.3f}, "
+                     f"prompt ~{token_est} tokens. Auto-decomposing.")
+                # Immune layer already recorded the block via check_dispatch_feasibility.
+                # Auto-decompose this model for this dispatch.
+                model_prompt, decomposed = _build_decomposed_prompt(
+                    prompt, full_code, task_key, mc.label, round_idx)
+                # Add to pre_decompose_models so future rounds decompose automatically
+                mgr.config.pre_decompose_models.add(mc.label)
+                _log(f"  {mc.label}: added to pre_decompose_models for future rounds")
 
         try:
             text, elapsed = dispatch_to_model(mc, model_prompt, cdsfl_text)
@@ -928,7 +1066,8 @@ def _dispatch_round(
                     "chars": len(text),
                     "findings_count": len(model_findings),
                     "round": round_idx,
-                    "decomposed": mc.label == "DeepSeek",
+                    "decomposed": decomposed,
+                    "prompt_chars": len(model_prompt),
                 },
             )
 
@@ -936,10 +1075,46 @@ def _dispatch_round(
             _log(f"  {mc.label}: CIRCUIT BREAKER — {e}")
         except TimeoutError as e:
             _log(f"  {mc.label}: TIMEOUT — {e}")
+            # Report to immune layer: timeout is a model_failure signal.
+            # The remediation chain will add this model to pre_decompose_models
+            # if it isn't already there.
+            _report_dispatch_failure(mgr, mc.label, round_idx, f"timeout: {e}")
         except Exception as e:
             _log(f"  {mc.label}: ERROR — {type(e).__name__}: {e}")
+            _report_dispatch_failure(mgr, mc.label, round_idx,
+                                     f"{type(e).__name__}: {e}")
 
     return findings, responses
+
+
+def _find_model_spec(mgr: DynamicManager, label: str) -> Optional[ModelSpec]:
+    """Look up a ModelSpec from the DynamicManager by label."""
+    for ms in mgr.models:
+        if ms.model_id == label:
+            return ms
+    return None
+
+
+def _report_dispatch_failure(
+    mgr: DynamicManager, model_label: str, round_idx: int, detail: str,
+) -> None:
+    """Report a dispatch failure (timeout/error) to the immune layer.
+
+    Creates a DetectorDiagnosis with pathology='model_failure' so the
+    remediation chain can add the model to pre_decompose_models.
+    """
+    diagnosis = DetectorDiagnosis(
+        detector="dispatch_watchdog",
+        pathology=f"Dispatch failure for {model_label}: {detail}",
+        severity="WARNING",
+        recommended_action="add_to_pre_decompose",
+        evidence={"model_id": model_label, "round": round_idx},
+    )
+    adjustment = mgr.failure_handler.apply_diagnosis(diagnosis, round_idx)
+    if adjustment:
+        _log(f"  IMMUNE: {model_label} → {adjustment}")
+    else:
+        _log(f"  IMMUNE: {model_label} failure recorded (already in pre_decompose)")
 
 
 def _build_model_responses(
