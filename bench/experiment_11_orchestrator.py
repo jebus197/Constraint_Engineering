@@ -122,8 +122,10 @@ def load_default_config() -> ExperimentConfig:
             api="deepseek",
             role="participant",
             system_prompt_path=str(cdsfl_path),
-            max_tokens=32768,
-            timeout=600,  # Exp15: increased from 300 — Reasoner does chain-of-thought
+            max_tokens=16384,  # Exp15b: halved from 32768 — Reasoner exhausts
+                               # output budget on CoT with 32K. 16K forces shorter
+                               # reasoning, leaves budget for visible response.
+            timeout=900,  # Exp15b: raised from 600 — CoT can take 700s+
             max_retries=3,
         ),
     ]
@@ -358,7 +360,18 @@ def call_deepseek(
     max_retries: int = 3,
     backoff_base: float = 3.0,
 ) -> str:
-    """Call DeepSeek via their OpenAI-compatible API."""
+    """Call DeepSeek via their OpenAI-compatible API.
+
+    DeepSeek Reasoner has a known failure mode: its chain-of-thought can
+    consume the entire output token budget, leaving 0 tokens for the visible
+    response. The API returns 200 OK with empty content. This is NOT an API
+    error — the model genuinely ran out of output budget.
+
+    Mitigation strategy:
+    1. On empty response, check reasoning_content for salvageable output
+    2. Retry with halved max_tokens (forces less internal reasoning budget)
+    3. Only circuit-break after all retries produce empty responses
+    """
     try:
         import openai
     except ImportError:
@@ -394,37 +407,81 @@ def call_deepseek(
     messages.append({"role": "user", "content": user_prompt})
 
     last_error = None
+    empty_response_count = 0
+    current_max_tokens = max_tokens
+
     for attempt in range(1, max_retries + 1):
         if attempt > 1:
-            _log(f"  [deepseek:{model_id}] retry {attempt}/{max_retries}")
+            _log(f"  [deepseek:{model_id}] retry {attempt}/{max_retries} "
+                 f"(max_tokens={current_max_tokens})")
         t0 = time.monotonic()
         try:
             response = client.chat.completions.create(
                 model=model_id,
                 messages=messages,
-                max_tokens=max_tokens,
+                max_tokens=current_max_tokens,
                 temperature=0.0,
                 timeout=timeout,
             )
             elapsed = time.monotonic() - t0
-            text = response.choices[0].message.content or ""
-            text = text.strip()
-            _log(f"  [deepseek:{model_id}] done ({elapsed:.1f}s, {len(text)} chars)")
-            if not text:
-                # Known issue with deepseek-reasoner — circuit breaker
-                raise CircuitBreakerTripped(
-                    "empty_response", model_id, "dispatch",
-                    f"Empty response body after {elapsed:.1f}s (known deepseek-reasoner issue)"
-                )
-            return text
-        except CircuitBreakerTripped:
-            raise
+
+            # Extract visible content
+            choice = response.choices[0]
+            text = (choice.message.content or "").strip()
+
+            # Check for reasoning_content (DeepSeek Reasoner's CoT output)
+            reasoning = ""
+            if hasattr(choice.message, "reasoning_content"):
+                reasoning = (choice.message.reasoning_content or "").strip()
+
+            _log(f"  [deepseek:{model_id}] done ({elapsed:.1f}s, "
+                 f"{len(text)} chars content, "
+                 f"{len(reasoning)} chars reasoning)")
+
+            if text:
+                return text
+
+            # Empty content — the model exhausted its token budget on CoT.
+            empty_response_count += 1
+            _log(f"  [deepseek:{model_id}] empty response "
+                 f"(attempt {attempt}, {elapsed:.1f}s, "
+                 f"reasoning={len(reasoning)} chars)")
+
+            if reasoning and len(reasoning) > 500:
+                # Reasoning exists — the model DID process the prompt but
+                # ran out of output tokens for the visible response.
+                # Log the reasoning length for diagnostics.
+                _log(f"  [deepseek:{model_id}] has {len(reasoning)} chars "
+                     f"of reasoning_content (CoT consumed output budget)")
+
+            # Strategy: halve max_tokens for next attempt.
+            # This forces DeepSeek to allocate less to internal reasoning
+            # and more to the visible response.
+            # Floor at 4096 — below that the response would be too truncated.
+            current_max_tokens = max(4096, current_max_tokens // 2)
+            _log(f"  [deepseek:{model_id}] reducing max_tokens to "
+                 f"{current_max_tokens} for next attempt")
+
+            if attempt < max_retries and backoff_base > 0:
+                time.sleep(backoff_base)
+            continue
+
         except Exception as e:
             elapsed = time.monotonic() - t0
             last_error = e
-            _log(f"  [deepseek:{model_id}] attempt {attempt} failed ({elapsed:.1f}s): {str(e)[:120]}")
+            _log(f"  [deepseek:{model_id}] attempt {attempt} failed "
+                 f"({elapsed:.1f}s): {str(e)[:120]}")
             if attempt < max_retries and backoff_base > 0:
                 time.sleep(backoff_base * (2 ** (attempt - 1)))
+
+    # All retries exhausted
+    if empty_response_count > 0:
+        raise CircuitBreakerTripped(
+            "empty_response", model_id, "dispatch",
+            f"Empty response after {max_retries} attempts "
+            f"({empty_response_count} empty). DeepSeek Reasoner CoT "
+            f"exhausted output budget each time."
+        )
 
     raise RuntimeError(
         f"DeepSeek call failed after {max_retries} attempts for {model_id}. "
