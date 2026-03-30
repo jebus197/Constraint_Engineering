@@ -118,7 +118,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   cross-experiment memory for immune layer (est. 150 lines). Policy Engine
   consolidation of remediation chains, registry TOML, inline heuristics.
   Deferred until Exp15/16 iteration stabilises immune layer shape. Plan:
-  `docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt`.
+  `docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.md`.
 - **STOPPING CRITERION (founder-defined, 30 March 2026):** Everything wired
   and fully operational to the extent that the bench produces meaningful
   results without wasted compute on broken detectors, format failures, or
@@ -164,7 +164,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   for mathmodel (110K not 54K), feasibility gate now checks ALL prompts,
   in-memory throughput tracking (median-of-3), throughput-derived max_chars.
   immune: 112K→12-93K sub-area, mathmodel: 110K→15-34K sub-area. 350 tests.
-  Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.txt`.
+  Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.md`.
 - **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
@@ -174,7 +174,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   decomposition and feasibility gate from Exp 17. Pending: preflight + canary
   test before launch. Launches after Exp 17 findings are collated and integrated.
 - **Whole Body Architecture designed (30 March 2026):** Design note at
-  `docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.txt`.
+  `docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.md`.
   Three communication layers: nervous system (dispatch sequencing), circulatory
   system (attributed finding flow), endocrine system (adaptive pacing signals).
   Four phases — Exp 18 implements Phases 1 (attributed findings) and 2
@@ -187,7 +187,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   surface, verified facts, explicit unknowns, adversarial brief). Plus stdin
   piping, `--output-schema`, persistent briefing. Evidence: 78% token reduction
   (155K→33K) with more findings (5→6). Pending implementation in orchestrators.
-  Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.txt`.
+  Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`.
 - **Next:** Implement confer packet fixes → resume Exp 17 → collate findings →
   test Exp 18 runner → launch Exp 18. Then: immune persistence + PE. Then:
   Bench Run 2. Deferred math model items (A-D1–D5) remain open but not blocking.

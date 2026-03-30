@@ -1,0 +1,361 @@
+[18:38:49] Phase 1: Layer 1 preflight
+[18:38:49] === LAYER 1 PREFLIGHT ===
+[18:38:49]   Parser: tuple format...
+[18:38:49]     PASS
+[18:38:49]   Parser: proposed_fix stored...
+[18:38:49]     PASS
+[18:38:49]   Parser: indented fence stripping...
+[18:38:49]     PASS
+[18:38:49]   Parser: digit prefix in finding ID...
+[18:38:49]     PASS
+[18:38:49]   Dynamic numbering: auto-increment...
+[18:38:49]     PASS (next=18)
+[18:38:49] Layer 1 preflight PASSED.
+[18:38:49] 
+Phase 2: Canary tests
+[18:38:49] === CANARY TESTS: Induced-Failure Scenarios ===
+[18:38:49]   Test 1: Canary — 3 consecutive empty responses
+[18:38:49]     Round 0: immune triggered recovery for canary_0: RETRY
+[18:38:49]     Round 1: immune triggered recovery for canary_0: RETRY
+[18:38:49]     Round 2: immune triggered recovery for canary_0: ABORT
+[18:38:49]   Test 1: PASSED — immune detected empty responses
+[18:38:49]   Test 2: False positive — low-severity finding should not trigger immune
+[18:38:49]   Test 2: PASSED — no over-triggering on benign findings
+[18:38:49]   Test 3: Cascade — 2/5 models fail simultaneously
+[18:38:49]   Test 3: PASSED — 5 models still active after cascade
+[18:38:49]   Test 4: Oscillation — alternating good/bad responses
+[18:38:49]     FSM terminated at round 3 — expected for oscillation test
+[18:38:49]   Test 4: PASSED — 1 immune actions over 6 oscillating rounds (damping working)
+[18:38:49] Canary tests PASSED.
+[18:38:49] 
+Phase 3: Model preflight
+[18:38:49] === PREFLIGHT CHECK ===
+[18:38:49]   Testing CC2...
+[18:38:49] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[18:39:06]   [openrouter:anthropic/claude-opus-4-6] done (16.3s, 78 chars)
+[18:39:06]   CC2: OK (17.5s, 78 chars)
+[18:39:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_cc2_20260330T183906Z.json
+[18:39:06]   Testing Codex...
+[18:39:06] Dispatching to Codex (gpt-5.4) via codex_exec...
+[18:39:26]   [codex] done (19.5s, 78 chars)
+[18:39:26]   Codex: OK (19.6s, 78 chars)
+[18:39:26]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_codex_20260330T183926Z.json
+[18:39:26]   Testing ChatGPT...
+[18:39:26] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[18:39:28]   [openrouter:openai/gpt-5.4] done (1.6s, 78 chars)
+[18:39:28]   ChatGPT: OK (2.3s, 78 chars)
+[18:39:28]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_chatgpt_20260330T183928Z.json
+[18:39:28]   Testing Gemini...
+[18:39:28] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[18:39:36]   [gemini:gemini-3.1-pro-preview] done (7.1s, 128 chars)
+[18:39:36]   Gemini: OK (8.2s, 128 chars)
+[18:39:36]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_gemini_20260330T183936Z.json
+[18:39:36]   Testing DeepSeek...
+[18:39:36] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[18:39:39]   [deepseek:deepseek-reasoner] done (2.8s, 89 chars content, 54 chars reasoning)
+[18:39:39]   DeepSeek: OK (3.3s, 89 chars)
+[18:39:39]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_deepseek_20260330T183939Z.json
+[18:39:39] Preflight PASSED — all models responding.
+[18:39:39] 
+Phase 4: Experiment 17
+[18:39:39] === EXPERIMENT 17: IMMUNE + LOAD BALANCING LAYER VALIDATION ===
+[18:39:39] Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17
+[18:39:39] Test article: 259714 chars, 6195 lines
+[18:39:39] Interface summary: 6258 chars
+[18:39:39] Mathematical appendix: 54930 chars, 824 lines
+[18:39:39] Verification chain: 27450 chars, 790 lines
+[18:39:39] Manifest frozen: 8c1dacb3
+[18:39:39] 
+=== ROUND 0A: BLIND DISCOVERY (4 tasks × 5 models) ===
+[18:39:39] 
+--- ROUND 0A (BLIND): Immune Response Layer ---
+[18:39:39]   Prompt: 266952 chars
+[18:39:40] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[18:42:02]   [openrouter:anthropic/claude-opus-4-6] done (142.6s, 19906 chars)
+[18:42:03]   CC2: 19906 chars, 143.0s
+[18:42:03]   CC2: 13 findings parsed
+[18:42:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_immune_cc2_20260330T184203Z.json
+[18:42:03]   Codex: task-level immune = 120630 chars > threshold 80000 — escalating to sub-area rotation
+[18:42:03]   Codex: sub-area → Detection (92911 chars)
+[18:42:03] Dispatching to Codex (gpt-5.4) via codex_exec...
+[18:45:26]   [codex] done (203.4s, 5248 chars)
+[18:45:26]   Codex: 5248 chars, 203.7s
+[18:45:26]   Codex: 7 findings parsed
+[18:45:26]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_immune_codex_20260330T184526Z.json
+[18:45:26] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[18:45:55]   [openrouter:openai/gpt-5.4] done (28.3s, 7149 chars)
+[18:45:55]   ChatGPT: 7149 chars, 29.0s
+[18:45:55]   ChatGPT: 10 findings parsed
+[18:45:55]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_immune_chatgpt_20260330T184555Z.json
+[18:45:55] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[18:47:43]   [gemini:gemini-3.1-pro-preview] done (107.1s, 4371 chars)
+[18:47:43]   Gemini: 4371 chars, 108.2s
+[18:47:43]   Gemini: 5 findings parsed
+[18:47:43]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_immune_gemini_20260330T184743Z.json
+[18:47:43]   DeepSeek: sub-area → Detection (92911 chars)
+[18:47:43]   DeepSeek: DISPATCH BLOCKED (context window) — P(feasible)=0.000, ~39156 tokens. Auto-decomposing.
+[18:47:43]   DeepSeek: sub-area → Detection (92911 chars)
+[18:47:43]   DeepSeek: added to pre_decompose_models
+[18:47:44] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[18:51:03]   [deepseek:deepseek-reasoner] done (198.9s, 8779 chars content, 19616 chars reasoning)
+[18:51:03]   DeepSeek: 8779 chars, 199.7s
+[18:51:03]   DeepSeek: 10 findings parsed
+[18:51:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_immune_deepseek_20260330T185103Z.json
+[18:51:03]   Immune Response Layer: 45 findings from 5 models
+[18:51:03] 
+--- ROUND 0A (BLIND): Load Balancing ---
+[18:51:03]   Prompt: 260646 chars
+[18:51:03] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[18:52:59]   [openrouter:anthropic/claude-opus-4-6] done (115.6s, 17119 chars)
+[18:52:59]   CC2: 17119 chars, 116.3s
+[18:52:59]   CC2: 11 findings parsed
+[18:52:59]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_loadbalancing_cc2_20260330T185259Z.json
+[18:52:59]   Codex: decomposed → Load Balancing (42015 chars)
+[18:53:00] Dispatching to Codex (gpt-5.4) via codex_exec...
+[18:57:35]   [codex] done (275.7s, 5297 chars)
+[18:57:35]   Codex: 5297 chars, 276.0s
+[18:57:35]   Codex: 7 findings parsed
+[18:57:35]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_loadbalancing_codex_20260330T185735Z.json
+[18:57:36] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[18:58:09]   [openrouter:openai/gpt-5.4] done (32.5s, 8298 chars)
+[18:58:09]   ChatGPT: 8298 chars, 33.6s
+[18:58:09]   ChatGPT: 10 findings parsed
+[18:58:09]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_loadbalancing_chatgpt_20260330T185809Z.json
+[18:58:09] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[19:00:40]   [gemini:gemini-3.1-pro-preview] done (147.9s, 4011 chars)
+[19:00:40]   Gemini: 4011 chars, 151.2s
+[19:00:40]   Gemini: 4 findings parsed
+[19:00:40]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_loadbalancing_gemini_20260330T190040Z.json
+[19:00:40]   DeepSeek: sub-area → Detection (92911 chars)
+[19:00:41] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[19:03:18]   [deepseek:deepseek-reasoner] done (156.8s, 8895 chars content, 14917 chars reasoning)
+[19:03:18]   DeepSeek: 8895 chars, 157.7s
+[19:03:18]   DeepSeek: 8 findings parsed
+[19:03:18]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_loadbalancing_deepseek_20260330T190318Z.json
+[19:03:18]   Load Balancing: 40 findings from 5 models
+[19:03:18] 
+--- ROUND 0A (BLIND): Persistence Layer (verification chain) ---
+[19:03:18]   Prompt: 28437 chars
+[19:03:18] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[19:05:52]   [openrouter:anthropic/claude-opus-4-6] done (152.9s, 24425 chars)
+[19:05:52]   CC2: 24425 chars, 153.6s
+[19:05:52]   CC2: 14 findings parsed
+[19:05:52]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_persistence_cc2_20260330T190552Z.json
+[19:05:52] Dispatching to Codex (gpt-5.4) via codex_exec...
+[19:11:06]   [codex] done (314.4s, 7612 chars)
+[19:11:06]   Codex: 7612 chars, 314.7s
+[19:11:06]   Codex: 7 findings parsed
+[19:11:06]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_persistence_codex_20260330T191106Z.json
+[19:11:07] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[19:12:02]   [openrouter:openai/gpt-5.4] done (54.6s, 12288 chars)
+[19:12:02]   ChatGPT: 12288 chars, 55.5s
+[19:12:02]   ChatGPT: 12 findings parsed
+[19:12:02]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_persistence_chatgpt_20260330T191202Z.json
+[19:12:02] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[19:14:47]   [gemini:gemini-3.1-pro-preview] done (164.0s, 5171 chars)
+[19:14:47]   Gemini: 5171 chars, 165.3s
+[19:14:47]   Gemini: 5 findings parsed
+[19:14:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_persistence_gemini_20260330T191447Z.json
+[19:14:47]   DeepSeek: sub-area → Detection (92911 chars)
+[19:14:48] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[19:18:05]   [deepseek:deepseek-reasoner] done (196.8s, 6151 chars content, 24021 chars reasoning)
+[19:18:05]   DeepSeek: 6151 chars, 197.6s
+[19:18:05]   DeepSeek: 8 findings parsed
+[19:18:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_persistence_deepseek_20260330T191805Z.json
+[19:18:05]   Persistence Layer (verification chain): 46 findings from 5 models
+[19:18:05] 
+--- ROUND 0A (BLIND): Mathematical Model Consistency ---
+[19:18:05]   Prompt: 315667 chars
+[19:18:05] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[19:20:54]   [openrouter:anthropic/claude-opus-4-6] done (168.7s, 23671 chars)
+[19:20:55]   CC2: 23671 chars, 169.6s
+[19:20:55]   CC2: 15 findings parsed
+[19:20:55]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_mathmodel_cc2_20260330T192055Z.json
+[19:20:55]   Codex: task-level mathmodel = 111744 chars > threshold 96270 — escalating to sub-area rotation
+[19:20:55]   Codex: sub-area → Config (14705 chars)
+[19:20:55] Dispatching to Codex (gpt-5.4) via codex_exec...
+[19:30:55]   [codex] timeout after 600.0s
+[19:30:55]   Codex: ERROR — RuntimeError: Codex call failed after 1 attempts. Last error: codex exec timed out after 600.0s
+[19:30:55]   IMMUNE: Codex failure recorded (already in pre_decompose)
+[19:30:55] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[19:31:48]   [openrouter:openai/gpt-5.4] done (52.1s, 11046 chars)
+[19:31:48]   ChatGPT: 11046 chars, 52.8s
+[19:31:48]   ChatGPT: 14 findings parsed
+[19:31:48]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_mathmodel_chatgpt_20260330T193148Z.json
+[19:31:48] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[19:35:20]   [gemini:gemini-3.1-pro-preview] done (211.4s, 6271 chars)
+[19:35:20]   Gemini: 6271 chars, 212.7s
+[19:35:20]   Gemini: 7 findings parsed
+[19:35:20]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_mathmodel_gemini_20260330T193520Z.json
+[19:35:21]   DeepSeek: sub-area → Config (14705 chars)
+[19:35:21] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[19:37:57]   [deepseek:deepseek-reasoner] done (155.9s, 19380 chars content, 1674 chars reasoning)
+[19:37:57]   DeepSeek: 19380 chars, 156.6s
+[19:37:57]   DeepSeek: 10 findings parsed
+[19:37:57]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0a_mathmodel_deepseek_20260330T193757Z.json
+[19:37:57]   Mathematical Model Consistency: 46 findings from 4 models
+[19:37:57] 
+Round 0A total: 177 findings across 4 tasks
+[19:37:58]   Telemetry: 0 diagnoses, 1 recoveries, 0 adjustments
+[19:37:58] 
+=== ROUND 0B: SEEDED VALIDATION (4 tasks × 5 models) ===
+[19:37:58] 
+--- ROUND 0B (SEEDED): Immune Response Layer ---
+[19:37:58]   Prompt: 287753 chars
+[19:37:58] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[19:40:54]   [openrouter:anthropic/claude-opus-4-6] done (175.0s, 27816 chars)
+[19:40:54]   CC2: 27816 chars, 175.6s
+[19:40:54]   CC2: 20 findings parsed
+[19:40:54]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_immune_cc2_20260330T194054Z.json
+[19:40:54]   Codex: task-level immune = 141620 chars > threshold 96270 — escalating to sub-area rotation
+[19:40:54]   Codex: sub-area → Response (23873 chars)
+[19:40:54]   Codex: THROUGHPUT WARNING — prompt 108574 chars > effective capacity 96270 chars. Escalating.
+[19:40:54]   Codex: task-level immune = 141620 chars > threshold 96270 — escalating to sub-area rotation
+[19:40:54]   Codex: sub-area → Response (23873 chars)
+[19:40:54] Dispatching to Codex (gpt-5.4) via codex_exec...
+[19:46:26]   [codex] done (331.9s, 6444 chars)
+[19:46:26]   Codex: 6444 chars, 332.1s
+[19:46:26]   Codex: 4 findings parsed
+[19:46:26]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_immune_codex_20260330T194626Z.json
+[19:46:26] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[19:47:37]   [openrouter:openai/gpt-5.4] done (70.4s, 16738 chars)
+[19:47:37]   ChatGPT: 16738 chars, 71.1s
+[19:47:37]   ChatGPT: 20 findings parsed
+[19:47:37]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_immune_chatgpt_20260330T194737Z.json
+[19:47:37] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[19:51:47]   [gemini:gemini-3.1-pro-preview] done (248.6s, 5153 chars)
+[19:51:47]   Gemini: 5153 chars, 250.1s
+[19:51:47]   Gemini: 6 findings parsed
+[19:51:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_immune_gemini_20260330T195147Z.json
+[19:51:47]   DeepSeek: sub-area → Response (23873 chars)
+[19:51:47] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[19:54:27]   [deepseek:deepseek-reasoner] done (159.0s, 8816 chars content, 20373 chars reasoning)
+[19:54:27]   DeepSeek: 8816 chars, 159.7s
+[19:54:27]   DeepSeek: 8 findings parsed
+[19:54:27]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_immune_deepseek_20260330T195427Z.json
+[19:54:27]   Immune Response Layer: 58 findings from 5 models
+[19:54:27] 
+--- ROUND 0B (SEEDED): Load Balancing ---
+[19:54:27]   Prompt: 279381 chars
+[19:54:27] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[19:56:29]   [openrouter:anthropic/claude-opus-4-6] done (121.3s, 17630 chars)
+[19:56:29]   CC2: 17630 chars, 122.0s
+[19:56:29]   CC2: 13 findings parsed
+[19:56:29]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_loadbalancing_cc2_20260330T195629Z.json
+[19:56:29]   Codex: decomposed → Load Balancing (42015 chars)
+[19:56:29] Dispatching to Codex (gpt-5.4) via codex_exec...
+[20:03:24]   [codex] done (415.2s, 4785 chars)
+[20:03:24]   Codex: 4785 chars, 415.4s
+[20:03:24]   Codex: 6 findings parsed
+[20:03:24]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_loadbalancing_codex_20260330T200324Z.json
+[20:03:25] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[20:04:14]   [openrouter:openai/gpt-5.4] done (48.7s, 11866 chars)
+[20:04:14]   ChatGPT: 11866 chars, 49.4s
+[20:04:14]   ChatGPT: 12 findings parsed
+[20:04:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_loadbalancing_chatgpt_20260330T200414Z.json
+[20:04:14] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[20:07:31]   [gemini:gemini-3.1-pro-preview] done (196.5s, 4962 chars)
+[20:07:32]   Gemini: 4962 chars, 197.9s
+[20:07:32]   Gemini: 5 findings parsed
+[20:07:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_loadbalancing_gemini_20260330T200732Z.json
+[20:07:32]   DeepSeek: sub-area → Response (23873 chars)
+[20:07:32] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[20:10:44]   [deepseek:deepseek-reasoner] done (192.1s, 8145 chars content, 31648 chars reasoning)
+[20:10:45]   DeepSeek: 8145 chars, 192.9s
+[20:10:45]   DeepSeek: 7 findings parsed
+[20:10:45]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_loadbalancing_deepseek_20260330T201045Z.json
+[20:10:45]   Load Balancing: 43 findings from 5 models
+[20:10:45] 
+--- ROUND 0B (SEEDED): Persistence Layer (verification chain) ---
+[20:10:45]   Prompt: 49655 chars
+[20:10:45] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:13:42]   [openrouter:anthropic/claude-opus-4-6] done (177.0s, 28287 chars)
+[20:13:42]   CC2: 28287 chars, 177.8s
+[20:13:42]   CC2: 19 findings parsed
+[20:13:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_persistence_cc2_20260330T201342Z.json
+[20:13:43] Dispatching to Codex (gpt-5.4) via codex_exec...
+[20:19:45]   [codex] done (362.6s, 7382 chars)
+[20:19:45]   Codex: 7382 chars, 362.8s
+[20:19:45]   Codex: 7 findings parsed
+[20:19:45]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_persistence_codex_20260330T201945Z.json
+[20:19:46] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[20:20:31]   [openrouter:openai/gpt-5.4] done (45.4s, 12080 chars)
+[20:20:31]   ChatGPT: 12080 chars, 46.1s
+[20:20:31]   ChatGPT: 12 findings parsed
+[20:20:31]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_persistence_chatgpt_20260330T202031Z.json
+[20:20:32] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[20:24:45]   [gemini:gemini-3.1-pro-preview] done (252.2s, 6122 chars)
+[20:24:45]   Gemini: 6122 chars, 253.5s
+[20:24:45]   Gemini: 6 findings parsed
+[20:24:45]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_persistence_gemini_20260330T202445Z.json
+[20:24:45]   DeepSeek: sub-area → Response (23873 chars)
+[20:24:45] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[20:25:32]   [deepseek:deepseek-reasoner] done (45.9s, 1080 chars content, 8227 chars reasoning)
+[20:25:32]   DeepSeek: 1080 chars, 46.6s
+[20:25:32]   DeepSeek: 1 findings parsed
+[20:25:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_persistence_deepseek_20260330T202532Z.json
+[20:25:32]   Persistence Layer (verification chain): 45 findings from 5 models
+[20:25:32] 
+--- ROUND 0B (SEEDED): Mathematical Model Consistency ---
+[20:25:32]   Prompt: 336884 chars
+[20:25:32] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:28:51]   [openrouter:anthropic/claude-opus-4-6] done (199.1s, 27668 chars)
+[20:28:52]   CC2: 27668 chars, 199.8s
+[20:28:52]   CC2: 18 findings parsed
+[20:28:52]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_mathmodel_cc2_20260330T202852Z.json
+[20:28:52]   Codex: task-level mathmodel = 132962 chars > threshold 91197 — escalating to sub-area rotation
+[20:28:52]   Codex: sub-area → Convergence (28527 chars)
+[20:28:52]   Codex: THROUGHPUT WARNING — prompt 107201 chars > effective capacity 91197 chars. Escalating.
+[20:28:52]   Codex: task-level mathmodel = 132962 chars > threshold 91197 — escalating to sub-area rotation
+[20:28:52]   Codex: sub-area → Convergence (28527 chars)
+[20:28:52] Dispatching to Codex (gpt-5.4) via codex_exec...
+[20:35:46]   [codex] done (414.4s, 6484 chars)
+[20:35:46]   Codex: 6484 chars, 414.7s
+[20:35:46]   Codex: 7 findings parsed
+[20:35:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_mathmodel_codex_20260330T203546Z.json
+[20:35:46] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[20:36:48]   [openrouter:openai/gpt-5.4] done (61.2s, 13397 chars)
+[20:36:48]   ChatGPT: 13397 chars, 62.0s
+[20:36:48]   ChatGPT: 15 findings parsed
+[20:36:48]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_mathmodel_chatgpt_20260330T203648Z.json
+[20:36:48] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[20:40:32]   [gemini:gemini-3.1-pro-preview] done (222.2s, 8114 chars)
+[20:40:32]   Gemini: 8114 chars, 223.7s
+[20:40:32]   Gemini: 8 findings parsed
+[20:40:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_mathmodel_gemini_20260330T204032Z.json
+[20:40:32]   DeepSeek: sub-area → Convergence (28527 chars)
+[20:40:32] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[20:43:46]   [deepseek:deepseek-reasoner] done (193.2s, 7917 chars content, 24838 chars reasoning)
+[20:43:46]   DeepSeek: 7917 chars, 194.0s
+[20:43:46]   DeepSeek: 10 findings parsed
+[20:43:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/r0b_mathmodel_deepseek_20260330T204346Z.json
+[20:43:46]   Mathematical Model Consistency: 58 findings from 5 models
+[20:43:46] 
+Round 0B total: 204 findings across 4 tasks
+[20:43:54]   Telemetry: 5 diagnoses, 1 recoveries, 1 adjustments
+[20:43:54] 
+=== ROUND 2: ADAPTIVE (4 tasks × 5 models) ===
+[20:43:54] 
+--- ROUND 2 (ADAPTIVE): Immune Response Layer ---
+[20:43:54]   Prompt: 309654 chars
+[20:43:54]   CC2: decomposed → Immune Response Layer (111993 chars)
+[20:43:55] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:45:41]   [openrouter:anthropic/claude-opus-4-6] done (106.4s, 16450 chars)
+[20:45:42]   CC2: 16450 chars, 107.2s
+[20:45:42]   CC2: 12 findings parsed
+[20:45:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_immune_cc2_20260330T204542Z.json
+[20:45:42]   Codex: task-level immune = 163667 chars > threshold 91197 — escalating to sub-area rotation
+[20:45:42]   Codex: sub-area → Integration (11634 chars)
+[20:45:42]   Codex: THROUGHPUT WARNING — prompt 118388 chars > effective capacity 91197 chars. Escalating.
+[20:45:42]   Codex: task-level immune = 163667 chars > threshold 91197 — escalating to sub-area rotation
+[20:45:42]   Codex: sub-area → Integration (11634 chars)
+[20:45:42] Dispatching to Codex (gpt-5.4) via codex_exec...
