@@ -149,8 +149,14 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   scenarios, mandatory telemetry, SymPy for math ops, dependency-aware fix DAG,
   DeepSeek decomposition, load balancing separate with interface contracts.
   All 4 open questions resolved. Plan status: APPROVED.
-- **Next:** Experiment 17 (execute validated plan against immune layer). Then:
-  immune persistence + PE. Then: Bench Run 2. Deferred math model items
+- **Experiment 17 prerequisites COMPLETE (30 March 2026, `e59f522`):**
+  Runner script, 4 canary tests (empty response, false positive, cascade,
+  oscillation — all passing), 5 Layer 1 preflight tests, round-level telemetry,
+  DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
+  traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
+  Independent stop caps (round 10, wall-clock 4h). Ready to execute.
+- **Next:** `python3 bench/run_exp17_immune.py run` — execute Experiment 17.
+  Then: immune persistence + PE. Then: Bench Run 2. Deferred math model items
   (A-D1–D5) remain open but are not blocking the bench.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full

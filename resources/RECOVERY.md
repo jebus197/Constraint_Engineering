@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 March 2026 06:45 UTC
+Last updated: 30 March 2026 07:14 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -36,8 +36,16 @@ EXPERIMENT 16 COMPLETE (30 March 2026, `881cf43`):
 - All 4 open questions resolved. Plan APPROVED for execution.
 - Collation report: bench/logs/experiment_16/experiment_16_collation_report.md
 
+EXPERIMENT 17 PREREQUISITES COMPLETE (30 March 2026, `e59f522`):
+- Runner: bench/run_exp17_immune.py (R0A blind + R0B seeded + adaptive)
+- 4 canary tests passing (empty response, false positive, cascade, oscillation)
+- 5 Layer 1 preflight tests passing
+- Round-level telemetry, DeepSeek decomposition, interface summary, traceability
+- Independent stop caps: round 10 + wall-clock 4h
+- Execute: python3 bench/run_exp17_immune.py run
+
 ROADMAP (30 March 2026):
-1. Experiment 17: execute validated plan against immune layer
+1. Experiment 17: execute (runner ready, `e59f522`)
 3. Build immune persistence layer (JSON, ~150 lines)
 4. Build Policy Engine (consolidation of remediation chains + registry)
 5. Wire verification chain into live pipeline
