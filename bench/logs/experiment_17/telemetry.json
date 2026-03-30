@@ -1,7 +1,7 @@
 [
   {
     "round": 0,
-    "timestamp": "2026-03-30T19:37:58.780322+00:00",
+    "timestamp": "2026-03-30T21:22:01.844987+00:00",
     "diagnoses": [],
     "recovery_actions": {
       "combined": "RETRY_CLARIFIED"
@@ -26,7 +26,7 @@
   },
   {
     "round": 1,
-    "timestamp": "2026-03-30T20:43:54.933344+00:00",
+    "timestamp": "2026-03-30T21:22:12.658507+00:00",
     "diagnoses": [
       {
         "detector": "model_failure",
@@ -71,7 +71,7 @@
         "detector": "model_failure",
         "round": 1,
         "severity": "WARNING",
-        "timestamp": 1774903433.627326,
+        "timestamp": 1774905731.308917,
         "chain_key": "model_failure",
         "chain_idx": 0
       }
@@ -79,6 +79,105 @@
     "stop_inputs": {
       "smoothed_mu": 191.10000000000002,
       "smoothed_novelty": 0.9191176470588236,
+      "vocab_saturated": false,
+      "exhaustion": false,
+      "abstraction_ok": true,
+      "stop_would_fire": false
+    },
+    "active_models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "allocation_warnings": []
+  },
+  {
+    "round": 2,
+    "timestamp": "2026-03-30T21:22:27.841821+00:00",
+    "diagnoses": [
+      {
+        "detector": "model_failure",
+        "pathology": "ChatGPT has failed 2 consecutive rounds",
+        "severity": "WARNING",
+        "recommended_action": "Lower decomposition threshold for ChatGPT, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "Gemini has failed 2 consecutive rounds",
+        "severity": "WARNING",
+        "recommended_action": "Lower decomposition threshold for Gemini, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "DeepSeek has failed 2 consecutive rounds",
+        "severity": "WARNING",
+        "recommended_action": "Lower decomposition threshold for DeepSeek, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "CC2 has failed 3 consecutive rounds",
+        "severity": "CRITICAL",
+        "recommended_action": "Lower decomposition threshold for CC2, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "Codex has failed 3 consecutive rounds",
+        "severity": "CRITICAL",
+        "recommended_action": "Lower decomposition threshold for Codex, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "monotonic_decline",
+        "pathology": "Codex: findings declining monotonically for 3 rounds ([28, 24, 21]), drop=7",
+        "severity": "WARNING",
+        "recommended_action": "Model Codex entering low-productivity attractor. Adjust prompt strategy, shuffle area order, or bench temporarily and reassign workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "ChatGPT has failed 3 consecutive rounds",
+        "severity": "CRITICAL",
+        "recommended_action": "Lower decomposition threshold for ChatGPT, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "Gemini has failed 3 consecutive rounds",
+        "severity": "CRITICAL",
+        "recommended_action": "Lower decomposition threshold for Gemini, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "model_failure",
+        "pathology": "DeepSeek has failed 3 consecutive rounds",
+        "severity": "CRITICAL",
+        "recommended_action": "Lower decomposition threshold for DeepSeek, or increase timeout, or bench and reassign its workload."
+      },
+      {
+        "detector": "monotonic_decline",
+        "pathology": "DeepSeek: findings declining monotonically for 3 rounds ([36, 26, 23]), drop=13",
+        "severity": "WARNING",
+        "recommended_action": "Model DeepSeek entering low-productivity attractor. Adjust prompt strategy, shuffle area order, or bench temporarily and reassign workload."
+      }
+    ],
+    "recovery_actions": {
+      "combined": "EXCLUDE"
+    },
+    "immune_adjustments": [
+      {
+        "parameter": "pre_decompose_models",
+        "old": "not in set",
+        "new": "added CC2",
+        "reason": "CC2 has failed 2 consecutive rounds",
+        "detector": "model_failure",
+        "round": 1,
+        "severity": "WARNING",
+        "timestamp": 1774905731.308917,
+        "chain_key": "model_failure",
+        "chain_idx": 0
+      }
+    ],
+    "stop_inputs": {
+      "smoothed_mu": 181.45,
+      "smoothed_novelty": 0.9157843137254902,
       "vocab_saturated": false,
       "exhaustion": false,
       "abstraction_ok": true,

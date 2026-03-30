@@ -19,16 +19,17 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (30 March 2026)
+## Current Pending Work (30 March 2026, 22:59 UTC)
 
 Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 17 PAUSED (30 March 2026, `8c46696`):
-- Crashed Round 3 (Codex timeout). Two bugs fixed: apply_diagnosis wrong
-  class (`c33bd40`), then 8-fix confer round (`8c46696`) — detector key
-  mismatch, sub-area escalation, throughput model, feasibility gate fix.
-  522 findings saved (R0A:172, R0B:189, R2:150, R3:11), 121 JSON files.
-  Resumable: `python3 bench/run_exp17_immune.py resume`
+EXPERIMENT 17 RUNNING (30 March 2026):
+- Resumed after Gemini spending cap fix + CX prompt efficiency confer.
+- R0A (177 findings) + R0B (204 findings) + Round 2 (150 findings) from cache.
+- Round 3 LIVE: Immune (31 findings) + Load Balancing (38 findings) complete.
+  Persistence + Math Model in progress. All 5 models active.
+- CX sub-area escalation and DeepSeek feasibility gate both firing correctly.
+- Log: `bench/logs/experiment_17/run_output_r7.log`
 - Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.md`
 
 EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
@@ -41,21 +42,26 @@ WHOLE BODY ARCHITECTURE DESIGNED (30 March 2026):
 - Nervous (dispatch sequencing), circulatory (attributed findings), endocrine
   (adaptive pacing). Exp 18 = Phases 1+2. Phases 3+4 = future.
 
-CX PROMPT EFFICIENCY CONFER COMPLETE (30 March 2026, `4e3b6ef`):
+CX PROMPT EFFICIENCY CONFER COMPLETE (30 March 2026, `8c1dacb`):
 - CX burns 155K tokens on 78 tool calls investigating codebase instead of
-  producing findings. Fix: 6-field standard confer packet with embedded code.
-  78% token reduction proven. Pending implementation in orchestrators.
+  producing findings. Fix: 6-field standard confer packet with embedded code,
+  stdin piping, output-schema. 78% token reduction proven. ALL IMPLEMENTED.
 - Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`
 
+TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
+- New `tts-output-protocol` directive in CLAUDE.md replaces old tts-default-on
+  + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
+  `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
+
 ROADMAP (30 March 2026):
-1. Implement confer packet fixes in orchestrators
-2. Resume Exp 17 → collate findings → integrate fixes
+1. ~~Implement confer packet fixes in orchestrators~~ DONE (`8c1dacb`)
+2. Exp 17 running → collate findings → integrate fixes
 3. Test + launch Experiment 18 (sequential confer)
-3. Build immune persistence layer (JSON, ~150 lines)
-4. Build Policy Engine (consolidation of remediation chains + registry)
-5. Wire verification chain into live pipeline
-6. Full bench run (Bench Run 2) — the finish line
-7. Deferred math model items (A-D1 through A-D5) — not blocking bench
+4. Build immune persistence layer (JSON, ~150 lines)
+5. Build Policy Engine (consolidation of remediation chains + registry)
+6. Wire verification chain into live pipeline
+7. Full bench run (Bench Run 2) — the finish line
+8. Deferred math model items (A-D1 through A-D5) — not blocking bench
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."

@@ -155,15 +155,12 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
   traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
   Independent stop caps (round 10, wall-clock 4h). Ready to execute.
-- **Experiment 17 PAUSED (30 March 2026, `8c46696`):** Crashed Round 3 (Codex
-  timeout → apply_diagnosis call on wrong class, fixed `c33bd40`). 522 findings
-  saved (R0A:172, R0B:189, R2:150, R3:11). All cached in 121 JSON files —
-  resumable: `python3 bench/run_exp17_immune.py resume`. Post-crash confer round
-  (CC2 + CX + CC1, `8c46696`): 8 converged fixes — detector key mismatch
-  (CX critical: "dispatch_watchdog" → "model_failure"), sub-area escalation
-  for mathmodel (110K not 54K), feasibility gate now checks ALL prompts,
-  in-memory throughput tracking (median-of-3), throughput-derived max_chars.
-  immune: 112K→12-93K sub-area, mathmodel: 110K→15-34K sub-area. 350 tests.
+- **Experiment 17 RUNNING (30 March 2026):** Resumed after Gemini spending cap
+  fix + CX prompt efficiency confer implementation (`8c1dacb`). R0A (177) + R0B
+  (204) + Round 2 (150) loaded from cache. Round 3 LIVE: Immune (31 findings) +
+  Load Balancing (38 findings) complete, Persistence + Math Model in progress.
+  All 5 models active. CX sub-area escalation and DeepSeek feasibility gate
+  both firing correctly. Log: `bench/logs/experiment_17/run_output_r7.log`.
   Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.md`.
 - **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
@@ -180,17 +177,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Four phases — Exp 18 implements Phases 1 (attributed findings) and 2
   (sequential dispatch). Phases 3 (multi-step pacing) and 4 (closed-loop
   feedback) are future work.
-- **CX prompt efficiency confer COMPLETE (30 March 2026, `4e3b6ef`):** CX
-  burns context on codebase investigation (78 tool calls, 155K tokens) instead
-  of producing findings. Root cause: confer prompts don't embed code. Converged
-  on 6-field standard confer packet (review target, code extracts, interaction
-  surface, verified facts, explicit unknowns, adversarial brief). Plus stdin
-  piping, `--output-schema`, persistent briefing. Evidence: 78% token reduction
-  (155K→33K) with more findings (5→6). Pending implementation in orchestrators.
-  Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`.
-- **Next:** Implement confer packet fixes → resume Exp 17 → collate findings →
-  test Exp 18 runner → launch Exp 18. Then: immune persistence + PE. Then:
-  Bench Run 2. Deferred math model items (A-D1–D5) remain open but not blocking.
+- **CX prompt efficiency confer COMPLETE + IMPLEMENTED (30 March 2026, `8c1dacb`):**
+  CX context waste (78 tool calls, 155K tokens). Fix: 6-field standard confer
+  packet, stdin piping, `--output-schema`. 78% token reduction. ALL IMPLEMENTED
+  in orchestrators. Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`.
+- **TTS output protocol updated (30 March 2026):** New `tts-output-protocol`
+  directive. Per-project Desktop folders (`CDSFL_tts/`, `Genesis_tts/`) + repo
+  `experimental_notes/` as .md. 141 files migrated from `~/Desktop/Accessibility/`.
+- **Next:** Exp 17 completing → collate findings → test Exp 18 runner → launch
+  Exp 18. Then: immune persistence + PE. Then: Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

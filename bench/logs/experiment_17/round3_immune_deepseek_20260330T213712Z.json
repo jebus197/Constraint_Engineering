@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260330T213712Z",
+  "phase": "round3_immune",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1102,
+  "response": "FINDING_ID: IM_F001\nSEVERITY: 0.75\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.65\nDESCRIPTION: The immune response layer has no visibility into LoadBalancer feasibility warnings, allocation imbalances, or token-limit violations. Model failures (timeout, underperform) caused by infeasible allocations (task load > L_m) or severe imbalance are diagnosed as model pathologies without considering the allocator's role. The LoadBalancer's `_allocation_warnings` and feasibility probability metrics are not passed to the health monitor, creating a systemic blind spot. This violates the CDSFL proportionality gate: ignoring a primary failure cause (allocation infeasibility) that downstream verification won't catch.\nPROPOSED_FIX: Extend `process_round()` to capture LoadBalancer warnings and feasibility probabilities; feed them as evidence to `DetectorHealthMonitor.record_model_round()`. Add a new pathology `\"allocation_infeasible\"` with remediation chain adjusting `feasibility_threshold`, `lambda_bal`, or token limits. Ensure P-pass gating includes allocation-side checks before blaming model.\nVERIFIED: FALSE",
+  "metadata": {
+    "elapsed": 119.5,
+    "chars": 1102,
+    "findings_count": 1,
+    "round": 3,
+    "decomposed": true,
+    "prompt_chars": 161993
+  }
+}
