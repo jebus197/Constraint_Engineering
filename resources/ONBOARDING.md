@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 29 March 2026
+Last updated: 30 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -94,8 +94,34 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   fix). Phase D: area-level vocabulary tracking (replaces global). Phase E:
   dispatch health monitoring (3 new pathology types). Recalibrate τ_vocab 0.10→0.04,
   W 3→5. 7 falsifiable predictions registered. Predicted termination: rounds 8–15.
-- **Next:** Execute Experiment 14 plan (doc sweep → Phases A–E → run).
-  Then: resolve deferred math model items (A-D1–D5).
+- **Experiment 14 Phases A–E COMPLETE (29-30 March 2026):** Self-adaptive
+  immune layer implemented. Per-model registry Layer 4 wired. Immune feedback
+  loop closed (apply_diagnosis). Per-model prompt adaptation. Area-level vocab
+  tracking. Dispatch health monitoring with 3 new pathology types. Recalibrated
+  τ_vocab_growth 0.10→0.04, vocab_sustained_window 3→5. 234 tests.
+- **Experiment 15 IN PROGRESS (30 March 2026):** Live wire run of
+  `dynamic_management.py` (now ~6,100 lines) with all 5 models. Self-adaptive
+  immune layer (Level 3) active. Three runs attempted: Run 1 killed by
+  DeepSeek CircuitBreakerTripped, Run 2 killed by same, Run 3 in progress
+  (Round 1, 21 findings so far). Fixes applied mid-experiment: circuit breaker
+  catch (`aa89585`), DeepSeek CoT budget exhaustion retry with halved
+  max_tokens (`5058d29`).
+- **Experiment 15 failure mode analysis COMPLETE (30 March 2026):** 6 failure
+  modes classified across mathematical model and immune layer. Dual-track
+  fixes implemented (`df52e85`):
+  - Mathematical model (MATHEMATICAL_APPENDIX.md §2): delivery feasibility
+    f_del, decomposition yield bounds η_dec, format yield φ_i. Combined:
+    q_ik = f_del · φ_i · d_ik · p_ik. All reduce to existing when factors=1.
+  - Immune layer: 3 new detectors (parser yield anomaly, monotonic decline,
+    cost-per-finding spike). 253 tests passing (19 new).
+- **Immune persistence + Policy Engine PLANNED (30 March 2026):** JSON-based
+  cross-experiment memory for immune layer (est. 150 lines). Policy Engine
+  consolidation of remediation chains, registry TOML, inline heuristics.
+  Deferred until Exp15/16 iteration stabilises immune layer shape. Plan:
+  `docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt`.
+- **Next:** Complete Experiment 15 Run 3. Iterate on findings. Run Experiment
+  16 if new failure modes emerge. Then: build immune persistence + PE. Then:
+  full bench run. Deferred math model items (A-D1–D5) remain open.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

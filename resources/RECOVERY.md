@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 29 March 2026 06:46 UTC
+Last updated: 30 March 2026 02:50 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,68 +19,40 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (29 March 2026)
+## Current Pending Work (30 March 2026)
 
-Experiment 12 COMPLETE. All fixes implemented and confer-reviewed.
-Experiment 13a (confer round) COMPLETE. Experiment 13b (live run) IN PROGRESS.
+Experiments 12, 13a, 13b, 14 ALL COMPLETE. See ONBOARDING.md for details.
 
-Post-Exp12 fixes implemented (all committed, 177 tests passing):
-- Vocabulary saturation stop signal (d52526a)
-- Windowed fingerprint replacing EMA (d52526a)
-- Model restart logic — IT Crowd principle (9f3d9e4)
-- Adaptive decomposition per model (9f3d9e4)
-- Artifact-size-based max_rounds with ceiling of 30 (9f3d9e4, cd023d9)
-- Fingerprint blending on restart (806162a)
-- Per-model mu computation — CC2 approved HARD (c91d63c, f5b457e)
+EXPERIMENT 15 IN PROGRESS (30 March 2026):
+- Live wire: dynamic_management.py (~6,100 lines), 5 models, self-adaptive
+  immune layer (Level 3) active.
+- Run 3 in progress (Round 1, 21 findings). Runs 1-2 killed by DeepSeek
+  circuit breaker — fixed mid-experiment.
+- Commits this session:
+  - c67ed97: Self-adaptive immune layer with extended P-pass (Level 3)
+  - 27e3622: Autonomous remediation engine + human-in-the-loop safety gate
+  - aa89585: CircuitBreakerTripped catch (no longer kills experiment)
+  - 5058d29: DeepSeek empty response retry with halved max_tokens
+  - df52e85: Dual-track failure mode fixes (§2 math model + 3 new detectors)
+- 253 tests passing.
 
-Exp13a confer synthesis: 3 modifications applied, 4 approved, 1 deferred.
-- Fix 3: restart guard now per-model (cd023d9)
-- Fix 5: max_rounds ceiling of 30 (cd023d9)
-- Fix 1: monotonic-decrease documented (cd023d9)
+FAILURE MODE ANALYSIS COMPLETE (30 March 2026):
+6 failure modes classified from Exp15 evidence:
+1. Kappa on empty sets (math model: φ_i format yield)
+2. CoT budget exhaustion (math model: f_del + immune: already fixed)
+3. Cascade degradation (immune: monotonic decline detector)
+4. Parser format divergence (immune: parser yield anomaly detector)
+5. Efficiency collapse (immune: cost-per-finding spike detector)
+6. Decomposition overshoot (math model: η_dec decomposition yield bounds)
 
-Documentation updated:
-- EXPERIMENTAL_RESULTS.md: Experiment 12 full write-up (35471eb)
-- FOUNDERS_NOTES.md: "The Live Wire" + biodiversity reassessment (35471eb)
-- README.md: extended to 29 March — dynamic management, live orchestration,
-  cognitive modes, synthetic domain expert thesis (35471eb)
-- Shorthand fix: cy = continue, t = TTS only (35471eb)
-
-Experiment 13b COMPLETE + FULLY ANALYSED (29 March 2026): 4 rounds, 184
-findings parsed. 5/5 models survived. Terminated via CONVERGED. Full
-statistical analysis: Kruskal-Wallis H=44.74 (p<0.0001) on cross-model
-severity. Gemini (0.818) and Codex (0.785) produce highest-severity findings.
-Duane NHPP fit R²=0.9999. Models independently found 97 findings in 7/8 fix
-areas. Premature termination diagnosed via SymPy/Wolfram: decomposed dispatch
-× vocab saturation interaction (Heaps' law, β≈0.024). Full entry in
-EXPERIMENTAL_RESULTS.md. TTS: Exp13b_Full_Analysis_2026-03-29.txt.
-
-Self-adaptive CDSFL analysis COMPLETE (29 March 2026): Three-tier architecture
-P-passed. DeepSeek dual pathology: dispatch blocking + verification
-miscalibration (0% verified, 6/15 corroborated TRUE by peers, 2σ outlier).
-Three new immune pathology types designed. Registry Layer 4 (per-model TOML)
-exists but not wired — Phase A. Implementation: Phases A-E. Novelty trajectory
-confirmed ascending (5 independent signals). TTS exports:
-Exp13b_What_The_Models_Found, Exp13b_Context_Novelty_Methodology,
-Self_Adaptive_CDSFL (all 2026-03-29).
-
-EXPERIMENT 14 PLAN APPROVED (29 March 2026, 20:55 BST):
-Full context gathered from all 12 TTS files (Exp12 through Exp13b + self-adaptive).
-Execution sequence:
-1. Doc sweep: mirror TTS to docs/experimental_notes/, check staleness
-2. Phase A: wire per-model registry Layer 4 TOML into orchestrator
-3. Phase B: close immune feedback loop — apply_diagnosis() in DynamicManager
-4. Phase C: per-model prompt adaptation — DeepSeek verification fix via registry
-5. Phase D: area-level vocabulary tracking (replaces global, fixes decomposition interaction)
-6. Phase E: dispatch health monitoring — 3 new pathology types in DetectorHealthMonitor
-7. Recalibrate: τ_vocab_growth 0.10→0.04, vocab_sustained_window 3→5
-8. Run tests, commit, push
-9. Launch Experiment 14: dynamic_management.py, 5 models, focus Areas 4-7
-10. 7 falsifiable predictions: >8 rounds, DeepSeek verification improves,
-    pre-decompose DeepSeek, all 5 survive, immune loop fires, >36 Area 4-7
-    findings, ascending abstraction holds
-
-Then: resolve deferred math model items (A-D1 through A-D5)
-Then: outreach to Michael Cox (MIDCA) when bench data is in hand
+ROADMAP (founder-approved 30 March 2026):
+1. Complete Exp15 Run 3 iteration
+2. Run Experiment 16 if new failure modes emerge
+3. Build immune persistence layer (JSON, ~150 lines)
+4. Build Policy Engine (consolidation of remediation chains + registry)
+5. Full bench run with accumulated immune memory
+6. Resolve deferred math model items (A-D1 through A-D5)
+Plan: docs/experimental_notes/Immune_Persistence_And_PE_Plan_2026-03-30.txt
 
 ## Standard Recovery (5 minutes)
 

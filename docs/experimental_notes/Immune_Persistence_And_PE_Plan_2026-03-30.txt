@@ -1,0 +1,209 @@
+CDSFL Immune Layer Persistence and Policy Engine Plan.
+30 March 2026, 03:45 BST.
+
+
+CONTEXT
+
+The immune layer (DetectorHealthMonitor in dynamic_management.py) is entirely
+in-memory. On process exit, all institutional knowledge is lost: which
+remediations worked, which chain steps to skip, per-model format yield
+patterns, adaptive sensitivity windows, false positive rates. Every experiment
+starts from zero. This is a known deficiency identified during Experiment 15
+failure mode analysis.
+
+The founder's directive is explicit: do not over-engineer. Build the simplest
+sufficient solution. Make the reasons for that choice explicit. Let the wider
+community, with access to far greater compute resources, decide how to extend
+this properly later.
+
+
+WHAT WE ARE BUILDING
+
+Two things, in sequence.
+
+1. Immune Layer Persistence. A lightweight JSON serialisation layer on
+   DetectorHealthMonitor that preserves cross-experiment institutional
+   knowledge. Not a database. Not a service. A file.
+
+2. Policy Engine (PE). The registry and rule system that governs immune layer
+   behaviour: which remediations to apply, when to escalate, per-model prompt
+   adaptation rules, HARD vs SOFT constraint classification for immune
+   responses. This consolidates what is currently spread across remediation
+   chain dicts, TOML registry files, and inline heuristics in apply_diagnosis.
+
+
+WHAT WE ARE NOT BUILDING
+
+We are not building a production persistence layer (SQLite, PostgreSQL, event
+sourcing). The Project Genesis persistence roadmap already covers that path
+(see Genesis MEMORY.md: "Infrastructure Not Yet Built" section). The CE bench
+infrastructure is experimental. It needs a notebook, not a database.
+
+We are not building a distributed state store. If CE ever needs multi-machine
+persistence (post-distributed-compute scaling), that is a fundamentally
+different problem requiring consensus protocols. That is the community's
+problem to solve with their compute resources.
+
+We are not building a query engine. The immune layer's knowledge base is small
+and bounded (estimated 2-5KB). Linear scan over a flat dict is the right tool
+at this scale. Adding query infrastructure would be pure over-engineering.
+
+
+EXECUTION ORDER
+
+Phase 1: Complete Experiment 15 and 16 iteration cycle.
+  The immune layer is actively being tested and modified. Persisting state
+  from a system that is still changing shape would create migration debt.
+  Finish iterating first.
+
+Phase 2: Immune Layer Persistence (estimated 150 lines).
+  a. Add to_dict() and from_dict() class methods on DetectorHealthMonitor.
+  b. Persist only institutional knowledge (not ephemeral per-run state):
+     - step_effectiveness: per chain step success and failure counts
+     - aggregated remediation success rate (rolling window)
+     - aggregated false positive rate
+     - aggregated chain exhaustion rate
+     - per-model format yield observations (phi values)
+     - adaptive sensitivity state (pathology_counts, resolved_counts)
+  c. Do NOT persist:
+     - Raw metric histories (kappa, mu, novelty per round) — ephemeral
+     - Active remediation state (mid-chain position) — per-experiment
+     - Per-round finding counts, response times — ephemeral
+  d. Add exponential decay weighting on effectiveness data.
+     Half-life of approximately 10 experiments. Old data fades so the
+     immune layer does not become anchored to stale observations.
+  e. Schema version field. On version mismatch, start fresh.
+     No migration code. If the schema changes, the old data is stale anyway.
+  f. File location: bench/immune_memory.json (or parameterised path).
+  g. Load on DetectorHealthMonitor.__init__. Save at experiment end and
+     at natural checkpoints (same cadence as existing checkpoint.json).
+  h. Atomic writes: write to temp file, rename. Same pattern as
+     run_phase2.py Checkpoint class.
+
+Phase 3: Policy Engine (PE).
+  a. Consolidate remediation chain definitions from inline dicts in
+     apply_diagnosis into a declarative structure.
+  b. Consolidate per-model prompt adaptation rules from registry Layer 4
+     TOML files and inline heuristics.
+  c. Provide a single interface that the immune layer queries:
+     "Given pathology X for model Y, what is the recommended action?"
+  d. PE reads from:
+     - Immune memory (cross-experiment effectiveness data)
+     - Registry TOML files (per-model prompt rules)
+     - HARD/SOFT constraint classifications
+  e. PE does NOT:
+     - Manage its own database
+     - Run as a separate service
+     - Require network access
+     - Do anything that a simple function call cannot do
+  f. Implementation: a single class (PolicyEngine) that wraps the existing
+     remediation chain logic, registry lookups, and immune memory reads
+     into a coherent interface. The logic already exists. The PE is a
+     consolidation, not new functionality.
+
+Phase 4: Full bench run.
+  With persistence and PE in place, run the full benchmark suite with
+  accumulated immune memory. This is the first test of whether cross-
+  experiment learning actually improves immune layer response time
+  (falsifiable prediction from the earlier analysis).
+
+
+WHAT WE LEARN FROM GENESIS AND OPEN BRAIN
+
+Genesis persistence architecture (from MEMORY.md "Infrastructure Not Yet
+Built"): event-sourced, SQLite minimum, PostgreSQL for production, atomic
+writes, crash recovery, JSON as import/export only. This is the right
+architecture for a production system with concurrent users. It is wrong for
+an experimental bench pipeline that runs one experiment at a time on an 8GB
+M1 Mac.
+
+Open Brain persistence: SQLite WAL, unified API with 3 facades and graceful
+degradation. 4 adapter protocols. This demonstrates the right pattern for
+a system that must interoperate with multiple backends. The immune layer
+does not have multiple backends. It has one file.
+
+The lesson from both: start with the simplest persistence that works. JSON
+files became Genesis's starting point. Open Brain started with SQLite because
+it needed concurrent access from the start. The immune layer needs neither
+concurrent access nor query capability. JSON is correct.
+
+The community will have access to:
+  - More compute (GPUs, clusters, not an 8GB M1)
+  - More models (future architectures with different failure profiles)
+  - More domains (industrial, biomedical, legal — each with domain-specific
+    pathology profiles)
+  - More users (concurrent experiments, shared immune memory)
+
+At that scale, JSON is wrong. SQLite is probably wrong. A proper distributed
+state store with consensus (Raft, Paxos, or blockchain-backed via Genesis
+anchoring) is the right tool. But that is their problem to solve with their
+resources. Our job is to prove the concept works and document the interface
+contract clearly enough that they can replace the backend without changing
+the immune layer logic.
+
+
+REASONS FOR THIS APPROACH (MADE EXPLICIT)
+
+1. The immune layer's knowledge base is small. Step effectiveness has at most
+   pathology_types (approximately 5) times chain_steps (approximately 4) times
+   models (approximately 5) equals 100 entries. With aggregated rates and
+   per-model observations, the total is under 200 entries. This fits
+   comfortably in a 2-5KB JSON file.
+
+2. The immune layer runs single-threaded. No concurrent access. No locking
+   needed. No WAL needed. No transaction semantics needed.
+
+3. The schema is still changing. Experiments 15 and 16 are actively adding
+   new detectors and modifying existing ones. A migration framework for a
+   JSON file that changes shape every few days is pure overhead.
+
+4. The read pattern is "load all on startup, save all on shutdown." This is
+   the worst-case scenario for a database (full table scan on load, full
+   table write on save) and the best-case scenario for JSON.
+
+5. The founder explicitly refuses to over-engineer. This is a design
+   constraint, not an oversight.
+
+
+FALSIFIABLE PREDICTIONS
+
+1. Cross-experiment immune memory reduces rounds-to-first-correct-diagnosis
+   from approximately 3 (cold start) to 1 (warm start) for known pathologies.
+
+2. Step effectiveness data allows the simplest-sufficient preference to skip
+   historically ineffective steps from the first round, not after observing
+   failures.
+
+3. Exponential decay prevents stale-data poisoning: when a model's API
+   changes, the immune layer adapts within 3 experiments despite contrary
+   historical data.
+
+4. Total immune_memory.json file size remains under 10KB after 20 or more
+   experiments.
+
+5. The PE consolidation reduces apply_diagnosis from its current length
+   (approximately 250 lines) to approximately 50 lines of delegation to
+   PolicyEngine, with no loss of functionality.
+
+
+INTERFACE CONTRACT FOR FUTURE IMPLEMENTORS
+
+The community should be able to replace the JSON backend with any storage
+system that satisfies this interface:
+
+  load() returns Dict with str keys and Any values
+  save(data: Dict) persists atomically
+  exists() returns bool
+
+That is the entire contract. The immune layer does not care where the data
+lives. It calls load on init, save at checkpoints, and works with the dict
+in between. If someone wants to put this in PostgreSQL, Redis, or on-chain
+via Genesis anchoring, they implement those three methods and everything
+works.
+
+
+TIMELINE
+
+This work begins after Experiment 15 and 16 iteration is complete, or when
+we stop finding new failure modes that change the immune layer's shape —
+whichever comes first. The founder decides when iteration is done.
