@@ -359,3 +359,79 @@ Round 0B total: 204 findings across 4 tasks
 [20:45:42]   Codex: task-level immune = 163667 chars > threshold 91197 — escalating to sub-area rotation
 [20:45:42]   Codex: sub-area → Integration (11634 chars)
 [20:45:42] Dispatching to Codex (gpt-5.4) via codex_exec...
+[20:51:39]   [codex] done (357.2s, 4383 chars)
+[20:51:39]   Codex: 4383 chars, 357.4s
+[20:51:39]   Codex: 6 findings parsed
+[20:51:39]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_immune_codex_20260330T205139Z.json
+[20:51:39] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[20:52:25]   [openrouter:openai/gpt-5.4] done (44.8s, 9848 chars)
+[20:52:25]   ChatGPT: 9848 chars, 45.6s
+[20:52:25]   ChatGPT: 10 findings parsed
+[20:52:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_immune_chatgpt_20260330T205225Z.json
+[20:52:25] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[20:52:27]   [gemini:gemini-3.1-pro-preview] attempt 1 failed (1.0s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[20:52:30]   [gemini:gemini-3.1-pro-preview] retry 2/5
+[20:52:31]   [gemini:gemini-3.1-pro-preview] attempt 2 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[20:52:34]   [gemini:gemini-3.1-pro-preview] retry 3/5
+[20:52:34]   [gemini:gemini-3.1-pro-preview] attempt 3 failed (0.8s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[20:52:37]   [gemini:gemini-3.1-pro-preview] retry 4/5
+[20:52:38]   [gemini:gemini-3.1-pro-preview] attempt 4 failed (0.8s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[20:52:41]   [gemini:gemini-3.1-pro-preview] retry 5/5
+[20:52:42]   [gemini:gemini-3.1-pro-preview] attempt 5 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[20:52:42]   Gemini: ERROR — RuntimeError: Gemini call failed after 5 attempts for gemini-3.1-pro-preview. Last error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RESOURCE_EXHAUSTED'}}
+[20:52:42]   IMMUNE: Gemini failure recorded (already in pre_decompose)
+[20:52:42]   DeepSeek: sub-area → Integration (11634 chars)
+[20:52:42] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[20:55:48]   [deepseek:deepseek-reasoner] done (185.7s, 11929 chars content, 22780 chars reasoning)
+[20:55:48]   DeepSeek: 11929 chars, 186.4s
+[20:55:48]   DeepSeek: 10 findings parsed
+[20:55:48]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_immune_deepseek_20260330T205548Z.json
+[20:55:48]   Immune Response Layer: 38 findings from 4 models
+[20:55:48] 
+--- ROUND 2 (ADAPTIVE): Load Balancing ---
+[20:55:48]   Prompt: 295142 chars
+[20:55:48]   CC2: decomposed → Load Balancing (42015 chars)
+[20:55:49] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[20:57:23]   [openrouter:anthropic/claude-opus-4-6] done (94.2s, 14443 chars)
+[20:57:23]   CC2: 14443 chars, 95.0s
+[20:57:23]   CC2: 11 findings parsed
+[20:57:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_loadbalancing_cc2_20260330T205723Z.json
+[20:57:23]   Codex: decomposed → Load Balancing (42015 chars)
+[20:57:24] Dispatching to Codex (gpt-5.4) via codex_exec...
+[21:04:31]   [codex] done (427.5s, 4591 chars)
+[21:04:31]   Codex: 4591 chars, 427.9s
+[21:04:31]   Codex: 5 findings parsed
+[21:04:31]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_loadbalancing_codex_20260330T210431Z.json
+[21:04:32] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[21:05:04]   [openrouter:openai/gpt-5.4] done (32.2s, 6961 chars)
+[21:05:04]   ChatGPT: 6961 chars, 32.9s
+[21:05:04]   ChatGPT: 7 findings parsed
+[21:05:04]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_loadbalancing_chatgpt_20260330T210504Z.json
+[21:05:04] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[21:05:07]   [gemini:gemini-3.1-pro-preview] attempt 1 failed (1.3s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[21:05:10]   [gemini:gemini-3.1-pro-preview] retry 2/5
+[21:05:11]   [gemini:gemini-3.1-pro-preview] attempt 2 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[21:05:14]   [gemini:gemini-3.1-pro-preview] retry 3/5
+[21:05:14]   [gemini:gemini-3.1-pro-preview] attempt 3 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[21:05:17]   [gemini:gemini-3.1-pro-preview] retry 4/5
+[21:05:18]   [gemini:gemini-3.1-pro-preview] attempt 4 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[21:05:21]   [gemini:gemini-3.1-pro-preview] retry 5/5
+[21:05:22]   [gemini:gemini-3.1-pro-preview] attempt 5 failed (0.7s): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RES
+[21:05:22]   Gemini: ERROR — RuntimeError: Gemini call failed after 5 attempts for gemini-3.1-pro-preview. Last error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your project has exceeded its spending cap.', 'status': 'RESOURCE_EXHAUSTED'}}
+[21:05:22]   IMMUNE: Gemini failure recorded (already in pre_decompose)
+[21:05:22]   DeepSeek: sub-area → Integration (11634 chars)
+[21:05:22] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[21:09:02]   [deepseek:deepseek-reasoner] done (220.0s, 11159 chars content, 29824 chars reasoning)
+[21:09:03]   DeepSeek: 11159 chars, 220.6s
+[21:09:03]   DeepSeek: 10 findings parsed
+[21:09:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/round2_loadbalancing_deepseek_20260330T210903Z.json
+[21:09:03]   Load Balancing: 33 findings from 4 models
+[21:09:03] 
+--- ROUND 2 (ADAPTIVE): Persistence Layer (verification chain) ---
+[21:09:03]   Prompt: 66177 chars
+[21:09:03] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[21:12:21]   [openrouter:anthropic/claude-opus-4-6] done (197.5s, 35395 chars)
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:301: UserWarning: resource_tracker: There appear to be 9 leaked semaphore objects to clean up at shutdown: {'/mp-vg_i9sr6', '/mp-wxtra2jq', '/mp-6xbdba2z', '/mp-k5bzxa10', '/mp-nddnz9fi', '/mp-5tr22toi', '/mp-5kadgxf0', '/mp-tmzyb0zp', '/mp-hcrotgtc'}
+  warnings.warn(
