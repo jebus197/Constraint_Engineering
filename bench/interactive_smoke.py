@@ -396,7 +396,8 @@ class CXChat:
         os.close(fd)
         try:
             result = sp.run(
-                ["codex", "exec", "--output-last-message", out, full],
+                ["codex", "exec", "--output-last-message", out, "-"],
+                input=full,
                 capture_output=True, text=True, timeout=300
             )
             text = Path(out).read_text().strip()

@@ -960,6 +960,111 @@ def _find_cached(phase_label: str, model_label: str) -> Optional[str]:
 RESUME_MODE = False
 
 
+# ─── Standard Confer Packet (CX prompt efficiency confer, 30 March 2026) ──
+# CX burns context investigating code it should already have. The confer
+# packet provides everything CX needs to produce findings immediately:
+# verified facts, adversarial brief, and explicit unknowns.
+#
+# Evidence: 155K tokens (78 tool calls) → 33K tokens (0 tool calls) with
+# embedded code + verified facts. 78% reduction, more findings (5→6).
+
+_ADVERSARIAL_BRIEF = (
+    "\n=== ADVERSARIAL BRIEF ===\n"
+    "The real defect may be outside these code snippets. Before validating "
+    "the proposed review boundary, test for: omitted assumptions, wrong "
+    "inputs to the functions shown, wrong ownership of responsibilities "
+    "between classes, and wrong problem framing. If you believe the issue "
+    "is upstream or adjacent to the code shown, say so explicitly.\n"
+    "=== END ADVERSARIAL BRIEF ===\n\n"
+)
+
+
+def _build_verified_facts(task_key: str, mc_label: str,
+                          round_idx: int) -> str:
+    """Build a verified facts block from experiment state.
+
+    CX confer F004: CX should not re-derive counts, timings, or errors
+    that CC1 already knows. Separate from hypotheses.
+    """
+    facts = ["=== VERIFIED FACTS (do not re-derive) ==="]
+
+    # Test article sizes
+    facts.append(f"- dynamic_management.py: ~260,000 chars (~6,100 lines)")
+    facts.append(f"- MATHEMATICAL_APPENDIX.md: ~55,000 chars")
+    facts.append(f"- verification_chain.py: ~790 lines")
+
+    # Task-specific sizes after decomposition
+    task_sizes = {
+        "immune": "112K chars task-level, 12-93K per sub-area",
+        "loadbalancing": "42K chars task-level (below threshold)",
+        "mathmodel": "110K chars with appendix, 15-34K per sub-area",
+        "persistence": "27K chars (separate file, below threshold)",
+    }
+    if task_key in task_sizes:
+        facts.append(f"- {task_key} decomposed size: {task_sizes[task_key]}")
+
+    # Throughput observations for this model
+    obs = _throughput_observations.get(mc_label, [])
+    if obs:
+        rates = [f"{chars/secs:.0f} chars/s ({chars} chars in {secs:.0f}s)"
+                 for chars, secs in obs[-3:] if secs > 0]
+        facts.append(f"- {mc_label} observed throughput: {'; '.join(rates)}")
+        eff = _effective_capacity(mc_label, 600.0)
+        if eff:
+            facts.append(f"- {mc_label} effective capacity at 600s timeout: {eff} chars")
+
+    # Known failures
+    if mc_label == "Codex" and round_idx >= 2:
+        facts.append("- Codex timed out in Round 3 of prior run (>600s on 112K immune prompt)")
+        facts.append("- Same prompt completed in 254s in Round 2 (high variance, CLI overhead)")
+
+    facts.append(f"- Current round: {round_idx}, task: {task_key}")
+    facts.append(f"- 350 tests passing as of last commit")
+    facts.append("=== END VERIFIED FACTS ===\n")
+    return "\n".join(facts)
+
+
+def _build_explicit_unknowns(task_key: str, area_name: str = "") -> str:
+    """Build explicit unknowns block — what the extraction might miss.
+
+    CX confer F002/F006: CC1 pre-selecting code creates bias risk. Name
+    what was excluded so the reviewer can flag if the omission matters.
+    """
+    unknowns = ["=== EXPLICIT UNKNOWNS / POSSIBLE OMISSION ZONES ==="]
+
+    if area_name:
+        # Sub-area: other sub-areas are excluded
+        all_areas = TASK_SUBAREAS.get(task_key, REVIEW_AREAS)
+        other_areas = [a[0] for a in all_areas if a[0] != area_name]
+        if other_areas:
+            unknowns.append(
+                f"- Other sub-areas NOT shown: {', '.join(other_areas)}. "
+                f"Cross-sub-area interactions may be missed.")
+
+    if task_key == "immune":
+        unknowns.append(
+            "- process_round() integration code is in skeletal form only "
+            "(definition + docstring). Full body not shown unless it matches "
+            "a marker.")
+        unknowns.append(
+            "- LoadBalancer and convergence detector interactions with immune "
+            "layer may be partially visible only.")
+    elif task_key == "mathmodel":
+        unknowns.append(
+            "- Implementation code is extracted by marker. Formulas that span "
+            "multiple classes may be partially visible.")
+    elif task_key == "loadbalancing":
+        unknowns.append(
+            "- Immune layer's effect on load balancing (model removal, "
+            "pre_decompose_models) visible in skeletal form only.")
+
+    unknowns.append(
+        "- If you believe the real issue is in code not shown, state what "
+        "code you would need to see and why.")
+    unknowns.append("=== END EXPLICIT UNKNOWNS ===\n")
+    return "\n".join(unknowns)
+
+
 def _build_subarea_prompt(
     preamble: str, full_code: str, math_text: str,
     task_key: str, mc_label: str, round_idx: int,
@@ -970,12 +1075,15 @@ def _build_subarea_prompt(
     sub-areas and rotate by round_idx. Falls back to REVIEW_AREAS if no
     task-specific sub-areas are defined.
 
-    CC2 confer F005: this is the escalation path when task-level decomposition
-    is still too large for a model.
+    Includes verified facts, adversarial brief, and explicit unknowns
+    (CX prompt efficiency confer: 6-field standard confer packet).
     """
     subareas = TASK_SUBAREAS.get(task_key, REVIEW_AREAS)
     area_idx = round_idx % len(subareas)
     area_name, markers = subareas[area_idx]
+
+    verified_facts = _build_verified_facts(task_key, mc_label, round_idx)
+    unknowns = _build_explicit_unknowns(task_key, area_name)
 
     if area_name == "Persistence":
         vc_text = ""
@@ -986,13 +1094,16 @@ def _build_subarea_prompt(
             f"(verification_chain.py) — hash chains, Merkle trees, "
             f"Ed25519 signing, epoch sealing.\n\n"
             + preamble
+            + f"\n{verified_facts}\n"
             + f"=== ARTIFACT 1: verification_chain.py ===\n\n"
             f"{vc_text}\n\n"
             f"=== END ARTIFACT 1 ===\n\n"
             f"=== ARTIFACT 2: MATHEMATICAL_APPENDIX.md ===\n\n"
             f"{math_text}\n\n"
             f"=== END ARTIFACT 2 ===\n\n"
-            f"Produce your findings now."
+            + unknowns
+            + _ADVERSARIAL_BRIEF
+            + "Produce your findings now."
         )
         _log(f"  {mc_label}: sub-area → {area_name} ({len(vc_text)} chars)")
     else:
@@ -1002,6 +1113,7 @@ def _build_subarea_prompt(
             f"The full code artifact has been decomposed for your context "
             f"window. Below is the {area_name} code plus skeletal context.\n\n"
             + preamble
+            + f"\n{verified_facts}\n"
             + f"=== ARTIFACT 1: {area_name} (from dynamic_management.py) ===\n\n"
             f"{focused}\n\n"
             f"=== END ARTIFACT 1 ===\n\n"
@@ -1013,6 +1125,7 @@ def _build_subarea_prompt(
                 f"{math_text}\n\n"
                 f"=== END ARTIFACT 2 ===\n\n"
             )
+        model_prompt += unknowns + _ADVERSARIAL_BRIEF
         model_prompt += "Produce your findings now."
         _log(f"  {mc_label}: sub-area → {area_name} ({len(focused)} chars)")
     return model_prompt, True
@@ -1054,12 +1167,15 @@ def _build_decomposed_prompt(
         return prompt, False
 
     task_desc = {t[0]: t[2] for t in TASKS}.get(task_key, task_key)
+    verified_facts = _build_verified_facts(task_key, mc_label, round_idx)
+    unknowns = _build_explicit_unknowns(task_key)
     model_prompt = (
         f"You are reviewing {task_desc}.\n\n"
         f"The full code artifact has been decomposed to focus on the "
         f"relevant classes and functions. Below is the focused code plus "
         f"skeletal context from dynamic_management.py.\n\n"
         + preamble
+        + f"\n{verified_facts}\n"
         + f"=== ARTIFACT 1: {task_desc} (from dynamic_management.py) ===\n\n"
         f"{focused}\n\n"
         f"=== END ARTIFACT 1 ===\n\n"
@@ -1070,6 +1186,7 @@ def _build_decomposed_prompt(
             f"{math_text}\n\n"
             f"=== END ARTIFACT 2 ===\n\n"
         )
+    model_prompt += unknowns + _ADVERSARIAL_BRIEF
     model_prompt += "Produce your findings now."
 
     # Sub-area escalation: if task-level result is too large, escalate

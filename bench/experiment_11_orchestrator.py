@@ -243,8 +243,13 @@ def call_codex(
     cdsfl_directives: str,
     timeout: int = 600,
     max_retries: int = 1,
+    use_output_schema: bool = False,
 ) -> str:
-    """Call Codex via codex exec with CDSFL as elevated directives in prompt body."""
+    """Call Codex via codex exec with CDSFL as elevated directives in prompt body.
+
+    Uses stdin piping (CC2 confer F001: removes shell arg size limit) and
+    optionally --output-schema (CC2 confer F006: forces structured findings).
+    """
     # Codex exec has no --system-prompt flag. CDSFL goes in the prompt body
     # as elevated directives (lesson #12).
     full_prompt = (
@@ -258,6 +263,14 @@ def call_codex(
         "=== END TASK ==="
     )
 
+    # Build command: stdin piping via "-" (CX confer F001)
+    cmd = ["codex", "exec"]
+    if use_output_schema:
+        schema_path = Path(__file__).parent / "cdsfl_finding_schema.json"
+        if schema_path.exists():
+            cmd.extend(["--output-schema", str(schema_path)])
+    cmd.append("-")  # read prompt from stdin
+
     last_error = None
     for attempt in range(1, max_retries + 1):
         if attempt > 1:
@@ -265,7 +278,8 @@ def call_codex(
         t0 = time.monotonic()
         try:
             result = subprocess.run(
-                ["codex", "exec", full_prompt],
+                cmd,
+                input=full_prompt,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -522,8 +536,14 @@ def dispatch(
     config: ModelConfig,
     user_prompt: str,
     cdsfl_system_prompt: str,
+    use_output_schema: bool = False,
 ) -> str:
-    """Dispatch a prompt to any model based on its config. Returns response text."""
+    """Dispatch a prompt to any model based on its config. Returns response text.
+
+    Args:
+        use_output_schema: If True and model is Codex, use --output-schema
+            to force structured CDSFL findings JSON output.
+    """
     _log(f"Dispatching to {config.label} ({config.model_id}) via {config.api}...")
 
     if config.api == "openrouter":
@@ -542,6 +562,7 @@ def dispatch(
             cdsfl_directives=cdsfl_system_prompt,
             timeout=config.timeout,
             max_retries=config.max_retries,
+            use_output_schema=use_output_schema,
         )
     elif config.api == "google":
         return call_gemini(

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CDSFL Structured Findings",
+  "description": "Output schema for CDSFL confer/review rounds. Forces structured findings output from models via codex exec --output-schema.",
+  "type": "object",
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "type", "severity", "flaw_class", "description", "proposed_fix", "verified"],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "description": "Unique ID: MODEL_F001 format"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["NOVEL", "VALIDATION", "CHALLENGE"],
+            "description": "NOVEL=new finding, VALIDATION=confirms prior, CHALLENGE=disputes prior"
+          },
+          "severity": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Severity score 0.0-1.0"
+          },
+          "flaw_class": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8,
+            "description": "CDSFL flaw classification 1-8"
+          },
+          "description": {
+            "type": "string",
+            "description": "What is wrong or could be improved, with file:line references"
+          },
+          "proposed_fix": {
+            "type": "string",
+            "description": "Specific fix proposal"
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "TRUE if the claim is verified against code, FALSE if speculative"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "Optional 1-2 sentence summary of findings"
+    }
+  }
+}
