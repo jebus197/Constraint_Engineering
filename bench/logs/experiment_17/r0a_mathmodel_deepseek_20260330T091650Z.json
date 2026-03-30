@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260330T091650Z",
+  "phase": "r0a_mathmodel",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1391,
+  "response": "FINDING_ID: MM_F001  \nSEVERITY: 0.8  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.7  \nDESCRIPTION: The Mathematical Appendix (§7) defines a cognitive measurement framework including the Duane NHPP model for discovery rate (λ(t)), Abstraction Index (H(x)), Total Cognitive Yield (Y(t)), and the four-dimensional capability fingerprint (D_decay, v̄, A, C). The provided Detection code (DetectorHealthMonitor) does not implement these formal models. Instead, it uses simple heuristic thresholds (e.g., kappa < 0.01, mu increasing by 10%, novelty declining by 20%) and trend checks (e.g., three‑round monotonic decline) for health monitoring. This constitutes a discrepancy between the documented mathematical foundation and the actual implementation—the code operates on ad‑hoc signals, not the derived quantities formalized in the appendix.  \nPROPOSED_FIX: Either implement the appendix models in the Detection layer (e.g., fit Duane parameters to finding‑count histories, compute H(x) for each finding, maintain the capability fingerprint per model) or revise the Mathematical Appendix to explicitly state that these models are forward‑looking extensions not yet implemented in the current codebase. If the appendix is intended as the formal basis for the immune layer, the code must be updated to compute the defined quantities and use them for pathology detection and remediation.  \nVERIFIED: TRUE",
+  "metadata": {
+    "elapsed": 108.2,
+    "chars": 1391,
+    "findings_count": 1,
+    "round": 0,
+    "decomposed": true
+  }
+}

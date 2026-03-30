@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260330T170352Z",
+  "phase": "round2_mathmodel",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1828,
+  "response": "FINDING_ID: MM_F001\nSEVERITY: 0.70\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.60\nDESCRIPTION: The numerical illustration in §6 (Combined Machine‑HIL Detection) contains an inconsistent calculation for the human cumulative detection C_H. Using the given parameters (E=0.85, M=0.9, α=0.4, d_H=0.9, n_H=2) and the formula p_H = E·(α + (1‑α)·M) = 0.799, the per‑pass detection probability is d_H·p_H = 0.7191. For two independent passes, C_H = 1 − (1 − 0.7191)^2 = 0.9211. The table reports C_H = 0.698, which does not match any plausible interpretation (e.g., using p_H without the discount yields 0.9596). This breaks the worked example and undermines the calibration narrative of the section.\nPROPOSED_FIX: Re‑compute the example with consistent parameters or adjust the reported values to match the formula. If the example intended different parameters (e.g., a lower p_H or a different d_H), state them explicitly.\nVERIFIED: TRUE\n\nFINDING_ID: MM_F002\nSEVERITY: 0.50\nFLAW_CLASS: 3\nABSTRACTION_INDEX: 0.75\nDESCRIPTION: The definition of Y_union(t) in §8.2 (Composite System Emergence) is ambiguous when the same finding is reported by multiple models with different abstraction indices. The formula Y_union(t) = |⋃ F_i(t)| · H̄_union(t) requires a unique abstraction index for each finding in the union. If two models report the same finding with different H(x) values, the framework must specify how to resolve the conflict (e.g., take the maximum, the average, or the value from the first model). Without this rule, the emergence condition Y_composite(t) > Y_union(t) + k·σ̂(Y) is not well‑defined.\nPROPOSED_FIX: Add a deterministic rule for merging duplicate findings in the union set, e.g., “When the same finding appears in multiple individual sets, use the maximum H(x) value among the duplicates for the union set.”\nVERIFIED: TRUE",
+  "metadata": {
+    "elapsed": 226.0,
+    "chars": 1828,
+    "findings_count": 2,
+    "round": 2,
+    "decomposed": true,
+    "prompt_chars": 103125
+  }
+}

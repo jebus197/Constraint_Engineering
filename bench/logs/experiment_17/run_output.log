@@ -1,0 +1,155 @@
+[14:53:46] === RESUME MODE: will use cached responses where available ===
+[14:53:46]   Found 31 cached response files in /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17
+[14:53:46] Phase 1: Layer 1 preflight
+[14:53:46] === LAYER 1 PREFLIGHT ===
+[14:53:46]   Parser: tuple format...
+[14:53:46]     PASS
+[14:53:46]   Parser: proposed_fix stored...
+[14:53:46]     PASS
+[14:53:46]   Parser: indented fence stripping...
+[14:53:46]     PASS
+[14:53:46]   Parser: digit prefix in finding ID...
+[14:53:46]     PASS
+[14:53:46]   Dynamic numbering: auto-increment...
+[14:53:46]     PASS (next=18)
+[14:53:46] Layer 1 preflight PASSED.
+[14:53:46] 
+Phase 2: Canary tests
+[14:53:46] === CANARY TESTS: Induced-Failure Scenarios ===
+[14:53:46]   Test 1: Canary — 3 consecutive empty responses
+[14:53:46]     Round 0: immune triggered recovery for canary_0: RETRY
+[14:53:46]     Round 1: immune triggered recovery for canary_0: RETRY
+[14:53:46]     Round 2: immune triggered recovery for canary_0: ABORT
+[14:53:46]   Test 1: PASSED — immune detected empty responses
+[14:53:46]   Test 2: False positive — low-severity finding should not trigger immune
+[14:53:46]   Test 2: PASSED — no over-triggering on benign findings
+[14:53:46]   Test 3: Cascade — 2/5 models fail simultaneously
+[14:53:46]   Test 3: PASSED — 5 models still active after cascade
+[14:53:46]   Test 4: Oscillation — alternating good/bad responses
+[14:53:46]     FSM terminated at round 3 — expected for oscillation test
+[14:53:46]   Test 4: PASSED — 1 immune actions over 6 oscillating rounds (damping working)
+[14:53:46] Canary tests PASSED.
+[14:53:46] 
+Phase 3: Model preflight
+[14:53:46] === PREFLIGHT CHECK ===
+[14:53:46]   Testing CC2...
+[14:53:46] Dispatching to CC2 (anthropic/claude-opus-4-6) via openrouter...
+[14:53:50]   [openrouter:anthropic/claude-opus-4-6] done (3.1s, 78 chars)
+[14:53:50]   CC2: OK (3.9s, 78 chars)
+[14:53:50]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_cc2_20260330T145350Z.json
+[14:53:50]   Testing Codex...
+[14:53:50] Dispatching to Codex (gpt-5.4) via codex_exec...
+[14:54:01]   [codex] done (10.8s, 78 chars)
+[14:54:01]   Codex: OK (10.9s, 78 chars)
+[14:54:01]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_codex_20260330T145401Z.json
+[14:54:01]   Testing ChatGPT...
+[14:54:01] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[14:54:03]   [openrouter:openai/gpt-5.4] done (1.4s, 78 chars)
+[14:54:03]   ChatGPT: OK (2.0s, 78 chars)
+[14:54:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_chatgpt_20260330T145403Z.json
+[14:54:03]   Testing Gemini...
+[14:54:03] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[14:54:10]   [gemini:gemini-3.1-pro-preview] done (5.9s, 110 chars)
+[14:54:10]   Gemini: OK (7.0s, 110 chars)
+[14:54:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17/preflight_gemini_20260330T145410Z.json
+[14:54:10]   Testing DeepSeek...
+[14:54:10] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[1[14:54:45]   [deepseek:deepseek-reasoner] done (73.7s, 79 chars content, 11448 chars reasoning)
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:301: UserWarning: resource_tracker: There appear to be 3 leaked semaphore objects to clean up at shutdown: {'/mp-ut67rw48', '/mp-mdeocsxo', '/mp-tz0pj8tr'}
+  warnings.warn(
+7
+[14:54:19] === EXPERIMENT 17: IMMUNE + LOAD BALANCING LAYER VALIDATION ===
+[14:54:19] Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/experiment_17
+[14:54:19] Test article: 259714 chars, 6195 lines
+[14:54:19] Interface summary: 6258 chars
+[14:54:19] Mathematical appendix: 54930 chars, 824 lines
+[14:54:19] Verification chain: 27450 chars, 790 lines
+[14:54:19] Manifest frozen: fe83ea40
+[14:54:19] 
+=== ROUND 0A: BLIND DISCOVERY (4 tasks × 5 models) ===
+[14:54:19] 
+--- ROUND 0A (BLIND): Immune Response Layer ---
+[14:54:19]   Prompt: 266952 chars
+[14:54:19]   CC2: CACHED (17413 chars from r0a_immune_cc2_20260330T081142Z.json)
+[14:54:19]   CC2: 12 findings (from cache)
+[14:54:19]   Codex: CACHED (5855 chars from r0a_immune_codex_20260330T081809Z.json)
+[14:54:19]   Codex: 8 findings (from cache)
+[14:54:19]   ChatGPT: CACHED (9904 chars from r0a_immune_chatgpt_20260330T081851Z.json)
+[14:54:19]   ChatGPT: 10 findings (from cache)
+[14:54:19]   Gemini: CACHED (6169 chars from r0a_immune_gemini_20260330T082133Z.json)
+[14:54:19]   Gemini: 8 findings (from cache)
+[14:54:19]   DeepSeek: CACHED (10486 chars from r0a_immune_deepseek_20260330T082412Z.json)
+[14:54:19]   DeepSeek: 10 findings (from cache)
+[14:54:19]   Immune Response Layer: 48 findings from 5 models
+[14:54:19] 
+--- ROUND 0A (BLIND): Load Balancing ---
+[14:54:19]   Prompt: 260646 chars
+[14:54:19]   CC2: CACHED (17208 chars from r0a_loadbalancing_cc2_20260330T082956Z.json)
+[14:54:19]   CC2: 10 findings (from cache)
+[14:54:19]   Codex: CACHED (4493 chars from r0a_loadbalancing_codex_20260330T083603Z.json)
+[14:54:19]   Codex: 6 findings (from cache)
+[14:54:19]   ChatGPT: CACHED (6970 chars from r0a_loadbalancing_chatgpt_20260330T083637Z.json)
+[14:54:19]   ChatGPT: 8 findings (from cache)
+[14:54:19]   Gemini: CACHED (3458 chars from r0a_loadbalancing_gemini_20260330T083913Z.json)
+[14:54:19]   Gemini: 4 findings (from cache)
+[14:54:19]   DeepSeek: CACHED (10475 chars from r0a_loadbalancing_deepseek_20260330T084253Z.json)
+[14:54:19]   DeepSeek: 10 findings (from cache)
+[14:54:19]   Load Balancing: 38 findings from 5 models
+[14:54:19] 
+--- ROUND 0A (BLIND): Persistence Layer (verification chain) ---
+[14:54:19]   Prompt: 28437 chars
+[14:54:19]   CC2: CACHED (20298 chars from r0a_persistence_cc2_20260330T084454Z.json)
+[14:54:19]   CC2: 14 findings (from cache)
+[14:54:19]   Codex: CACHED (5215 chars from r0a_persistence_codex_20260330T085308Z.json)
+[14:54:19]   Codex: 6 findings (from cache)
+[14:54:19]   ChatGPT: CACHED (13240 chars from r0a_persistence_chatgpt_20260330T085400Z.json)
+[14:54:19]   ChatGPT: 13 findings (from cache)
+[14:54:19]   Gemini: CACHED (5384 chars from r0a_persistence_gemini_20260330T085744Z.json)
+[14:54:19]   Gemini: 6 findings (from cache)
+[14:54:19]   DeepSeek: CACHED (8806 chars from r0a_persistence_deepseek_20260330T090118Z.json)
+[14:54:19]   DeepSeek: 10 findings (from cache)
+[14:54:19]   Persistence Layer (verification chain): 49 findings from 5 models
+[14:54:19] 
+--- ROUND 0A (BLIND): Mathematical Model Consistency ---
+[14:54:19]   Prompt: 315667 chars
+[14:54:19]   CC2: CACHED (26349 chars from r0a_mathmodel_cc2_20260330T090435Z.json)
+[14:54:19]   CC2: 13 findings (from cache)
+[14:54:19]   Codex: CACHED (7462 chars from r0a_mathmodel_codex_20260330T091053Z.json)
+[14:54:19]   Codex: 7 findings (from cache)
+[14:54:19]   ChatGPT: CACHED (10851 chars from r0a_mathmodel_chatgpt_20260330T091152Z.json)
+[14:54:19]   ChatGPT: 12 findings (from cache)
+[14:54:19]   Gemini: CACHED (6872 chars from r0a_mathmodel_gemini_20260330T091502Z.json)
+[14:54:19]   Gemini: 4 findings (from cache)
+[14:54:19]   DeepSeek: CACHED (1391 chars from r0a_mathmodel_deepseek_20260330T091650Z.json)
+[14:54:19]   DeepSeek: 1 findings (from cache)
+[14:54:19]   Mathematical Model Consistency: 37 findings from 5 models
+[14:54:19] 
+Round 0A total: 172 findings across 4 tasks
+[14:54:20]   Telemetry: 0 diagnoses, 1 recoveries, 0 adjustments
+[14:54:20] 
+=== ROUND 0B: SEEDED VALIDATION (4 tasks × 5 models) ===
+[14:54:20] 
+--- ROUND 0B (SEEDED): Immune Response Layer ---
+[14:54:20]   Prompt: 288998 chars
+[14:54:20]   CC2: CACHED (24160 chars from r0b_immune_cc2_20260330T092254Z.json)
+[14:54:20]   CC2: 16 findings (from cache)
+[14:54:20]   Codex: CACHED (6621 chars from r0b_immune_codex_20260330T092834Z.json)
+[14:54:20]   Codex: 6 findings (from cache)
+[14:54:20]   ChatGPT: CACHED (12562 chars from r0b_immune_chatgpt_20260330T092925Z.json)
+[14:54:20]   ChatGPT: 15 findings (from cache)
+[14:54:20]   Gemini: CACHED (7112 chars from r0b_immune_gemini_20260330T093158Z.json)
+[14:54:20]   Gemini: 8 findings (from cache)
+[14:54:20]   DeepSeek: CACHED (8855 chars from r0b_immune_deepseek_20260330T093451Z.json)
+[14:54:20]   DeepSeek: 5 findings (from cache)
+[14:54:20]   Immune Response Layer: 50 findings from 5 models
+[14:54:20] 
+--- ROUND 0B (SEEDED): Load Balancing ---
+[14:54:20]   Prompt: 278560 chars
+[14:54:20]   CC2: CACHED (19469 chars from r0b_loadbalancing_cc2_20260330T093712Z.json)
+[14:54:20]   CC2: 14 findings (from cache)
+[14:54:20] Dispatching to Codex (gpt-5.4) via codex_exec...
+[14:59:51]   [codex] done (331.1s, 3105 chars)
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:301: UserWarning: resource_tracker: There appear to be 3 leaked semaphore objects to clean up at shutdown: {'/mp-gutcoul3', '/mp-8fuh9ykv', '/mp-gyk4rtuf'}
+  warnings.warn(
+rn(

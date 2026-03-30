@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260330T164545Z",
+  "phase": "round2_persistence",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 1709,
+  "response": "```json\n[\n  {\n    \"FINDING_ID\": \"VC_F014\",\n    \"SEVERITY\": 0.85,\n    \"FLAW_CLASS\": 2,\n    \"ABSTRACTION_INDEX\": 0.80,\n    \"DESCRIPTION\": \"The `hash_only` storage mode does not support anchoring opaque binary artifacts or pre-computed hashes, fundamentally defeating its primary architectural purpose. When appending a record with `storage_mode=\\\"hash_only\\\"`, the `append_record` API still requires the caller to provide the target artifact as the `payload` argument. The method then processes this artifact via `canonical_json(payload)`, encodes it to UTF-8, and computes the SHA-256 hash. This creates multiple severe limitations: 1) It is impossible to anchor a pre-computed hash, forcing the data through the chain's local serialization layer. 2) It is impossible to anchor raw binary data (e.g., PDFs, compiled models). If a caller passes `bytes`, `json.dumps()` raises a `TypeError`. If the caller base64-encodes the data, the chain computes the hash over the JSON-formatted string (including quotes and escaping), rather than the raw file bytes, silently breaking standard off-chain hash verification. 3) Forcing large external datasets into memory as Python objects to be JSON-serialized just to extract a hash is extremely memory-inefficient.\",\n    \"PROPOSED_FIX\": \"Refactor `append_record` to accept an explicit `precomputed_hash: Optional[str] = None` argument. If `storage_mode == \\\"hash_only\\\"` and `precomputed_hash` is provided, use it directly without requiring or serializing a `payload`. Alternatively, separate the API into `append_record` and `append_hash_anchor` to safely segregate the code paths for on-chain payloads versus off-chain binary commitments.\",\n    \"VERIFIED\": true\n  }\n]\n```",
+  "metadata": {
+    "elapsed": 284.6,
+    "chars": 1709,
+    "findings_count": 1,
+    "round": 2,
+    "decomposed": false,
+    "prompt_chars": 68586
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260330T162813Z",
+  "phase": "round2_loadbalancing",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2035,
+  "response": "```yaml\nFINDING_ID: LB_F001\nSEVERITY: 0.88\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.65\nDESCRIPTION: In `DynamicManager.update_fingerprints()`, models that produce zero findings receive zero-valued capability observations (`v_bar=0.0, A=0.0, C=0.0`), driving their live fingerprints toward zero via EMA. However, a model might produce zero findings simply because it was assigned zero tasks by the `LoadBalancer` (e.g., the PM model, which is structurally excluded from normal tasks by `_admissibility_mask()`, or a worker left idle due to low redundancy targets). This conflates \"not assigned work\" with \"failed to perform,\" systematically corrupting the adaptive routing feedback loop by artificially decaying the capability profiles of healthy but unassigned models.\nPROPOSED_FIX: In `update_fingerprints()`, inspect the current round's `Allocation`. If a model was assigned zero tasks, skip its fingerprint update entirely for that round to preserve its mathematically sound capability scores.\nVERIFIED: TRUE\n\nFINDING_ID: LB_F002\nSEVERITY: 0.86\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.70\nDESCRIPTION: `FailureHandler._expected_performance()` calculates target performance using the raw fingerprint array (`q = model.fingerprint.as_array()`) via the dot product `np.dot(b, q)`. Because `D_decay` (index 0) is a \"lower is better\" metric, and the baseline vectors `b_pm`, `b_col`, and `b_par` all define positive coefficients for index 0 (e.g., `0.10`, `0.15`), the math adds `+ coefficient * D_decay`. This means models with a HIGH (worse) decay rate are mathematically expected to perform BETTER than models with a near-zero (excellent) decay rate. This inverted logic causes poor models to trigger underperformance falsely, while allowing excellent models to slack off below thresholds.\nPROPOSED_FIX: In `_expected_performance()`, use a normalisation/inversion step similar to `CapabilityFingerprint.as_normalised_array()`, or directly compute `q = np.array([1.0 - fp.D_decay, fp.v_bar, fp.A, fp.C])` before the dot product.\nVERIFIED: TRUE\n```",
+  "metadata": {
+    "elapsed": 288.0,
+    "chars": 2035,
+    "findings_count": 2,
+    "round": 2,
+    "decomposed": false,
+    "prompt_chars": 294280
+  }
+}
