@@ -286,23 +286,31 @@ universal methodology, domain-specific directives, user personalisation.
 
 ## Communication Protocols
 
-The founder uses single-letter shorthand:
+The founder uses single-token shorthand to steer cognitive mode. Commands
+compose left-to-right, separated by a single space. Full reference:
+`resources/SHORTCUTS.md`.
+
 - `y` = yes/approved
 - `cy` = continue
-- `t` = export to TTS accessibility file
+- `rt` = read context files + continue
 - `d` = discuss before proceeding
-- `p` = run P-pass (falsify)
-- `e` = extrapolate beyond immediate domain
-- `c` = confer with CX via CLI, run mutual P-passes until convergence
+- `r` = re-read key context files (IM, checkpoints)
+- `p` = P-pass (Popperian falsification — iterative, not observational)
+- `c` = confer with all available models under CDSFL protocol
 - `a` = analyse dispassionately
-- `r` = read IM only (quick context check)
-- `rr` = full recovery (re-read all resources, rebuild context from scratch)
-- `rs` = restore state (full recovery: rebuild context from all sources)
-- `re` = external research (web search, arXiv, Semantic Scholar, Sci-Hub)
-- `sv` = save state (Open Brain + update recovery resources + commit + push)
+- `e` = extrapolate beyond immediate domain
+- `rr` = full recovery (rebuild context from all sources)
+- `rs` = restore state (IM + OB + checkpoints + memory)
+- `t` = send to TTS (accessible plain-text export)
+- `sv` = save state (Open Brain + update docs + commit + push)
+- `re` = external research (web search, arXiv, Semantic Scholar)
+- `g` = confer with Gemini specifically
+- `sy` = check with SymPy (mathematical verification)
+- `x` = override sleep/rest warnings for current session
+- `qc` = quality control (full docs/staleness/consistency check)
 
-These compose: `p d e` = falsify, discuss, extrapolate. `c p a d` = confer
-with CX, P-pass, analyse, discuss.
+These compose: `p d e` = falsify, discuss, extrapolate. `rs qc` = restore
+state, then quality control.
 
 ## How to Resume Work
 
