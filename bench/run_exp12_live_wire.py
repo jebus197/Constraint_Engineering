@@ -505,7 +505,13 @@ def run_blind_round(
 
         except CircuitBreakerTripped as e:
             _log(f"  {mc.label}: CIRCUIT BREAKER — {e}")
-            raise
+            _log(f"  {mc.label}: Treating as model failure, continuing round")
+            responses[mc.label] = ModelResponse(
+                model_id=mc.label,
+                round_idx=0,
+                content="",
+                response_time=mc.timeout + 1.0,
+            )
         except Exception as e:
             _log(f"  {mc.label}: ERROR — {e}")
             responses[mc.label] = ModelResponse(
@@ -820,7 +826,12 @@ def run_adaptive_round(
 
         except CircuitBreakerTripped as e:
             _log(f"  {mc.label}: CIRCUIT BREAKER — {e}")
-            raise
+            _log(f"  {mc.label}: Treating as model failure, continuing round")
+            responses[mc.label] = ModelResponse(
+                model_id=mc.label, round_idx=round_idx, content="",
+                response_time=mc.timeout + 1.0,
+            )
+            continue
         except Exception as e:
             _log(f"  {mc.label}: ERROR — {e}")
             responses[mc.label] = ModelResponse(
