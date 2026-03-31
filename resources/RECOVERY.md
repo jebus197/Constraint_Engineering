@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 March 2026 01:11 UTC
+Last updated: 31 March 2026 09:37 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -59,28 +59,39 @@ MIDCA ANALYSIS COMPLETE (31 March 2026):
 - CDSFL vs Cox et al. AAAI-16. 6/8 met, 2 partial, extends beyond MIDCA scope.
 - Analysis: docs/experimental_notes/CDSFL_MIDCA_Analysis_2026-03-30.md
 
-COMPOSABLE DIRECTIVE ARCHITECTURE P-PASSED (31 March 2026):
+COMPOSABLE DIRECTIVE ARCHITECTURE P-PASSED + BUILT (31 March 2026):
 - Four-layer stack: Universal → Domain → Phenotype → Situation.
-- 5 falsification passes, 5 falsifiable questions. Dynamic composer = missing piece.
-- Proposed as Experiment 19. In discussion (user "d" pending).
-- Analysis: docs/experimental_notes/CDSFL_Composable_Directives_Analysis_2026-03-31.md
+- 5 falsification passes, 5 falsifiable questions. Dynamic composer BUILT.
+- 5-model architecture confer: 3 rounds × 5 models (~191K chars). Open format.
+- 5-model composer review confer: 2 rounds × 5 models (~303K chars). Problem box.
+- All 6 problems solved. CX won all 6. ChatGPT strong second.
+- Composer: bench/cdsfl_registry/composer.py (1,399 lines). All fixes applied.
+- SymPy verified: 8 implementation claims + 12 mathematical model claims pass.
+- Ising model needs bounded ψ: Σψ ≤ −Σlog(1−q_i).
+- Two complementary coherence constructs: capacity-based (CC2/Gemini) + entropy-based (DeepSeek).
+- Optimal directive window: product φ(L)·α(L) has unique maximum.
+- Analysis: docs/experimental_notes/CDSFL_Composer_Review_Confer_2026-03-31.md
+- Confer logs: bench/logs/composable_directives_confer/, bench/logs/composer_review_confer/
 
 TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
 - New `tts-output-protocol` directive in CLAUDE.md replaces old tts-default-on
   + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
   `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
 
-ROADMAP (31 March 2026):
+ROADMAP (31 March 2026, updated 09:37 UTC):
 1. ~~Implement confer packet fixes in orchestrators~~ DONE (`8c1dacb`)
 2. ~~CX CLI efficiency fixes (reasoning, MCP, ephemeral)~~ DONE
-3. Resume Exp 17 (with CX fixes or wait for quota reset ~3 Apr)
-4. Exp 19: composable directive architecture (dynamic composer, ~200-400 lines)
-5. Test + launch Experiment 18 (sequential confer)
-6. Build immune persistence layer (JSON, ~150 lines)
-7. Build Policy Engine (consolidation of remediation chains + registry)
-8. Wire verification chain into live pipeline
-9. Full bench run (Bench Run 2) — the finish line
-10. Deferred math model items (A-D1 through A-D5) — not blocking bench
+3. ~~Build dynamic directive composer~~ DONE (`adaa434`, 1,399 lines, all 6 fixes)
+4. Wire composer into orchestrator (Problem 6 integration code exists, not applied)
+5. Apply verified math model extensions to MATHEMATICAL_APPENDIX.md (§7.12–7.16)
+6. Run math model fix confer (A-D1–A-D5 deferred, A-N1–A-N3 new additions)
+7. Resume Exp 17 (CX quota resets ~3 Apr)
+8. Exp 19: composable directive hypothesis test (different configs → different results?)
+9. Test + launch Experiment 18 (sequential confer)
+10. Build immune persistence layer (JSON, ~150 lines)
+11. Build Policy Engine (consolidation of remediation chains + registry)
+12. Wire verification chain into live pipeline
+13. Full bench run (Bench Run 2) — the finish line
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."

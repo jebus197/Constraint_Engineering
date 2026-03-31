@@ -201,12 +201,40 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   passes, 5 falsifiable questions generated. Dynamic composer (~200-400 lines)
   identified as missing piece. Proposed as Experiment 19. Analysis:
   `docs/experimental_notes/CDSFL_Composable_Directives_Analysis_2026-03-31.md`.
+- **5-model composable directives confer COMPLETE (31 March 2026):** 3 rounds ×
+  5 models (~191K chars). Open-format architecture review. All 5 models agreed
+  on four-layer stack, phenotype-as-transform, coherence budgeting, and the need
+  for a dynamic composer. Independently converged on coherence penalty, attention
+  yield, and diversity decomposition. Results: `bench/logs/composable_directives_confer/`.
+- **5-model composer review confer COMPLETE (31 March 2026, `adaa434`):** 2 rounds ×
+  5 models (~303K chars). "Problem box" format — models constrained to produce
+  working code solutions only. All 6 identified problems solved. CX won all 6.
+  ChatGPT strong second. Results: `bench/logs/composer_review_confer/`.
+- **Dynamic Directive Composer BUILT (31 March 2026, `adaa434`):**
+  `bench/cdsfl_registry/composer.py` — 1,399 lines. Four-layer directive
+  composition with monotonicity enforcement, coherence budgeting, CID provenance.
+  All 6 confer fixes applied: universal minimal rendering (1,865 chars vs 9,597),
+  intra-packet pruning (two-pass HARD/SOFT), 9-step phenotype transform (Jaccard
+  dedup), cross-layer conflict resolution (3-rule hierarchy), coherence threshold
+  calibration from experiment logs, orchestrator integration helpers. All 5 model
+  compositions valid, no monotonicity violations.
+- **SymPy verification of composer + mathematical model (31 March 2026):** 8
+  implementation claims verified (density monotonicity, calibration threshold,
+  Jaccard→containment, pruning convergence, priority total order, coherence
+  detection reduction, constraint preservation, dedup threshold). 12 mathematical
+  model claims verified (unified detection equation, attention yield, coherence
+  penalty, correlated joint miss, diversity decomposition, Ising model with
+  bounded ψ, hierarchical dependence, correlation-adjusted coverage, entropy
+  coherence, composition monotonicity, critical mass sigmoid, diversity ratio).
+  All pass. Ising model requires Σψ ≤ −Σlog(1−q_i).
 - **TTS output protocol updated (30 March 2026):** New `tts-output-protocol`
   directive. Per-project Desktop folders (`CDSFL_tts/`, `Genesis_tts/`) + repo
   `experimental_notes/` as .md. 141 files migrated from `~/Desktop/Accessibility/`.
-- **Next:** Resume Exp 17 (CX with efficiency fixes or wait for quota reset
-  ~3 Apr) → collate findings → Exp 19 (composable directives) → test Exp 18
-  runner → launch Exp 18. Then: immune persistence + PE. Then: Bench Run 2.
+- **Next:** Wire composer into orchestrator (Problem 6 code exists, not applied) →
+  apply verified math model extensions to MATHEMATICAL_APPENDIX.md (§7.12–7.16) →
+  run math model fix confer (deferred items A-D1–A-D5, new additions A-N1–A-N3) →
+  resume Exp 17 (CX quota resets ~3 Apr) → Exp 19 (composable directive hypothesis
+  test) → Exp 18 (sequential confer) → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
@@ -249,6 +277,7 @@ Constraint_Engineering/
     run_exp18_confer.py       -- Exp 18: sequential confer runner (Whole Body)
     cdsfl_registry/           -- Constraint Editor (CE) policy engine
       registry.py             -- 5-layer hierarchical merge with monotonicity
+      composer.py             -- Dynamic Directive Composer (4-layer composition)
       refinements.py          -- Independence-aware confirmation, tuple canon
       universal.toml          -- Layer 1 (immutable HARD constraints)
       domains/                -- Layer 2 (domain-specific policies)
