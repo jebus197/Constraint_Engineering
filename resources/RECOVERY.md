@@ -120,12 +120,23 @@ MATHEMATICAL APPENDIX REWRITTEN (31 March 2026, `c7f9e7a`):
   ρ clipping, seeded sensitivity, NMI diversity, S_sync^emp, re-injection,
   HIL framing penalty, substrate ceiling. Post-edit SymPy 7/7 PASS.
 
-ROADMAP (31 March 2026, updated 15:15 UTC):
-1-10. ~~All confer/composer/audit/FFF/appendix rewrite~~ ALL DONE
-11. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
-13. Wire composer into orchestrator
-14. Resume Exp 17 (CX quota resets ~3 Apr)
-15. Exp 19: composable directive hypothesis test (include find-fix-follow condition)
+EXP 17 FIX TRIAGE COMPLETE (31 March 2026):
+- 52 fixes total: 13 IM (immune), 13 LB (load balancing), 20 VC (verification
+  chain), 10 MM (math-to-code alignment). 2 MM fixes resolved by appendix
+  rewrite (MM_F001 notation, MM_F005 O_A specification). 50 still applicable.
+- All are code-level, not specification-level. Tests verify correctness.
+- 6 critical (≥0.85): IM_F002, IM_F013, IM_F005, LB_F005, VC_F001, IM_F001.
+
+NEXT STEPS (31 March 2026, agreed with founder):
+1. Formalise Find-Fix-Follow pattern mathematically (§7.12 or §9)
+2. SymPy verify the FFF formalization
+3. Apply all 52 Exp 17 code fixes in 4 batches (IM→LB→VC→MM), test after each
+4. Send to Gemini under FFF:
+   (a) FFF formalization + full revised model → coherence check
+   (b) Fixed code sections → find what CC missed or broke
+5. Wire composer into orchestrator
+6. Exp 19: composable directive hypothesis test (include FFF condition)
+7. Exp 18 → immune persistence + PE → Bench Run 2
 16. Test + launch Experiment 18 (sequential confer)
 17. Build immune persistence + Policy Engine
 18. Full bench run (Bench Run 2) — the finish line
