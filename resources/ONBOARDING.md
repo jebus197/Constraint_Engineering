@@ -308,11 +308,25 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   separability axioms, ρ clipping, seeded sensitivity Ŝ_H, NMI diversity δ_ij,
   S_sync^emp empirical anchor, error re-injection ν, HIL framing penalty IG_HIL,
   substrate ceiling. Post-edit SymPy 7/7 reduction properties confirmed.
-- **Next:** Unify γ + stop signal → Exp 19 (FFF hypothesis test, composer
-  wired, runner built at `run_exp19_fff.py`) → deep FFF (multi-turn) →
-  Exp 20 (sequential confer) → insight propagation → immune persistence +
-  PE → Bench Run 2. Founder observations:
-  `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`.
+- **Gemini 9-page proposal P-passed (31 March 2026):** 2 genuinely useful
+  (parallel blind dispatch, hybrid async-then-sync), 6 already implemented
+  (churn), 1 mathematically incorrect (SI formula — SymPy falsified sign
+  inversion on contradictions), 2 deferred (epistemic mesh/sovereign shards).
+  Founder decision: reasoning_effort stays at xhigh (max capability, not
+  throttled). User-configurable reasoning is a separate future feature.
+- **Outstanding fixes tracking file (31 March 2026):** Persistent record of
+  ALL unimplemented items from 17 TTS files and experimental notes, cross-
+  referenced against codebase. Prevents context-loss from losing track of
+  deferred work. File: `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`.
+- **Founder decision — incremental testing (31 March 2026):** No multi-fix
+  smoke tests. One variable at a time, measured against a known baseline.
+  Sequence: (1) standard CDSFL baseline confer with CC2+CX+Gemini, (2) add
+  CX MCP/plugin flags, (3) add parallel dispatch, (4) add WBA attribution.
+  Each change measured independently.
+- **Next:** Standard CDSFL baseline confer → CX flags → parallel dispatch →
+  WBA attribution → γ unification → Exp 19 → Exp 20 → Bench Run 2.
+  Founder observations: `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`.
+  Outstanding items: `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

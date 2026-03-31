@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 March 2026 11:46 UTC
+Last updated: 31 March 2026 21:56 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,9 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (31 March 2026, 01:11 UTC)
+## Current Pending Work (31 March 2026, 21:56 UTC)
 
-Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
+Experiments 12–18 ALL COMPLETE. See ONBOARDING.md for details.
 
 EXPERIMENT 17 CODE FIXES COMPLETE + Exp 18 FFF CONVERGENCE COMPLETE (31 March 2026):
 - Round 3 COMPLETE (140 findings). All applicable code fixes applied in 4 batches:
@@ -29,8 +29,9 @@ EXPERIMENT 17 CODE FIXES COMPLETE + Exp 18 FFF CONVERGENCE COMPLETE (31 March 20
 - Three-way FFF round-robin (Gemini → CX GPT-5.4 → Gemini) converged in 3 rounds
   with 7 additional fixes (commit `d85eb5a`). Now formally Experiment 18.
 - CX efficiency confer R2: 4 models × 2 rounds, 46 findings, converged.
-- CLI efficiency fixes IMPLEMENTED in call_codex(): reasoning effort
-  xhigh→medium, MCP servers disabled, plugins disabled, ephemeral mode.
+- CLI efficiency fixes PARTIALLY IMPLEMENTED in call_codex(): MCP/plugin
+  disabling and ephemeral mode proposed but NOT YET VERIFIED in code.
+  Reasoning effort remains xhigh (founder decision: max capability, not throttled).
 - Logs: `bench/logs/experiment_17/`, `bench/logs/gemini_fff_exp17_fixes/`
 - Confer results: `bench/logs/cx_efficiency_confer_r2/`
 
@@ -137,24 +138,39 @@ THREE-WAY FFF CONVERGENCE COMPLETE (31 March 2026, `d85eb5a`):
 - Three-way CC/Gemini/CX FFF round-robin under CDSFL. All fixes applied. 351 tests.
 - Logs: bench/logs/gemini_fff_exp17_fixes/
 
+GEMINI P-PASS COMPLETE (31 March 2026):
+- Gemini's 9-page proposal P-passed. 2 genuinely useful (parallel dispatch,
+  hybrid async-sync), 6 already implemented (churn), 1 mathematically incorrect
+  (SI formula — SymPy falsified), 2 deferred (mesh/shards).
+- Founder rejected reasoning_effort downgrade: max capability stays as default.
+  User-configurable reasoning is a separate future feature.
+
+OUTSTANDING FIXES TRACKING FILE WRITTEN (31 March 2026):
+- `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`
+- Persistent record of ALL unimplemented items from 17 TTS files and notes.
+- Prevents context-loss from losing track of deferred work.
+
 NEXT STEPS (31 March 2026):
-1. Composer wired into Exp 19 runner (DONE — `run_exp19_fff.py` built)
-2. Unify γ and diminishing-returns stop signal (founder observation: separate
-   calculations are redundant — γ already measures what vocab/novelty proxy)
-3. Deep FFF (multi-turn within single model) — third Exp 19 condition or separate exp
-4. Exp 19: FFF hypothesis test (2- or 3-condition: standard vs FFF vs deep FFF)
-5. Exp 20: sequential confer (Whole Body Phase 1+2)
-6. Insight propagation: formalise "discover method → propagate across models"
-7. Build immune persistence + Policy Engine
+1. Standard CDSFL confer baseline (existing schema, no novel changes) with
+   CC2 + CX + Gemini on immune task area. FFF via situation layer. Sequential
+   dispatch. This validates all Exp 17/18 code fixes under live multi-model review.
+2. After baseline: layer in CX MCP/plugin flags (one change, measured)
+3. After that: parallel blind dispatch (one change, measured)
+4. After that: WBA Phase 1 finding attribution (one change, measured)
+5. γ unification (pre-Bench Run 2, pending founder confirmation)
+6. Exp 19: FFF hypothesis test (runner built, ready)
+7. Exp 20: sequential confer (runner built, ready)
 8. Full bench run (Bench Run 2) — the finish line
 Founder observations: `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`
+All outstanding items: `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."
 
 META-TRAJECTORY: Exp12=structural, Exp13=calibration, Exp14=design gaps,
 Exp15=edge cases, Exp16=plan review, Exp17=immune+LB live, Exp18=FFF,
-Exp20=confer.
+Exp20=confer. Founder decision: incremental changes only, one variable at a
+time measured against baseline. No multi-fix smoke tests.
 
 ## Standard Recovery (5 minutes)
 
