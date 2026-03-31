@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 30 March 2026 17:05 UTC
+Last updated: 31 March 2026 01:11 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,18 +19,19 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (30 March 2026, 22:59 UTC)
+## Current Pending Work (31 March 2026, 01:11 UTC)
 
 Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 17 RUNNING (30 March 2026):
-- Resumed after Gemini spending cap fix + CX prompt efficiency confer.
-- R0A (177 findings) + R0B (204 findings) + Round 2 (150 findings) from cache.
-- Round 3 LIVE: Immune (31 findings) + Load Balancing (38 findings) complete.
-  Persistence + Math Model in progress. All 5 models active.
-- CX sub-area escalation and DeepSeek feasibility gate both firing correctly.
+EXPERIMENT 17 PAUSED (31 March 2026):
+- Round 3 COMPLETE (140 findings). Round 4 partial (Immune 34, LB 36,
+  Persistence 26 complete; Math Model partial — CX hit usage limit mid-round).
+- CX OpenAI usage limit exhausted (~3h runtime). Resets ~3 April.
+- CX efficiency confer R2: 4 models × 2 rounds, 46 findings, converged.
+- CLI efficiency fixes IMPLEMENTED in call_codex(): reasoning effort
+  xhigh→medium, MCP servers disabled, plugins disabled, ephemeral mode.
 - Log: `bench/logs/experiment_17/run_output_r7.log`
-- Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.md`
+- Confer results: `bench/logs/cx_efficiency_confer_r2/`
 
 EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
 - bench/run_exp18_confer.py — sequential confer (Whole Body Phase 1+2).
@@ -42,26 +43,44 @@ WHOLE BODY ARCHITECTURE DESIGNED (30 March 2026):
 - Nervous (dispatch sequencing), circulatory (attributed findings), endocrine
   (adaptive pacing). Exp 18 = Phases 1+2. Phases 3+4 = future.
 
-CX PROMPT EFFICIENCY CONFER COMPLETE (30 March 2026, `8c1dacb`):
+CX PROMPT EFFICIENCY CONFER R1 COMPLETE (30 March 2026, `8c1dacb`):
 - CX burns 155K tokens on 78 tool calls investigating codebase instead of
   producing findings. Fix: 6-field standard confer packet with embedded code,
   stdin piping, output-schema. 78% token reduction proven. ALL IMPLEMENTED.
 - Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`
+
+CX EFFICIENCY CONFER R2 COMPLETE (31 March 2026):
+- CX hit usage limit after ~3h. 4-model confer under CDSFL diagnosed root causes.
+- CLI audit: reasoning effort xhigh, 4 MCP servers loading, no ephemeral mode.
+- Fixes implemented in call_codex(): -c model_reasoning_effort="medium",
+  -c mcp_servers={}, -c plugins={}, --ephemeral. Confer: bench/logs/cx_efficiency_confer_r2/
+
+MIDCA ANALYSIS COMPLETE (31 March 2026):
+- CDSFL vs Cox et al. AAAI-16. 6/8 met, 2 partial, extends beyond MIDCA scope.
+- Analysis: docs/experimental_notes/CDSFL_MIDCA_Analysis_2026-03-30.md
+
+COMPOSABLE DIRECTIVE ARCHITECTURE P-PASSED (31 March 2026):
+- Four-layer stack: Universal → Domain → Phenotype → Situation.
+- 5 falsification passes, 5 falsifiable questions. Dynamic composer = missing piece.
+- Proposed as Experiment 19. In discussion (user "d" pending).
+- Analysis: docs/experimental_notes/CDSFL_Composable_Directives_Analysis_2026-03-31.md
 
 TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
 - New `tts-output-protocol` directive in CLAUDE.md replaces old tts-default-on
   + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
   `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
 
-ROADMAP (30 March 2026):
+ROADMAP (31 March 2026):
 1. ~~Implement confer packet fixes in orchestrators~~ DONE (`8c1dacb`)
-2. Exp 17 running → collate findings → integrate fixes
-3. Test + launch Experiment 18 (sequential confer)
-4. Build immune persistence layer (JSON, ~150 lines)
-5. Build Policy Engine (consolidation of remediation chains + registry)
-6. Wire verification chain into live pipeline
-7. Full bench run (Bench Run 2) — the finish line
-8. Deferred math model items (A-D1 through A-D5) — not blocking bench
+2. ~~CX CLI efficiency fixes (reasoning, MCP, ephemeral)~~ DONE
+3. Resume Exp 17 (with CX fixes or wait for quota reset ~3 Apr)
+4. Exp 19: composable directive architecture (dynamic composer, ~200-400 lines)
+5. Test + launch Experiment 18 (sequential confer)
+6. Build immune persistence layer (JSON, ~150 lines)
+7. Build Policy Engine (consolidation of remediation chains + registry)
+8. Wire verification chain into live pipeline
+9. Full bench run (Bench Run 2) — the finish line
+10. Deferred math model items (A-D1 through A-D5) — not blocking bench
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."

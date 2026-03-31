@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 30 March 2026
+Last updated: 31 March 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -155,13 +155,14 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
   traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
   Independent stop caps (round 10, wall-clock 4h). Ready to execute.
-- **Experiment 17 RUNNING (30 March 2026):** Resumed after Gemini spending cap
-  fix + CX prompt efficiency confer implementation (`8c1dacb`). R0A (177) + R0B
-  (204) + Round 2 (150) loaded from cache. Round 3 LIVE: Immune (31 findings) +
-  Load Balancing (38 findings) complete, Persistence + Math Model in progress.
-  All 5 models active. CX sub-area escalation and DeepSeek feasibility gate
-  both firing correctly. Log: `bench/logs/experiment_17/run_output_r7.log`.
-  Confer record: `docs/experimental_notes/Dispatch_Fix_Confer_2026-03-30.md`.
+- **Experiment 17 PAUSED (31 March 2026):** Round 3 COMPLETE (140 findings).
+  Round 4 partial: Immune (34), LB (36), Persistence (26) complete; Math Model
+  partial (CC2 done, CX hit OpenAI usage limit, ChatGPT done, Gemini/DeepSeek
+  in progress when paused). CX usage limit exhausted (~3h runtime, resets ~3 Apr).
+  CX efficiency confer R2 completed: 4 models × 2 rounds, 46 findings, converged.
+  CLI flag audit revealed 3 major efficiency fixes now implemented: reasoning
+  effort xhigh→medium, MCP servers disabled, ephemeral mode enabled.
+  Log: `bench/logs/experiment_17/run_output_r7.log`.
 - **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
@@ -181,11 +182,31 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   CX context waste (78 tool calls, 155K tokens). Fix: 6-field standard confer
   packet, stdin piping, `--output-schema`. 78% token reduction. ALL IMPLEMENTED
   in orchestrators. Record: `docs/experimental_notes/CX_Prompt_Efficiency_Confer_2026-03-30.md`.
+- **CX efficiency confer R2 COMPLETE (31 March 2026):** CX hit usage limit after
+  ~3h runtime. 4-model confer (CC2, ChatGPT, Gemini, DeepSeek) under CDSFL on
+  CX dispatch costs. 2 rounds, converged. CLI audit revealed: reasoning effort
+  locked at xhigh, 4 MCP servers loading per dispatch, no ephemeral mode. Fixes
+  implemented in `call_codex()`: `-c 'model_reasoning_effort="medium"'`,
+  `-c "mcp_servers={}"`, `-c "plugins={}"`, `--ephemeral`. Confer results:
+  `bench/logs/cx_efficiency_confer_r2/`.
+- **MIDCA analysis COMPLETE (31 March 2026):** CDSFL mapped against Cox et al.
+  AAAI-16 MIDCA standard. 6/8 core requirements met, 2 partial (expectation
+  generation, anomaly detection partially implicit). CDSFL extends beyond MIDCA
+  scope in multi-agent coordination and substrate-agnostic measurement. Honest
+  assessment: system-level metacognition, not agent-level. Analysis:
+  `docs/experimental_notes/CDSFL_MIDCA_Analysis_2026-03-30.md`.
+- **Composable directive architecture P-PASSED (31 March 2026):** Modular,
+  dynamically assembled directive packets preserving core Popperian constraints.
+  Four-layer stack: Universal → Domain → Phenotype → Situation. 5 falsification
+  passes, 5 falsifiable questions generated. Dynamic composer (~200-400 lines)
+  identified as missing piece. Proposed as Experiment 19. Analysis:
+  `docs/experimental_notes/CDSFL_Composable_Directives_Analysis_2026-03-31.md`.
 - **TTS output protocol updated (30 March 2026):** New `tts-output-protocol`
   directive. Per-project Desktop folders (`CDSFL_tts/`, `Genesis_tts/`) + repo
   `experimental_notes/` as .md. 141 files migrated from `~/Desktop/Accessibility/`.
-- **Next:** Exp 17 completing → collate findings → test Exp 18 runner → launch
-  Exp 18. Then: immune persistence + PE. Then: Bench Run 2.
+- **Next:** Resume Exp 17 (CX with efficiency fixes or wait for quota reset
+  ~3 Apr) → collate findings → Exp 19 (composable directives) → test Exp 18
+  runner → launch Exp 18. Then: immune persistence + PE. Then: Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

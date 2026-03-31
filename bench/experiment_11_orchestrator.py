@@ -92,7 +92,7 @@ def load_default_config() -> ExperimentConfig:
             system_prompt_path=str(cdsfl_path),
             max_tokens=32768,  # codex exec manages output, but we set for prompt construction
             timeout=600,
-            max_retries=1,
+            max_retries=1,  # single attempt — immune layer handles CX failures gracefully
             backoff_base=0.0,
         ),
         ModelConfig(
@@ -264,7 +264,16 @@ def call_codex(
     )
 
     # Build command: stdin piping via "-" (CX confer F001)
-    cmd = ["codex", "exec"]
+    # Efficiency overrides (CX confer R2): reduce reasoning effort from xhigh→medium,
+    # disable MCP servers and plugins (Linear/Notion/Figma/Playwright not needed),
+    # ephemeral mode (no session persistence overhead).
+    cmd = [
+        "codex", "exec",
+        "-c", 'model_reasoning_effort="medium"',
+        "-c", "mcp_servers={}",
+        "-c", "plugins={}",
+        "--ephemeral",
+    ]
     if use_output_schema:
         schema_path = Path(__file__).parent / "cdsfl_finding_schema.json"
         if schema_path.exists():

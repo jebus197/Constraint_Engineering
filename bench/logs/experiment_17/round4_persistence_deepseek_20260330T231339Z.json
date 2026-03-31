@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260330T231339Z",
+  "phase": "round4_persistence",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2001,
+  "response": "**FINDING_ID:** VC_F028  \n**SEVERITY:** 0.92  \n**FLAW_CLASS:** 5  \n**ABSTRACTION_INDEX:** 0.45  \n**DESCRIPTION:** `canonical_json` does not recursively sort keys in nested dictionaries, breaking cryptographic determinism for structured payloads or metadata. The function uses `json.dumps(obj, sort_keys=True, separators=(\",\", \":\"))`, which sorts only top‑level keys. Two semantically identical objects with different key order in nested dictionaries produce different canonical strings, leading to different `entry_hash` and `chain_hash` values. This undermines the tamper‑evidence guarantee because the same logical content can produce multiple valid hash representations.  \n**PROPOSED_FIX:** Replace `canonical_json` with a recursive function that sorts keys at all levels. Example implementation:  \n```python\ndef canonical_json(obj: Any) -> str:\n    def sort_keys(obj):\n        if isinstance(obj, dict):\n            return {k: sort_keys(v) for k, v in sorted(obj.items())}\n        if isinstance(obj, list):\n            return [sort_keys(v) for v in obj]\n        return obj\n    sorted_obj = sort_keys(obj)\n    return json.dumps(sorted_obj, separators=(\",\", \":\"))\n```  \n**VERIFIED:** TRUE  \n\n**FINDING_ID:** VC_F029  \n**SEVERITY:** 0.40  \n**FLAW_CLASS:** 6  \n**ABSTRACTION_INDEX:** 0.20  \n**DESCRIPTION:** `_normalize_timestamp` uses `datetime.fromisoformat()`, which is only available in Python 3.7+. The module’s dependencies claim “Python stdlib only” but do not specify a minimum Python version. On Python 3.6 (still in limited use), the function will raise `AttributeError` and break all timestamp processing. This is a compatibility‑induced denial‑of‑service for older environments.  \n**PROPOSED_FIX:** Either (a) document a hard requirement of Python ≥3.7, or (b) implement a fallback parser for Python 3.6 using `dateutil` (adds dependency) or a manual ISO‑8601 regex. The simpler fix is to update the documentation and `setup.py`/`pyproject.toml` to enforce Python ≥3.7.  \n**VERIFIED:** TRUE",
+  "metadata": {
+    "elapsed": 153.4,
+    "chars": 2001,
+    "findings_count": 2,
+    "round": 4,
+    "decomposed": true,
+    "prompt_chars": 146806
+  }
+}
