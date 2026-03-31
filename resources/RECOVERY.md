@@ -92,14 +92,22 @@ TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
   deferral operator τ_defer, A-N1 REJECTED, A-N3 null-vector guard
 - Logs: bench/logs/gemini_math_audit/round{0-6}_*.{json,md}
 
-ROADMAP (31 March 2026, updated 13:28 UTC):
+FIND-FIX-FOLLOW PATTERN IDENTIFIED (31 March 2026):
+- Founder's informal Gemini interaction pattern: find issue → fix it → explore
+  consequences of fix. Three-step intra-model cycle produces scope expansion.
+- Current CDSFL rounds require findings but not resolution within model's turn.
+- Resolution-and-consequence obligation proposed for round instructions.
+- Testable as Exp 19 condition or Bench Run 2 variant.
+- Also flagged: seeded sensitivity + NMI sycophancy trigger for evaluation.
+
+ROADMAP (31 March 2026, updated 14:28 UTC):
 1-9. ~~All confer/composer/audit work~~ ALL DONE (converged)
 10. Apply CX's two minor modifications to Gemini Round 6 text
 11. Apply converged model to MATHEMATICAL_APPENDIX.md (§9, §10, namespace, C(n))
 12. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
 13. Wire composer into orchestrator
 14. Resume Exp 17 (CX quota resets ~3 Apr)
-15. Exp 19: composable directive hypothesis test
+15. Exp 19: composable directive hypothesis test (include find-fix-follow condition)
 16. Test + launch Experiment 18 (sequential confer)
 17. Build immune persistence + Policy Engine
 18. Full bench run (Bench Run 2) — the finish line

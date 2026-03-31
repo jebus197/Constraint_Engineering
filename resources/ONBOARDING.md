@@ -260,10 +260,22 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   independence branching (independent vs correlated via Ising), full namespace
   refactor table (17 collisions), decomposed delivery reformulated as synthesis
   deferral operator τ_defer, A-N1 anti-parroting REJECTED, A-N3 null-vector guard.
+- **Find-Fix-Follow pattern identified (31 March 2026):** Analysis of founder's
+  informal Gemini interaction pattern revealed a three-step intra-model cycle
+  (find issue → resolve it → explore consequences of resolution) that produces
+  scope expansion beyond what inter-model confer rounds alone achieve. Currently
+  CDSFL rounds require models to report findings but not to resolve them within
+  their own turn. Adding a resolution-and-consequence obligation to round
+  instructions would reduce rounds-to-convergence and increase cross-section
+  issue discovery. Testable as Exp 19 condition or Bench Run 2 variant. Also
+  identified: seeded sensitivity (known-defect injection for calibration) and
+  NMI-based sycophancy trigger from same Gemini session warrant evaluation
+  against existing S_sync and immune layer.
 - **Next:** Apply CX's two minor modifications → apply converged model to
   MATHEMATICAL_APPENDIX.md (§9, §10, namespace refactor, C(n) branching) →
   apply Exp 17 implementation fixes → wire composer → resume Exp 17 (CX resets
-  ~3 Apr) → Exp 19 → Exp 18 → immune persistence + PE → Bench Run 2.
+  ~3 Apr) → Exp 19 (include find-fix-follow condition) → Exp 18 → immune
+  persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
