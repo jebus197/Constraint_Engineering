@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Experiment 18: Sequential Confer with Attributed Findings.
+"""Experiment 20: Sequential Confer with Attributed Findings.
 
 Architectural evolution from Experiment 17's parallel broadcast to sequential
 confer within each round. Models see attributed prior findings and produce
@@ -26,7 +26,7 @@ Key design decisions (from Whole Body Architecture plan, 2026-03-30):
 - Same stop caps: round 10 + wall-clock 4h
 
 Usage:
-    python3 bench/run_exp18_confer.py [preflight|canary|run|resume]
+    python3 bench/run_exp20_confer.py [preflight|canary|run|resume]
 
     preflight  — verify all models respond + Layer 1 acceptance tests
     canary     — run induced-failure scenarios only
@@ -108,7 +108,7 @@ from run_exp16_plan_review import run_preflight as _run_model_preflight
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-EXPERIMENT = "18"
+EXPERIMENT = "20"
 LOGS_DIR = REPO_ROOT / "bench" / "logs" / f"experiment_{EXPERIMENT}"
 
 # Same stop caps as Exp 17
@@ -339,7 +339,7 @@ def _build_confer_prompt(
     task_desc = {t[0]: t[2] for t in TASKS}[task_key]
 
     preamble = (
-        f"You are in {round_label} of Experiment 18 — "
+        f"You are in {round_label} of Experiment 20 — "
         f"TASK: {task_desc}.\n"
         f"You are model {dispatch_position + 1} of {total_models} "
         f"in this round's sequential dispatch.\n\n"
@@ -600,9 +600,9 @@ def _dispatch_confer_round(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_experiment() -> Dict[str, Any]:
-    """Run full Experiment 18."""
+    """Run full Experiment 20."""
     experiment_start = time.monotonic()
-    _log(f"=== EXPERIMENT 18: SEQUENTIAL CONFER WITH ATTRIBUTED FINDINGS ===")
+    _log(f"=== EXPERIMENT 20: SEQUENTIAL CONFER WITH ATTRIBUTED FINDINGS ===")
     _log(f"Logs: {LOGS_DIR}")
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -771,7 +771,7 @@ def run_experiment() -> Dict[str, Any]:
 
     # ── Summary ──
     elapsed_total = time.monotonic() - experiment_start
-    _log(f"\n=== EXPERIMENT 18 SUMMARY ===")
+    _log(f"\n=== EXPERIMENT 20 SUMMARY ===")
     _log(f"Architecture: sequential confer with attributed findings")
     _log(f"Total findings: {len(all_findings)}")
     _log(f"Rounds completed: {len(round_results)}")
@@ -831,18 +831,18 @@ if __name__ == "__main__":
 
         _log("\nPhase 3: Model preflight")
         config = load_default_config()
-        # Point preflight logs at Exp 18 dir
+        # Point preflight logs at Exp 20 dir
         import run_exp16_plan_review
         run_exp16_plan_review.LOGS_DIR = LOGS_DIR
         if not _run_model_preflight(config):
             _log("Model preflight FAILED — aborting")
             sys.exit(1)
 
-        _log("\nPhase 4: Experiment 18 (sequential confer)")
+        _log("\nPhase 4: Experiment 20 (sequential confer)")
         report = run_experiment()
-        _log(f"\nExperiment 18 complete. {report['total_findings']} findings "
+        _log(f"\nExperiment 20 complete. {report['total_findings']} findings "
              f"across {len(report['rounds'])} rounds.")
     else:
         print(f"Unknown mode: {mode}")
-        print("Usage: python3 bench/run_exp18_confer.py [preflight|canary|run|resume]")
+        print("Usage: python3 bench/run_exp20_confer.py [preflight|canary|run|resume]")
         sys.exit(1)

@@ -130,8 +130,9 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 - **META-TRAJECTORY:** Problem space is shrinking across experiments. Exp12
   found structural failures (broken detectors). Exp13 found calibration
   errors (one threshold). Exp14 found design gaps (not broken code). Exp15
-  found edge cases (format divergence, CoT budget). Each iteration finds less
-  fundamental problems. The methodology is converging on itself. Experiment
+  found edge cases (format divergence, CoT budget). Exp17 immune+LB live
+  validation. Exp18=FFF convergence (methodology test). Each iteration finds
+  less fundamental problems. The methodology is converging on itself. Experiment
   numbering must auto-increment from logs directory (currently hardcoded).
 - **Experiment 15 Run 3 COMPLETE + Layer 1 fixes (30 March 2026, `148f80d`):**
   286 findings across 7 rounds (5 models). Parser fix recovered +18 findings
@@ -162,19 +163,26 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   in 3 rounds with 7 additional fixes. Key: pathology_key routing (IM_F013),
   remediation escalation reset (IM_F002), verify_chain exception safety, estimate_gamma
   correction, kappa_rate divergence fix. Logs: `bench/logs/gemini_fff_exp17_fixes/`.
-- **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
-  `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
+- **Experiment 18 COMPLETE (31 March 2026, `d85eb5a`):** First formal FFF
+  methodology test. Three-way round-robin (Gemini → CX GPT-5.4 → Gemini) under
+  CDSFL with find-fix-follow instructions. 7 genuine fixes from 3 rounds.
+  Key finding: FFF produces integration-level issues standard confer misses.
+  CX model/effort configuration critical (o4-mini: 0 genuine; GPT-5.4 xhigh: 5
+  genuine). Convergence in 3 rounds. Logs: `bench/logs/gemini_fff_exp17_fixes/`.
+- **Experiment 20 runner BUILT (30 March 2026, `e11b4a2`):**
+  `bench/run_exp20_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
   first, player_manager last as arbitrator). Attributed findings with
   `[source: model_id]`. Three output types: NOVEL, VALIDATION, CHALLENGE.
   Position-aware prompts (first reviewer, confer, arbitrator). Inherits
   decomposition and feasibility gate from Exp 17. Pending: preflight + canary
   test before launch. Launches after Exp 17 findings are collated and integrated.
+  (Renumbered from Exp 18 to Exp 20 after FFF convergence work claimed Exp 18.)
 - **Whole Body Architecture designed (30 March 2026):** Design note at
   `docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.md`.
   Three communication layers: nervous system (dispatch sequencing), circulatory
   system (attributed finding flow), endocrine system (adaptive pacing signals).
-  Four phases — Exp 18 implements Phases 1 (attributed findings) and 2
+  Four phases — Exp 20 implements Phases 1 (attributed findings) and 2
   (sequential dispatch). Phases 3 (multi-step pacing) and 4 (closed-loop
   feedback) are future work.
 - **CX prompt efficiency confer COMPLETE + IMPLEMENTED (30 March 2026, `8c1dacb`):**
@@ -198,7 +206,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   dynamically assembled directive packets preserving core Popperian constraints.
   Four-layer stack: Universal → Domain → Phenotype → Situation. 5 falsification
   passes, 5 falsifiable questions generated. Dynamic composer (~200-400 lines)
-  identified as missing piece. Proposed as Experiment 19. Analysis:
+  identified as missing piece. Exp 19 combines composable directives with FFF
+  as a 2-condition test (standard vs FFF). Analysis:
   `docs/experimental_notes/CDSFL_Composable_Directives_Analysis_2026-03-31.md`.
 - **5-model composable directives confer COMPLETE (31 March 2026):** 3 rounds ×
   5 models (~191K chars). Open-format architecture review. All 5 models agreed
@@ -266,7 +275,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   CDSFL rounds require models to report findings but not to resolve them within
   their own turn. Adding a resolution-and-consequence obligation to round
   instructions would reduce rounds-to-convergence and increase cross-section
-  issue discovery. Testable as Exp 19 condition or Bench Run 2 variant. Also
+  issue discovery. Now formally tested as Experiment 18 (FFF convergence).
+  Exp 19 combines composable directives with FFF as a 2-condition test. Also
   identified: seeded sensitivity (known-defect injection for calibration) and
   NMI-based sycophancy trigger from same Gemini session warrant evaluation
   against existing S_sync and immune layer.
@@ -298,9 +308,9 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   separability axioms, ρ clipping, seeded sensitivity Ŝ_H, NMI diversity δ_ij,
   S_sync^emp empirical anchor, error re-injection ν, HIL framing penalty IG_HIL,
   substrate ceiling. Post-edit SymPy 7/7 reduction properties confirmed.
-- **Next:** Apply Exp 17 implementation fixes (IM_F001-F013, LB, VC) → wire
-  composer into orchestrator → resume Exp 17 (CX resets ~3 Apr) → Exp 19
-  (find-fix-follow condition) → Exp 18 → immune persistence + PE → Bench Run 2.
+- **Next:** Wire composer into orchestrator → Exp 19 (FFF hypothesis test,
+  2-condition: standard vs FFF) → Exp 20 (sequential confer) → immune
+  persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
@@ -340,7 +350,7 @@ Constraint_Engineering/
   bench/
     run_round_robin.py        -- Main bench test orchestrator (~3500 lines)
     run_exp17_immune.py       -- Exp 17: immune + LB live validation runner
-    run_exp18_confer.py       -- Exp 18: sequential confer runner (Whole Body)
+    run_exp20_confer.py       -- Exp 20: sequential confer runner (Whole Body)
     cdsfl_registry/           -- Constraint Editor (CE) policy engine
       registry.py             -- 5-layer hierarchical merge with monotonicity
       composer.py             -- Dynamic Directive Composer (4-layer composition)

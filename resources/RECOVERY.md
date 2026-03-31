@@ -23,25 +23,27 @@ This is enough to resume most tasks.
 
 Experiments 12–16 ALL COMPLETE. See ONBOARDING.md for details.
 
-EXPERIMENT 17 PAUSED (31 March 2026):
-- Round 3 COMPLETE (140 findings). Round 4 partial (Immune 34, LB 36,
-  Persistence 26 complete; Math Model partial — CX hit usage limit mid-round).
-- CX OpenAI usage limit exhausted (~3h runtime). Resets ~3 April.
+EXPERIMENT 17 CODE FIXES COMPLETE + Exp 18 FFF CONVERGENCE COMPLETE (31 March 2026):
+- Round 3 COMPLETE (140 findings). All applicable code fixes applied in 4 batches:
+  8 IM + 9 LB + 14 VC + 4 MM = 35 fixes (commit `050fd20`). 351 tests passing.
+- Three-way FFF round-robin (Gemini → CX GPT-5.4 → Gemini) converged in 3 rounds
+  with 7 additional fixes (commit `d85eb5a`). Now formally Experiment 18.
 - CX efficiency confer R2: 4 models × 2 rounds, 46 findings, converged.
 - CLI efficiency fixes IMPLEMENTED in call_codex(): reasoning effort
   xhigh→medium, MCP servers disabled, plugins disabled, ephemeral mode.
-- Log: `bench/logs/experiment_17/run_output_r7.log`
+- Logs: `bench/logs/experiment_17/`, `bench/logs/gemini_fff_exp17_fixes/`
 - Confer results: `bench/logs/cx_efficiency_confer_r2/`
 
-EXPERIMENT 18 RUNNER BUILT (30 March 2026, `e11b4a2`):
-- bench/run_exp18_confer.py — sequential confer (Whole Body Phase 1+2).
+EXPERIMENT 20 RUNNER BUILT (30 March 2026, `e11b4a2`):
+- bench/run_exp20_confer.py — sequential confer (Whole Body Phase 1+2).
 - Attributed findings, fingerprint dispatch ordering, NOVEL/VALIDATION/CHALLENGE.
 - Pending: preflight + canary, then launch after Exp 17 collation.
+- (Renumbered from Exp 18 to Exp 20 after FFF convergence work claimed Exp 18.)
 
 WHOLE BODY ARCHITECTURE DESIGNED (30 March 2026):
 - docs/experimental_notes/Whole_Body_Architecture_Plan_2026-03-30.md
 - Nervous (dispatch sequencing), circulatory (attributed findings), endocrine
-  (adaptive pacing). Exp 18 = Phases 1+2. Phases 3+4 = future.
+  (adaptive pacing). Exp 20 = Phases 1+2. Phases 3+4 = future.
 
 CX PROMPT EFFICIENCY CONFER R1 COMPLETE (30 March 2026, `8c1dacb`):
 - CX burns 155K tokens on 78 tool calls investigating codebase instead of
@@ -97,7 +99,8 @@ FIND-FIX-FOLLOW PATTERN IDENTIFIED (31 March 2026):
   consequences of fix. Three-step intra-model cycle produces scope expansion.
 - Current CDSFL rounds require findings but not resolution within model's turn.
 - Resolution-and-consequence obligation proposed for round instructions.
-- Testable as Exp 19 condition or Bench Run 2 variant.
+- Now formally tested as Experiment 18 (FFF convergence). Exp 19 = formal
+  2-condition test (standard vs FFF).
 - Also flagged: seeded sensitivity + NMI sycophancy trigger for evaluation.
 
 ROUND 7 FFF AUDIT COMPLETE (31 March 2026, `e86d44e`):
@@ -136,17 +139,17 @@ THREE-WAY FFF CONVERGENCE COMPLETE (31 March 2026, `d85eb5a`):
 
 NEXT STEPS (31 March 2026):
 1. Wire composer into orchestrator
-2. Exp 19: composable directive hypothesis test (include FFF condition)
-3. Exp 18 → immune persistence + PE → Bench Run 2
-4. Test + launch Experiment 18 (sequential confer)
-5. Build immune persistence + Policy Engine
-6. Full bench run (Bench Run 2) — the finish line
+2. Exp 19: FFF hypothesis test (2-condition: standard vs FFF)
+3. Exp 20: sequential confer (Whole Body Phase 1+2)
+4. Build immune persistence + Policy Engine
+5. Full bench run (Bench Run 2) — the finish line
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."
 
 META-TRAJECTORY: Exp12=structural, Exp13=calibration, Exp14=design gaps,
-Exp15=edge cases, Exp16=plan review, Exp17=immune+LB live, Exp18=confer.
+Exp15=edge cases, Exp16=plan review, Exp17=immune+LB live, Exp18=FFF,
+Exp20=confer.
 
 ## Standard Recovery (5 minutes)
 

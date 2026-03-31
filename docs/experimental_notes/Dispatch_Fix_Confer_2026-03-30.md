@@ -62,4 +62,4 @@ Codex timing out on 112K immune prompts. Decomposition logic had bugs:
 - mathmodel: 110K → sub-area rotation (15-34K per sub-area)
 - loadbalancing: 42K (unchanged, below threshold)
 - persistence: 27K (unchanged, separate file)
-- 350 tests passing, Exp 18 imports verified
+- 350 tests passing, Exp 20 (formerly Exp 18) imports verified
