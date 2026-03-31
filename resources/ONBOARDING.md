@@ -230,11 +230,23 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 - **TTS output protocol updated (30 March 2026):** New `tts-output-protocol`
   directive. Per-project Desktop folders (`CDSFL_tts/`, `Genesis_tts/`) + repo
   `experimental_notes/` as .md. 141 files migrated from `~/Desktop/Accessibility/`.
-- **Next:** Wire composer into orchestrator (Problem 6 code exists, not applied) →
-  apply verified math model extensions to MATHEMATICAL_APPENDIX.md (§7.12–7.16) →
-  run math model fix confer (deferred items A-D1–A-D5, new additions A-N1–A-N3) →
-  resume Exp 17 (CX quota resets ~3 Apr) → Exp 19 (composable directive hypothesis
-  test) → Exp 18 (sequential confer) → immune persistence + PE → Bench Run 2.
+- **Decomposed dispatch infrastructure BUILT (31 March 2026, `d139e12`):**
+  `bench/decomposed_dispatch.py` — reusable multi-turn staged context loading for
+  all 5 APIs (Gemini chat, OpenRouter messages, DeepSeek messages, CX accumulated
+  context). Implements the "tutor" pattern: chunks delivered with "WAITING"
+  acknowledgement, synthesis triggered only after full payload received.
+- **Gemini Phase 1 mathematical coherence audit COMPLETE (31 March 2026, `d139e12`):**
+  8-chunk decomposed delivery (~65K chars). All 8 WAITING responses clean. 14,872
+  chars of mathematical analysis (174s). Findings: 14 symbol collisions (namespace
+  refactor HARD), all 5 deferred items resolved (A-D1 asymmetric Δ, A-D2 D→ρ_info,
+  A-D3 keep step, A-D4 M_suppress volume constraint, A-D5 T_conv/T_budg). A-N1
+  anti-parroting REJECTED (contradicts O_A). A-N3 modified (bound ascending_bonus).
+  Ising model explicitly rejected. Decomposed delivery attention claim FALSIFIED
+  (cumulative context). Proposed §9-§11 structure. Log:
+  `bench/logs/gemini_math_audit/round0_gemini_20260331T102313Z.json`.
+- **Next:** SymPy verify Gemini claims → Phase 2 all-model review (decomposed) →
+  iterate → apply Exp 17 implementation fixes → wire composer → resume Exp 17
+  (CX resets ~3 Apr) → Exp 19 → Exp 18 → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 March 2026 09:37 UTC
+Last updated: 31 March 2026 11:46 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -78,18 +78,27 @@ TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
   + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
   `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
 
-ROADMAP (31 March 2026, updated 10:08 UTC):
-1. ~~Implement confer packet fixes in orchestrators~~ DONE (`8c1dacb`)
-2. ~~CX CLI efficiency fixes (reasoning, MCP, ephemeral)~~ DONE
-3. ~~Build dynamic directive composer~~ DONE (`adaa434`, 1,399 lines, all 6 fixes)
-4. Apply MM_F001 + MM_F002 (known math errors from Exp 17) before audit
-5. Build decomposed_dispatch.py (multi-turn staged context loading, ~150 lines)
-6. Gemini Phase 1: solo mathematical coherence audit (decomposed delivery)
-7. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC) in parallel
-8. SymPy verify Gemini's output
-9. Phase 2: all-model CDSFL review of Gemini's unified model (tight math box)
-10. Iterate until convergence (SymPy + model agreement)
-11. Wire composer into orchestrator (Problem 6 integration code exists)
+GEMINI PHASE 1 MATH AUDIT COMPLETE (31 March 2026, `d139e12`):
+- decomposed_dispatch.py BUILT (reusable multi-turn staged context loading)
+- gemini_math_audit.py: 8-chunk decomposed delivery, all 8 WAITING responses clean
+- 14,872 chars of mathematical analysis, 174s total
+- KEY FINDINGS: 14 symbol collisions (namespace refactor HARD), all 5 deferred
+  items resolved, A-N1 anti-parroting REJECTED (contradicts O_A), A-N3 modified,
+  Ising model rejected, decomposed delivery attention claim FALSIFIED (cumulative
+  context means α(L_total) applies at synthesis regardless of chunking)
+- Proposes §9-§11 structure for composition extensions
+- Log: bench/logs/gemini_math_audit/round0_gemini_20260331T102313Z.json
+
+ROADMAP (31 March 2026, updated 11:46 UTC):
+1-3. ~~Confer packets, CX CLI, composer~~ ALL DONE
+4. ~~MM_F001 + MM_F002 applied~~ DONE (`d139e12`)
+5. ~~decomposed_dispatch.py built~~ DONE (`d139e12`)
+6. ~~Gemini Phase 1 math audit~~ DONE (`d139e12`)
+7. SymPy verify Gemini's claims (14 collisions, deferred item resolutions)
+8. Phase 2: all-model CDSFL review of Gemini output (tight math box, decomposed)
+9. Iterate until convergence (SymPy + model agreement)
+10. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
+11. Wire composer into orchestrator
 12. Resume Exp 17 (CX quota resets ~3 Apr)
 13. Exp 19: composable directive hypothesis test
 14. Test + launch Experiment 18 (sequential confer)
