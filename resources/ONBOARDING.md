@@ -155,14 +155,13 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   DeepSeek 3-area immune decomposition, interface summary, appendix-to-code
   traceability (22 fully implemented, 5 partial, 8 not implemented formulas).
   Independent stop caps (round 10, wall-clock 4h). Ready to execute.
-- **Experiment 17 PAUSED (31 March 2026):** Round 3 COMPLETE (140 findings).
-  Round 4 partial: Immune (34), LB (36), Persistence (26) complete; Math Model
-  partial (CC2 done, CX hit OpenAI usage limit, ChatGPT done, Gemini/DeepSeek
-  in progress when paused). CX usage limit exhausted (~3h runtime, resets ~3 Apr).
-  CX efficiency confer R2 completed: 4 models × 2 rounds, 46 findings, converged.
-  CLI flag audit revealed 3 major efficiency fixes now implemented: reasoning
-  effort xhigh→medium, MCP servers disabled, ephemeral mode enabled.
-  Log: `bench/logs/experiment_17/run_output_r7.log`.
+- **Experiment 17 CODE FIXES APPLIED + FFF CONVERGED (31 March 2026, `d85eb5a`):**
+  Round 3 COMPLETE (140 findings), Round 4 partial. All applicable code fixes
+  applied in 4 batches: 8 IM + 9 LB + 14 VC + 4 MM = 35 fixes. 351 tests passing.
+  Three-way FFF round-robin (Gemini → CX GPT-5.4 → Gemini) under CDSFL converged
+  in 3 rounds with 7 additional fixes. Key: pathology_key routing (IM_F013),
+  remediation escalation reset (IM_F002), verify_chain exception safety, estimate_gamma
+  correction, kappa_rate divergence fix. Logs: `bench/logs/gemini_fff_exp17_fixes/`.
 - **Experiment 18 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp18_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model

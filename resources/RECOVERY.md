@@ -120,26 +120,27 @@ MATHEMATICAL APPENDIX REWRITTEN (31 March 2026, `c7f9e7a`):
   ρ clipping, seeded sensitivity, NMI diversity, S_sync^emp, re-injection,
   HIL framing penalty, substrate ceiling. Post-edit SymPy 7/7 PASS.
 
-EXP 17 FIX TRIAGE COMPLETE (31 March 2026):
-- 52 fixes total: 13 IM (immune), 13 LB (load balancing), 20 VC (verification
-  chain), 10 MM (math-to-code alignment). 2 MM fixes resolved by appendix
-  rewrite (MM_F001 notation, MM_F005 O_A specification). 50 still applicable.
-- All are code-level, not specification-level. Tests verify correctness.
-- 6 critical (≥0.85): IM_F002, IM_F013, IM_F005, LB_F005, VC_F001, IM_F001.
+EXP 17 CODE FIXES ALL APPLIED (31 March 2026, `050fd20`):
+- 8 IM + 9 LB + 14 VC + 4 MM code fixes applied in 4 batches. 351 tests passing.
+- Key fixes: pathology_key routing (IM_F013), remediation escalation reset (IM_F002),
+  FFD allocation sort (LB_F001), verify_chain exception safety, atomic writes,
+  kappa_rate clamping, estimate_gamma correction, remaining_value abs decay.
 
-NEXT STEPS (31 March 2026, agreed with founder):
-1. Formalise Find-Fix-Follow pattern mathematically (§7.12 or §9)
-2. SymPy verify the FFF formalization
-3. Apply all 52 Exp 17 code fixes in 4 batches (IM→LB→VC→MM), test after each
-4. Send to Gemini under FFF:
-   (a) FFF formalization + full revised model → coherence check
-   (b) Fixed code sections → find what CC missed or broke
-5. Wire composer into orchestrator
-6. Exp 19: composable directive hypothesis test (include FFF condition)
-7. Exp 18 → immune persistence + PE → Bench Run 2
-16. Test + launch Experiment 18 (sequential confer)
-17. Build immune persistence + Policy Engine
-18. Full bench run (Bench Run 2) — the finish line
+THREE-WAY FFF CONVERGENCE COMPLETE (31 March 2026, `d85eb5a`):
+- Round 1 (Gemini): 2 findings — estimate_gamma inf, kappa_rate divergence masking.
+- Round 2 (CX GPT-5.4 xhigh): 5 findings — verify_chain safety, Verifier robustness,
+  mu+novelty routing, PM warning wiring, estimate_gamma zero-data refinement.
+- Round 3 (Gemini): Convergence declared — no new findings above 0.5 severity.
+- Three-way CC/Gemini/CX FFF round-robin under CDSFL. All fixes applied. 351 tests.
+- Logs: bench/logs/gemini_fff_exp17_fixes/
+
+NEXT STEPS (31 March 2026):
+1. Wire composer into orchestrator
+2. Exp 19: composable directive hypothesis test (include FFF condition)
+3. Exp 18 → immune persistence + PE → Bench Run 2
+4. Test + launch Experiment 18 (sequential confer)
+5. Build immune persistence + Policy Engine
+6. Full bench run (Bench Run 2) — the finish line
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."
