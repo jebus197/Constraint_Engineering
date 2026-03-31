@@ -1,12 +1,43 @@
 # Mathematical Appendix: Extensions to the CDSFL Formal Model
 
-*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XIII of the white paper. This appendix contains extensions in two groups: §1–6 extend the detection and coverage models; §7–8 introduce the cognitive measurement framework and formalise the emergence of second-order cognitive properties in composite analytical systems. All formulas in §7–8 were computationally verified using SymPy and Wolfram Alpha (March 2026). Benchmark data from the three-architecture review now exists for initial calibration; full calibration against frontier task data is in progress.*
+*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XIII of the white paper. This appendix contains extensions in three groups: §0.1 establishes the corroboration branching foundation (independent vs correlated passes); §1–6 extend the detection and coverage models; §7–8 introduce the cognitive measurement framework and formalise the emergence of second-order cognitive properties in composite analytical systems. All formulas were computationally verified using SymPy and Wolfram Alpha (March 2026). An 8-round coherence audit (6 models, 39 SymPy checks, all passing) declared the model mathematically coherent and complete on 31 March 2026.*
 
 ---
 
 ## Status
 
-The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. Benchmark data from the three-architecture adversarial review now provides a basis for initial calibration of these extensions. They are stated precisely so they can be tested, and discarded if they do not improve prediction.
+The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. Benchmark data from the three-architecture adversarial review now provides a basis for initial calibration of these extensions. They are stated precisely so they can be tested, and discarded if they do not improve prediction. The full model was declared mathematically coherent after an 8-round audit (31 March 2026) involving 6 models with 39 independent algebra checks, all passing.
+
+---
+
+## 0.1 Corroboration Branching C(n)
+
+The white paper's simple corroboration model C(n) = 1 − ∏q_i assumes strict independence between passes. When passes are correlated (e.g., models sharing training data, prompts, or analytical framing), this assumption produces domain violations in the joint probability. The corroboration model branches:
+
+**Branch 1 (Independent):**
+
+> **C(n) = 1 − ∏_{i=1}^{n} q_i**
+
+Valid when passes are operationally independent (distinct architectures, independent prompts, no shared context).
+
+**Branch 2 (Correlated — Normalised Ising/Boltzmann):**
+
+> **C(n) = 1 − P(x_1 = 1, ..., x_n = 1)**
+
+Where x_i ∈ {0, 1} indicates detection failure for pass i. The joint failure probability is:
+
+> **P(x) = (1/Z) · [∏_{i=1}^{n} q_i^{x_i} · (1 − q_i)^{1 − x_i}] · exp(Σ_{1≤i<j≤n} ψ_ij · x_i · x_j)**
+
+Where:
+- q_i ∈ [0, 1]: baseline independent failure probability (Bernoulli parameters, not post-coupling marginals)
+- ψ_ij ∈ ℝ: pairwise correlation coupling between passes i and j
+- Z: partition function summing over all 2^n states, strictly guaranteeing P(x) ∈ [0, 1]
+
+**Reduction property:** When ψ_ij = 0 for all pairs, the exponent equals 1, Z = 1, and the Ising model reduces exactly to the independent product ∏q_i (Branch 1). The independent model is a special case of the correlated model.
+
+**Boundedness constraint:** The coupling constants must satisfy Σψ_ij ≤ −Σlog(1 − q_i) to ensure all state probabilities remain non-negative. (Verified by SymPy, March 2026.)
+
+**Selection criterion:** Use Branch 1 when models are architecturally distinct and prompts are independent. Use Branch 2 when models share training lineage, are given each other's outputs (confer rounds), or systematic correlation is suspected. The structured F_n model in §2 functions as a computationally tractable approximation of this exact physical model.
 
 ---
 
@@ -22,7 +53,7 @@ These are different quantities. A coverage score of F_n = 0.95 means 95% of the 
 
 ### Definitions
 
-- **π_k** — prior flaw rate for class k. The probability, before any testing, that a flaw of class k exists. Domain-dependent. Must be estimated from experience, historical data, or conservatively set high.
+- **π_risk,k** — prior flaw rate for class k. The probability, before any testing, that a flaw of class k exists. Domain-dependent. Must be estimated from experience, historical data, or conservatively set high.
 - **m_k** — miss probability for class k after n passes:
 
 > m_k = Π_{i=1}^{n} (1 − d_i · p_ik)
@@ -33,20 +64,20 @@ This is the probability that *all* passes missed a flaw of class k, given that t
 
 By Bayes' theorem, the posterior probability that a flaw of class k remains after n passes that found nothing:
 
-> P(flaw_k | no detection) = (π_k · m_k) / ((1 − π_k) + π_k · m_k)
+> P(flaw_k | no detection) = (π_risk,k · m_k) / ((1 − π_risk,k) + π_risk,k · m_k)
 
 Weighted residual risk across all flaw classes:
 
-> **R_n = Σ_k w_k · (π_k · m_k) / ((1 − π_k) + π_k · m_k)**
+> **R_n = Σ_k w_k · (π_risk,k · m_k) / ((1 − π_risk,k) + π_risk,k · m_k)**
 
 ### Interpretation
 
-- When π_k is low (well-tested domain, mature code), R_n is small even with moderate coverage.
-- When π_k is high (suspect code, novel domain), R_n remains substantial even with high coverage.
+- When π_risk,k is low (well-tested domain, mature code), R_n is small even with moderate coverage.
+- When π_risk,k is high (suspect code, novel domain), R_n remains substantial even with high coverage.
 - When m_k → 0 (perfect detection), R_n → 0 regardless of prior. As expected.
-- When m_k → 1 (no detection capability), R_n → Σ_k w_k · π_k. The prior is unchanged. Testing added nothing.
+- When m_k → 1 (no detection capability), R_n → Σ_k w_k · π_risk,k. The prior is unchanged. Testing added nothing.
 
-**Domain note:** R_n is defined for π_k ∈ [0, 1) or m_k ∈ (0, 1]. The boundary (π_k = 1, m_k = 0) represents a logical contradiction (certain flaw + perfect detection + no finding) and is excluded.
+**Domain note:** R_n is defined for π_risk,k ∈ [0, 1) or m_k ∈ (0, 1]. The boundary (π_risk,k = 1, m_k = 0) represents a logical contradiction (certain flaw + perfect detection + no finding) and is excluded.
 
 ### Relationship to F_n
 
@@ -62,14 +93,14 @@ The reporting format extends from (F_n, A) to **(F_n, R_n, A)**.
 
 ### Calibration
 
-π_k values must come from domain experience, not from the model's self-assessment. Candidate sources:
+π_risk,k values must come from domain experience, not from the model's self-assessment. Candidate sources:
 - Historical defect rates for the domain and task type
-- Conservative defaults (π_k = 0.5 when unknown)
+- Conservative defaults (π_risk,k = 0.5 when unknown)
 - Expert estimation at the constraint-bounding stage (Part III of the white paper)
 
-R_n is only as good as the prior. When π_k is unknown, report R_n with explicit prior assumptions stated.
+R_n is only as good as the prior. When π_risk,k is unknown, report R_n with explicit prior assumptions stated.
 
-**Termination-aware R_n:** When the falsification loop terminates by budget exhaustion rather than convergence (see §3 of the core directives), π_k should be inflated to reflect the residual falsification debt. A conservative approach: π_k(exhausted) = π_k + (1 − π_k) · Δ(k_max), treating the terminal Δ as evidence of remaining undiscovered flaws. This is a first-order approximation; refinement via Duane extrapolation (§7.1) is possible but adds complexity. (Added during 3-model confer, 27 March 2026.)
+**Termination-aware R_n:** When the falsification loop terminates by budget exhaustion rather than convergence (see §3 of the core directives), π_risk,k should be inflated to reflect the residual falsification debt. A conservative approach: π_risk,k(exhausted) = π_risk,k + (1 − π_risk,k) · Δ(k_max), treating the terminal Δ as evidence of remaining undiscovered flaws. This is a first-order approximation; refinement via Duane extrapolation (§7.1) is possible but adds complexity. (Added during 3-model confer, 27 March 2026.)
 
 ### Reduction Property
 
@@ -78,6 +109,44 @@ Under simplifying assumptions (K = 1, d_i = 1, all p_ik = p, π = 0.5), R_n redu
 > R_n = (1 − p)^n / (1 + (1 − p)^n)
 
 which is the standard Bayesian posterior for a symmetric prior under repeated Bernoulli non-detection. The residual risk model is the Bayesian generalisation of the coverage model in the same way that F_n is the multi-class generalisation of C(n).
+
+### Empirical Prior Anchor (Seeded Defect Injection)
+
+The model uses abstract miss probabilities m_k but lacks an empirical ground-truth anchor for validating those estimates during runtime. Seeded defect injection provides this anchor.
+
+Given N_k seeded defects of class k injected into the task context, the empirical detection sensitivity is:
+
+> **Ŝ_{H,k} = n_found / N_k**
+
+This directly updates the machine miss probability empirical bounds:
+
+> **𝔼[m_k] ≈ 1 − Ŝ_{H,k}**
+
+**Interpretation:**
+- Ŝ_H = 1 (found all seeds): m_k ≈ 0 — strong detection capability for this class
+- Ŝ_H = 0 (found no seeds): m_k ≈ 1 — no detection capability for this class
+
+If Ŝ_H drops as rounds progress, the models are becoming "blind" (due to framing bias or context exhaustion), allowing the Manager to dynamically increase adversarial diversity or reset context. Ŝ_H feeds directly into the sycophancy trigger (§7.5) and eliminates floating assumptions in the Bayesian updating.
+
+**Domain:** Ŝ_{H,k} ∈ [0, 1] and m_k ∈ [0, 1] by construction. No clipping required.
+
+(Adopted during Round 8 construct evaluation, 31 March 2026. SymPy verified: S_H ∈ [0,1] → m_k ∈ [0,1].)
+
+### Substrate Ceiling (Asymptotic Boundary)
+
+The model implicitly assumes that with sufficient iterations and model diversity, residual risk converges to zero. This is not true when the ensemble lacks fundamental capability for a specific defect class.
+
+For any defect class k, if the requisite analytical capability is absent across all models (∀i, m_{i,k} = 1), infinite iterative application yields a strictly positive residual risk limit:
+
+> **lim_{n→∞} R_{n,k} = π_risk,k**
+
+The methodology is an efficiency multiplier on the union of substrate capabilities, bounded globally by max_i(Ω_i) where Ω_i is the analytical capability set of model i. It is not an intelligence generator.
+
+**Hard Exit:** The SymPy Deterministic Governor enforces a Hard Exit if ΔR_n = 0 over successive passes — indicating the system has hit the substrate ceiling and further iteration is futile.
+
+**Relationship to §8.4:** §8.4 asserts substrate agnosticism (the framework applies to any analytical agent). The substrate ceiling establishes the complementary boundary: the framework cannot exceed the union of its components' capabilities, regardless of substrate type.
+
+(Modified from informal Gemini constructs and adopted during Round 8, 31 March 2026. SymPy verified: R → π_risk,k when all m = 1.)
 
 ---
 
@@ -119,9 +188,9 @@ The structured model implicitly assumes that every pass i produces a parseable r
 
 Define the delivery feasibility factor for model i:
 
-> **f_del(i) = P(|response_i| > 0 | budget_i, arch_i)**
+> **f_del(i) = I(context_complete_i) · P(|response_i| > 0 | budget_i, arch_i)**
 
-where budget_i is the max_tokens allocation and arch_i encodes architecture-specific output constraints (e.g., shared CoT budget, output length limits).
+where I(context_complete_i) is a binary indicator (1 if model i received complete context, 0 if context was truncated), budget_i is the max_tokens allocation and arch_i encodes architecture-specific output constraints (e.g., shared CoT budget, output length limits). If a model's context is truncated, I = 0 makes feasibility zero, preventing downstream computation on incomplete input.
 
 The effective detection probability becomes:
 
@@ -139,7 +208,9 @@ When a model's context or output capacity is insufficient for the full artifact,
 
 Define the decomposition yield ratio for model i:
 
-> **η_dec(i) = |F_decomposed(i)| / |F_full(i)|**
+> **η_dec(i) = exp(−τ_defer(i)) · (|F_decomposed(i)| / |F_full(i)|_expected)**
+
+Where τ_defer(i) ≥ 0 represents the integration complexity permanently lost by severing cross-module context. Decomposition is penalised exponentially based on how much structural synthesis was deferred. This creates a provable optimisation threshold: decomposition is only mathematically viable when the capacity yield multiplier exceeds the synthesis deferral penalty exp(τ_defer).
 
 When η_dec(i) < 1, decomposition is counter-productive for model i. The effective detection probability under decomposition becomes:
 
@@ -147,17 +218,19 @@ When η_dec(i) < 1, decomposition is counter-productive for model i. The effecti
 
 This introduces a testable prediction: for each model, there exists a context threshold below which decomposition improves yield (η_dec > 1) and above which it degrades yield (η_dec < 1). The optimal decomposition threshold is model-specific and should be calibrated empirically.
 
+**Reduction property:** When τ_defer = 0, the decomposed metric reduces to the simple ratio |F_decomposed|/|F_full|_expected. (τ_defer replaces the falsified attention yield claim from Rounds 2–6 of the coherence audit, 31 March 2026.)
+
 **Interaction with f_del:** For models where decomposition is applied specifically to avoid budget exhaustion, η_dec and f_del are coupled. The orchestrator should choose the strategy that maximises f_del · η_dec, not f_del alone. A model that produces 6 findings with f_del=0.8 (expected yield: 4.8) outperforms the same model decomposed with f_del=1.0 but η_dec=0.17 (expected yield: 1.0).
 
 **Reduction property:** When η_dec(i) = 1 for all i (decomposition neither helps nor hurts), the model reduces to the existing formulation. (Added during failure mode analysis, 30 March 2026.)
 
-### Format Yield and Inter-Model Convergence (φ_i)
+### Format Yield and Inter-Model Convergence (φ_fmt(i))
 
 The inter-model convergence metrics (kappa_set, kappa_rate, kappa_adopt) defined in the operational layer compute agreement over the set of parsed findings per model. When a model produces findings in a format the parser does not recognise, |F_parsed(i)| = 0 even though the model produced substantive output. This creates a specification error: the convergence metric treats the model as having found nothing, and inter-model agreement (kappa) computes over incomplete sets.
 
 Define the format yield for model i:
 
-> **φ_i = |F_parsed(i)| / |F_actual(i)|**
+> **φ_fmt(i) = |F_parsed(i)| / |F_actual(i)|**
 
 where |F_actual(i)| is the count of genuine findings in the model's raw output (regardless of format compliance) and |F_parsed(i)| is what the parser extracts.
 
@@ -165,19 +238,49 @@ The convergence metric should operate on the effective finding set:
 
 > **F_eff(i) = F_parsed(i) ∪ F_rescued(i)**
 
-where F_rescued(i) are findings recovered by format-adaptive re-extraction when φ_i < 1 is detected. The detection condition is:
+where F_rescued(i) are findings recovered by format-adaptive re-extraction when φ_fmt(i) < 1 is detected. The detection condition is:
 
-> **|raw_chars(i)| > τ_chars ∧ φ_i < τ_φ**
+> **|raw_chars(i)| > τ_chars ∧ φ_fmt(i) < τ_φ**
 
 where τ_chars is a minimum response size threshold (indicating the model produced substantive output) and τ_φ is the minimum acceptable format yield (typically 0.5).
 
 **Relationship to f_del:** f_del captures whether the model produces any output at all; φ captures whether produced output is parseable. The two are sequential: first f_del determines if there is a response, then φ determines if the response is usable. The combined effective detection probability is:
 
-> q_ik = f_del(i) · φ_i · d_ik · p_ik
+> q_ik = f_del(i) · φ_fmt(i) · d_ik · p_ik
 
-When both f_del(i) = 1 and φ_i = 1, this reduces to the existing model.
+When both f_del(i) = 1 and φ_fmt(i) = 1, this reduces to the existing model.
 
 **Calibration from Experiment 15:** DeepSeek Reasoner used `**F001**` format (bold markdown IDs) instead of the expected `FINDING_ID: F001` text format. Raw output: 9738 chars, 14 actual findings, 0 parsed findings → φ = 0. This is a pure format divergence, not a detection failure — the model's analytical capability was intact. (Added during failure mode analysis, 30 March 2026.)
+
+### Diversity Separability Axiom
+
+The diversity discount d_ik decomposes into two independent factors:
+
+> **d_ik ≡ d_weight(i, k) · d_config(i, k)**
+
+Where d_weight models underlying parameter space overlap (how similar the models' internal representations are for class k) and d_config models operational inference overlap (how similar the prompts, context, and instructions are). This grounds inter-model orchestration: the penalty of using two models from the same architecture family (d_weight < 1) is separable from the penalty of giving them identical prompts (d_config < 1).
+
+**Reduction property:** When d_config = 1 for all pairs (fully distinct operational setups), d_ik = d_weight — the pure architectural diversity term.
+
+(Separability axiom from Round 7 coherence audit, 31 March 2026.)
+
+### NMI Diversity Estimator (δ_ij)
+
+The observable output correlation between models i and j is estimated via Normalised Mutual Information:
+
+> **δ_ij = 1 − I(X_i; X_j) / min(H(X_i), H(X_j))**
+
+Where:
+- I(X_i; X_j): mutual information (overlap of discovered errors between models i and j)
+- H(X_i): Shannon entropy (total analytical content of model i's output)
+- δ_ij → 1: orthogonal discovery (maximum diversity — models finding different defects)
+- δ_ij → 0: identical information manifolds (models echoing each other)
+
+**Relationship to Ising model:** (1 − δ_ij) directly parameterises the pairwise coupling constants ψ_ij in §0.1. High mutual information (low δ) implies strong positive coupling (correlated failures). This provides the missing observable estimator for the theoretical d_ik parameter and the Ising coupling constants.
+
+**Domain:** NMI ∈ [0, 1] by information theory (I(X;Y) ≤ min(H(X), H(Y))), therefore δ_ij ∈ [0, 1]. No clipping required.
+
+(NMI diversity estimator adopted during Round 8 construct evaluation, 31 March 2026. SymPy verified.)
 
 ---
 
@@ -226,7 +329,7 @@ For most engineering work, this conflation is harmless — you weight by importa
 
 Define:
 - **F_{n,k}** = per-class coverage: 1 − Π_i (1 − d_ik · p_ik)
-- **R_{n,k}** = per-class residual risk: (π_k · m_k) / ((1 − π_k) + π_k · m_k)
+- **R_{n,k}** = per-class residual risk: (π_risk,k · m_k) / ((1 − π_risk,k) + π_risk,k · m_k)
 - **s_k** = expected harm/severity for class k
 
 Expected residual loss:
@@ -274,7 +377,7 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | Substrate agnosticism (§8.4) | Prediction stated | Not tested (requires human trials) | Design human-team protocol experiment |
 | f_del (delivery feasibility) | Well-defined, reduces to existing when f_del=1 | Exp15: DeepSeek f_del≈0.8 at 32K tokens | Calibrate per-model f_del from API response data |
 | η_dec (decomposition yield) | Well-defined, reduces to existing when η_dec=1 | Exp15: Gemini η_dec≈0.17 (6→1 findings) | Measure per-model η_dec across decomposition thresholds |
-| φ_i (format yield) | Well-defined, sequential with f_del | Exp15: DeepSeek φ=0 (14 actual, 0 parsed) | Implement format-adaptive re-extraction |
+| φ_fmt(i) (format yield) | Well-defined, sequential with f_del | Exp15: DeepSeek φ=0 (14 actual, 0 parsed) | Implement format-adaptive re-extraction |
 
 ---
 
@@ -374,11 +477,11 @@ The divergence between claimed and observed performance is the calibration signa
 
 For asymmetric calibration (penalising overconfidence more than underconfidence):
 
-> **κ_asym = 1 − β · max(0, E_claimed − E*(t)) − max(0, E*(t) − E_claimed)**
+> **κ_asym = 1 − β_pen · max(0, E_claimed − E*(t)) − max(0, E*(t) − E_claimed)**
 
-Where β > 1 penalises overconfidence. With β = 1.5:
+Where β_pen > 1 penalises overconfidence. With β_pen = 1.5:
 
-| Scenario | E_claimed | E*(t) | κ (symmetric) | κ (asymmetric, β=1.5) |
+| Scenario | E_claimed | E*(t) | κ (symmetric) | κ (asymmetric, β_pen=1.5) |
 |---|---|---|---|---|
 | Well-calibrated expert | 0.75 | 0.72 | 0.97 | 0.955 |
 | Overconfident (dangerous) | 0.85 | 0.40 | 0.55 | 0.325 |
@@ -399,10 +502,40 @@ The system's predicted combined detection adjusts automatically. An overclaiming
 ### Future Research Directions
 
 1. **Posterior convergence rate:** Does the Bayesian posterior on E converge at the rate the Beta-Binomial model predicts? Simulation suggests approximately five reviews; empirical confirmation is needed across different domains and task complexities.
-2. **Asymmetric calibration outcomes:** Does penalising overconfidence more heavily than underconfidence (β > 1) produce better system-level detection than symmetric calibration (β = 1)? Testable by comparing aggregate detection rates under both regimes.
+2. **Asymmetric calibration outcomes:** Does penalising overconfidence more heavily than underconfidence (β_pen > 1) produce better system-level detection than symmetric calibration (β_pen = 1)? Testable by comparing aggregate detection rates under both regimes.
 3. **Calibration score publication effects:** Does publishing the calibration score change reviewer behaviour? Specifically: does it produce honest self-assessment (the intended outcome) or strategic sandbagging (claiming low E to appear well-calibrated when overperforming)? This is a behavioural question, not a mathematical one, but it affects whether the metric is deployable.
 4. **Sandbagging detection via symmetric miscalibration check.** The expertise posterior E*(t) = (a₀ + Σcatches) / (a₀ + b₀ + Σtrials) converges in approximately 5 reviews. After convergence, persistent miscalibration in either direction is detectable: if |E_claim,t − E*(t)| > τσ_t for k consecutive reviews, flag the reviewer. Direction-aware normalised counters (overclaim_rate = overclaim_count / t, underclaim_rate = underclaim_count / t) distinguish persistent from sporadic miscalibration and overclaiming from underclaiming without requiring a separate posterior. The detection is symmetric: the same threshold and mechanism catches both overconfidence and strategic sandbagging. E*(t) remains the sole skill estimate, uncontaminated by honesty tracking. An earlier dual-posterior design (S*(t)) was considered but rejected as unnecessary — the founder correctly identified that the existing E*(t) posterior already provides the evidence for detection in both directions.
 5. **Priming correlation extension.** The priming state can be made pass-specific: ρ_MH,j = clip(ρ₀ + γ₁(1 − I_j) + γ₂F_j + γ₃R_j + γ₄D_j, 0, 1), where I_j is blind-first compliance (binary), F_j/R_j/D_j are fatigue/rush/distraction proxies from telemetry. When I_j = 0 (human saw machine output before committing), ρ_MH,j increases toward 1, reducing the human's effective independent contribution in G_n. Coefficients γ₁–γ₄ require empirical calibration.
+
+### Correlation Domain Constraint
+
+All correlation variables (including ρ_MH) are valid exclusively on the domain [0, 1]. The framework unconditionally applies:
+
+> **ρ_effective = max(0, min(1, ρ))**
+
+to all derived correlations. This ensures that behavioural modifiers (e.g., fatigue, rush) cannot accidentally flip the cognitive priming equation into generating mathematically impossible negative correlations.
+
+(Domain constraint from Round 7 coherence audit, 31 March 2026.)
+
+### Hint Framing Penalty (F_HIL)
+
+When a human provides a hint, it collapses the search space to a sub-manifold Ω_hint ⊂ Ω. This produces a quantifiable blind spot for defect classes outside the hinted region. The penalty is modelled via KL divergence information gain:
+
+> **IG_HIL = D_KL(P(Ω | Hint) ‖ P(Ω))**
+
+The empirical miss probability m_k for defect class k ∉ Ω_hint is penalised:
+
+> **m_{k|hint} = 1 − (1 − m_k) · exp(−IG_HIL)**
+
+**Boundary conditions:**
+- IG_HIL = 0 (no hint): m_{k|hint} = m_k — no penalty
+- IG_HIL → ∞ (maximally constraining hint): m_{k|hint} → 1 — total blindness outside hint scope
+
+Highly specific hints mathematically degrade the system's ability to find orthogonal defects, enforcing the principle that the search should be "wide" in early rounds and "deep" in later rounds. The Team Manager calculates the optimal entropy path to ensure the search remains broad before narrowing.
+
+**Relationship to ρ_MH:** The priming correlation ρ_MH captures the general correlation between human and machine reasoning. IG_HIL captures the specific damage a particular hint does to the search space. Both reduce effective HIL contribution, but through different mechanisms: ρ_MH through overlap of analytical framing, IG_HIL through restriction of the prior domain.
+
+(Hint framing penalty modified from informal Gemini constructs and adopted during Round 8, 31 March 2026. SymPy verified: IG=0 → no penalty, IG→∞ → m=1.)
 
 ### Relationship to Other Extensions
 
@@ -441,6 +574,18 @@ The convergence parameter γ = 1 − β classifies analytical behaviour:
 
 **Relationship to Inverse Square Root Law:** The convergence diagnostic in Part X-A (SE = σ/√n) is a special case. The Duane model generalises it by allowing the decay rate to be empirically estimated per model per condition, rather than assuming the √n shape.
 
+**Error re-injection extension:** The standard Duane model assumes monotonic decay of latent defects. In practice, iterative multi-model refactoring introduces new defects. The extended intensity function accounts for error re-injection:
+
+> **λ_ext(n) = (β / η) · (n / η)^(β − 1) + ν · Δ_{n−1}**
+
+Where ν ∈ [0, 1] is the Re-injection Coefficient (probability that a structural adoption in round n−1 yields a new fault) and Δ_{n−1} is the quantified adoption magnitude from §7.6.
+
+**Divergence condition:** If ν · Δ_{n−1} > |dλ_Duane/dn|, the system transitions from convergence to entropy generation (producing more noise than signal). This triggers an automatic halt. The Team Manager monitors the re-injection term to detect when fixes are destabilising the system.
+
+**Reduction property:** When ν = 0 (no re-injection), λ_ext = λ — the standard Duane model.
+
+(Error re-injection modified from informal Gemini constructs and adopted during Round 8, 31 March 2026. SymPy verified: dλ/dn < 0 for β < 1 confirmed.)
+
 ### 7.2 Abstraction Index H(x) (Finding Depth)
 
 Not all findings are equal. A syntax error and a paradigm-level architectural flaw both count as one finding, but contribute different analytical value. The Abstraction Index scores each finding on three dimensions:
@@ -448,11 +593,11 @@ Not all findings are equal. A syntax error and a paradigm-level architectural fl
 > **H(x) = c · F(x) · ρ_info(x) · G(x)**
 
 Where:
-- **F(x)** = 1 + α·𝟙(verifiable_claim exists) + β·𝟙(constraint_class = HARD) — **Formality**: presence of verifiable claims and HARD constraint violations
+- **F(x)** = 1 + c_F1·𝟙(verifiable_claim exists) + c_F2·𝟙(constraint_class = HARD) — **Formality**: presence of verifiable claims and HARD constraint violations
 - **ρ_info(x)** = ln(e + W_e / (W_c + 1)) — **Information density**: evidence-to-claim word ratio (short dense findings score higher than verbose restatements)
-- **G(x)** = 1 + γ·ln(1 + N_cm) + δ·ln(1 + D_ref) — **Generalisation scope**: cross-module mention count and reference depth
+- **G(x)** = 1 + c_G1·ln(1 + N_cm) + c_G2·ln(1 + D_ref) — **Generalisation scope**: cross-module mention count and reference depth
 - **c** = model confidence (0 to 1)
-- α, β, γ, δ initialised at 1.0 (calibration against human-ranked examples pending)
+- c_F1, c_F2, c_G1, c_G2 initialised at 1.0 (calibration against human-ranked examples pending)
 
 **Verified:** High-abstraction finding (formal, dense, cross-cutting, high confidence) scores H = 17.89. Low-abstraction finding (informal, verbose, local, moderate confidence) scores H = 0.53. Discrimination ratio: 33.4×. (D(x) renamed to ρ_info(x) during 3-model confer, 27 March 2026, to resolve triple collision with D(n) distributed coverage and D_decay in the capability fingerprint.)
 
@@ -479,10 +624,10 @@ The total analytical value can only be calculated after the analysis completes. 
 > **V̂(t, T) = ∫₀ᵗ v(τ)dτ + remaining_estimate**
 
 Where the remaining estimate is:
-- If k(t) > 0: v_w(t) · (1 − exp(−k(t) · (T − t))) / k(t)
-- If k(t) ≤ 0: v_w(t) · (T − t)
+- If k_decay(t) > 0: v_w(t) · (1 − exp(−k_decay(t) · (T − t))) / k_decay(t)
+- If k_decay(t) ≤ 0: v_w(t) · (T − t)
 
-Here k(t) is the local exponential decay rate of the sliding-window generation rate v_w(t), estimated from consecutive round values. This is distinct from the Duane NHPP intensity λ(t) in §7.1, which is the global power-law intensity and is always positive.
+Here k_decay(t) is the local exponential decay rate of the sliding-window generation rate v_w(t), estimated from consecutive round values. This is distinct from the Duane NHPP intensity λ(t) in §7.1, which is the global power-law intensity and is always positive.
 
 v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical decay rate estimated from consecutive round values.
 
@@ -520,7 +665,7 @@ Where Δ̄ is the mean Adoption Delta (§7.6) across all model pairs. S_sync ≈
 
 > **O_A defined iff |{f ∈ F_conv : verifiable(f)}| ≥ 2**
 >
-> **If |{f ∈ F_conv : verifiable(f)}| < 2: O_A = ⊥, S_sync = S_sync(Δ)**
+> **If |{f ∈ F_conv : verifiable(f)}| < 2: O_A = ⊥, S_sync = Δ̄**
 
 When the verifiable subset of F_conv contains fewer than 2 findings, O_A is undefined (⊥) and S_sync relies on Δ̄ alone. The threshold at 2 is deliberate: a single verification outcome produces O_A ∈ {0, 1}, making S_sync binary on one data point. Two or more verifiable findings provide the minimum discriminative power for a meaningful verification rate. Without this guard, O_A = 0/|F_conv| = 0 on non-mathematical claims, producing S_sync = Δ̄ · 1 = Δ̄ — flagging all convergence with high deference as sycophantic regardless of content quality. (Guard identified during CC × Gemini 3.1 Pro Extended P-Pass; rationale formalised during 3-model confer, 27 March 2026.)
 
@@ -528,11 +673,36 @@ When the verifiable subset of F_conv contains fewer than 2 findings, O_A is unde
 
 S_sync measures convergence on unverified shared claims. A separate failure mode exists: both models drop their blind findings without converging on anything new. When F_conv = ∅ and both models abandoned findings, S_sync = 0 (because O_A = 1 by convention), which misclassifies mutual analytical collapse as independence. The mutual suppression metric detects this:
 
-> **M_suppress(A, B) = 𝟙(F_conv = ∅) · (Δ_drop(A→B) + Δ_drop(B→A)) / 2**
+> **M_suppress(A, B) = I(|B_A \ B_B| > 0 ∧ |B_B \ B_A| > 0) · 𝟙(F_conv = ∅) · (Δ_drop(A→B) + Δ_drop(B→A)) / 2**
 
-Where Δ_drop is the asymmetric drop rate from §7.6. When M_suppress > τ_suppress, flag as destructive convergence (distinct from sycophancy). When F_conv = ∅ and M_suppress triggers, O_A = ⊥ and S_sync = ⊥ — evaluate mutual suppression instead. τ_suppress calibration: start conservatively at 0.5 (both models dropped at least half their unique findings). (Identified during 5-model meta-test; formalised during 3-model confer, 27 March 2026.)
+Where Δ_drop is the asymmetric drop rate from §7.6 and I(·) ensures mutual suppression only triggers when both models actually had unique work to drop. When M_suppress > τ_suppress, flag as destructive convergence (distinct from sycophancy). When F_conv = ∅ and M_suppress triggers, O_A = ⊥ and S_sync = ⊥ — evaluate mutual suppression instead. τ_suppress calibration: start conservatively at 0.5 (both models dropped at least half their unique findings). (Identified during 5-model meta-test; formalised during 3-model confer, 27 March 2026.)
 
 **Limitation:** O_A is computed only from the subset of findings that SymPy can verify (mathematical claims). For tasks with few mathematical claims, the metric has low statistical power. This is documented, not hidden.
+
+**Null-vector yield weighting:**
+
+To avert evaluating S_sync on empty sets, the aggregate value of a composite finding set y is:
+
+> **w(y) = 0, if ‖y‖₂ = 0**
+>
+> **w(y) = v̄(y) · u_qual(y) · (1 − S_sync(y)), if ‖y‖₂ > 0**
+
+When a model pair outputs zero new findings, w(y) = 0, avoiding a divide-by-zero cascade inside Objective Alignment (O_A). (Null-vector guard from Round 7 coherence audit, 31 March 2026.)
+
+**Empirically-anchored sycophancy trigger:**
+
+When seeded defect injection (§1) and NMI diversity estimation (§2) are available at runtime, S_sync can be anchored to empirical observables:
+
+> **S_sync^emp = (1 − δ̄_cp) · (1 − Ŝ_H)**
+
+Where δ̄_cp is the mean NMI-based diversity (§2) between the Captain and Position players, and Ŝ_H is the seeded detection sensitivity (§1). This distinguishes:
+- **Valid convergence:** δ low (models agree) but Ŝ_H high (found planted defects) → S_sync^emp low
+- **Sycophantic collapse:** δ low (models agree) and Ŝ_H low (missed planted defects) → S_sync^emp high
+- **Diverse but weak:** δ high (models disagree) and Ŝ_H low → S_sync^emp low (not sycophancy, just capability gap)
+
+Bench-and-Swap is executed if S_sync^emp > τ_sync: relegate the sycophantic model, promote a Wildcard with known low correlation.
+
+**Selection:** Use S_sync (behaviour-based, §7.5) when seeded defects are not available. Use S_sync^emp (empirically-anchored) when both seeded sensitivity and NMI diversity are available. S_sync^emp is strictly preferred because it distinguishes valid convergence from sycophantic collapse using ground-truth measurement. (Adopted during Round 8 construct evaluation, 31 March 2026. SymPy verified: three-regime discrimination confirmed.)
 
 ### 7.6 Adoption Delta Δ (Independence Measurement)
 
@@ -589,11 +759,11 @@ SymPy falsification gives absolute zero. Simple, fixed weights.
 
 **Approach B (Bayesian log-odds, preferred):**
 
-> **L_total = L_prior + Σ_i [L_i · log(TPR_i / FPR_i) + (1 − L_i) · log(FNR_i / TNR_i)]**
+> **Λ_total = Λ_prior + Σ_{i ∈ D_det} [o_i · log(TPR_i / FPR_i) + (1 − o_i) · log(FNR_i / TNR_i)]**
 >
-> **S_v = 1 / (1 + exp(−L_total))**
+> **S_v = 1 / (1 + exp(−Λ_total))**
 
-Where L_prior = 0 (uniform prior: P(claim true) = 0.5 before any verification). L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). When verifier i returns indeterminate (neither verified nor falsified), it is excluded from the sum — it does not contribute to L_total. When all verifiers are indeterminate, L_total = L_prior = 0 and S_v = 0.5 (neutral prior). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. The L_prior term makes the Bayesian structure explicit; the ≥ 0.5 selection threshold in §7.11 is calibrated to this specific prior. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass; indeterminate handling formalised during 5-model meta-test, 27 March 2026.)
+Where Λ_prior = 0 (uniform prior: P(claim true) = 0.5 before any verification). o_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified), evaluated over the determinate set D_det (verifiers that returned a definite result). When verifier i returns indeterminate (neither verified nor falsified), it is excluded from D_det and does not contribute to Λ_total. When all verifiers are indeterminate, D_det = ∅, Λ_total = Λ_prior = 0 and S_v = 0.5 (neutral prior). The formula encodes conditional weight selection: when o_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when o_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. The Λ_prior term makes the Bayesian structure explicit; the ≥ 0.5 selection threshold in §7.11 is calibrated to this specific prior. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass; indeterminate handling formalised during 5-model meta-test, 27 March 2026. L→Λ rename and o_i notation applied during 8-round coherence audit, 31 March 2026.)
 
 | Verifier | TPR | FPR | Positive weight log(TPR/FPR) | Negative weight log(FNR/TNR) |
 |---|---|---|---|---|
@@ -624,14 +794,22 @@ No single number tells the whole story. A model might find many things quickly (
 
 | Component | Mathematical status | Implementation status |
 |---|---|---|
-| Duane NHPP (§7.1) | Verified, AICc-tested | Implemented in decay_analysis.py |
+| Ising branching (§0.1) | Verified, reduction proven | Ready for implementation |
+| Seeded sensitivity (§1) | Verified, domain [0,1] | Ready for implementation |
+| Substrate ceiling (§1) | Verified, asymptote proven | Ready for implementation |
+| NMI diversity (§2) | Verified, domain [0,1] | Ready for implementation |
+| Separability axiom (§2) | Defined | Ready for implementation |
+| τ_defer (§2) | Verified, reduction proven | Ready for implementation |
+| ρ domain constraint (§6) | Verified | Ready for implementation |
+| HIL framing penalty (§6) | Verified, limits confirmed | Ready for implementation |
+| Duane NHPP + re-injection (§7.1) | Verified, AICc-tested, divergence condition proven | Implemented in decay_analysis.py (base); re-injection pending |
 | H(x) (§7.2) | Verified, 33.4× discrimination | Ready for implementation |
 | Y(t) (§7.3) | Verified | Ready for implementation |
 | V̂ estimator (§7.4) | Verified, convergence proven | Ready for implementation |
-| O_A (§7.5) | Verified, edge cases handled | Ready for implementation |
+| O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
 | Δ (§7.6) | Verified | Ready for implementation |
 | Sev(f) (§7.7) | Verified | Implemented in pipeline |
-| Multi-verifier (§7.8) | Verified, both approaches | Ready for implementation |
+| Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
 | Fingerprint (§7.9) | Verified | Partially implemented |
 | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
 
@@ -691,15 +869,15 @@ For a set of n independent analytical agents {A₁, ..., Aₙ} operating under s
 
 **Emergence condition:**
 
-> **Y_composite(t) > max{Y_i(t)} + k · σ̂(Y)**
+> **Y_composite(t) > max{Y_i(t)} + z_conf · σ̂(Y)**
 
-Where σ̂(Y) is the bootstrap standard error of the Y estimates and k is a confidence multiplier (k = 1.96 for 95% confidence). The strict inequality Y_composite > max(Y_i) is necessary but not sufficient — it must exceed the measurement uncertainty to distinguish genuine emergence from statistical noise. (Statistical threshold added during 5-model meta-test, 27 March 2026.)
+Where σ̂(Y) is the bootstrap standard error of the Y estimates and z_conf is a confidence multiplier (z_conf = 1.96 for 95% confidence). The strict inequality Y_composite > max(Y_i) is necessary but not sufficient — it must exceed the measurement uncertainty to distinguish genuine emergence from statistical noise. (Statistical threshold added during 5-model meta-test, 27 March 2026. k→z_conf rename during 8-round coherence audit, 31 March 2026.)
 
 The Y_composite > max(Y_i) condition is necessary but not sufficient to distinguish emergence from simple aggregation. The union of individual outputs would give:
 
 > Y_union(t) = |⋃ F_i(t)| · H̄_union(t)
 
-**Strong emergence condition:** Y_composite(t) > Y_union(t) + k · σ̂(Y). This establishes that interaction produced cognitive value beyond what the union of independent outputs would yield. The weaker condition (composite > max individual) is satisfiable by trivial aggregation and should not be used alone. Genuine emergence is the confer protocol forcing agents into analytical territory none explored alone. A finding from agent A provokes investigation by agent B, which surfaces a structural issue that agent C formalises. The resulting insight exists because of the interaction and is not present in any individual agent's blind output.
+**Strong emergence condition:** Y_composite(t) > Y_union(t) + z_conf · σ̂(Y). This establishes that interaction produced cognitive value beyond what the union of independent outputs would yield. The weaker condition (composite > max individual) is satisfiable by trivial aggregation and should not be used alone. Genuine emergence is the confer protocol forcing agents into analytical territory none explored alone. A finding from agent A provokes investigation by agent B, which surfaces a structural issue that agent C formalises. The resulting insight exists because of the interaction and is not present in any individual agent's blind output.
 
 **Empirical evidence:** Three-architecture adversarial review (March 2026). Gemini found 16 issues that Claude Opus and Codex missed across 8 rounds of mutual review. These were structural findings visible only from a different analytical perspective. The composite system was measurably more capable than any pair.
 
@@ -741,7 +919,7 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 
 | Claim | Test | Failure criterion |
 |---|---|---|
-| Composite Y > individual max Y + k·σ̂ | Bench test, all conditions | Y_composite ≤ max(Y_i) + 1.96·σ̂(Y) on majority of tasks |
+| Composite Y > individual max Y + z_conf·σ̂ | Bench test, all conditions | Y_composite ≤ max(Y_i) + 1.96·σ̂(Y) on majority of tasks |
 | Metacognitive feedback improves performance | Pre/post feedback comparison | No measurable change in γ or v̄ after feedback |
 | Substrate agnosticism | Human trials under CDSFL | Humans under protocol show no measurable decay curves |
 | Emergence is genuine, not aggregation | Δ and O_A joint analysis | High Δ with low O_A across majority of tasks |
@@ -769,48 +947,66 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | p_ik | Detection probability, pass i, flaw class k | White paper §2.2 |
 | d_i | Diversity discount, pass i (scalar) | White paper §2.2 |
 | d_ik | Diversity discount, pass i, flaw class k | This appendix §2 |
+| d_weight(i,k) | Parameter space overlap component of d_ik | This appendix §2 |
+| d_config(i,k) | Operational inference overlap component of d_ik | This appendix §2 |
 | o_ik | Overlap of reviewer i with priors, flaw class k | This appendix §2 |
+| δ_ij | NMI-based diversity between models i and j | This appendix §2 |
 | w_k | Consequence weight, flaw class k | White paper §2.2 |
 | s_k | Expected harm/severity, flaw class k | This appendix §4 |
-| π_k | Prior flaw rate, flaw class k | This appendix §1 |
+| π_risk,k | Prior flaw rate, flaw class k | This appendix §1 |
 | m_k | Miss probability, flaw class k | This appendix §1 |
+| Ŝ_{H,k} | Seeded detection sensitivity for class k | This appendix §1 |
 | A | Anchor state (A0–A3) | White paper §2.2 |
 | ρ | Inter-architecture correlation | White paper Part XIII |
+| ψ_ij | Ising pairwise correlation coupling | This appendix §0.1 |
+| Z | Ising partition function | This appendix §0.1 |
 | G_n | Combined machine-HIL detection | White paper §7.1, this appendix §6 |
 | C_M(k) | Machine cumulative detection for class k | This appendix §6 |
 | C_H(k) | HIL cumulative detection for class k | This appendix §6 |
 | ρ_MH | Cross-correlation (cognitive priming) | White paper §7.1, this appendix §6 |
+| IG_HIL | Hint framing penalty (KL divergence) | This appendix §6 |
 | E | HIL domain expertise level | White paper §7.1, this appendix §6 |
 | M | HIL methodology formality | White paper §7.1, this appendix §6 |
 | α | Expertise floor coefficient | This appendix §6 |
+| β_pen | Asymmetric calibration overconfidence penalty | This appendix §6 |
 | λ_s | Domain variable sensitivity | White paper §7.1, this appendix §6 |
 | V_s | Domain-specific variable (pluggable) | White paper §7.1, this appendix §6 |
 | E*(t) | Bayesian posterior expertise estimate | White paper §7.1, this appendix §6 |
 | κ | HIL calibration metric | This appendix §6 |
 | λ(t) | Duane NHPP intensity function | This appendix §7.1 |
+| ν | Error re-injection coefficient | This appendix §7.1 |
 | β | Duane shape parameter | This appendix §7.1 |
 | η | Duane scale parameter | This appendix §7.1 |
 | γ | Convergence parameter (1 − β) | This appendix §7.1 |
+| τ_defer | Synthesis deferral penalty | This appendix §2 |
 | H(x) | Abstraction Index (finding depth) | This appendix §7.2 |
 | F(x) | Formality component of H(x) | This appendix §7.2 |
+| c_F1, c_F2 | Formality coefficients (verifiable, HARD) | This appendix §7.2 |
 | ρ_info(x) | Information density component of H(x) | This appendix §7.2 |
 | G(x) | Generalisation scope component of H(x) | This appendix §7.2 |
+| c_G1, c_G2 | Generalisation coefficients (cross-module, ref depth) | This appendix §7.2 |
 | Y(t) | Total Cognitive Yield | This appendix §7.3 |
 | H̄(t) | Mean Abstraction Index at time t | This appendix §7.3 |
 | V̂(t,T) | Online Total Value Estimator | This appendix §7.4 |
-| k(t) | Local exponential decay rate of v_w(t) | This appendix §7.4 |
+| k_decay(t) | Local exponential decay rate of v_w(t) | This appendix §7.4 |
 | Δ̄ | Mean derived scalar Adoption Delta across model pairs | This appendix §7.5 |
+| z_conf | Confidence multiplier for emergence threshold | This appendix §8.2 |
 | σ̂(Y) | Bootstrap standard error of Y estimates | This appendix §8.2 |
 | O_A | Objective Alignment (sycophancy detection) | This appendix §7.5 |
 | F_conv | Newly converged finding set | This appendix §7.5 |
-| S_sync | Composite sycophancy score | This appendix §7.5 |
+| S_sync | Composite sycophancy score (behaviour-based) | This appendix §7.5 |
+| S_sync^emp | Empirically-anchored sycophancy score (NMI + Ŝ_H) | This appendix §7.5 |
+| w(y) | Null-vector yield weighting | This appendix §7.5 |
 | Δ_adopt(A→B) | Adoption rate (fraction of novel partner findings incorporated) | This appendix §7.6 |
 | Δ_drop(A→B) | Drop rate (fraction of unique own findings abandoned) | This appendix §7.6 |
 | Δ̄(A→B) | Derived scalar adoption delta (mean of rates) | This appendix §7.6 |
 | M_suppress | Mutual suppression metric | This appendix §7.5 |
 | Sev(f) | Per-finding severity score | This appendix §7.7 |
 | S_v | Multi-verifier Bayesian severity | This appendix §7.8 |
-| L_total | Bayesian log-odds total | This appendix §7.8 |
+| Λ_total | Bayesian log-odds total | This appendix §7.8 |
+| Λ_prior | Bayesian log-odds prior | This appendix §7.8 |
+| o_i | Determinate verifier output (binary) | This appendix §7.8 |
+| D_det | Determinate verifier set | This appendix §7.8 |
 | (D_decay,v̄,A,C) | Capability fingerprint | This appendix §7.9 |
 | selected(f) | Manager selection predicate | This appendix §7.11 |
 | Y_composite | Composite system Total Cognitive Yield | This appendix §8.2 |
@@ -819,7 +1015,7 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 
 ## Attribution
 
-The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion.
+The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary.
 
 ---
 
