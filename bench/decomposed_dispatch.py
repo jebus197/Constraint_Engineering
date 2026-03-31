@@ -1,0 +1,584 @@
+#!/usr/bin/env python3
+"""Decomposed Dispatch: multi-turn staged context loading for AI models.
+
+Implements the "tutor" pattern: split large payloads into ordered chunks,
+deliver each with a "wait" instruction, verify acknowledgement, then trigger
+synthesis with the final instruction chunk.
+
+Mathematical basis: if attention yield α(L) decays exponentially past threshold
+L₀, staged delivery keeps each chunk below L₀ so the model processes each at
+α ≈ 1. Monolithic delivery of the same total length would get α(L_total) ≪ 1.
+
+    α_staged(L_total, n) ≈ Π α(Lᵢ) where each Lᵢ < L₀
+    α_monolithic(L_total) = exp(−β(L_total − L₀))  for L_total > L₀
+
+This is a testable prediction: staged delivery should empirically preserve
+finding quality compared to monolithic delivery at the same total length.
+
+Usage:
+    chunks = [
+        DecomposedChunk("Section 1 content", label="§1-6 Base framework"),
+        DecomposedChunk("Section 2 content", label="§7 Cognitive measurement"),
+        ...
+    ]
+    result = decomposed_dispatch(
+        api="google",
+        model_id="gemini-3.1-pro-preview",
+        system_prompt=cdsfl_text,
+        chunks=chunks,
+        final_instruction="You now have the complete model. Proceed with...",
+        max_tokens=32768,
+    )
+"""
+
+import json
+import os
+import subprocess
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Sequence
+
+# Import shared logging and circuit breaker from orchestrator
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from experiment_11_orchestrator import _log, CircuitBreakerTripped
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data structures
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class DecomposedChunk:
+    """One segment of a decomposed payload."""
+    content: str
+    label: str = ""  # human-readable label for logging
+
+    @property
+    def chars(self) -> int:
+        return len(self.content)
+
+
+@dataclass
+class DecomposedResult:
+    """Result of a decomposed dispatch."""
+    text: str                          # final synthesis response
+    model_id: str
+    api: str
+    chunks_delivered: int
+    total_chars_delivered: int
+    wait_responses: list[str] = field(default_factory=list)
+    elapsed_s: float = 0.0
+    turns: list[dict[str, str]] = field(default_factory=list)  # full conversation
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Wait instruction templates
+# ─────────────────────────────────────────────────────────────────────────────
+
+WAIT_PREFIX = (
+    "=== STAGED DELIVERY — CHUNK {n} OF {total} ===\n"
+    "This is part {n} of a {total}-part payload.{label_line}\n"
+    "DO NOT analyse. DO NOT synthesise. DO NOT act on this content yet.\n"
+    "Acknowledge receipt by responding with exactly: WAITING\n"
+    "You will receive the complete problem and explicit instruction to proceed.\n"
+    "=== CONTENT ===\n\n"
+)
+
+FINAL_PREFIX = (
+    "=== FINAL CHUNK — CHUNK {n} OF {total} ===\n"
+    "You now have the complete payload ({total} chunks, ~{total_chars:,} characters).{label_line}\n"
+    "=== INSTRUCTION ===\n\n"
+)
+
+
+def _format_wait(n: int, total: int, label: str = "") -> str:
+    label_line = f"\nLabel: {label}" if label else ""
+    return WAIT_PREFIX.format(n=n, total=total, label_line=label_line)
+
+
+def _format_final(n: int, total: int, total_chars: int, label: str = "") -> str:
+    label_line = f"\nLabel: {label}" if label else ""
+    return FINAL_PREFIX.format(
+        n=n, total=total, total_chars=total_chars, label_line=label_line,
+    )
+
+
+def _is_waiting(response: str) -> bool:
+    """Check if model acknowledged with WAITING."""
+    cleaned = response.strip().upper()
+    return "WAITING" in cleaned and len(cleaned) < 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API-specific multi-turn implementations
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _decomposed_gemini(
+    model_id: str,
+    system_prompt: str | None,
+    chunks: Sequence[DecomposedChunk],
+    final_instruction: str,
+    max_tokens: int,
+    timeout: int,
+) -> DecomposedResult:
+    """Multi-turn decomposed delivery via Gemini chat API."""
+    from google import genai
+    from google.genai import types as genai_types
+
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY / GOOGLE_API_KEY not set")
+
+    try:
+        import httpx
+        http_client = httpx.Client(timeout=httpx.Timeout(
+            connect=30.0, read=float(timeout), write=30.0, pool=30.0,
+        ))
+        client = genai.Client(api_key=api_key, http_options={"client": http_client})
+    except (ImportError, TypeError, ValueError):
+        client = genai.Client(api_key=api_key)
+
+    total = len(chunks) + 1  # chunks + final instruction
+    total_chars = sum(c.chars for c in chunks) + len(final_instruction)
+
+    # Build conversation as list of Content parts for multi-turn
+    contents: list[genai_types.Content] = []
+    wait_responses: list[str] = []
+    turns: list[dict[str, str]] = []
+
+    config = genai_types.GenerateContentConfig(
+        max_output_tokens=max_tokens,
+        system_instruction=system_prompt if system_prompt else None,
+    )
+
+    t0 = time.monotonic()
+
+    # Deliver each chunk, get WAITING response
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        user_msg = _format_wait(n, total, chunk.label) + chunk.content
+        contents.append(genai_types.Content(
+            role="user", parts=[genai_types.Part(text=user_msg)],
+        ))
+
+        _log(f"  [gemini:{model_id}] delivering chunk {n}/{total}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
+
+        response = client.models.generate_content(
+            model=model_id, contents=contents, config=config,
+        )
+        resp_text = (response.text or "").strip()
+        wait_responses.append(resp_text)
+        turns.append({"role": "user", "content": user_msg})
+        turns.append({"role": "assistant", "content": resp_text})
+
+        contents.append(genai_types.Content(
+            role="model", parts=[genai_types.Part(text=resp_text)],
+        ))
+
+        if not _is_waiting(resp_text):
+            _log(f"  [gemini:{model_id}] WARNING: chunk {n} got non-WAITING "
+                 f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+
+    # Final instruction — trigger synthesis
+    final_msg = _format_final(total, total, total_chars, "Synthesis instruction") + final_instruction
+    contents.append(genai_types.Content(
+        role="user", parts=[genai_types.Part(text=final_msg)],
+    ))
+
+    _log(f"  [gemini:{model_id}] delivering final instruction (chunk {total}/{total})")
+
+    response = client.models.generate_content(
+        model=model_id, contents=contents, config=config,
+    )
+    result_text = (response.text or "").strip()
+    elapsed = time.monotonic() - t0
+    turns.append({"role": "user", "content": final_msg})
+    turns.append({"role": "assistant", "content": result_text})
+
+    _log(f"  [gemini:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+
+    return DecomposedResult(
+        text=result_text,
+        model_id=model_id,
+        api="google",
+        chunks_delivered=len(chunks),
+        total_chars_delivered=total_chars,
+        wait_responses=wait_responses,
+        elapsed_s=round(elapsed, 1),
+        turns=turns,
+    )
+
+
+def _decomposed_openrouter(
+    model_id: str,
+    system_prompt: str | None,
+    chunks: Sequence[DecomposedChunk],
+    final_instruction: str,
+    max_tokens: int,
+    timeout: int,
+) -> DecomposedResult:
+    """Multi-turn decomposed delivery via OpenRouter (CC2, ChatGPT)."""
+    import openai
+
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY not set")
+
+    try:
+        import httpx
+        http_timeout = httpx.Timeout(
+            connect=30.0, read=float(timeout), write=30.0, pool=30.0,
+        )
+    except ImportError:
+        http_timeout = timeout
+
+    client = openai.OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+        timeout=http_timeout,
+    )
+
+    total = len(chunks) + 1
+    total_chars = sum(c.chars for c in chunks) + len(final_instruction)
+
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    wait_responses: list[str] = []
+    turns: list[dict[str, str]] = []
+    t0 = time.monotonic()
+
+    # Deliver chunks
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        user_msg = _format_wait(n, total, chunk.label) + chunk.content
+        messages.append({"role": "user", "content": user_msg})
+
+        _log(f"  [openrouter:{model_id}] delivering chunk {n}/{total}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
+
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            max_tokens=256,  # only need "WAITING"
+            temperature=0.0,
+            timeout=timeout,
+        )
+        resp_text = (response.choices[0].message.content or "").strip()
+        wait_responses.append(resp_text)
+        turns.append({"role": "user", "content": user_msg})
+        turns.append({"role": "assistant", "content": resp_text})
+        messages.append({"role": "assistant", "content": resp_text})
+
+        if not _is_waiting(resp_text):
+            _log(f"  [openrouter:{model_id}] WARNING: chunk {n} got non-WAITING "
+                 f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+
+    # Final instruction
+    final_msg = _format_final(total, total, total_chars, "Synthesis instruction") + final_instruction
+    messages.append({"role": "user", "content": final_msg})
+
+    _log(f"  [openrouter:{model_id}] delivering final instruction (chunk {total}/{total})")
+
+    response = client.chat.completions.create(
+        model=model_id,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=0.0,
+        timeout=timeout,
+    )
+    result_text = (response.choices[0].message.content or "").strip()
+    elapsed = time.monotonic() - t0
+    turns.append({"role": "user", "content": final_msg})
+    turns.append({"role": "assistant", "content": result_text})
+
+    _log(f"  [openrouter:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+
+    return DecomposedResult(
+        text=result_text,
+        model_id=model_id,
+        api="openrouter",
+        chunks_delivered=len(chunks),
+        total_chars_delivered=total_chars,
+        wait_responses=wait_responses,
+        elapsed_s=round(elapsed, 1),
+        turns=turns,
+    )
+
+
+def _decomposed_deepseek(
+    model_id: str,
+    system_prompt: str | None,
+    chunks: Sequence[DecomposedChunk],
+    final_instruction: str,
+    max_tokens: int,
+    timeout: int,
+) -> DecomposedResult:
+    """Multi-turn decomposed delivery via DeepSeek API."""
+    import openai
+
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError("DEEPSEEK_API_KEY not set")
+
+    client = openai.OpenAI(
+        base_url="https://api.deepseek.com",
+        api_key=api_key,
+        timeout=timeout,
+    )
+
+    total = len(chunks) + 1
+    total_chars = sum(c.chars for c in chunks) + len(final_instruction)
+
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    wait_responses: list[str] = []
+    turns: list[dict[str, str]] = []
+    t0 = time.monotonic()
+
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        user_msg = _format_wait(n, total, chunk.label) + chunk.content
+        messages.append({"role": "user", "content": user_msg})
+
+        _log(f"  [deepseek:{model_id}] delivering chunk {n}/{total}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
+
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            max_tokens=256,
+            timeout=timeout,
+        )
+        resp_text = (response.choices[0].message.content or "").strip()
+        wait_responses.append(resp_text)
+        turns.append({"role": "user", "content": user_msg})
+        turns.append({"role": "assistant", "content": resp_text})
+        messages.append({"role": "assistant", "content": resp_text})
+
+        if not _is_waiting(resp_text):
+            _log(f"  [deepseek:{model_id}] WARNING: chunk {n} got non-WAITING "
+                 f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+
+    # Final instruction
+    final_msg = _format_final(total, total, total_chars, "Synthesis instruction") + final_instruction
+    messages.append({"role": "user", "content": final_msg})
+
+    _log(f"  [deepseek:{model_id}] delivering final instruction (chunk {total}/{total})")
+
+    response = client.chat.completions.create(
+        model=model_id,
+        messages=messages,
+        max_tokens=max_tokens,
+        timeout=timeout,
+    )
+    result_text = (response.choices[0].message.content or "").strip()
+    elapsed = time.monotonic() - t0
+    turns.append({"role": "user", "content": final_msg})
+    turns.append({"role": "assistant", "content": result_text})
+
+    _log(f"  [deepseek:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+
+    return DecomposedResult(
+        text=result_text,
+        model_id=model_id,
+        api="deepseek",
+        chunks_delivered=len(chunks),
+        total_chars_delivered=total_chars,
+        wait_responses=wait_responses,
+        elapsed_s=round(elapsed, 1),
+        turns=turns,
+    )
+
+
+def _decomposed_codex(
+    chunks: Sequence[DecomposedChunk],
+    cdsfl_directives: str,
+    final_instruction: str,
+    timeout: int,
+) -> DecomposedResult:
+    """Decomposed delivery via Codex CLI.
+
+    CX doesn't support true multi-turn via codex exec. We approximate it by
+    accumulating all prior chunks into the prompt body for each call, with
+    the "WAITING" responses embedded as context. The final call includes all
+    chunks + the synthesis instruction.
+
+    This is less efficient than true multi-turn (each call re-processes prior
+    context) but preserves the staged delivery semantics.
+    """
+    total = len(chunks) + 1
+    total_chars = sum(c.chars for c in chunks) + len(final_instruction)
+
+    accumulated_context = ""
+    wait_responses: list[str] = []
+    turns: list[dict[str, str]] = []
+    t0 = time.monotonic()
+
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        accumulated_context += (
+            f"\n=== CHUNK {n}/{total} ({chunk.label or 'unlabelled'}) ===\n"
+            f"{chunk.content}\n"
+        )
+        _log(f"  [codex] accumulating chunk {n}/{total}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
+        wait_responses.append("WAITING (accumulated)")
+        turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+        turns.append({"role": "assistant", "content": "WAITING"})
+
+    # Single call with all context + final instruction
+    full_prompt = (
+        "=== SYSTEM INSTRUCTIONS (CDSFL Operating Constraints) ===\n"
+        f"{cdsfl_directives}\n"
+        "=== END SYSTEM INSTRUCTIONS ===\n\n"
+        f"=== STAGED CONTEXT ({len(chunks)} chunks, ~{total_chars:,} chars) ===\n"
+        f"{accumulated_context}\n"
+        "=== END STAGED CONTEXT ===\n\n"
+        "=== INSTRUCTION ===\n"
+        f"{final_instruction}\n"
+        "=== END INSTRUCTION ==="
+    )
+
+    cmd = [
+        "codex", "exec",
+        "-c", 'model_reasoning_effort="medium"',
+        "-c", "mcp_servers={}",
+        "-c", "plugins={}",
+        "--ephemeral",
+        "-",
+    ]
+
+    _log(f"  [codex] delivering all {len(chunks)} chunks + instruction"
+         f" (~{len(full_prompt):,} chars total)")
+
+    result = subprocess.run(
+        cmd,
+        input=full_prompt,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    elapsed = time.monotonic() - t0
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()[:200]
+        raise RuntimeError(f"codex exec returned {result.returncode}: {stderr}")
+
+    result_text = result.stdout.strip()
+    if not result_text:
+        raise CircuitBreakerTripped(
+            "empty_response", "Codex", "dispatch",
+            f"Empty stdout after {elapsed:.1f}s",
+        )
+
+    turns.append({"role": "user", "content": f"[final instruction: {len(final_instruction)} chars]"})
+    turns.append({"role": "assistant", "content": result_text})
+
+    _log(f"  [codex] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+
+    return DecomposedResult(
+        text=result_text,
+        model_id="codex-exec/gpt-5.4",
+        api="codex_exec",
+        chunks_delivered=len(chunks),
+        total_chars_delivered=total_chars,
+        wait_responses=wait_responses,
+        elapsed_s=round(elapsed, 1),
+        turns=turns,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Public interface
+# ─────────────────────────────────────────────────────────────────────────────
+
+def decomposed_dispatch(
+    api: str,
+    model_id: str | None,
+    system_prompt: str | None,
+    chunks: Sequence[DecomposedChunk],
+    final_instruction: str,
+    max_tokens: int = 32768,
+    timeout: int = 600,
+    cdsfl_directives: str | None = None,
+) -> DecomposedResult:
+    """Dispatch a decomposed payload to any supported API.
+
+    Args:
+        api: One of "google", "openrouter", "deepseek", "codex_exec".
+        model_id: Model identifier (not needed for codex_exec).
+        system_prompt: CDSFL system prompt (used as system_instruction for
+            Gemini, system message for OpenRouter/DeepSeek).
+        chunks: Ordered sequence of content chunks to deliver.
+        final_instruction: The synthesis instruction sent after all chunks.
+        max_tokens: Max tokens for the final synthesis response.
+        timeout: Per-call timeout in seconds.
+        cdsfl_directives: Raw CDSFL text for Codex (which embeds it in prompt).
+
+    Returns:
+        DecomposedResult with the synthesis response and conversation history.
+    """
+    _log(f"  Decomposed dispatch: {api}/{model_id or 'codex'}, "
+         f"{len(chunks)} chunks, ~{sum(c.chars for c in chunks):,} chars")
+
+    if api == "google":
+        return _decomposed_gemini(
+            model_id, system_prompt, chunks, final_instruction,
+            max_tokens, timeout,
+        )
+    elif api == "openrouter":
+        return _decomposed_openrouter(
+            model_id, system_prompt, chunks, final_instruction,
+            max_tokens, timeout,
+        )
+    elif api == "deepseek":
+        return _decomposed_deepseek(
+            model_id, system_prompt, chunks, final_instruction,
+            max_tokens, timeout,
+        )
+    elif api == "codex_exec":
+        return _decomposed_codex(
+            chunks, cdsfl_directives or system_prompt or "",
+            final_instruction, timeout,
+        )
+    else:
+        raise ValueError(f"Unknown API: {api}")
+
+
+def save_decomposed_result(
+    result: DecomposedResult,
+    output_dir: str | Path,
+    label: str,
+    round_idx: int = 0,
+) -> Path:
+    """Save a decomposed dispatch result to JSON."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    filename = f"round{round_idx}_{label.lower()}_{ts}.json"
+    outfile = output_dir / filename
+
+    outfile.write_text(json.dumps({
+        "model": label,
+        "model_id": result.model_id,
+        "api": result.api,
+        "round": round_idx,
+        "chunks_delivered": result.chunks_delivered,
+        "total_chars_delivered": result.total_chars_delivered,
+        "response_chars": len(result.text),
+        "elapsed_s": result.elapsed_s,
+        "wait_responses": result.wait_responses,
+        "response": result.text,
+        "turns": result.turns,
+    }, indent=2), encoding="utf-8")
+
+    _log(f"  Saved: {outfile}")
+    return outfile

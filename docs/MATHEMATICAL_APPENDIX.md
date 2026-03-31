@@ -295,6 +295,8 @@ Where:
 
 The formula models two independent detection streams (machine and human) whose combined coverage is degraded by the priming correlation ρ_MH. When the human has seen the machine's output before forming their own analysis, ρ_MH > 0 and the human's effective contribution is reduced. At ρ_MH = 1, the human adds nothing — their reasoning is fully absorbed into the machine's framing.
 
+**Identifiability note:** ρ_MH and E*(t) (the evolving expertise estimate from the Feedback section) are confounded in outcome data. Both reduce the same C_H(k)·(1−ρ_MH) product, so the model cannot distinguish "human expertise is low" from "human is cognitively primed" using confer-round outcomes alone. Identification requires experimental variation: blind rounds (ρ_MH ≈ 0) provide unconfounded E*(t) estimates; confer rounds with independently calibrated E*(t) provide ρ_MH estimates. Joint estimation from confer-only data is ill-posed. (Finding from 5-model Experiment 17, March 2026.)
+
 ### HIL Detection Probability
 
 The HIL's per-pass detection probability is parameterised as:
@@ -587,11 +589,11 @@ SymPy falsification gives absolute zero. Simple, fixed weights.
 
 **Approach B (Bayesian log-odds, preferred):**
 
-> **L_total = Σ_i [L_i · log(TPR_i / FPR_i) + (1 − L_i) · log(FNR_i / TNR_i)]**
+> **L_total = L_prior + Σ_i [L_i · log(TPR_i / FPR_i) + (1 − L_i) · log(FNR_i / TNR_i)]**
 >
 > **S_v = 1 / (1 + exp(−L_total))**
 
-Where L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). When verifier i returns indeterminate (neither verified nor falsified), it is excluded from the sum — it does not contribute to L_total. When all verifiers are indeterminate, L_total = 0 and S_v = 0.5 (neutral prior). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass; indeterminate handling formalised during 5-model meta-test, 27 March 2026.)
+Where L_prior = 0 (uniform prior: P(claim true) = 0.5 before any verification). L_i ∈ {0, 1} is the binary output of verifier i (1 = verified, 0 = falsified). When verifier i returns indeterminate (neither verified nor falsified), it is excluded from the sum — it does not contribute to L_total. When all verifiers are indeterminate, L_total = L_prior = 0 and S_v = 0.5 (neutral prior). The formula encodes conditional weight selection: when L_i = 1, the positive log-likelihood ratio log(TPR/FPR) is applied; when L_i = 0, the negative log-likelihood ratio log(FNR/TNR) is applied. This is a standard Naive Bayes log-odds update. The L_prior term makes the Bayesian structure explicit; the ≥ 0.5 selection threshold in §7.11 is calibrated to this specific prior. (Notation clarified during CC × Gemini 3.1 Pro Extended P-Pass; indeterminate handling formalised during 5-model meta-test, 27 March 2026.)
 
 | Verifier | TPR | FPR | Positive weight log(TPR/FPR) | Negative weight log(FNR/TNR) |
 |---|---|---|---|---|
