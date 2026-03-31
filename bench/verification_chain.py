@@ -46,9 +46,13 @@ What This Layer DOES NOT PROVE
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
+import os
+import re
 import sys
+import tempfile
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -121,11 +125,18 @@ class Verifier:
         self._key = public_key
 
     def verify(self, signature_b64: str, data: bytes) -> bool:
+        """Verify a base64-encoded Ed25519 signature.
+
+        Returns False for invalid signatures or malformed base64.
+        Raises on unexpected errors (library bugs, bad key state).
+        """
+        import binascii
+        from cryptography.exceptions import InvalidSignature
         try:
-            sig = _base64.b64decode(signature_b64)
+            sig = _base64.b64decode(signature_b64, validate=True)
             self._key.verify(sig, data)
             return True
-        except Exception:
+        except (InvalidSignature, binascii.Error):
             return False
 
 
@@ -140,8 +151,26 @@ def canonical_json(obj: Any) -> str:
     IMPORTANT: Sealed record bodies must not contain floating-point values.
     Float serialization varies across platforms and can break determinism.
     Use fixed-precision decimal strings if numeric precision is needed.
+
+    Raises TypeError if any float is found in the object tree.
     """
+    _reject_floats(obj)
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+
+
+def _reject_floats(obj: Any) -> None:
+    """Recursively check for float values and raise TypeError if found."""
+    if isinstance(obj, float):
+        raise TypeError(
+            f"Float values break cross-platform determinism. "
+            f"Use string representation instead: {obj!r}"
+        )
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _reject_floats(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _reject_floats(v)
 
 
 def sha256_digest(data: bytes) -> str:
@@ -149,28 +178,43 @@ def sha256_digest(data: bytes) -> str:
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
+_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
 def _digest_bytes(digest_str: str) -> bytes:
-    """Extract raw hash bytes from 'sha256:<hex>' string."""
-    prefix = "sha256:"
-    if not digest_str.startswith(prefix):
-        raise ValueError(f"Expected digest starting with '{prefix}', got: {digest_str!r}")
-    return bytes.fromhex(digest_str[len(prefix):])
+    """Extract raw hash bytes from 'sha256:<hex>' string.
+
+    Validates strict canonical format: lowercase hex, exactly 64 characters,
+    no whitespace or uppercase.
+    """
+    if not _DIGEST_RE.match(digest_str):
+        raise ValueError(
+            f"Expected digest matching 'sha256:<64 lowercase hex chars>', "
+            f"got: {digest_str!r}"
+        )
+    return bytes.fromhex(digest_str[7:])
 
 
 def _normalize_timestamp(ts: str) -> str:
-    """Parse a timestamp string and return RFC 3339 UTC."""
-    # Accept common ISO 8601 formats
+    """Parse a timestamp string and return RFC 3339 UTC.
+
+    Accepts ISO 8601 timestamps with explicit timezone (Z or +/-HH:MM).
+    Rejects naive timestamps (no timezone) to prevent ambiguous audit records.
+    """
     ts = ts.strip()
-    # If already ends with Z, parse directly
+    # Only replace a trailing Z, not Z appearing elsewhere in the string
     if ts.endswith("Z"):
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(ts[:-1] + "+00:00")
     else:
         dt = datetime.fromisoformat(ts)
-    # Convert to UTC
+    # Reject naive timestamps — ambiguous in an audit context
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    else:
-        dt = dt.astimezone(timezone.utc)
+        raise ValueError(
+            f"Timestamp must include explicit timezone (Z or +/-HH:MM), "
+            f"got naive timestamp: {ts!r}"
+        )
+    # Convert to UTC
+    dt = dt.astimezone(timezone.utc)
     # Format as RFC 3339 UTC
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -351,6 +395,7 @@ class VerificationChain:
         self._records: list[dict] = []
         self._epochs: list[dict] = []
         self._signer = signer
+        self._schema_version = SCHEMA_VERSION
 
     # -- Public API --------------------------------------------------------
 
@@ -422,7 +467,14 @@ class VerificationChain:
         """Seal all current records into a Merkle epoch.
 
         Returns an epoch dict containing the merkle_root and record count.
+        Raises ValueError if the chain is empty or no new records exist
+        since the last sealed epoch.
         """
+        if not self._records:
+            raise ValueError("Cannot seal epoch on empty chain")
+        if (self._epochs
+                and self._epochs[-1]["record_count"] == len(self._records)):
+            raise ValueError("No new records since last epoch seal")
         leaves = [
             _digest_bytes(r["chain_hash"]) for r in self._records
         ]
@@ -443,21 +495,30 @@ class VerificationChain:
 
         If a Verifier is provided, signatures on authenticated records are
         also checked. Records with attribution "claimed_only" are not checked.
+
+        All records and epochs are checked even if early failures are found,
+        so the returned message contains a complete diagnostic.
         """
         if not self._records:
             return True, "Chain is empty — nothing to verify."
 
+        errors: list[str] = []
+
         for i, record in enumerate(self._records):
             ok, msg = self._verify_single(i, record, verifier=verifier)
             if not ok:
-                return False, f"Record {i}: {msg}"
+                errors.append(f"Record {i}: {msg}")
 
         # Verify epochs if any exist
         for epoch in self._epochs:
             ok, msg = self._verify_epoch(epoch)
             if not ok:
-                return False, f"Epoch {epoch.get('epoch_index', '?')}: {msg}"
+                errors.append(
+                    f"Epoch {epoch.get('epoch_index', '?')}: {msg}"
+                )
 
+        if errors:
+            return False, "; ".join(errors)
         return True, f"All {len(self._records)} records verified."
 
     def verify_record(
@@ -497,28 +558,52 @@ class VerificationChain:
             return False
 
     def save_json(self, path: str) -> None:
-        """Serialize the full chain to a JSON file."""
+        """Serialize the full chain to a JSON file.
+
+        Uses atomic write (write to temp file, then rename) to prevent
+        corruption from crashes or interruptions during write.
+        """
         data = {
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": self._schema_version,
             "records": self._records,
             "epochs": self._epochs,
         }
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+        # Write to temp file first, then atomically replace
+        dir_name = os.path.dirname(os.path.abspath(path))
+        fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, path)
+        except BaseException:
+            # Clean up temp file on any failure
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     @classmethod
     def load_json(cls, path: str) -> "VerificationChain":
-        """Deserialize a chain from a JSON file."""
+        """Deserialize a chain from a JSON file.
+
+        Preserves the schema_version from the loaded file to prevent
+        silent version downgrades on round-trip.
+        """
         with open(path, "r") as f:
             data = json.load(f)
         chain = cls()
+        chain._schema_version = data.get("schema_version", SCHEMA_VERSION)
         chain._records = data.get("records", [])
         chain._epochs = data.get("epochs", [])
         return chain
 
     def head(self) -> Optional[dict]:
-        """Return the latest record, or None if the chain is empty."""
-        return self._records[-1] if self._records else None
+        """Return a deep copy of the latest record, or None if empty.
+
+        Returns a copy to prevent accidental mutation of internal state.
+        """
+        return copy.deepcopy(self._records[-1]) if self._records else None
 
     @property
     def records(self) -> list[dict]:
@@ -586,9 +671,20 @@ class VerificationChain:
             )
 
         # 6. Verify signature (if verifier provided and record is authenticated)
-        if verifier is not None and _HAS_CRYPTO:
+        if verifier is not None:
+            if not _HAS_CRYPTO:
+                raise RuntimeError(
+                    "Signature verification requested but 'cryptography' "
+                    "library is not available"
+                )
             sig_info = record.get("signature", {})
             if sig_info.get("attribution") == "authenticated":
+                # Validate algorithm field matches expected scheme
+                algo = sig_info.get("algorithm")
+                if algo != "Ed25519":
+                    return False, (
+                        f"unsupported signature algorithm: {algo!r}"
+                    )
                 sig_b64 = sig_info.get("signature")
                 if not sig_b64:
                     return False, "authenticated record has no signature data"
@@ -671,6 +767,10 @@ def _cli_verify_record(args: argparse.Namespace) -> int:
 def _cli_seal_epoch(args: argparse.Namespace) -> int:
     """Handle the 'seal-epoch' subcommand."""
     chain = VerificationChain.load_json(args.chain_file)
+    valid, msg = chain.verify_chain()
+    if not valid:
+        print(f"Chain verification failed: {msg}", file=sys.stderr)
+        return 1
     epoch = chain.seal_epoch()
     chain.save_json(args.chain_file)
     print(f"Epoch {epoch['epoch_index']} sealed: "
@@ -697,6 +797,16 @@ def _cli_verify_proof(args: argparse.Namespace) -> int:
             root_bytes = bytes.fromhex(root_str[7:])
         else:
             root_bytes = bytes.fromhex(root_str)
+        # Warn if supplied root differs from proof's embedded root
+        if "merkle_root" in proof:
+            proof_root_hex = proof["merkle_root"].replace("sha256:", "")
+            supplied_hex = root_str.replace("sha256:", "")
+            if proof_root_hex != supplied_hex:
+                print(
+                    "WARNING: supplied root differs from proof's "
+                    "embedded merkle_root",
+                    file=sys.stderr,
+                )
         valid = rfc9162_verify_inclusion(
             _digest_bytes(proof["chain_hash"]),
             proof["proof"],
@@ -783,7 +893,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         "show-head": _cli_show_head,
     }
 
-    return handlers[args.command](args)
+    try:
+        return handlers[args.command](args)
+    except (json.JSONDecodeError, FileNotFoundError, PermissionError,
+            ValueError, IndexError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

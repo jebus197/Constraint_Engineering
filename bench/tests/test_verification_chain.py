@@ -290,12 +290,18 @@ class TestInclusionProof(unittest.TestCase):
 class TestEpochs(unittest.TestCase):
     """Empty, single, and odd-leaf epoch handling."""
 
-    def test_empty_epoch(self):
+    def test_empty_epoch_rejected(self):
+        """Sealing an empty chain should raise ValueError."""
         chain = VerificationChain()
-        epoch = chain.seal_epoch()
-        expected = "sha256:" + hashlib.sha256(b"").hexdigest()
-        self.assertEqual(epoch["merkle_root"], expected)
-        self.assertEqual(epoch["record_count"], 0)
+        with self.assertRaises(ValueError):
+            chain.seal_epoch()
+
+    def test_duplicate_epoch_rejected(self):
+        """Sealing when no new records exist should raise ValueError."""
+        chain = _make_chain(3)
+        chain.seal_epoch()
+        with self.assertRaises(ValueError):
+            chain.seal_epoch()
 
     def test_single_record_epoch(self):
         chain = _make_chain(1)

@@ -543,6 +543,16 @@ class RoleAssignment:
         # Use live fingerprints when available (Exp14 fix)
         models_for_scoring = list(self._models)
         if live_fingerprints:
+            # LB_F007: Warn if active models are missing from live_fingerprints
+            # (stale data would silently degrade scoring accuracy).
+            missing = active_models - {self.pm_model_id} - set(live_fingerprints.keys())
+            if missing:
+                import warnings as _warnings
+                _warnings.warn(
+                    f"RoleAssignment.reassign(): active models {missing} missing "
+                    f"from live_fingerprints — using stale initial fingerprints",
+                    stacklevel=2,
+                )
             models_for_scoring = []
             for m in self._models:
                 if m.model_id in live_fingerprints:
@@ -624,6 +634,50 @@ class RoleAssignment:
 
         self.role_map = new_map
         return new_map
+
+    def pm_performance_warning(
+        self,
+        live_fingerprints: Optional[Dict[str, "CapabilityFingerprint"]] = None,
+        active_models: Optional[Set[str]] = None,
+    ) -> Optional[str]:
+        """LB_F005: Check if PM has degraded below worst active PAR.
+
+        C3 prevents PM replacement, but monitoring should flag when the lock
+        is costing output quality. Returns warning string or None.
+        """
+        if not live_fingerprints or not active_models:
+            return None
+        pm_fp = live_fingerprints.get(self.pm_model_id)
+        if pm_fp is None:
+            return None
+        pm_score = self._capability_score(
+            ModelSpec(self.pm_model_id, pm_fp), Role.PM,
+            self._compute_pool_max(
+                [ModelSpec(m, live_fingerprints[m])
+                 for m in active_models if m in live_fingerprints]
+            ),
+            self._config,
+        )
+        par_scores = {}
+        for mid in active_models:
+            if mid == self.pm_model_id or mid not in live_fingerprints:
+                continue
+            par_scores[mid] = self._capability_score(
+                ModelSpec(mid, live_fingerprints[mid]), Role.PAR,
+                self._compute_pool_max(
+                    [ModelSpec(m, live_fingerprints[m])
+                     for m in active_models if m in live_fingerprints]
+                ),
+                self._config,
+            )
+        if par_scores and pm_score < min(par_scores.values()):
+            worst_par = min(par_scores, key=lambda k: par_scores[k])
+            return (
+                f"PM {self.pm_model_id} score ({pm_score:.3f}) below worst "
+                f"PAR {worst_par} ({par_scores[worst_par]:.3f}). C3 prevents "
+                f"replacement but output quality may be degraded."
+            )
+        return None
 
     def record_failure(self, model_id: str, failed: bool) -> None:
         """Record whether a model failed in the current round.
@@ -857,6 +911,9 @@ class LoadBalancer:
         taus = np.array([m.tau for m in self.models], dtype=np.float64)
 
         # Per-model load: sum_j a_{jm} * b_j
+        # LB_F002: Each redundant copy independently consumes full token_demand.
+        # This is intentional: redundancy is a reliability mechanism where all
+        # copies execute (not just one). Monetary cost reflects actual spend.
         loads = matrix.T.astype(np.float64) @ demands  # shape (K,)
 
         # Monetary cost: sum_m c_m * load_m
@@ -884,6 +941,11 @@ class LoadBalancer:
         admissibility: NDArray[np.int_],
     ) -> Tuple[bool, List[str]]:
         """Check all HARD feasibility constraints.
+
+        LB_F009: F1 violations from force-assign fallback are expected (tagged
+        in _allocation_warnings). This method reports all violations uniformly;
+        callers should cross-reference _allocation_warnings to distinguish
+        intentional force-assign violations from unexpected solver bugs.
 
         Returns:
             (feasible, list_of_violations)
@@ -919,7 +981,16 @@ class LoadBalancer:
         return len(violations) == 0, violations
 
     def _balanced(self, matrix: NDArray[np.int_]) -> bool:
-        """Check balance predicate: Var(load_fractions) <= epsilon_bal."""
+        """Check balance predicate: Var(load_fractions) <= epsilon_bal.
+
+        LB_F011: Uses population variance (np.var, ddof=0). For small K this is
+        more permissive than sample variance. epsilon_bal should be interpreted
+        accordingly — it bounds the mean squared deviation from mean load fraction.
+
+        LB_F003: When redundancy_target > 1, task demand is charged to all assigned
+        models. Balance is meaningful only when most tasks have target=1; with high
+        redundancy, variance reflects redundancy distribution, not imbalance.
+        """
         demands = np.array([t.token_demand for t in self.tasks], dtype=np.float64)
         limits = np.array([m.L for m in self.models], dtype=np.float64)
         loads = matrix.T.astype(np.float64) @ demands
@@ -933,10 +1004,13 @@ class LoadBalancer:
         """Greedy allocation heuristic.
 
         Strategy:
-        1. Sort tasks by criticality (descending) — high-criticality first.
+        1. Sort tasks by criticality (descending), then token_demand (descending)
+           within tier (LB_F001: first-fit-decreasing).
         2. For each task, assign to admissible models with lowest current load
            fraction, up to redundancy target.
-        3. Respect token limits (F1).
+        3. Respect token limits (F1) when possible. When no model can fit a task
+           within limits, force-assign to the model with most remaining capacity
+           (LB_F006/LB_F013: F1 violation reported, coverage F2 maintained).
 
         Returns:
             Allocation matrix a_{jm}, shape (J, K).
@@ -950,8 +1024,13 @@ class LoadBalancer:
         limits = np.array([m.L for m in self.models], dtype=np.float64)
         current_loads = np.zeros(K, dtype=np.float64)
 
-        # Sort tasks by criticality descending
-        task_order = sorted(range(J), key=lambda j: self.tasks[j].criticality, reverse=True)
+        # LB_F001: Sort by criticality descending, then token_demand descending
+        # within same criticality tier (first-fit-decreasing heuristic).
+        task_order = sorted(
+            range(J),
+            key=lambda j: (self.tasks[j].criticality, self.tasks[j].token_demand),
+            reverse=True,
+        )
 
         for j in task_order:
             target = self._redundancy_target(self.tasks[j])
@@ -983,23 +1062,39 @@ class LoadBalancer:
                 )
 
             assigned = 0
-            for m_idx in admissible:
-                if assigned >= target:
-                    break
-                # Check F1: would this assignment exceed token limit?
-                if current_loads[m_idx] + demands[j] <= limits[m_idx]:
-                    matrix[j, m_idx] = 1
-                    current_loads[m_idx] += demands[j]
-                    assigned += 1
+            # LB_F006: If no model can fit this task within limits, skip the
+            # normal loop and go directly to capacity-aware force-assign.
+            if feasible_count == 0 and admissible:
+                # Force-assign to model with most remaining capacity
+                best_m = max(
+                    admissible,
+                    key=lambda m_idx: limits[m_idx] - current_loads[m_idx],
+                )
+                matrix[j, best_m] = 1
+                current_loads[best_m] += demands[j]
+                assigned = 1
+                self._allocation_warnings.append(
+                    f"Task {self.tasks[j].task_id}: force-assigned to "
+                    f"{self.models[best_m].model_id} (F1 violation, no feasible model)"
+                )
+            else:
+                for m_idx in admissible:
+                    if assigned >= target:
+                        break
+                    # Check F1: would this assignment exceed token limit?
+                    if current_loads[m_idx] + demands[j] <= limits[m_idx]:
+                        matrix[j, m_idx] = 1
+                        current_loads[m_idx] += demands[j]
+                        assigned += 1
 
-            # If we couldn't meet redundancy target, ensure at least coverage (F2)
-            if assigned == 0:
-                # Force-assign to least-loaded admissible model even if over limit
-                # (F1 violation is reported but coverage is maintained)
-                if admissible:
-                    m_idx = admissible[0]
-                    matrix[j, m_idx] = 1
-                    current_loads[m_idx] += demands[j]
+                # If we couldn't meet redundancy target, ensure at least coverage (F2)
+                if assigned == 0:
+                    # Force-assign to least-loaded admissible model even if over limit
+                    # (F1 violation is reported but coverage is maintained)
+                    if admissible:
+                        m_idx = admissible[0]
+                        matrix[j, m_idx] = 1
+                        current_loads[m_idx] += demands[j]
 
         return matrix
 
@@ -1732,7 +1827,13 @@ class ConvergenceDetector:
         rate_r = _rate(round_idx)
         rate_1 = _rate(1) if 1 in self._round_findings else _rate(0)
 
-        return 1.0 - (rate_r / (rate_1 + self.config.epsilon_conv))
+        # MM_F006: When rate_1 is near zero (no baseline established),
+        # kappa_rate is undefined. Return 0.0 rather than a wildly
+        # amplified ratio from dividing by epsilon_conv.
+        if rate_1 < self.config.epsilon_conv:
+            return 0.0
+        result = 1.0 - (rate_r / (rate_1 + self.config.epsilon_conv))
+        return max(-1.0, min(1.0, result))
 
     def kappa_adopt(self, round_idx: int) -> float:
         """Adoption stabilisation metric.
@@ -1789,10 +1890,10 @@ class ConvergenceDetector:
     def estimate_gamma(self, round_idx: int) -> float:
         """Estimate Duane convergence parameter gamma_hat.
 
-        gamma_hat = log(r) / (log(|F^(<=r)|) - log(|F^(<=1)|))
-
-        For gamma > 1: reliability growth (kappa_rate -> 1).
-        For gamma < 1: degradation (kappa_rate < 0).
+        MM_F014: Corrected formula. Duane model: N(t) = (t/η)^β, so
+        β = (log(N(r)) - log(N(1))) / log(r). Then γ = 1 - β:
+          γ > 0: reliability growth (finding rate decreasing)
+          γ < 0: degradation (finding rate increasing)
 
         This is a DIAGNOSTIC, not the convergence threshold (founder decision).
         """
@@ -1807,11 +1908,12 @@ class ConvergenceDetector:
         if cum_r <= cum_1 or cum_1 <= 0:
             return float("inf") if cum_r == cum_1 else 0.0
 
-        denom = math.log(cum_r) - math.log(cum_1)
-        if abs(denom) < 1e-10:
+        log_r = math.log(round_idx)
+        if abs(log_r) < 1e-10:
             return float("inf")
 
-        return math.log(round_idx) / denom
+        beta = (math.log(cum_r) - math.log(cum_1)) / log_r
+        return 1.0 - beta
 
     # --- Reduction property validators ---
 
@@ -2225,6 +2327,9 @@ class DiminishingReturnsDetector:
                 if rounds & recent_range  # intersection: area was active recently
             ]
             if active_areas:
+                # MM_F010: Track whether any area was actually checked.
+                # If all areas were skipped (insufficient data), return False.
+                any_checked = False
                 for area in active_areas:
                     # Check if this area has sustained low growth over its
                     # active rounds within the window.
@@ -2239,10 +2344,13 @@ class DiminishingReturnsDetector:
                     if len(area_rounds_in_window) < 1:
                         # Area wasn't active at all in window — skip, not block
                         continue
+                    any_checked = True
                     for r in area_rounds_in_window:
                         if self._area_vocab_growth.get(area, {}).get(r, 1.0) >= tau:
                             return False  # This area still has novelty
-                return True  # All active areas are saturated
+                if not any_checked:
+                    return False  # No area had data — not saturated
+                return True  # All checked areas are saturated
 
         # Fallback: global vocab tracking (pre-Phase D behaviour).
         for r in range(round_idx - W + 1, round_idx + 1):
@@ -2331,9 +2439,11 @@ class DiminishingReturnsDetector:
             return 0.0
 
         # Assume mu decays by the ratio of last two rounds
+        # MM_F012: Use absolute values for magnitude decay; if mu_prev is negative
+        # (yield decreasing), ratio would be negative and produce wrong decay.
         mu_prev = self.smoothed_marginal_value(round_idx - 1) if round_idx >= 1 else mu_current
-        if mu_prev > 0 and math.isfinite(mu_prev):
-            decay = mu_current / mu_prev
+        if abs(mu_prev) > 1e-10 and math.isfinite(mu_prev):
+            decay = abs(mu_current) / abs(mu_prev)
         else:
             decay = 0.5  # default decay
 
@@ -2464,6 +2574,9 @@ class DetectorDiagnosis:
     severity: str  # "WARNING", "CRITICAL"
     recommended_action: str  # what to do about it
     evidence: Dict[str, Any] = field(default_factory=dict)
+    # IM_F013: Machine-readable key for remediation routing, decoupled from
+    # human-readable pathology string. Must match _REMEDIATION_CHAINS keys.
+    pathology_key: str = ""
 
 
 class DetectorHealthMonitor:
@@ -2492,7 +2605,9 @@ class DetectorHealthMonitor:
         self,
         stuck_window: int = 3,
         mu_increase_window: int = 2,
+        config: Optional["DynamicManagementConfig"] = None,
     ) -> None:
+        self._config = config
         self._kappa_history: List[float] = []
         self._mu_history: List[float] = []
         self._novelty_history: List[float] = []
@@ -2648,6 +2763,7 @@ class DetectorHealthMonitor:
                             "adaptive_window": eff_kappa_window,
                             "persistence": persistence + 1,
                         },
+                        pathology_key="kappa_stuck",
                     )
                     new_diagnoses.append(diag)
             else:
@@ -2762,6 +2878,7 @@ class DetectorHealthMonitor:
                             "total_decline": total_decline,
                             "occurrence": persistence + 1,
                         },
+                        pathology_key="findings_decline",
                     )
                     new_diagnoses.append(diag)
             else:
@@ -2780,9 +2897,8 @@ class DetectorHealthMonitor:
         # but still producing novel findings.
         if len(self._vocab_growth_history) >= 3:
             recent_vg = self._vocab_growth_history[-3:]
-            # We don't have direct access to config here, so use 0.04 as default
-            # (the config tau_vocab_growth is typically 0.04).
-            if all(vg < 0.04 for vg in recent_vg):
+            tau_vg = self._config.tau_vocab_growth if self._config else 0.04
+            if all(vg < tau_vg for vg in recent_vg):
                 recent_fc = self._finding_counts[-3:]
                 if sum(recent_fc) > 0:
                     persistence = self._pathology_counts.get("vocab_saturation", 0)
@@ -2805,6 +2921,7 @@ class DetectorHealthMonitor:
                             "finding_counts": recent_fc,
                             "occurrence": persistence + 1,
                         },
+                        pathology_key="vocab_saturation",
                     )
                     new_diagnoses.append(diag)
 
@@ -2891,6 +3008,7 @@ class DetectorHealthMonitor:
                     "consecutive_failures": consecutive,
                     "occurrence": persistence + 1,
                 },
+                pathology_key="model_failure",
             )
             self._diagnoses.append(diag)
             results.append(diag)
@@ -3086,7 +3204,7 @@ class DetectorHealthMonitor:
 
             # For some metrics, "improved" means decreased (mu should stabilise)
             if target in ("mu",):
-                improved = abs(current_val) < abs(old_val) * 1.2  # mu not getting worse
+                improved = abs(current_val) < abs(old_val) * 0.95  # mu must show 5% improvement
 
             log_entry = {
                 "pathology": pathology_key,
@@ -3123,7 +3241,12 @@ class DetectorHealthMonitor:
                 )
                 # Increment chain index for escalation — the next apply_diagnosis
                 # call will try the next fix in the chain.
+                # IM_F002: Reset applied_round and metric_at_apply so the
+                # verification window for the escalated step starts from NOW,
+                # not from the original application point.
                 state["chain_idx"] += 1
+                state["applied_round"] = current_round
+                state["metric_at_apply"] = current_val
 
             diag = DetectorDiagnosis(
                 detector="remediation_outcome",
@@ -4109,6 +4232,7 @@ class DetectorHealthMonitor:
                                 "blocked_round": block_round,
                                 "success_rounds": [s for s in successes if s > block_round],
                             },
+                            pathology_key="dispatch_false_positive",
                         )
                         new_diagnoses.append(diag)
 
@@ -4123,8 +4247,12 @@ class DetectorHealthMonitor:
                 all_rates.extend(rates)
 
         if len(model_means) >= 3 and all_rates:
-            pop_mean = sum(all_rates) / len(all_rates)
-            pop_std = (sum((r - pop_mean) ** 2 for r in all_rates) / len(all_rates)) ** 0.5
+            # IM_F009: Compute std from model means, not individual observations.
+            # Using individual observations biases pop_std toward long-running
+            # models and compares a mean against an observation-level std.
+            means_list = list(model_means.values())
+            pop_mean = sum(means_list) / len(means_list)
+            pop_std = (sum((m - pop_mean) ** 2 for m in means_list) / len(means_list)) ** 0.5
             if pop_std > 0.01:  # avoid division by near-zero
                 for model_id, m in model_means.items():
                     z_score = (m - pop_mean) / pop_std
@@ -4147,6 +4275,7 @@ class DetectorHealthMonitor:
                                 f"Flag VERIFIED field for {model_id} as unreliable. "
                                 f"Add per-model directive to re-examine verification."
                             ),
+                            pathology_key="verification_miscalibration",
                             evidence={
                                 "model_id": model_id,
                                 "model_mean": m,
@@ -4392,6 +4521,12 @@ class FailureHandler:
         # Execute exclusion if needed
         if action == RecoveryAction.EXCLUDE:
             self._active_models.discard(model_id)
+        # IM_F008: Execute role downgrade — update role_map so subsequent
+        # _expected_performance() calls use the correct baseline vector.
+        elif action == RecoveryAction.DOWNGRADE_ROLE:
+            current_role = self.role_map.get(model_id)
+            if current_role == Role.COL:
+                self.role_map[model_id] = Role.PAR
 
         return action
 
@@ -4873,7 +5008,7 @@ class DynamicManager:
         self.correlated_failures = CorrelatedFailureModel()
 
         # Area 7: Detector Health Monitor (immune response layer)
-        self.health_monitor = DetectorHealthMonitor()
+        self.health_monitor = DetectorHealthMonitor(config=self.config)
 
         # Round results history
         self._round_results: List[RoundResult] = []
@@ -5154,7 +5289,12 @@ class DynamicManager:
             mid = model.model_id
             fc = _model_finding_counts.get(mid, 0)
             failed = mid not in responses or not responses[mid].parseable
-            model_diags = self.health_monitor.record_model_round(mid, fc, failed)
+            resp = responses.get(mid)
+            model_diags = self.health_monitor.record_model_round(
+                mid, fc, failed,
+                response_time=resp.response_time if resp and hasattr(resp, 'response_time') else 0.0,
+                response_chars=len(resp.content) if resp and resp.content else 0,
+            )
             for model_diag in model_diags:
                 self.event_stream.emit(
                     ManagerEvent(
@@ -5696,14 +5836,23 @@ class DynamicManager:
             return None
 
         # Check damping: was this parameter adjusted recently?
+        # Use composite key (detector + model_id if present) to prevent
+        # per-model pathologies from interfering across models (IM_F005).
+        diag_model = diagnosis.evidence.get("model_id", "")
         for adj in self._immune_adjustments:
+            adj_model = adj.get("model_id", "")
             if (adj["detector"] == diagnosis.detector
+                    and adj_model == diag_model
                     and round_idx - adj["round"] < self.config.immune_damping_rounds):
                 return None  # Too soon — damping prevents oscillation
 
         # --- Map diagnosis to remediation chain ---
+        # IM_F013: Use machine-readable pathology_key first, fall back to
+        # string matching for backward compatibility with legacy diagnoses.
         chain_key = None
-        if diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
+        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:
+            chain_key = diagnosis.pathology_key
+        elif diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
             chain_key = "kappa_stuck"
         elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
             chain_key = "vocab_saturation"
@@ -5711,7 +5860,11 @@ class DynamicManager:
             chain_key = "findings_decline"
         elif diagnosis.detector == "model_failure":
             chain_key = "model_failure"
-        elif diagnosis.detector == "dispatch" and "false positive" in diagnosis.pathology.lower():
+
+        if diagnosis.pathology_key == "dispatch_false_positive" or (
+            not diagnosis.pathology_key and diagnosis.detector == "dispatch"
+            and "false positive" in diagnosis.pathology.lower()
+        ):
             # Direct fix, no chain needed
             model_id = diagnosis.evidence.get("model_id", "")
             if model_id and model_id not in self.config.pre_decompose_models:
@@ -5725,7 +5878,10 @@ class DynamicManager:
                 self._record_adjustment(adjustment, diagnosis, round_idx)
                 return adjustment
             return None
-        elif diagnosis.detector == "mu+novelty" and "disagree" in diagnosis.pathology.lower():
+        elif diagnosis.pathology_key == "mu_novelty_disagree" or (
+            not diagnosis.pathology_key and diagnosis.detector == "mu+novelty"
+            and "disagree" in diagnosis.pathology.lower()
+        ):
             # Advisory — no parameter to adjust
             adjustment = {
                 "parameter": "stop_signal_priority",
@@ -5735,7 +5891,10 @@ class DynamicManager:
             }
             self._record_adjustment(adjustment, diagnosis, round_idx)
             return adjustment
-        elif diagnosis.detector == "verification" and "miscalibration" in diagnosis.pathology.lower():
+        elif diagnosis.pathology_key == "verification_miscalibration" or (
+            not diagnosis.pathology_key and diagnosis.detector == "verification"
+            and "miscalibration" in diagnosis.pathology.lower()
+        ):
             model_id = diagnosis.evidence.get("model_id", "")
             if model_id and model_id not in self.config.per_model_directives:
                 directive = (
