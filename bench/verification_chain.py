@@ -127,16 +127,19 @@ class Verifier:
     def verify(self, signature_b64: str, data: bytes) -> bool:
         """Verify a base64-encoded Ed25519 signature.
 
-        Returns False for invalid signatures or malformed base64.
+        Returns False for invalid signatures, malformed base64, or non-string
+        signature fields (CX_FFF_003: tampered JSON with int/list/null).
         Raises on unexpected errors (library bugs, bad key state).
         """
         import binascii
         from cryptography.exceptions import InvalidSignature
         try:
+            if not isinstance(signature_b64, (str, bytes)):
+                return False
             sig = _base64.b64decode(signature_b64, validate=True)
             self._key.verify(sig, data)
             return True
-        except (InvalidSignature, binascii.Error):
+        except (InvalidSignature, binascii.Error, TypeError, ValueError):
             return False
 
 
@@ -505,13 +508,19 @@ class VerificationChain:
         errors: list[str] = []
 
         for i, record in enumerate(self._records):
-            ok, msg = self._verify_single(i, record, verifier=verifier)
+            try:
+                ok, msg = self._verify_single(i, record, verifier=verifier)
+            except (KeyError, TypeError, ValueError) as exc:
+                ok, msg = False, f"malformed record: {exc}"
             if not ok:
                 errors.append(f"Record {i}: {msg}")
 
         # Verify epochs if any exist
         for epoch in self._epochs:
-            ok, msg = self._verify_epoch(epoch)
+            try:
+                ok, msg = self._verify_epoch(epoch)
+            except (KeyError, TypeError, ValueError) as exc:
+                ok, msg = False, f"malformed epoch: {exc}"
             if not ok:
                 errors.append(
                     f"Epoch {epoch.get('epoch_index', '?')}: {msg}"

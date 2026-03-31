@@ -1827,11 +1827,14 @@ class ConvergenceDetector:
         rate_r = _rate(round_idx)
         rate_1 = _rate(1) if 1 in self._round_findings else _rate(0)
 
-        # MM_F006: When rate_1 is near zero (no baseline established),
-        # kappa_rate is undefined. Return 0.0 rather than a wildly
-        # amplified ratio from dividing by epsilon_conv.
+        # MM_F006 + GEM_FFF_002: When rate_1 is near zero (no baseline
+        # established), check if rate_r is also near zero. If both are
+        # near zero, return 0.0 (no data). If rate_r > 0 with rate_1 ≈ 0,
+        # the system is diverging — return -1.0 (bounded minimum).
         if rate_1 < self.config.epsilon_conv:
-            return 0.0
+            if rate_r < self.config.epsilon_conv:
+                return 0.0  # No baseline, no current activity
+            return -1.0  # Diverging: new findings with no baseline
         result = 1.0 - (rate_r / (rate_1 + self.config.epsilon_conv))
         return max(-1.0, min(1.0, result))
 
@@ -1905,8 +1908,12 @@ class ConvergenceDetector:
             self.get_cumulative_classes(0)
         )
 
-        if cum_r <= cum_1 or cum_1 <= 0:
-            return float("inf") if cum_r == cum_1 else 0.0
+        # CX refinement of GEM_FFF_001: return 1.0 only when cum_1 > 0.
+        # When cum_r == cum_1 == 0, there's no data — return 0.0 not "converged".
+        if cum_1 <= 0:
+            return 0.0
+        if cum_r <= cum_1:
+            return 1.0 if cum_r == cum_1 else 0.0
 
         log_r = math.log(round_idx)
         if abs(log_r) < 1e-10:
@@ -2847,6 +2854,7 @@ class DetectorHealthMonitor:
                         "novelty_rate": self._novelty_history[-2:],
                         "mu": self._mu_history[-2:],
                     },
+                    pathology_key="mu_novelty_disagree",  # CX_FFF_004
                 )
                 new_diagnoses.append(diag)
 
@@ -5583,6 +5591,22 @@ class DynamicManager:
                     C=alpha_ema * obs["C"] + (1 - alpha_ema) * old_fp.C,
                 )
             self._live_fingerprints[model_id] = new_fp
+
+        # CX_FFF_005: Check if PM has degraded below worst PAR (LB_F005)
+        active_ids = {m.model_id for m in self.models if m.model_id in responses}
+        pm_warn = self.role_assignment.pm_performance_warning(
+            live_fingerprints=self._live_fingerprints,
+            active_models=active_ids,
+        )
+        if pm_warn:
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.ROUND_COMPLETE,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=pm_warn,
+                )
+            )
 
         # Emit event with updated fingerprints
         self.event_stream.emit(
