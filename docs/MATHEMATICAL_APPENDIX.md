@@ -812,6 +812,7 @@ No single number tells the whole story. A model might find many things quickly (
 | Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
 | Fingerprint (§7.9) | Verified | Partially implemented |
 | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+| FFF convergence (§7.12) | Verified, 7 properties proven | Process model; implemented via round instructions |
 
 ### 7.11 Manager Selection Function
 
@@ -830,6 +831,59 @@ This function prioritises verified, severe findings concerning HARD constraints,
 When 2/3 or more models agree on a finding but S_v < 0.5 (computational evidence is net negative), the finding is rejected. Model agreement does not override computational falsification. This is by design: the framework trusts mathematics over consensus.
 
 (Added during 3-model confer, 27 March 2026.)
+
+### 7.12 Find-Fix-Follow (FFF) Convergence Model
+
+Standard CDSFL confer rounds require models to report findings but not to resolve them within their own turn. Find-Fix-Follow (FFF) extends this by requiring each model to (1) find a defect, (2) produce an exact fix, and (3) analyse the consequences of that fix — all in a single turn. This produces scope expansion: consequence analysis surfaces cross-section integration issues that finding-only rounds miss.
+
+**State transition:** Each FFF cycle transforms the model state:
+
+> **M_{n+1} = apply(M_n, r_j)**
+
+Where r_j is the resolution of defect d_j found in state M_n. The "follow" step produces consequent defects:
+
+> **D_{n+1} = ν · D_n + ε_n**
+
+Where ν ∈ [0, 1) is the re-injection rate (§7.1) and ε_n ≥ 0 represents novel defects surfaced by consequence analysis.
+
+**Contraction condition:** The FFF operator is contractive when:
+
+> **ε_n < D_n · (1 − ν)**
+
+That is, the novel defects from consequence analysis must be fewer than the net defects resolved. When ν < 1 and this condition holds, |D_n| decreases monotonically.
+
+**Fixed point:** The defect count converges to:
+
+> **D* = ε* / (1 − ν)**
+
+Where ε* is the steady-state novel defect rate. When ε* = 0 (no novel follow defects), D* = 0 — clean convergence. When ε* > 0, D* > 0 — a residual defect floor bounded by the substrate ceiling (§1).
+
+**Convergence rate:** The half-life of the defect count is:
+
+> **n_{1/2} = −ln(2) / ln(ν)**
+
+At ν = 0.5, half-life is 1 round. At ν = 0.8, half-life is 3.1 rounds. This is directly measurable from experimental data.
+
+**Scope expansion ratio:** FFF surfaces more issues per cycle than findings-only confer:
+
+> **D_total = D_found · (1 + σ)**
+
+Where σ = |D_follow| / |D_found| is the scope expansion ratio. When σ = 0, FFF reduces to standard confer. When σ > 0, FFF discovers (1 + σ)× more issues per cycle.
+
+**Relationship to Duane γ (§7.1):** For large n, the Duane intensity ratio λ(n+1)/λ(n) ≈ 1 − γ/n. The FFF contraction rate ν maps to this: γ > 0 ↔ ν < 1 (contractive), γ = 0 ↔ ν = 1 (churn), γ < 0 ↔ ν > 1 (divergent). The FFF convergence model is the discrete-round analogue of the continuous Duane NHPP.
+
+**Termination:**
+- **Natural termination:** D* < τ_D (defect count below threshold), equivalent to ε* < τ_D · (1 − ν)
+- **Substrate ceiling (§1):** D* ≥ τ_D → Hard Exit (the ensemble lacks capability to resolve remaining defects)
+- **Successive stall:** ΔR_n = 0 for consecutive passes → no further progress possible
+
+**Efficiency comparison:** FFF is strictly more efficient than findings-only confer when σ > 0 and ν < 1. Each FFF round costs one model call (same as confer) but resolves issues and surfaces consequences in the same turn. Rounds-to-convergence ratio: n_FFF / n_confer ≈ 1 / (1 + σ).
+
+**Empirical evidence:** Round 7 (31 March 2026). A single Gemini FFF round on the full 826-line appendix produced 6 integration issues — approximately 2 direct finds and 4 follow-consequences (σ ≈ 2.0). These were cross-section issues between Round 6 resolutions and existing appendix text that would have required multiple findings-only rounds to surface.
+
+**Reduction property:** When σ = 0 (no follow step), the FFF model reduces to the standard confer model with findings-only rounds. When ν = 0 (no re-injection), convergence is immediate upon resolution. The standard models are special cases.
+
+(FFF pattern identified from founder's informal Gemini interaction, 31 March 2026. Formalised and SymPy-verified 7/7 during 8-round coherence audit.)
 
 ---
 
@@ -1009,6 +1063,10 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | D_det | Determinate verifier set | This appendix §7.8 |
 | (D_decay,v̄,A,C) | Capability fingerprint | This appendix §7.9 |
 | selected(f) | Manager selection predicate | This appendix §7.11 |
+| D_n | Defect count at FFF round n | This appendix §7.12 |
+| D* | FFF fixed-point defect count | This appendix §7.12 |
+| σ | FFF scope expansion ratio | This appendix §7.12 |
+| n_{1/2} | FFF convergence half-life | This appendix §7.12 |
 | Y_composite | Composite system Total Cognitive Yield | This appendix §8.2 |
 
 ---
