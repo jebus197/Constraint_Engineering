@@ -271,11 +271,20 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   identified: seeded sensitivity (known-defect injection for calibration) and
   NMI-based sycophancy trigger from same Gemini session warrant evaluation
   against existing S_sync and immune layer.
-- **Next:** Apply CX's two minor modifications → apply converged model to
-  MATHEMATICAL_APPENDIX.md (§9, §10, namespace refactor, C(n) branching) →
-  apply Exp 17 implementation fixes → wire composer → resume Exp 17 (CX resets
-  ~3 Apr) → Exp 19 (include find-fix-follow condition) → Exp 18 → immune
-  persistence + PE → Bench Run 2.
+- **Round 7 find-fix-follow audit COMPLETE (31 March 2026, `e86d44e`):**
+  Gemini received full 826-line appendix + all Round 6 resolutions under CDSFL
+  with find-fix-follow instructions. Found 6 integration issues (namespace detail
+  renames, C(n) branching placement as §0.1, τ_defer exponential penalty for
+  decomposition, null-set evaluation with context indicator, suppression guard
+  circular reference, separability axiom placement + ρ clipping). All fixed with
+  exact text. SymPy 10/10 PASS. Gemini declared model mathematically coherent
+  and complete. First practical demonstration of find-fix-follow producing
+  cross-section integration findings in a single round.
+- **Next:** Apply all converged fixes to MATHEMATICAL_APPENDIX.md (namespace
+  refactor, §0.1 C(n) branching, Ising normalisation, τ_defer, null-set guards,
+  separability axioms, ρ clipping) → apply Exp 17 implementation fixes → wire
+  composer → resume Exp 17 (CX resets ~3 Apr) → Exp 19 (find-fix-follow
+  condition) → Exp 18 → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
