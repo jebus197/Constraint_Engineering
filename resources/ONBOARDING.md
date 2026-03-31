@@ -110,8 +110,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   modes classified across mathematical model and immune layer. Dual-track
   fixes implemented (`df52e85`):
   - Mathematical model (MATHEMATICAL_APPENDIX.md §2): delivery feasibility
-    f_del, decomposition yield bounds η_dec, format yield φ_i. Combined:
-    q_ik = f_del · φ_i · d_ik · p_ik. All reduce to existing when factors=1.
+    f_del, decomposition yield bounds η_dec, format yield φ_fmt(i). Combined:
+    q_ik = f_del(i) · φ_fmt(i) · d_ik · p_ik. All reduce to existing when factors=1.
   - Immune layer: 3 new detectors (parser yield anomaly, monotonic decline,
     cost-per-finding spike). [253 tests](../bench/TEST_COVERAGE.md) passing (19 new).
 - **Immune persistence + Policy Engine PLANNED (30 March 2026):** JSON-based
@@ -293,13 +293,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   stopping (§7.4 already handles). SymPy 6/6 PASS. Total audit: 8 rounds,
   39 algebra checks, all passing, 6 models examined. Model remains coherent.
   Log: `bench/logs/gemini_math_audit/round8_fff_eval_gemini_20260331T145404Z.json`.
-- **Next:** Apply all converged fixes to MATHEMATICAL_APPENDIX.md (namespace
-  refactor, §0.1 C(n) branching, Ising normalisation, τ_defer, null-set guards,
-  separability axioms, ρ clipping, plus Round 8 adoptions: seeded sensitivity,
-  NMI diversity, S_sync anchoring, re-injection rate, HIL framing penalty,
-  substrate ceiling) → apply Exp 17 implementation fixes → wire composer →
-  resume Exp 17 (CX resets ~3 Apr) → Exp 19 (find-fix-follow condition) →
-  Exp 18 → immune persistence + PE → Bench Run 2.
+- **MATHEMATICAL_APPENDIX.md REWRITTEN (31 March 2026, `c7f9e7a`):** All
+  converged fixes from 8-round audit applied. 826 → 1022 lines. §0.1 Ising
+  branching, full namespace refactor (17 collisions), τ_defer, null-vector guards,
+  separability axioms, ρ clipping, seeded sensitivity Ŝ_H, NMI diversity δ_ij,
+  S_sync^emp empirical anchor, error re-injection ν, HIL framing penalty IG_HIL,
+  substrate ceiling. Post-edit SymPy 7/7 reduction properties confirmed.
+- **Next:** Apply Exp 17 implementation fixes (IM_F001-F013, LB, VC) → wire
+  composer into orchestrator → resume Exp 17 (CX resets ~3 Apr) → Exp 19
+  (find-fix-follow condition) → Exp 18 → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

@@ -114,9 +114,14 @@ ROUND 8 GEMINI CONSTRUCT EVALUATION COMPLETE (31 March 2026):
 - SymPy 6/6 PASS. Total audit: 8 rounds, 39 algebra checks, all passing
 - Log: bench/logs/gemini_math_audit/round8_fff_eval_gemini_20260331T145404Z.json
 
-ROADMAP (31 March 2026, updated 14:57 UTC):
-1-9. ~~All confer/composer/audit/FFF work~~ ALL DONE (converged + declared complete)
-10. Apply all converged fixes to MATHEMATICAL_APPENDIX.md (includes Round 8 adoptions)
+MATHEMATICAL APPENDIX REWRITTEN (31 March 2026, `c7f9e7a`):
+- All 8-round audit fixes applied. 826 → 1022 lines.
+- §0.1 Ising, namespace refactor, τ_defer, null-vector guards, separability,
+  ρ clipping, seeded sensitivity, NMI diversity, S_sync^emp, re-injection,
+  HIL framing penalty, substrate ceiling. Post-edit SymPy 7/7 PASS.
+
+ROADMAP (31 March 2026, updated 15:15 UTC):
+1-10. ~~All confer/composer/audit/FFF/appendix rewrite~~ ALL DONE
 11. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
 13. Wire composer into orchestrator
 14. Resume Exp 17 (CX quota resets ~3 Apr)

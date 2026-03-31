@@ -49,7 +49,7 @@
 |---|---|---|
 | §2 | d_ik class-specific diversity discount | Not needed for immune layer validation |
 | §2 | η_dec decomposition yield | Treated as binary feasibility, not yield ratio |
-| §2 | φ_i format/parser yield | Monitored empirically, not modelled |
+| §2 | φ_fmt(i) format/parser yield | Monitored empirically, not modelled |
 | §7.5 | O_A objective alignment (sycophancy) | Deferred — A-D4 in math model plan |
 | §7.6 | Δ_adopt / Δ_drop asymmetric rates | Deferred — A-D1 in math model plan |
 | §7.8 | S_v multi-verifier Bayesian severity | Deferred — requires real verification data |
