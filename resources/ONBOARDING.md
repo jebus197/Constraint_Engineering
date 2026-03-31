@@ -308,9 +308,11 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   separability axioms, ρ clipping, seeded sensitivity Ŝ_H, NMI diversity δ_ij,
   S_sync^emp empirical anchor, error re-injection ν, HIL framing penalty IG_HIL,
   substrate ceiling. Post-edit SymPy 7/7 reduction properties confirmed.
-- **Next:** Wire composer into orchestrator → Exp 19 (FFF hypothesis test,
-  2-condition: standard vs FFF) → Exp 20 (sequential confer) → immune
-  persistence + PE → Bench Run 2.
+- **Next:** Unify γ + stop signal → Exp 19 (FFF hypothesis test, composer
+  wired, runner built at `run_exp19_fff.py`) → deep FFF (multi-turn) →
+  Exp 20 (sequential confer) → insight propagation → immune persistence +
+  PE → Bench Run 2. Founder observations:
+  `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)

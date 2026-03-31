@@ -138,11 +138,16 @@ THREE-WAY FFF CONVERGENCE COMPLETE (31 March 2026, `d85eb5a`):
 - Logs: bench/logs/gemini_fff_exp17_fixes/
 
 NEXT STEPS (31 March 2026):
-1. Wire composer into orchestrator
-2. Exp 19: FFF hypothesis test (2-condition: standard vs FFF)
-3. Exp 20: sequential confer (Whole Body Phase 1+2)
-4. Build immune persistence + Policy Engine
-5. Full bench run (Bench Run 2) — the finish line
+1. Composer wired into Exp 19 runner (DONE — `run_exp19_fff.py` built)
+2. Unify γ and diminishing-returns stop signal (founder observation: separate
+   calculations are redundant — γ already measures what vocab/novelty proxy)
+3. Deep FFF (multi-turn within single model) — third Exp 19 condition or separate exp
+4. Exp 19: FFF hypothesis test (2- or 3-condition: standard vs FFF vs deep FFF)
+5. Exp 20: sequential confer (Whole Body Phase 1+2)
+6. Insight propagation: formalise "discover method → propagate across models"
+7. Build immune persistence + Policy Engine
+8. Full bench run (Bench Run 2) — the finish line
+Founder observations: `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."
