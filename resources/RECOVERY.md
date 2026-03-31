@@ -78,20 +78,23 @@ TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
   + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
   `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
 
-ROADMAP (31 March 2026, updated 09:37 UTC):
+ROADMAP (31 March 2026, updated 10:08 UTC):
 1. ~~Implement confer packet fixes in orchestrators~~ DONE (`8c1dacb`)
 2. ~~CX CLI efficiency fixes (reasoning, MCP, ephemeral)~~ DONE
 3. ~~Build dynamic directive composer~~ DONE (`adaa434`, 1,399 lines, all 6 fixes)
-4. Wire composer into orchestrator (Problem 6 integration code exists, not applied)
-5. Apply verified math model extensions to MATHEMATICAL_APPENDIX.md (§7.12–7.16)
-6. Run math model fix confer (A-D1–A-D5 deferred, A-N1–A-N3 new additions)
-7. Resume Exp 17 (CX quota resets ~3 Apr)
-8. Exp 19: composable directive hypothesis test (different configs → different results?)
-9. Test + launch Experiment 18 (sequential confer)
-10. Build immune persistence layer (JSON, ~150 lines)
-11. Build Policy Engine (consolidation of remediation chains + registry)
-12. Wire verification chain into live pipeline
-13. Full bench run (Bench Run 2) — the finish line
+4. Apply MM_F001 + MM_F002 (known math errors from Exp 17) before audit
+5. Build decomposed_dispatch.py (multi-turn staged context loading, ~150 lines)
+6. Gemini Phase 1: solo mathematical coherence audit (decomposed delivery)
+7. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC) in parallel
+8. SymPy verify Gemini's output
+9. Phase 2: all-model CDSFL review of Gemini's unified model (tight math box)
+10. Iterate until convergence (SymPy + model agreement)
+11. Wire composer into orchestrator (Problem 6 integration code exists)
+12. Resume Exp 17 (CX quota resets ~3 Apr)
+13. Exp 19: composable directive hypothesis test
+14. Test + launch Experiment 18 (sequential confer)
+15. Build immune persistence + Policy Engine
+16. Full bench run (Bench Run 2) — the finish line
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."
