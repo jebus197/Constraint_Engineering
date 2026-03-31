@@ -78,32 +78,31 @@ TTS OUTPUT PROTOCOL UPDATED (30 March 2026):
   + tts-repo-mirror. Per-project Desktop folders (e.g. `CDSFL_tts/`) + repo
   `experimental_notes/` as formatted .md. 141 files moved from Accessibility/.
 
-GEMINI PHASE 1 MATH AUDIT COMPLETE (31 March 2026, `d139e12`):
-- decomposed_dispatch.py BUILT (reusable multi-turn staged context loading)
-- gemini_math_audit.py: 8-chunk decomposed delivery, all 8 WAITING responses clean
-- 14,872 chars of mathematical analysis, 174s total
-- KEY FINDINGS: 14 symbol collisions (namespace refactor HARD), all 5 deferred
-  items resolved, A-N1 anti-parroting REJECTED (contradicts O_A), A-N3 modified,
-  Ising model rejected, decomposed delivery attention claim FALSIFIED (cumulative
-  context means α(L_total) applies at synthesis regardless of chunking)
-- Proposes §9-§11 structure for composition extensions
-- Log: bench/logs/gemini_math_audit/round0_gemini_20260331T102313Z.json
+6-ROUND MATHEMATICAL COHERENCE AUDIT CONVERGED (31 March 2026):
+- Round 0: Gemini Phase 1 (8-chunk decomposed, 14,872 chars, 6 tasks)
+- Round 1: SymPy 13/13 PASS + CC observations (5 items)
+- Round 2: Gemini Phase 2 (namespace table, §9/§10 text, self-falsification)
+- Round 4: 5-model review (CC2+CX+ChatGPT+DeepSeek+Gemini, 28,088 chars)
+- Round 5: SymPy 10/10 PASS (ρ_eff domain, C(n) independence, Ising pairwise,
+  normalised Ising, ⊥ probability, Λ uniqueness — all confirmed)
+- Round 6: Gemini final resolutions + CX verification (3 APPROVE, 2 MODIFY)
+- 8 items RESOLVED, 2 minor CX modifications outstanding (editorial)
+- KEY OUTCOMES: normalised Ising with partition function Z, C(n) branching
+  (independent vs correlated), namespace refactor (17 collisions), synthesis
+  deferral operator τ_defer, A-N1 REJECTED, A-N3 null-vector guard
+- Logs: bench/logs/gemini_math_audit/round{0-6}_*.{json,md}
 
-ROADMAP (31 March 2026, updated 11:46 UTC):
-1-3. ~~Confer packets, CX CLI, composer~~ ALL DONE
-4. ~~MM_F001 + MM_F002 applied~~ DONE (`d139e12`)
-5. ~~decomposed_dispatch.py built~~ DONE (`d139e12`)
-6. ~~Gemini Phase 1 math audit~~ DONE (`d139e12`)
-7. SymPy verify Gemini's claims (14 collisions, deferred item resolutions)
-8. Phase 2: all-model CDSFL review of Gemini output (tight math box, decomposed)
-9. Iterate until convergence (SymPy + model agreement)
-10. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
-11. Wire composer into orchestrator
-12. Resume Exp 17 (CX quota resets ~3 Apr)
-13. Exp 19: composable directive hypothesis test
-14. Test + launch Experiment 18 (sequential confer)
-15. Build immune persistence + Policy Engine
-16. Full bench run (Bench Run 2) — the finish line
+ROADMAP (31 March 2026, updated 13:28 UTC):
+1-9. ~~All confer/composer/audit work~~ ALL DONE (converged)
+10. Apply CX's two minor modifications to Gemini Round 6 text
+11. Apply converged model to MATHEMATICAL_APPENDIX.md (§9, §10, namespace, C(n))
+12. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
+13. Wire composer into orchestrator
+14. Resume Exp 17 (CX quota resets ~3 Apr)
+15. Exp 19: composable directive hypothesis test
+16. Test + launch Experiment 18 (sequential confer)
+17. Build immune persistence + Policy Engine
+18. Full bench run (Bench Run 2) — the finish line
 
 STOPPING CRITERION (founder-defined): "Everything wired and fully operational
 to an extent that we can turn it against the bench without wasted effort."

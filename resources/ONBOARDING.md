@@ -244,9 +244,26 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Ising model explicitly rejected. Decomposed delivery attention claim FALSIFIED
   (cumulative context). Proposed §9-§11 structure. Log:
   `bench/logs/gemini_math_audit/round0_gemini_20260331T102313Z.json`.
-- **Next:** SymPy verify Gemini claims → Phase 2 all-model review (decomposed) →
-  iterate → apply Exp 17 implementation fixes → wire composer → resume Exp 17
-  (CX resets ~3 Apr) → Exp 19 → Exp 18 → immune persistence + PE → Bench Run 2.
+- **6-round mathematical coherence audit CONVERGED (31 March 2026, `0c5d7ea`+):**
+  Iterative Gemini-led audit with 5-model CDSFL review and SymPy verification.
+  Round 0: Gemini Phase 1 (8-chunk decomposed, 14,872 chars, 6 tasks). Round 1:
+  SymPy 13/13 PASS + CC observations. Round 2: Gemini Phase 2 (namespace table,
+  §9/§10 text, self-falsification). Round 4: 5-model review (CC2+CX+ChatGPT+
+  DeepSeek+Gemini, 28,088 chars, consensus matrix). Round 5: SymPy 10/10 PASS.
+  Round 6: Gemini final resolutions + CX verification (3 APPROVE, 2 MODIFY).
+  **Resolved (8):** §9.1 P(y_t|x)=⊥→P=0, §9.2 N_len* uniqueness conditional,
+  A-N1 rejection, A-N2 acceptance, §11→§9.4 fold, synthesis deferral, deferred
+  items A-D1–D5, ρ_eff domain restriction [0,1]. **Outstanding (2 minor):** CX
+  modifications to O2 (q_i terminology) and O4 (piecewise weight definition) —
+  both editorial, not mathematical substance. Logs: `bench/logs/gemini_math_audit/`.
+  **Key outcomes:** normalised Ising model with partition function Z, C(n)
+  independence branching (independent vs correlated via Ising), full namespace
+  refactor table (17 collisions), decomposed delivery reformulated as synthesis
+  deferral operator τ_defer, A-N1 anti-parroting REJECTED, A-N3 null-vector guard.
+- **Next:** Apply CX's two minor modifications → apply converged model to
+  MATHEMATICAL_APPENDIX.md (§9, §10, namespace refactor, C(n) branching) →
+  apply Exp 17 implementation fixes → wire composer → resume Exp 17 (CX resets
+  ~3 Apr) → Exp 19 → Exp 18 → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
