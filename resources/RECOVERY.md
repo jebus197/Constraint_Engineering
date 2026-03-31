@@ -106,9 +106,17 @@ ROUND 7 FFF AUDIT COMPLETE (31 March 2026, `e86d44e`):
 - Model declared mathematically coherent and complete by Gemini
 - First practical demonstration of find-fix-follow pattern
 
-ROADMAP (31 March 2026, updated 14:44 UTC):
+ROUND 8 GEMINI CONSTRUCT EVALUATION COMPLETE (31 March 2026):
+- 9 constructs from informal founder-Gemini interaction evaluated under CDSFL FFF
+- 3 ADOPT: seeded sensitivity (S_H), NMI diversity (δ_ij), sycophancy trigger
+- 3 MODIFY: error re-injection (ν), HIL framing penalty, substrate ceiling
+- 3 REJECT: Mayo severity (redundant), calibration ω (unnecessary), optimal stopping (covered)
+- SymPy 6/6 PASS. Total audit: 8 rounds, 39 algebra checks, all passing
+- Log: bench/logs/gemini_math_audit/round8_fff_eval_gemini_20260331T145404Z.json
+
+ROADMAP (31 March 2026, updated 14:57 UTC):
 1-9. ~~All confer/composer/audit/FFF work~~ ALL DONE (converged + declared complete)
-10. Apply all converged fixes to MATHEMATICAL_APPENDIX.md
+10. Apply all converged fixes to MATHEMATICAL_APPENDIX.md (includes Round 8 adoptions)
 11. Apply remaining Exp 17 implementation fixes (IM_F001-F013, LB, VC)
 13. Wire composer into orchestrator
 14. Resume Exp 17 (CX quota resets ~3 Apr)

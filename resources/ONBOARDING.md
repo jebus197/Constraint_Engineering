@@ -280,11 +280,26 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   exact text. SymPy 10/10 PASS. Gemini declared model mathematically coherent
   and complete. First practical demonstration of find-fix-follow producing
   cross-section integration findings in a single round.
+- **Round 8 Gemini construct evaluation COMPLETE (31 March 2026, `e0cbb99`+):**
+  9 constructs from informal founder-Gemini interaction evaluated under CDSFL
+  find-fix-follow. Gemini evaluated its own earlier work against the converged
+  model. **3 ADOPT:** seeded defect injection (empirical ground-truth for m_k),
+  NMI diversity audit (observable estimator for d_ik and J_ij), sycophancy
+  trigger via S_H (anchors S_sync to empirical observables). **3 MODIFY:**
+  error re-injection rate (maps to existing Δ, adds divergence halt), HIL
+  framing penalty (formalises hint damage to search space), substrate ceiling
+  (asymptotic boundary on R_n). **3 REJECT:** Mayo severity (redundant with
+  §4+§0.1+§7.8), calibration coefficient ω (unnecessary scalar), optimal
+  stopping (§7.4 already handles). SymPy 6/6 PASS. Total audit: 8 rounds,
+  39 algebra checks, all passing, 6 models examined. Model remains coherent.
+  Log: `bench/logs/gemini_math_audit/round8_fff_eval_gemini_20260331T145404Z.json`.
 - **Next:** Apply all converged fixes to MATHEMATICAL_APPENDIX.md (namespace
   refactor, §0.1 C(n) branching, Ising normalisation, τ_defer, null-set guards,
-  separability axioms, ρ clipping) → apply Exp 17 implementation fixes → wire
-  composer → resume Exp 17 (CX resets ~3 Apr) → Exp 19 (find-fix-follow
-  condition) → Exp 18 → immune persistence + PE → Bench Run 2.
+  separability axioms, ρ clipping, plus Round 8 adoptions: seeded sensitivity,
+  NMI diversity, S_sync anchoring, re-injection rate, HIL framing penalty,
+  substrate ceiling) → apply Exp 17 implementation fixes → wire composer →
+  resume Exp 17 (CX resets ~3 Apr) → Exp 19 (find-fix-follow condition) →
+  Exp 18 → immune persistence + PE → Bench Run 2.
 - **Experimental design:** 2x2 factorial — Control (no methodology),
   HIL (expert hint only), CDSFL (structure + verification), CDSFL+HIL (full
   methodology with expert guidance and research)
