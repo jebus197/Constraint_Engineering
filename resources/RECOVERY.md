@@ -29,9 +29,9 @@ EXPERIMENT 17 CODE FIXES COMPLETE + Exp 18 FFF CONVERGENCE COMPLETE (31 March 20
 - Three-way FFF round-robin (Gemini → CX GPT-5.4 → Gemini) converged in 3 rounds
   with 7 additional fixes (commit `d85eb5a`). Now formally Experiment 18.
 - CX efficiency confer R2: 4 models × 2 rounds, 46 findings, converged.
-- CLI efficiency fixes PARTIALLY IMPLEMENTED in call_codex(): MCP/plugin
-  disabling and ephemeral mode proposed but NOT YET VERIFIED in code.
-  Reasoning effort remains xhigh (founder decision: max capability, not throttled).
+- CLI efficiency fixes IMPLEMENTED in call_codex(): MCP servers disabled,
+  plugins disabled, ephemeral mode. Reasoning effort reverted to xhigh
+  (founder decision 2026-03-31: max capability, not throttled).
 - Logs: `bench/logs/experiment_17/`, `bench/logs/gemini_fff_exp17_fixes/`
 - Confer results: `bench/logs/cx_efficiency_confer_r2/`
 

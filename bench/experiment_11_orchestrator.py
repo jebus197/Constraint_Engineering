@@ -264,12 +264,13 @@ def call_codex(
     )
 
     # Build command: stdin piping via "-" (CX confer F001)
-    # Efficiency overrides (CX confer R2): reduce reasoning effort from xhigh→medium,
-    # disable MCP servers and plugins (Linear/Notion/Figma/Playwright not needed),
+    # Efficiency overrides (CX confer R2): disable MCP servers and plugins
+    # (Linear/Notion/Figma/Playwright not needed for bench dispatch),
     # ephemeral mode (no session persistence overhead).
+    # NOTE: reasoning_effort stays at default (xhigh) — founder decision
+    # 2026-03-31: max capability required for complex tasks. Do not throttle.
     cmd = [
         "codex", "exec",
-        "-c", 'model_reasoning_effort="medium"',
         "-c", "mcp_servers={}",
         "-c", "plugins={}",
         "--ephemeral",
