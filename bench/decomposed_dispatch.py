@@ -397,6 +397,154 @@ def _decomposed_deepseek(
     )
 
 
+def _decomposed_claude_cli(
+    model_id: str,
+    chunks: Sequence[DecomposedChunk],
+    cdsfl_directives: str,
+    final_instruction: str,
+    timeout: int,
+) -> DecomposedResult:
+    """Decomposed delivery via Claude CLI — true multi-turn via --resume.
+
+    Uses session persistence: first chunk creates a session (--session-id),
+    subsequent chunks continue it (--resume). Each WAIT-step chunk is
+    acknowledged before the next is sent. The final turn triggers synthesis.
+
+    This gives CC2 full cross-chunk context — unlike Codex's per-chunk
+    independent calls, CC2 can reference earlier chunks when analysing
+    later ones. Free on Max subscription.
+    """
+    import uuid
+
+    total = len(chunks) + 1  # chunks + final instruction
+    total_chars = sum(c.chars for c in chunks) + len(final_instruction)
+    session_id = str(uuid.uuid4())
+
+    wait_responses: list[str] = []
+    turns: list[dict[str, str]] = []
+    t0 = time.monotonic()
+
+    _log(f"  [claude-cli] multi-turn dispatch: {len(chunks)} chunks + final, "
+         f"session={session_id[:8]}..., ~{total_chars:,} chars total")
+
+    # Deliver each chunk with WAIT instruction
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        user_msg = _format_wait(n, total, chunk.label) + chunk.content
+
+        if i == 0:
+            # First chunk: create session with --session-id and --system-prompt
+            cmd = [
+                "claude", "-p",
+                "--model", model_id,
+                "--output-format", "text",
+                "--session-id", session_id,
+                "--disallowed-tools", "Bash", "Edit", "Write",
+                "--system-prompt", cdsfl_directives,
+            ]
+        else:
+            # Subsequent chunks: resume existing session
+            cmd = [
+                "claude", "-p",
+                "--output-format", "text",
+                "--resume", session_id,
+            ]
+
+        _log(f"  [claude-cli] delivering chunk {n}/{total}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
+
+        try:
+            result = subprocess.run(
+                cmd,
+                input=user_msg,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+
+            if result.returncode != 0:
+                stderr = result.stderr.strip()[:200]
+                _log(f"  [claude-cli] chunk {n} failed (rc={result.returncode}): {stderr}")
+                wait_responses.append(f"FAILED: {stderr}")
+                turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+                turns.append({"role": "assistant", "content": f"FAILED: {stderr}"})
+                # Session may be broken — can't continue
+                break
+
+            resp_text = result.stdout.strip()
+            wait_responses.append(resp_text)
+            turns.append({"role": "user", "content": user_msg[:200] + "..."})
+            turns.append({"role": "assistant", "content": resp_text})
+
+            if not _is_waiting(resp_text):
+                _log(f"  [claude-cli] WARNING: chunk {n} got non-WAITING "
+                     f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+
+        except subprocess.TimeoutExpired:
+            _log(f"  [claude-cli] chunk {n} timed out after {timeout}s")
+            wait_responses.append(f"TIMEOUT ({timeout}s)")
+            turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+            turns.append({"role": "assistant", "content": f"TIMEOUT after {timeout}s"})
+            break
+
+    # Final instruction — trigger synthesis via --resume
+    final_msg = _format_final(
+        total, total, total_chars, "Synthesis instruction"
+    ) + final_instruction
+
+    cmd_final = [
+        "claude", "-p",
+        "--output-format", "text",
+        "--resume", session_id,
+    ]
+
+    _log(f"  [claude-cli] delivering final instruction (chunk {total}/{total})")
+
+    try:
+        result = subprocess.run(
+            cmd_final,
+            input=final_msg,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        elapsed = time.monotonic() - t0
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip()[:200]
+            raise RuntimeError(f"claude CLI final turn failed (rc={result.returncode}): {stderr}")
+
+        result_text = result.stdout.strip()
+        if not result_text:
+            raise CircuitBreakerTripped(
+                "empty_response", "Claude CLI", "dispatch",
+                f"Empty synthesis after {elapsed:.1f}s",
+            )
+
+        turns.append({"role": "user", "content": final_msg[:200] + "..."})
+        turns.append({"role": "assistant", "content": result_text})
+
+        _log(f"  [claude-cli] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+
+    except subprocess.TimeoutExpired:
+        elapsed = time.monotonic() - t0
+        raise CircuitBreakerTripped(
+            "timeout", "Claude CLI", "dispatch",
+            f"Synthesis timed out after {elapsed:.1f}s",
+        )
+
+    return DecomposedResult(
+        text=result_text,
+        model_id=f"claude-cli/{model_id}",
+        api="claude_cli",
+        chunks_delivered=len(chunks),
+        total_chars_delivered=total_chars,
+        wait_responses=wait_responses,
+        elapsed_s=round(elapsed, 1),
+        turns=turns,
+    )
+
+
 def _decomposed_codex(
     chunks: Sequence[DecomposedChunk],
     cdsfl_directives: str,
@@ -563,7 +711,13 @@ def decomposed_dispatch(
     _log(f"  Decomposed dispatch: {api}/{model_id or 'codex'}, "
          f"{len(chunks)} chunks, ~{sum(c.chars for c in chunks):,} chars")
 
-    if api == "google":
+    if api == "claude_cli":
+        # Claude CLI is single-shot like Codex — use per-chunk independent calls
+        return _decomposed_claude_cli(
+            model_id or "opus", chunks, cdsfl_directives or system_prompt or "",
+            final_instruction, timeout,
+        )
+    elif api == "google":
         return _decomposed_gemini(
             model_id, system_prompt, chunks, final_instruction,
             max_tokens, timeout,

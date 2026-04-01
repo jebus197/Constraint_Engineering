@@ -76,8 +76,8 @@ def load_default_config() -> ExperimentConfig:
     models = [
         ModelConfig(
             label="CC2",
-            model_id="anthropic/claude-opus-4-6",
-            api="openrouter",
+            model_id="opus",
+            api="claude_cli",
             role="player_manager",
             system_prompt_path=str(cdsfl_path),
             max_tokens=32768,
@@ -234,6 +234,79 @@ def call_openrouter(
 
     raise RuntimeError(
         f"OpenRouter call failed after {max_retries} attempts for {model_id}. "
+        f"Last error: {last_error}"
+    )
+
+
+def call_claude_cli(
+    model_id: str,
+    system_prompt: str | None,
+    user_prompt: str,
+    max_tokens: int = 32768,
+    timeout: int = 300,
+    max_retries: int = 3,
+    backoff_base: float = 1.0,
+) -> str:
+    """Call Claude via claude CLI (Max subscription — no API credits needed).
+
+    Uses --bare for minimal overhead (no hooks, LSP, auto-memory, CLAUDE.md).
+    Uses --system-prompt for native CDSFL delivery (unlike Codex which embeds
+    in prompt body). Uses stdin piping for large prompts.
+    """
+    cmd = [
+        "claude", "-p",
+        "--model", model_id,
+        "--output-format", "text",
+        "--no-session-persistence",
+        "--disallowed-tools", "Bash", "Edit", "Write",  # analysis only
+    ]
+    if system_prompt:
+        cmd.extend(["--system-prompt", system_prompt])
+
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        if attempt > 1:
+            _log(f"  [claude-cli:{model_id}] retry {attempt}/{max_retries}")
+        t0 = time.monotonic()
+        try:
+            result = subprocess.run(
+                cmd,
+                input=user_prompt,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+            elapsed = time.monotonic() - t0
+            text = result.stdout.strip()
+            if result.returncode != 0:
+                stderr = result.stderr.strip()[:200]
+                raise RuntimeError(
+                    f"claude CLI returned {result.returncode}: {stderr}")
+            _log(f"  [claude-cli:{model_id}] done ({elapsed:.1f}s, {len(text)} chars)")
+            if not text:
+                raise CircuitBreakerTripped(
+                    "empty_response", model_id, "dispatch",
+                    f"Empty stdout after {elapsed:.1f}s",
+                )
+            return text
+        except subprocess.TimeoutExpired:
+            elapsed = time.monotonic() - t0
+            last_error = TimeoutError(
+                f"claude CLI timed out after {elapsed:.1f}s")
+            _log(f"  [claude-cli:{model_id}] attempt {attempt} failed "
+                 f"({elapsed:.1f}s): {last_error}")
+        except CircuitBreakerTripped:
+            raise
+        except Exception as e:
+            elapsed = time.monotonic() - t0
+            last_error = e
+            _log(f"  [claude-cli:{model_id}] attempt {attempt} failed "
+                 f"({elapsed:.1f}s): {str(e)[:120]}")
+            if attempt < max_retries and backoff_base > 0:
+                time.sleep(backoff_base * (2 ** (attempt - 1)))
+
+    raise RuntimeError(
+        f"Claude CLI call failed after {max_retries} attempts for {model_id}. "
         f"Last error: {last_error}"
     )
 
@@ -556,7 +629,17 @@ def dispatch(
     """
     _log(f"Dispatching to {config.label} ({config.model_id}) via {config.api}...")
 
-    if config.api == "openrouter":
+    if config.api == "claude_cli":
+        return call_claude_cli(
+            model_id=config.model_id,
+            system_prompt=cdsfl_system_prompt if config.system_prompt_path else None,
+            user_prompt=user_prompt,
+            max_tokens=config.max_tokens,
+            timeout=config.timeout,
+            max_retries=config.max_retries,
+            backoff_base=config.backoff_base,
+        )
+    elif config.api == "openrouter":
         return call_openrouter(
             model_id=config.model_id,
             system_prompt=cdsfl_system_prompt if config.system_prompt_path else None,
