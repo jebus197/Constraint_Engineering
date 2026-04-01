@@ -190,15 +190,19 @@ def compose_for_model(model_label: str) -> ComposedDirectiveSet:
 
 # Target chunk size for multi-turn delivery (chars). Chosen to stay well
 # within attention windows for all models (~30K tokens ≈ 120K chars).
-MULTITURN_CHUNK_TARGET = 80_000
+MULTITURN_CHUNK_TARGET = 30_000  # ~7.5K tokens — well within Codex comfort zone
 
 
 def _build_chunks(prompt: str, full_code: str, task_key: str) -> list[DecomposedChunk]:
     """Split a large prompt into WAIT-step chunks for multi-turn delivery.
 
     Strategy: separate the preamble/instructions from the code artifact and
-    any appendices. Each becomes its own chunk. If the code artifact itself
-    exceeds MULTITURN_CHUNK_TARGET, split it at natural boundaries (class/def).
+    any appendices. Each becomes its own chunk. If any chunk exceeds
+    MULTITURN_CHUNK_TARGET, split it at natural boundaries (class/def/blank
+    line) or hard-split if no boundary found within target.
+
+    Run 6 fix: previous threshold (80K) meant 100K artifacts landed in one
+    chunk, causing Codex timeouts. Now 30K with guaranteed hard-split fallback.
     """
     chunks: list[DecomposedChunk] = []
 
@@ -219,27 +223,11 @@ def _build_chunks(prompt: str, full_code: str, task_key: str) -> list[Decomposed
             text += "\n=== END ARTIFACT ==="
 
             if len(text) > MULTITURN_CHUNK_TARGET:
-                # Split large artifact at class/def boundaries
-                lines = text.split("\n")
-                current = []
-                current_len = 0
-                sub_idx = 0
-                for line in lines:
-                    if (current_len > MULTITURN_CHUNK_TARGET // 2
-                            and (line.startswith("class ") or line.startswith("def "))):
-                        chunks.append(DecomposedChunk(
-                            "\n".join(current),
-                            label=f"Artifact {i+1} part {sub_idx+1}",
-                        ))
-                        sub_idx += 1
-                        current = []
-                        current_len = 0
-                    current.append(line)
-                    current_len += len(line) + 1
-                if current:
+                # Split large artifact at class/def boundaries, with hard-split fallback
+                sub_chunks = _split_artifact(text, MULTITURN_CHUNK_TARGET)
+                for si, sc in enumerate(sub_chunks):
                     chunks.append(DecomposedChunk(
-                        "\n".join(current),
-                        label=f"Artifact {i+1} part {sub_idx+1}",
+                        sc, label=f"Artifact {i+1} part {si+1}",
                     ))
             else:
                 chunks.append(DecomposedChunk(text, label=f"Artifact {i+1}"))
@@ -253,6 +241,46 @@ def _build_chunks(prompt: str, full_code: str, task_key: str) -> list[Decomposed
                 chunks.append(DecomposedChunk(chunk_text, label=f"Part {i // MULTITURN_CHUNK_TARGET + 1}"))
 
     return chunks
+
+
+def _split_artifact(text: str, target: int) -> list[str]:
+    """Split a large artifact into chunks at natural boundaries.
+
+    Priority: class/def boundaries > blank-line boundaries > hard split.
+    Guarantees no chunk exceeds 2× target (hard split fallback).
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    current: list[str] = []
+    current_len = 0
+
+    for line in lines:
+        # Natural boundary: class or top-level def (not indented)
+        is_boundary = (
+            line.startswith("class ") or
+            (line.startswith("def ") and not line.startswith("    "))
+        )
+        # Soft boundary: blank line after exceeding target
+        is_soft_boundary = (current_len > target and line.strip() == "")
+
+        if current_len > target and (is_boundary or is_soft_boundary):
+            result.append("\n".join(current))
+            current = []
+            current_len = 0
+
+        current.append(line)
+        current_len += len(line) + 1
+
+        # Hard split: if we've reached 2× target with no boundary, force split
+        if current_len > target * 2:
+            result.append("\n".join(current))
+            current = []
+            current_len = 0
+
+    if current:
+        result.append("\n".join(current))
+
+    return result
 
 
 def _multiturn_fallback(
