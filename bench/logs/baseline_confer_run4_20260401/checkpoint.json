@@ -1,0 +1,674 @@
+{
+  "completed_round": 2,
+  "timestamp": "2026-04-01T05:36:23.736015+00:00",
+  "all_findings": [
+    [
+      {
+        "finding_id": "CC2_IM_F001",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.72,
+        "abstraction_index": 0.6,
+        "description": "In `_verify_remediation_outcomes`, the \"improved\" check for most metrics uses `current_val > old_val` (higher is better). However, for `finding_count`, higher is indeed better, but for `vocab_growth`, the semantics are ambiguous — a pathology like `vocab_saturation` is diagnosed when vocab_growth is *too low*, so improvement means vocab_growth *increasing*. This happens to align with `current_val > old_val`. But for `kappa_stuck`, improvement means kappa increasing — also aligns. The real problem is that `novelty` is not handled as a special case: for `mu_novelty_disagree`, the target metric could be `novelty`, and whether higher novelty is \"improved\" depends on context (if novelty is declining toward convergence, *lower* novelty is the desired state, not higher). The default `current_val > old_val` assumes higher is always better for non-`mu` metrics, which is incorrect for convergence-oriented metrics where decline signals healthy convergence.",
+        "proposed_fix": "Add `novelty` to the special-case handling alongside `mu`. For novelty, \"improved\" should mean the disagreement resolved (novelty and mu now agree), not that novelty increased. Alternatively, store the *direction* of expected improvement in `_remediation_state` when the remediation is applied, rather than hardcoding direction per metric name:\n# In set_remediation_state, add parameter:\n#   improvement_direction: Literal[\"increase\", \"decrease\", \"stabilize\"]\n# In _verify_remediation_outcomes:\nif state[\"improvement_direction\"] == \"increase\":\n    improved = current_val > old_val\nelif state[\"improvement_direction\"] == \"decrease\":\n    improved = current_val < old_val\nelif state[\"improvement_direction\"] == \"stabilize\":\n    improved = abs(current_val - old_val) < abs(old_val) * 0.1",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F002",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.78,
+        "abstraction_index": 0.5,
+        "description": "In `_verify_remediation_outcomes`, when a remediation is ineffective, the code increments `state[\"chain_idx\"]` and updates `state[\"applied_round\"]` and `state[\"metric_at_apply\"]`. However, this escalation happens *without* checking whether the next chain index actually exists in `_REMEDIATION_CHAINS`. The escalated `chain_idx` is stored, and the next call to `apply_diagnosis()` (not shown but referenced) would need to look up this index. If the chain is exhausted (chain_idx >= len(chain)), the system will silently carry a stale remediation state entry that never resolves and never triggers `record_chain_exhaustion`. The verification loop will keep checking this entry every round, finding it \"ineffective\" each time, and incrementing `chain_idx` unboundedly.",
+        "proposed_fix": "After incrementing `chain_idx`, check against the chain length. If exhausted, call `self.record_chain_exhaustion(pathology_key)`, remove the entry from `self._remediation_state`, and emit an appropriate diagnosis:\nstate[\"chain_idx\"] += 1\n# Check if chain is exhausted\nchain = _REMEDIATION_CHAINS.get(pathology_key, [])\nif state[\"chain_idx\"] >= len(chain):\n    self.record_chain_exhaustion(pathology_key)\n    del self._remediation_state[pathology_key]\n    # Emit chain exhaustion diagnosis\nelse:\n    state[\"applied_round\"] = current_round\n    state[\"metric_at_apply\"] = current_val",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F003",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.65,
+        "abstraction_index": 0.3,
+        "description": "`remediation_success_rate` returns `1.0` when `_remediation_outcomes` is empty (\"No data → assume healthy\"). This default interacts badly with `self_diagnose()`: the self-check for low success rate (`success_rate < 0.3`) will never fire until at least one remediation outcome is recorded. This is correct behavior. However, the `false_positive_rate` property divides `natural_resolutions` by `max(1, total_detections)` where `total_detections` counts ALL diagnoses ever emitted (not windowed), while `natural_resolutions` is windowed to the last 10 rounds. This creates an asymmetry: as the system runs longer, `total_detections` grows monotonically while `natural_resolutions` is bounded by the window, causing `false_positive_rate` to trend toward 0 regardless of actual false positive frequency. The self-check for high false positive rate (`fp_rate > 0.5`) becomes increasingly unlikely to fire in long-running sessions.",
+        "proposed_fix": "Window `total_detections` to the same 10-round window used for `natural_resolutions`. Track round index on each diagnosis (already available via `evidence` dict in some but not all diagnoses), or maintain a separate per-round detection counter:\n@property\ndef false_positive_rate(self) -> float:\n    current_round = len(self._kappa_history) - 1\n    window = 10\n    start_round = max(0, current_round - window)\n    # Window BOTH numerator and denominator\n    total_detections = sum(\n        1 for d in self._diagnoses\n        if d.detector not in (\"remediation_outcome\",)\n        and isinstance(d.evidence, dict)\n        and d.evidence.get(\"round\", d.evidence.get(\"occurrence\", 0)) >= start_round\n    )\n    natural_resolutions = sum(\n        1 for fp in self._false_positive_history\n        if fp[\"round\"] >= start_round\n    )\n    if total_detections == 0:\n        return 0.0\n    return min(1.0, natural_resolutions / max(1, total_detections))",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F004",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.7,
+        "description": "The adaptive sensitivity mechanism in `record_round` computes `effective_window` by *adding* `resolved * self._sensitivity_growth` to the base window. The docstring says \"Each resolved pathology makes us less trigger-happy\" and the intent is to widen the window after false alarms. However, `_sensitivity_growth` is initialized to `1` (integer), meaning each resolved pathology adds exactly 1 round to the detection window. Meanwhile, `_sensitivity_decay` (0.8) is described as shrinking the window after false alarms but is never used in `effective_window` — it's only used in `self_diagnose` for the false-positive self-check. The formal specification in the docstring says `W_d(r) = W_d(0) · decay^(count_resolved_d) + growth · count_persistent_d`, but the implementation ignores the `decay^(count_resolved_d)` multiplicative term entirely and uses only the additive `growth · count_resolved` term. The `persistent` variable is computed but never used to adjust the window.",
+        "proposed_fix": "Implement the documented formula:\ndef effective_window(detector: str, base_window: int) -> int:\n    resolved = self._resolved_counts.get(detector, 0)\n    persistent = self._pathology_counts.get(detector, 0)\n    # Multiplicative decay from resolved (false alarms widen window)\n    decayed_base = base_window * (self._sensitivity_decay  resolved)\n    # Additive growth from persistent (true positives narrow window... \n    # but wait — persistent pathologies should INCREASE sensitivity,\n    # meaning NARROWER window, not wider)\n    adjusted = decayed_base + self._sensitivity_growth * persistent\n    return max(2, int(adjusted))\nNote: there's a further conceptual issue — the formula adds `growth * persistent` which *widens* the window for persistent pathologies, but the comment says persistent pathologies should \"escalate severity\" not widen the window. The formula and the intent are contradictory. The fix should subtract persistent contribution or use it only for severity escalation as the prose describes.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F005",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.6,
+        "abstraction_index": 0.4,
+        "description": "`DetectorDiagnosis` has a `pathology_key` field (added per IM_F013 comment) for machine-readable remediation routing. However, several diagnosis emissions in `record_round` and `record_model_round` do not set `pathology_key`. Specifically: the `mu` distortion check (Check 2) never sets `pathology_key`; the `model_failure` diagnosis sets `pathology_key=\"model_failure\"`; the `parser_yield` diagnosis does not set `pathology_key`; the `monotonic_decline` diagnosis does not set `pathology_key`; the `cpf_spike` diagnosis does not set `pathology_key`. Since `pathology_key` defaults to `\"\"`, any remediation routing that keys on `pathology_key` will fail to match these diagnoses, and they'll fall through to no remediation chain.",
+        "proposed_fix": "Set `pathology_key` on every `DetectorDiagnosis` emission. The key should match the corresponding entry in `_REMEDIATION_CHAINS`:\n# For mu distortion (Check 2):\npathology_key=\"mu_distortion\",\n# For parser_yield:\npathology_key=\"parser_yield\",\n# For monotonic_decline:\npathology_key=\"monotonic_decline\",\n# For cpf_spike:\npathology_key=\"cpf_spike\",",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F006",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.55,
+        "abstraction_index": 0.3,
+        "description": "In `record_round`, Check 4 (findings decline) requires `len(self._finding_counts) >= 4` but then checks `recent_3 = self._finding_counts[-3:]` — only the last 3 elements. The `>= 4` guard is overly conservative (3 would suffice for the 3-element slice). More importantly, the monotonic decline check `all(recent_3[i] < recent_3[i - 1] for i in range(1, len(recent_3)))` iterates `i` from 1 to 2, checking `recent_3[1] < recent_3[0]` and `recent_3[2] < recent_3[1]`. This is correct for strict monotonic decline. However, the `total_decline > 5` threshold is applied to `recent_3[0] - recent_3[-1]`, which is `recent_3[0] - recent_3[2]`. If findings go from 6 to 5 to 0, total_decline = 6, which triggers. But if findings go from 100 to 94 to 93, total_decline = 7, which also triggers despite being a <7% decline. The threshold is absolute rather than relative, making it overly sensitive for high-finding-count rounds and insensitive for low-finding-count rounds.",
+        "proposed_fix": "Use a relative threshold or combine absolute and relative:\nrelative_decline = total_decline / max(recent_3[0], 1)\nif total_decline > 5 or relative_decline > 0.3:  # >30% decline\nAlternatively, the `>= 4` guard should be `>= 3` since only 3 elements are used.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F007",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.82,
+        "abstraction_index": 0.7,
+        "description": "The `FailureHandler.get_recovery` method counts `same_type_count` as the total number of historical failures of the same type, not consecutive failures. The `n_fail` parameter is documented as \"Consecutive failures before escalation\" in the config, and the persistence window concept (ChatGPT contribution) is specifically about consecutive/windowed failure detection. But `same_type_count = sum(1 for r in history if r.failure_type == failure_type)` counts ALL historical failures of that type regardless of recency or consecutiveness. This means a model that failed with TIMEOUT in round 1, succeeded in rounds 2-10, then failed with TIMEOUT in round 11 would have `same_type_count=2`, triggering escalation despite the failures being non-consecutive and separated by 9 successful rounds. This contradicts the documented intent and the persistence window design.",
+        "proposed_fix": "Window the failure count to recent rounds, consistent with `persistence_window`:\nwindow = self.config.persistence_window\nrecent_history = [\n    r for r in history\n    if r.round_idx >= round_idx - window\n    and r.failure_type == failure_type\n]\nsame_type_count = len(recent_history)\nrepeated = same_type_count >= self.config.n_fail",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F008",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.58,
+        "abstraction_index": 0.5,
+        "description": "`FailureHandler.get_recovery` handles `DOWNGRADE_ROLE` by changing `COL → PAR` in `role_map`. However, there is no handling for downgrading `PM → COL` or `PM → PAR`. The PM failure path goes directly to ABORT on repeated failure, so PM downgrade is arguably not needed. But the `UNDERPERFORM` path applies to all roles including PM (the PM check only gates EMPTY/TIMEOUT/MALFORMED). A PM that underperforms repeatedly would get `DOWNGRADE_ROLE`, but the downgrade code only handles `COL → PAR`. A PM downgrade would be silently ignored, leaving the PM in its role despite the recovery action saying it should be downgraded.",
+        "proposed_fix": "Either (a) add PM downgrade handling (`PM → COL` or `PM → PAR`), or (b) explicitly exclude PM from the UNDERPERFORM → DOWNGRADE_ROLE path by adding a PM check before the underperform recovery:\nelif failure_type == FailureType.UNDERPERFORM:\n    if is_pm:\n        action = RecoveryAction.LOG_ONLY  # PM underperformance logged, not downgraded\n    else:\n        action = (\n            RecoveryAction.DOWNGRADE_ROLE if repeated else RecoveryAction.LOG_ONLY\n        )",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F009",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.68,
+        "abstraction_index": 0.5,
+        "description": "In `check_dispatch_health`, the verification miscalibration check computes `pop_std` from model means (per the IM_F009 comment in the code itself — this was a prior fix). However, with only 3 models (the minimum for the check to fire), the population standard deviation of 3 means is extremely noisy. A z-score threshold of -2.0 with N=3 means is statistically questionable — with 3 data points, a z-score of -2.0 is nearly impossible under a normal distribution (it would require one value to be an extreme outlier relative to just 2 others). The check will almost never fire with exactly 3 models, and when it does fire, it's likely detecting a genuine outlier but with very low statistical power. The `>= 3` threshold creates a false sense of statistical validity.",
+        "proposed_fix": "Either raise the minimum model count to 5+ for meaningful z-score analysis, or use a simpler threshold-based check for small model counts:\nif len(model_means) >= 5:\n    # Z-score approach (statistically meaningful)\n    ...\nelif len(model_means) >= 3:\n    # Simple threshold: flag if model mean < 50% of population mean\n    for model_id, m in model_means.items():\n        if m < pop_mean * 0.5:\n            # Flag as potential miscalibration\n            ...",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F010",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.75,
+        "abstraction_index": 0.8,
+        "description": "The extended P-pass implementation in `_extended_p_pass_remediation` has a convergence detection flaw. The \"same failures as previous iteration\" check compares failure *signatures* (the prefix before \" — \") across iterations. But `all_failures` accumulates failures from ALL iterations, and the code attempts to separate previous-iteration failures by slicing `all_failures[:-len(iteration_failures)]`. This is incorrect when `iteration_failures` is empty (would take `all_failures[:]`, i.e., all failures, as \"previous\"), and when iterations produce different numbers of failures, the slice boundaries don't correctly isolate per-iteration failures. Furthermore, the early-stop comparison `if not new_failures` checks if the *current* iteration's failure signatures are a subset of *all prior* iterations' signatures combined, not just the immediately preceding iteration. This means the convergence criterion is weaker than intended — it stops when no *globally* new failure types appear, not when two consecutive passes agree.",
+        "proposed_fix": "Track per-iteration failure signatures explicitly:\nprev_iteration_sigs: Set[str] = set()\nfor iteration in range(max_iterations):\n    iteration_failures: List[str] = []\n    # ... (existing checks) ...\n    current_sigs = set(f.split(\" — \")[0] for f in iteration_failures)\n    if iteration > 0 and current_sigs == prev_iteration_sigs:\n        break  # Two consecutive passes agree\n    prev_iteration_sigs = current_sigs",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F011",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.5,
+        "abstraction_index": 0.3,
+        "description": "`FailureHandler._expected_performance` calls `self.config.get_baseline(role)` but `DynamicManagementConfig` as shown does not define a `get_baseline` method. The config has `b_pm`, `b_col`, `b_par` fields, but no dispatch method. This is listed in the Interface Summary as `config.get_baseline(role) → NDArray`, so it presumably exists but is not shown. If the implementation simply returns the matching `b_*` array, there's no issue. But if `get_baseline` is missing, `_expected_performance` will raise `AttributeError` on every call, making underperformance detection completely non-functional.",
+        "proposed_fix": "Verify `get_baseline` exists on `DynamicManagementConfig`. If not, add:\ndef get_baseline(self, role: Role) -> NDArray[np.float64]:\n    if role == Role.PM:\n        return self.b_pm\n    elif role == Role.COL:\n        return self.b_col\n    else:\n        return self.b_par",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_IM_F012",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.63,
+        "abstraction_index": 0.4,
+        "description": "FINDING_ID: IM_F012\nSEVERITY: 0.63\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.4\nDESCRIPTION: In `record_model_round`, the monotonic decline resolution logic checks `if self._pathology_counts.get",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_IM_F013",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.7,
+        "abstraction_index": 0.6,
+        "description": "`_REMEDIATION_CHAINS` is referenced throughout the codebase (in comments, in `_verify_remediation_outcomes` escalation logic, in `recommended_chain_start`, and in IM_F002's chain exhaustion check) but is never defined in the visible code. It appears as a class-level reference in `DetectorHealthMonitor` context but no actual data structure is shown. The `_is_multi_modular` method references it: `\"Must match _REMEDIATION_CHAINS keys\"`. Without this mapping, the entire autonomous remediation escalation system is inoperable — `apply_diagnosis()` cannot look up which fixes to try, `recommended_chain_start` returns indices into a nonexistent chain, and chain exhaustion detection cannot determine chain length.",
+        "proposed_fix": "Define `_REMEDIATION_CHAINS` as a class variable on `DetectorHealthMonitor` (or module-level constant), mapping pathology keys to ordered lists of remediation steps:\n_REMEDIATION_CHAINS: ClassVar[Dict[str, List[Dict[str, Any]]]] = {\n    \"kappa_stuck\": [\n        {\"transform\": \"lower_tau_sim\", \"delta\": -0.1, \"target_metric\": \"kappa\"},\n        {\"transform\": \"reset_equivalence_classes\", \"target_metric\": \"kappa\"},\n        {\"transform\": \"switch_similarity_function\", \"target_metric\": \"kappa\"},\n    ],\n    \"mu_distortion\": [...],\n    \"findings_decline\": [...],\n    \"vocab_saturation\": [...],\n    \"model_failure\": [...],\n    # etc.\n}\nThis is likely defined in the truncated portion of the file, but its absence from the visible code means the entire chain-based remediation system cannot be verified.",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_IM_F014",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.55,
+        "abstraction_index": 0.3,
+        "description": "In `record_round`, Check 5 (vocab saturation) uses a hardcoded window of 3 rounds (`if len(self._vocab_growth_history) >= 3` and `recent_vg = self._vocab_growth_history[-3:]`), but the config parameter `vocab_sustained_window` is set to 5. The health monitor's vocab saturation check uses a different (shorter) window than the `DiminishingReturnsDetector`'s vocab saturation stop signal. This means the health monitor will diagnose \"premature vocab saturation\" after 3 rounds of low growth, while the actual stop predicate requires 5 rounds. The health monitor fires its remediation 2 rounds before the stop predicate would actually trigger, potentially applying unnecessary fixes.",
+        "proposed_fix": "Use the config's `vocab_sustained_window` instead of hardcoded 3:\nvw = self._config.vocab_sustained_window if self._config else 3\nif len(self._vocab_growth_history) >= vw:\n    recent_vg = self._vocab_growth_history[-vw:]",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F015",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 7,
+        "severity": 0.45,
+        "abstraction_index": 0.2,
+        "description": "`false_positive_rate` iterates over ALL `self._diagnoses` on every call, with a filter that checks `hasattr(d, 'evidence')` and `isinstance(d.evidence, dict)`. Since `DetectorDiagnosis` always has an `evidence` field (defaulting to `{}`), the `hasattr` check always passes and the `isinstance` check always passes (it's always a dict). This means `total_detections` simply counts all non-remediation-outcome diagnoses ever emitted. For long-running sessions with many rounds, this list grows unboundedly and the linear scan becomes increasingly expensive. Combined with IM_F003 (the windowing asymmetry), this is both a correctness and performance issue.",
+        "proposed_fix": "Maintain a per-round detection counter (`self._detections_per_round: List[int]`) incremented in `record_round`, and use it for windowed counting:\n@property\ndef false_positive_rate(self) -> float:\n    window = 10\n    start = max(0, len(self._detections_per_round) - window)\n    total = sum(self._detections_per_round[start:])\n    natural = sum(1 for fp in self._false_positive_history if fp[\"round\"] >= start)\n    if total == 0:\n        return 0.0\n    return min(1.0, natural / max(1, total))",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F016",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.7,
+        "description": "The `FailureHandler` does not integrate with `DetectorHealthMonitor` or the immune feedback loop. When `FailureHandler` excludes a model (`_active_models.discard(model_id)`), this changes the active model count, which the health monitor tracks via `record_round(active_models=...)`. But the health monitor's `record_model_round` is called separately and tracks its own `_model_failure_counts`. There is no mechanism for the health monitor's diagnoses (e.g., \"model_failure\" pathology) to influence `FailureHandler`'s recovery decisions. The two systems operate in parallel with no feedback coupling: `FailureHandler` makes exclusion decisions based on its own `n_fail` threshold, while `DetectorHealthMonitor` diagnoses the same failures with its own window and severity logic. If the health monitor recommends \"bench temporarily and reassign workload\" but `FailureHandler` has already permanently excluded the model, the health monitor's recommendation is moot. Conversely, if the health monitor's remediation (e.g., \"lower decomposition threshold\") would prevent the failure, `FailureHandler` doesn't wait for it.",
+        "proposed_fix": "Add a consultation step in `FailureHandler.get_recovery` that checks whether the health monitor has an active remediation for the failing model before escalating to EXCLUDE:\ndef get_recovery(self, model_id, round_idx, failure_type, health_monitor=None):\n    # ... existing logic ...\n    if action == RecoveryAction.EXCLUDE and health_monitor is not None:\n        key = f\"model_failure_{model_id}\"\n        if key in health_monitor._remediation_state:\n            # Active remediation in progress — defer exclusion\n            action = RecoveryAction.RETRY_EXTENDED\n    # ... rest of method ...\nAlternatively, make `FailureHandler` accept a health monitor reference at construction and consult it automatically.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F017",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 8,
+        "severity": 0.48,
+        "abstraction_index": 0.2,
+        "description": "The `_sensitivity_growth` parameter is initialized to `1` (integer) while `_sensitivity_decay` is `0.8` (float). The formal specification in the docstring describes `growth > 0` as growing the window after persistent true positives, but the actual effect in `effective_window` is to widen the detection window for persistent pathologies — making the system *less* sensitive to them, not more. The docstring says \"Repeated exposure to the SAME pathology narrows the window and speeds response\" but the implementation widens it. This is a documentation-implementation contradiction. The code comment \"But persistent pathologies don't reduce window — they escalate severity\" partially acknowledges this but doesn't reconcile with the formal specification.",
+        "proposed_fix": "Either update the formal specification to match the implementation (persistent pathologies widen window, severity escalation is the sensitivity mechanism), or fix the implementation to match the specification (persistent pathologies narrow the window). Given that severity escalation is already implemented separately, the specification should be updated to accurately describe the actual behavior.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F001",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.96,
+        "abstraction_index": 0.82,
+        "description": "Rejected P-pass steps are recorded as if they were applied remediations. That lets the verifier score never-run chain steps, poison step-effectiveness learning, and skip or exhaust chains incorrectly.",
+        "proposed_fix": "Separate “chain advanced” from “remediation applied” and make the verifier ignore unapplied states.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F002",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.9,
+        "abstraction_index": 0.69,
+        "description": "Approved deferred remediations are stamped with the diagnosis round, not the approval round. That makes verification windows, regression snapshots, and audit logs point to the wrong intervention time.",
+        "proposed_fix": "Use the actual approval round when recording the adjustment and remediation state, and snapshot deferred approvals the same way AUTO fixes are snapshotted.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F003",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.87,
+        "abstraction_index": 0.58,
+        "description": "`process_round()` tells the health monitor a model “failed” only when the response is missing or unparsable. TIMEOUT, EMPTY, FORMAT, and UNDERPERFORM failures detected by `FailureHandler` are invisible to immune per-model failure tracking.",
+        "proposed_fix": "Drive the health monitor from the authoritative `failures` map, not from `parseable` alone.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F004",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.84,
+        "abstraction_index": 0.63,
+        "description": "The verifier assumes “higher is better” for `vocab_growth`, but the `vocab_saturation` remediation works by lowering the threshold, not by forcing the raw metric upward. A successful threshold change can therefore be marked as ineffective and escalated unnecessarily.",
+        "proposed_fix": "Verify `vocab_saturation` by checking whether the pathology still holds under the new threshold, not by comparing raw metric direction.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F005",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.74,
+        "abstraction_index": 0.44,
+        "description": "`record_round()` stores primary detector diagnoses in `_diagnoses` before it appends remediation-outcome and self-diagnosis results. Those later diagnoses are returned to the caller but silently missing from the monitor’s persistent history.",
+        "proposed_fix": "Extend `_diagnoses` only after all diagnosis sources have been collected.",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F001",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.2,
+        "description": "In `DetectorHealthMonitor.record_round` (Check 3), the threshold condition multiplies `self._mu_history[-2]` directly by 1.2 to detect a 20% increase. Because marginal value (`mu`) can naturally be negative, multiplying a negative value by a factor > 1 makes it *more negative*. Consequently, a decreasing `mu` falsely triggers the threshold as an \"increase\", resulting in false positive diagnoses for detector disagreement.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F002",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.5,
+        "description": "The P-pass validations in `_standard_p_pass_remediation` and `_extended_p_pass_remediation` use `abs(recent_3[i]) <= abs(recent_3[i - 1]) * 1.05` to assess if `mu` is naturally improving. Because `mu` stabilisation means returning toward zero, an \"improving\" trend mandates a shrinking magnitude. Permitting a 1.05 multiplier actively authorises a 5% *growth* in `mu` magnitude to pass as \"improving\", causing the P-pass to prematurely abort valid and necessary interventions due to a false perception of natural recovery.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F003",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.4,
+        "description": "In `FailureHandler.get_recovery`, the escalation evaluation `same_type_count >= self.config.n_fail` compares the count of *past* failures directly against the limit. With the default `n_fail=2`, this requires 2 historical failure records before escalation occurs on the *third* failure. This violates the `n_fail` bounded limit and contradicts the explicit inline testing intent where the second failure should trigger ABORT.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F004",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.9,
+        "abstraction_index": 0.7,
+        "description": "In `DetectorHealthMonitor.self_diagnose`, Check 2 attempts to reduce an unacceptable false positive rate by escalating `self._sensitivity_decay`. However, `_sensitivity_decay` is dead code; it is never leveraged in the window calculation mechanism `effective_window()`. Instead, `effective_window()` exclusively monitors `self._sensitivity_growth` to widen detection ranges. Because the immune layer modifies an orphaned variable, it enters an infinite unhandled loop, permanently failing to desensitize the framework.",
+        "proposed_fix": "",
+        "verified": false
+      }
+    ],
+    [
+      {
+        "finding_id": "CC2_IM_F027",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.75,
+        "description": "The `false_positive_rate` property computes `total_detections` by counting ALL diagnoses ever emitted (no round windowing), but computes `natural_resolutions` only within the last 10 rounds (`fp[\"round\"] >= start_round`). This creates a denominator that grows monotonically while the numerator is windowed, causing the false positive rate to asymptotically approach 0.0 regardless of actual recent false positive frequency. After enough rounds, `self_diagnose()` Self-check 2 (`fp_rate > 0.5`) becomes structurally impossible to trigger, even if every recent detection is a false positive. The property claims to measure \"last 10 rounds\" but only windows the numerator.",
+        "proposed_fix": "Window `total_detections` to the same round range. Either add a `round` field to each diagnosis entry and filter by `start_round`, or maintain a separate per-round detection counter. The denominator and numerator must use the same temporal window.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F028",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.78,
+        "abstraction_index": 0.65,
+        "description": "In `record_round` Check 3 (novelty/mu disagreement), the condition `mu_increasing_now = self._mu_history[-1] > self._mu_history[-2] * 1.2` has the same negative-value bug that was fixed in Check 2 (the \"Exp14 fix\" comment). When `mu` is negative (common during convergence), multiplying by 1.2 makes the threshold MORE negative, so any less-negative value (i.e., mu improving toward zero) triggers the \"mu increasing\" condition. For example, mu going from -0.5 to -0.3 satisfies `-0.3 > -0.5 * 1.2 = -0.6`, falsely detecting mu as \"increasing\" when it's actually stabilising. Check 2 was explicitly fixed to use absolute values; Check 3 was not.",
+        "proposed_fix": "Apply the same absolute-value pattern used in Check 2: `mu_increasing_now = self._mu_history[-1] > self._mu_history[-2] + abs(self._mu_history[-2]) * 0.2` or equivalently compare absolute magnitudes.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F029",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.72,
+        "abstraction_index": 0.55,
+        "description": "The `_extended_p_pass_remediation` convergence detection compares `current_sigs` (failure signatures from the current iteration) against `prev_sigs` derived from `all_failures[:-len(iteration_failures)]`. However, `all_failures` accumulates across ALL iterations. On iteration 2, `prev_failures_for_sig` contains iteration 0 AND iteration 1 failures. On iteration 1, it contains only iteration 0 failures. This means the \"previous\" baseline grows each iteration, making it progressively harder to detect \"no new failures\" because the comparison set keeps expanding. The correct comparison is between the current iteration's failures and the immediately preceding iteration's failures only — not the entire accumulated history. This is related to but distinct from CC2_IM_F010 (which identified the accumulation issue); the specific consequence here is that the early-stop condition becomes increasingly permissive rather than increasingly strict, potentially terminating too early when iteration 2 finds failures that were already in iteration 0 but not iteration 1.",
+        "proposed_fix": "Track per-iteration failure signatures separately: `per_iteration_failures: List[Set[str]] = []`, append `current_sigs` each iteration, and compare `per_iteration_failures[-1]` against `per_iteration_failures[-2]`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F030",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.7,
+        "description": "`FailureHandler.get_recovery` for `FailureType.FORMAT` has the escalation logic inverted. When `repeated=True` (multiple FORMAT failures), it returns `RETRY_CLARIFIED`. When `repeated=False` (first FORMAT failure), it returns `DEGRADE`. This means the first format violation triggers degradation (a more severe action), while repeated format violations only trigger a clarified retry (a less severe action). Every other failure type in the policy table escalates severity on repetition (RETRY→EXCLUDE, RETRY_EXTENDED→EXCLUDE, etc.). FORMAT uniquely de-escalates. The recovery policy table in §7.2 of the converged plan would logically have DEGRADE or RETRY_CLARIFIED on first failure and EXCLUDE or stronger on repetition.",
+        "proposed_fix": "Swap the actions: `action = RecoveryAction.RETRY_CLARIFIED if not repeated else RecoveryAction.DEGRADE` (or EXCLUDE for repeated FORMAT failures, matching the escalation pattern of other types).",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F031",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 6,
+        "severity": 0.68,
+        "abstraction_index": 0.45,
+        "description": "`record_model_round` appends diagnoses to `self._diagnoses` directly (via `self._diagnoses.append(diag)`) for model_failure, parser_yield, monotonic_decline, and cpf_spike detections. It also returns them. But `record_round` calls `self._diagnoses.extend(new_diagnoses)` at the end for its own diagnoses. If the caller collects diagnoses from both `record_round` and `record_model_round` and then iterates `self._diagnoses` or `self.all_diagnoses`, the model-level diagnoses appear twice in the combined view — once from the direct append in `record_model_round`, and once if the caller adds the returned list to any aggregate. More critically, `record_model_round` diagnoses are added to `self._diagnoses` BEFORE `record_round` runs, so `false_positive_rate`'s `total_detections` count includes model-level diagnoses in the denominator even though they have no corresponding natural-resolution tracking (model-level pathologies use `record_natural_resolution` with model-specific keys like `monotonic_decline_{model_id}`, but `false_positive_rate` counts ALL non-remediation-outcome diagnoses).",
+        "proposed_fix": "Either have `record_model_round` only return diagnoses (not append to `self._diagnoses`) and let the caller decide, or ensure `false_positive_rate` filters to the same detector categories that can produce natural resolutions.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F032",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.74,
+        "abstraction_index": 0.6,
+        "description": "The `_p_pass_self_adjustment` early-stop condition compares string representations of pass reports: `if iteration > 0 and pass_reports[-1] == pass_reports[-2]`. But `pass_reports` entries include the iteration number in the string (e.g., `\"Self-adjustment P-pass iteration 1: 2 failures\"` vs `\"Self-adjustment P-pass iteration 2: 2 failures\"`). These strings will NEVER be equal because the iteration counter differs. The early-stop condition is dead code — the loop always runs to `max_iterations`. This means the extended P-pass for self-adjustments never benefits from convergence detection, always consuming the full iteration budget.",
+        "proposed_fix": "Compare failure sets rather than report strings. Track `per_iteration_failures` as a list of sets and compare `per_iteration_failures[-1] == per_iteration_failures[-2]`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F033",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 2,
+        "severity": 0.65,
+        "abstraction_index": 0.5,
+        "description": "`FailureHandler._expected_performance` calls `self.config.get_baseline(role)`, but `DynamicManagementConfig` defines `b_pm`, `b_col`, `b_par` as separate fields with no `get_baseline()` dispatch method. This was noted as CC2_IM_F011 (VERIFIED: FALSE). Examining the code more carefully: the `__post_init__` method is shown but its body is not included in the artifact. If `get_baseline` is not implemented there or elsewhere, every call to `detect_failure` for UNDERPERFORM checking will raise `AttributeError`, making underperformance detection completely non-functional. The `validate_k1` static method only tests TIMEOUT, never exercising the UNDERPERFORM path, so this would not be caught by the built-in validators.",
+        "proposed_fix": "Add a `get_baseline(self, role: Role) -> NDArray` method to `DynamicManagementConfig` that dispatches to `b_pm`, `b_col`, or `b_par` based on the role enum value.",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_IM_F034",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.55,
+        "description": "In `self_diagnose` Self-check 2 (high false positive rate), the code adjusts `self._sensitivity_decay` but this parameter is never read by `effective_window()`. The `effective_window` function uses `self._sensitivity_growth` (to widen the window based on resolved counts) but never uses `_sensitivity_decay`. This means Self-check 2's remediation action (increasing `_sensitivity_decay` from 0.8 toward 0.95) has zero effect on detection behaviour. The formal specification in `__init__` describes `decay ∈ (0,1) — shrinks window after false alarms` but the implementation of `effective_window` only implements the growth term. This is closely related to Gemini_IM_F004 but extends it: not only is `_sensitivity_decay` dead code in `effective_window`, but the self-diagnosis system actively \"remediates\" by adjusting this dead parameter, creating a false sense of self-correction while the actual false positive rate remains unaffected.",
+        "proposed_fix": "Either implement the decay term in `effective_window` (e.g., `adjusted = max(2, int(base_window * (decay  resolved) + growth * persistent))`), or change Self-check 2 to adjust a parameter that `effective_window` actually reads (e.g., increase `_sensitivity_growth` to widen windows faster).",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F035",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 6,
+        "severity": 0.62,
+        "abstraction_index": 0.4,
+        "description": "`record_round` Check 4 (findings decline) requires `all(recent_3[i] < recent_3[i - 1] for i in range(1, len(recent_3)))` — strict monotonic decline. It also requires `total_decline > 5`. But the resolution branch (the `else` clause) fires whenever the decline pattern is NOT strictly monotonic. This means a sequence like [20, 10, 10] (decline then plateau) clears the pathology counter, even though findings have halved and are stagnant. The pathology is \"findings declining\" but the resolution condition is \"not strictly declining\" — a plateau after a crash is treated as recovery. Similarly, [20, 15, 16] (decline then tiny bounce) clears the counter despite an overall 20% drop.",
+        "proposed_fix": "The resolution condition should require actual recovery, not merely non-decline. For example: `recent_3[-1] >= recent_3[0]` (latest count at least as high as the start of the window), or require the count to exceed a fraction of the pre-decline peak.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F036",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 4,
+        "severity": 0.58,
+        "abstraction_index": 0.35,
+        "description": "`record_model_round` detects `parser_yield` and `cpf_spike` pathologies but neither sets `pathology_key` on the emitted `DetectorDiagnosis`. The `pathology_key` field defaults to `\"\"`. This means these pathologies cannot be routed through `_REMEDIATION_CHAINS` (which uses `pathology_key` for lookup), cannot be tracked by `set_remediation_state` (which indexes by `pathology_key`), and cannot benefit from the autonomous remediation escalation system. The `monotonic_decline` and `model_failure` detections in the same method also omit `pathology_key`. This extends CC2_IM_F005's observation about missing `pathology_key` to the full set of `record_model_round` detections.",
+        "proposed_fix": "Set `pathology_key` on all `DetectorDiagnosis` emissions in `record_model_round`: `pathology_key=\"parser_yield\"`, `pathology_key=\"cpf_spike\"`, `pathology_key=\"monotonic_decline\"`, `pathology_key=\"model_failure\"`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F037",
+        "model_id": "CC2",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.66,
+        "abstraction_index": 0.5,
+        "description": "`FailureHandler.should_abort` checks `len(self._active_models) < self.config.k_min` with `k_min` defaulting to 1. This means abort only triggers when there are ZERO active models. But the config comment on line ~156 says `k_min: int = 2  # Minimum active models before abort`, while the actual default in the dataclass is `k_min: int = 1`. The Interface Summary also states `k_min | 2 | 156 | Minimum active models before abort`. If the intended value is 2 (as documented), the default of 1 means the system will continue operating with a single non-PM model even when the design intent is to abort. If the intended value is 1, the documentation is wrong. Either way, there's a specification-implementation mismatch.",
+        "proposed_fix": "Align the default value with the documented intent. If the design requires at least 2 active models, set `k_min: int = 2`. Update the Interface Summary or the code to match.",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_001",
+        "model_id": "Gemini",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.5,
+        "description": "FINDING_ID: IM_F_NEW_001\nSEVERITY: 0.85\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.5\nVERIFIED: TRUE\nDESCRIPTION: In `DetectorHealthMonitor.check_dispatch_health`, the verification miscalibration check require",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_002",
+        "model_id": "Gemini",
+        "round_idx": 1,
+        "flaw_class": 4,
+        "severity": 0.75,
+        "abstraction_index": 0.4,
+        "description": "FINDING_ID: IM_F_NEW_002\nSEVERITY: 0.75\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.4\nVERIFIED: TRUE\nDESCRIPTION: In `DetectorHealthMonitor.record_model_round`, the `DetectorDiagnosis` instances created for th",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_003",
+        "model_id": "Gemini",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.88,
+        "abstraction_index": 0.6,
+        "description": "FINDING_ID: IM_F_NEW_003\nSEVERITY: 0.88\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.6\nVERIFIED: TRUE\nDESCRIPTION: In `DetectorHealthMonitor.false_positive_rate`, the ratio is documented to calculate over the \"",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_004",
+        "model_id": "Gemini",
+        "round_idx": 1,
+        "flaw_class": 4,
+        "severity": 0.82,
+        "abstraction_index": 0.5,
+        "description": "FINDING_ID: IM_F_NEW_004\nSEVERITY: 0.82\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.5\nVERIFIED: TRUE\nDESCRIPTION: In `DetectorHealthMonitor.record_model_round`, the `parser_yield` and `cpf_spike` pathology det",
+        "proposed_fix": "",
+        "verified": true
+      }
+    ],
+    [
+      {
+        "finding_id": "CC2_IM_F_R2_001",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.88,
+        "abstraction_index": 0.75,
+        "description": "In `_verify_remediation_outcomes`, when a remediation is judged INEFFECTIVE, the code increments `state[\"chain_idx\"]` in-place but does NOT delete the entry from `self._remediation_state`. The next call to `_verify_remediation_outcomes` will re-evaluate the same `pathology_key` entry with the incremented `chain_idx`, the updated `applied_round = current_round`, and `metric_at_apply = current_val`. However, no code ever actually *applies* the escalated chain step. The comment says \"the next apply_diagnosis call will try the next fix in the chain\" — but `_verify_remediation_outcomes` is called from `record_round()`, which runs every round regardless of whether `apply_diagnosis()` is called. If `apply_diagnosis()` is not called (e.g., the diagnosis was already handled, or the caller doesn't invoke it), the verification window for the escalated step elapses, the same metric is re-checked, it's judged ineffective again (because no fix was actually applied), `chain_idx` increments again, and this repeats until the chain is silently exhausted — all without any remediation step ever being executed after the first one. This is a runaway escalation loop driven by verification of never-applied steps.",
+        "proposed_fix": "After incrementing `chain_idx` for escalation, set a flag like `state[\"awaiting_application\"] = True`. In `_verify_remediation_outcomes`, skip entries where `awaiting_application` is True. Clear the flag in `set_remediation_state()` when the caller actually applies the next step. Alternatively, remove the entry from `_remediation_state` on ineffective verdict and let `apply_diagnosis()` re-enter it when it applies the escalated step.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_002",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.82,
+        "abstraction_index": 0.65,
+        "description": "`effective_window()` is defined as a closure inside `record_round()` and uses `self._resolved_counts` and `self._pathology_counts` to compute the adaptive window. The growth term `resolved * self._sensitivity_growth` widens the window after natural resolutions. However, `_resolved_counts` is monotonically increasing (it's incremented on resolution but never decremented or decayed). Over a long run with many transient pathologies that self-resolve, the effective window grows without bound: `effective_window(\"kappa\", 3)` could become 3 + 10*1 = 13 after 10 resolutions. At window=13, the kappa-stuck check requires 13 consecutive rounds of kappa < 0.01 before firing — effectively disabling the detector for any run shorter than 13 rounds. The `max(2, ...)` floor prevents it from going below 2 but provides no ceiling. The `_sensitivity_decay` parameter was intended to counteract this (the docstring says \"decay ∈ (0,1) — shrinks window after false alarms\") but as noted in CC2_IM_F034/Gemini_IM_F004, `_sensitivity_decay` is dead code — it's never read by `effective_window()`.",
+        "proposed_fix": "Add a ceiling to `effective_window`: `adjusted = min(base_window * 2, max(2, int(adjusted + resolved * self._sensitivity_growth)))`. Alternatively, implement the decay term as originally designed: `adjusted = int(base_window * (self._sensitivity_decay  resolved) + persistent * self._sensitivity_growth)`, which would shrink the window as resolutions accumulate (since decay < 1).",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_003",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.78,
+        "abstraction_index": 0.6,
+        "description": "In `record_round` Check 5 (vocab saturation), the resolution branch is missing entirely. When vocab growth recovers above `tau_vg`, the `vocab_saturation` entry in `_pathology_counts` is never cleared. Compare with Checks 1, 2, and 4, which all have `else` branches that reset `_pathology_counts[key] = 0`, increment `_resolved_counts`, and call `record_natural_resolution()`. The absence of a resolution branch means: (a) `_pathology_counts[\"vocab_saturation\"]` ratchets upward permanently, causing severity to escalate to CRITICAL and stay there even after the condition resolves; (b) `false_positive_rate` is understated because natural resolutions of vocab saturation are never recorded; (c) `effective_window` for vocab_saturation (if it were used) would never benefit from resolution-based widening.",
+        "proposed_fix": "Add an `else` branch after the `if all(vg < tau_vg for vg in recent_vg):` block that mirrors the resolution logic in Checks 1/2/4: reset `_pathology_counts[\"vocab_saturation\"]` to 0, increment `_resolved_counts[\"vocab_saturation\"]`, and call `self.record_natural_resolution(\"vocab_saturation\")` if no active remediation exists.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_004",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 2,
+        "severity": 0.76,
+        "abstraction_index": 0.55,
+        "description": "`record_remediation_outcome()` is documented as \"Called by `_verify_remediation_outcomes` when a verdict is reached\" and it feeds `_remediation_outcomes` and `_step_effectiveness`. However, `_verify_remediation_outcomes` calls it for BOTH successful and ineffective remediations. The `_step_effectiveness` tracker correctly records both. But `recommended_chain_start()` uses `_step_effectiveness` to skip steps where `stats[\"fail\"] >= 2 and stats[\"success\"] == 0`. The problem: when the runaway escalation from IM_F_R2_001 occurs (verification of never-applied steps), each phantom \"ineffective\" verdict increments the fail count for chain steps that were never actually tried. This poisons `recommended_chain_start()` — it will recommend skipping steps that have never been executed, based on phantom failure data. The step-effectiveness learning system learns from fabricated evidence.",
+        "proposed_fix": "Guard `record_remediation_outcome()` to only record outcomes for steps that were actually applied (not just scheduled for escalation). This requires the `awaiting_application` flag from IM_F_R2_001's fix, or a separate `actually_applied` boolean in the remediation state.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_005",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 6,
+        "severity": 0.72,
+        "abstraction_index": 0.45,
+        "description": "`self_diagnose()` Self-check 1 gates on `len(self._remediation_outcomes) >= 3` before checking `success_rate < 0.3`. But `remediation_success_rate` uses `self._remediation_outcomes[-10:]` (last 10). When exactly 3 outcomes exist and all are failures, `success_rate = 0.0 < 0.3` triggers the self-adjustment. The self-adjustment widens `_stuck_window` and `_mu_increase_window`. But with only 3 data points, the success rate estimate has enormous variance — a single success would change it from 0.0 to 0.33, crossing the threshold. The minimum sample size of 3 is too small for a self-adjustment that permanently widens detection windows (there's no mechanism to narrow them back if the success rate later improves). This creates a ratchet: early failures trigger window widening, which reduces detection sensitivity, which reduces the number of remediations attempted, which means fewer outcomes are recorded, which means the success rate stays low or becomes undefined.",
+        "proposed_fix": "Increase the minimum sample size to at least 5-6 outcomes before triggering self-adjustment. Add a complementary self-check that narrows windows back when `remediation_success_rate > 0.7` for a sustained period, preventing the one-directional ratchet.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_006",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.5,
+        "description": "In `FailureHandler.get_recovery`, the UNDERPERFORM path returns `RecoveryAction.DOWNGRADE_ROLE` when `repeated=True`, and the subsequent execution block handles `DOWNGRADE_ROLE` by changing `COL → PAR`. But `repeated` is computed as `same_type_count >= self.config.n_fail` where `same_type_count` counts ALL historical UNDERPERFORM failures for that model, not just recent ones within the `persistence_window`. A model that underperformed 2 rounds ago (triggering UNDERPERFORM), then performed well for 5 rounds, then underperforms again, will have `same_type_count = 2 >= n_fail(2)`, so `repeated=True`, and will immediately get DOWNGRADE_ROLE instead of LOG_ONLY. The persistence window concept (ChatGPT contribution, documented in config) is correctly applied in `detect_failure()` for *detecting* underperformance, but the *recovery escalation* ignores temporal locality entirely. The failure history is append-only with no windowing.",
+        "proposed_fix": "Filter `same_type_count` to only count failures within a recent window (e.g., `persistence_window` rounds): `same_type_count = sum(1 for r in history if r.failure_type == failure_type and r.round_idx >= round_idx - self.config.persistence_window)`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_007",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.68,
+        "abstraction_index": 0.4,
+        "description": "`check_dispatch_health` Pathology 5 (verification miscalibration) computes `pop_std` from model means using population standard deviation. With exactly 3 models (the minimum for the check to fire), the population std of 3 values is inherently noisy (CC2_IM_F009 noted this). But there's a deeper issue: the z-score threshold of -2.0 with a population of 3 means is statistically meaningless. In a population of 3, the maximum possible |z-score| for any single value is `2/√3 ≈ 1.15` when using population std (since the outlier pulls the mean toward itself). Therefore `z_score < -2.0` is mathematically impossible with 3 data points using population standard deviation. The check can never fire with exactly 3 models. With 4+ models it becomes possible but still requires extreme divergence. The `pop_std > 0.01` guard prevents division by zero but doesn't address the impossibility of the z-score threshold being reachable.",
+        "proposed_fix": "Either lower the z-score threshold to something achievable with small populations (e.g., -1.5), or switch to a different test for small N (e.g., check if a model's mean is below `pop_mean - 0.2` as an absolute threshold rather than a z-score). Alternatively, use sample std (`ddof=1`) which produces larger values and makes the z-score threshold reachable, though still noisy.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_008",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 4,
+        "severity": 0.65,
+        "abstraction_index": 0.35,
+        "description": "`record_model_round` detects `monotonic_decline` pathology and has a resolution branch (the `else` clause that resets `_pathology_counts[key]` and calls `record_natural_resolution`). However, the resolution branch fires whenever the strict decline pattern `recent_3[0] > recent_3[1] > recent_3[2]` is NOT met. This includes the case where `recent_3[0] == 0` (the guard `recent_3[0] > 0` prevents diagnosis but doesn't prevent resolution). If a model has history `[0, 0, 0]`, the decline pattern fails, the else branch fires, and if `_pathology_counts[key] > 0` from a prior diagnosis, it records a \"natural resolution\" — even though the model is producing zero findings. A model going from `[5, 3, 1]` (diagnosed) to `[1, 0, 0]` (not strictly declining because 0 == 0) would be marked as \"resolved\" despite being in a worse state.",
+        "proposed_fix": "Add a positive-output guard to the resolution branch: only mark as resolved if the most recent finding count is above some minimum (e.g., `recent_3[-1] > 0`), or if the trend has actually reversed (increasing).",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_009",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 6,
+        "severity": 0.62,
+        "abstraction_index": 0.3,
+        "description": "`_p_pass_self_adjustment` has an early-stop condition `if iteration > 0 and pass_reports[-1] == pass_reports[-2]`. CC2_IM_F032 identified that iteration numbers in the string prevent equality. But there's a second issue: the `failures` list used in the final verdict block (`hard = [f for f in failures if \"contradiction\" in f]`) only contains failures from the LAST iteration, not all iterations. The variable `failures` is re-initialized at the top of each loop iteration (`failures: List[str] = []`). If iteration 1 found a HARD contradiction but iteration 2 found only SOFT failures, the final verdict would see no HARD failures and return WARN instead of REJECT. The early-stop break preserves the last iteration's failures, but normal loop completion also uses only the last iteration's failures.",
+        "proposed_fix": "Accumulate all failures across iterations (similar to `all_failures` in `_extended_p_pass_remediation`) and use the accumulated list for the final verdict. Alternatively, break on the first iteration that finds HARD failures.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F_R2_010",
+        "model_id": "CC2",
+        "round_idx": 2,
+        "flaw_class": 2,
+        "severity": 0.58,
+        "abstraction_index": 0.45,
+        "description": "`FailureHandler.detect_failure` emits `ManagerEventType.MALFORMED` for both MALFORMED (Priority 3) and FORMAT (Priority 4) failures. The FORMAT detection branch uses `event_type=ManagerEventType.MALFORMED` with detail \"Response parseable but not format-compliant\". Any downstream consumer of the event stream (PM monitoring, audit logs) cannot distinguish between a truly malformed response and a format-non-compliant one. The `ManagerEventType` enum presumably has a FORMAT variant (or should), but the code reuses MALFORMED. This means event-stream-based failure tracking will overcount MALFORMED and undercount FORMAT, and any event-driven recovery logic keyed on event type will misroute FORMAT failures.",
+        "proposed_fix": "Use the correct event type for FORMAT failures. If `ManagerEventType.FORMAT` doesn't exist, add it. If the enum intentionally lacks it, use `ManagerEventType.MALFORMED` but include `failure_type: \"FORMAT\"` in the event detail or as a structured field.",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_ZSCORE_IMPOSSIBLE",
+        "model_id": "Gemini",
+        "round_idx": 2,
+        "flaw_class": 5,
+        "severity": 0.95,
+        "abstraction_index": 0.6,
+        "description": "FINDING_ID: IM_F_NEW_ZSCORE_IMPOSSIBLE\nSEVERITY: 0.95\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.60\nVERIFIED: TRUE\nDESCRIPTION: In `check_dispatch_health`, the verification miscalibration check uses `z_score ",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_GENERATOR_FILTER_BUG",
+        "model_id": "Gemini",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.4,
+        "description": "FINDING_ID: IM_F_NEW_GENERATOR_FILTER_BUG\nSEVERITY: 0.80\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.40\nVERIFIED: TRUE\nDESCRIPTION: In `_extended_p_pass_remediation`, the per-model impact assessment checks for",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_SIMPLEST_SUFFICIENT_INVERSION",
+        "model_id": "Gemini",
+        "round_idx": 2,
+        "flaw_class": 1,
+        "severity": 0.82,
+        "abstraction_index": 0.5,
+        "description": "FINDING_ID: IM_F_NEW_SIMPLEST_SUFFICIENT_INVERSION\nSEVERITY: 0.82\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.50\nVERIFIED: TRUE\nDESCRIPTION: In `self_diagnose`, the code generates self-adjustment candidates to",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F_NEW_UNRESOLVED_MODEL_PATHOLOGY",
+        "model_id": "Gemini",
+        "round_idx": 2,
+        "flaw_class": 4,
+        "severity": 0.85,
+        "abstraction_index": 0.5,
+        "description": "FINDING_ID: IM_F_NEW_UNRESOLVED_MODEL_PATHOLOGY\nSEVERITY: 0.85\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.50\nVERIFIED: TRUE\nDESCRIPTION: In `record_model_round`, the `model_failure` pathology lacks an `else:`",
+        "proposed_fix": "",
+        "verified": true
+      }
+    ]
+  ],
+  "result_so_far": {
+    "experiment": "baseline_confer_run4",
+    "start_time": "2026-04-01T04:52:00.370714+00:00",
+    "models": [
+      "CC2",
+      "Codex",
+      "Gemini"
+    ],
+    "task": "immune",
+    "max_rounds": 5,
+    "rounds": [
+      {
+        "round": 0,
+        "type": "blind",
+        "findings_count": 26,
+        "models_responded": [
+          "CC2",
+          "Codex",
+          "Gemini"
+        ],
+        "elapsed_s": 830.7,
+        "per_model": {
+          "CC2": 17,
+          "Codex": 5,
+          "Gemini": 4
+        }
+      },
+      {
+        "round": 1,
+        "type": "adaptive",
+        "findings_count": 15,
+        "models_responded": [
+          "CC2",
+          "Gemini"
+        ],
+        "elapsed_s": 911.1,
+        "per_model": {
+          "CC2": 11,
+          "Gemini": 4
+        }
+      },
+      {
+        "round": 2,
+        "type": "adaptive",
+        "findings_count": 14,
+        "models_responded": [
+          "CC2",
+          "Gemini"
+        ],
+        "elapsed_s": 921.3,
+        "per_model": {
+          "CC2": 10,
+          "Gemini": 4
+        }
+      }
+    ]
+  }
+}

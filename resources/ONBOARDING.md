@@ -177,6 +177,17 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Three test runs diagnosed and fixed different bugs. Run 3 reached R3 with 58
   findings before session loss. Runner now structurally correct; needs clean re-run.
   Logs: `bench/logs/baseline_confer_20260331/`.
+- **Baseline confer γ-unified + C(H,E) (1 April 2026, uncommitted):**
+  Run 4 upgrades. Two SymPy-verified changes to `run_baseline_confer.py`:
+  (1) **γ unification:** Replaced multi-proxy stop signal (vocabulary saturation
+  + novelty window) with Duane γ threshold + Y(t) abstraction guard. SymPy proof:
+  Heaps' dV/dn ≡ Duane λ(n) (identical form). Abstraction guard independent
+  (γ measures count decay, not depth). Net: 3 params → 1 γ threshold + 1 Y(t)
+  monotonicity check. (2) **C(H,E) Popper corroboration:** Degree of corroboration
+  C(H,E) = (P(E|H) − P(E)) / (P(E|H) + P(E)) computed as reporting metric.
+  P(E|H) = CDSFL finding rate, P(E) = Control baseline (2.0/round from Bench Run
+  1 smoke test). Domain [-1,+1], SymPy-verified. Provides Popper-native number
+  for white paper. Logs: `bench/logs/baseline_confer_run4_20260401/`.
 - **Experiment 20 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp20_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
@@ -331,8 +342,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Sequence: (1) standard CDSFL baseline confer with CC2+CX+Gemini, (2) add
   CX MCP/plugin flags, (3) add parallel dispatch, (4) add WBA attribution.
   Each change measured independently.
-- **Next:** Standard CDSFL baseline confer → CX flags → parallel dispatch →
-  WBA attribution → γ unification → Exp 19 → Exp 20 → Bench Run 2.
+- **Next:** Baseline Run 4 (γ-unified + C(H,E)) → CX flags → parallel dispatch →
+  WBA attribution → Exp 19 → Exp 20 → Bench Run 2.
   Founder observations: `docs/experimental_notes/Founders_FFF_Observations_2026-03-31.md`.
   Outstanding items: `docs/experimental_notes/Outstanding_Fixes_And_Deferred_Items_2026-03-31.md`.
 - **Experimental design:** 2x2 factorial — Control (no methodology),

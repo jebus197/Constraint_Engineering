@@ -1003,9 +1003,10 @@ class TestFailureHandler:
         action = fh_setup.get_recovery("m_low", 0, FailureType.MALFORMED)
         assert action == RecoveryAction.RETRY_CLARIFIED
 
-    def test_recovery_format_first_is_degrade(self, fh_setup):
+    def test_recovery_format_first_is_retry_clarified(self, fh_setup):
+        """IM_F030 fix: first FORMAT occurrence should be lenient (RETRY_CLARIFIED)."""
         action = fh_setup.get_recovery("m_low", 0, FailureType.FORMAT)
-        assert action == RecoveryAction.DEGRADE
+        assert action == RecoveryAction.RETRY_CLARIFIED
 
     def test_recovery_underperform_first_is_log_only(self, fh_setup):
         action = fh_setup.get_recovery("m_low", 0, FailureType.UNDERPERFORM)

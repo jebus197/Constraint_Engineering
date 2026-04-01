@@ -2644,8 +2644,8 @@ class DetectorHealthMonitor:
         # and less sensitive to transient fluctuations.
         self._pathology_counts: Dict[str, int] = {}  # detector → consecutive occurrences
         self._resolved_counts: Dict[str, int] = {}   # detector → resolved pathologies
-        self._sensitivity_decay: float = 0.8  # reduce window after resolved pathology
-        self._sensitivity_growth: float = 1   # extend window after persistent pathology
+        self._sensitivity_decay: float = 0.8  # multiplicative decay per resolved pathology
+        self._sensitivity_growth: float = 0.5  # multiplicative growth per persistent pathology
 
         # --- Autonomous remediation (Exp15) ---
         # Track per-model failure counts for failure pattern detection.
@@ -2737,10 +2737,11 @@ class DetectorHealthMonitor:
         def effective_window(detector: str, base_window: int) -> int:
             resolved = self._resolved_counts.get(detector, 0)
             persistent = self._pathology_counts.get(detector, 0)
-            adjusted = base_window
-            # Each resolved pathology makes us less trigger-happy
-            adjusted = max(2, int(adjusted + resolved * self._sensitivity_growth))
-            # But persistent pathologies don't reduce window — they escalate severity
+            # IM_F005/IM_F034 fix: multiplicative decay W_d(r) = W_d(0) * decay^resolved
+            # and wire in _sensitivity_decay + _sensitivity_growth (previously dead code)
+            decay = self._sensitivity_decay
+            growth = self._sensitivity_growth
+            adjusted = max(2, int(base_window * (decay ** resolved) * (1 + growth * persistent)))
             return adjusted
 
         # Check 1: kappa stuck at zero
@@ -2837,7 +2838,7 @@ class DetectorHealthMonitor:
         # Check 3: novelty_rate and mu disagreeing
         if len(self._novelty_history) >= 2 and len(self._mu_history) >= 2:
             novelty_declining = self._novelty_history[-1] < self._novelty_history[-2] * 0.8
-            mu_increasing_now = self._mu_history[-1] > self._mu_history[-2] * 1.2
+            mu_increasing_now = abs(self._mu_history[-1]) > abs(self._mu_history[-2]) * 1.2
 
             if novelty_declining and mu_increasing_now:
                 diag = DetectorDiagnosis(
@@ -2890,7 +2891,10 @@ class DetectorHealthMonitor:
                     )
                     new_diagnoses.append(diag)
             else:
-                if self._pathology_counts.get("findings_decline", 0) > 0:
+                # IM_F035 fix: require actual recovery (latest >= earliest),
+                # not just non-decline. A plateau after a crash is not recovery.
+                if (self._pathology_counts.get("findings_decline", 0) > 0
+                        and recent_3[-1] >= recent_3[0]):
                     self._resolved_counts["findings_decline"] = (
                         self._resolved_counts.get("findings_decline", 0) + 1
                     )
@@ -2933,8 +2937,6 @@ class DetectorHealthMonitor:
                     )
                     new_diagnoses.append(diag)
 
-        self._diagnoses.extend(new_diagnoses)
-
         # --- Autonomous remediation outcome verification (Exp15) ---
         # After each round, check if previously applied remediations worked.
         verification_results = self._verify_remediation_outcomes()
@@ -2946,6 +2948,9 @@ class DetectorHealthMonitor:
         self_diags = self.self_diagnose()
         for sd in self_diags:
             new_diagnoses.append(sd)
+
+        # IM_F005 fix: extend AFTER all diagnosis sources collected
+        self._diagnoses.extend(new_diagnoses)
 
         return new_diagnoses
 
@@ -3342,11 +3347,24 @@ class DetectorHealthMonitor:
         window = 10
         start_round = max(0, current_round - window)
 
-        total_detections = sum(
-            1 for d in self._diagnoses
+        # IM_F027 fix: window BOTH numerator and denominator to same range.
+        # DetectorDiagnosis lacks a round field, so we estimate by taking
+        # the last (window * avg_diagnoses_per_round) diagnoses. Since
+        # _diagnoses are appended in round order, the tail approximates
+        # the windowed set. Use len(kappa_history) as total rounds.
+        total_rounds = max(1, len(self._kappa_history))
+        all_detections = [
+            d for d in self._diagnoses
             if hasattr(d, 'evidence') and isinstance(d.evidence, dict)
             and d.detector not in ("remediation_outcome",)
-        )
+        ]
+        if total_rounds > window and all_detections:
+            # Approximate: take proportional tail of detections
+            fraction = min(1.0, window / total_rounds)
+            windowed_count = max(1, int(len(all_detections) * fraction))
+            total_detections = windowed_count
+        else:
+            total_detections = len(all_detections)
         natural_resolutions = sum(
             1 for fp in self._false_positive_history
             if fp["round"] >= start_round
@@ -3805,6 +3823,7 @@ class DetectorHealthMonitor:
             (proceed: bool, rationale: str)
         """
         pass_reports: List[str] = []
+        prev_failures: List[str] = []
 
         for iteration in range(max_iterations):
             failures: List[str] = []
@@ -3891,9 +3910,12 @@ class DetectorHealthMonitor:
                     + "; ".join(pass_reports)
                 ))
 
-            # Early stop: same failures as previous iteration
-            if iteration > 0 and pass_reports[-1] == pass_reports[-2]:
+            # Early stop: same failure SET as previous iteration
+            # IM_F032 fix: compare failure sets, not string reports (which
+            # include iteration number and thus can never be equal)
+            if iteration > 0 and set(failures) == set(prev_failures):
                 break
+            prev_failures = list(failures)
 
         # Verdict: HARD failures (contradictions) reject, SOFT warn
         hard = [f for f in failures if "contradiction" in f]
@@ -4264,7 +4286,7 @@ class DetectorHealthMonitor:
             if pop_std > 0.01:  # avoid division by near-zero
                 for model_id, m in model_means.items():
                     z_score = (m - pop_mean) / pop_std
-                    if z_score < -2.0:
+                    if z_score < -1.2:  # Samuelson: max |z|=√(N-1)≈1.414 for N=3
                         # Check if already diagnosed
                         key = f"verif_miscal_{model_id}"
                         persistence = self._pathology_counts.get(key, 0)
@@ -4514,8 +4536,10 @@ class FailureHandler:
                 RecoveryAction.EXCLUDE if repeated else RecoveryAction.RETRY_CLARIFIED
             )
         elif failure_type == FailureType.FORMAT:
+            # IM_F030 fix: first occurrence=RETRY_CLARIFIED (lenient),
+            # repeated=DEGRADE (escalate). Was previously inverted.
             action = (
-                RecoveryAction.RETRY_CLARIFIED if repeated else RecoveryAction.DEGRADE
+                RecoveryAction.DEGRADE if repeated else RecoveryAction.RETRY_CLARIFIED
             )
         elif failure_type == FailureType.UNDERPERFORM:
             action = (
@@ -4773,18 +4797,25 @@ class CorrelatedFailureModel:
         for mid in model_ids:
             independent_all *= rates[mid]
 
-        # Find maximum pairwise correlation contribution
-        max_correlation_boost = 0.0
+        # Pairwise correlated failure: P(A∩B) = p^2 + rho*p*(1-p)
+        # This is the mathematically correct joint formula that guarantees
+        # P(A∩B) <= min(P(A), P(B)) when rho in [0,1].
+        # For >2 models, use worst-case pairwise joint probability.
+        max_pairwise_joint = 0.0
         ids = list(model_ids)
         for i in range(len(ids)):
             for j in range(i + 1, len(ids)):
-                v = self.get_vulnerability(ids[i], ids[j])
-                boost = v * min(rates[ids[i]], rates[ids[j]])
-                max_correlation_boost = max(max_correlation_boost, boost)
+                rho = self.get_vulnerability(ids[i], ids[j])
+                p_i = rates[ids[i]]
+                p_j = rates[ids[j]]
+                p_min = min(p_i, p_j)
+                # Joint: p_min^2 + rho * p_min * (1 - p_min)
+                joint = p_min ** 2 + rho * p_min * (1 - p_min)
+                max_pairwise_joint = max(max_pairwise_joint, joint)
 
-        # Conservative estimate: independent product + worst-case correlation
-        # Clamped to not exceed the minimum individual failure rate
-        result = independent_all + max_correlation_boost
+        # Conservative estimate: max of independent product and worst-case
+        # pairwise joint, clamped to min individual rate
+        result = max(independent_all, max_pairwise_joint)
         min_individual = min(rates.values()) if rates else 0.0
         return min(result, min_individual)
 

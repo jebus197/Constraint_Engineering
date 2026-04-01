@@ -448,7 +448,7 @@ def _decomposed_codex(
 
     cmd = [
         "codex", "exec",
-        "-c", 'model_reasoning_effort="medium"',
+        "-c", 'model_reasoning_effort="xhigh"',
         "-c", "mcp_servers={}",
         "-c", "plugins={}",
         "--ephemeral",

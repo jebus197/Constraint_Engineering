@@ -83,13 +83,12 @@
 
 ## 4. Founder's Three Strategic Observations
 
-### 4a. γ unification — `PENDING (founder decision required)`
+### 4a. γ unification — `IMPLEMENTED (1 April 2026)`
 - **Source:** Founder observation (2026-03-31), recorded in `Founders_FFF_Observations_2026-03-31.md`
-- **Insight:** Decay curve γ already measures what the diminishing-returns stop signal (vocabulary saturation + novelty window + abstraction guard) measures via proxies. Unifying would simplify code and make stopping mathematically grounded.
-- **Implementation path:** Replace `tau_vocab_growth` threshold with γ threshold calibrated from data. Make novelty window redundant (sustained high γ is mathematically equivalent). Use `kappa_rate` as derivative of decay curve.
-- **Benefit:** Reduces parameter space before Bench Run 2.
-- **Risk:** γ estimation requires ≥2 rounds of data. Early rounds would have no stop signal.
-- **Trigger:** Pre-Bench Run 2 refactor, after founder confirms.
+- **Insight:** Decay curve γ already measures what the diminishing-returns stop signal (vocabulary saturation + novelty window + abstraction guard) measures via proxies.
+- **SymPy verification (1 April 2026):** Heaps' law dV/dn = K·β·n^{β−1} has identical form to Duane λ(n) = α·γ·n^{γ−1}. Vocabulary saturation and novelty window are discretized approximations of γ monitoring. Abstraction guard is independent (γ measures count, not depth).
+- **Implementation:** `run_baseline_confer.py` — replaced `_check_convergence()` with γ threshold (0.5) + Y(t) cognitive yield monotonicity guard. Subsumes τ_vocab_growth and novelty_window. Keeps abstraction guard. 3 params → 1 γ threshold + 1 Y(t) check.
+- **Validation:** Synthetic test: 20→10→5→3 findings → γ=0.537 → converged. Ascending abstraction (10 shallow → 3 deep) → γ=0.621 but Y(t) ascending → NOT converged. Both correct.
 
 ### 4b. Deep FFF (multi-turn FFF within single model) — `DEFERRED`
 - **Source:** Founder observation (2026-03-31)
@@ -175,8 +174,9 @@
 ## Execution Sequence (Founder-Approved)
 
 1. ✅ Write this tracking file (this document)
-2. **NEXT:** Run standard CDSFL confer (existing proven schema) with CC2 + CX + Gemini on immune task area. No novel dispatch changes. FFF via situation layer. Clean baseline.
-3. **AFTER BASELINE:** Layer in changes one at a time, measured against baseline:
+2. ✅ γ unification implemented + C(H,E) Popper corroboration added (1 April 2026)
+3. **NEXT:** Run 4 — standard CDSFL confer with CC2 + CX + Gemini on immune task area. γ-unified stop signal. C(H,E) reporting. FFF via situation layer. Clean baseline.
+4. **AFTER BASELINE:** Layer in changes one at a time, measured against baseline:
    - First: CX MCP/plugin flags (items 1a, 1b)
    - Then: Parallel blind dispatch (item 2a)
    - Then: Finding attribution (item 3a)
