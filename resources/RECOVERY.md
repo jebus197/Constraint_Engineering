@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 1 April 2026 02:50 UTC
+Last updated: 1 April 2026 08:28 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,25 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (31 March 2026, 21:56 UTC)
+## Current Pending Work (1 April 2026, 08:28 UTC)
 
 Experiments 12–18 ALL COMPLETE. See ONBOARDING.md for details.
+
+BASELINE CONFER RUN 5 LIVE (1 April 2026):
+- 5 models: CC2 + CX + Gemini + DeepSeek + ChatGPT, all xhigh reasoning
+- All under CDSFL + FFF, reviewing dynamic_management.py immune layer
+- 10 SymPy-confirmed fixes applied, multi-turn fallback armed, no-exclusion policy
+- Check status: `ps aux | grep run_baseline_confer`
+- Live log: `tail -f bench/logs/baseline_confer_run5_20260401/run5_live.log`
+- Checkpoint: `bench/logs/baseline_confer_run5_20260401/checkpoint.json`
+- Resume: `python3 bench/run_baseline_confer.py --resume`
+
+INPUT COMPLEXITY HYPOTHESIS (1 April 2026, not yet implemented):
+- Compute Heaps β on input text → γ_input complexity signal for dispatch routing
+- Extended: amplification factor A = β_output/β_input (learned after R0)
+- Three-dimensional dispatch: length × γ_input × A
+- Notes: docs/experimental_notes/Input_Complexity_Decay_Curves_2026-04-01.md
+- Notes: docs/experimental_notes/Amplification_Factor_2026-04-01.md
 
 EXPERIMENT 17 CODE FIXES COMPLETE + Exp 18 FFF CONVERGENCE COMPLETE (31 March 2026):
 - Round 3 COMPLETE (140 findings). All applicable code fixes applied in 4 batches:
