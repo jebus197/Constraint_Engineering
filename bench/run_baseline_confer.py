@@ -71,7 +71,7 @@ from dynamic_management import (
     RoundResult,
     DetectorDiagnosis,
 )
-from run_exp12_live_wire import (
+from runner_core import (
     source_env,
     build_model_specs,
     parse_findings,
