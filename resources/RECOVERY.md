@@ -19,23 +19,32 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (1 April 2026, 08:28 UTC)
+## Current Pending Work (1 April 2026, 18:03 UTC)
 
-Experiments 12–18 ALL COMPLETE. See ONBOARDING.md for details.
+Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. See ONBOARDING.md for details.
 
-BASELINE CONFER RUN 5 LIVE (1 April 2026):
+RUN 6 READY TO LAUNCH (1 April 2026):
+- All 31 immune layer bugs from Run 5 fixed + FFF verified (4 additional fixes)
+- JSON parser fixed (ChatGPT JSON array format now handled)
+- Observation-only γ/A measurement wired in (does not affect dispatch)
 - 5 models: CC2 + CX + Gemini + DeepSeek + ChatGPT, all xhigh reasoning
-- All under CDSFL + FFF, reviewing dynamic_management.py immune layer
-- 10 SymPy-confirmed fixes applied, multi-turn fallback armed, no-exclusion policy
-- Check status: `ps aux | grep run_baseline_confer`
-- Live log: `tail -f bench/logs/baseline_confer_run5_20260401/run5_live.log`
-- Checkpoint: `bench/logs/baseline_confer_run5_20260401/checkpoint.json`
+- MAX_ROUNDS=20 (convergence is the real stop criterion)
+- Launch: `python3 bench/run_baseline_confer.py run`
 - Resume: `python3 bench/run_baseline_confer.py --resume`
+- Logs: `bench/logs/baseline_confer_run6_20260401/`
 
-INPUT COMPLEXITY HYPOTHESIS (1 April 2026, not yet implemented):
-- Compute Heaps β on input text → γ_input complexity signal for dispatch routing
-- Extended: amplification factor A = β_output/β_input (learned after R0)
-- Three-dimensional dispatch: length × γ_input × A
+RUN 5 RESULTS (1 April 2026, COMPLETE):
+- 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)
+- 58% independently confirmed by 2+ models
+- Duane γ=0.112 (NOT converged), Popper C(H,E)=0.847 (strong)
+- Analysis: docs/experimental_notes/Run5_Analysis_2026-04-01.md
+- Findings: docs/experimental_notes/Run5_Findings_2026-04-01.md
+- Logs: bench/logs/baseline_confer_run5_20260401/
+
+INPUT COMPLEXITY MODULE (1 April 2026, observation-only):
+- bench/input_complexity.py — γ_input, γ_output, amplification A, compound objective
+- Wired into runner as observation-only (not used for dispatch decisions)
+- 36 tests passing
 - Notes: docs/experimental_notes/Input_Complexity_Decay_Curves_2026-04-01.md
 - Notes: docs/experimental_notes/Amplification_Factor_2026-04-01.md
 

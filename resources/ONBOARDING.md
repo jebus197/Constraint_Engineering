@@ -196,13 +196,36 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Pre-seeded Codex + DeepSeek for decomposition (Run 4 CX timeout fixed).
   Run 4 logs preserved: `bench/logs/baseline_confer_run4_20260401/`.
   Run 5 logs: `bench/logs/baseline_confer_run5_20260401/`.
-- **Input complexity via decay curves (1 April 2026, hypothesis):**
-  Proposed: compute Heaps β on INPUT text to drive dispatch decisions. Same
-  Heaps/Duane duality used for convergence, applied to input complexity.
-  Extended by founder: amplification factor A = β_output/β_input measures how
-  productive a question is. Three-dimensional dispatch: length × γ_input × A.
-  P-passed, 4 falsifiable predictions generated. Not yet implemented.
-  Notes: `docs/experimental_notes/Input_Complexity_Decay_Curves_2026-04-01.md`,
+- **Baseline confer Run 5 COMPLETE (1 April 2026, `589c053`):**
+  155 corrected findings from 5 models × 5 rounds. 31 unique bug clusters,
+  16 critical (sev ≥ 0.85), 58% independently confirmed by 2+ models. Three
+  systemic failure modes: state leaks (8 clusters), direction inversions (4),
+  missing interface contracts (6). Duane γ=0.112 (NOT converged — rich
+  unexplored surface). Popper C(H,E)=0.847 (strong). Infrastructure validated:
+  multi-turn fallback (2/2 recoveries), no-exclusion (load-bearing — immune
+  layer tried to kill all 5 models at R2), FSM terminal guard (load-bearing —
+  caught terminal state R3-R4). ChatGPT parser bug discovered: 29 findings lost
+  to JSON format mismatch (fixed). Analysis: `docs/experimental_notes/Run5_Analysis_2026-04-01.md`.
+  Findings: `docs/experimental_notes/Run5_Findings_2026-04-01.md`.
+  Logs: `bench/logs/baseline_confer_run5_20260401/`.
+- **All 31 Run 5 bug fixes applied + FFF verified (1 April 2026, `589c053`):**
+  All 31 immune layer bugs fixed in `dynamic_management.py`. FFF verification
+  pass caught 4 additional issues: FH-1 regression (idempotent _record_failure),
+  FH-2 hasattr smell (proper __init__), RV-4 missing pathology_counts clear on
+  exhaustion, DC-1/DC-2 encapsulation (register_diagnoses() method). JSON parser
+  fixed — JSON array detection as first-pass before tuple/marker parsers.
+  Observation-only γ_input/γ_output/amplification wired into runner. 387 tests.
+- **Run 6 PREPARED (1 April 2026):** Runner configured: MAX_ROUNDS=20
+  (convergence is the real stop criterion), WALL_CLOCK_CAP=8h, all 31 fixes
+  active, JSON parser fixed, observation-only complexity measurement active.
+  Runner: `bench/run_baseline_confer.py`. Logs will be at
+  `bench/logs/baseline_confer_run6_20260401/`.
+- **Input complexity module BUILT (1 April 2026, test article):**
+  `bench/input_complexity.py` — Heaps β on input text (γ_input), output
+  complexity (γ_output), amplification factor A = β_output/β_input, compound
+  objective (A × steepness, optimal at β_out=0.5 — Occam emerges from maths).
+  Wired into runner as observation-only measurement. Not used for dispatch.
+  36 tests. Notes: `docs/experimental_notes/Input_Complexity_Decay_Curves_2026-04-01.md`,
   `docs/experimental_notes/Amplification_Factor_2026-04-01.md`.
 - **Experiment 20 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp20_confer.py` — sequential confer architecture (Phase 1+2 of
