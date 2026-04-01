@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Baseline CDSFL Confer: CC2 + CX + Gemini + DeepSeek on immune task area.
+"""Baseline CDSFL Confer: CC2 + CX + Gemini + DeepSeek + ChatGPT on immune task area.
 
 Standard CDSFL schema with FFF situation directive (proven in Exp 18).
 Sequential dispatch with multi-turn decomposed fallback. If single-turn
@@ -18,6 +18,7 @@ Models:
   - Codex (GPT-5.4 via codex exec CLI)
   - Gemini (Gemini 3.1 Pro via Google SDK)
   - DeepSeek (DeepSeek Reasoner via DeepSeek API)
+  - ChatGPT (GPT-5.4 via OpenRouter)
 
 Usage:
     python3 bench/run_baseline_confer.py [preflight|run|--resume]
@@ -132,8 +133,8 @@ INTERFACE_SUMMARY_PATH = (
     REPO_ROOT / "bench" / "logs" / "experiment_17_interface_summary.md"
 )
 
-# 4-model set: CC2, Codex (CX), Gemini, DeepSeek
-BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek"}
+# 5-model set: all available frontier models
+BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}
 
 # FFF situation directive (proven in Exp 18)
 FFF_SITUATION_TEXT = (
@@ -701,7 +702,7 @@ def run_confer(
 ) -> Dict[str, Any]:
     """Run the baseline confer: blind R1 → adaptive R2+ → stop on convergence."""
     _log("=" * 60)
-    _log("BASELINE CONFER RUN 5: CC2 + CX + Gemini + DeepSeek, FFF + CDSFL + multi-turn fallback")
+    _log("BASELINE CONFER RUN 5: CC2 + CX + Gemini + DeepSeek + ChatGPT, FFF + CDSFL + multi-turn fallback")
     _log(f"  Max rounds: {MAX_ROUNDS}")
     _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
     _log(f"  Task: immune (dynamic_management.py)")
