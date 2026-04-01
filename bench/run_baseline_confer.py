@@ -108,6 +108,14 @@ from decomposed_dispatch import (
     DecomposedResult,
     save_decomposed_result,
 )
+from input_complexity import (
+    compute_gamma_input,
+    compute_gamma_output,
+    compute_amplification,
+    recommend_dispatch,
+    AmplificationHistory,
+    HeapsResult,
+)
 from cdsfl_registry.composer import (
     compose,
     DirectivePacket,
@@ -120,10 +128,10 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run5_20260401"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run6_20260401"
 
-MAX_ROUNDS = 5          # Conservative — baseline, not endurance test
-WALL_CLOCK_CAP_S = 2 * 3600  # 2 hours
+MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
+WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
 
 # Test article: immune task area (most recent fixes, highest coverage)
 TEST_ARTICLE_PATH = REPO_ROOT / "bench" / "dynamic_management.py"
@@ -739,10 +747,11 @@ def run_confer(
 
     all_findings: List[List[Finding]] = []
     all_responses: List[Dict[str, str]] = []
+    amp_history = AmplificationHistory()  # per-model A tracking (observation only)
     experiment_start = time.monotonic()
     start_round = 0
     result = {
-        "experiment": "baseline_confer_run5",
+        "experiment": "baseline_confer_run6",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "models": [mc.label for mc in exp_config.models
                     if mc.label in BASELINE_MODELS],
@@ -822,6 +831,19 @@ def run_confer(
 
         _log(f"  Prompt: {len(prompt):,} chars")
 
+        # ── Observation-only: γ_input measurement ────────────────────
+        gamma_input_result = compute_gamma_input(prompt)
+        dispatch_rec = recommend_dispatch(
+            len(prompt), gamma_input_result.gamma,
+            r_squared=gamma_input_result.r_squared,
+        )
+        _log(f"  γ_input: β={gamma_input_result.beta:.3f}, "
+             f"γ={gamma_input_result.gamma:.3f}, "
+             f"R²={gamma_input_result.r_squared:.3f}, "
+             f"windows={gamma_input_result.n_windows}")
+        _log(f"  Dispatch recommendation (observation): "
+             f"{dispatch_rec.strategy} — {dispatch_rec.reasoning}")
+
         # Dispatch
         findings, responses = _dispatch_round(
             exp_config, mgr, prompt, cdsfl_text, full_code, round_idx,
@@ -850,6 +872,7 @@ def run_confer(
                 for label in responses
             },
         }
+        # Complexity observation data added after γ measurement below
         result["rounds"].append(round_data)
 
         _log(f"\n  Round {round_idx} summary: {len(findings)} findings from "
@@ -857,6 +880,43 @@ def run_confer(
         for label in sorted(responses.keys()):
             model_count = len([f for f in findings if f.model_id == label])
             _log(f"    {label}: {model_count} findings")
+
+        # ── Observation-only: γ_output + amplification per model ─────
+        round_amplification = {}
+        for label in sorted(responses.keys()):
+            model_findings = [f for f in findings if f.model_id == label]
+            if not model_findings:
+                continue
+            descriptions = [f.description for f in model_findings]
+            gamma_out = compute_gamma_output(descriptions)
+            amp = compute_amplification(gamma_input_result, gamma_out)
+            amp_history.record(label, amp)
+            round_amplification[label] = {
+                "gamma_output": amp.gamma_output,
+                "beta_output": amp.beta_output,
+                "A": amp.A,
+                "compound_obj": amp.compound_objective,
+                "dist_from_optimal": amp.distance_from_optimal,
+                "n_findings": len(model_findings),
+                "r_sq_output": gamma_out.r_squared,
+            }
+            est_A = amp_history.estimated_A(label)
+            _log(f"    {label}: γ_out={amp.gamma_output:.3f}, "
+                 f"A={amp.A:.3f}, obj={amp.compound_objective:.3f}, "
+                 f"est_A={est_A:.3f}" if est_A else
+                 f"    {label}: γ_out={amp.gamma_output:.3f}, "
+                 f"A={amp.A:.3f}, obj={amp.compound_objective:.3f}")
+        round_data_complexity = {
+            "gamma_input": {
+                "beta": round(gamma_input_result.beta, 4),
+                "gamma": round(gamma_input_result.gamma, 4),
+                "r_squared": round(gamma_input_result.r_squared, 4),
+                "n_windows": gamma_input_result.n_windows,
+            },
+            "dispatch_recommendation": dispatch_rec.strategy,
+            "per_model_amplification": round_amplification,
+        }
+        round_data["complexity"] = round_data_complexity
 
         # Feed findings to DynamicManager — ONE call per round with ALL
         # responses (FSM advances once per process_round call; calling it
@@ -965,6 +1025,23 @@ def run_confer(
     # Cognitive yield Y(t) per round
     y_per_round = [round(_compute_cognitive_yield(rnd), 3) for rnd in all_findings]
     result["cognitive_yield_per_round"] = y_per_round
+
+    # Amplification history summary (observation only — not used for dispatch)
+    amp_summary = {}
+    for model_id in sorted(amp_history.records.keys()):
+        est_a = amp_history.estimated_A(model_id)
+        est_c = amp_history.estimated_compound(model_id)
+        amp_summary[model_id] = {
+            "estimated_A": round(est_a, 4) if est_a else None,
+            "estimated_compound": round(est_c, 4) if est_c else None,
+            "n_observations": len(amp_history.records[model_id]),
+        }
+    result["amplification_summary"] = amp_summary
+    _log(f"\n  Amplification summary (observation):")
+    for mid, s in amp_summary.items():
+        _log(f"    {mid}: A={s['estimated_A']}, "
+             f"obj={s['estimated_compound']}, "
+             f"n={s['n_observations']}")
 
     # ── Popper's Degree of Corroboration C(H,E) ──────────────────────
     #

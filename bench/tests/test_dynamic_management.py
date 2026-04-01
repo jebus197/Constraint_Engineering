@@ -1008,9 +1008,10 @@ class TestFailureHandler:
         action = fh_setup.get_recovery("m_low", 0, FailureType.FORMAT)
         assert action == RecoveryAction.RETRY_CLARIFIED
 
-    def test_recovery_underperform_first_is_log_only(self, fh_setup):
+    def test_recovery_underperform_first_is_retry(self, fh_setup):
+        """FH-3 fix (Run 5): UNDERPERFORM first occurrence is RETRY, not LOG_ONLY."""
         action = fh_setup.get_recovery("m_low", 0, FailureType.UNDERPERFORM)
-        assert action == RecoveryAction.LOG_ONLY
+        assert action == RecoveryAction.RETRY
 
     def test_recovery_underperform_repeated_is_downgrade(self, fh_setup, config):
         for _ in range(config.n_fail):
@@ -1783,10 +1784,13 @@ class TestDetectorHealthMonitorExp15:
         assert len(diags) == 0  # drop is only 2 (9→7)
 
     def test_vocab_saturation_detection(self):
-        """Low vocab growth for 3+ rounds triggers vocab_saturation diagnosis."""
+        """Low vocab growth for sustained window triggers vocab_saturation diagnosis.
+
+        VS-1 fix (Run 5): window is now config-driven (default 5), not hardcoded 3.
+        """
         hm = DetectorHealthMonitor()
-        # Need 3 rounds of data with low vocab growth
-        for i in range(3):
+        # Need vocab_sustained_window (default 5) rounds of data with low vocab growth
+        for i in range(5):
             hm.record_vocab_growth(0.02)  # below 0.04 threshold
             hm.record_round(kappa=0.5, mu=10.0, novelty_rate=0.5,
                             finding_count=10, active_models=5)
@@ -2158,7 +2162,11 @@ class TestSelfAdaptiveImmuneLayer:
         assert hm._stuck_window == 4  # widened from 3
 
     def test_self_diagnose_bounded_window(self):
-        """Self-adjustment never exceeds 2x original window."""
+        """Self-adjustment never exceeds 2x original window.
+
+        SD-2 fix (Run 5): self_diagnose now has damping (immune_damping_rounds).
+        Advance rounds between self_diagnose calls to satisfy damping window.
+        """
         hm = DetectorHealthMonitor(stuck_window=3)
         for i in range(6):
             hm.record_round(0.0, 10.0, 0.5, 10, 3)
@@ -2167,17 +2175,23 @@ class TestSelfAdaptiveImmuneLayer:
         # First self-diagnose: 3 → 4
         hm.self_diagnose()
         assert hm._stuck_window == 4
-        # Force another by adding more failures
+        # Advance rounds to clear SD-2 damping, then add more failures
+        for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
         for _ in range(3):
             hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
         hm.self_diagnose()
         assert hm._stuck_window == 5
         # One more should hit the cap at 6 (2 × 3)
         for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        for _ in range(3):
             hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
         hm.self_diagnose()
         assert hm._stuck_window == 6  # 2x original
         # Beyond cap — should not increase further
+        for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
         for _ in range(3):
             hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
         hm.self_diagnose()

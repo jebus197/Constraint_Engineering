@@ -2701,6 +2701,15 @@ class DetectorHealthMonitor:
         self._original_stuck_window = stuck_window
         self._original_mu_window = mu_increase_window
 
+    def register_diagnoses(self, diagnoses: list) -> None:
+        """Register externally-produced diagnoses (e.g. from record_model_round).
+
+        DC-1/DC-2 fix (Run 5): encapsulates _diagnoses access so callers
+        don't reach into the internal list directly. Call this BEFORE
+        record_round() to ensure false_positive_rate sees consistent counts.
+        """
+        self._diagnoses.extend(diagnoses)
+
     def record_round(
         self,
         kappa: float,
@@ -2737,12 +2746,18 @@ class DetectorHealthMonitor:
         def effective_window(detector: str, base_window: int) -> int:
             resolved = self._resolved_counts.get(detector, 0)
             persistent = self._pathology_counts.get(detector, 0)
-            # IM_F005/IM_F034 fix: multiplicative decay W_d(r) = W_d(0) * decay^resolved
-            # and wire in _sensitivity_decay + _sensitivity_growth (previously dead code)
+            # AW-1 fix (Run 5, SymPy-verified): decay direction was inverted.
+            # resolved → WIDEN window (less sensitive): use decay^(-resolved)
+            #   so more resolved issues → larger window.
+            # persistent → NARROW window (more sensitive): divide by (1 + growth*persistent)
+            #   so more persistent issues → smaller window.
+            # AW-2 fix: cap at [2, 2 * base_window] to prevent unbounded growth.
             decay = self._sensitivity_decay
             growth = self._sensitivity_growth
-            adjusted = max(2, int(base_window * (decay ** resolved) * (1 + growth * persistent)))
-            return adjusted
+            widen = decay ** (-resolved) if decay > 0 else 1.0  # >1 when resolved>0
+            narrow = 1.0 / (1.0 + growth * persistent)          # <1 when persistent>0
+            adjusted = int(base_window * widen * narrow)
+            return max(2, min(2 * base_window, adjusted))
 
         # Check 1: kappa stuck at zero
         eff_kappa_window = effective_window("kappa", self._stuck_window)
@@ -2804,6 +2819,10 @@ class DetectorHealthMonitor:
                 recent_models = self._active_model_counts[-(eff_mu_window + 1):]
                 model_count_changed = len(set(recent_models)) > 1
 
+                # MU-1 fix (Run 5): increment pathology count (was missing)
+                persistence = self._pathology_counts.get("mu", 0)
+                self._pathology_counts["mu"] = persistence + 1
+
                 diag = DetectorDiagnosis(
                     detector="mu",
                     pathology=f"mu increasing ({recent_mu[0]:.1f} → {recent_mu[-1]:.1f}) "
@@ -2821,13 +2840,17 @@ class DetectorHealthMonitor:
                         "finding_counts": recent_findings,
                         "active_models": recent_models,
                         "model_count_changed": model_count_changed,
+                        "persistence": persistence + 1,
                     },
+                    # PK-1 fix (Run 5): was missing pathology_key
+                    pathology_key="mu_distortion",
                 )
                 new_diagnoses.append(diag)
             else:
-                # mu no longer pathological — mark resolved (Exp14 fix:
-                # CC2 14b F033, sev 0.55 — resolved_counts only for kappa)
-                if self._pathology_counts.get("mu", 0) > 0:
+                # MU-3 fix (Run 5): resolve ONLY when mu stops increasing.
+                # The old compound condition resolved when EITHER mu stopped
+                # increasing OR findings started increasing — too permissive.
+                if not mu_increasing and self._pathology_counts.get("mu", 0) > 0:
                     self._resolved_counts["mu"] = (
                         self._resolved_counts.get("mu", 0) + 1
                     )
@@ -2838,7 +2861,14 @@ class DetectorHealthMonitor:
         # Check 3: novelty_rate and mu disagreeing
         if len(self._novelty_history) >= 2 and len(self._mu_history) >= 2:
             novelty_declining = self._novelty_history[-1] < self._novelty_history[-2] * 0.8
-            mu_increasing_now = abs(self._mu_history[-1]) > abs(self._mu_history[-2]) * 1.2
+            # MU-2 fix (Run 5): use directional test consistent with Check 2.
+            # abs() comparison treated "more negative" as "increasing", which is
+            # semantically wrong. Use signed comparison: mu increased if it grew
+            # by more than 20% of its absolute value (same logic as Check 2).
+            mu_increasing_now = (
+                self._mu_history[-1] > self._mu_history[-2]
+                + abs(self._mu_history[-2]) * 0.2
+            )
 
             if novelty_declining and mu_increasing_now:
                 diag = DetectorDiagnosis(
@@ -2866,7 +2896,10 @@ class DetectorHealthMonitor:
             recent_3 = self._finding_counts[-3:]
             if all(recent_3[i] < recent_3[i - 1] for i in range(1, len(recent_3))):
                 total_decline = recent_3[0] - recent_3[-1]
-                if total_decline > 5:  # not just noise
+                # FD-1 fix (Run 5): relative threshold, not fixed constant.
+                # At least 30% decline from window start, minimum 3 to filter noise.
+                decline_threshold = max(3, int(0.3 * recent_3[0]))
+                if total_decline > decline_threshold:
                     persistence = self._pathology_counts.get("findings_decline", 0)
                     self._pathology_counts["findings_decline"] = persistence + 1
                     severity = "CRITICAL" if persistence >= 2 else "WARNING"
@@ -2907,19 +2940,22 @@ class DetectorHealthMonitor:
         # has been below tau_vocab_growth for 3+ consecutive rounds AND finding
         # counts are still positive, the models are using repetitive vocabulary
         # but still producing novel findings.
-        if len(self._vocab_growth_history) >= 3:
-            recent_vg = self._vocab_growth_history[-3:]
+        # VS-1 fix (Run 5): use configured window, not hardcoded 3
+        vs_window = self._config.vocab_sustained_window if self._config else 5
+        if len(self._vocab_growth_history) >= vs_window:
+            recent_vg = self._vocab_growth_history[-vs_window:]
             tau_vg = self._config.tau_vocab_growth if self._config else 0.04
             if all(vg < tau_vg for vg in recent_vg):
-                recent_fc = self._finding_counts[-3:]
+                recent_fc = self._finding_counts[-vs_window:]
                 if sum(recent_fc) > 0:
                     persistence = self._pathology_counts.get("vocab_saturation", 0)
                     self._pathology_counts["vocab_saturation"] = persistence + 1
                     diag = DetectorDiagnosis(
                         detector="vocab_saturation",
                         pathology=(
-                            f"Premature vocab saturation: vocab_growth below 4% "
-                            f"for 3 rounds ({[f'{v:.3f}' for v in recent_vg]}) "
+                            f"Premature vocab saturation: vocab_growth below "
+                            f"{tau_vg:.0%} for {vs_window} rounds "
+                            f"({[f'{v:.3f}' for v in recent_vg]}) "
                             f"but {sum(recent_fc)} findings still being produced"
                         ),
                         severity="WARNING",
@@ -2936,6 +2972,16 @@ class DetectorHealthMonitor:
                         pathology_key="vocab_saturation",
                     )
                     new_diagnoses.append(diag)
+            else:
+                # VS-2 fix (Run 5): add resolution path (was missing entirely).
+                # Without this, vocab_saturation pathology persists forever.
+                if self._pathology_counts.get("vocab_saturation", 0) > 0:
+                    self._resolved_counts["vocab_saturation"] = (
+                        self._resolved_counts.get("vocab_saturation", 0) + 1
+                    )
+                    if "vocab_saturation" not in self._remediation_state:
+                        self.record_natural_resolution("vocab_saturation")
+                    self._pathology_counts["vocab_saturation"] = 0
 
         # --- Autonomous remediation outcome verification (Exp15) ---
         # After each round, check if previously applied remediations worked.
@@ -3023,7 +3069,8 @@ class DetectorHealthMonitor:
                 },
                 pathology_key="model_failure",
             )
-            self._diagnoses.append(diag)
+            # DC-1 fix (Run 5): do NOT append to self._diagnoses here.
+            # The caller consolidates all diagnoses via record_round().
             results.append(diag)
 
         # --- Parser yield anomaly detection (Exp15 FM4) ---
@@ -3053,8 +3100,8 @@ class DetectorHealthMonitor:
                     "format_yield": 0.0,
                     "occurrence": persistence + 1,
                 },
+                pathology_key="parser_yield",  # PK-2 fix (Run 5)
             )
-            self._diagnoses.append(diag)
             results.append(diag)
 
         # --- Monotonic decline detection (Exp15 FM3) ---
@@ -3087,8 +3134,8 @@ class DetectorHealthMonitor:
                             "total_decline": total_decline,
                             "occurrence": persistence + 1,
                         },
+                        pathology_key="monotonic_decline",  # PK-2 fix (Run 5)
                     )
-                    self._diagnoses.append(diag)
                     results.append(diag)
             else:
                 # Decline broken — resolve if previously pathological
@@ -3148,8 +3195,8 @@ class DetectorHealthMonitor:
                             "threshold": mean_cpf + 2 * std_cpf,
                             "occurrence": persistence + 1,
                         },
+                        pathology_key="cpf_spike",  # PK-2 fix (Run 5)
                     )
-                    self._diagnoses.append(diag)
                     results.append(diag)
 
         return results
@@ -3162,6 +3209,7 @@ class DetectorHealthMonitor:
         metric_at_apply: float,
         target_metric: str,
         verification_window: int = 2,
+        chain_length: int = 999,
     ) -> None:
         """Record that a remediation was applied, for outcome verification.
 
@@ -3179,6 +3227,7 @@ class DetectorHealthMonitor:
             "metric_at_apply": metric_at_apply,
             "target_metric": target_metric,
             "verification_window": verification_window,
+            "chain_length": chain_length,  # RV-1: for bounds check
         }
 
     def _verify_remediation_outcomes(self) -> List[DetectorDiagnosis]:
@@ -3213,11 +3262,20 @@ class DetectorHealthMonitor:
 
             old_val = state["metric_at_apply"]
             chain_idx = state["chain_idx"]
-            improved = current_val > old_val  # higher is better for kappa, findings
 
-            # For some metrics, "improved" means decreased (mu should stabilise)
+            # RV-2 fix (Run 5): direction-aware improvement check.
+            # Default: higher is better (kappa, finding_count).
+            # mu: abs decrease (stabilisation) is improvement.
+            # vocab_growth: compare against threshold, not raw direction —
+            #   the pathology is "below tau_vg", so improvement means
+            #   current_val >= tau_vg, not just current_val > old_val.
             if target in ("mu",):
-                improved = abs(current_val) < abs(old_val) * 0.95  # mu must show 5% improvement
+                improved = abs(current_val) < abs(old_val) * 0.95
+            elif target == "vocab_growth":
+                tau_vg = self._config.tau_vocab_growth if self._config else 0.04
+                improved = current_val >= tau_vg
+            else:
+                improved = current_val > old_val  # kappa, finding_count, novelty
 
             log_entry = {
                 "pathology": pathology_key,
@@ -3245,6 +3303,9 @@ class DetectorHealthMonitor:
                 )
                 # Clear remediation state — fix worked
                 del self._remediation_state[pathology_key]
+                # RV-3 fix (Run 5): also clear pathology_counts so a
+                # future recurrence starts from zero, not the old count.
+                self._pathology_counts.pop(pathology_key, None)
             else:
                 severity = "WARNING"
                 detail = (
@@ -3257,9 +3318,22 @@ class DetectorHealthMonitor:
                 # IM_F002: Reset applied_round and metric_at_apply so the
                 # verification window for the escalated step starts from NOW,
                 # not from the original application point.
-                state["chain_idx"] += 1
-                state["applied_round"] = current_round
-                state["metric_at_apply"] = current_val
+                # RV-1 fix (Run 5): bounds-check before incrementing.
+                # If we'd exceed the chain length, record exhaustion and
+                # clear the state instead of creating a zombie entry.
+                next_idx = chain_idx + 1
+                chain_len = state.get("chain_length", 999)
+                if next_idx >= chain_len:
+                    self.record_chain_exhaustion(pathology_key)
+                    # RV-4 fix (Run 5): clear stale remediation state AND
+                    # pathology counts on exhaustion, so a natural recurrence
+                    # starts fresh instead of at the inflated historical count.
+                    self._remediation_state.pop(pathology_key, None)
+                    self._pathology_counts.pop(pathology_key, None)
+                else:
+                    state["chain_idx"] = next_idx
+                    state["applied_round"] = current_round
+                    state["metric_at_apply"] = current_val
 
             diag = DetectorDiagnosis(
                 detector="remediation_outcome",
@@ -3960,6 +4034,12 @@ class DetectorHealthMonitor:
         if current_round < 5:
             return diagnoses  # Too early for meaningful self-assessment
 
+        # SD-2 fix: check immune_damping_rounds before self-adjustment
+        damping_rounds = getattr(self._config, 'immune_damping_rounds', 2) if hasattr(self, '_config') else 2
+        if hasattr(self, '_last_self_adjust_round'):
+            if current_round - self._last_self_adjust_round < damping_rounds:
+                return diagnoses  # Damping: skip self-adjustment this round
+
         # --- Self-check 1: Remediation success rate ---
         # This is a MULTI-MODULAR self-adjustment: it changes stuck_window
         # (kappa detection) AND mu_increase_window (mu detection) — two
@@ -4007,11 +4087,12 @@ class DetectorHealthMonitor:
                 # Extended P-pass on the self-adjustment before applying.
                 # Iterate toward simplest sufficient: try adjusting both,
                 # then only one, then neither.
+                # SD-3 fix: try single-parameter adjustments before combined
                 candidates = []
                 if new_stuck != old_stuck and new_mu != old_mu:
-                    candidates.append(("both", new_stuck, new_mu))
                     candidates.append(("stuck_only", new_stuck, old_mu))
                     candidates.append(("mu_only", old_stuck, new_mu))
+                    candidates.append(("both", new_stuck, new_mu))
                 elif new_stuck != old_stuck:
                     candidates.append(("stuck_only", new_stuck, old_mu))
                 else:
@@ -4051,6 +4132,7 @@ class DetectorHealthMonitor:
                         }
                         self._self_adjustment_log.append(entry)
                         self._self_diagnosis_history.append(entry)
+                        self._last_self_adjust_round = current_round  # SD-2
 
                         diag = DetectorDiagnosis(
                             detector="self_diagnosis",
@@ -4126,6 +4208,7 @@ class DetectorHealthMonitor:
                     diagnoses.append(diag)
                 else:
                     self._sensitivity_decay = new_decay
+                    self._last_self_adjust_round = current_round  # SD-2
                     entry = {
                         "trigger": "high_false_positive_rate",
                         "false_positive_rate": fp_rate,
@@ -4283,39 +4366,57 @@ class DetectorHealthMonitor:
             means_list = list(model_means.values())
             pop_mean = sum(means_list) / len(means_list)
             pop_std = (sum((m - pop_mean) ** 2 for m in means_list) / len(means_list)) ** 0.5
-            if pop_std > 0.01:  # avoid division by near-zero
-                for model_id, m in model_means.items():
-                    z_score = (m - pop_mean) / pop_std
-                    if z_score < -1.2:  # Samuelson: max |z|=√(N-1)≈1.414 for N=3
-                        # Check if already diagnosed
-                        key = f"verif_miscal_{model_id}"
-                        persistence = self._pathology_counts.get(key, 0)
-                        self._pathology_counts[key] = persistence + 1
-                        severity = "CRITICAL" if persistence >= 1 else "WARNING"
+            n_models = len(model_means)
+            for model_id, m in model_means.items():
+                # VM-1 fix: adaptive threshold for small populations.
+                # For N < 5 models, z-scores are unreliable (Samuelson bound
+                # max|z| = sqrt(N-1)), so use direct comparison instead.
+                flagged = False
+                z_score = 0.0
+                if n_models < 5:
+                    # Direct comparison: flag if below 70% of population mean
+                    flagged = m < pop_mean * 0.7
+                    if pop_std > 0.01:
+                        z_score = (m - pop_mean) / pop_std
+                else:
+                    if pop_std > 0.01:
+                        z_score = (m - pop_mean) / pop_std
+                        flagged = z_score < -1.2
+                if flagged:
+                    # Check if already diagnosed
+                    key = f"verif_miscal_{model_id}"
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    severity = "CRITICAL" if persistence >= 1 else "WARNING"
 
-                        diag = DetectorDiagnosis(
-                            detector="verification",
-                            pathology=(
-                                f"Verification miscalibration: {model_id} mean "
-                                f"verification rate {m:.2f} is {abs(z_score):.1f}σ "
-                                f"below population mean {pop_mean:.2f}"
-                            ),
-                            severity=severity,
-                            recommended_action=(
-                                f"Flag VERIFIED field for {model_id} as unreliable. "
-                                f"Add per-model directive to re-examine verification."
-                            ),
-                            pathology_key="verification_miscalibration",
-                            evidence={
-                                "model_id": model_id,
-                                "model_mean": m,
-                                "population_mean": pop_mean,
-                                "population_std": pop_std,
-                                "z_score": z_score,
-                                "occurrence": persistence + 1,
-                            },
-                        )
-                        new_diagnoses.append(diag)
+                    diag = DetectorDiagnosis(
+                        detector="verification",
+                        pathology=(
+                            f"Verification miscalibration: {model_id} mean "
+                            f"verification rate {m:.2f} is {abs(z_score):.1f}σ "
+                            f"below population mean {pop_mean:.2f}"
+                        ),
+                        severity=severity,
+                        recommended_action=(
+                            f"Flag VERIFIED field for {model_id} as unreliable. "
+                            f"Add per-model directive to re-examine verification."
+                        ),
+                        pathology_key="verification_miscalibration",
+                        evidence={
+                            "model_id": model_id,
+                            "model_mean": m,
+                            "population_mean": pop_mean,
+                            "population_std": pop_std,
+                            "z_score": z_score,
+                            "occurrence": persistence + 1,
+                        },
+                    )
+                    new_diagnoses.append(diag)
+                else:
+                    # VM-2 fix: clear pathology count when model recovers
+                    key = f"verif_miscal_{model_id}"
+                    if key in self._pathology_counts:
+                        del self._pathology_counts[key]
 
         self._diagnoses.extend(new_diagnoses)
         return new_diagnoses
@@ -4378,6 +4479,10 @@ class FailureHandler:
         }
         # Reallocation depth tracker (cascade guard)
         self._realloc_depth: Dict[str, int] = {}  # task_id -> depth
+        # FH-2 fix (Run 5): dedup set for detect_failure — prevents duplicate
+        # deliveries from inflating perf_history. Initialised in __init__,
+        # not lazily via hasattr.
+        self._perf_rounds_seen: set = set()
 
     def _expected_performance(self, model_id: str) -> float:
         """Compute expected(m, r) = b_rho(m) . q_m.
@@ -4470,7 +4575,12 @@ class FailureHandler:
 
         # Priority 5: UNDERPERFORM (with persistence window)
         perf = self._performance_metric(response)
-        self._perf_history.setdefault(response.model_id, []).append(perf)
+        # FH-2 fix (Run 5): deduplicate by round to prevent inflation
+        # from repeated calls with the same response.
+        key = (response.model_id, response.round_idx)
+        if key not in self._perf_rounds_seen:
+            self._perf_rounds_seen.add(key)
+            self._perf_history.setdefault(response.model_id, []).append(perf)
 
         h = self.config.persistence_window
         recent_perfs = self._perf_history[response.model_id][-h:]
@@ -4504,16 +4614,29 @@ class FailureHandler:
         """
         is_pm = self.role_map.get(model_id) == Role.PM
         history = self._failure_history.get(model_id, [])
+
+        # FH-6 fix (Run 5): window to recent rounds, not lifetime.
+        # Use persistence_window for consistency with UNDERPERFORM detection.
+        window = self.config.persistence_window
+        recent_history = [
+            r for r in history
+            if r.round_idx >= max(0, round_idx - window)
+        ]
         same_type_count = sum(
-            1 for r in history if r.failure_type == failure_type
+            1 for r in recent_history if r.failure_type == failure_type
         )
-        repeated = same_type_count >= self.config.n_fail
+        # FH-1 fix (Run 5): include current failure in count (off-by-one).
+        # History hasn't been appended yet, so +1 for the current occurrence.
+        repeated = (same_type_count + 1) >= self.config.n_fail
 
         # PM failure handling (HARD constraint)
+        # FH-5 fix (Run 5): include FORMAT in PM hard-failure set.
+        # FORMAT is a protocol-level failure — PM must be reliable.
         if is_pm and failure_type in (
             FailureType.EMPTY,
             FailureType.TIMEOUT,
             FailureType.MALFORMED,
+            FailureType.FORMAT,
         ):
             if repeated:
                 action = RecoveryAction.ABORT
@@ -4542,11 +4665,16 @@ class FailureHandler:
                 RecoveryAction.DEGRADE if repeated else RecoveryAction.RETRY_CLARIFIED
             )
         elif failure_type == FailureType.UNDERPERFORM:
+            # FH-3 fix (Run 5): LOG_ONLY violates "catch-and-log is NOT handling".
+            # Non-repeated: RETRY (give model another chance with feedback).
+            # Repeated: DOWNGRADE_ROLE (same as before).
             action = (
-                RecoveryAction.DOWNGRADE_ROLE if repeated else RecoveryAction.LOG_ONLY
+                RecoveryAction.DOWNGRADE_ROLE if repeated else RecoveryAction.RETRY
             )
         else:
-            action = RecoveryAction.LOG_ONLY
+            # FH-3 fix (Run 5): unknown failure types should not silently
+            # map to LOG_ONLY. Use RETRY as a safe default with escalation path.
+            action = RecoveryAction.RETRY
 
         self._record_failure(model_id, round_idx, failure_type, action)
 
@@ -4569,7 +4697,17 @@ class FailureHandler:
         failure_type: FailureType,
         action: RecoveryAction,
     ) -> None:
-        """Record a failure in the history."""
+        """Record a failure in the history.
+
+        FH-1 fix (Run 5): idempotent — if a record for the same
+        (model_id, round_idx, failure_type) already exists, skip.
+        Network retries can call get_recovery() twice for the same failure.
+        """
+        history = self._failure_history.get(model_id, [])
+        for existing in history:
+            if (existing.round_idx == round_idx
+                    and existing.failure_type == failure_type):
+                return  # already recorded — idempotent
         record = FailureRecord(
             model_id=model_id,
             round_idx=round_idx,
@@ -4621,6 +4759,14 @@ class FailureHandler:
     def record_reallocation(self, task_id: str) -> None:
         """Increment reallocation depth for a task."""
         self._realloc_depth[task_id] = self._realloc_depth.get(task_id, 0) + 1
+
+    def reset_round_state(self) -> None:
+        """Reset per-round state at round boundaries.
+
+        FH-7 fix (Run 5): realloc_depth was never reset, permanently
+        blocking reallocation after hitting max depth once.
+        """
+        self._realloc_depth.clear()
 
     # --- Reduction property validators ---
 
@@ -4808,9 +4954,12 @@ class CorrelatedFailureModel:
                 rho = self.get_vulnerability(ids[i], ids[j])
                 p_i = rates[ids[i]]
                 p_j = rates[ids[j]]
-                p_min = min(p_i, p_j)
-                # Joint: p_min^2 + rho * p_min * (1 - p_min)
-                joint = p_min ** 2 + rho * p_min * (1 - p_min)
+                # CF-1 fix: use actual per-model rates for pairwise joint,
+                # not p_min. Joint P(A∩B) = p_i*p_j + rho*sqrt(p_i*(1-p_i)*p_j*(1-p_j))
+                # which correctly accounts for asymmetric failure rates.
+                independent_pair = p_i * p_j
+                corr_term = rho * (p_i * (1 - p_i) * p_j * (1 - p_j)) ** 0.5
+                joint = independent_pair + corr_term
                 max_pairwise_joint = max(max_pairwise_joint, joint)
 
         # Conservative estimate: max of independent product and worst-case
@@ -5084,6 +5233,8 @@ class DynamicManager:
         # Regression snapshots: metric values captured before each AUTO fix,
         # used to detect if the fix made things worse.
         self._pre_fix_snapshots: List[Dict[str, Any]] = []
+        # PR-3 fix: flag to defer autonomous remediation after regression
+        self._regression_defer: bool = False
 
         # --- Phase E: Dispatch health tracking ---
         # Records dispatch blocking events per model for false-positive detection.
@@ -5334,6 +5485,8 @@ class DynamicManager:
                 response_time=resp.response_time if resp and hasattr(resp, 'response_time') else 0.0,
                 response_chars=len(resp.content) if resp and resp.content else 0,
             )
+            # DC-2 fix: consolidate per-model diagnoses into health monitor
+            self.health_monitor.register_diagnoses(model_diags)
             for model_diag in model_diags:
                 self.event_stream.emit(
                     ManagerEvent(
@@ -5453,6 +5606,8 @@ class DynamicManager:
                             },
                         )
                     )
+                    # PR-3 fix: set regression defer flag
+                    self._regression_defer = True
             # Clean up checked snapshots
             self._pre_fix_snapshots = [
                 s for s in self._pre_fix_snapshots
@@ -5468,6 +5623,17 @@ class DynamicManager:
         )
         new_state = self.fsm.transition(event)
 
+        # --- PR-1 fix: update fingerprints BEFORE role reassignment ---
+        # Role reassignment uses _live_fingerprints, so fingerprints must be
+        # current before reassign() reads them.
+        # CRITICAL: update fingerprints BEFORE appending the RoundResult.
+        # update_fingerprints() builds prior_findings from self._round_results.
+        # If the current round is already appended, every finding matches itself
+        # via similarity, driving D_decay to 1.0 regardless of actual duplication.
+        # CX identified this in the confer round (confidence 0.98).
+        if not self.fsm.is_terminal:
+            self.update_fingerprints(round_idx, findings, responses)
+
         # --- Area 1: Role reassignment (if continuing) ---
         if not self.fsm.is_terminal:
             self.role_assignment.reassign(
@@ -5476,15 +5642,6 @@ class DynamicManager:
             )
             # Update failure handler's role map
             self.failure_handler.role_map = self.role_assignment.role_map
-
-        # --- Adaptive routing feedback: update live fingerprints ---
-        # CRITICAL: update fingerprints BEFORE appending the RoundResult.
-        # update_fingerprints() builds prior_findings from self._round_results.
-        # If the current round is already appended, every finding matches itself
-        # via similarity, driving D_decay to 1.0 regardless of actual duplication.
-        # CX identified this in the confer round (confidence 0.98).
-        if not self.fsm.is_terminal:
-            self.update_fingerprints(round_idx, findings, responses)
 
         result = RoundResult(
             round_idx=round_idx,
@@ -5801,6 +5958,91 @@ class DynamicManager:
              "description": "pre-decompose failing model",
              "risk": "AUTO"},
         ],
+        # PK-3 fix: missing remediation chains for new pathology types
+        "mu_distortion": [
+            # Step 0: Widen mu window — bounded, reversible
+            {"parameter": "mu_increase_window", "transform": "widen_mu_window",
+             "target_metric": "mu",
+             "description": "widen mu detection window by 1",
+             "risk": "AUTO"},
+            # Step 1: Flag mu as unreliable, prefer novelty_rate
+            {"parameter": "stop_signal_priority", "transform": "prefer_novelty",
+             "target_metric": "mu",
+             "description": "prefer novelty_rate over mu for stop signal",
+             "risk": "DEFER"},
+        ],
+        "mu_novelty_disagree": [
+            # Step 0: Advisory — prefer novelty_rate
+            {"parameter": "stop_signal_priority", "transform": "prefer_novelty",
+             "target_metric": "mu",
+             "description": "prefer novelty_rate over mu (disagreement detected)",
+             "risk": "AUTO"},
+            # Step 1: Widen mu window to reduce sensitivity
+            {"parameter": "mu_increase_window", "transform": "widen_mu_window",
+             "target_metric": "mu",
+             "description": "widen mu detection window by 1",
+             "risk": "AUTO"},
+        ],
+        "parser_yield": [
+            # Step 0: Add parsing directive to affected model
+            {"parameter": "per_model_directives", "transform": "add_parsing_directive",
+             "target_metric": "finding_count",
+             "description": "add structured-output parsing directive",
+             "risk": "AUTO"},
+            # Step 1: Pre-decompose model to reduce output complexity
+            {"parameter": "pre_decompose_models", "transform": "add_to_pre_decompose",
+             "target_metric": "finding_count",
+             "description": "pre-decompose model with low parser yield",
+             "risk": "AUTO"},
+        ],
+        "monotonic_decline": [
+            # Step 0: Add cross-area synthesis directive
+            {"parameter": "per_model_directives", "transform": "add_synthesis_directive",
+             "target_metric": "finding_count",
+             "description": "add synthesis directive to counter decline",
+             "risk": "AUTO"},
+            # Step 1: Widen stuck window to tolerate temporary dips
+            {"parameter": "stuck_window", "transform": "widen_stuck_window",
+             "target_metric": "kappa",
+             "description": "widen stuck detection window by 1",
+             "risk": "DEFER"},
+        ],
+        "cpf_spike": [
+            # Step 0: Flag model for closer verification scrutiny
+            {"parameter": "per_model_directives", "transform": "add_verification_directive",
+             "target_metric": "finding_count",
+             "description": "add verification scrutiny directive after CPF spike",
+             "risk": "AUTO"},
+            # Step 1: Pre-decompose to reduce failure cascades
+            {"parameter": "pre_decompose_models", "transform": "add_to_pre_decompose",
+             "target_metric": "finding_count",
+             "description": "pre-decompose model after CPF spike",
+             "risk": "AUTO"},
+        ],
+        "dispatch_false_positive": [
+            # Step 0: Pre-decompose blocked model
+            {"parameter": "pre_decompose_models", "transform": "add_to_pre_decompose",
+             "target_metric": "finding_count",
+             "description": "pre-decompose model that was falsely blocked",
+             "risk": "AUTO"},
+            # Step 1: Lower feasibility threshold for this model
+            {"parameter": "feasibility_threshold", "transform": "lower_feasibility_threshold",
+             "target_metric": "finding_count",
+             "description": "lower feasibility threshold to reduce false blocking",
+             "risk": "DEFER"},
+        ],
+        "verification_miscalibration": [
+            # Step 0: Add verification re-examination directive
+            {"parameter": "per_model_directives", "transform": "add_verification_directive",
+             "target_metric": "finding_count",
+             "description": "add verification re-examination directive",
+             "risk": "AUTO"},
+            # Step 1: Flag model's VERIFIED field as unreliable system-wide
+            {"parameter": "verification_trust", "transform": "flag_verification_unreliable",
+             "target_metric": "finding_count",
+             "description": "flag model verification as unreliable",
+             "risk": "DEFER"},
+        ],
     }
 
     def _apply_transform(
@@ -5888,6 +6130,10 @@ class DynamicManager:
 
         # Skip remediation outcome reports — they're informational only
         if diagnosis.detector == "remediation_outcome":
+            return None
+
+        # PR-3 fix: skip autonomous remediation if regression detected
+        if getattr(self, '_regression_defer', False):
             return None
 
         # Check damping: was this parameter adjusted recently?
@@ -6151,6 +6397,14 @@ class DynamicManager:
             return None
 
         step = deferred["step"]
+
+        # PR-2 fix: check immune_damping_rounds before applying deferred fix
+        current_round = getattr(self, '_process_round_count', 0)
+        for adj in self._immune_adjustments:
+            if (adj.get("detector") == deferred["diagnosis"]["detector"]
+                    and current_round - adj["round"] < self.config.immune_damping_rounds):
+                return None  # Damping: too soon to apply this deferred fix
+
         diag = DetectorDiagnosis(
             detector=deferred["diagnosis"]["detector"],
             pathology=deferred["diagnosis"]["pathology"],

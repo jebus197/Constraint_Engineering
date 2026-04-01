@@ -179,6 +179,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     """
     findings = []
     import re
+    import json as _json
 
     # Strip markdown bold markers before parsing — CC2 uses **SEVERITY:** format
     # where the colon is inside the bold markers, breaking field extraction.
@@ -189,6 +190,76 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # CX fix: allow optional leading whitespace (indented fences in lists/blockquotes)
     response = re.sub(r'^\s*```\w*\s*\n?', '', response, flags=re.MULTILINE)
     response = re.sub(r'^\s*```\s*$', '', response, flags=re.MULTILINE)
+
+    # ── JSON array parser ────────────────────────────────────────────
+    # ChatGPT (GPT-5.4) outputs findings as JSON arrays:
+    #   [{"FINDING_ID": "IM_F001", "SEVERITY": 0.9, ...}, ...]
+    # This must run FIRST — before tuple and marker parsers — because
+    # JSON quotes around keys break all downstream regex patterns.
+    # Run 5 lost 29 ChatGPT findings to this bug.
+    json_match = re.search(r'\[[\s\n]*\{', response)
+    if json_match:
+        # Find the matching closing bracket
+        start = json_match.start()
+        # Try to parse from this point
+        bracket_depth = 0
+        end = start
+        for i, ch in enumerate(response[start:], start):
+            if ch == '[':
+                bracket_depth += 1
+            elif ch == ']':
+                bracket_depth -= 1
+                if bracket_depth == 0:
+                    end = i + 1
+                    break
+        json_text = response[start:end]
+        try:
+            arr = _json.loads(json_text)
+            if isinstance(arr, list) and len(arr) > 0 and isinstance(arr[0], dict):
+                for obj in arr:
+                    if not isinstance(obj, dict):
+                        continue
+                    # Normalise keys to uppercase for consistent extraction
+                    norm = {k.upper().replace(" ", "_"): v for k, v in obj.items()}
+                    fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                    # Skip _FOLLOW companion entries — they are supplementary
+                    if "_FOLLOW" in fid.upper():
+                        continue
+                    severity = float(norm.get("SEVERITY", 0.5))
+                    severity = max(0.0, min(1.0, severity))
+                    flaw_raw = norm.get("FLAW_CLASS", 1)
+                    if isinstance(flaw_raw, str):
+                        try:
+                            flaw_class = max(1, min(8, int(flaw_raw)))
+                        except ValueError:
+                            flaw_class = 1
+                    else:
+                        flaw_class = max(1, min(8, int(flaw_raw)))
+                    abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
+                    abstraction = max(0.0, min(1.0, abstraction))
+                    description = str(norm.get("DESCRIPTION", ""))
+                    proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                    verified_raw = norm.get("VERIFIED", False)
+                    if isinstance(verified_raw, str):
+                        verified = verified_raw.upper() == "TRUE"
+                    else:
+                        verified = bool(verified_raw)
+                    findings.append(Finding(
+                        finding_id=f"{model_id}_{fid}",
+                        model_id=model_id,
+                        round_idx=round_idx,
+                        flaw_class=flaw_class,
+                        severity=severity,
+                        abstraction_index=abstraction,
+                        description=description,
+                        proposed_fix=proposed_fix,
+                        verified=verified,
+                    ))
+                if findings:
+                    return findings
+        except (_json.JSONDecodeError, ValueError, TypeError):
+            pass  # Not valid JSON — fall through to tuple parser
+    # ── End JSON array parser ────────────────────────────────────────
 
     # ── Tuple-format parser ──────────────────────────────────────────
     # Models (especially Gemini/ChatGPT) emit findings as tuples:
