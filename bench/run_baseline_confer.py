@@ -171,6 +171,7 @@ def _dispatch_round(
     full_code: str,
     round_idx: int,
     task_key: str = "immune",
+    round_type: str = "blind",
 ) -> tuple[List[Finding], Dict[str, str]]:
     """Dispatch prompt to 3 models sequentially. Returns (findings, responses)."""
     findings: List[Finding] = []
@@ -214,8 +215,11 @@ def _dispatch_round(
                     prompt, full_code, task_key, mc.label, round_idx,
                     max_chars=eff_cap or 0)
 
+        # Generous wall-clock: 3× timeout for large prompts
+        wall_limit = mc.timeout * 3
         try:
-            text, elapsed = dispatch_to_model(mc, model_prompt, model_cdsfl)
+            text, elapsed = dispatch_to_model(
+                mc, model_prompt, model_cdsfl, wall_clock_limit=wall_limit)
             _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
             _record_throughput(mc.label, len(model_prompt), elapsed)
 
@@ -226,12 +230,23 @@ def _dispatch_round(
 
             # Save individual output
             LOGS_DIR.mkdir(parents=True, exist_ok=True)
+            phase_label = f"r{round_idx}_{round_type}"
             save_output(
-                LOGS_DIR, f"round_{round_idx}", mc.label,
-                {"response": text, "findings_count": len(model_findings),
-                 "elapsed_s": round(elapsed, 1), "decomposed": decomposed,
-                 "chars": len(text)})
+                LOGS_DIR, phase_label, mc.label,
+                model_prompt[:200] + "...", text,
+                metadata={
+                    "round": round_idx,
+                    "elapsed": round(elapsed, 1),
+                    "chars": len(text),
+                    "findings_count": len(model_findings),
+                    "decomposed": decomposed,
+                    "prompt_chars": len(model_prompt),
+                })
 
+        except CircuitBreakerTripped as e:
+            _log(f"  {mc.label}: CIRCUIT BREAKER — {e}")
+            _report_dispatch_failure(
+                mgr, mc.label, round_idx, f"circuit_breaker: {e}")
         except TimeoutError as e:
             _log(f"  {mc.label}: TIMEOUT — {e}")
             _report_dispatch_failure(mgr, mc.label, round_idx, f"timeout: {e}")
@@ -379,8 +394,14 @@ def run_confer(exp_config: ExperimentConfig, cdsfl_text: str) -> Dict[str, Any]:
     _log(f"  Logs: {LOGS_DIR}")
     _log("=" * 60)
 
-    # Load test articles
-    full_code = TEST_ARTICLE_PATH.read_text(encoding="utf-8")
+    # Load test articles — use task-extracted code, NOT the full file.
+    # The full dynamic_management.py is 269K chars (~67K tokens). Sending
+    # that raw caused CC2 and Gemini to timeout in the first attempt.
+    # Task extraction focuses on immune-relevant code + skeletal context.
+    full_code_raw = TEST_ARTICLE_PATH.read_text(encoding="utf-8")
+    full_code = _extract_task_area(full_code_raw, "immune") or full_code_raw
+    _log(f"  Immune extraction: {len(full_code_raw):,} → {len(full_code):,} chars "
+         f"({100*(1-len(full_code)/len(full_code_raw)):.0f}% reduction)")
     math_appendix = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
     verification_chain = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
     interface_summary = ""
@@ -391,13 +412,7 @@ def run_confer(exp_config: ExperimentConfig, cdsfl_text: str) -> Dict[str, Any]:
     dm_config = DynamicManagementConfig()
     dm_config.max_rounds = MAX_ROUNDS
     model_specs = build_model_specs(exp_config)
-    task = Task(
-        task_id="baseline_immune",
-        description="Immune response layer validation (baseline confer)",
-        constraints=["CDSFL", "FFF"],
-        criticality=0.7,
-    )
-    mgr = DynamicManager(dm_config, model_specs, task)
+    mgr = DynamicManager(model_specs, dm_config)
     telemetry = RoundTelemetry(LOGS_DIR)
 
     all_findings: List[List[Finding]] = []
@@ -430,8 +445,7 @@ def run_confer(exp_config: ExperimentConfig, cdsfl_text: str) -> Dict[str, Any]:
         if round_idx > 0 and all_findings:
             # Aggregate all prior findings for context
             prior_flat = [f for rnd in all_findings for f in rnd]
-            prior_findings_text = format_findings_for_context(
-                prior_flat, f"Rounds 0-{round_idx - 1}")
+            prior_findings_text = format_findings_for_context(prior_flat)
 
         prompt = _build_task_prompt(
             task_key="immune",
@@ -449,6 +463,7 @@ def run_confer(exp_config: ExperimentConfig, cdsfl_text: str) -> Dict[str, Any]:
         # Dispatch
         findings, responses = _dispatch_round(
             exp_config, mgr, prompt, cdsfl_text, full_code, round_idx,
+            round_type=round_type,
         )
 
         # Safety check
@@ -481,20 +496,57 @@ def run_confer(exp_config: ExperimentConfig, cdsfl_text: str) -> Dict[str, Any]:
             model_count = len([f for f in findings if f.model_id == label])
             _log(f"    {label}: {model_count} findings")
 
-        # Feed findings to DynamicManager
-        for f in findings:
-            model_resp = ModelResponse(
-                model_id=f.model_id,
-                round_number=round_idx,
-                findings=[f],
-                raw_text=responses.get(f.model_id, ""),
-                elapsed_s=0.0,
+        # Feed findings to DynamicManager — ONE call per round with ALL
+        # responses (FSM advances once per process_round call; calling it
+        # per-model would corrupt the round index and convergence state).
+        rn_responses: Dict[str, ModelResponse] = {}
+        for label, text in responses.items():
+            model_findings_for_label = [
+                f for f in findings if f.model_id == label
+            ]
+            rn_responses[label] = ModelResponse(
+                model_id=label,
+                round_idx=round_idx,
+                content=text,
+                response_time=round_elapsed,
+                parseable=len(model_findings_for_label) > 0,
+                format_compliant=True,
+                finding_count=len(model_findings_for_label),
+                mean_abstraction=(
+                    sum(f.abstraction_index for f in model_findings_for_label)
+                    / len(model_findings_for_label)
+                    if model_findings_for_label else 0.5
+                ),
             )
-            mgr.record_response(model_resp)
 
-        # Convergence check
+        dm_result = mgr.process_round(
+            rn_responses,
+            findings,
+            [],  # no explicit task objects needed for convergence tracking
+            round_cost=1.0,
+            duration=round_elapsed,
+        )
+
+        # Log immune diagnostics from DynamicManager
+        if dm_result.recovery_actions:
+            _log(f"  Immune: {dm_result.recovery_actions}")
+        _log(f"  DM: kappa={dm_result.convergence_metric:.3f}, "
+             f"mu={dm_result.marginal_value:.3f}, "
+             f"converged={dm_result.converged}, stop={dm_result.stop}")
+        if dm_result.converged:
+            _log(f"\n  DM CONVERGED at round {round_idx}")
+            result["converged_at"] = round_idx
+            result["convergence_reason"] = "dm_converged"
+            break
+        if dm_result.stop:
+            _log(f"\n  DM STOP at round {round_idx}: diminishing returns")
+            result["converged_at"] = round_idx
+            result["convergence_reason"] = "dm_diminishing_returns"
+            break
+
+        # Fallback convergence check (simple novelty rate)
         converged, reason = _check_convergence(all_findings, round_idx)
-        _log(f"  Convergence: {reason}")
+        _log(f"  Convergence (fallback): {reason}")
         if converged:
             _log(f"\n  CONVERGED at round {round_idx}: {reason}")
             result["converged_at"] = round_idx

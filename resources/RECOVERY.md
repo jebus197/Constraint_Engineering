@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 31 March 2026 21:56 UTC
+Last updated: 1 April 2026 02:50 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -150,10 +150,20 @@ OUTSTANDING FIXES TRACKING FILE WRITTEN (31 March 2026):
 - Persistent record of ALL unimplemented items from 17 TTS files and notes.
 - Prevents context-loss from losing track of deferred work.
 
-NEXT STEPS (31 March 2026):
-1. Standard CDSFL confer baseline (existing schema, no novel changes) with
-   CC2 + CX + Gemini on immune task area. FFF via situation layer. Sequential
-   dispatch. This validates all Exp 17/18 code fixes under live multi-model review.
+BASELINE CONFER RUNNER AUDIT FIXES APPLIED (1 April 2026):
+- `bench/run_baseline_confer.py` — 10 structural fixes from code audit:
+  process_round() called ONCE per round (not per-model), proper ModelResponse
+  construction (content/response_time/round_idx), CircuitBreakerTripped handler,
+  round_type parameter threaded through _dispatch_round, format_findings_for_context
+  called with correct args, task extraction (269K→114K chars) before prompt building.
+- Three attempted runs hit different bugs (task init, format_findings type error,
+  ModelResponse field names). All fixed. Run 3 reached Round 3 with 58 findings
+  before session context exhaustion killed it. Round 0 per-model JSONs saved;
+  Rounds 1-3 lost (round_type NameError in save_output — now fixed).
+- Runner is now structurally correct. Needs clean re-run.
+
+NEXT STEPS (1 April 2026):
+1. Re-run baseline CDSFL confer (all audit fixes now in code). Clean run expected.
 2. After baseline: layer in CX MCP/plugin flags (one change, measured)
 3. After that: parallel blind dispatch (one change, measured)
 4. After that: WBA Phase 1 finding attribution (one change, measured)

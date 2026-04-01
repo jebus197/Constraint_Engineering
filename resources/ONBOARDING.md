@@ -169,6 +169,14 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Key finding: FFF produces integration-level issues standard confer misses.
   CX model/effort configuration critical (o4-mini: 0 genuine; GPT-5.4 xhigh: 5
   genuine). Convergence in 3 rounds. Logs: `bench/logs/gemini_fff_exp17_fixes/`.
+- **Baseline confer runner BUILT + AUDIT FIXES (1 April 2026, `2b30423`+uncommitted):**
+  `bench/run_baseline_confer.py` — standard CDSFL confer with CC2 + CX + Gemini
+  on immune task area. FFF via situation directive. Sequential dispatch. 10
+  structural fixes from code audit (process_round once-per-round, ModelResponse
+  construction, CircuitBreakerTripped handler, task extraction 269K→114K chars).
+  Three test runs diagnosed and fixed different bugs. Run 3 reached R3 with 58
+  findings before session loss. Runner now structurally correct; needs clean re-run.
+  Logs: `bench/logs/baseline_confer_20260331/`.
 - **Experiment 20 runner BUILT (30 March 2026, `e11b4a2`):**
   `bench/run_exp20_confer.py` — sequential confer architecture (Phase 1+2 of
   Whole Body Architecture). Fingerprint-based dispatch ordering (strongest model
