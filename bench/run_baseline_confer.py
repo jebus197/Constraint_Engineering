@@ -340,77 +340,108 @@ def _multiturn_fallback(
 # Dispatch: sequential, one model at a time (existing infrastructure)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _dispatch_round(
-    exp_config: ExperimentConfig,
+def _dispatch_single_model(
+    mc: ModelConfig,
     mgr: DynamicManager,
     prompt: str,
     cdsfl_text: str,
     full_code: str,
     round_idx: int,
-    task_key: str = "immune",
-    round_type: str = "blind",
-) -> tuple[List[Finding], Dict[str, str]]:
-    """Dispatch prompt to 3 models sequentially. Returns (findings, responses)."""
-    findings: List[Finding] = []
-    responses: Dict[str, str] = {}
+    task_key: str,
+    round_type: str,
+) -> tuple[List[Finding], str | None]:
+    """Dispatch to one model. Returns (findings, response_text_or_None).
 
-    for mc in exp_config.models:
-        if mc.label not in BASELINE_MODELS:
-            continue
-        if mc.role == "collator":
-            continue
+    Thread-safe: uses only local state + thread-safe _log writes.
+    DynamicManager is read-only during dispatch (feasibility check only).
+    """
+    # Compose directives for this model
+    try:
+        composed = compose_for_model(mc.label)
+        model_cdsfl = composed.rendered_text
+        _log(f"  {mc.label}: composed directives "
+             f"({len(model_cdsfl)} chars, CID={composed.cid[:12]}...)")
+    except Exception as e:
+        _log(f"  {mc.label}: composer failed ({e}), using raw CDSFL")
+        model_cdsfl = cdsfl_text
 
-        # Compose directives for this model
-        try:
-            composed = compose_for_model(mc.label)
-            model_cdsfl = composed.rendered_text
-            _log(f"  {mc.label}: composed directives "
-                 f"({len(model_cdsfl)} chars, CID={composed.cid[:12]}...)")
-        except Exception as e:
-            _log(f"  {mc.label}: composer failed ({e}), using raw CDSFL")
-            model_cdsfl = cdsfl_text
+    # Dynamic decomposition check
+    model_prompt = prompt
+    decomposed = False
+    eff_cap = _effective_capacity(mc.label, mc.timeout)
+    if _should_decompose(mc.label, mgr):
+        model_prompt, decomposed = _build_decomposed_prompt(
+            prompt, full_code, task_key, mc.label, round_idx,
+            max_chars=eff_cap or 0)
+        _log(f"  {mc.label}: decomposed={decomposed}")
 
-        # Dynamic decomposition check
-        model_prompt = prompt
-        decomposed = False
-        eff_cap = _effective_capacity(mc.label, mc.timeout)
-        if _should_decompose(mc.label, mgr):
+    # Pre-dispatch feasibility gate
+    model_spec = _find_model_spec(mgr, mc.label)
+    if model_spec:
+        token_est = len(model_prompt) // 4
+        ok, p_feasible = mgr.check_dispatch_feasibility(model_spec, token_est)
+        if not ok:
+            _log(f"  {mc.label}: DISPATCH BLOCKED (P={p_feasible:.3f}, "
+                 f"~{token_est} tokens). Auto-decomposing.")
             model_prompt, decomposed = _build_decomposed_prompt(
                 prompt, full_code, task_key, mc.label, round_idx,
                 max_chars=eff_cap or 0)
-            _log(f"  {mc.label}: decomposed={decomposed}")
 
-        # Pre-dispatch feasibility gate
-        model_spec = _find_model_spec(mgr, mc.label)
-        if model_spec:
-            token_est = len(model_prompt) // 4
-            ok, p_feasible = mgr.check_dispatch_feasibility(model_spec, token_est)
-            if not ok:
-                _log(f"  {mc.label}: DISPATCH BLOCKED (P={p_feasible:.3f}, "
-                     f"~{token_est} tokens). Auto-decomposing.")
-                model_prompt, decomposed = _build_decomposed_prompt(
-                    prompt, full_code, task_key, mc.label, round_idx,
-                    max_chars=eff_cap or 0)
+    # Generous wall-clock: 3× timeout for large prompts
+    wall_limit = mc.timeout * 3
+    try:
+        text, elapsed = dispatch_to_model(
+            mc, model_prompt, model_cdsfl, wall_clock_limit=wall_limit)
+        _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
+        _record_throughput(mc.label, len(model_prompt), elapsed)
 
-        # Generous wall-clock: 3× timeout for large prompts
-        wall_limit = mc.timeout * 3
-        try:
-            text, elapsed = dispatch_to_model(
-                mc, model_prompt, model_cdsfl, wall_clock_limit=wall_limit)
-            _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
+        # Log full model response for live monitoring
+        _log(f"\n{'─' * 40} {mc.label} RESPONSE {'─' * 40}")
+        _log(text)
+        _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+
+        model_findings = parse_findings(mc.label, round_idx, text)
+        _log(f"  {mc.label}: {len(model_findings)} findings parsed")
+
+        # Save individual output
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        phase_label = f"r{round_idx}_{round_type}"
+        save_output(
+            LOGS_DIR, phase_label, mc.label,
+            model_prompt[:200] + "...", text,
+            metadata={
+                "round": round_idx,
+                "elapsed": round(elapsed, 1),
+                "chars": len(text),
+                "findings_count": len(model_findings),
+                "decomposed": decomposed,
+                "prompt_chars": len(model_prompt),
+            })
+
+        return model_findings, text
+
+    except (CircuitBreakerTripped, TimeoutError, Exception) as e:
+        err_type = type(e).__name__
+        _log(f"  {mc.label}: {err_type} — {e}")
+        _log(f"  {mc.label}: attempting multi-turn decomposed fallback...")
+
+        # Multi-turn fallback: never exclude, always try harder
+        fallback = _multiturn_fallback(
+            mc, model_prompt, model_cdsfl, full_code, task_key,
+            round_idx, round_type,
+        )
+        if fallback is not None:
+            text, elapsed = fallback
+            _log(f"  {mc.label}: RECOVERED via multi-turn ({elapsed:.1f}s)")
             _record_throughput(mc.label, len(model_prompt), elapsed)
 
-            # Log full model response for live monitoring
-            _log(f"\n{'─' * 40} {mc.label} RESPONSE {'─' * 40}")
+            _log(f"\n{'─' * 40} {mc.label} RESPONSE (multi-turn) {'─' * 40}")
             _log(text)
             _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
 
             model_findings = parse_findings(mc.label, round_idx, text)
-            findings.extend(model_findings)
-            responses[mc.label] = text
-            _log(f"  {mc.label}: {len(model_findings)} findings parsed")
+            _log(f"  {mc.label}: {len(model_findings)} findings parsed (multi-turn)")
 
-            # Save individual output
             LOGS_DIR.mkdir(parents=True, exist_ok=True)
             phase_label = f"r{round_idx}_{round_type}"
             save_output(
@@ -421,54 +452,85 @@ def _dispatch_round(
                     "elapsed": round(elapsed, 1),
                     "chars": len(text),
                     "findings_count": len(model_findings),
-                    "decomposed": decomposed,
+                    "decomposed": True,
+                    "multiturn": True,
                     "prompt_chars": len(model_prompt),
                 })
 
-        except (CircuitBreakerTripped, TimeoutError, Exception) as e:
-            err_type = type(e).__name__
-            _log(f"  {mc.label}: {err_type} — {e}")
-            _log(f"  {mc.label}: attempting multi-turn decomposed fallback...")
+            return model_findings, text
+        else:
+            # Multi-turn also failed — defer immune reporting to main thread
+            # (DynamicManager.apply_diagnosis is not thread-safe)
+            _log(f"  {mc.label}: ALL dispatch methods exhausted")
+            return [], f"__DISPATCH_FAILED__:{err_type}: {e} (multi-turn also failed)"
 
-            # Multi-turn fallback: never exclude, always try harder
-            fallback = _multiturn_fallback(
-                mc, model_prompt, model_cdsfl, full_code, task_key,
-                round_idx, round_type,
+
+def _dispatch_round(
+    exp_config: ExperimentConfig,
+    mgr: DynamicManager,
+    prompt: str,
+    cdsfl_text: str,
+    full_code: str,
+    round_idx: int,
+    task_key: str = "immune",
+    round_type: str = "blind",
+) -> tuple[List[Finding], Dict[str, str]]:
+    """Dispatch prompt to all models. Returns (findings, responses).
+
+    Blind/discovery rounds dispatch in parallel (ThreadPoolExecutor).
+    Adaptive/confer rounds dispatch sequentially (models see prior findings).
+    Gemini proposal item 2a/2b, P-passed 2026-03-31.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    findings: List[Finding] = []
+    responses: Dict[str, str] = {}
+
+    eligible = [
+        mc for mc in exp_config.models
+        if mc.label in BASELINE_MODELS and mc.role != "collator"
+    ]
+
+    parallel = round_type == "blind"
+    deferred_failures: list[tuple[str, str]] = []  # (label, detail)
+
+    if parallel:
+        _log(f"  Parallel dispatch: {len(eligible)} models simultaneously")
+        with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
+            future_to_label = {
+                pool.submit(
+                    _dispatch_single_model,
+                    mc, mgr, prompt, cdsfl_text, full_code,
+                    round_idx, task_key, round_type,
+                ): mc.label
+                for mc in eligible
+            }
+            for future in as_completed(future_to_label):
+                label = future_to_label[future]
+                try:
+                    model_findings, text = future.result()
+                    findings.extend(model_findings)
+                    if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
+                        responses[label] = text
+                    elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
+                        deferred_failures.append((label, text[20:]))
+                except Exception as e:
+                    _log(f"  {label}: unexpected thread error — {type(e).__name__}: {e}")
+    else:
+        for mc in eligible:
+            model_findings, text = _dispatch_single_model(
+                mc, mgr, prompt, cdsfl_text, full_code,
+                round_idx, task_key, round_type,
             )
-            if fallback is not None:
-                text, elapsed = fallback
-                _log(f"  {mc.label}: RECOVERED via multi-turn ({elapsed:.1f}s)")
-                _record_throughput(mc.label, len(model_prompt), elapsed)
-
-                _log(f"\n{'─' * 40} {mc.label} RESPONSE (multi-turn) {'─' * 40}")
-                _log(text)
-                _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
-
-                model_findings = parse_findings(mc.label, round_idx, text)
-                findings.extend(model_findings)
+            findings.extend(model_findings)
+            if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
                 responses[mc.label] = text
-                _log(f"  {mc.label}: {len(model_findings)} findings parsed (multi-turn)")
+            elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
+                deferred_failures.append((mc.label, text[20:]))
 
-                LOGS_DIR.mkdir(parents=True, exist_ok=True)
-                phase_label = f"r{round_idx}_{round_type}"
-                save_output(
-                    LOGS_DIR, phase_label, mc.label,
-                    model_prompt[:200] + "...", text,
-                    metadata={
-                        "round": round_idx,
-                        "elapsed": round(elapsed, 1),
-                        "chars": len(text),
-                        "findings_count": len(model_findings),
-                        "decomposed": True,
-                        "multiturn": True,
-                        "prompt_chars": len(model_prompt),
-                    })
-            else:
-                # Multi-turn also failed — report to immune layer
-                _log(f"  {mc.label}: ALL dispatch methods exhausted")
-                _report_dispatch_failure(
-                    mgr, mc.label, round_idx,
-                    f"{err_type}: {e} (multi-turn also failed)")
+    # Apply deferred immune reports on main thread (DynamicManager not thread-safe)
+    for label, detail in deferred_failures:
+        _report_dispatch_failure(mgr, label, round_idx, detail)
 
     return findings, responses
 

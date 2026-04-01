@@ -37,16 +37,15 @@
 
 ## 2. Parallel Dispatch (Gemini Proposal)
 
-### 2a. Parallel blind-round dispatch — `PENDING`
+### 2a. Parallel blind-round dispatch — `IMPLEMENTED (1 April 2026)`
 - **Source:** Gemini 9-page proposal, P-passed 2026-03-31. Survived as genuinely useful.
-- **Change:** `_dispatch_round` currently iterates sequentially (`for mc in exp_config.models`). Switch to `ThreadPoolExecutor(max_workers=N)` for blind/discovery rounds.
-- **Expected gain:** T_async = max(t_i) instead of T_sync = Σt_i. ~3x wall-clock reduction for 3 models.
-- **Constraint:** Blind rounds only. No cross-model dependency until findings are aggregated.
-- **Files:** `bench/run_round_robin.py` (lines 2961-3019 self-iterate, 3121-3162 confer), `bench/run_exp17_immune.py` (lines 1203-1320 `_dispatch_round`)
+- **Change:** `_dispatch_round` refactored: per-model work extracted into `_dispatch_single_model()`, blind rounds dispatch via `ThreadPoolExecutor(max_workers=N)`. FFF-verified thread safety: _log (stderr, GIL-safe), DynamicManager (read-only during dispatch), save_output (unique filenames), _record_throughput (dict.setdefault+append, GIL-safe). Immune failure reports deferred to main thread (DynamicManager.apply_diagnosis not thread-safe).
+- **Expected gain:** T_async = max(t_i) instead of T_sync = Σt_i. ~44% wall-clock reduction for 5 models (Run 6 R0: 825s sequential → ~465s parallel, Codex bottleneck).
+- **File:** `bench/run_baseline_confer.py` (`_dispatch_single_model`, `_dispatch_round`)
 
-### 2b. Hybrid async-then-sync round structure — `PENDING`
+### 2b. Hybrid async-then-sync round structure — `IMPLEMENTED (1 April 2026)`
 - **Source:** Same Gemini proposal.
-- **Change:** Blind rounds dispatch in parallel; adaptive/confer rounds remain sequential (models need to see each other's findings).
+- **Change:** Blind rounds dispatch in parallel; adaptive/confer rounds remain sequential (models need to see each other's findings). Implemented as `parallel = round_type == "blind"` gate in `_dispatch_round`.
 - **Maps to:** Existing `blind_first` → adaptive round structure in `DynamicManagementConfig`.
 
 ### 2c. Gemini's SI formula — `SUPERSEDED`
