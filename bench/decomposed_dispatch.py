@@ -403,50 +403,33 @@ def _decomposed_codex(
     final_instruction: str,
     timeout: int,
 ) -> DecomposedResult:
-    """Decomposed delivery via Codex CLI.
+    """Decomposed delivery via Codex CLI — per-chunk independent calls.
 
-    CX doesn't support true multi-turn via codex exec. We approximate it by
-    accumulating all prior chunks into the prompt body for each call, with
-    the "WAITING" responses embedded as context. The final call includes all
-    chunks + the synthesis instruction.
+    codex exec is single-shot (no session persistence), so true multi-turn
+    is impossible. Instead of accumulating all chunks into one giant prompt
+    (which caused 189K payloads and timeouts), we dispatch each chunk as an
+    independent codex exec call with its own findings request, then merge
+    all findings at the end.
 
-    This is less efficient than true multi-turn (each call re-processes prior
-    context) but preserves the staged delivery semantics.
+    Each chunk gets:
+    - The CDSFL system directives
+    - A brief context header (what the chunk is, what round, chunk N of M)
+    - The chunk content itself
+    - The FFF synthesis instruction
+
+    This keeps each call under ~40K chars, well within Codex's comfort zone.
+    The trade-off is that Codex can't cross-reference between chunks within
+    a single call — but the confer rounds handle cross-chunk synthesis anyway.
     """
     total = len(chunks) + 1
     total_chars = sum(c.chars for c in chunks) + len(final_instruction)
 
-    accumulated_context = ""
+    all_responses: list[str] = []
     wait_responses: list[str] = []
     turns: list[dict[str, str]] = []
     t0 = time.monotonic()
 
-    for i, chunk in enumerate(chunks):
-        n = i + 1
-        accumulated_context += (
-            f"\n=== CHUNK {n}/{total} ({chunk.label or 'unlabelled'}) ===\n"
-            f"{chunk.content}\n"
-        )
-        _log(f"  [codex] accumulating chunk {n}/{total}"
-             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
-        wait_responses.append("WAITING (accumulated)")
-        turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
-        turns.append({"role": "assistant", "content": "WAITING"})
-
-    # Single call with all context + final instruction
-    full_prompt = (
-        "=== SYSTEM INSTRUCTIONS (CDSFL Operating Constraints) ===\n"
-        f"{cdsfl_directives}\n"
-        "=== END SYSTEM INSTRUCTIONS ===\n\n"
-        f"=== STAGED CONTEXT ({len(chunks)} chunks, ~{total_chars:,} chars) ===\n"
-        f"{accumulated_context}\n"
-        "=== END STAGED CONTEXT ===\n\n"
-        "=== INSTRUCTION ===\n"
-        f"{final_instruction}\n"
-        "=== END INSTRUCTION ==="
-    )
-
-    cmd = [
+    cmd_base = [
         "codex", "exec",
         "-c", 'model_reasoning_effort="xhigh"',
         "-c", "mcp_servers={}",
@@ -455,33 +438,85 @@ def _decomposed_codex(
         "-",
     ]
 
-    _log(f"  [codex] delivering all {len(chunks)} chunks + instruction"
-         f" (~{len(full_prompt):,} chars total)")
+    _log(f"  [codex] per-chunk dispatch: {len(chunks)} independent calls, "
+         f"~{total_chars:,} chars total")
 
-    result = subprocess.run(
-        cmd,
-        input=full_prompt,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-    elapsed = time.monotonic() - t0
-
-    if result.returncode != 0:
-        stderr = result.stderr.strip()[:200]
-        raise RuntimeError(f"codex exec returned {result.returncode}: {stderr}")
-
-    result_text = result.stdout.strip()
-    if not result_text:
-        raise CircuitBreakerTripped(
-            "empty_response", "Codex", "dispatch",
-            f"Empty stdout after {elapsed:.1f}s",
+    for i, chunk in enumerate(chunks):
+        n = i + 1
+        # Build a self-contained prompt for this chunk
+        chunk_prompt = (
+            "=== SYSTEM INSTRUCTIONS (CDSFL Operating Constraints) ===\n"
+            f"{cdsfl_directives}\n"
+            "=== END SYSTEM INSTRUCTIONS ===\n\n"
+            f"=== CHUNK {n} OF {len(chunks)} ({chunk.label or 'unlabelled'}) ===\n"
+            f"You are reviewing one section of a larger codebase. This is chunk "
+            f"{n} of {len(chunks)}. Other chunks are being reviewed in parallel.\n"
+            f"Focus your analysis on the code in THIS chunk only.\n\n"
+            f"{chunk.content}\n"
+            f"=== END CHUNK ===\n\n"
+            f"=== INSTRUCTION ===\n"
+            f"{final_instruction}\n"
+            f"=== END INSTRUCTION ==="
         )
 
-    turns.append({"role": "user", "content": f"[final instruction: {len(final_instruction)} chars]"})
-    turns.append({"role": "assistant", "content": result_text})
+        _log(f"  [codex] dispatching chunk {n}/{len(chunks)}"
+             f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'},"
+             f" prompt={len(chunk_prompt):,} chars)")
 
-    _log(f"  [codex] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
+        try:
+            result = subprocess.run(
+                cmd_base,
+                input=chunk_prompt,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+
+            if result.returncode != 0:
+                stderr = result.stderr.strip()[:200]
+                _log(f"  [codex] chunk {n} failed (rc={result.returncode}): {stderr}")
+                wait_responses.append(f"FAILED (rc={result.returncode})")
+                turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+                turns.append({"role": "assistant", "content": f"FAILED: {stderr}"})
+                continue
+
+            resp_text = result.stdout.strip()
+            chunk_elapsed = time.monotonic() - t0
+
+            if resp_text:
+                all_responses.append(
+                    f"=== FINDINGS FROM CHUNK {n}/{len(chunks)}"
+                    f" ({chunk.label or 'unlabelled'}) ===\n{resp_text}"
+                )
+                _log(f"  [codex] chunk {n} done ({chunk_elapsed:.1f}s cumulative,"
+                     f" {len(resp_text):,} chars response)")
+            else:
+                _log(f"  [codex] chunk {n} returned empty response")
+
+            wait_responses.append(f"OK ({len(resp_text)} chars)")
+            turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+            turns.append({"role": "assistant", "content": resp_text[:500] if resp_text else "(empty)"})
+
+        except subprocess.TimeoutExpired:
+            _log(f"  [codex] chunk {n} timed out after {timeout}s — skipping")
+            wait_responses.append(f"TIMEOUT ({timeout}s)")
+            turns.append({"role": "user", "content": f"[chunk {n}: {chunk.chars} chars]"})
+            turns.append({"role": "assistant", "content": f"TIMEOUT after {timeout}s"})
+
+    elapsed = time.monotonic() - t0
+
+    if not all_responses:
+        raise CircuitBreakerTripped(
+            "empty_response", "Codex", "dispatch",
+            f"All {len(chunks)} chunk calls failed or returned empty after {elapsed:.1f}s",
+        )
+
+    # Merge all chunk responses into one combined output
+    result_text = "\n\n".join(all_responses)
+
+    _log(f"  [codex] all chunks complete ({elapsed:.1f}s total,"
+         f" {len(all_responses)}/{len(chunks)} succeeded,"
+         f" {len(result_text):,} chars merged)")
 
     return DecomposedResult(
         text=result_text,
