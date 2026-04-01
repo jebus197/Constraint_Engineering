@@ -273,6 +273,17 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         try:
             arr = json.loads(json_text)
             if isinstance(arr, list) and len(arr) > 0 and isinstance(arr[0], dict):
+                # Validate this is actually a findings array, not embedded JSON
+                # (e.g. remediation actions in PROPOSED_FIX). Require at least
+                # one object to have FINDING_ID or SEVERITY — the two fields
+                # that distinguish findings from arbitrary JSON.
+                _FINDINGS_KEYS = {"FINDING_ID", "SEVERITY"}
+                has_findings_key = any(
+                    _FINDINGS_KEYS & {k.upper().replace(" ", "_") for k in obj}
+                    for obj in arr if isinstance(obj, dict)
+                )
+                if not has_findings_key:
+                    raise ValueError("JSON array lacks findings keys — not a findings array")
                 for obj in arr:
                     if not isinstance(obj, dict):
                         continue
