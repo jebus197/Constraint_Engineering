@@ -723,7 +723,14 @@ def run_confer(
         interface_summary = INTERFACE_SUMMARY_PATH.read_text(encoding="utf-8")
 
     # Build DynamicManager
-    dm_config = DynamicManagementConfig()
+    # Pre-seed Codex and DeepSeek for decomposition. Codex CLI overhead
+    # makes full-artifact dispatch impractical (370-556s observed in Exp 17).
+    # DeepSeek always decomposed (Exp 16 unanimous). Without pre-seeding,
+    # they get the full 122K prompt, hit timeout, and only THEN fall back
+    # to multi-turn — wasting 600-900s per model per round.
+    dm_config = DynamicManagementConfig(
+        pre_decompose_models={"Codex", "DeepSeek"},
+    )
     dm_config.max_rounds = MAX_ROUNDS
     model_specs = build_model_specs(exp_config)
     mgr = DynamicManager(model_specs, dm_config)
