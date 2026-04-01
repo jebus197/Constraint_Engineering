@@ -215,11 +215,17 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   exhaustion, DC-1/DC-2 encapsulation (register_diagnoses() method). JSON parser
   fixed — JSON array detection as first-pass before tuple/marker parsers.
   Observation-only γ_input/γ_output/amplification wired into runner. 387 tests.
-- **Run 6 PREPARED (1 April 2026):** Runner configured: MAX_ROUNDS=20
-  (convergence is the real stop criterion), WALL_CLOCK_CAP=8h, all 31 fixes
-  active, JSON parser fixed, observation-only complexity measurement active.
-  Runner: `bench/run_baseline_confer.py`. Logs will be at
-  `bench/logs/baseline_confer_run6_20260401/`.
+- **Run 6 LAUNCHED (1 April 2026, in progress):** 5 models, MAX_ROUNDS=20,
+  convergence-driven. Three fixes applied mid-session before launch:
+  (1) Multi-turn chunking (80K→30K target + hard-split fallback, `44adcad`),
+  (2) Codex per-chunk independent dispatch instead of 189K accumulated payload (`380368a`),
+  (3) JSON parser false-positive fix — embedded remediation JSON in PROPOSED_FIX
+  no longer hijacks findings parser (`bc09e78`).
+  Canonical runner_core.py extracted (`e47e6b2`) — single source of truth for
+  parser + dispatch, all experiment runners import from it.
+  R0: CC2=15 (1 parsed due to parser bug in loaded code), Codex=6, ChatGPT=5.
+  R1: CC2=12, ChatGPT=9. Codex survived 101K single-turn at 465s.
+  Logs: `bench/logs/baseline_confer_run6_20260401/`.
 - **Input complexity module BUILT (1 April 2026, test article):**
   `bench/input_complexity.py` — Heaps β on input text (γ_input), output
   complexity (γ_output), amplification factor A = β_output/β_input, compound

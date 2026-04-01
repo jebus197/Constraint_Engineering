@@ -19,19 +19,26 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (1 April 2026, 18:03 UTC)
+## Current Pending Work (1 April 2026, 20:58 UTC)
 
-Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. See ONBOARDING.md for details.
+Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. Run 6 IN PROGRESS.
 
-RUN 6 READY TO LAUNCH (1 April 2026):
+RUN 6 IN PROGRESS (1 April 2026):
 - All 31 immune layer bugs from Run 5 fixed + FFF verified (4 additional fixes)
-- JSON parser fixed (ChatGPT JSON array format now handled)
+- Three mid-session fixes applied before launch:
+  1. Multi-turn chunking: 80K→30K target + hard-split fallback (`44adcad`)
+  2. Codex per-chunk independent dispatch: no more 189K accumulated payload (`380368a`)
+  3. JSON parser false-positive: embedded non-findings JSON no longer hijacks parser (`bc09e78`)
+- Canonical runner_core.py extracted (`e47e6b2`) — single source of truth
 - Observation-only γ/A measurement wired in (does not affect dispatch)
 - 5 models: CC2 + CX + Gemini + DeepSeek + ChatGPT, all xhigh reasoning
 - MAX_ROUNDS=20 (convergence is the real stop criterion)
-- Launch: `python3 bench/run_baseline_confer.py run`
+- R0: CC2=15 findings (1 parsed — parser bug in loaded code), Codex=6, ChatGPT=5
+- R1: CC2=12, ChatGPT=9. Codex 465s on 101K single-turn (survived)
 - Resume: `python3 bench/run_baseline_confer.py --resume`
 - Logs: `bench/logs/baseline_confer_run6_20260401/`
+- NOTE: Running process loaded old parser code. CC2 R0 findings lost to bug.
+  Parser fix only takes effect on restart/next run.
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)
