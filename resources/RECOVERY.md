@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 16:59 BST
+Last updated: 2 April 2026 19:44 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,52 +19,32 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (2 April 2026, 16:42 BST)
+## Current Pending Work (2 April 2026, 19:44 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE. Run 7b sy+f COMPLETE.
+Run 7b BUILD SESSION COMPLETE — 14 bug fixes applied, quality gate built, Run 8 READY.
 
-RUN 7b sy+f ANALYSIS COMPLETE (2 April 2026):
-- 197 raw findings → 16 unique verified bugs (6 medium, 10 low)
-- 76% of findings were churn (same bug re-reported across rounds)
-- 3 false positives (Codex @dataclass hallucination × 8 rounds)
-- 2 mathematical claims refuted by SymPy
-- Top bugs: self_diagnose bypasses immune_feedback_enabled (0.55),
-  pathology_key namespace mismatch (0.40), _verify_remediation key
-  mismatch kappa/mu (0.35), FPR windowing bias, global damping,
-  chain_exhaustion_rate double-count
-- Full report: docs/experimental_notes/Run7b_SyF_Analysis_2026-04-02.md
-
-PM FILTER + ADAPTIVE IMMUNE VERIFICATION DESIGNED (2 April 2026):
-- Three-stage quality gate: innate (dedup+SymPy+AST, zero cost) →
-  adaptive (parallel verification agents via local claude CLI) →
-  regulatory (meta-verification preventing over-rejection)
-- All infrastructure exists, needs wiring not building
-- Local claude CLI as PM: full tool access (Bash, SymPy, AST, file read),
-  zero marginal cost on Max subscription
-- Nested D-decay convergence at all three levels
-- 5 falsifiable questions registered
-- Design: docs/experimental_notes/PM_Filter_Architecture_2026-04-02.md,
-  docs/experimental_notes/Adaptive_Immune_Verification_2026-04-02.md,
-  docs/experimental_notes/Recursive_Falsification_2026-04-02.md
-- Key extension: DetectorHealthMonitor instantiated twice (generators +
-  verifiers) = self-regulating T-cell layer, zero new monitoring code.
-  Human input formally falsifiable via pre-dispatch review. S_sync detects
-  under-challenge of human assumptions. Substrate-agnostic Ω.
-
-RUN 7b RESULTS (2 April 2026, `556e0af`):
-- 20 rounds, 197 findings, 3,106s wall-clock. γ=0.393, C(H,E)=0.6624
-- Per model: Codex 116, DeepSeek 41, CC2 20, ChatGPT 11, Gemini 9
-- Ω churn guard ACTIVE: 4/5 models benched
-- File split: dynamic_management.py → 12 modules in bench/dm/ (427 tests pass)
-- Context budget: 80K default, 30K DeepSeek, IT Crowd reset, cross-model only
-- Logs: bench/logs/baseline_confer_run7b_20260402/
+RUN 7b BUILD SESSION COMPLETE (2 April 2026, `4b70824`):
+- 14 of 16 verified bugs fixed (1 reverted by SymPy falsification of fix itself)
+- Fix 4 (SY-3, chain_exhaustion_rate denominator) reverted: SymPy proved
+  exhaustions and outcomes are mutually exclusive code paths, denominator correct
+- New bench/verification_utils.py (~500 lines): 3-stage quality gate
+  (dedup + SymPy subprocess + AST structural verification). PM stage stubbed.
+- Quality gate wired into runner as OBSERVATION-ONLY
+- Layer 3 switched from passive to ACTIVE (will steer prompts for first time)
+- SymPy+FFF verification of new code caught 2 bugs: self-dedup in quality gate,
+  checkpoint serialisation. Both fixed.
+- 427 tests pass
+- Files changed: _immune.py (+440 lines), _failure_handler.py (+14), _types.py (+6),
+  run_baseline_confer.py (+36), test_dynamic_management.py (+5), verification_utils.py (new)
 
 NEXT ACTIONS (founder-approved sequence):
-1. Fix 16 verified bugs from sy+f analysis (batch 1: 5 medium, batch 2: 7 low, batch 3: 4 cosmetic/defensive)
-2. Build PM filter — wire existing infrastructure (~200 lines)
-3. Implement T-cell verification agents (~400 lines)
-4. Run 8 with PM filter active — expected dramatic churn reduction
-5. Bench Run 2 preparation
+1. Run 8 — models examine the immune layer they are running under. Quality gate
+   observes but does not filter. Layer 3 actively steers prompts. Ω churn guard
+   and context budget remain active.
+2. If quality gate observations match manual sy+f results → promote to load-bearing
+   for Run 9. Enable PM verification stage (full T-cell architecture).
+3. Bench Run 2 preparation
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)

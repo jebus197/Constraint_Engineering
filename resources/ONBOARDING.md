@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 2 April 2026
+Last updated: 2 April 2026 19:44 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -267,6 +267,24 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   _verify_remediation key mismatch for kappa/mu (0.35), false_positive_rate
   windowing bias, global damping scalar, chain_exhaustion_rate double-count.
   Analysis: `docs/experimental_notes/Run7b_SyF_Analysis_2026-04-02.md`.
+- **Run 7b BUILD SESSION COMPLETE (2 April 2026, `4b70824`):**
+  14 of 16 verified bugs fixed (1 reverted by SymPy falsification of fix itself).
+  Key fixes: namespace unification via `_CHAIN_TO_COUNTER` mapping,
+  `immune_feedback_enabled` suppression gate on `self_diagnose()`, per-trigger
+  damping (3 independent channels), FPR exact windowed counting via `round_idx`
+  on all `DetectorDiagnosis`, bivariate normal correlation with Frechet upper
+  bound clamping, full lifecycle for check 3 (mu_novelty_disagree), hysteresis-
+  based VM resolution, P-pass gate on self-check 2, threshold boundary fix.
+  New `bench/verification_utils.py` (~500 lines): 3-stage quality gate — dedup
+  via `_finding_similarity`, SymPy subprocess verification, AST structural
+  verification. PM stage stubbed (disabled). OBSERVATION-ONLY for Run 8.
+  Layer 3 switched from `active=False` to `active=True` — will steer prompts
+  for first time based on referential_density correlation with Ω.
+  Runner: quality gate wired after each round, termination reason fix for
+  MAX_ROUNDS fallthrough, dynamic round banner. 427 tests pass.
+  SymPy+FFF verification of fixes caught 2 additional bugs in new code:
+  quality gate self-dedup (current round in prior_findings), checkpoint
+  serialisation of new fields. Both fixed.
 - **PM Filter + Adaptive Immune Verification DESIGNED (2 April 2026):**
   Three-stage automated quality gate between rounds: (1) innate immunity —
   similarity dedup + SymPy + AST checking (zero cost, sub-second), (2) adaptive
