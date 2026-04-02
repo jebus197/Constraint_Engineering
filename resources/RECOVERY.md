@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 16:42 BST
+Last updated: 2 April 2026 16:59 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -44,7 +44,12 @@ PM FILTER + ADAPTIVE IMMUNE VERIFICATION DESIGNED (2 April 2026):
 - Nested D-decay convergence at all three levels
 - 5 falsifiable questions registered
 - Design: docs/experimental_notes/PM_Filter_Architecture_2026-04-02.md,
-  docs/experimental_notes/Adaptive_Immune_Verification_2026-04-02.md
+  docs/experimental_notes/Adaptive_Immune_Verification_2026-04-02.md,
+  docs/experimental_notes/Recursive_Falsification_2026-04-02.md
+- Key extension: DetectorHealthMonitor instantiated twice (generators +
+  verifiers) = self-regulating T-cell layer, zero new monitoring code.
+  Human input formally falsifiable via pre-dispatch review. S_sync detects
+  under-challenge of human assumptions. Substrate-agnostic Ω.
 
 RUN 7b RESULTS (2 April 2026, `556e0af`):
 - 20 rounds, 197 findings, 3,106s wall-clock. γ=0.393, C(H,E)=0.6624
