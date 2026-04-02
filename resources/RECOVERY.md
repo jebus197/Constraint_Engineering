@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 1 April 2026 08:28 UTC
+Last updated: 2 April 2026 09:17 UTC
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,26 +19,33 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (1 April 2026, 20:58 UTC)
+## Current Pending Work (2 April 2026, 09:17 UTC)
 
-Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. Run 6 IN PROGRESS.
+Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. Run 6 COMPLETE.
 
-RUN 6 IN PROGRESS (1 April 2026):
-- All 31 immune layer bugs from Run 5 fixed + FFF verified (4 additional fixes)
-- Three mid-session fixes applied before launch:
-  1. Multi-turn chunking: 80K→30K target + hard-split fallback (`44adcad`)
-  2. Codex per-chunk independent dispatch: no more 189K accumulated payload (`380368a`)
-  3. JSON parser false-positive: embedded non-findings JSON no longer hijacks parser (`bc09e78`)
-- Canonical runner_core.py extracted (`e47e6b2`) — single source of truth
-- Observation-only γ/A measurement wired in (does not affect dispatch)
-- 5 models: CC2 + CX + Gemini + DeepSeek + ChatGPT, all xhigh reasoning
-- MAX_ROUNDS=20 (convergence is the real stop criterion)
-- R0: CC2=15 findings (1 parsed — parser bug in loaded code), Codex=6, ChatGPT=5
-- R1: CC2=12, ChatGPT=9. Codex 465s on 101K single-turn (survived)
-- Resume: `python3 bench/run_baseline_confer.py --resume`
-- Logs: `bench/logs/baseline_confer_run6_20260401/`
-- NOTE: Running process loaded old parser code. CC2 R0 findings lost to bug.
-  Parser fix only takes effect on restart/next run.
+RUN 6 COMPLETE (2 April 2026):
+- 11 rounds, 299 findings, wall-clock cap at 29,223s (8h7m)
+- Per model: ChatGPT 89, CC2 85, DeepSeek 49, Codex 43, Gemini 33
+- γ=0.027 (NOT converged), C(H,E)=0.863 (strong corroboration)
+- CHURN CONFIRMED: 44% findings re-target previously-examined code, severity
+  inflated R0→R10. Compound objective correctly detected churn passively.
+- MATH AUDIT: 4 SymPy-confirmed valuable bugs (flatlined metric bypass,
+  CorrelatedFailureModel N≥3 overestimate, P-pass dead iteration, asymmetric
+  detect/resolve)
+- SOFTWARE AUDIT: 5 code-verified bugs worth fixing (_apply_transform 7/12
+  missing, PAR DOWNGRADE dead end, mu key mismatch, findings_decline off-by-one,
+  _perf_rounds_seen unbounded)
+- Amplification: ChatGPT A=1.67, DeepSeek A=1.56, Codex A=1.55, CC2 A=1.48,
+  Gemini A=1.12
+- Report: bench/logs/baseline_confer_run6_20260401/baseline_confer_report.json
+- Logs: bench/logs/baseline_confer_run6_20260401/
+
+NEXT ACTIONS (founder-approved sequence):
+1. Implement compound objective threshold as churn guard (replaces γ-only stop)
+2. Parallelize ALL rounds (not just blind — adaptive rounds are also independent within-round)
+3. Switch Codex+DeepSeek to OpenRouter (eliminates CLI overhead + decomposed fallback)
+4. Fix the 9 confirmed bugs (4 math + 5 software) before next run
+5. Then: Run 7 with churn guard active — expected 5-7 rounds, ~2-3 hours
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)

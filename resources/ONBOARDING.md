@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 1 April 2026
+Last updated: 2 April 2026
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -215,17 +215,21 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   exhaustion, DC-1/DC-2 encapsulation (register_diagnoses() method). JSON parser
   fixed — JSON array detection as first-pass before tuple/marker parsers.
   Observation-only γ_input/γ_output/amplification wired into runner. 387 tests.
-- **Run 6 LAUNCHED (1 April 2026, in progress):** 5 models, MAX_ROUNDS=20,
-  convergence-driven. Three fixes applied mid-session before launch:
-  (1) Multi-turn chunking (80K→30K target + hard-split fallback, `44adcad`),
-  (2) Codex per-chunk independent dispatch instead of 189K accumulated payload (`380368a`),
-  (3) JSON parser false-positive fix — embedded remediation JSON in PROPOSED_FIX
-  no longer hijacks findings parser (`bc09e78`).
-  Canonical runner_core.py extracted (`e47e6b2`) — single source of truth for
-  parser + dispatch, all experiment runners import from it.
-  R0: CC2=15 (1 parsed due to parser bug in loaded code), Codex=6, ChatGPT=5.
-  R1: CC2=12, ChatGPT=9. Codex survived 101K single-turn at 465s.
-  Logs: `bench/logs/baseline_confer_run6_20260401/`.
+- **Run 6 COMPLETE (2 April 2026, wall-clock cap at 29,223s / 8h7m):**
+  11 rounds, 299 findings, 5 models. Per model: ChatGPT 89, CC2 85,
+  DeepSeek 49, Codex 43, Gemini 33. γ=0.027 (NOT converged), C(H,E)=0.863
+  (strong corroboration). Terminated by wall-clock cap, not convergence.
+  Mid-session fixes: chunking (`44adcad`), Codex per-chunk dispatch (`380368a`),
+  parser false-positive (`bc09e78`), CC2→claude CLI (`de3e1ae`), parallel
+  blind dispatch (`1647acb`).
+  CHURN ANALYSIS: 44% of findings re-targeted previously-examined code.
+  Severity inflated R0→R10 (avg 0.55→0.80). R0-R3 genuinely novel; R4-R10
+  largely elaborate restatements. MATH: 64 findings, 8 SymPy-verified, 7 valid,
+  4 genuinely valuable bugs. SOFTWARE: 6 code-verified, 5 true, 5 worth fixing.
+  CRITICAL: γ alone is wrong stop criterion. Compound objective (A × γ_output)
+  already detected churn passively. Proposed as primary churn guard.
+  Amplification: ChatGPT A=1.67, DeepSeek A=1.56, Codex A=1.55, CC2 A=1.48,
+  Gemini A=1.12. Logs: `bench/logs/baseline_confer_run6_20260401/`.
 - **Input complexity module BUILT (1 April 2026, test article):**
   `bench/input_complexity.py` — Heaps β on input text (γ_input), output
   complexity (γ_output), amplification factor A = β_output/β_input, compound
