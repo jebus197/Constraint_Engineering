@@ -267,6 +267,22 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   _verify_remediation key mismatch for kappa/mu (0.35), false_positive_rate
   windowing bias, global damping scalar, chain_exhaustion_rate double-count.
   Analysis: `docs/experimental_notes/Run7b_SyF_Analysis_2026-04-02.md`.
+- **Run 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):**
+  6-cell immune agent pipeline mapping biological cell types to parallel
+  verification agents: Dendritic Cell (triage), Cytotoxic T-Cell (code FFF),
+  B-Cell (SymPy + z3 + statsmodels), NK Cell (dedup + false-positive DB),
+  Helper T-Cell (confidence-weighted synthesis), Regulatory T-Cell (autoimmune
+  prevention). Pipeline: DC (~1s) → [CT + B + NK parallel] (~30-60s) →
+  HT + RT (~1s). All 6 agents structurally constrained by code — no agent
+  relies on natural language instruction. CT agent uses Level 3 enforcement:
+  schema-forced structured evidence with file:line:code citations, mechanically
+  verified against actual source by `_verify_ct_claim()`. Verdict derived from
+  verification results, not agent opinion. New tools integrated: z3-solver 4.16,
+  statsmodels 0.14.6, uncertainties 3.2.3 via Python 3.13 discovery. B-Cell
+  class-switches (SymPy → z3) when primary tool returns uncertain. NK Cell seeded
+  with Run 7b false-positive patterns. Wired into runner as observation-only
+  for Run 8; two flags flip for Run 9 (`observation_only=False`, `ct_enabled=True`).
+  465 tests pass. Design: `docs/experimental_notes/Immune_Agent_Architecture_2026-04-02.md`.
 - **Run 7b BUILD SESSION COMPLETE (2 April 2026, `4b70824`):**
   14 of 16 verified bugs fixed (1 reverted by SymPy falsification of fix itself).
   Key fixes: namespace unification via `_CHAIN_TO_COUNTER` mapping,

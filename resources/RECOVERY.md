@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 19:44 BST
+Last updated: 2 April 2026 23:14 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,32 +19,41 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (2 April 2026, 19:44 BST)
+## Current Pending Work (2 April 2026, 23:14 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE. Run 7b sy+f COMPLETE.
-Run 7b BUILD SESSION COMPLETE — 14 bug fixes applied, quality gate built, Run 8 READY.
+Run 7b BUILD SESSION COMPLETE. Run 9 INFRASTRUCTURE BUILT. Run 8 READY TO LAUNCH.
+
+RUN 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):
+- 6-cell immune agent pipeline: Dendritic Cell (triage), Cytotoxic T-Cell
+  (code FFF), B-Cell (SymPy + z3 + statsmodels), NK Cell (dedup + FP DB),
+  Helper T-Cell (synthesis), Regulatory T-Cell (autoimmune prevention)
+- ALL 6 agents structurally constrained by code, not natural language
+- CT agent Level 3 enforcement: schema-forced evidence with file:line:code
+  citations, mechanically verified by _verify_ct_claim(). Verdict from
+  verification results, not agent opinion.
+- New tools: z3-solver 4.16, statsmodels 0.14.6, uncertainties 3.2.3
+  via Python 3.13 discovery at /Library/Frameworks/.../3.13/bin/python3
+- B-Cell class-switches SymPy → z3 on uncertain results
+- NK Cell seeded with Run 7b false-positive patterns (Codex @dataclass ×8)
+- Wired into runner: observation_only=True + ct_enabled=False for Run 8
+- 465 tests pass
+- Files: bench/immune_agents.py (~630 lines), bench/ct_verdict_schema.json,
+  bench/verification_utils.py (updated), bench/tests/test_immune_agents.py (38 tests)
 
 RUN 7b BUILD SESSION COMPLETE (2 April 2026, `4b70824`):
-- 14 of 16 verified bugs fixed (1 reverted by SymPy falsification of fix itself)
-- Fix 4 (SY-3, chain_exhaustion_rate denominator) reverted: SymPy proved
-  exhaustions and outcomes are mutually exclusive code paths, denominator correct
-- New bench/verification_utils.py (~500 lines): 3-stage quality gate
-  (dedup + SymPy subprocess + AST structural verification). PM stage stubbed.
-- Quality gate wired into runner as OBSERVATION-ONLY
-- Layer 3 switched from passive to ACTIVE (will steer prompts for first time)
-- SymPy+FFF verification of new code caught 2 bugs: self-dedup in quality gate,
-  checkpoint serialisation. Both fixed.
-- 427 tests pass
-- Files changed: _immune.py (+440 lines), _failure_handler.py (+14), _types.py (+6),
-  run_baseline_confer.py (+36), test_dynamic_management.py (+5), verification_utils.py (new)
+- 14 of 16 verified bugs fixed, quality gate built, Layer 3 activated
+- Details in ONBOARDING.md
 
 NEXT ACTIONS (founder-approved sequence):
 1. Run 8 — models examine the immune layer they are running under. Quality gate
-   observes but does not filter. Layer 3 actively steers prompts. Ω churn guard
-   and context budget remain active.
-2. If quality gate observations match manual sy+f results → promote to load-bearing
-   for Run 9. Enable PM verification stage (full T-cell architecture).
-3. Bench Run 2 preparation
+   + immune pipeline observe but do not filter. Layer 3 actively steers prompts.
+   Ω churn guard and context budget remain active.
+2. If quality gate + immune pipeline observations match manual sy+f results →
+   promote to load-bearing for Run 9: flip observation_only=False, ct_enabled=True.
+   Full 6-cell immune pipeline filters findings between rounds.
+3. Bench Run 2 preparation — domain tools (pint, astropy, shapely, chempy,
+   biopython) available for B-Cell class-switching on diverse tasks.
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)
