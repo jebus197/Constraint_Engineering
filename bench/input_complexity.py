@@ -455,3 +455,361 @@ def recommend_dispatch(
         reasoning=reasoning,
         estimated_A=round(est_A, 4) if est_A is not None else None,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Layer 3: Adaptive Question Optimisation
+#
+# Learns which prompt characteristics produce high Ω per model, then
+# generates focus directives that steer the next round toward productive
+# territory.
+#
+# Three features (from the 1 April P-pass):
+#   1. Referential density: how many distinct domain concepts the prompt connects
+#   2. Novelty: how much new content vs. prior rounds (measured via vocab overlap)
+#   3. Specificity: targeted vs. broad (measured via topic concentration)
+#
+# The compound objective Ω = A × γ_output is both the convergence signal
+# (Layer 2) and the fitness function for question optimisation (Layer 3).
+# Same mathematical object, two purposes.
+#
+# Active/passive switch: when passive, recommendations are logged but not
+# injected. When active, a focus directive is prepended to the prompt.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class PromptFeatures:
+    """Structural features of a prompt that may predict productive output."""
+    referential_density: float   # unique domain concepts per 1K tokens
+    novelty_score: float         # fraction of vocab NOT seen in prior rounds
+    specificity: float           # Herfindahl index of concept frequency (0=uniform, 1=concentrated)
+    token_count: int             # total content tokens (after stopword removal)
+    concept_count: int           # unique domain concepts
+
+
+@dataclass
+class QuestionOutcome:
+    """A (features, outcome) pair for one round."""
+    round_idx: int
+    features: PromptFeatures
+    per_model_omega: dict[str, float]   # model → Ω for this round
+    mean_omega: float                   # mean across models
+
+
+@dataclass
+class FocusDirective:
+    """A steering recommendation for the next round's prompt."""
+    directive_text: str          # human-readable text to inject into prompt
+    reasoning: str               # why this directive was generated
+    confidence: float            # 0–1, based on data quality
+    predicted_omega_lift: float  # estimated improvement over baseline
+
+
+def _extract_concepts(tokens: list[str], min_freq: int = 2) -> dict[str, int]:
+    """Extract domain concepts from content tokens.
+
+    A 'concept' is a token that appears at least min_freq times (not a
+    one-off variable name). Returns {concept: frequency}.
+    """
+    freq: dict[str, int] = {}
+    for t in tokens:
+        freq[t] = freq.get(t, 0) + 1
+    return {t: c for t, c in freq.items() if c >= min_freq}
+
+
+def extract_prompt_features(
+    prompt_text: str,
+    prior_vocab: Optional[set[str]] = None,
+) -> PromptFeatures:
+    """Extract structural features from a prompt.
+
+    Args:
+        prompt_text: The full prompt text.
+        prior_vocab: Cumulative vocabulary from all prior rounds. If None,
+            novelty_score is 1.0 (no prior context → everything is novel).
+
+    Returns:
+        PromptFeatures with referential density, novelty, and specificity.
+    """
+    tokens = tokenize(prompt_text)
+    if not tokens:
+        return PromptFeatures(
+            referential_density=0.0, novelty_score=1.0, specificity=0.0,
+            token_count=0, concept_count=0,
+        )
+
+    concepts = _extract_concepts(tokens)
+    token_count = len(tokens)
+    concept_count = len(concepts)
+
+    # Referential density: concepts per 1K tokens
+    referential_density = (concept_count / max(1, token_count)) * 1000
+
+    # Novelty: fraction of unique tokens not seen in prior rounds
+    unique_tokens = set(tokens)
+    if prior_vocab and unique_tokens:
+        new_tokens = unique_tokens - prior_vocab
+        novelty_score = len(new_tokens) / len(unique_tokens)
+    else:
+        novelty_score = 1.0  # no prior data → everything is novel
+
+    # Specificity: Herfindahl index on concept frequencies
+    # HHI = Σ(share_i²). Uniform distribution → 1/N → low. One dominant → 1.
+    if concepts:
+        total_freq = sum(concepts.values())
+        shares = [c / total_freq for c in concepts.values()]
+        hhi = sum(s * s for s in shares)
+        # Normalise: raw HHI ranges from 1/N to 1. Map to [0, 1].
+        min_hhi = 1.0 / len(concepts) if len(concepts) > 0 else 0.0
+        specificity = (hhi - min_hhi) / (1.0 - min_hhi) if (1.0 - min_hhi) > 1e-10 else 0.0
+    else:
+        specificity = 0.0
+
+    return PromptFeatures(
+        referential_density=round(referential_density, 3),
+        novelty_score=round(novelty_score, 3),
+        specificity=round(specificity, 3),
+        token_count=token_count,
+        concept_count=concept_count,
+    )
+
+
+class AdaptiveQuestionOptimiser:
+    """Learns which prompt features predict high Ω and generates focus directives.
+
+    Passive mode (default): logs recommendations, does not modify prompts.
+    Active mode: generates a focus directive to prepend to the next prompt.
+
+    The fitness function is Ω = A × γ_output (the compound objective).
+    Features are: referential_density, novelty_score, specificity.
+
+    After MIN_OBSERVATIONS rounds, the optimiser can identify which feature
+    directions correlate with higher Ω and recommend adjustments.
+    """
+
+    # Minimum observations before making recommendations
+    MIN_OBSERVATIONS = 3
+
+    def __init__(self, active: bool = False) -> None:
+        """Initialise the optimiser.
+
+        Args:
+            active: If True, generate directives for prompt injection.
+                    If False (default), log recommendations only.
+        """
+        self.active = active
+        self.history: list[QuestionOutcome] = []
+        self.cumulative_vocab: set[str] = set()
+        self._feature_omega_pairs: list[tuple[PromptFeatures, float]] = []
+
+    def observe(
+        self,
+        round_idx: int,
+        prompt_text: str,
+        per_model_omega: dict[str, float],
+    ) -> QuestionOutcome:
+        """Record a (features, outcome) observation after a round completes.
+
+        Call this AFTER computing Ω for all models in a round.
+
+        Args:
+            round_idx: The round that just completed.
+            prompt_text: The prompt that was sent.
+            per_model_omega: {model_id: Ω} for this round.
+
+        Returns:
+            The QuestionOutcome recorded.
+        """
+        features = extract_prompt_features(
+            prompt_text,
+            prior_vocab=self.cumulative_vocab if self.cumulative_vocab else None,
+        )
+
+        # Update cumulative vocab for novelty tracking in future rounds
+        tokens = tokenize(prompt_text)
+        self.cumulative_vocab.update(tokens)
+
+        mean_omega = (
+            sum(per_model_omega.values()) / len(per_model_omega)
+            if per_model_omega else 0.0
+        )
+
+        outcome = QuestionOutcome(
+            round_idx=round_idx,
+            features=features,
+            per_model_omega=per_model_omega,
+            mean_omega=round(mean_omega, 4),
+        )
+        self.history.append(outcome)
+        self._feature_omega_pairs.append((features, mean_omega))
+
+        return outcome
+
+    def _compute_feature_correlations(self) -> dict[str, float]:
+        """Compute Pearson-like correlation between each feature and mean Ω.
+
+        Returns {feature_name: correlation} where positive means the feature
+        predicts higher Ω.
+
+        Uses a simplified correlation: (mean_feature_in_top_half_Ω -
+        mean_feature_in_bottom_half_Ω) / pooled_std. This avoids scipy
+        dependency and is robust enough for 3-10 observations.
+        """
+        if len(self._feature_omega_pairs) < self.MIN_OBSERVATIONS:
+            return {}
+
+        # Sort by Ω
+        sorted_pairs = sorted(self._feature_omega_pairs, key=lambda p: p[1])
+        mid = len(sorted_pairs) // 2
+        bottom = sorted_pairs[:mid]
+        top = sorted_pairs[mid:]
+
+        correlations: dict[str, float] = {}
+        for feature_name in ("referential_density", "novelty_score", "specificity"):
+            bottom_vals = [getattr(f, feature_name) for f, _ in bottom]
+            top_vals = [getattr(f, feature_name) for f, _ in top]
+
+            if not bottom_vals or not top_vals:
+                correlations[feature_name] = 0.0
+                continue
+
+            mean_bottom = sum(bottom_vals) / len(bottom_vals)
+            mean_top = sum(top_vals) / len(top_vals)
+
+            # Pooled std (simplified — just range-based to avoid edge cases)
+            all_vals = bottom_vals + top_vals
+            val_range = max(all_vals) - min(all_vals)
+            if val_range < 1e-10:
+                correlations[feature_name] = 0.0
+            else:
+                correlations[feature_name] = round(
+                    (mean_top - mean_bottom) / val_range, 3
+                )
+
+        return correlations
+
+    def recommend(self) -> Optional[FocusDirective]:
+        """Generate a focus directive based on learned feature-Ω correlations.
+
+        Returns None if insufficient data (< MIN_OBSERVATIONS rounds).
+        Returns a FocusDirective with the recommended prompt adjustment.
+
+        The directive targets the feature with the strongest positive
+        correlation to Ω, suggesting the prompt emphasise that dimension.
+        """
+        if len(self._feature_omega_pairs) < self.MIN_OBSERVATIONS:
+            return None
+
+        correlations = self._compute_feature_correlations()
+        if not correlations:
+            return None
+
+        # Find strongest positive correlation
+        best_feature = max(correlations, key=correlations.get)  # type: ignore
+        best_corr = correlations[best_feature]
+
+        if best_corr <= 0.05:
+            # No feature has a meaningful positive correlation
+            return FocusDirective(
+                directive_text="",
+                reasoning=(
+                    f"No prompt feature shows strong correlation with Ω. "
+                    f"Correlations: {correlations}. No adjustment recommended."
+                ),
+                confidence=0.0,
+                predicted_omega_lift=0.0,
+            )
+
+        # Generate directive based on which feature correlates most
+        confidence = min(1.0, best_corr * 2)  # scale to [0, 1]
+
+        # Compute predicted lift: mean Ω of top-half minus mean Ω overall
+        sorted_pairs = sorted(self._feature_omega_pairs, key=lambda p: p[1])
+        mid = len(sorted_pairs) // 2
+        top_omega = [o for _, o in sorted_pairs[mid:]]
+        all_omega = [o for _, o in sorted_pairs]
+        lift = (
+            (sum(top_omega) / len(top_omega)) - (sum(all_omega) / len(all_omega))
+            if top_omega and all_omega else 0.0
+        )
+
+        directive_map = {
+            "referential_density": (
+                "## Focus Directive (adaptive)\n"
+                "Higher-Ω rounds in this session correlated with prompts that "
+                "connected MORE existing concepts. For this round: look for "
+                "cross-cutting issues that span multiple subsystems. Trace "
+                "interactions between components. Findings that reference "
+                "multiple code areas are more valuable than isolated ones.\n\n"
+            ),
+            "novelty_score": (
+                "## Focus Directive (adaptive)\n"
+                "Higher-Ω rounds in this session correlated with prompts that "
+                "contained MORE novel content. For this round: focus on areas "
+                "NOT yet examined. Avoid re-examining previously reported "
+                "findings. Seek unexplored code paths, untested edge cases, "
+                "and assumptions not yet challenged.\n\n"
+            ),
+            "specificity": (
+                "## Focus Directive (adaptive)\n"
+                "Higher-Ω rounds in this session correlated with MORE targeted "
+                "prompts. For this round: focus deeply on ONE specific area "
+                "rather than scanning broadly. Depth over breadth. Pick the "
+                "most complex untested subsystem and analyse it thoroughly.\n\n"
+            ),
+        }
+
+        directive_text = directive_map.get(best_feature, "")
+        reasoning = (
+            f"Feature '{best_feature}' has strongest correlation with Ω "
+            f"(r={best_corr:.3f}). Correlations: {correlations}. "
+            f"Based on {len(self._feature_omega_pairs)} observations."
+        )
+
+        return FocusDirective(
+            directive_text=directive_text,
+            reasoning=reasoning,
+            confidence=round(confidence, 3),
+            predicted_omega_lift=round(lift, 4),
+        )
+
+    def get_directive_text(self) -> str:
+        """Convenience: return directive text if active and available, else empty.
+
+        This is the method the runner calls. If passive, always returns "".
+        If active but insufficient data, returns "".
+        If active with sufficient data, returns the focus directive text.
+        """
+        if not self.active:
+            return ""
+        rec = self.recommend()
+        if rec is None or not rec.directive_text:
+            return ""
+        return rec.directive_text
+
+    def summary(self) -> dict:
+        """Return a JSON-serialisable summary of the optimiser state."""
+        correlations = self._compute_feature_correlations()
+        rec = self.recommend()
+        return {
+            "observations": len(self._feature_omega_pairs),
+            "active": self.active,
+            "correlations": correlations,
+            "recommendation": {
+                "directive": rec.directive_text[:100] + "..." if rec and rec.directive_text else None,
+                "reasoning": rec.reasoning if rec else None,
+                "confidence": rec.confidence if rec else None,
+                "predicted_lift": rec.predicted_omega_lift if rec else None,
+            } if rec else None,
+            "feature_history": [
+                {
+                    "round": o.round_idx,
+                    "referential_density": o.features.referential_density,
+                    "novelty_score": o.features.novelty_score,
+                    "specificity": o.features.specificity,
+                    "mean_omega": o.mean_omega,
+                }
+                for o in self.history
+            ],
+        }

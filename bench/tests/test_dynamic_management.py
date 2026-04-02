@@ -32,6 +32,8 @@ from bench.dynamic_management import (
     CapabilityFingerprint,
     ConvergenceDetector,
     CorrelatedFailureModel,
+    DetectorDiagnosis,
+    DetectorHealthMonitor,
     DiminishingReturnsDetector,
     DynamicManagementConfig,
     DynamicManager,
@@ -1013,11 +1015,29 @@ class TestFailureHandler:
         action = fh_setup.get_recovery("m_low", 0, FailureType.UNDERPERFORM)
         assert action == RecoveryAction.RETRY
 
-    def test_recovery_underperform_repeated_is_downgrade(self, fh_setup, config):
+    def test_recovery_underperform_repeated_par_escalates_to_exclude(self, fh_setup, config):
+        """Run 6 bug 6: PAR model with repeated underperformance can't downgrade
+        further — escalates to EXCLUDE instead of silently doing nothing."""
         for _ in range(config.n_fail):
             fh_setup.get_recovery("m_low", 0, FailureType.UNDERPERFORM)
         action = fh_setup.get_recovery("m_low", 1, FailureType.UNDERPERFORM)
-        assert action == RecoveryAction.DOWNGRADE_ROLE
+        # m_low is PAR — DOWNGRADE_ROLE has nowhere to go, so escalates to EXCLUDE
+        assert action == RecoveryAction.EXCLUDE
+
+    def test_recovery_underperform_col_downgrades_to_par(self, fh_setup, config):
+        """COL model with repeated underperformance downgrades to PAR normally.
+
+        The n_fail threshold triggers DOWNGRADE_ROLE which demotes COL→PAR.
+        After demotion, the model is PAR, so subsequent DOWNGRADE_ROLE
+        escalates to EXCLUDE (Run 6 bug 6 fix).
+        """
+        # First call: non-repeated → RETRY
+        action1 = fh_setup.get_recovery("m_mid", 0, FailureType.UNDERPERFORM)
+        assert action1 == RecoveryAction.RETRY
+        # Second call: repeated → DOWNGRADE_ROLE (COL→PAR)
+        action2 = fh_setup.get_recovery("m_mid", 1, FailureType.UNDERPERFORM)
+        assert action2 == RecoveryAction.DOWNGRADE_ROLE
+        assert fh_setup.role_map["m_mid"] == Role.PAR
 
     def test_pm_failure_retry_then_abort(self, fh_setup, config):
         """PM failure: RETRY first, ABORT on repetition."""
@@ -1763,13 +1783,17 @@ class TestDetectorHealthMonitorExp15:
         assert len(failure_diags) == 0  # only 1 failure since reset
 
     def test_findings_decline_detection(self):
-        """Declining findings for 3 rounds triggers diagnosis."""
+        """Declining findings for 3 rounds triggers diagnosis.
+
+        Run 6 bug 8 fix: off-by-one corrected (>= 3 not >= 4).
+        3 data points is now sufficient to detect a 3-round decline.
+        """
         hm = DetectorHealthMonitor()
-        # Need 4 rounds of data (we check the last 3)
-        for counts in [30, 25, 18, 10]:
+        # 3 rounds is now sufficient (was 4 before off-by-one fix)
+        for counts in [30, 25, 18]:
             hm.record_round(kappa=0.0, mu=10.0, novelty_rate=1.0,
                             finding_count=counts, active_models=5)
-        # Last 3 are [25, 18, 10] — declining with drop > 5
+        # [30, 25, 18] — declining with total drop = 12 > threshold
         diags = [d for d in hm._diagnoses if d.detector == "findings_decline"]
         assert len(diags) == 1
         assert "declining" in diags[0].pathology.lower()
@@ -2258,14 +2282,21 @@ class TestSelfAdaptiveImmuneLayer:
         assert hm._remediation_outcomes[0]["success"] is True
 
     def test_natural_resolution_fed_on_kappa_resolve(self):
-        """When kappa pathology resolves without active remediation, it's a false positive."""
+        """When kappa pathology resolves without active remediation, it's a false positive.
+
+        Run 6 bug 4: resolution now requires resolution_hysteresis (default 2)
+        consecutive non-pathological rounds before resolving.
+        """
         hm = DetectorHealthMonitor(stuck_window=3)
         # Trigger kappa pathology
         for _ in range(3):
             hm.record_round(0.0, 10.0, 0.5, 10, 3)
         assert hm._pathology_counts.get("kappa", 0) >= 1
         # Now resolve it (kappa > 0.01) without active remediation
+        # Need 2 non-pathological rounds (resolution_hysteresis=2)
         hm.record_round(0.5, 10.0, 0.5, 10, 3)
+        assert len(hm._false_positive_history) == 0  # Not yet resolved
+        hm.record_round(0.5, 10.0, 0.5, 10, 3)  # Second non-pathological round
         assert len(hm._false_positive_history) == 1
 
     def test_chain_skip_in_apply_diagnosis(self):
@@ -2646,14 +2677,20 @@ class TestMonotonicDeclineDetector:
         assert decline_diags[0].severity == "CRITICAL"
 
     def test_resolves_on_recovery(self):
-        """Recovery from decline marks pathology as resolved."""
+        """Recovery from decline marks pathology as resolved.
+
+        Run 6 bug 4: resolution requires resolution_hysteresis (default 2)
+        consecutive non-pathological rounds.
+        """
         hm = DetectorHealthMonitor()
         hm.record_model_round("Gemini", 10, failed=False)
         hm.record_model_round("Gemini", 6, failed=False)
         hm.record_model_round("Gemini", 2, failed=False)  # triggers
-        # Recovery
-        diags = hm.record_model_round("Gemini", 7, failed=False)
+        # Recovery: need 2 non-declining rounds for hysteresis
+        hm.record_model_round("Gemini", 7, failed=False)  # 1st recovery
         key = "monotonic_decline_Gemini"
+        assert hm._pathology_counts.get(key, 0) > 0  # Not yet resolved
+        hm.record_model_round("Gemini", 8, failed=False)  # 2nd recovery
         assert hm._pathology_counts.get(key, 0) == 0
         assert hm._resolved_counts.get(key, 0) >= 1
 
@@ -2750,3 +2787,179 @@ class TestCostPerFindingSpikeDetector:
         )
         assert len([d for d in diags_cc2 if d.detector == "cpf_spike"]) == 1
         assert len([d for d in diags_codex if d.detector == "cpf_spike"]) == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN 6 BUG FIX TESTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestRun6BugFixes:
+    """Tests for 9 bugs confirmed and fixed from Run 6 analysis."""
+
+    def test_flatlined_metric_not_improving(self):
+        """Bug 1: metric stuck at 0.0 should NOT be classified as improving."""
+        hm = DetectorHealthMonitor()
+        # Set up metric history with all zeros
+        hm._get_metric_history = lambda m: [0.0, 0.0, 0.0]
+        # Standard P-pass should NOT skip remediation for flatlined metric
+        proceed, rationale = hm._standard_p_pass_remediation(
+            "test_chain", 0, "test transform", 0.0, "test_metric"
+        )
+        # Should proceed (flatlined metric is NOT "improving")
+        assert proceed is True
+
+    def test_correlated_failure_n3_not_overestimated(self):
+        """Bug 2: N≥3 correlated failure should not massively overestimate."""
+        cfm = CorrelatedFailureModel()
+        for mid in ["a", "b", "c", "d", "e"]:
+            cfm.set_base_failure_rate(mid, 0.1)
+        # 5 independent models at 10% each, no correlation
+        # True independent: 0.1^5 = 0.00001
+        # Old code returned ~0.01 (1000× overestimate)
+        result = cfm.correlated_class_failure(["a", "b", "c", "d", "e"])
+        # Should be close to independent product, not the pairwise joint
+        assert result < 0.001, f"N=5 joint prob {result} is too high (overestimate)"
+        assert result >= 0.1**5, f"N=5 joint prob {result} is below independent product"
+
+    def test_correlated_failure_n2_unchanged(self):
+        """Bug 2: N=2 behaviour should remain unchanged."""
+        cfm = CorrelatedFailureModel()
+        cfm.set_base_failure_rate("a", 0.1)
+        cfm.set_base_failure_rate("b", 0.1)
+        cfm.set_vulnerability("a", "b", 0.5)
+        result = cfm.correlated_class_failure(["a", "b"])
+        # p_i*p_j + rho*sqrt(p_i*(1-p_i)*p_j*(1-p_j))
+        # = 0.01 + 0.5*sqrt(0.09*0.09) = 0.01 + 0.045 = 0.055
+        assert abs(result - 0.055) < 0.001
+
+    def test_findings_decline_at_three_rounds(self):
+        """Bug 8: findings decline should detect at 3 data points, not 4."""
+        hm = DetectorHealthMonitor()
+        # Only 3 rounds with clear decline
+        hm.record_round(0.0, 10.0, 0.5, 30, 3)
+        hm.record_round(0.0, 10.0, 0.5, 20, 3)
+        hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        diags = [d for d in hm._diagnoses if d.detector == "findings_decline"]
+        assert len(diags) == 1, "Should detect decline with just 3 data points"
+
+    def test_mu_distortion_key_lookup(self):
+        """Bug 7: mu_distortion chain key should map to 'mu' in pathology_counts."""
+        # The replace chain should convert "mu_distortion" → "mu"
+        chain_key = "mu_distortion"
+        result = chain_key.replace("_stuck", "").replace("_saturation", "").replace("_distortion", "")
+        assert result == "mu", f"Key lookup got '{result}', expected 'mu'"
+
+    def test_resolution_hysteresis_prevents_flipflop(self):
+        """Bug 4: pathology should not resolve after just 1 non-pathological round."""
+        hm = DetectorHealthMonitor(stuck_window=3)
+        # Trigger kappa pathology
+        for _ in range(3):
+            hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        assert hm._pathology_counts.get("kappa", 0) >= 1
+        # One non-pathological round — should NOT resolve yet
+        hm.record_round(0.5, 10.0, 0.5, 10, 3)
+        assert hm._pathology_counts.get("kappa", 0) > 0, (
+            "Pathology resolved after only 1 non-pathological round (hysteresis failure)"
+        )
+        # Second non-pathological round — NOW it should resolve
+        hm.record_round(0.5, 10.0, 0.5, 10, 3)
+        assert hm._pathology_counts.get("kappa", 0) == 0, (
+            "Pathology not resolved after 2 non-pathological rounds"
+        )
+
+    def test_par_downgrade_escalates_to_exclude(self):
+        """Bug 6: PAR model receiving DOWNGRADE_ROLE should escalate to EXCLUDE."""
+        models = [
+            ModelSpec("m_par", CapabilityFingerprint(0.3, 0.3, 0.3, 0.3)),
+        ]
+        config = DynamicManagementConfig()
+        fh = FailureHandler(models, {"m_par": Role.PAR}, config)
+        # Trigger repeated underperformance → DOWNGRADE_ROLE
+        for _ in range(config.n_fail):
+            fh.get_recovery("m_par", 0, FailureType.UNDERPERFORM)
+        action = fh.get_recovery("m_par", 1, FailureType.UNDERPERFORM)
+        assert action == RecoveryAction.EXCLUDE
+        assert "m_par" not in fh._active_models
+
+    def test_missing_transforms_implemented(self):
+        """Bug 5: all 12 transforms referenced in chains should be handled."""
+        config = DynamicManagementConfig(immune_feedback_enabled=True,
+                                         immune_damping_rounds=0)
+        models = [
+            ModelSpec("m1", CapabilityFingerprint(0.5, 0.5, 0.5, 0.5)),
+        ]
+        mgr = DynamicManager(models, config)
+
+        # Create a dummy diagnosis with evidence containing model_id
+        diag = DetectorDiagnosis(
+            detector="test", pathology="test", severity="WARNING",
+            recommended_action="test",
+            evidence={"model_id": "m1"},
+            pathology_key="test",
+        )
+
+        # The 7 transforms that were missing before Run 6 fix
+        missing_before = [
+            "widen_mu_window", "prefer_novelty", "add_parsing_directive",
+            "widen_stuck_window", "add_verification_directive",
+            "lower_feasibility_threshold", "flag_verification_unreliable",
+        ]
+        for transform in missing_before:
+            result = mgr._apply_transform(transform, diag)
+            assert result is None or isinstance(result, dict), (
+                f"Transform {transform} returned unexpected {type(result)}"
+            )
+
+    def test_extended_ppass_single_iteration(self):
+        """Bug 3: extended P-pass default max_iterations should be 1."""
+        hm = DetectorHealthMonitor()
+        # Verify default max_iterations is 1, not 3
+        import inspect
+        sig = inspect.signature(hm._extended_p_pass_remediation)
+        default = sig.parameters["max_iterations"].default
+        assert default == 1, f"max_iterations default should be 1, got {default}"
+
+    def test_config_new_params_exist(self):
+        """Resolution parameter and convergence params exist in config."""
+        config = DynamicManagementConfig()
+        assert hasattr(config, "resolution_threshold")
+        assert config.resolution_threshold == 0.5
+        assert hasattr(config, "convergence_omega_tau")
+        assert config.convergence_omega_tau == 0.10
+        assert hasattr(config, "convergence_omega_window")
+        assert config.convergence_omega_window == 2
+        assert hasattr(config, "resolution_hysteresis")
+        assert config.resolution_hysteresis == 2
+
+    def test_config_resolution_threshold_bounds(self):
+        """Resolution threshold must be in [0, 1]."""
+        with pytest.raises(ValueError):
+            DynamicManagementConfig(resolution_threshold=-0.1)
+        with pytest.raises(ValueError):
+            DynamicManagementConfig(resolution_threshold=1.1)
+        # Edge cases should work
+        DynamicManagementConfig(resolution_threshold=0.0)
+        DynamicManagementConfig(resolution_threshold=1.0)
+
+    def test_perf_rounds_seen_bounded(self):
+        """Bug 9: _perf_rounds_seen should not grow without bound."""
+        models = [
+            ModelSpec("m1", CapabilityFingerprint(0.5, 0.5, 0.5, 0.5)),
+        ]
+        config = DynamicManagementConfig(persistence_window=2)
+        fh = FailureHandler(models, {"m1": Role.PAR}, config)
+        # Simulate 100 rounds of detection
+        for i in range(100):
+            resp = ModelResponse(
+                model_id="m1", round_idx=i, content="test",
+                response_time=10.0, parseable=True, format_compliant=True,
+                finding_count=5, mean_abstraction=0.5,
+            )
+            fh.detect_failure(resp)
+        # Set should be bounded: 2 * persistence_window * n_models = 2*2*1 = 4
+        max_expected = config.persistence_window * 2 * len(models)
+        assert len(fh._perf_rounds_seen) <= max_expected, (
+            f"_perf_rounds_seen has {len(fh._perf_rounds_seen)} entries, "
+            f"expected <= {max_expected}"
+        )

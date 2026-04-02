@@ -253,26 +253,61 @@ class RoundTelemetry:
 # Code extraction / decomposition
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Immune layer integration interfaces: when a sub-area rotation excludes
+# a component, models still need to see its PUBLIC interface (signatures,
+# parameter types, return types) to verify cross-component correctness.
+# Without this, models reviewing Detection can't verify how apply_diagnosis()
+# calls DetectorHealthMonitor methods, and models reviewing Integration
+# can't verify what DetectorDiagnosis fields they're reading.
+#
+# Run 7b fix: skeletal context (def+docstring only) was insufficient.
+# ChatGPT correctly flagged this as a "completeness failure relative to
+# the task boundary." The fix: include full function signatures + type
+# hints + first 10 lines of body for interface-critical non-target blocks.
+_INTERFACE_CRITICAL_MARKERS = {
+    # These are always included at interface depth (sig + 10 body lines)
+    # regardless of which sub-area is the current rotation target.
+    "apply_diagnosis", "_apply_transform", "_REMEDIATION_CHAINS",
+    "process_round", "record_round", "record_model_round",
+    "register_diagnoses", "_verify_remediation_outcomes",
+    "check_dispatch_feasibility", "check_dispatch_health",
+    "detect_failure", "handle_failure",
+}
+
+
 def _extract_code_area(code: str, markers: List[str],
                        area_label: str = "") -> str:
-    """Extract code matching markers + skeletal context from dynamic_management.py.
+    """Extract code matching markers + interface context from dynamic_management.py.
 
     Used for both DeepSeek sub-area decomposition and task-level decomposition
     for any model in pre_decompose_models.
 
-    Returns focused code: target classes/functions in full, everything else
-    reduced to definition + docstring only, plus first 200 lines (module config).
+    Returns focused code with three tiers:
+      1. TARGET: full code for classes/functions matching `markers`.
+      2. INTERFACE: signature + type hints + first 10 body lines for
+         functions in _INTERFACE_CRITICAL_MARKERS (cross-component APIs).
+      3. SKELETAL: definition + docstring only for everything else.
+      4. CONFIG: first 200 lines (module config, enums, dataclasses).
+
+    The interface tier is the Run 7b fix: it ensures that models reviewing
+    one sub-area can still verify how it connects to other sub-areas.
     """
     lines = code.split("\n")
 
     # Find all class/function boundaries (top-level classes, class methods)
     boundaries = []
     for i, line in enumerate(lines):
+        raw = line.rstrip()
         stripped = line.strip()
-        if re.match(r'^class \w+', stripped) or re.match(r'^    def \w+', stripped):
+        # Top-level class definitions
+        if re.match(r'^class \w+', stripped):
+            boundaries.append((i, stripped))
+        # Class methods (indented def) — match against raw line to preserve indent
+        elif re.match(r'^    def \w+', raw):
             boundaries.append((i, stripped))
 
     target_lines: set = set()
+    interface_lines: set = set()
     context_lines: set = set()
 
     for start_idx, defn in boundaries:
@@ -284,20 +319,52 @@ def _extract_code_area(code: str, markers: List[str],
                 break
 
         is_target = any(marker in defn for marker in markers)
+        is_interface = any(marker in defn for marker in _INTERFACE_CRITICAL_MARKERS)
+
         if is_target:
+            # Full code
             for j in range(start_idx, end_idx):
                 target_lines.add(j)
+        elif is_interface:
+            # Interface depth: signature + first 10 lines of body.
+            # This gives models enough to verify parameter types, return
+            # types, and the shape of the interaction without the full
+            # implementation.
+            interface_depth = min(start_idx + 15, end_idx)
+            for j in range(start_idx, interface_depth):
+                interface_lines.add(j)
+            # Add a marker showing the block was truncated
+            if interface_depth < end_idx:
+                # We'll add a comment after assembly
+                pass
         else:
             # Skeletal: definition + docstring only
             context_lines.add(start_idx)
             if start_idx + 1 < end_idx and '"""' in lines[start_idx + 1]:
                 context_lines.add(start_idx + 1)
+                # Include closing triple-quote if docstring spans multiple lines
+                for j in range(start_idx + 2, min(start_idx + 20, end_idx)):
+                    context_lines.add(j)
+                    if '"""' in lines[j]:
+                        break
 
     # Module-level config (first 200 lines)
     for j in range(min(200, len(lines))):
         context_lines.add(j)
 
-    all_lines = target_lines | context_lines
+    # Also include _REMEDIATION_CHAINS dict if it's in the code
+    # (it's a module-level dict, not a class/def, so boundaries miss it)
+    for i, line in enumerate(lines):
+        if "_REMEDIATION_CHAINS" in line and ("=" in line or "{" in line):
+            # Include the full dict definition (scan for closing brace)
+            brace_depth = 0
+            for j in range(i, min(i + 200, len(lines))):
+                interface_lines.add(j)
+                brace_depth += lines[j].count("{") - lines[j].count("}")
+                if brace_depth <= 0 and j > i:
+                    break
+
+    all_lines = target_lines | interface_lines | context_lines
     return "\n".join(lines[j] for j in sorted(all_lines))
 
 

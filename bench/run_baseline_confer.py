@@ -114,6 +114,7 @@ from input_complexity import (
     compute_amplification,
     recommend_dispatch,
     AmplificationHistory,
+    AdaptiveQuestionOptimiser,
     HeapsResult,
 )
 from cdsfl_registry.composer import (
@@ -128,7 +129,7 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run6_20260401"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run7b_20260402"
 
 MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
 WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
@@ -187,6 +188,101 @@ def compose_for_model(model_label: str) -> ComposedDirectiveSet:
 # ─────────────────────────────────────────────────────────────────────────────
 # Multi-turn decomposed dispatch: fallback when single-turn fails
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Context budget: IT Crowd fix — "turn it off and turn it back on again"
+#
+# When accumulated prior findings exceed a model's context budget, the model
+# gets a CONTEXT RESET: only finding IDs + one-line summaries instead of full
+# text. The model starts fresh but knows what's been found. This prevents
+# the prompt bloat that killed DeepSeek in Run 7 R2 (300K+ chars of prior
+# findings on top of a 190K base prompt).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _format_findings_summary_only(findings: List[Finding]) -> str:
+    """One-line summary per finding — context reset mode.
+
+    Used when full findings text exceeds a model's context budget.
+    The model gets enough to avoid duplicates without the full text.
+    """
+    if not findings:
+        return "(No findings from prior rounds.)"
+
+    lines = [
+        f"(CONTEXT RESET: {len(findings)} prior findings exist. "
+        f"Showing ID + severity + one-line summary only. "
+        f"Do NOT repeat these — find NEW issues.)\n"
+    ]
+    for f in findings:
+        # Truncate description to first sentence or 120 chars
+        desc = f.description
+        first_sentence_end = desc.find(". ")
+        if first_sentence_end > 0 and first_sentence_end < 120:
+            desc = desc[:first_sentence_end + 1]
+        elif len(desc) > 120:
+            desc = desc[:120] + "..."
+        lines.append(f"  {f.finding_id} (sev={f.severity:.2f}): {desc}")
+    return "\n".join(lines)
+
+
+def _format_findings_for_model(
+    all_findings: List[List[Finding]],
+    model_label: str,
+    dm_config: DynamicManagementConfig,
+) -> str:
+    """Format prior findings with per-model context budget awareness.
+
+    Strategy:
+    1. Compute full findings text via format_findings_for_context().
+    2. If it fits within the model's budget → use it.
+    3. If not → CONTEXT RESET: switch to summary-only mode.
+
+    Within the budget path, exclude the model's own prior findings
+    (a model doesn't need its own output repeated back — the value is
+    cross-pollination from OTHER models).
+    """
+    if not all_findings:
+        return ""
+
+    # Get this model's context budget
+    budget = dm_config.context_budget_overrides.get(
+        model_label, dm_config.context_budget_chars
+    )
+
+    # Flatten all prior findings, excluding this model's own
+    cross_findings = [
+        f for rnd in all_findings for f in rnd
+        if f.model_id != model_label
+    ]
+
+    if not cross_findings:
+        return "(No cross-model findings from prior rounds.)"
+
+    # Try full text first
+    full_text = format_findings_for_context(cross_findings)
+
+    if len(full_text) <= budget:
+        return full_text
+
+    # Over budget — try last-round-only with full text
+    max_round = max(f.round_idx for f in cross_findings)
+    last_round = [f for f in cross_findings if f.round_idx == max_round]
+    last_round_text = format_findings_for_context(last_round)
+
+    if len(last_round_text) <= budget:
+        # Last round fits — add summary of earlier rounds
+        earlier = [f for f in cross_findings if f.round_idx < max_round]
+        earlier_summary = _format_findings_summary_only(earlier)
+        combined = earlier_summary + "\n\n" + last_round_text
+        if len(combined) <= budget:
+            return combined
+        # Even combined is over budget — just use last round
+        return last_round_text
+
+    # Even last round alone exceeds budget → full context reset
+    return _format_findings_summary_only(cross_findings)
+
 
 # Target chunk size for multi-turn delivery (chars). Chosen to stay well
 # within attention windows for all models (~30K tokens ≈ 120K chars).
@@ -474,12 +570,18 @@ def _dispatch_round(
     round_idx: int,
     task_key: str = "immune",
     round_type: str = "blind",
+    benched_models: Optional[set] = None,
+    all_findings: Optional[List[List[Finding]]] = None,
+    dm_config: Optional[DynamicManagementConfig] = None,
 ) -> tuple[List[Finding], Dict[str, str]]:
     """Dispatch prompt to all models. Returns (findings, responses).
 
-    Blind/discovery rounds dispatch in parallel (ThreadPoolExecutor).
-    Adaptive/confer rounds dispatch sequentially (models see prior findings).
-    Gemini proposal item 2a/2b, P-passed 2026-03-31.
+    All rounds dispatch in parallel (ThreadPoolExecutor).
+    Benched models (Ω churn guard) are excluded from dispatch.
+
+    Context budget (IT Crowd fix): each model gets its own prior-findings
+    text, capped to its context budget. Models exceeding their budget get
+    a CONTEXT RESET with summary-only findings.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -489,44 +591,70 @@ def _dispatch_round(
     eligible = [
         mc for mc in exp_config.models
         if mc.label in BASELINE_MODELS and mc.role != "collator"
+        and (not benched_models or mc.label not in benched_models)
     ]
 
-    parallel = round_type == "blind"
+    # Per-model prompt construction: inject context-budgeted findings
+    def _make_model_prompt(mc_label: str) -> str:
+        if round_idx == 0 or not all_findings or dm_config is None:
+            return prompt  # blind round or no findings — use base prompt
+
+        findings_text = _format_findings_for_model(
+            all_findings, mc_label, dm_config,
+        )
+        budget = dm_config.context_budget_overrides.get(
+            mc_label, dm_config.context_budget_chars,
+        )
+        is_reset = findings_text.startswith("(CONTEXT RESET:")
+        _log(f"  {mc_label}: findings context {len(findings_text):,} chars "
+             f"(budget={budget:,}, {'RESET' if is_reset else 'full'})")
+
+        # Inject findings into the preamble position.
+        # The base prompt has prior_findings_text="" so we append findings
+        # after the blind-round marker or adaptive-round marker.
+        if findings_text:
+            return prompt.replace(
+                "This is a BLIND round. No prior findings provided.",
+                "This is a BLIND round. No prior findings provided.",
+            ).replace(
+                # The prompt says "blind" for R0, but for adaptive rounds
+                # _build_task_prompt with empty findings just omits the
+                # findings section. We prepend findings to the prompt.
+                "=== ARTIFACT:",
+                f"Prior findings for this task:\n\n{findings_text}\n\n"
+                f"Find what was MISSED. Do not repeat known findings.\n\n"
+                f"=== ARTIFACT:",
+            ) if round_idx > 0 else prompt
+        return prompt
+
+    # Run 6 optimisation: ALL rounds dispatch in parallel. Adaptive rounds
+    # have no within-round data dependency (models see prior-round findings
+    # only). Thread safety verified: _dispatch_single_model uses only local
+    # state; immune failure reporting deferred via sentinel.
+    parallel = True
     deferred_failures: list[tuple[str, str]] = []  # (label, detail)
 
-    if parallel:
-        _log(f"  Parallel dispatch: {len(eligible)} models simultaneously")
-        with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
-            future_to_label = {
-                pool.submit(
-                    _dispatch_single_model,
-                    mc, mgr, prompt, cdsfl_text, full_code,
-                    round_idx, task_key, round_type,
-                ): mc.label
-                for mc in eligible
-            }
-            for future in as_completed(future_to_label):
-                label = future_to_label[future]
-                try:
-                    model_findings, text = future.result()
-                    findings.extend(model_findings)
-                    if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
-                        responses[label] = text
-                    elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
-                        deferred_failures.append((label, text[20:]))
-                except Exception as e:
-                    _log(f"  {label}: unexpected thread error — {type(e).__name__}: {e}")
-    else:
-        for mc in eligible:
-            model_findings, text = _dispatch_single_model(
-                mc, mgr, prompt, cdsfl_text, full_code,
+    _log(f"  Parallel dispatch: {len(eligible)} models simultaneously")
+    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
+        future_to_label = {
+            pool.submit(
+                _dispatch_single_model,
+                mc, mgr, _make_model_prompt(mc.label), cdsfl_text, full_code,
                 round_idx, task_key, round_type,
-            )
-            findings.extend(model_findings)
-            if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
-                responses[mc.label] = text
-            elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
-                deferred_failures.append((mc.label, text[20:]))
+            ): mc.label
+            for mc in eligible
+        }
+        for future in as_completed(future_to_label):
+            label = future_to_label[future]
+            try:
+                model_findings, text = future.result()
+                findings.extend(model_findings)
+                if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
+                    responses[label] = text
+                elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
+                    deferred_failures.append((label, text[20:]))
+            except Exception as e:
+                _log(f"  {label}: unexpected thread error — {type(e).__name__}: {e}")
 
     # Apply deferred immune reports on main thread (DynamicManager not thread-safe)
     for label, detail in deferred_failures:
@@ -838,10 +966,18 @@ def run_confer(
     all_findings: List[List[Finding]] = []
     all_responses: List[Dict[str, str]] = []
     amp_history = AmplificationHistory()  # per-model A tracking (observation only)
+    # Layer 3: Adaptive Question Optimiser (passive for Run 7, active for Run 8+)
+    question_optimiser = AdaptiveQuestionOptimiser(active=False)
+    # Compound objective Ω churn guard (Run 6 → Run 7)
+    omega_history: Dict[str, List[float]] = {}  # model → [Ω per round]
+    benched_models: set[str] = set()
+    resolution_S = dm_config.resolution_threshold
+    omega_tau = dm_config.convergence_omega_tau
+    omega_window = dm_config.convergence_omega_window
     experiment_start = time.monotonic()
     start_round = 0
     result = {
-        "experiment": "baseline_confer_run6",
+        "experiment": "baseline_confer_run7",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "models": [mc.label for mc in exp_config.models
                     if mc.label in BASELINE_MODELS],
@@ -901,14 +1037,8 @@ def run_confer(
         _log(f"Round {round_idx} ({round_type})")
         _log(f"{'─' * 60}")
 
-        # Build prompt
-        prior_findings_text = ""
-        if round_idx > 0 and all_findings:
-            # Aggregate all prior findings for context
-            prior_flat = [f for rnd in all_findings for f in rnd]
-            prior_findings_text = format_findings_for_context(prior_flat)
-
-        prompt = _build_task_prompt(
+        # Build base prompt (without findings — findings are per-model)
+        base_prompt = _build_task_prompt(
             task_key="immune",
             round_label=f"R{round_idx} ({round_type})",
             round_type=round_type,
@@ -916,15 +1046,21 @@ def run_confer(
             math_appendix=math_appendix,
             verification_chain=verification_chain,
             interface_summary=interface_summary,
-            prior_findings_text=prior_findings_text,
+            prior_findings_text="",  # injected per-model in dispatch
         )
 
-        _log(f"  Prompt: {len(prompt):,} chars")
+        # Layer 3: inject focus directive if optimiser is active
+        focus_directive = question_optimiser.get_directive_text()
+        if focus_directive:
+            base_prompt = focus_directive + base_prompt
+            _log(f"  AQO: focus directive injected ({len(focus_directive)} chars)")
+
+        _log(f"  Base prompt (no findings): {len(base_prompt):,} chars")
 
         # ── Observation-only: γ_input measurement ────────────────────
-        gamma_input_result = compute_gamma_input(prompt)
+        gamma_input_result = compute_gamma_input(base_prompt)
         dispatch_rec = recommend_dispatch(
-            len(prompt), gamma_input_result.gamma,
+            len(base_prompt), gamma_input_result.gamma,
             r_squared=gamma_input_result.r_squared,
         )
         _log(f"  γ_input: β={gamma_input_result.beta:.3f}, "
@@ -934,10 +1070,14 @@ def run_confer(
         _log(f"  Dispatch recommendation (observation): "
              f"{dispatch_rec.strategy} — {dispatch_rec.reasoning}")
 
-        # Dispatch
+        # Dispatch (benched models excluded from Ω churn guard)
+        # Each model gets its own context-budgeted findings injection.
         findings, responses = _dispatch_round(
-            exp_config, mgr, prompt, cdsfl_text, full_code, round_idx,
+            exp_config, mgr, base_prompt, cdsfl_text, full_code, round_idx,
             round_type=round_type,
+            benched_models=benched_models,
+            all_findings=all_findings,
+            dm_config=dm_config,
         )
 
         # Safety check
@@ -1007,6 +1147,74 @@ def run_confer(
             "per_model_amplification": round_amplification,
         }
         round_data["complexity"] = round_data_complexity
+
+        # ── Compound objective Ω churn guard (active) ──────────────────
+        # Filter findings by resolution threshold S, then compute Ω.
+        # Per-model benching when Ω < τ for omega_window consecutive rounds.
+        for label in sorted(responses.keys()):
+            model_findings = [f for f in findings if f.model_id == label]
+            # Filter by resolution threshold S
+            filtered = [f for f in model_findings
+                        if getattr(f, "severity", 0.5) >= resolution_S]
+            if not filtered:
+                # No findings above threshold — Ω = 0 (exhausted)
+                omega_val = 0.0
+            else:
+                descriptions = [f.description for f in filtered]
+                gamma_out = compute_gamma_output(descriptions)
+                amp = compute_amplification(gamma_input_result, gamma_out)
+                omega_val = amp.compound_objective
+
+            omega_history.setdefault(label, []).append(omega_val)
+
+            # Check for benching
+            history = omega_history[label]
+            if (len(history) >= omega_window
+                    and all(v < omega_tau for v in history[-omega_window:])
+                    and label not in benched_models):
+                benched_models.add(label)
+                _log(f"  ★ BENCHED {label}: Ω < {omega_tau} for "
+                     f"{omega_window} consecutive rounds "
+                     f"(last {omega_window}: {[f'{v:.3f}' for v in history[-omega_window:]]})")
+
+        # Add Ω data to round record
+        round_data["omega"] = {
+            label: omega_history.get(label, [0.0])[-1]
+            for label in responses
+        }
+        round_data["benched_models"] = sorted(benched_models)
+
+        # ── Layer 3: Adaptive Question Optimiser observation ─────────
+        round_omega_for_optimiser = {
+            label: omega_history.get(label, [0.0])[-1]
+            for label in responses
+        }
+        q_outcome = question_optimiser.observe(round_idx, base_prompt, round_omega_for_optimiser)
+        q_rec = question_optimiser.recommend()
+        if q_rec and q_rec.reasoning:
+            _log(f"  AQO: {q_rec.reasoning}")
+            if q_rec.directive_text:
+                _log(f"  AQO directive ({'ACTIVE' if question_optimiser.active else 'PASSIVE'}): "
+                     f"{q_rec.directive_text[:80]}...")
+        round_data["question_optimiser"] = {
+            "features": {
+                "referential_density": q_outcome.features.referential_density,
+                "novelty_score": q_outcome.features.novelty_score,
+                "specificity": q_outcome.features.specificity,
+            },
+            "mean_omega": q_outcome.mean_omega,
+            "recommendation": q_rec.reasoning if q_rec else None,
+            "confidence": q_rec.confidence if q_rec else None,
+        }
+
+        # Check for run termination: all non-benched models below threshold
+        active_labels = set(responses.keys()) - benched_models
+        if not active_labels and len(responses) > 0:
+            _log(f"\n  ★ ALL MODELS BENCHED — run converged via Ω churn guard")
+            result["converged_at"] = round_idx
+            result["convergence_reason"] = "omega_churn_guard"
+            result["benched_models"] = sorted(benched_models)
+            break
 
         # Feed findings to DynamicManager — ONE call per round with ALL
         # responses (FSM advances once per process_round call; calling it
@@ -1132,6 +1340,20 @@ def run_confer(
         _log(f"    {mid}: A={s['estimated_A']}, "
              f"obj={s['estimated_compound']}, "
              f"n={s['n_observations']}")
+
+    # Omega churn guard summary
+    result["omega_history"] = {k: [round(v, 4) for v in vals]
+                               for k, vals in omega_history.items()}
+    result["question_optimiser"] = question_optimiser.summary()
+    result["benched_models"] = sorted(benched_models)
+    result["resolution_threshold"] = resolution_S
+    result["omega_tau"] = omega_tau
+    if benched_models:
+        _log(f"\n  Ω churn guard: {len(benched_models)} models benched")
+        for mid in sorted(benched_models):
+            history = omega_history.get(mid, [])
+            _log(f"    {mid}: final Ω trajectory = "
+                 f"{[f'{v:.3f}' for v in history[-5:]]}")
 
     # ── Popper's Degree of Corroboration C(H,E) ──────────────────────
     #

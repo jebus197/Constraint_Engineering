@@ -86,14 +86,16 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="Codex",
-            model_id="gpt-5.4",
-            api="codex_exec",
+            model_id="openai/gpt-5.4",
+            api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),
-            max_tokens=32768,  # codex exec manages output, but we set for prompt construction
-            timeout=600,
-            max_retries=1,  # single attempt — immune layer handles CX failures gracefully
-            backoff_base=0.0,
+            max_tokens=32768,
+            timeout=300,
+            max_retries=3,
+            # Run 6: switched from codex_exec to openrouter. Eliminates the
+            # catastrophic decomposed fallback (45-80 min/round) and the
+            # brittle CLI auth dependency. Same model, direct API.
         ),
         ModelConfig(
             label="ChatGPT",
@@ -143,7 +145,7 @@ def load_default_config() -> ExperimentConfig:
 # ---------------------------------------------------------------------------
 
 def _log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
+    ts = datetime.now().strftime("%H:%M:%S")  # local time (was UTC — Run 7 fix)
     print(f"[{ts}] {msg}", file=sys.stderr)
 
 
@@ -504,13 +506,19 @@ def call_deepseek(
         raise RuntimeError("DEEPSEEK_API_KEY not set")
 
     # DeepSeek Reasoner can hold connections open for very long during
-    # chain-of-thought.  Use explicit httpx timeout with a hard total
-    # timeout to prevent indefinite hangs (Exp15 fix: Round 4 hang).
+    # chain-of-thought.  Use explicit httpx timeout with:
+    # - read timeout per chunk (prevents individual read hangs)
+    # - HARD per-attempt wall clock via threading (prevents indefinite total)
+    # Run 7 fix: read=timeout was per-chunk, not total. DeepSeek streamed
+    # 85K chars of reasoning over 470s with each chunk succeeding, then
+    # the retry hung indefinitely. Now: read=300s per chunk, total capped
+    # at 2× timeout via threading.
+    per_attempt_wall_cap = timeout * 2  # hard total per API call
     try:
         import httpx
         http_timeout = httpx.Timeout(
             connect=30.0,
-            read=float(timeout),
+            read=min(300.0, float(timeout)),  # per-chunk read cap
             write=30.0,
             pool=30.0,
         )
@@ -538,13 +546,30 @@ def call_deepseek(
                  f"(max_tokens={current_max_tokens})")
         t0 = time.monotonic()
         try:
-            response = client.chat.completions.create(
-                model=model_id,
-                messages=messages,
-                max_tokens=current_max_tokens,
-                temperature=0.0,
-                timeout=timeout,
-            )
+            # Hard wall-clock cap per attempt: run the API call in a thread
+            # so we can kill it if it exceeds per_attempt_wall_cap.
+            # This catches the case where DeepSeek streams reasoning tokens
+            # slowly (each read succeeds) but the total call takes forever.
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
+                _future = _pool.submit(
+                    client.chat.completions.create,
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=current_max_tokens,
+                    temperature=0.0,
+                    timeout=timeout,
+                )
+                try:
+                    response = _future.result(timeout=per_attempt_wall_cap)
+                except concurrent.futures.TimeoutError:
+                    elapsed = time.monotonic() - t0
+                    _log(f"  [deepseek:{model_id}] HARD WALL CAP hit "
+                         f"({elapsed:.0f}s > {per_attempt_wall_cap:.0f}s cap)")
+                    raise TimeoutError(
+                        f"DeepSeek attempt {attempt} exceeded hard wall cap "
+                        f"of {per_attempt_wall_cap:.0f}s"
+                    )
             elapsed = time.monotonic() - t0
 
             # Extract visible content
