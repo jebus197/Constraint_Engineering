@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 15:20 BST
+Last updated: 2 April 2026 16:42 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,34 +19,46 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (2 April 2026, 15:20 BST)
+## Current Pending Work (2 April 2026, 16:42 BST)
 
-Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE.
+Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE. Run 7b sy+f COMPLETE.
 
-RUN 7b COMPLETE (2 April 2026, `556e0af`):
+RUN 7b sy+f ANALYSIS COMPLETE (2 April 2026):
+- 197 raw findings → 16 unique verified bugs (6 medium, 10 low)
+- 76% of findings were churn (same bug re-reported across rounds)
+- 3 false positives (Codex @dataclass hallucination × 8 rounds)
+- 2 mathematical claims refuted by SymPy
+- Top bugs: self_diagnose bypasses immune_feedback_enabled (0.55),
+  pathology_key namespace mismatch (0.40), _verify_remediation key
+  mismatch kappa/mu (0.35), FPR windowing bias, global damping,
+  chain_exhaustion_rate double-count
+- Full report: docs/experimental_notes/Run7b_SyF_Analysis_2026-04-02.md
+
+PM FILTER + ADAPTIVE IMMUNE VERIFICATION DESIGNED (2 April 2026):
+- Three-stage quality gate: innate (dedup+SymPy+AST, zero cost) →
+  adaptive (parallel verification agents via local claude CLI) →
+  regulatory (meta-verification preventing over-rejection)
+- All infrastructure exists, needs wiring not building
+- Local claude CLI as PM: full tool access (Bash, SymPy, AST, file read),
+  zero marginal cost on Max subscription
+- Nested D-decay convergence at all three levels
+- 5 falsifiable questions registered
+- Design: docs/experimental_notes/PM_Filter_Architecture_2026-04-02.md,
+  docs/experimental_notes/Adaptive_Immune_Verification_2026-04-02.md
+
+RUN 7b RESULTS (2 April 2026, `556e0af`):
 - 20 rounds, 197 findings, 3,106s wall-clock. γ=0.393, C(H,E)=0.6624
 - Per model: Codex 116, DeepSeek 41, CC2 20, ChatGPT 11, Gemini 9
-- Ω churn guard ACTIVE: 4/5 models benched (CC2, ChatGPT, DeepSeek, Gemini)
-- Codex sustained through all 20 rounds
-- Layer 3 (AdaptiveQuestionOptimiser) passive — r_density strongest (r=0.141)
+- Ω churn guard ACTIVE: 4/5 models benched
 - File split: dynamic_management.py → 12 modules in bench/dm/ (427 tests pass)
 - Context budget: 80K default, 30K DeepSeek, IT Crowd reset, cross-model only
-- Decomposition coherence: 3-tier extraction + _INTERFACE_CRITICAL_MARKERS
-- Report: bench/logs/baseline_confer_run7b_20260402/baseline_confer_report.json
 - Logs: bench/logs/baseline_confer_run7b_20260402/
 
-RUN 6 RESULTS (2 April 2026):
-- 11 rounds, 299 findings, wall-clock cap at 29,223s (8h7m)
-- γ=0.027 (NOT converged), C(H,E)=0.863 (strong corroboration)
-- CHURN CONFIRMED: 44% findings re-target previously-examined code
-- 9 confirmed bugs (4 math + 5 software) — ALL FIXED before Run 7b
-- Logs: bench/logs/baseline_confer_run6_20260401/
-
-NEXT ACTIONS:
-1. Analyse 197 Run 7b findings (which are genuine, which are churn?)
-2. Update runner to target bench/dm/ individual modules (not monolithic file)
-3. Layer 3 activation decision (sufficient passive data?)
-4. Run 8 with targeted module review + active Layer 3
+NEXT ACTIONS (founder-approved sequence):
+1. Fix 16 verified bugs from sy+f analysis (batch 1: 5 medium, batch 2: 7 low, batch 3: 4 cosmetic/defensive)
+2. Build PM filter — wire existing infrastructure (~200 lines)
+3. Implement T-cell verification agents (~400 lines)
+4. Run 8 with PM filter active — expected dramatic churn reduction
 5. Bench Run 2 preparation
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):

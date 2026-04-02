@@ -258,6 +258,26 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   (~230K chars of prior findings on top of 190K base prompt). DeepSeek spent 470s
   generating 85,706 chars of CoT reasoning with 0 chars of visible content. Hard
   wall-clock cap via threading added. Logs: `bench/logs/baseline_confer_run7b_20260402/`.
+- **Run 7b sy+f analysis COMPLETE (2 April 2026):**
+  197 raw findings → 16 unique verified bugs (6 medium, 10 low). 76% of findings
+  were churn (same bug re-reported across rounds). 3 false positives including
+  Codex hallucinating missing @dataclass decorator 8 times (7% of Codex output).
+  2 mathematical claims refuted by SymPy. Top bugs: self_diagnose() bypasses
+  immune_feedback_enabled (0.55), pathology_key namespace mismatch (0.40),
+  _verify_remediation key mismatch for kappa/mu (0.35), false_positive_rate
+  windowing bias, global damping scalar, chain_exhaustion_rate double-count.
+  Analysis: `docs/experimental_notes/Run7b_SyF_Analysis_2026-04-02.md`.
+- **PM Filter + Adaptive Immune Verification DESIGNED (2 April 2026):**
+  Three-stage automated quality gate between rounds: (1) innate immunity —
+  similarity dedup + SymPy + AST checking (zero cost, sub-second), (2) adaptive
+  immunity — parallel verification agents via local `claude` CLI with full tool
+  access (reads actual files, runs SymPy, AST-parses source; zero marginal cost
+  on Max subscription), (3) regulatory T-cells — meta-verification agents that
+  prevent over-rejection. All existing infrastructure (verify_sympy(), Finding.verified,
+  _finding_similarity(), Role.PM) needs wiring, not building. Nested D-decay
+  convergence at all three levels. 5 falsifiable questions registered.
+  Design: `docs/experimental_notes/PM_Filter_Architecture_2026-04-02.md`,
+  `docs/experimental_notes/Adaptive_Immune_Verification_2026-04-02.md`.
 - **Input complexity module BUILT (1 April 2026, test article):**
   `bench/input_complexity.py` — Heaps β on input text (γ_input), output
   complexity (γ_output), amplification factor A = β_output/β_input, compound
