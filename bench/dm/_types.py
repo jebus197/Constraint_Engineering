@@ -376,6 +376,8 @@ class Finding:
     description: str = ""
     proposed_fix: str = ""  # Model's proposed fix (CX: was parsed but discarded)
     verified: bool = False  # Whether finding was independently verified (SymPy, etc.)
+    pm_verdict: str = ""  # PM's verdict on this finding (Category 2)
+    dedup_of: str = ""  # finding_id this is a duplicate of, if any (Category 2)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -544,6 +546,10 @@ class DetectorDiagnosis:
     # IM_F013: Machine-readable key for remediation routing, decoupled from
     # human-readable pathology string. Must match _REMEDIATION_CHAINS keys.
     pathology_key: str = ""
+    # SY-1 fix (Run 7b): round index when diagnosis was produced. Enables
+    # exact windowed counting in false_positive_rate (replaces proportional-
+    # tail approximation).
+    round_idx: int = -1
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

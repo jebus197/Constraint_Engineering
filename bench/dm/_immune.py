@@ -146,6 +146,9 @@ class DetectorHealthMonitor:
         # Track the original parameter values for bounded self-adjustment
         self._original_stuck_window = stuck_window
         self._original_mu_window = mu_increase_window
+        # SY-2 fix (Run 7b): per-trigger-type damping dict, not a single int.
+        # Prevents one trigger's adjustment from damping a different trigger.
+        self._last_self_adjust_round: Dict[str, int] = {}
 
     def register_diagnoses(self, diagnoses: list) -> None:
         """Register externally-produced diagnoses (e.g. from record_model_round).
@@ -217,25 +220,28 @@ class DetectorHealthMonitor:
                     self._pathology_counts["kappa"] = persistence + 1
                     self._resolution_counter["kappa"] = 0  # Reset hysteresis
                     severity = "CRITICAL" if persistence >= 1 else "WARNING"
-                    diag = DetectorDiagnosis(
-                        detector="kappa",
-                        pathology=f"kappa stuck at ~0 for {eff_kappa_window} consecutive "
-                                  f"rounds despite {sum(recent_findings)} findings produced "
-                                  f"(occurrence {persistence + 1})",
-                        severity=severity,
-                        recommended_action="Similarity function may be too strict for this "
-                                           "domain. Consider lowering tau_sim or improving "
-                                           "tokenization. Check _finding_similarity() output "
-                                           "on actual finding pairs.",
-                        evidence={
-                            "kappa_values": recent_kappa,
-                            "finding_counts": recent_findings,
-                            "adaptive_window": eff_kappa_window,
-                            "persistence": persistence + 1,
-                        },
-                        pathology_key="kappa_stuck",
-                    )
-                    new_diagnoses.append(diag)
+                    # FFF-D: suppression gate — skip diagnosis if remediation active
+                    if "kappa_stuck" not in self._remediation_state:
+                        diag = DetectorDiagnosis(
+                            detector="kappa",
+                            pathology=f"kappa stuck at ~0 for {eff_kappa_window} consecutive "
+                                      f"rounds despite {sum(recent_findings)} findings produced "
+                                      f"(occurrence {persistence + 1})",
+                            severity=severity,
+                            recommended_action="Similarity function may be too strict for this "
+                                               "domain. Consider lowering tau_sim or improving "
+                                               "tokenization. Check _finding_similarity() output "
+                                               "on actual finding pairs.",
+                            evidence={
+                                "kappa_values": recent_kappa,
+                                "finding_counts": recent_findings,
+                                "adaptive_window": eff_kappa_window,
+                                "persistence": persistence + 1,
+                            },
+                            pathology_key="kappa_stuck",
+                            round_idx=len(self._kappa_history) - 1,
+                        )
+                        new_diagnoses.append(diag)
             else:
                 # Kappa no longer stuck — require resolution_hysteresis consecutive
                 # non-pathological rounds before resolving (Run 6 bug 4 fix).
@@ -277,29 +283,32 @@ class DetectorHealthMonitor:
                 self._pathology_counts["mu"] = persistence + 1
                 self._resolution_counter["mu"] = 0  # Reset hysteresis
 
-                diag = DetectorDiagnosis(
-                    detector="mu",
-                    pathology=f"mu increasing ({recent_mu[0]:.1f} → {recent_mu[-1]:.1f}) "
-                              f"while findings stable/declining ({recent_findings})",
-                    severity="WARNING" if not model_count_changed else "CRITICAL",
-                    recommended_action=(
-                        "Cost distortion from model benching/unbenching. mu = delta_Y / c_r "
-                        "is unreliable when active model count changes. Use novelty_rate as "
-                        "primary convergence signal."
-                        if model_count_changed
-                        else "mu may be unreliable — check cost calculation and yield function."
-                    ),
-                    evidence={
-                        "mu_values": recent_mu,
-                        "finding_counts": recent_findings,
-                        "active_models": recent_models,
-                        "model_count_changed": model_count_changed,
-                        "persistence": persistence + 1,
-                    },
-                    # PK-1 fix (Run 5): was missing pathology_key
-                    pathology_key="mu_distortion",
-                )
-                new_diagnoses.append(diag)
+                # FFF-D: suppression gate — skip diagnosis if remediation active
+                if "mu_distortion" not in self._remediation_state:
+                    diag = DetectorDiagnosis(
+                        detector="mu",
+                        pathology=f"mu increasing ({recent_mu[0]:.1f} → {recent_mu[-1]:.1f}) "
+                                  f"while findings stable/declining ({recent_findings})",
+                        severity="WARNING" if not model_count_changed else "CRITICAL",
+                        recommended_action=(
+                            "Cost distortion from model benching/unbenching. mu = delta_Y / c_r "
+                            "is unreliable when active model count changes. Use novelty_rate as "
+                            "primary convergence signal."
+                            if model_count_changed
+                            else "mu may be unreliable — check cost calculation and yield function."
+                        ),
+                        evidence={
+                            "mu_values": recent_mu,
+                            "finding_counts": recent_findings,
+                            "active_models": recent_models,
+                            "model_count_changed": model_count_changed,
+                            "persistence": persistence + 1,
+                        },
+                        # PK-1 fix (Run 5): was missing pathology_key
+                        pathology_key="mu_distortion",
+                        round_idx=len(self._kappa_history) - 1,
+                    )
+                    new_diagnoses.append(diag)
             else:
                 # MU-3 fix (Run 5): resolve ONLY when mu stops increasing.
                 # Run 6 bug 4: require resolution_hysteresis non-pathological rounds.
@@ -330,23 +339,47 @@ class DetectorHealthMonitor:
             )
 
             if novelty_declining and mu_increasing_now:
-                diag = DetectorDiagnosis(
-                    detector="mu+novelty",
-                    pathology=f"Novelty declining ({self._novelty_history[-2]:.2f} → "
-                              f"{self._novelty_history[-1]:.2f}) but mu increasing "
-                              f"({self._mu_history[-2]:.1f} → {self._mu_history[-1]:.1f})",
-                    severity="WARNING",
-                    recommended_action="Detectors disagree — novelty says converging, mu says "
-                                       "not. Trust novelty_rate (cost-independent) over mu "
-                                       "(cost-dependent). The stop predicate should use "
-                                       "novelty_rate as primary signal.",
-                    evidence={
-                        "novelty_rate": self._novelty_history[-2:],
-                        "mu": self._mu_history[-2:],
-                    },
-                    pathology_key="mu_novelty_disagree",  # CX_FFF_004
-                )
-                new_diagnoses.append(diag)
+                # FFF-G: full lifecycle for Check 3 (mirroring checks 1, 2, 4, 5)
+                persistence = self._pathology_counts.get("mu_novelty_disagree", 0)
+                self._pathology_counts["mu_novelty_disagree"] = persistence + 1
+                self._resolution_counter["mu_novelty_disagree"] = 0  # Reset hysteresis
+                severity = "CRITICAL" if persistence >= 1 else "WARNING"
+                # FFF-D: suppression gate — skip diagnosis if remediation active
+                if "mu_novelty_disagree" not in self._remediation_state:
+                    diag = DetectorDiagnosis(
+                        detector="mu+novelty",
+                        pathology=f"Novelty declining ({self._novelty_history[-2]:.2f} → "
+                                  f"{self._novelty_history[-1]:.2f}) but mu increasing "
+                                  f"({self._mu_history[-2]:.1f} → {self._mu_history[-1]:.1f})",
+                        severity=severity,
+                        recommended_action="Detectors disagree — novelty says converging, mu says "
+                                           "not. Trust novelty_rate (cost-independent) over mu "
+                                           "(cost-dependent). The stop predicate should use "
+                                           "novelty_rate as primary signal.",
+                        evidence={
+                            "novelty_rate": self._novelty_history[-2:],
+                            "mu": self._mu_history[-2:],
+                            "persistence": persistence + 1,
+                        },
+                        pathology_key="mu_novelty_disagree",  # CX_FFF_004
+                        round_idx=len(self._kappa_history) - 1,
+                    )
+                    new_diagnoses.append(diag)
+            else:
+                # FFF-G: resolution path for Check 3 with hysteresis
+                if self._pathology_counts.get("mu_novelty_disagree", 0) > 0:
+                    self._resolution_counter["mu_novelty_disagree"] = (
+                        self._resolution_counter.get("mu_novelty_disagree", 0) + 1
+                    )
+                    hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                    if self._resolution_counter["mu_novelty_disagree"] >= hysteresis:
+                        self._resolved_counts["mu_novelty_disagree"] = (
+                            self._resolved_counts.get("mu_novelty_disagree", 0) + 1
+                        )
+                        if "mu_novelty_disagree" not in self._remediation_state:
+                            self.record_natural_resolution("mu_novelty_disagree")
+                        self._pathology_counts["mu_novelty_disagree"] = 0
+                        self._resolution_counter["mu_novelty_disagree"] = 0
 
         # --- Check 4 (Exp15): System-wide findings decline ---
         # If total findings have declined for 3+ consecutive rounds, the models
@@ -358,31 +391,34 @@ class DetectorHealthMonitor:
                 # FD-1 fix (Run 5): relative threshold, not fixed constant.
                 # At least 30% decline from window start, minimum 3 to filter noise.
                 decline_threshold = max(3, int(0.3 * recent_3[0]))
-                if total_decline > decline_threshold:
+                if total_decline >= decline_threshold:
                     persistence = self._pathology_counts.get("findings_decline", 0)
                     self._pathology_counts["findings_decline"] = persistence + 1
                     self._resolution_counter["findings_decline"] = 0  # Reset hysteresis
                     severity = "CRITICAL" if persistence >= 2 else "WARNING"
-                    diag = DetectorDiagnosis(
-                        detector="findings_decline",
-                        pathology=(
-                            f"System-wide findings declining for 3 rounds "
-                            f"({recent_3}), total drop={total_decline}"
-                        ),
-                        severity=severity,
-                        recommended_action=(
-                            "Models may be exhausting the current area rotation. "
-                            "Consider shuffling area order, adjusting decomposition "
-                            "boundaries, or adding cross-area synthesis prompts."
-                        ),
-                        evidence={
-                            "finding_counts": recent_3,
-                            "total_decline": total_decline,
-                            "occurrence": persistence + 1,
-                        },
-                        pathology_key="findings_decline",
-                    )
-                    new_diagnoses.append(diag)
+                    # FFF-D: suppression gate — skip diagnosis if remediation active
+                    if "findings_decline" not in self._remediation_state:
+                        diag = DetectorDiagnosis(
+                            detector="findings_decline",
+                            pathology=(
+                                f"System-wide findings declining for 3 rounds "
+                                f"({recent_3}), total drop={total_decline}"
+                            ),
+                            severity=severity,
+                            recommended_action=(
+                                "Models may be exhausting the current area rotation. "
+                                "Consider shuffling area order, adjusting decomposition "
+                                "boundaries, or adding cross-area synthesis prompts."
+                            ),
+                            evidence={
+                                "finding_counts": recent_3,
+                                "total_decline": total_decline,
+                                "occurrence": persistence + 1,
+                            },
+                            pathology_key="findings_decline",
+                            round_idx=len(self._kappa_history) - 1,
+                        )
+                        new_diagnoses.append(diag)
             else:
                 # IM_F035 fix: require actual recovery (latest >= earliest),
                 # not just non-decline. A plateau after a crash is not recovery.
@@ -409,7 +445,9 @@ class DetectorHealthMonitor:
         # but still producing novel findings.
         # VS-1 fix (Run 5): use configured window, not hardcoded 3
         vs_window = self._config.vocab_sustained_window if self._config else 5
-        if len(self._vocab_growth_history) >= vs_window:
+        if len(self._finding_counts) < vs_window:
+            pass  # FFF-J: not enough finding_count entries for Check 5
+        elif len(self._vocab_growth_history) >= vs_window:
             recent_vg = self._vocab_growth_history[-vs_window:]
             tau_vg = self._config.tau_vocab_growth if self._config else 0.04
             if all(vg < tau_vg for vg in recent_vg):
@@ -418,28 +456,31 @@ class DetectorHealthMonitor:
                     persistence = self._pathology_counts.get("vocab_saturation", 0)
                     self._pathology_counts["vocab_saturation"] = persistence + 1
                     self._resolution_counter["vocab_saturation"] = 0  # Reset hysteresis
-                    diag = DetectorDiagnosis(
-                        detector="vocab_saturation",
-                        pathology=(
-                            f"Premature vocab saturation: vocab_growth below "
-                            f"{tau_vg:.0%} for {vs_window} rounds "
-                            f"({[f'{v:.3f}' for v in recent_vg]}) "
-                            f"but {sum(recent_fc)} findings still being produced"
-                        ),
-                        severity="WARNING",
-                        recommended_action=(
-                            "Lower tau_vocab_growth or reset vocab tracking window. "
-                            "Models are still productive but the vocab growth signal "
-                            "would falsely suggest saturation."
-                        ),
-                        evidence={
-                            "vocab_growth_rates": recent_vg,
-                            "finding_counts": recent_fc,
-                            "occurrence": persistence + 1,
-                        },
-                        pathology_key="vocab_saturation",
-                    )
-                    new_diagnoses.append(diag)
+                    # FFF-D: suppression gate — skip diagnosis if remediation active
+                    if "vocab_saturation" not in self._remediation_state:
+                        diag = DetectorDiagnosis(
+                            detector="vocab_saturation",
+                            pathology=(
+                                f"Premature vocab saturation: vocab_growth below "
+                                f"{tau_vg:.0%} for {vs_window} rounds "
+                                f"({[f'{v:.3f}' for v in recent_vg]}) "
+                                f"but {sum(recent_fc)} findings still being produced"
+                            ),
+                            severity="WARNING",
+                            recommended_action=(
+                                "Lower tau_vocab_growth or reset vocab tracking window. "
+                                "Models are still productive but the vocab growth signal "
+                                "would falsely suggest saturation."
+                            ),
+                            evidence={
+                                "vocab_growth_rates": recent_vg,
+                                "finding_counts": recent_fc,
+                                "occurrence": persistence + 1,
+                            },
+                            pathology_key="vocab_saturation",
+                            round_idx=len(self._kappa_history) - 1,
+                        )
+                        new_diagnoses.append(diag)
             else:
                 # VS-2 fix (Run 5): add resolution path (was missing entirely).
                 # Run 6 bug 4: require resolution_hysteresis non-pathological rounds.
@@ -541,7 +582,8 @@ class DetectorHealthMonitor:
                     "consecutive_failures": consecutive,
                     "occurrence": persistence + 1,
                 },
-                pathology_key="model_failure",
+                pathology_key=f"model_failure_{model_id}",
+                round_idx=len(self._kappa_history),
             )
             # DC-1 fix (Run 5): do NOT append to self._diagnoses here.
             # The caller consolidates all diagnoses via record_round().
@@ -574,7 +616,8 @@ class DetectorHealthMonitor:
                     "format_yield": 0.0,
                     "occurrence": persistence + 1,
                 },
-                pathology_key="parser_yield",  # PK-2 fix (Run 5)
+                pathology_key=f"parser_yield_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                round_idx=len(self._kappa_history),
             )
             results.append(diag)
 
@@ -609,7 +652,8 @@ class DetectorHealthMonitor:
                             "total_decline": total_decline,
                             "occurrence": persistence + 1,
                         },
-                        pathology_key="monotonic_decline",  # PK-2 fix (Run 5)
+                        pathology_key=f"monotonic_decline_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                        round_idx=len(self._kappa_history),
                     )
                     results.append(diag)
             else:
@@ -677,7 +721,8 @@ class DetectorHealthMonitor:
                             "threshold": mean_cpf + 2 * std_cpf,
                             "occurrence": persistence + 1,
                         },
-                        pathology_key="cpf_spike",  # PK-2 fix (Run 5)
+                        pathology_key=f"cpf_spike_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                        round_idx=len(self._kappa_history),
                     )
                     results.append(diag)
 
@@ -787,7 +832,8 @@ class DetectorHealthMonitor:
                 del self._remediation_state[pathology_key]
                 # RV-3 fix (Run 5): also clear pathology_counts so a
                 # future recurrence starts from zero, not the old count.
-                self._pathology_counts.pop(pathology_key, None)
+                # FFF-C fix (Run 7b): use mapped counter key, not chain key.
+                self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)
             else:
                 severity = "WARNING"
                 detail = (
@@ -811,7 +857,8 @@ class DetectorHealthMonitor:
                     # pathology counts on exhaustion, so a natural recurrence
                     # starts fresh instead of at the inflated historical count.
                     self._remediation_state.pop(pathology_key, None)
-                    self._pathology_counts.pop(pathology_key, None)
+                    # FFF-C fix (Run 7b): use mapped counter key, not chain key.
+                    self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)
                 else:
                     state["chain_idx"] = next_idx
                     state["applied_round"] = current_round
@@ -826,6 +873,7 @@ class DetectorHealthMonitor:
                     else f"Escalate to chain step {chain_idx + 1} for {pathology_key}."
                 ),
                 evidence=log_entry,
+                round_idx=current_round,
             )
             outcomes.append(diag)
 
@@ -903,24 +951,19 @@ class DetectorHealthMonitor:
         window = 10
         start_round = max(0, current_round - window)
 
-        # IM_F027 fix: window BOTH numerator and denominator to same range.
-        # DetectorDiagnosis lacks a round field, so we estimate by taking
-        # the last (window * avg_diagnoses_per_round) diagnoses. Since
-        # _diagnoses are appended in round order, the tail approximates
-        # the windowed set. Use len(kappa_history) as total rounds.
-        total_rounds = max(1, len(self._kappa_history))
+        # SY-1 fix (Run 7b): use exact windowed counting via round_idx field
+        # instead of proportional-tail approximation. DetectorDiagnosis now
+        # carries round_idx, so we can filter precisely.
         all_detections = [
             d for d in self._diagnoses
             if hasattr(d, 'evidence') and isinstance(d.evidence, dict)
             and d.detector not in ("remediation_outcome",)
         ]
-        if total_rounds > window and all_detections:
-            # Approximate: take proportional tail of detections
-            fraction = min(1.0, window / total_rounds)
-            windowed_count = max(1, int(len(all_detections) * fraction))
-            total_detections = windowed_count
-        else:
-            total_detections = len(all_detections)
+        windowed_detections = [
+            d for d in all_detections
+            if d.round_idx >= start_round
+        ]
+        total_detections = len(windowed_detections)
         natural_resolutions = sum(
             1 for fp in self._false_positive_history
             if fp["round"] >= start_round
@@ -934,6 +977,10 @@ class DetectorHealthMonitor:
         """Fraction of recent pathology encounters that exhausted their chain."""
         recent_outcomes = self._remediation_outcomes[-10:]
         recent_exhaustions = self._chain_exhaustion_history[-5:]
+        # SY-3 re-examined: exhaustions and outcomes are from MUTUALLY
+        # EXCLUSIVE code paths (record_chain_exhaustion vs
+        # record_remediation_outcome), so they ARE additive.
+        # SymPy falsified the original "subset" claim.
         total = len(recent_outcomes) + len(recent_exhaustions)
         if total == 0:
             return 0.0
@@ -961,6 +1008,18 @@ class DetectorHealthMonitor:
             return idx
         # All known steps were ineffective — start at the next one
         return last_skipped + 1 if last_skipped >= 0 else 0
+
+    # --- FFF-C fix (Run 7b): chain-key to counter-key mapping ---
+    # _pathology_counts uses detector-family keys ("kappa", "mu") but
+    # remediation chains use pathology keys ("kappa_stuck", "mu_distortion").
+    # This mapping bridges the two namespaces.
+    _CHAIN_TO_COUNTER: ClassVar[Dict[str, str]] = {
+        "kappa_stuck": "kappa",
+        "mu_distortion": "mu",
+        "findings_decline": "findings_decline",
+        "vocab_saturation": "vocab_saturation",
+        "mu_novelty_disagree": "mu_novelty_disagree",
+    }
 
     # --- Multi-modular fix classification ---
     # Transforms that affect multiple independent components (models, detection
@@ -1276,11 +1335,10 @@ class DetectorHealthMonitor:
             # Cross-check 3: Over-specification — is the fix more complex
             # than necessary? If the pathology has been seen fewer than 3
             # times, a multi-model fix may be premature.
+            # FFF-C fix (Run 7b): use _CHAIN_TO_COUNTER mapping instead of
+            # fragile .replace() chain (which missed _distortion until Run 6 bug 7).
             pathology_occurrence = self._pathology_counts.get(
-                # Run 6 bug 7: mu_distortion key mismatch. The replace chain
-                # handled _stuck and _saturation but not _distortion. The
-                # pathology_counts key for mu is "mu", not "mu_distortion".
-                chain_key.replace("_stuck", "").replace("_saturation", "").replace("_distortion", ""),
+                self._CHAIN_TO_COUNTER.get(chain_key, chain_key),
                 0,
             )
             if pathology_occurrence < 3 and models and len(models) >= 3:
@@ -1542,18 +1600,24 @@ class DetectorHealthMonitor:
         if current_round < 5:
             return diagnoses  # Too early for meaningful self-assessment
 
-        # SD-2 fix: check immune_damping_rounds before self-adjustment
-        damping_rounds = getattr(self._config, 'immune_damping_rounds', 2) if hasattr(self, '_config') else 2
-        if hasattr(self, '_last_self_adjust_round'):
-            if current_round - self._last_self_adjust_round < damping_rounds:
-                return diagnoses  # Damping: skip self-adjustment this round
+        # FFF-E fix (Run 7b): if immune feedback is disabled, self-diagnosis
+        # should also be disabled — it feeds the same feedback loop.
+        if self._config and not getattr(self._config, 'immune_feedback_enabled', True):
+            return diagnoses
+
+        # SD-2 fix: check immune_damping_rounds before self-adjustment.
+        # SY-2 fix (Run 7b): per-trigger-type damping — each self-check has
+        # its own trigger key so one adjustment doesn't damp unrelated checks.
+        damping_rounds = getattr(self._config, 'immune_damping_rounds', 2) if self._config else 2
 
         # --- Self-check 1: Remediation success rate ---
         # This is a MULTI-MODULAR self-adjustment: it changes stuck_window
         # (kappa detection) AND mu_increase_window (mu detection) — two
         # independent detection modules. Extended P-pass required.
+        _trigger_key_1 = "low_remediation_success"
+        _last_1 = self._last_self_adjust_round.get(_trigger_key_1, -999)
         success_rate = self.remediation_success_rate
-        if len(self._remediation_outcomes) >= 3 and success_rate < 0.3:
+        if len(self._remediation_outcomes) >= 3 and success_rate < 0.3 and current_round - _last_1 >= damping_rounds:
             old_stuck = self._stuck_window
             old_mu = self._mu_increase_window
 
@@ -1589,6 +1653,7 @@ class DetectorHealthMonitor:
                         },
                         "round": current_round,
                     },
+                    round_idx=current_round,
                 )
                 diagnoses.append(diag)
             if can_adjust:
@@ -1640,7 +1705,7 @@ class DetectorHealthMonitor:
                         }
                         self._self_adjustment_log.append(entry)
                         self._self_diagnosis_history.append(entry)
-                        self._last_self_adjust_round = current_round  # SD-2
+                        self._last_self_adjust_round[_trigger_key_1] = current_round  # SD-2, SY-2
 
                         diag = DetectorDiagnosis(
                             detector="self_diagnosis",
@@ -1656,6 +1721,7 @@ class DetectorHealthMonitor:
                                 f"{old_mu}→{cand_mu}. {rationale}"
                             ),
                             evidence=entry,
+                            round_idx=current_round,
                         )
                         diagnoses.append(diag)
                         applied = True
@@ -1680,13 +1746,16 @@ class DetectorHealthMonitor:
                             "candidates_tried": len(candidates),
                             "round": current_round,
                         },
+                        round_idx=current_round,
                     )
                     diagnoses.append(diag)
 
         # --- Self-check 2: High false positive rate ---
         # Single-module (sensitivity_decay only) — standard P-pass sufficient.
+        _trigger_key_2 = "high_false_positive"
+        _last_2 = self._last_self_adjust_round.get(_trigger_key_2, -999)
         fp_rate = self.false_positive_rate
-        if len(self._false_positive_history) >= 2 and fp_rate > 0.5:
+        if len(self._false_positive_history) >= 2 and fp_rate > 0.5 and current_round - _last_2 >= damping_rounds:
             old_decay = self._sensitivity_decay
             new_decay = min(0.95, old_decay + 0.05)
 
@@ -1712,45 +1781,72 @@ class DetectorHealthMonitor:
                         severity="INFO",
                         recommended_action="No action — natural trend improving.",
                         evidence={"fp_rate": fp_rate, "round": current_round},
+                        round_idx=current_round,
                     )
                     diagnoses.append(diag)
                 else:
-                    self._sensitivity_decay = new_decay
-                    self._last_self_adjust_round = current_round  # SD-2
-                    entry = {
-                        "trigger": "high_false_positive_rate",
-                        "false_positive_rate": fp_rate,
-                        "adjustment": {
-                            "sensitivity_decay": {"old": old_decay, "new": new_decay},
+                    # FFF-F: wire actual P-pass for self-check 2 (mirrors self-check 1)
+                    proceed, rationale = self._p_pass_self_adjustment(
+                        trigger="high_false_positive_rate",
+                        adjustments={
+                            "sensitivity_decay": (old_decay, new_decay),
                         },
-                        "round": current_round,
-                        "rationale": (
-                            f"False positive rate {fp_rate:.1%} > 50%. "
-                            f"Reducing detection sensitivity "
-                            f"(decay {old_decay}→{new_decay})."
-                        ),
-                    }
-                    self._self_adjustment_log.append(entry)
-                    self._self_diagnosis_history.append(entry)
-
-                    diag = DetectorDiagnosis(
-                        detector="self_diagnosis",
-                        pathology=(
-                            f"Immune layer self-assessment: false positive rate "
-                            f"{fp_rate:.1%} indicates over-sensitive detection"
-                        ),
-                        severity="WARNING",
-                        recommended_action=(
-                            f"Self-adjusted: sensitivity_decay "
-                            f"{old_decay}→{new_decay}"
-                        ),
-                        evidence=entry,
+                        success_rate=self.remediation_success_rate,
                     )
-                    diagnoses.append(diag)
+                    if not proceed:
+                        # P-pass rejected — skip adjustment
+                        diag = DetectorDiagnosis(
+                            detector="self_diagnosis",
+                            pathology=(
+                                f"Immune layer: false positive rate {fp_rate:.1%} "
+                                f"but self-adjustment rejected by P-pass"
+                            ),
+                            severity="INFO",
+                            recommended_action=rationale,
+                            evidence={"fp_rate": fp_rate, "round": current_round},
+                            round_idx=current_round,
+                        )
+                        diagnoses.append(diag)
+                    else:
+                        self._sensitivity_decay = new_decay
+                        self._last_self_adjust_round[_trigger_key_2] = current_round  # SD-2, SY-2
+                        entry = {
+                            "trigger": "high_false_positive_rate",
+                            "false_positive_rate": fp_rate,
+                            "adjustment": {
+                                "sensitivity_decay": {"old": old_decay, "new": new_decay},
+                            },
+                            "round": current_round,
+                            "rationale": (
+                                f"False positive rate {fp_rate:.1%} > 50%. "
+                                f"Reducing detection sensitivity "
+                                f"(decay {old_decay}→{new_decay})."
+                            ),
+                        }
+                        self._self_adjustment_log.append(entry)
+                        self._self_diagnosis_history.append(entry)
+
+                        diag = DetectorDiagnosis(
+                            detector="self_diagnosis",
+                            pathology=(
+                                f"Immune layer self-assessment: false positive rate "
+                                f"{fp_rate:.1%} indicates over-sensitive detection"
+                            ),
+                            severity="WARNING",
+                            recommended_action=(
+                                f"Self-adjusted: sensitivity_decay "
+                                f"{old_decay}→{new_decay}. {rationale}"
+                            ),
+                            evidence=entry,
+                            round_idx=current_round,
+                        )
+                        diagnoses.append(diag)
 
         # --- Self-check 3: Chain exhaustion rate ---
+        _trigger_key_3 = "chain_exhaustion"
+        _last_3 = self._last_self_adjust_round.get(_trigger_key_3, -999)
         exhaust_rate = self.chain_exhaustion_rate
-        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5:
+        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds:
             diag = DetectorDiagnosis(
                 detector="self_diagnosis",
                 pathology=(
@@ -1769,6 +1865,7 @@ class DetectorHealthMonitor:
                     "recent_exhaustions": self._chain_exhaustion_history[-5:],
                     "round": current_round,
                 },
+                round_idx=current_round,
             )
             diagnoses.append(diag)
 
@@ -1854,6 +1951,7 @@ class DetectorHealthMonitor:
                                 "success_rounds": [s for s in successes if s > block_round],
                             },
                             pathology_key="dispatch_false_positive",
+                            round_idx=round_idx,
                         )
                         new_diagnoses.append(diag)
 
@@ -1910,6 +2008,7 @@ class DetectorHealthMonitor:
                             f"Add per-model directive to re-examine verification."
                         ),
                         pathology_key="verification_miscalibration",
+                        round_idx=round_idx,
                         evidence={
                             "model_id": model_id,
                             "model_mean": m,
@@ -1922,9 +2021,16 @@ class DetectorHealthMonitor:
                     new_diagnoses.append(diag)
                 else:
                     # VM-2 fix: clear pathology count when model recovers
+                    # FFF-I: use resolution_counter + hysteresis instead of immediate deletion
                     key = f"verif_miscal_{model_id}"
-                    if key in self._pathology_counts:
-                        del self._pathology_counts[key]
+                    if self._pathology_counts.get(key, 0) > 0:
+                        self._resolution_counter[key] = (
+                            self._resolution_counter.get(key, 0) + 1
+                        )
+                        hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                        if self._resolution_counter.get(key, 0) >= hysteresis:
+                            self._pathology_counts[key] = 0
+                            self._resolution_counter[key] = 0
 
         self._diagnoses.extend(new_diagnoses)
         return new_diagnoses

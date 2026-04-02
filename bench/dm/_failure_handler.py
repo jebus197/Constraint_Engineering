@@ -513,10 +513,10 @@ class CorrelatedFailureModel:
 
         v_ij = self.get_vulnerability(model_i, model_j)
 
-        # Independent component
+        # SY-4 fix: use bivariate normal form for consistency with
+        # correlated_class_failure(). rho * sqrt(p_i*(1-p_i)*p_j*(1-p_j))
         independent = p_i * p_j
-        # Correlation component: bounded to not exceed min(p_i, p_j)
-        correlation = v_ij * min(p_i, p_j) * (1.0 - max(p_i, p_j))
+        correlation = v_ij * (p_i * (1.0 - p_i) * p_j * (1.0 - p_j)) ** 0.5
         joint = independent + correlation
 
         # Clamp to valid probability range
@@ -529,9 +529,9 @@ class CorrelatedFailureModel:
     ) -> float:
         """Compute probability that ALL models in a class fail simultaneously.
 
-        Uses a conservative upper bound based on pairwise correlations:
-        P(all fail) <= min over pairs of P(pair fails) for the most correlated pair,
-        scaled by the product of remaining individual probabilities.
+        Uses an approximate bound assuming conditional independence of non-paired models:
+        P(all fail) ≈ min over pairs of P(pair fails jointly) × product of remaining
+        individual failure rates.
 
         For practical use: this gives a risk estimate for model classes that
         share infrastructure (e.g., all OpenAI models, all models behind
@@ -597,6 +597,8 @@ class CorrelatedFailureModel:
                     p_i = rates[ids[i]]
                     p_j = rates[ids[j]]
                     pair_joint = p_i * p_j + rho * (p_i * (1 - p_i) * p_j * (1 - p_j)) ** 0.5
+                    # SY-5: enforce Frechet upper bound on intermediate values
+                    pair_joint = min(pair_joint, min(p_i, p_j))
                     # Remaining models fail independently
                     remaining_product = 1.0
                     for k in range(len(ids)):

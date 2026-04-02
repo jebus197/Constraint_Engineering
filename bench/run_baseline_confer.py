@@ -108,6 +108,7 @@ from decomposed_dispatch import (
     DecomposedResult,
     save_decomposed_result,
 )
+from bench.verification_utils import run_quality_gate, QualityGateResult
 from input_complexity import (
     compute_gamma_input,
     compute_gamma_output,
@@ -129,7 +130,7 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run7b_20260402"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run8_20260402"
 
 MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
 WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
@@ -967,7 +968,7 @@ def run_confer(
     all_responses: List[Dict[str, str]] = []
     amp_history = AmplificationHistory()  # per-model A tracking (observation only)
     # Layer 3: Adaptive Question Optimiser (passive for Run 7, active for Run 8+)
-    question_optimiser = AdaptiveQuestionOptimiser(active=False)
+    question_optimiser = AdaptiveQuestionOptimiser(active=True)
     # Compound objective Ω churn guard (Run 6 → Run 7)
     omega_history: Dict[str, List[float]] = {}  # model → [Ω per round]
     benched_models: set[str] = set()
@@ -1090,6 +1091,24 @@ def run_confer(
         all_findings.append(findings)
         all_responses.append(responses)
 
+        # ── Quality gate (observation only) ──────────────────────────
+        qg_result = run_quality_gate(
+            findings,
+            [f for rnd in all_findings[:-1] for f in rnd],  # exclude current round
+            source_paths=[
+                str(REPO_ROOT / "bench" / "dm" / "_immune.py"),
+                str(REPO_ROOT / "bench" / "dm" / "_failure_handler.py"),
+                str(REPO_ROOT / "bench" / "dm" / "_manager.py"),
+            ],
+            pm_enabled=False,
+        )
+        _log(f"  Quality gate: {qg_result.dedup_count} duplicates, "
+             f"{len(qg_result.sympy_log)} SymPy checks, "
+             f"{len(qg_result.ast_log)} AST checks")
+        if qg_result.dedup_count > 0:
+            _log(f"    Dedup rate: {qg_result.dedup_count}/{len(findings)} = "
+                 f"{qg_result.dedup_count/max(1,len(findings)):.0%}")
+
         round_elapsed = time.monotonic() - round_start
         round_data = {
             "round": round_idx,
@@ -1100,6 +1119,13 @@ def run_confer(
             "per_model": {
                 label: len([f for f in findings if f.model_id == label])
                 for label in responses
+            },
+            "quality_gate": {
+                "dedup_count": qg_result.dedup_count,
+                "dedup_rate": round(qg_result.dedup_count / max(1, len(findings)), 3),
+                "sympy_checks": len(qg_result.sympy_log),
+                "ast_checks": len(qg_result.ast_log),
+                "stage_timings": qg_result.stage_timings,
             },
         }
         # Complexity observation data added after γ measurement below
@@ -1299,6 +1325,10 @@ def run_confer(
             result["convergence_reason"] = reason
             break
 
+    if "converged_at" not in result:
+        result["termination_reason"] = "MAX_ROUNDS"
+        _log(f"\n  MAX_ROUNDS ({MAX_ROUNDS}) reached without convergence")
+
     # Final summary
     total_elapsed = time.monotonic() - experiment_start
     total_findings = sum(len(rnd) for rnd in all_findings)
@@ -1411,7 +1441,7 @@ def run_confer(
     )
 
     _log(f"\n{'=' * 60}")
-    _log(f"BASELINE CONFER — RUN 5 COMPLETE")
+    _log(f"BASELINE CONFER — {len(all_findings)} ROUNDS COMPLETE")
     _log(f"  Rounds: {len(all_findings)}")
     _log(f"  Total findings: {total_findings}")
     _log(f"  Per model: {per_model_totals}")

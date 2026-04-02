@@ -2241,6 +2241,11 @@ class TestSelfAdaptiveImmuneLayer:
         hm = DetectorHealthMonitor()
         for i in range(6):
             hm.record_round(0.0, 10.0, 0.5, 10, 3)
+        # Exhaustions and outcomes are from mutually exclusive code paths
+        # (SymPy-verified). Denominator = outcomes + exhaustions.
+        # Need exhaustions / total > 0.5: 3 exhaustions + 1 outcome = 75%.
+        hm.record_remediation_outcome("kappa_stuck", 0, False, 0.0, 0.0)
+        hm.record_chain_exhaustion("kappa_stuck")
         hm.record_chain_exhaustion("kappa_stuck")
         hm.record_chain_exhaustion("kappa_stuck")
         diags = hm.self_diagnose()
