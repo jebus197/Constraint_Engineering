@@ -230,6 +230,34 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   already detected churn passively. Proposed as primary churn guard.
   Amplification: ChatGPT A=1.67, DeepSeek A=1.56, Codex A=1.55, CC2 A=1.48,
   Gemini A=1.12. Logs: `bench/logs/baseline_confer_run6_20260401/`.
+- **Run 7b COMPLETE (2 April 2026, `556e0af`):**
+  20 rounds, 197 findings, 3,106s wall-clock. γ=0.393 (converging), C(H,E)=0.6624
+  (moderate corroboration). Per model: Codex 116, DeepSeek 41, CC2 20, ChatGPT 11,
+  Gemini 9. Ω churn guard active: 4 of 5 models benched (CC2, ChatGPT, DeepSeek,
+  Gemini) when Ω < 0.10 for 2 consecutive rounds. Codex sustained through all 20
+  rounds. Layer 3 (AdaptiveQuestionOptimiser) passive — referential_density showed
+  strongest correlation with Ω (r=0.141).
+  FOUR MAJOR CHANGES from Run 6:
+  (1) **Compound objective Ω churn guard** — A × γ_output = (β_out/β_in) × (1 − β_out),
+  peaks at β_out=0.5. Per-model benching when Ω < τ (0.10) for 2 consecutive rounds.
+  Resolution parameter S (default 0.5) tuneable severity threshold.
+  (2) **Per-model context budget** — 80K default, 30K DeepSeek override. "IT Crowd fix":
+  when accumulated findings exceed budget, model gets fresh instance with summary-only
+  context (finding IDs + one-line descriptions). Cross-model findings only (models
+  never see their own prior findings).
+  (3) **File split** — 6,890-line `dynamic_management.py` split into 12 modules in
+  `bench/dm/` (strict two-level DAG, zero circular deps). Backward-compatible
+  re-export shim preserves all imports. Each module under 25K tokens for single-pass
+  model review. 427 tests pass unchanged through the shim.
+  (4) **Decomposition coherence** — Three-tier extraction (TARGET full, INTERFACE
+  sig+15 lines, SKELETAL def+docstring) with `_INTERFACE_CRITICAL_MARKERS` ensuring
+  cross-component APIs visible in all sub-area rotations. Critical regex bug fixed
+  (class methods were invisible to boundary detection due to matching against stripped
+  lines). `_REMEDIATION_CHAINS` dict explicitly captured.
+  Run 7 (predecessor) failed: DeepSeek hung due to unbounded context injection
+  (~230K chars of prior findings on top of 190K base prompt). DeepSeek spent 470s
+  generating 85,706 chars of CoT reasoning with 0 chars of visible content. Hard
+  wall-clock cap via threading added. Logs: `bench/logs/baseline_confer_run7b_20260402/`.
 - **Input complexity module BUILT (1 April 2026, test article):**
   `bench/input_complexity.py` — Heaps β on input text (γ_input), output
   complexity (γ_output), amplification factor A = β_output/β_input, compound
@@ -433,8 +461,23 @@ Constraint_Engineering/
     MATHEMATICAL_APPENDIX.md  -- Mathematical extensions
   bench/
     run_round_robin.py        -- Main bench test orchestrator (~3500 lines)
+    run_baseline_confer.py    -- Baseline confer runner (Run 5-7b)
     run_exp17_immune.py       -- Exp 17: immune + LB live validation runner
     run_exp20_confer.py       -- Exp 20: sequential confer runner (Whole Body)
+    dynamic_management.py     -- Re-export shim (75 lines, backward compat)
+    dm/                       -- Dynamic management modules (split from 6,890-line monolith)
+      _types.py               -- Config, enums, dataclasses (shared vocabulary)
+      _role_assignment.py     -- RoleAssignment (Area 1)
+      _load_balancer.py       -- Allocation, LoadBalancer (Area 2)
+      _fsm.py                 -- RoundProgressionFSM (Area 3)
+      _convergence.py         -- ConvergenceDetector, similarity (Area 4)
+      _diminishing_returns.py -- DiminishingReturnsDetector (Area 5)
+      _immune.py              -- DetectorHealthMonitor (immune layer)
+      _failure_handler.py     -- FailureHandler, CorrelatedFailureModel
+      _events.py              -- ManagerEventStream
+      _manager.py             -- DynamicManager (orchestrator)
+      _validation.py          -- validate_all_reductions
+    input_complexity.py       -- γ_input, γ_output, A, Ω, Layer 3 optimiser
     cdsfl_registry/           -- Constraint Editor (CE) policy engine
       registry.py             -- 5-layer hierarchical merge with monotonicity
       composer.py             -- Dynamic Directive Composer (4-layer composition)

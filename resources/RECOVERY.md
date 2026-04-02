@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 09:17 UTC
+Last updated: 2 April 2026 15:20 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,33 +19,35 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (2 April 2026, 09:17 UTC)
+## Current Pending Work (2 April 2026, 15:20 BST)
 
-Experiments 12–18 ALL COMPLETE. Run 5 COMPLETE. Run 6 COMPLETE.
+Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE.
 
-RUN 6 COMPLETE (2 April 2026):
+RUN 7b COMPLETE (2 April 2026, `556e0af`):
+- 20 rounds, 197 findings, 3,106s wall-clock. γ=0.393, C(H,E)=0.6624
+- Per model: Codex 116, DeepSeek 41, CC2 20, ChatGPT 11, Gemini 9
+- Ω churn guard ACTIVE: 4/5 models benched (CC2, ChatGPT, DeepSeek, Gemini)
+- Codex sustained through all 20 rounds
+- Layer 3 (AdaptiveQuestionOptimiser) passive — r_density strongest (r=0.141)
+- File split: dynamic_management.py → 12 modules in bench/dm/ (427 tests pass)
+- Context budget: 80K default, 30K DeepSeek, IT Crowd reset, cross-model only
+- Decomposition coherence: 3-tier extraction + _INTERFACE_CRITICAL_MARKERS
+- Report: bench/logs/baseline_confer_run7b_20260402/baseline_confer_report.json
+- Logs: bench/logs/baseline_confer_run7b_20260402/
+
+RUN 6 RESULTS (2 April 2026):
 - 11 rounds, 299 findings, wall-clock cap at 29,223s (8h7m)
-- Per model: ChatGPT 89, CC2 85, DeepSeek 49, Codex 43, Gemini 33
 - γ=0.027 (NOT converged), C(H,E)=0.863 (strong corroboration)
-- CHURN CONFIRMED: 44% findings re-target previously-examined code, severity
-  inflated R0→R10. Compound objective correctly detected churn passively.
-- MATH AUDIT: 4 SymPy-confirmed valuable bugs (flatlined metric bypass,
-  CorrelatedFailureModel N≥3 overestimate, P-pass dead iteration, asymmetric
-  detect/resolve)
-- SOFTWARE AUDIT: 5 code-verified bugs worth fixing (_apply_transform 7/12
-  missing, PAR DOWNGRADE dead end, mu key mismatch, findings_decline off-by-one,
-  _perf_rounds_seen unbounded)
-- Amplification: ChatGPT A=1.67, DeepSeek A=1.56, Codex A=1.55, CC2 A=1.48,
-  Gemini A=1.12
-- Report: bench/logs/baseline_confer_run6_20260401/baseline_confer_report.json
+- CHURN CONFIRMED: 44% findings re-target previously-examined code
+- 9 confirmed bugs (4 math + 5 software) — ALL FIXED before Run 7b
 - Logs: bench/logs/baseline_confer_run6_20260401/
 
-NEXT ACTIONS (founder-approved sequence):
-1. Implement compound objective threshold as churn guard (replaces γ-only stop)
-2. Parallelize ALL rounds (not just blind — adaptive rounds are also independent within-round)
-3. Switch Codex+DeepSeek to OpenRouter (eliminates CLI overhead + decomposed fallback)
-4. Fix the 9 confirmed bugs (4 math + 5 software) before next run
-5. Then: Run 7 with churn guard active — expected 5-7 rounds, ~2-3 hours
+NEXT ACTIONS:
+1. Analyse 197 Run 7b findings (which are genuine, which are churn?)
+2. Update runner to target bench/dm/ individual modules (not monolithic file)
+3. Layer 3 activation decision (sufficient passive data?)
+4. Run 8 with targeted module review + active Layer 3
+5. Bench Run 2 preparation
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)
