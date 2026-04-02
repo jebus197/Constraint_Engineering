@@ -109,6 +109,7 @@ from decomposed_dispatch import (
     save_decomposed_result,
 )
 from bench.verification_utils import run_quality_gate, QualityGateResult
+from bench.immune_agents import run_immune_pipeline, ImmuneResponse
 from input_complexity import (
     compute_gamma_input,
     compute_gamma_output,
@@ -1092,14 +1093,15 @@ def run_confer(
         all_responses.append(responses)
 
         # ── Quality gate (observation only) ──────────────────────────
+        _immune_source_paths = [
+            str(REPO_ROOT / "bench" / "dm" / "_immune.py"),
+            str(REPO_ROOT / "bench" / "dm" / "_failure_handler.py"),
+            str(REPO_ROOT / "bench" / "dm" / "_manager.py"),
+        ]
         qg_result = run_quality_gate(
             findings,
             [f for rnd in all_findings[:-1] for f in rnd],  # exclude current round
-            source_paths=[
-                str(REPO_ROOT / "bench" / "dm" / "_immune.py"),
-                str(REPO_ROOT / "bench" / "dm" / "_failure_handler.py"),
-                str(REPO_ROOT / "bench" / "dm" / "_manager.py"),
-            ],
+            source_paths=_immune_source_paths,
             pm_enabled=False,
         )
         _log(f"  Quality gate: {qg_result.dedup_count} duplicates, "
@@ -1108,6 +1110,21 @@ def run_confer(
         if qg_result.dedup_count > 0:
             _log(f"    Dedup rate: {qg_result.dedup_count}/{len(findings)} = "
                  f"{qg_result.dedup_count/max(1,len(findings)):.0%}")
+
+        # ── Immune pipeline (Run 9+: 6-cell parallel verification) ───
+        # observation_only=True for Run 8, False for Run 9+
+        immune_result = run_immune_pipeline(
+            findings,
+            [f for rnd in all_findings[:-1] for f in rnd],
+            source_paths=_immune_source_paths,
+            observation_only=True,   # flip to False for Run 9
+            ct_enabled=False,        # flip to True for Run 9 (requires claude CLI)
+            tau_sim=0.8,
+        )
+        _log(f"  Immune pipeline: {immune_result.rejection_rate:.0%} rejection rate, "
+             f"autoimmune={'YES' if immune_result.autoimmune_flag else 'no'}")
+        _log(f"    Tools: {immune_result.tool_usage}")
+        _log(f"    Timings: {immune_result.stage_timings}")
 
         round_elapsed = time.monotonic() - round_start
         round_data = {
@@ -1126,6 +1143,16 @@ def run_confer(
                 "sympy_checks": len(qg_result.sympy_log),
                 "ast_checks": len(qg_result.ast_log),
                 "stage_timings": qg_result.stage_timings,
+            },
+            "immune_pipeline": {
+                "rejection_rate": immune_result.rejection_rate,
+                "autoimmune_flag": immune_result.autoimmune_flag,
+                "observation_only": immune_result.observation_only,
+                "tool_usage": immune_result.tool_usage,
+                "stage_timings": immune_result.stage_timings,
+                "final_verdicts": {
+                    k: v for k, v in immune_result.final_verdicts.items()
+                },
             },
         }
         # Complexity observation data added after γ measurement below

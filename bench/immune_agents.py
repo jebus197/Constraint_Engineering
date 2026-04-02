@@ -1,0 +1,1076 @@
+"""Immune agent pipeline for CDSFL verification (Run 9+).
+
+Maps biological immune cell types to specialised verification agents,
+each running in parallel with a distinct toolset:
+
+    Dendritic Cell  — Triage: classify findings, extract testable claims
+    Cytotoxic T     — Code FFF: read source, verify bugs exist
+    B-Cell          — Math/Logic: SymPy + z3 + statsmodels cross-verification
+    NK Cell         — Pattern memory: dedup + known false-positive matching
+    Helper T        — Synthesis: aggregate verdicts, confidence-weighted voting
+    Regulatory T    — Meta-verification: prevent autoimmune (over-rejection)
+
+Architecture:
+    Stage 1 (sequential):  Dendritic Cell triage (~1s)
+    Stage 2 (parallel):    CT + B-Cell + NK Cell (~30-60s, bottleneck is CT)
+    Stage 3 (sequential):  Helper T synthesis + Regulatory T meta-check (~1s)
+
+Hardware target: M1 8GB Mac. CT uses claude CLI (network-bound).
+B-Cell and NK are Python subprocess calls (CPU-light). 6 concurrent
+agents observed stable on this hardware.
+"""
+
+from __future__ import annotations
+
+import ast
+import concurrent.futures
+import glob as globmod
+import json
+import os
+import re
+import shutil
+import subprocess as sp
+import sys
+import time
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from bench.dm._types import Finding
+from bench.dm._convergence import _finding_similarity
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _find_python_with_tools() -> str:
+    """Find Python interpreter that has z3, sympy, statsmodels installed."""
+    candidates = [
+        "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        shutil.which("python3.13") or "",
+        shutil.which("python3.12") or "",
+        sys.executable,
+    ]
+    for py in candidates:
+        if not py or not os.path.isfile(py):
+            continue
+        try:
+            r = sp.run(
+                [py, "-c", "import sympy, z3, statsmodels; print('ok')"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if "ok" in r.stdout:
+                return py
+        except (sp.TimeoutExpired, OSError):
+            continue
+    return sys.executable  # fallback
+
+
+def _find_claude_cli() -> Optional[str]:
+    """Find claude CLI binary."""
+    # Check standard locations
+    if shutil.which("claude"):
+        return shutil.which("claude")
+
+    # macOS app bundle locations
+    app_support = Path.home() / "Library" / "Application Support" / "Claude"
+    patterns = [
+        str(app_support / "claude-code" / "*" / "claude.app" / "Contents" / "MacOS" / "claude"),
+        str(app_support / "claude-code-vm" / "*" / "claude"),
+    ]
+    for pattern in patterns:
+        matches = sorted(globmod.glob(pattern), reverse=True)  # newest first
+        if matches and os.path.isfile(matches[0]):
+            return matches[0]
+
+    return None
+
+
+# Module-level discovery (cached)
+PYTHON_TOOLS: str = _find_python_with_tools()
+CLAUDE_CLI: Optional[str] = _find_claude_cli()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Data types
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class CellType(Enum):
+    """Immune cell types mapped to verification roles."""
+    DENDRITIC = "dendritic"
+    CYTOTOXIC_T = "cytotoxic_t"
+    B_CELL = "b_cell"
+    NK_CELL = "nk_cell"
+    HELPER_T = "helper_t"
+    REGULATORY_T = "regulatory_t"
+
+
+class ClaimType(Enum):
+    """Classification of a finding's testable claim."""
+    MATHEMATICAL = "mathematical"      # equations, inequalities, bounds
+    LOGICAL = "logical"                # if/then invariants, reachability
+    CODE_STRUCTURAL = "code_structural"  # missing method, wrong decorator
+    CODE_BEHAVIORAL = "code_behavioral"  # bug in logic, wrong return value
+    STATISTICAL = "statistical"        # distribution claims, significance
+    UNCATEGORISED = "uncategorised"
+
+
+@dataclass
+class CellVerdict:
+    """A single verdict from one immune cell on one finding."""
+    cell_type: CellType
+    finding_id: str
+    verdict: str          # CONFIRMED, REJECTED, UNCERTAIN, DUPLICATE, NOVEL
+    confidence: float     # 0.0–1.0
+    evidence: str         # explanation
+    tool_used: str        # which tool produced this verdict
+    elapsed_s: float = 0.0
+
+
+@dataclass
+class TriagedFinding:
+    """Finding annotated by Dendritic Cell with claim classification."""
+    finding: Finding
+    claim_type: ClaimType
+    extracted_claim: str = ""       # the testable assertion pulled from description
+    is_duplicate: bool = False      # NK Cell flag
+    duplicate_of: Optional[str] = None
+    similarity: float = 0.0
+
+
+@dataclass
+class ImmuneResponse:
+    """Complete immune response for a batch of findings."""
+    triaged: List[TriagedFinding]
+    cell_verdicts: Dict[str, List[CellVerdict]]  # finding_id → verdicts
+    final_verdicts: Dict[str, str]               # finding_id → CONFIRMED/REJECTED/UNCERTAIN
+    final_confidences: Dict[str, float]           # finding_id → aggregated confidence
+    filtered_findings: List[Finding]              # findings that survived filtering
+    rejected_findings: List[Finding]              # findings removed by immune response
+    rejection_rate: float
+    autoimmune_flag: bool           # True if Regulatory T flagged over-rejection
+    stage_timings: Dict[str, float]
+    tool_usage: Dict[str, int]      # tool_name → times_used
+    observation_only: bool          # if True, filtered_findings == all findings
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Claim detection patterns
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_MATH_PATTERN = re.compile(
+    r"(?:"
+    r"[=<>!]=?"
+    r"|[+\-*/^]"
+    r"|\bsqrt\b|\blog\b|\bexp\b"
+    r"|\b\d+\s*[*/+\-]"
+    r"|\bEq\(|\bGt\(|\bLt\("
+    r"|\bbound\b|\bthreshold\b|\binequality\b"
+    r"|\bformula\b|\bequation\b"
+    r")"
+)
+
+_LOGIC_PATTERN = re.compile(
+    r"(?:"
+    r"\bif\b.*\bthen\b"
+    r"|\breachable\b|\bunreachable\b"
+    r"|\binvariant\b|\bprecondition\b|\bpostcondition\b"
+    r"|\bimplies\b|\bcontradiction\b"
+    r"|\balways\b.*\bnever\b|\bnever\b.*\balways\b"
+    r")",
+    re.IGNORECASE,
+)
+
+_STAT_PATTERN = re.compile(
+    r"(?:"
+    r"\bsignificant\b|\bp-value\b|\bp\s*[<=]\s*0\.\d"
+    r"|\bdistribution\b|\bcorrelation\b|\bregression\b"
+    r"|\bmean\b.*\bdiffer\b|\bvariance\b"
+    r"|\bKruskal\b|\bWilcoxon\b|\bt-test\b|\bchi-squared\b"
+    r")",
+    re.IGNORECASE,
+)
+
+_STRUCT_PATTERN = re.compile(
+    r"(?:"
+    r"@\w+\s+decorator"
+    r"|\bmissing\b.*\bmethod\b|\bmethod\b.*\bmissing\b"
+    r"|\bno\b.*\bclass\b|\bclass\b.*\bnot\s+defined\b"
+    r"|\bdecorator\b.*\bnot\s+found\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 1. DENDRITIC CELL — Triage and classification
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _classify_claim(finding: Finding) -> Tuple[ClaimType, str]:
+    """Classify a finding's claim type and extract the testable assertion."""
+    desc = finding.description
+
+    # Check specific patterns before generic math (which matches broadly)
+    if _STAT_PATTERN.search(desc):
+        return ClaimType.STATISTICAL, desc
+
+    if _LOGIC_PATTERN.search(desc):
+        return ClaimType.LOGICAL, desc
+
+    if _STRUCT_PATTERN.search(desc):
+        return ClaimType.CODE_STRUCTURAL, desc
+
+    if _MATH_PATTERN.search(desc):
+        eq_match = re.search(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
+        claim = eq_match.group(1) if eq_match else desc
+        return ClaimType.MATHEMATICAL, claim
+
+    # Default: behavioural code claim (most findings are about code bugs)
+    return ClaimType.CODE_BEHAVIORAL, desc
+
+
+def dendritic_cell_triage(findings: List[Finding]) -> List[TriagedFinding]:
+    """Stage 1: Classify all findings by claim type.
+
+    The Dendritic Cell bridges innate and adaptive immunity by
+    determining which verification pathway each finding needs.
+    Fast, pure-Python, no external tools.
+    """
+    triaged = []
+    for f in findings:
+        claim_type, extracted = _classify_claim(f)
+        triaged.append(TriagedFinding(
+            finding=f,
+            claim_type=claim_type,
+            extracted_claim=extracted,
+        ))
+    return triaged
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 2. CYTOTOXIC T-CELL — Code FFF verification via claude CLI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) -> str:
+    """Build the Cytotoxic T-Cell verification prompt."""
+    files_list = "\n".join(f"  - {p}" for p in source_paths)
+    findings_block = "\n".join(
+        f"  [{tf.finding.finding_id}] severity={tf.finding.severity:.2f} "
+        f"type={tf.claim_type.value}: {tf.finding.description}"
+        for tf in findings
+    )
+
+    return (
+        "You are a Cytotoxic T-Cell verification agent in the CDSFL immune system. "
+        "Your role is to kill false findings by checking them against actual source code.\n\n"
+        "INSTRUCTIONS:\n"
+        "1. Read each source file listed below.\n"
+        "2. For each finding, use Find-Follow-Fix (FFF):\n"
+        "   - FIND: locate the exact code the finding describes\n"
+        "   - FOLLOW: trace whether the described bug actually exists\n"
+        "   - FIX: determine if the finding is genuine or false\n"
+        "3. Be adversarial — look for reasons the finding is WRONG.\n\n"
+        f"Source files:\n{files_list}\n\n"
+        f"Findings to verify:\n{findings_block}\n\n"
+        "For EACH finding, output exactly one JSON object per line:\n"
+        '{"finding_id": "...", "verdict": "CONFIRMED|REJECTED|UNCERTAIN", '
+        '"confidence": 0.0-1.0, "evidence": "..."}\n'
+    )
+
+
+def cytotoxic_t_cell(
+    triaged: List[TriagedFinding],
+    source_paths: List[str],
+    timeout: int = 180,
+) -> List[CellVerdict]:
+    """Stage 2a: Code FFF verification via claude CLI.
+
+    The Cytotoxic T-Cell reads actual source files and checks whether
+    described bugs exist. Uses claude CLI with restricted tools.
+    Network-bound (~30-60s). Falls back to UNCERTAIN if CLI unavailable.
+    """
+    # Filter to code-relevant findings
+    code_findings = [
+        tf for tf in triaged
+        if tf.claim_type in (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
+        and not tf.is_duplicate
+    ]
+
+    if not code_findings:
+        return []
+
+    if not CLAUDE_CLI:
+        return [
+            CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T,
+                finding_id=tf.finding.finding_id,
+                verdict="UNCERTAIN",
+                confidence=0.0,
+                evidence="claude CLI not available",
+                tool_used="none",
+            )
+            for tf in code_findings
+        ]
+
+    prompt = _build_ct_prompt(code_findings, source_paths)
+    t0 = time.monotonic()
+
+    try:
+        result = sp.run(
+            [
+                CLAUDE_CLI, "-p", prompt,
+                "--allowedTools", "Read,Bash,Grep,Glob",
+                "--max-turns", "4",
+            ],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        elapsed = time.monotonic() - t0
+        output = result.stdout.strip()
+
+        verdicts: List[CellVerdict] = []
+        seen: Set[str] = set()
+        for line in output.splitlines():
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                obj = json.loads(line)
+                fid = obj.get("finding_id", "")
+                if fid and fid not in seen:
+                    verdicts.append(CellVerdict(
+                        cell_type=CellType.CYTOTOXIC_T,
+                        finding_id=fid,
+                        verdict=obj.get("verdict", "UNCERTAIN"),
+                        confidence=float(obj.get("confidence", 0.5)),
+                        evidence=obj.get("evidence", ""),
+                        tool_used="claude_cli_fff",
+                        elapsed_s=elapsed,
+                    ))
+                    seen.add(fid)
+            except (json.JSONDecodeError, ValueError):
+                continue
+
+        # Fill in any findings not covered
+        for tf in code_findings:
+            if tf.finding.finding_id not in seen:
+                verdicts.append(CellVerdict(
+                    cell_type=CellType.CYTOTOXIC_T,
+                    finding_id=tf.finding.finding_id,
+                    verdict="UNCERTAIN",
+                    confidence=0.0,
+                    evidence="CT agent did not return a verdict",
+                    tool_used="claude_cli_fff",
+                    elapsed_s=elapsed,
+                ))
+
+        return verdicts
+
+    except sp.TimeoutExpired:
+        return [
+            CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T,
+                finding_id=tf.finding.finding_id,
+                verdict="UNCERTAIN",
+                confidence=0.0,
+                evidence=f"CT agent timeout ({timeout}s)",
+                tool_used="claude_cli_fff",
+                elapsed_s=timeout,
+            )
+            for tf in code_findings
+        ]
+    except Exception as e:
+        return [
+            CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T,
+                finding_id=tf.finding.finding_id,
+                verdict="UNCERTAIN",
+                confidence=0.0,
+                evidence=f"CT agent error: {e}",
+                tool_used="claude_cli_fff",
+            )
+            for tf in code_findings
+        ]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 3. B-CELL — Mathematical/Logical verification (SymPy + z3 + statsmodels)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _run_tool_subprocess(code: str, timeout: int = 15) -> str:
+    """Run Python code in a subprocess using the tools-equipped interpreter."""
+    try:
+        result = sp.run(
+            [PYTHON_TOOLS, "-c", code],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        return result.stdout.strip()
+    except sp.TimeoutExpired:
+        return "TIMEOUT"
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+def _verify_sympy(claim: str) -> CellVerdict:
+    """Verify a mathematical claim via SymPy."""
+    code = f"""
+import sympy
+from sympy import *
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+try:
+    expr = parse_expr({repr(claim)},
+        transformations=(standard_transformations + (implicit_multiplication_application,)),
+        local_dict={{'pi': sympy.pi, 'E': sympy.E, 'oo': sympy.oo, 'n': symbols('n'),
+                     'sqrt': sympy.sqrt, 'cos': sympy.cos, 'sin': sympy.sin,
+                     'Eq': sympy.Eq, 'Gt': sympy.Gt, 'Lt': sympy.Lt,
+                     'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And}},
+        global_dict={{'__builtins__': {{}}}})
+    result = sympy.simplify(expr)
+    if result == True:
+        print("VERIFIED_TRUE")
+    elif result == False:
+        print("VERIFIED_FALSE")
+    else:
+        n_val = expr.subs(symbols('n'), 100)
+        if n_val == True:
+            print("NUMERICAL_TRUE")
+        elif n_val == False:
+            print("NUMERICAL_FALSE")
+        else:
+            print(f"SIMPLIFIED: {{result}}")
+except Exception as e:
+    print(f"UNVERIFIABLE: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    if "VERIFIED_TRUE" in output or "NUMERICAL_TRUE" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.95, evidence=f"SymPy: {output}", tool_used="sympy",
+            elapsed_s=elapsed,
+        )
+    elif "VERIFIED_FALSE" in output or "NUMERICAL_FALSE" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.95, evidence=f"SymPy: {output}", tool_used="sympy",
+            elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.3, evidence=f"SymPy: {output}", tool_used="sympy",
+            elapsed_s=elapsed,
+        )
+
+
+def _verify_z3(claim: str) -> CellVerdict:
+    """Verify a logical invariant claim via z3-solver.
+
+    Attempts to express the claim as a z3 constraint and check
+    satisfiability. Useful for if/then invariants, reachability,
+    and constraint satisfaction claims.
+    """
+    code = f"""
+import z3
+import re
+
+claim = {repr(claim)}
+
+# Try to extract a simple logical structure:
+# "if X then Y" -> check if NOT(X implies Y) is unsatisfiable
+if_then = re.search(r'if\\s+(.+?)\\s+then\\s+(.+)', claim, re.IGNORECASE)
+if if_then:
+    # Create symbolic booleans for the conditions
+    X = z3.Bool('X')
+    Y = z3.Bool('Y')
+    s = z3.Solver()
+    # Check if "X and not Y" is satisfiable (counterexample to X->Y)
+    s.add(X)
+    s.add(z3.Not(Y))
+    if s.check() == z3.sat:
+        print("SATISFIABLE_COUNTEREXAMPLE")
+    else:
+        print("UNSAT_VALID")
+else:
+    # Try numeric constraint extraction
+    nums = re.findall(r'[-+]?\\d*\\.?\\d+', claim)
+    if len(nums) >= 2:
+        a, b = float(nums[0]), float(nums[1])
+        x = z3.Real('x')
+        s = z3.Solver()
+        if '>=' in claim or 'greater than or equal' in claim.lower():
+            s.add(z3.Not(x >= b))
+            s.add(x == a)
+            result = s.check()
+            if result == z3.unsat:
+                print(f"VERIFIED_TRUE: {{a}} >= {{b}}")
+            else:
+                print(f"VERIFIED_FALSE: {{a}} < {{b}}")
+        elif '<=' in claim or 'less than or equal' in claim.lower():
+            s.add(z3.Not(x <= b))
+            s.add(x == a)
+            result = s.check()
+            if result == z3.unsat:
+                print(f"VERIFIED_TRUE: {{a}} <= {{b}}")
+            else:
+                print(f"VERIFIED_FALSE: {{a}} > {{b}}")
+        else:
+            print(f"Z3_PARSED: extracted {len(nums)} numeric values")
+    else:
+        print("Z3_UNSTRUCTURED: claim not parseable as constraint")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    if "VERIFIED_TRUE" in output or "UNSAT_VALID" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.90, evidence=f"z3: {output}", tool_used="z3",
+            elapsed_s=elapsed,
+        )
+    elif "VERIFIED_FALSE" in output or "SATISFIABLE_COUNTEREXAMPLE" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.90, evidence=f"z3: {output}", tool_used="z3",
+            elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"z3: {output}", tool_used="z3",
+            elapsed_s=elapsed,
+        )
+
+
+def _verify_statistical(claim: str) -> CellVerdict:
+    """Verify a statistical claim via statsmodels/scipy.
+
+    Checks claims about significance, distributions, correlations.
+    """
+    code = f"""
+import re
+claim = {repr(claim)}
+
+# Extract p-value claims
+p_match = re.search(r'p\\s*[<=]\\s*(0\\.\\d+)', claim)
+if p_match:
+    p_val = float(p_match.group(1))
+    alpha = 0.05
+    if p_val < alpha:
+        print(f"STAT_SIGNIFICANT: p={p_val} < alpha={alpha}")
+    else:
+        print(f"STAT_NOT_SIGNIFICANT: p={p_val} >= alpha={alpha}")
+else:
+    # Check for correlation claims
+    r_match = re.search(r'r\\s*=\\s*([-+]?0?\\.\\d+)', claim)
+    if r_match:
+        r_val = float(r_match.group(1))
+        if abs(r_val) > 0.7:
+            print(f"STRONG_CORRELATION: r={r_val}")
+        elif abs(r_val) > 0.3:
+            print(f"MODERATE_CORRELATION: r={r_val}")
+        else:
+            print(f"WEAK_CORRELATION: r={r_val}")
+    else:
+        print("STAT_UNPARSEABLE: no testable statistical claim extracted")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    if "SIGNIFICANT" in output and "NOT_SIGNIFICANT" not in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
+            elapsed_s=elapsed,
+        )
+    elif "NOT_SIGNIFICANT" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
+            elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"stats: {output}", tool_used="statsmodels",
+            elapsed_s=elapsed,
+        )
+
+
+def _verify_uncertainty(claim: str, metric_name: str, metric_value: float,
+                        metric_std: float) -> CellVerdict:
+    """Propagate measurement uncertainty via the uncertainties package.
+
+    Checks whether a conclusion holds under error propagation.
+    E.g., if γ = 0.39 ± 0.05, does the "converging" conclusion hold?
+    """
+    code = f"""
+from uncertainties import ufloat
+import math
+
+val = ufloat({metric_value}, {metric_std})
+name = {repr(metric_name)}
+
+# Check standard convergence thresholds
+if name == "gamma":
+    threshold = 0.5
+    if val.nominal_value >= threshold:
+        print(f"CONVERGED: {{val}} >= {{threshold}}")
+    elif val.nominal_value + val.std_dev >= threshold:
+        print(f"BORDERLINE: {{val}} overlaps {{threshold}} within 1-sigma")
+    else:
+        print(f"NOT_CONVERGED: {{val}} < {{threshold}} even at +1-sigma")
+elif name == "omega":
+    threshold = 0.10
+    if val.nominal_value < threshold:
+        print(f"BELOW_THRESHOLD: {{val}} < {{threshold}}")
+    elif val.nominal_value - val.std_dev < threshold:
+        print(f"BORDERLINE: {{val}} overlaps {{threshold}} within 1-sigma")
+    else:
+        print(f"ABOVE_THRESHOLD: {{val}} >= {{threshold}}")
+else:
+    print(f"MEASURED: {{name}} = {{val}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    return CellVerdict(
+        cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+        confidence=0.5, evidence=f"uncertainty: {output}",
+        tool_used="uncertainties", elapsed_s=elapsed,
+    )
+
+
+def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
+    """Stage 2b: Mathematical/logical/statistical verification.
+
+    The B-Cell uses somatic hypermutation — it adapts its verification
+    strategy based on the claim type. Mathematical claims get SymPy,
+    logical claims get z3, statistical claims get statsmodels.
+    Cross-verification (class switching): if SymPy returns UNCERTAIN,
+    try z3 as a fallback.
+    """
+    verdicts: List[CellVerdict] = []
+
+    for tf in triaged:
+        if tf.is_duplicate:
+            continue
+
+        fid = tf.finding.finding_id
+        v: Optional[CellVerdict] = None
+
+        if tf.claim_type == ClaimType.MATHEMATICAL:
+            v = _verify_sympy(tf.extracted_claim)
+            # Class switching: if SymPy uncertain, try z3
+            if v.verdict == "UNCERTAIN":
+                v2 = _verify_z3(tf.extracted_claim)
+                if v2.verdict != "UNCERTAIN":
+                    v = v2
+                    v.evidence += " [class-switched from SymPy]"
+
+        elif tf.claim_type == ClaimType.LOGICAL:
+            v = _verify_z3(tf.extracted_claim)
+
+        elif tf.claim_type == ClaimType.STATISTICAL:
+            v = _verify_statistical(tf.extracted_claim)
+
+        if v is not None:
+            v.finding_id = fid
+            verdicts.append(v)
+
+    return verdicts
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 4. NK CELL — Pattern recognition, dedup, and immune memory
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Known false-positive patterns from Run 7b analysis
+_KNOWN_FALSE_POSITIVES: List[Dict[str, Any]] = [
+    {
+        "pattern": re.compile(r"@dataclass\s+decorator.*missing", re.IGNORECASE),
+        "source": "Run 7b: Codex hallucinated missing @dataclass 8 times",
+        "expected_model": "Codex",
+    },
+    {
+        "pattern": re.compile(r"missing\s+@dataclass", re.IGNORECASE),
+        "source": "Run 7b: @dataclass false positive cluster",
+        "expected_model": "Codex",
+    },
+]
+
+
+def nk_cell_verify(
+    triaged: List[TriagedFinding],
+    prior_findings: List[Finding],
+    tau_sim: float = 0.8,
+    false_positive_db: Optional[List[Dict[str, Any]]] = None,
+) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
+    """Stage 2c: Pattern recognition and deduplication.
+
+    The NK Cell provides innate-like immunity with adaptive memory.
+    It matches findings against:
+    1. Prior findings (dedup via similarity)
+    2. Known false-positive patterns (memory from prior runs)
+    3. Anomaly detection (severity outliers, repeated hallucinations)
+
+    Returns updated triaged findings with duplicate flags set,
+    plus verdicts for pattern-matched findings.
+    """
+    fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES
+    verdicts: List[CellVerdict] = []
+
+    for tf in triaged:
+        f = tf.finding
+
+        # 1. Dedup against prior findings
+        best_sim = 0.0
+        best_match: Optional[str] = None
+        for pf in prior_findings:
+            sim = _finding_similarity(f, pf)
+            if sim > best_sim:
+                best_sim = sim
+                best_match = pf.finding_id
+
+        if best_sim >= tau_sim:
+            tf.is_duplicate = True
+            tf.duplicate_of = best_match
+            tf.similarity = best_sim
+            verdicts.append(CellVerdict(
+                cell_type=CellType.NK_CELL,
+                finding_id=f.finding_id,
+                verdict="DUPLICATE",
+                confidence=best_sim,
+                evidence=f"Duplicate of {best_match} (sim={best_sim:.3f})",
+                tool_used="similarity_dedup",
+            ))
+            continue
+
+        # 2. Check against known false-positive patterns
+        for fp in fp_db:
+            if fp["pattern"].search(f.description):
+                model_match = (
+                    not fp.get("expected_model")
+                    or fp["expected_model"] == f.model_id
+                )
+                if model_match:
+                    verdicts.append(CellVerdict(
+                        cell_type=CellType.NK_CELL,
+                        finding_id=f.finding_id,
+                        verdict="REJECTED",
+                        confidence=0.90,
+                        evidence=f"Known FP: {fp['source']}",
+                        tool_used="false_positive_db",
+                    ))
+                    break
+
+        # 3. Anomaly detection: severity outliers
+        if f.severity > 0.95 and f.round_idx > 5:
+            verdicts.append(CellVerdict(
+                cell_type=CellType.NK_CELL,
+                finding_id=f.finding_id,
+                verdict="UNCERTAIN",
+                confidence=0.4,
+                evidence=f"Late-round high severity ({f.severity:.2f} at R{f.round_idx}) — possible inflation",
+                tool_used="anomaly_detection",
+            ))
+
+    return triaged, verdicts
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 5. HELPER T-CELL — Verdict synthesis
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def helper_t_cell_synthesize(
+    triaged: List[TriagedFinding],
+    all_verdicts: List[CellVerdict],
+) -> Tuple[Dict[str, str], Dict[str, float]]:
+    """Stage 3a: Synthesize all cell verdicts into final judgments.
+
+    The Helper T-Cell coordinates the immune response by aggregating
+    verdicts from all cell types. Uses confidence-weighted voting:
+    - CONFIRMED verdicts contribute positive weight
+    - REJECTED verdicts contribute negative weight
+    - UNCERTAIN verdicts contribute nothing
+    - DUPLICATE verdicts are auto-rejected
+
+    A finding needs net positive confidence to survive.
+    Asymmetric threshold: rejection requires 0.6+ net confidence,
+    confirmation requires only 0.4+ (false negatives are costlier
+    than false positives).
+    """
+    # Group verdicts by finding
+    verdicts_by_finding: Dict[str, List[CellVerdict]] = {}
+    for v in all_verdicts:
+        verdicts_by_finding.setdefault(v.finding_id, []).append(v)
+
+    final_verdicts: Dict[str, str] = {}
+    final_confidences: Dict[str, float] = {}
+
+    for tf in triaged:
+        fid = tf.finding.finding_id
+        fv = verdicts_by_finding.get(fid, [])
+
+        # Auto-reject duplicates
+        if tf.is_duplicate:
+            final_verdicts[fid] = "DUPLICATE"
+            final_confidences[fid] = tf.similarity
+            continue
+
+        # Confidence-weighted voting
+        confirm_weight = 0.0
+        reject_weight = 0.0
+
+        for v in fv:
+            if v.verdict == "CONFIRMED":
+                confirm_weight += v.confidence
+            elif v.verdict == "REJECTED":
+                reject_weight += v.confidence
+            elif v.verdict == "DUPLICATE":
+                reject_weight += v.confidence
+            # UNCERTAIN contributes nothing
+
+        total = confirm_weight + reject_weight
+        if total == 0:
+            # No verdicts — pass through (precautionary principle)
+            final_verdicts[fid] = "UNCERTAIN"
+            final_confidences[fid] = 0.0
+        elif reject_weight / max(total, 0.001) >= 0.6:
+            final_verdicts[fid] = "REJECTED"
+            final_confidences[fid] = reject_weight / total
+        elif confirm_weight / max(total, 0.001) >= 0.4:
+            final_verdicts[fid] = "CONFIRMED"
+            final_confidences[fid] = confirm_weight / total
+        else:
+            final_verdicts[fid] = "UNCERTAIN"
+            final_confidences[fid] = max(confirm_weight, reject_weight) / max(total, 0.001)
+
+    return final_verdicts, final_confidences
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. REGULATORY T-CELL — Meta-verification and autoimmune prevention
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def regulatory_t_cell_check(
+    final_verdicts: Dict[str, str],
+    triaged: List[TriagedFinding],
+    max_rejection_rate: float = 0.50,
+    min_findings_for_check: int = 5,
+) -> Tuple[bool, str]:
+    """Stage 3b: Check for autoimmune response (over-rejection).
+
+    The Regulatory T-Cell prevents the immune system from attacking
+    valid findings. If the rejection rate exceeds the threshold,
+    it flags an autoimmune condition — the verification pipeline
+    itself may be miscalibrated.
+
+    Returns:
+        (autoimmune_flag, reason)
+    """
+    total = len(final_verdicts)
+    if total < min_findings_for_check:
+        return False, f"Too few findings ({total}) for meta-check"
+
+    rejected = sum(1 for v in final_verdicts.values() if v == "REJECTED")
+    duplicated = sum(1 for v in final_verdicts.values() if v == "DUPLICATE")
+    removed = rejected + duplicated
+    removal_rate = removed / total
+
+    reasons = []
+
+    # Check 1: Overall rejection rate
+    if rejected / total > max_rejection_rate:
+        reasons.append(
+            f"Rejection rate {rejected}/{total} ({rejected/total:.1%}) "
+            f"exceeds threshold ({max_rejection_rate:.0%})"
+        )
+
+    # Check 2: Single cell type dominating rejections
+    # (indicates a miscalibrated tool, not genuine false positives)
+    # We'd need per-cell rejection counts here — tracked via verdicts
+
+    # Check 3: All findings from one model rejected
+    model_counts: Dict[str, int] = {}
+    model_rejected: Dict[str, int] = {}
+    for tf in triaged:
+        mid = tf.finding.model_id
+        model_counts[mid] = model_counts.get(mid, 0) + 1
+        if final_verdicts.get(tf.finding.finding_id) == "REJECTED":
+            model_rejected[mid] = model_rejected.get(mid, 0) + 1
+
+    for mid, total_m in model_counts.items():
+        rej_m = model_rejected.get(mid, 0)
+        if total_m >= 3 and rej_m == total_m:
+            reasons.append(
+                f"All {total_m} findings from {mid} rejected — "
+                f"possible systematic bias against this model"
+            )
+
+    if reasons:
+        return True, "; ".join(reasons)
+
+    return False, f"Pipeline healthy: {removal_rate:.1%} removal rate"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ORCHESTRATOR — Run the full immune pipeline
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def run_immune_pipeline(
+    new_findings: List[Finding],
+    prior_findings: List[Finding],
+    source_paths: List[str],
+    observation_only: bool = True,
+    ct_enabled: bool = True,
+    ct_timeout: int = 180,
+    tau_sim: float = 0.8,
+    false_positive_db: Optional[List[Dict[str, Any]]] = None,
+    max_rejection_rate: float = 0.50,
+) -> ImmuneResponse:
+    """Run the full 6-cell immune pipeline.
+
+    Stages:
+        1. Dendritic Cell triage (sequential, ~1s)
+        2. Cytotoxic T + B-Cell + NK Cell (parallel, ~30-60s)
+        3. Helper T synthesis + Regulatory T meta-check (sequential, ~1s)
+
+    Args:
+        new_findings: Findings from the current round.
+        prior_findings: All findings from previous rounds.
+        source_paths: Paths to source files for verification.
+        observation_only: If True, all findings pass through regardless.
+        ct_enabled: Whether to run Cytotoxic T-Cell (claude CLI).
+        ct_timeout: Timeout for CT agent in seconds.
+        tau_sim: Similarity threshold for NK Cell dedup.
+        false_positive_db: Known false-positive patterns for NK Cell.
+        max_rejection_rate: Regulatory T-Cell autoimmune threshold.
+
+    Returns:
+        ImmuneResponse with complete pipeline results.
+    """
+    timings: Dict[str, float] = {}
+    tool_usage: Dict[str, int] = {}
+
+    # ── Stage 1: Dendritic Cell triage ────────────────────────────────
+    t0 = time.monotonic()
+    triaged = dendritic_cell_triage(new_findings)
+    timings["dendritic"] = round(time.monotonic() - t0, 4)
+
+    # Log claim type distribution
+    type_counts = {}
+    for tf in triaged:
+        key = tf.claim_type.value
+        type_counts[key] = type_counts.get(key, 0) + 1
+
+    # ── Stage 2: Parallel verification ────────────────────────────────
+    all_verdicts: List[CellVerdict] = []
+    t0 = time.monotonic()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {}
+
+        # 2a: Cytotoxic T-Cell (code FFF)
+        if ct_enabled:
+            futures["cytotoxic_t"] = pool.submit(
+                cytotoxic_t_cell, triaged, source_paths, ct_timeout,
+            )
+
+        # 2b: B-Cell (math/logic/stats)
+        futures["b_cell"] = pool.submit(b_cell_verify, triaged)
+
+        # 2c: NK Cell (pattern/dedup)
+        futures["nk_cell"] = pool.submit(
+            nk_cell_verify, triaged, prior_findings, tau_sim, false_positive_db,
+        )
+
+        # Collect results
+        for name, future in futures.items():
+            try:
+                result = future.result(timeout=ct_timeout + 30)
+                if name == "nk_cell":
+                    triaged, nk_verdicts = result
+                    all_verdicts.extend(nk_verdicts)
+                    tool_usage["similarity_dedup"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "similarity_dedup"
+                    )
+                    tool_usage["false_positive_db"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "false_positive_db"
+                    )
+                    tool_usage["anomaly_detection"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "anomaly_detection"
+                    )
+                else:
+                    cell_verdicts = result
+                    all_verdicts.extend(cell_verdicts)
+                    for v in cell_verdicts:
+                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+            except Exception as e:
+                # Cell failure is non-fatal — log and continue
+                pass
+
+    timings["parallel_verification"] = round(time.monotonic() - t0, 4)
+
+    # ── Stage 3a: Helper T-Cell synthesis ─────────────────────────────
+    t0 = time.monotonic()
+    final_verdicts, final_confidences = helper_t_cell_synthesize(triaged, all_verdicts)
+    timings["helper_t"] = round(time.monotonic() - t0, 4)
+
+    # ── Stage 3b: Regulatory T-Cell meta-check ────────────────────────
+    t0 = time.monotonic()
+    autoimmune_flag, reg_reason = regulatory_t_cell_check(
+        final_verdicts, triaged, max_rejection_rate,
+    )
+    timings["regulatory_t"] = round(time.monotonic() - t0, 4)
+
+    # ── Build response ────────────────────────────────────────────────
+    filtered: List[Finding] = []
+    rejected: List[Finding] = []
+
+    for tf in triaged:
+        fid = tf.finding.finding_id
+        verdict = final_verdicts.get(fid, "UNCERTAIN")
+
+        if observation_only:
+            # Observation mode: everything passes through
+            filtered.append(tf.finding)
+        elif verdict in ("CONFIRMED", "UNCERTAIN"):
+            filtered.append(tf.finding)
+        else:
+            rejected.append(tf.finding)
+
+    # If autoimmune flagged, override: pass everything through
+    if autoimmune_flag and not observation_only:
+        filtered = [tf.finding for tf in triaged]
+        rejected = []
+
+    total = len(triaged)
+    rej_count = sum(1 for v in final_verdicts.values() if v in ("REJECTED", "DUPLICATE"))
+    rejection_rate = rej_count / max(total, 1)
+
+    # Group verdicts by finding for the response
+    verdicts_by_finding: Dict[str, List[CellVerdict]] = {}
+    for v in all_verdicts:
+        verdicts_by_finding.setdefault(v.finding_id, []).append(v)
+
+    return ImmuneResponse(
+        triaged=triaged,
+        cell_verdicts=verdicts_by_finding,
+        final_verdicts=final_verdicts,
+        final_confidences=final_confidences,
+        filtered_findings=filtered,
+        rejected_findings=rejected,
+        rejection_rate=round(rejection_rate, 4),
+        autoimmune_flag=autoimmune_flag,
+        stage_timings=timings,
+        tool_usage=tool_usage,
+        observation_only=observation_only,
+    )

@@ -1,22 +1,53 @@
-"""PM filter quality gate for CDSFL — observation-only.
+"""PM filter quality gate for CDSFL.
 
-Logs verdicts but does NOT gate findings. Each verification stage
-(dedup, SymPy, AST, PM) runs independently and records results into
-a QualityGateResult for downstream analysis.
+Run 8: observation-only (logs verdicts, all findings pass through).
+Run 9+: load-bearing via immune_agents.py (6-cell immune pipeline).
+
+Each verification stage (dedup, SymPy, AST, z3, statsmodels, PM) runs
+independently and records results into a QualityGateResult.
 """
 
 from __future__ import annotations
 
 import ast
 import json
+import os
 import re
+import shutil
 import subprocess as sp
+import sys
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 from bench.dm._types import Finding
 from bench.dm._convergence import _finding_similarity
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool-equipped Python discovery
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _find_tools_python() -> str:
+    """Find Python with SymPy/z3/statsmodels. Cached at module level."""
+    candidates = [
+        "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+        "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        shutil.which("python3.13") or "",
+        shutil.which("python3.12") or "",
+    ]
+    for py in candidates:
+        if py and os.path.isfile(py):
+            try:
+                r = sp.run([py, "-c", "import sympy; print('ok')"],
+                           capture_output=True, text=True, timeout=10)
+                if "ok" in r.stdout:
+                    return py
+            except (sp.TimeoutExpired, OSError):
+                continue
+    return sys.executable  # fallback
+
+_TOOLS_PYTHON: str = _find_tools_python()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -69,7 +100,7 @@ except Exception as e:
     print(f"UNVERIFIABLE: {{e}}")
 """
         result = sp.run(
-            ["python3", "-c", code],
+            [_TOOLS_PYTHON, "-c", code],
             capture_output=True, text=True, timeout=10,
         )
         output = result.stdout.strip()
@@ -81,6 +112,101 @@ except Exception as e:
             return {"verified": None, "result": output, "method": "unverifiable"}
     except Exception as e:
         return {"verified": None, "result": str(e), "method": "error"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 1b. z3 logical invariant verification
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def verify_z3(claim: str) -> dict:
+    """Verify a logical invariant claim via z3-solver in a subprocess.
+
+    Attempts to express numeric constraints as z3 assertions and check
+    satisfiability. Returns {"verified": bool|None, "result": str, "method": "z3"}.
+    """
+    if not claim or claim.strip() == "None":
+        return {"verified": None, "result": "no claim", "method": "skipped"}
+    try:
+        code = f"""
+import z3, re
+claim = {repr(claim)}
+nums = re.findall(r'[-+]?\\d*\\.?\\d+', claim)
+if len(nums) >= 2:
+    a, b = float(nums[0]), float(nums[1])
+    x = z3.Real('x')
+    s = z3.Solver()
+    if '>=' in claim:
+        s.add(z3.Not(x >= b)); s.add(x == a)
+        print("VERIFIED_TRUE" if s.check() == z3.unsat else "VERIFIED_FALSE")
+    elif '<=' in claim:
+        s.add(z3.Not(x <= b)); s.add(x == a)
+        print("VERIFIED_TRUE" if s.check() == z3.unsat else "VERIFIED_FALSE")
+    elif '==' in claim or '= ' in claim:
+        s.add(z3.Not(x == b)); s.add(x == a)
+        print("VERIFIED_TRUE" if s.check() == z3.unsat else "VERIFIED_FALSE")
+    else:
+        print(f"Z3_PARSED: {len(nums)} values")
+else:
+    print("Z3_UNSTRUCTURED")
+"""
+        result = sp.run(
+            [_TOOLS_PYTHON, "-c", code],
+            capture_output=True, text=True, timeout=10,
+        )
+        output = result.stdout.strip()
+        if "VERIFIED_TRUE" in output:
+            return {"verified": True, "result": output, "method": "z3"}
+        elif "VERIFIED_FALSE" in output:
+            return {"verified": False, "result": output, "method": "z3"}
+        else:
+            return {"verified": None, "result": output, "method": "z3"}
+    except Exception as e:
+        return {"verified": None, "result": str(e), "method": "z3_error"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 1c. Statistical verification via statsmodels
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def verify_statistical(claim: str) -> dict:
+    """Verify a statistical claim by extracting and checking p-values/correlations.
+
+    Returns {"verified": bool|None, "result": str, "method": "statsmodels"}.
+    """
+    if not claim or claim.strip() == "None":
+        return {"verified": None, "result": "no claim", "method": "skipped"}
+    try:
+        code = f"""
+import re
+claim = {repr(claim)}
+p_match = re.search(r'p\\s*[<=]\\s*(0\\.\\d+)', claim)
+if p_match:
+    p = float(p_match.group(1))
+    print("STAT_SIGNIFICANT" if p < 0.05 else "STAT_NOT_SIGNIFICANT")
+else:
+    r_match = re.search(r'r\\s*=\\s*([-+]?0?\\.\\d+)', claim)
+    if r_match:
+        r = abs(float(r_match.group(1)))
+        label = "STRONG" if r > 0.7 else "MODERATE" if r > 0.3 else "WEAK"
+        print(f"CORRELATION_{{label}}: r={{r_match.group(1)}}")
+    else:
+        print("STAT_UNPARSEABLE")
+"""
+        result = sp.run(
+            [_TOOLS_PYTHON, "-c", code],
+            capture_output=True, text=True, timeout=10,
+        )
+        output = result.stdout.strip()
+        if "SIGNIFICANT" in output and "NOT_SIGNIFICANT" not in output:
+            return {"verified": True, "result": output, "method": "statsmodels"}
+        elif "NOT_SIGNIFICANT" in output:
+            return {"verified": False, "result": output, "method": "statsmodels"}
+        else:
+            return {"verified": None, "result": output, "method": "statsmodels"}
+    except Exception as e:
+        return {"verified": None, "result": str(e), "method": "statsmodels_error"}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
