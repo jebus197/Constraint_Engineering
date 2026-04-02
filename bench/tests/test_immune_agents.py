@@ -1,5 +1,7 @@
 """Tests for the immune agent pipeline (bench/immune_agents.py)."""
 
+import os
+import tempfile
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -17,6 +19,9 @@ from bench.immune_agents import (
     regulatory_t_cell_check,
     run_immune_pipeline,
     _classify_claim,
+    _verify_ct_claim,
+    _ct_evidence_to_verdict,
+    _parse_ct_output,
     _KNOWN_FALSE_POSITIVES,
 )
 
@@ -304,3 +309,172 @@ class TestImmunePipeline:
         # and override: all findings pass through
         if result.autoimmune_flag:
             assert len(result.filtered_findings) == 10
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Cytotoxic T-Cell — mechanical verification (Level 3 enforcement)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestCTMechanicalVerification:
+    """Tests for _verify_ct_claim — the structural enforcement layer."""
+
+    @pytest.fixture
+    def source_file(self, tmp_path):
+        """Create a temporary Python file with known content."""
+        code = (
+            "class Foo:\n"                    # line 1
+            "    def bar(self):\n"             # line 2
+            "        return 42\n"              # line 3
+            "\n"                               # line 4
+            "    def baz(self, x):\n"          # line 5
+            "        if x > 0:\n"              # line 6
+            "            return x * 2\n"       # line 7
+            "        return -1\n"              # line 8
+        )
+        f = tmp_path / "test_source.py"
+        f.write_text(code)
+        return str(f)
+
+    def test_exact_match(self, source_file):
+        evidence = {
+            "file": source_file,
+            "line": 3,
+            "code_snippet": "return 42",
+            "observation": "returns constant",
+        }
+        verified, conf, reason = _verify_ct_claim(evidence)
+        assert verified
+        assert conf == 1.0
+        assert "Exact match" in reason
+
+    def test_near_match_in_window(self, source_file):
+        evidence = {
+            "file": source_file,
+            "line": 5,
+            "code_snippet": "if x > 0:",
+            "observation": "checks positivity",
+        }
+        # "if x > 0:" is at line 6, but we cited line 5 — should find in ±2 window
+        verified, conf, reason = _verify_ct_claim(evidence)
+        assert verified
+        assert conf >= 0.5
+
+    def test_mismatch_drops_to_zero(self, source_file):
+        evidence = {
+            "file": source_file,
+            "line": 3,
+            "code_snippet": "return self.hallucinated_value",
+            "observation": "wrong return",
+        }
+        verified, conf, reason = _verify_ct_claim(evidence)
+        assert not verified
+        assert conf == 0.0
+        assert "does not match" in reason
+
+    def test_missing_file(self):
+        evidence = {
+            "file": "/nonexistent/path/to/file.py",
+            "line": 1,
+            "code_snippet": "anything",
+            "observation": "test",
+        }
+        verified, conf, reason = _verify_ct_claim(evidence)
+        assert not verified
+        assert conf == 0.0
+
+    def test_line_out_of_range(self, source_file):
+        evidence = {
+            "file": source_file,
+            "line": 999,
+            "code_snippet": "return 42",
+            "observation": "test",
+        }
+        verified, conf, reason = _verify_ct_claim(evidence)
+        assert not verified
+        assert "out of range" in reason
+
+    def test_empty_evidence(self):
+        verified, conf, reason = _verify_ct_claim({})
+        assert not verified
+        assert conf == 0.0
+
+
+class TestCTEvidenceToVerdict:
+    """Tests for _ct_evidence_to_verdict — verdict from mechanical verification."""
+
+    def test_all_verified_bug_exists_confirms(self, tmp_path):
+        f = tmp_path / "src.py"
+        f.write_text("def broken():\n    return None  # should return int\n")
+        evidence = [{
+            "file": str(f), "line": 2,
+            "code_snippet": "return None  # should return int",
+            "observation": "returns None instead of int",
+        }]
+        v = _ct_evidence_to_verdict("f1", "bug_exists", evidence)
+        assert v.verdict == "CONFIRMED"
+        assert v.confidence > 0
+        assert v.tool_used == "ct_mechanical"
+
+    def test_all_verified_no_error_rejects(self, tmp_path):
+        f = tmp_path / "src.py"
+        f.write_text("def correct():\n    return 42\n")
+        evidence = [{
+            "file": str(f), "line": 2,
+            "code_snippet": "return 42",
+            "observation": "returns correct value",
+        }]
+        v = _ct_evidence_to_verdict("f1", "no_error", evidence)
+        assert v.verdict == "REJECTED"
+        assert v.confidence > 0
+
+    def test_no_evidence_verified_returns_uncertain(self):
+        evidence = [{
+            "file": "/nonexistent.py", "line": 1,
+            "code_snippet": "hallucinated",
+            "observation": "made up",
+        }]
+        v = _ct_evidence_to_verdict("f1", "bug_exists", evidence)
+        assert v.verdict == "UNCERTAIN"
+        assert v.confidence == 0.0
+        assert "0/1 evidence items verified" in v.evidence
+
+    def test_empty_evidence_list(self):
+        v = _ct_evidence_to_verdict("f1", "bug_exists", [])
+        assert v.verdict == "UNCERTAIN"
+        assert "no evidence" in v.evidence.lower()
+
+
+class TestCTOutputParsing:
+    """Tests for _parse_ct_output — parsing agent output."""
+
+    def test_schema_enforced_json(self):
+        output = '{"verdicts": [{"finding_id": "f1", "claim_type": "bug_exists", "evidence": []}]}'
+        results = _parse_ct_output(output)
+        assert len(results) == 1
+        assert results[0]["finding_id"] == "f1"
+
+    def test_json_lines_fallback(self):
+        output = (
+            'Some text\n'
+            '{"finding_id": "f1", "claim_type": "bug_exists", "evidence": []}\n'
+            '{"finding_id": "f2", "claim_type": "no_error", "evidence": []}\n'
+        )
+        results = _parse_ct_output(output)
+        assert len(results) == 2
+
+    def test_embedded_json_fallback(self):
+        output = (
+            'Here is my analysis:\n'
+            'Finding f1: {"finding_id": "f1", "claim_type": "bug_absent"}\n'
+        )
+        results = _parse_ct_output(output)
+        assert len(results) == 1
+        assert results[0]["finding_id"] == "f1"
+
+    def test_empty_output(self):
+        results = _parse_ct_output("")
+        assert results == []
+
+    def test_garbage_output(self):
+        results = _parse_ct_output("This is just rambling text with no JSON at all.")
+        assert results == []

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cytotoxic T-Cell Verdict",
+  "description": "Structured evidence from the CT verification agent. The agent is an investigator, not a judge — it reports what it found at specific locations. Verdicts are determined mechanically from the evidence, not from the agent's opinion.",
+  "type": "object",
+  "required": ["verdicts"],
+  "properties": {
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "claim_type", "evidence"],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "description": "The finding ID being investigated"
+          },
+          "claim_type": {
+            "type": "string",
+            "enum": ["bug_exists", "bug_absent", "code_missing", "code_present", "logic_error", "no_error"],
+            "description": "What the investigation found — a structural assertion, not an opinion"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["file", "line", "code_snippet", "observation"],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "description": "Absolute path to the source file examined"
+                },
+                "line": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Line number where the relevant code was found"
+                },
+                "code_snippet": {
+                  "type": "string",
+                  "description": "The exact code at that location (copy-pasted, not paraphrased)"
+                },
+                "observation": {
+                  "type": "string",
+                  "description": "What this code does or does not do, relative to the finding's claim"
+                }
+              }
+            },
+            "minItems": 1,
+            "description": "Concrete evidence from the source files. Each item must cite a real file, real line, and the real code at that line."
+          }
+        }
+      }
+    }
+  }
+}

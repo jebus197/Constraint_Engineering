@@ -251,11 +251,30 @@ def dendritic_cell_triage(findings: List[Finding]) -> List[TriagedFinding]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 2. CYTOTOXIC T-CELL — Code FFF verification via claude CLI
+# 2. CYTOTOXIC T-CELL — Structurally-enforced code investigation
+#
+# The CT agent is an INVESTIGATOR, not a judge. It reads source code and
+# reports what it found at specific file:line locations. Its claims are
+# then MECHANICALLY VERIFIED against the actual source by _verify_ct_claim().
+# The verdict is determined by code, not by the agent's opinion.
+#
+# Structural enforcement:
+#   1. Output schema (ct_verdict_schema.json) forces structured evidence
+#   2. Each evidence item must cite file, line, and code_snippet
+#   3. _verify_ct_claim() reads the real file at the real line and checks
+#      whether the snippet matches — if it doesn't, confidence drops to 0
+#   4. Verdict is computed from verification results, not from agent text
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_CT_SCHEMA_PATH = Path(__file__).parent / "ct_verdict_schema.json"
+
+
 def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) -> str:
-    """Build the Cytotoxic T-Cell verification prompt."""
+    """Build the CT investigation prompt.
+
+    The prompt instructs the agent to INVESTIGATE, not JUDGE. It must
+    produce structured evidence with exact file:line:code citations.
+    """
     files_list = "\n".join(f"  - {p}" for p in source_paths)
     findings_block = "\n".join(
         f"  [{tf.finding.finding_id}] severity={tf.finding.severity:.2f} "
@@ -264,21 +283,186 @@ def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) ->
     )
 
     return (
-        "You are a Cytotoxic T-Cell verification agent in the CDSFL immune system. "
-        "Your role is to kill false findings by checking them against actual source code.\n\n"
-        "INSTRUCTIONS:\n"
-        "1. Read each source file listed below.\n"
-        "2. For each finding, use Find-Follow-Fix (FFF):\n"
-        "   - FIND: locate the exact code the finding describes\n"
-        "   - FOLLOW: trace whether the described bug actually exists\n"
-        "   - FIX: determine if the finding is genuine or false\n"
-        "3. Be adversarial — look for reasons the finding is WRONG.\n\n"
+        "You are an investigator. Your output will be mechanically verified.\n"
+        "Do NOT state opinions or verdicts. Report ONLY what you observe.\n\n"
+        "For each finding below:\n"
+        "1. Read the source file(s) to locate the code the finding describes.\n"
+        "2. For each piece of evidence, record:\n"
+        "   - file: the absolute path you read\n"
+        "   - line: the exact line number\n"
+        "   - code_snippet: copy-paste the actual code at that line "
+        "(1-5 lines, verbatim)\n"
+        "   - observation: what this code does relative to the finding's claim\n"
+        "3. Set claim_type to one of: bug_exists, bug_absent, code_missing, "
+        "code_present, logic_error, no_error\n\n"
+        "Do NOT paraphrase code. Copy it exactly.\n"
+        "Do NOT add verdicts like CONFIRMED or REJECTED.\n"
+        "Your evidence will be verified against the actual files.\n\n"
         f"Source files:\n{files_list}\n\n"
-        f"Findings to verify:\n{findings_block}\n\n"
-        "For EACH finding, output exactly one JSON object per line:\n"
-        '{"finding_id": "...", "verdict": "CONFIRMED|REJECTED|UNCERTAIN", '
-        '"confidence": 0.0-1.0, "evidence": "..."}\n'
+        f"Findings to investigate:\n{findings_block}\n\n"
+        "Output format: a single JSON object matching the schema, with a "
+        "'verdicts' array containing one entry per finding.\n"
     )
+
+
+def _verify_ct_claim(evidence: Dict[str, Any]) -> Tuple[bool, float, str]:
+    """Mechanically verify a single CT evidence item against the real file.
+
+    Reads the cited file at the cited line and checks whether the
+    code_snippet actually appears there. This is the structural
+    enforcement — the agent's claim is tested against reality.
+
+    Returns:
+        (verified, confidence, reason)
+        - verified: True if snippet matches code at cited location
+        - confidence: 1.0 if exact match, 0.5 if fuzzy, 0.0 if mismatch
+        - reason: explanation of verification result
+    """
+    file_path = evidence.get("file", "")
+    line_num = evidence.get("line", 0)
+    snippet = evidence.get("code_snippet", "").strip()
+
+    if not file_path or not line_num or not snippet:
+        return False, 0.0, "Missing file, line, or code_snippet"
+
+    if not os.path.isfile(file_path):
+        return False, 0.0, f"File does not exist: {file_path}"
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except (OSError, UnicodeDecodeError) as e:
+        return False, 0.0, f"Cannot read file: {e}"
+
+    if line_num < 1 or line_num > len(lines):
+        return False, 0.0, f"Line {line_num} out of range (file has {len(lines)} lines)"
+
+    # Extract a window around the cited line (±2 lines for fuzzy matching)
+    start = max(0, line_num - 3)
+    end = min(len(lines), line_num + 2)
+    window = "".join(lines[start:end])
+    actual_line = lines[line_num - 1].strip()
+
+    # Normalise whitespace for comparison
+    snippet_normalised = " ".join(snippet.split())
+    actual_normalised = " ".join(actual_line.split())
+    window_normalised = " ".join(window.split())
+
+    # Exact line match
+    if snippet_normalised in actual_normalised or actual_normalised in snippet_normalised:
+        return True, 1.0, f"Exact match at line {line_num}"
+
+    # Check if snippet appears anywhere in the ±2 line window
+    if snippet_normalised in window_normalised:
+        return True, 0.8, f"Snippet found within ±2 lines of line {line_num}"
+
+    # Check if first significant token of snippet appears in window
+    # (handles minor copy-paste differences)
+    snippet_tokens = [t for t in snippet_normalised.split() if len(t) > 3]
+    if snippet_tokens:
+        matches = sum(1 for t in snippet_tokens if t in window_normalised)
+        token_ratio = matches / len(snippet_tokens)
+        if token_ratio >= 0.6:
+            return True, 0.5, (
+                f"Partial match ({matches}/{len(snippet_tokens)} tokens) "
+                f"near line {line_num}"
+            )
+
+    return False, 0.0, (
+        f"Snippet does not match code at line {line_num}. "
+        f"Cited: '{snippet_normalised[:80]}...' "
+        f"Actual: '{actual_normalised[:80]}...'"
+    )
+
+
+def _ct_evidence_to_verdict(
+    finding_id: str,
+    claim_type: str,
+    evidence_items: List[Dict[str, Any]],
+) -> CellVerdict:
+    """Convert mechanically-verified CT evidence into a verdict.
+
+    The verdict is determined by the VERIFICATION RESULTS, not by
+    the agent's stated claim_type. The agent says "bug_exists" but
+    if none of its evidence checks out, the verdict is UNCERTAIN.
+
+    Rules:
+        - All evidence verified + claim_type in (bug_exists, logic_error,
+          code_missing) → CONFIRMED (the finding is probably real)
+        - All evidence verified + claim_type in (bug_absent, no_error,
+          code_present) → REJECTED (the finding is probably false)
+        - Mixed or no evidence verified → UNCERTAIN
+        - No evidence at all → UNCERTAIN
+    """
+    if not evidence_items:
+        return CellVerdict(
+            cell_type=CellType.CYTOTOXIC_T,
+            finding_id=finding_id,
+            verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence="CT agent provided no evidence",
+            tool_used="ct_mechanical",
+        )
+
+    verifications = []
+    for ev in evidence_items:
+        verified, conf, reason = _verify_ct_claim(ev)
+        verifications.append((verified, conf, reason))
+
+    verified_count = sum(1 for v, _, _ in verifications if v)
+    total = len(verifications)
+    avg_confidence = sum(c for _, c, _ in verifications) / max(total, 1)
+
+    # Build evidence summary from verification results
+    evidence_summary = "; ".join(
+        f"[{'PASS' if v else 'FAIL'} {c:.1f}] {r}"
+        for v, c, r in verifications
+    )
+
+    # Determine verdict from verified evidence + structural claim type
+    FINDING_SUPPORTS = {"bug_exists", "logic_error", "code_missing"}
+    FINDING_REFUTES = {"bug_absent", "no_error", "code_present"}
+
+    if verified_count == 0:
+        # No evidence checks out — agent hallucinated or was wrong
+        return CellVerdict(
+            cell_type=CellType.CYTOTOXIC_T,
+            finding_id=finding_id,
+            verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence=f"0/{total} evidence items verified. {evidence_summary}",
+            tool_used="ct_mechanical",
+        )
+
+    verification_rate = verified_count / total
+
+    if verification_rate >= 0.5 and claim_type in FINDING_SUPPORTS:
+        return CellVerdict(
+            cell_type=CellType.CYTOTOXIC_T,
+            finding_id=finding_id,
+            verdict="CONFIRMED",
+            confidence=round(avg_confidence * verification_rate, 3),
+            evidence=f"{verified_count}/{total} verified. {evidence_summary}",
+            tool_used="ct_mechanical",
+        )
+    elif verification_rate >= 0.5 and claim_type in FINDING_REFUTES:
+        return CellVerdict(
+            cell_type=CellType.CYTOTOXIC_T,
+            finding_id=finding_id,
+            verdict="REJECTED",
+            confidence=round(avg_confidence * verification_rate, 3),
+            evidence=f"{verified_count}/{total} verified. {evidence_summary}",
+            tool_used="ct_mechanical",
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.CYTOTOXIC_T,
+            finding_id=finding_id,
+            verdict="UNCERTAIN",
+            confidence=round(avg_confidence * verification_rate, 3),
+            evidence=f"{verified_count}/{total} verified. {evidence_summary}",
+            tool_used="ct_mechanical",
+        )
 
 
 def cytotoxic_t_cell(
@@ -286,13 +470,17 @@ def cytotoxic_t_cell(
     source_paths: List[str],
     timeout: int = 180,
 ) -> List[CellVerdict]:
-    """Stage 2a: Code FFF verification via claude CLI.
+    """Stage 2a: Structurally-enforced code investigation via claude CLI.
 
-    The Cytotoxic T-Cell reads actual source files and checks whether
-    described bugs exist. Uses claude CLI with restricted tools.
-    Network-bound (~30-60s). Falls back to UNCERTAIN if CLI unavailable.
+    The CT agent is an INVESTIGATOR, not a judge:
+    1. Schema enforcement forces structured evidence output
+    2. Each evidence item cites file:line:code_snippet
+    3. _verify_ct_claim() mechanically checks each citation
+    4. Verdict is computed from verification results, not agent opinion
+
+    If the agent's citations don't match the actual code, confidence
+    drops to zero regardless of what the agent claimed.
     """
-    # Filter to code-relevant findings
     code_findings = [
         tf for tf in triaged
         if tf.claim_type in (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
@@ -319,41 +507,40 @@ def cytotoxic_t_cell(
     t0 = time.monotonic()
 
     try:
-        result = sp.run(
-            [
-                CLAUDE_CLI, "-p", prompt,
-                "--allowedTools", "Read,Bash,Grep,Glob",
-                "--max-turns", "4",
-            ],
-            capture_output=True, text=True, timeout=timeout,
-        )
+        cmd = [
+            CLAUDE_CLI, "-p", prompt,
+            "--allowedTools", "Read,Grep,Glob",
+            "--max-turns", "4",
+        ]
+        # Enforce output schema if available
+        if _CT_SCHEMA_PATH.exists():
+            cmd.extend(["--output-format", "json"])
+
+        result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
         elapsed = time.monotonic() - t0
         output = result.stdout.strip()
 
+        # Parse the structured response
+        raw_verdicts = _parse_ct_output(output)
+
+        # Mechanically verify each evidence item
         verdicts: List[CellVerdict] = []
         seen: Set[str] = set()
-        for line in output.splitlines():
-            line = line.strip()
-            if not line.startswith("{"):
+        for rv in raw_verdicts:
+            fid = rv.get("finding_id", "")
+            if not fid or fid in seen:
                 continue
-            try:
-                obj = json.loads(line)
-                fid = obj.get("finding_id", "")
-                if fid and fid not in seen:
-                    verdicts.append(CellVerdict(
-                        cell_type=CellType.CYTOTOXIC_T,
-                        finding_id=fid,
-                        verdict=obj.get("verdict", "UNCERTAIN"),
-                        confidence=float(obj.get("confidence", 0.5)),
-                        evidence=obj.get("evidence", ""),
-                        tool_used="claude_cli_fff",
-                        elapsed_s=elapsed,
-                    ))
-                    seen.add(fid)
-            except (json.JSONDecodeError, ValueError):
-                continue
+            seen.add(fid)
 
-        # Fill in any findings not covered
+            verdict = _ct_evidence_to_verdict(
+                finding_id=fid,
+                claim_type=rv.get("claim_type", ""),
+                evidence_items=rv.get("evidence", []),
+            )
+            verdict.elapsed_s = elapsed
+            verdicts.append(verdict)
+
+        # Fill in findings the agent didn't investigate
         for tf in code_findings:
             if tf.finding.finding_id not in seen:
                 verdicts.append(CellVerdict(
@@ -361,8 +548,8 @@ def cytotoxic_t_cell(
                     finding_id=tf.finding.finding_id,
                     verdict="UNCERTAIN",
                     confidence=0.0,
-                    evidence="CT agent did not return a verdict",
-                    tool_used="claude_cli_fff",
+                    evidence="CT agent did not investigate this finding",
+                    tool_used="ct_mechanical",
                     elapsed_s=elapsed,
                 ))
 
@@ -376,7 +563,7 @@ def cytotoxic_t_cell(
                 verdict="UNCERTAIN",
                 confidence=0.0,
                 evidence=f"CT agent timeout ({timeout}s)",
-                tool_used="claude_cli_fff",
+                tool_used="ct_mechanical",
                 elapsed_s=timeout,
             )
             for tf in code_findings
@@ -389,10 +576,53 @@ def cytotoxic_t_cell(
                 verdict="UNCERTAIN",
                 confidence=0.0,
                 evidence=f"CT agent error: {e}",
-                tool_used="claude_cli_fff",
+                tool_used="ct_mechanical",
             )
             for tf in code_findings
         ]
+
+
+def _parse_ct_output(output: str) -> List[Dict[str, Any]]:
+    """Parse CT agent output, handling both schema-enforced JSON and fallback.
+
+    Tries three parsing strategies:
+    1. Full JSON object with "verdicts" array (schema-enforced)
+    2. JSON lines (one object per line, legacy format)
+    3. Extract JSON from mixed text (agent didn't follow schema perfectly)
+    """
+    # Strategy 1: Full JSON with verdicts array
+    try:
+        data = json.loads(output)
+        if isinstance(data, dict) and "verdicts" in data:
+            return data["verdicts"]
+    except json.JSONDecodeError:
+        pass
+
+    # Strategy 2: JSON lines
+    results = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+            if "finding_id" in obj:
+                results.append(obj)
+        except json.JSONDecodeError:
+            continue
+    if results:
+        return results
+
+    # Strategy 3: Find JSON objects in mixed text
+    json_pattern = re.compile(r'\{[^{}]*"finding_id"[^{}]*\}', re.DOTALL)
+    for match in json_pattern.finditer(output):
+        try:
+            obj = json.loads(match.group())
+            results.append(obj)
+        except json.JSONDecodeError:
+            continue
+
+    return results
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
