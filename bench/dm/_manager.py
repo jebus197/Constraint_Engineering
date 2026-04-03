@@ -407,12 +407,15 @@ class DynamicManager:
                 self.role_assignment.record_failure(model_id, True)
 
                 if action == RecoveryAction.ABORT:
-                    critical_failure = True
+                    if not self.config.no_exclusion_mode:
+                        critical_failure = True
+                    # In no_exclusion_mode, ABORT is logged but doesn't
+                    # kill the FSM. The runner overrides it to decomposed.
             else:
                 self.role_assignment.record_failure(model_id, False)
 
-        # Check abort condition
-        if self.failure_handler.should_abort():
+        # Check abort condition (respects no_exclusion_mode)
+        if self.failure_handler.should_abort() and not self.config.no_exclusion_mode:
             critical_failure = True
 
         # --- Area 4: Convergence detection ---

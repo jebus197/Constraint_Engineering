@@ -132,7 +132,7 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run9_20260403"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run10_20260403"
 
 MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
 WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
@@ -1047,6 +1047,7 @@ def run_confer(
     # to multi-turn — wasting 600-900s per model per round.
     dm_config = DynamicManagementConfig(
         pre_decompose_models={"Codex", "DeepSeek"},
+        no_exclusion_mode=True,  # Runner overrides ABORT → decomposed fallback
     )
     dm_config.max_rounds = MAX_ROUNDS
     model_specs = build_model_specs(exp_config)
@@ -1204,9 +1205,10 @@ def run_confer(
             findings,
             [f for rnd in all_findings[:-1] for f in rnd],
             source_paths=_immune_source_paths,
-            observation_only=False,  # Run 9: active immune filtering
-            ct_enabled=True,         # Run 9: claude CLI tool enabled
-            tau_sim=0.8,
+            observation_only=False,  # Run 9+: active immune filtering
+            ct_enabled=True,         # Run 9+: claude CLI tool enabled
+            # tau_sim uses calibrated default from _types.py (0.33)
+            # Run 9 bug: hardcoded 0.8 here overrode the calibration
         )
         _log(f"  Immune pipeline: {immune_result.rejection_rate:.0%} rejection rate, "
              f"autoimmune={'YES' if immune_result.autoimmune_flag else 'no'}")
@@ -1380,8 +1382,9 @@ def run_confer(
             )
 
         # Feed findings to DynamicManager — guarded against terminal FSM.
-        # Run 4 crashed when FSM entered FAILURE state from ABORT/EXCLUDE.
-        # Fix: catch RuntimeError, log, and continue without DM feedback.
+        # Run 4/9 bug: FSM enters FAILURE state from ABORT/EXCLUDE cascade.
+        # The DM section is optional — convergence check MUST always run.
+        dm_result = None
         try:
             dm_result = mgr.process_round(
                 rn_responses,
@@ -1394,57 +1397,71 @@ def run_confer(
             if "terminal" in str(e).lower() or "FSM" in str(e):
                 _log(f"  DM: FSM TERMINAL — {e}")
                 _log(f"  DM: continuing without DM feedback (data preserved)")
-                # Checkpoint despite FSM crash — data is valuable
-                _save_checkpoint(LOGS_DIR, round_idx, all_findings, result)
-                continue
-            raise  # re-raise if it's a different RuntimeError
+            else:
+                raise  # re-raise if it's a different RuntimeError
 
-        # Log immune diagnostics from DynamicManager
-        if dm_result.recovery_actions:
-            _log(f"  Immune: {dm_result.recovery_actions}")
+        # Process DM result if available (not available when FSM is terminal)
+        dm_converged = False
+        if dm_result is not None:
+            # Log immune diagnostics from DynamicManager
+            if dm_result.recovery_actions:
+                _log(f"  Immune: {dm_result.recovery_actions}")
 
-            # NO-EXCLUSION POLICY: intercept EXCLUDE/ABORT signals.
-            # recovery_actions is Dict[str, str] (model_id → action name).
-            # Instead of excluding, route to multi-turn decomposed dispatch.
-            for model_id, action_name in dm_result.recovery_actions.items():
-                if action_name in ("EXCLUDE", "ABORT"):
-                    _log(f"  NO-EXCLUSION: overriding {action_name} for "
-                         f"{model_id} → pre_decompose + multi-turn fallback")
-                    mgr.config.pre_decompose_models.add(model_id)
+                # NO-EXCLUSION POLICY: intercept EXCLUDE/ABORT signals.
+                for model_id, action_name in dm_result.recovery_actions.items():
+                    if action_name in ("EXCLUDE", "ABORT"):
+                        _log(f"  NO-EXCLUSION: overriding {action_name} for "
+                             f"{model_id} → pre_decompose + multi-turn fallback")
+                        mgr.config.pre_decompose_models.add(model_id)
 
-        _log(f"  DM: kappa={dm_result.convergence_metric:.3f}, "
-             f"mu={dm_result.marginal_value:.3f}, "
-             f"converged={dm_result.converged}, stop={dm_result.stop}")
-        if dm_result.converged:
-            _log(f"\n  DM CONVERGED at round {round_idx}")
-            result["converged_at"] = round_idx
-            result["convergence_reason"] = "dm_converged"
-            break
-        if dm_result.stop:
-            _log(f"\n  DM STOP at round {round_idx}: diminishing returns")
-            result["converged_at"] = round_idx
-            result["convergence_reason"] = "dm_diminishing_returns"
-            break
+            _log(f"  DM: kappa={dm_result.convergence_metric:.3f}, "
+                 f"mu={dm_result.marginal_value:.3f}, "
+                 f"converged={dm_result.converged}, stop={dm_result.stop}")
+            if dm_result.converged:
+                _log(f"\n  DM CONVERGED at round {round_idx}")
+                result["converged_at"] = round_idx
+                result["convergence_reason"] = "dm_converged"
+                dm_converged = True
+            elif dm_result.stop:
+                _log(f"\n  DM STOP at round {round_idx}: diminishing returns")
+                result["converged_at"] = round_idx
+                result["convergence_reason"] = "dm_diminishing_returns"
+                dm_converged = True
 
-        # γ-unified convergence check (uses γ_novel for decisions)
+        # γ-unified convergence check — ALWAYS runs regardless of FSM state.
+        # Run 9 bug: `continue` in FSM exception handler skipped this for
+        # 15 of 20 rounds, making convergence detection impossible.
         converged, reason, novel_per_round = _check_convergence(all_findings, round_idx)
         _log(f"  Convergence (γ-unified): {reason}")
 
-        # Add novelty data to round report
+        # Finding-ID convergence: if zero novel base IDs for N consecutive
+        # rounds, the models are restating. This is the simplest and most
+        # reliable convergence signal — the models self-label their findings.
         if novel_per_round is not None:
             round_data["novelty"] = {
                 "novel_this_round": novel_per_round[-1] if novel_per_round else 0,
                 "novel_per_round": novel_per_round,
                 "total_unique_clusters": sum(novel_per_round),
             }
+            # Check for N consecutive zero-novel rounds
+            zero_novel_window = 3  # declare convergence after 3 rounds of no novelty
+            if len(novel_per_round) >= zero_novel_window:
+                tail = novel_per_round[-zero_novel_window:]
+                if all(n == 0 for n in tail):
+                    _log(f"  FINDING-ID CONVERGENCE: {zero_novel_window} consecutive "
+                         f"rounds with zero novel findings")
+                    converged = True
+                    reason = (f"finding_id_exhaustion({zero_novel_window}_rounds_"
+                              f"zero_novel)")
 
         # Checkpoint after every round — survives process death
         _save_checkpoint(LOGS_DIR, round_idx, all_findings, result)
 
-        if converged:
+        if dm_converged or converged:
             _log(f"\n  CONVERGED at round {round_idx}: {reason}")
-            result["converged_at"] = round_idx
-            result["convergence_reason"] = reason
+            if "converged_at" not in result:
+                result["converged_at"] = round_idx
+                result["convergence_reason"] = reason
             break
 
     if "converged_at" not in result:

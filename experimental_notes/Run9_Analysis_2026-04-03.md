@@ -81,6 +81,32 @@ The FSM entered `TerminationReason.FAILURE` at Round 5 and never recovered. All 
 **B-Cell:** 0 usage across all 20 rounds (SymPy/z3 verification path not firing).
 **CT:** Fires in 14/20 rounds but returns UNCERTAIN on everything except near-exact duplicates.
 
+### Post-Run Root Cause Analysis (Bugs 4–6)
+
+**Bug 4: B-Cell f-string escape (Critical — Silent Cell Death)**
+`_verify_z3()` line 752: `{len(nums)}` inside an f-string code template was
+interpolated by the *outer* Python process instead of being passed through to
+the subprocess. NameError crashed b_cell_verify(), caught by silent
+`except: pass` at line 1248. Same bug in `_verify_statistical()` lines 795–808.
+Result: entire B-Cell pipeline dead for all runs since immune layer was added.
+
+**Bug 5: Silent exception swallowing (Critical)**
+Pipeline exception handler (line 1246–1248) used bare `pass`, hiding Bug 4.
+Any cell crash was invisible. Fixed with `logging.warning()`.
+
+**Bug 6: CT UNCERTAIN-only verdicts (Diagnosed)**
+CT fires but claim_type from agent output often doesn't match FINDING_SUPPORTS
+or FINDING_REFUTES sets, and evidence items frequently fail file:line verification
+against modified code. Both conditions produce UNCERTAIN regardless of agent quality.
+Partial fix: logging. Full fix requires structured output schema enforcement.
+
+**SymPy Verification of Top 4 Run 9 Claims:**
+- IM_F001 (sensitivity_decay polarity, 63x): ALREADY FIXED in Run 5 (AW-1)
+- IM_F005 (chain_exhaustion double-counting, 52x): ALREADY EXAMINED (SY-3)
+- false_positive_rate off-by-one: TRIVIAL (11 vs 10 rounds, consistent)
+- strict inequality boundary: UNLOCATED (no specific code reference)
+All top-restated findings are either resolved or trivial. 84.5% churn confirmed.
+
 ## Churn Analysis
 
 Top 5 most-restated findings:
@@ -99,10 +125,12 @@ Novelty effectively exhausted by Round 13.
 
 ## Run 10 Action Items
 
-1. Fix `continue` bypass — convergence check must run every round
-2. Fix hardcoded `tau_sim=0.8` — remove explicit kwarg
-3. Investigate/fix DM FSM terminal failure at R5
-4. Investigate B-Cell non-firing (SymPy/z3 never invoked)
-5. Investigate CT UNCERTAIN-only verdicts
-6. Switch runtime to Python 3.13
-7. Cross-reference 65 unique findings against already-applied fixes
+1. ~~Fix `continue` bypass — convergence check must run every round~~ DONE
+2. ~~Fix hardcoded `tau_sim=0.8` — remove explicit kwarg~~ DONE
+3. ~~Investigate/fix DM FSM terminal failure at R5~~ DONE (no_exclusion_mode)
+4. ~~Investigate B-Cell non-firing~~ DONE — f-string escape bugs in _verify_z3 and _verify_statistical
+5. ~~Investigate CT UNCERTAIN-only verdicts~~ DIAGNOSED — claim_type mismatch + evidence verification failures
+6. ~~Fix silent exception swallowing in pipeline~~ DONE — logging.warning replaces pass
+7. ~~Add finding-ID convergence detection~~ DONE — 3 consecutive zero-novel rounds
+8. Switch runtime to Python 3.13 (between runs)
+9. Cross-reference 65 unique findings against already-applied fixes — SymPy confirmed top 4 are stale

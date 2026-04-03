@@ -137,6 +137,11 @@ class DynamicManagementConfig:
     max_per_model_directive_chars: int = 500
     # Pre-decompose models that had false-positive blocking in prior experiments.
     pre_decompose_models: Set[str] = field(default_factory=set)
+    # No-exclusion mode: ABORT does not trigger FAIL_CRITICAL in the FSM.
+    # Run 9 bug: DM internally set critical_failure=True on ABORT, sending
+    # the FSM to TERMINAL before the runner could override. With this flag,
+    # ABORT is a recoverable action, not a state-machine-ending event.
+    no_exclusion_mode: bool = False
 
     # --- Resolution hysteresis (Run 6 bug 4) ---
     # Require this many consecutive non-pathological rounds before resolving

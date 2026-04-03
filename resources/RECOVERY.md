@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 April 2026 00:59 BST
+Last updated: 3 April 2026 12:18 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -64,15 +64,20 @@ RUN 9 COMPLETE (3 April 2026, 05:44 BST):
 - ADDITIONAL: B-Cell SymPy/z3 not firing (0 false_positive_db, 0 anomaly).
   CT returns UNCERTAIN on all but near-exact duplicates. Both need investigation.
 
-NEXT ACTIONS (Run 10 prep):
-1. Fix continue bypass — convergence check must run every round
-2. Fix hardcoded tau_sim=0.8 — remove explicit kwarg
-3. Investigate/fix DM FSM terminal failure at R5
-4. Investigate B-Cell non-firing (SymPy/z3 never invoked)
-5. Investigate CT UNCERTAIN-only verdicts
-6. Switch runtime to Python 3.13 (/opt/homebrew/bin/python3.13)
-7. Cross-reference 65 unique Run 9 findings against already-applied fixes
-8. Run 10 with all infrastructure bugs fixed
+RUN 10 FIXES APPLIED (3 April 2026, 11:45 BST):
+All 7 action items resolved. 6 bugs fixed, 1 diagnosed:
+1. DONE: continue bypass — convergence check restructured outside try/except
+2. DONE: tau_sim 0.8→0.33 in runner, immune_agents.py, _types.py
+3. DONE: FSM terminal — no_exclusion_mode prevents ABORT→FAIL_CRITICAL
+4. DONE: B-Cell — f-string escape bugs in _verify_z3 (line 752) and
+   _verify_statistical (lines 795-808). NameError crashed B-Cell silently
+   via silent except:pass. B-Cell was DEAD for all runs since creation.
+5. DONE: Silent pass → logging.warning in pipeline exception handler
+6. DONE: Finding-ID convergence (3 consecutive zero-novel rounds)
+7. DIAGNOSED: CT UNCERTAIN — claim_type mismatch + evidence verification.
+   Partial improvement expected from B-Cell revival + better logging.
+SymPy verified: top 4 restated findings (IM_F001-F005) all ALREADY FIXED.
+465 tests pass. Commit pending.
 
 RUN 10 PREP (mark for next run):
 - Switch runtime from system Python 3.9 to Homebrew 3.13

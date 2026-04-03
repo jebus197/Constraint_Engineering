@@ -749,7 +749,7 @@ else:
             else:
                 print(f"VERIFIED_FALSE: {{a}} > {{b}}")
         else:
-            print(f"Z3_PARSED: extracted {len(nums)} numeric values")
+            print(f"Z3_PARSED: extracted {{len(nums)}} numeric values")
     else:
         print("Z3_UNSTRUCTURED: claim not parseable as constraint")
 """
@@ -792,20 +792,20 @@ if p_match:
     p_val = float(p_match.group(1))
     alpha = 0.05
     if p_val < alpha:
-        print(f"STAT_SIGNIFICANT: p={p_val} < alpha={alpha}")
+        print(f"STAT_SIGNIFICANT: p={{p_val}} < alpha={{alpha}}")
     else:
-        print(f"STAT_NOT_SIGNIFICANT: p={p_val} >= alpha={alpha}")
+        print(f"STAT_NOT_SIGNIFICANT: p={{p_val}} >= alpha={{alpha}}")
 else:
     # Check for correlation claims
     r_match = re.search(r'r\\s*=\\s*([-+]?0?\\.\\d+)', claim)
     if r_match:
         r_val = float(r_match.group(1))
         if abs(r_val) > 0.7:
-            print(f"STRONG_CORRELATION: r={r_val}")
+            print(f"STRONG_CORRELATION: r={{r_val}}")
         elif abs(r_val) > 0.3:
-            print(f"MODERATE_CORRELATION: r={r_val}")
+            print(f"MODERATE_CORRELATION: r={{r_val}}")
         else:
-            print(f"WEAK_CORRELATION: r={r_val}")
+            print(f"WEAK_CORRELATION: r={{r_val}}")
     else:
         print("STAT_UNPARSEABLE: no testable statistical claim extracted")
 """
@@ -940,7 +940,7 @@ _KNOWN_FALSE_POSITIVES: List[Dict[str, Any]] = [
 def nk_cell_verify(
     triaged: List[TriagedFinding],
     prior_findings: List[Finding],
-    tau_sim: float = 0.8,
+    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
     """Stage 2c: Pattern recognition and deduplication.
@@ -1162,7 +1162,7 @@ def run_immune_pipeline(
     observation_only: bool = True,
     ct_enabled: bool = True,
     ct_timeout: int = 180,
-    tau_sim: float = 0.8,
+    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
     max_rejection_rate: float = 0.50,
 ) -> ImmuneResponse:
@@ -1245,7 +1245,10 @@ def run_immune_pipeline(
                         tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
             except Exception as e:
                 # Cell failure is non-fatal — log and continue
-                pass
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Immune cell %s failed: %s: %s", name, type(e).__name__, e
+                )
 
     timings["parallel_verification"] = round(time.monotonic() - t0, 4)
 

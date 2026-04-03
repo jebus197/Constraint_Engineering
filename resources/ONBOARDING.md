@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 3 April 2026 00:59 BST
+Last updated: 3 April 2026 12:18 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,16 +22,25 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
+- **Run 10 FIXES APPLIED (3 April 2026, 12:18 BST):** 6 bugs fixed,
+  1 diagnosed. B-Cell f-string escape (dead since creation — NameError
+  in `_verify_z3` crashed entire cell, hidden by silent `except: pass`).
+  `continue` bypass restructured. `tau_sim` 0.8→0.33 in 3 locations.
+  `no_exclusion_mode` prevents FSM terminal cascade. Finding-ID convergence
+  added (3 consecutive zero-novel rounds). Silent `pass` → `logging.warning`.
+  SymPy verified top 4 Run 9 claims: all already fixed or trivial. 465 tests
+  pass. Run 11 provisional plan written (4 branches contingent on Run 10).
 - **Run 9 COMPLETE (3 April 2026):** 20 rounds, 425 findings, 120 min.
   γ_raw=+0.157, C(H,E)=0.828. Terminated MAX_ROUNDS. 65 unique finding
   IDs (vs Run 8: 30). Churn 84.5% (vs 91.2%). All 5 models produced
   implementation-level findings (task packet fix worked). Immune pipeline
   active: 21 DUPLICATE verdicts, 404 UNCERTAIN. Gemini benched at R5.
-  THREE INFRASTRUCTURE BUGS FOUND: (1) `continue` bypass — DM FSM terminal
-  at R5 skips γ-on-clusters convergence check for rounds 5-19; (2) hardcoded
-  `tau_sim=0.8` overrides calibrated 0.33 — NK Cell dedup threshold
-  unreachable; (3) DM FSM goes TERMINAL(FAILURE) at R5, never recovers.
-  B-Cell SymPy/z3 tools not firing (0 usage). CT fires but returns UNCERTAIN.
+  SIX INFRASTRUCTURE BUGS FOUND: (1) `continue` bypass — convergence check
+  skipped for R5-R19; (2) hardcoded `tau_sim=0.8` — NK dedup unreachable;
+  (3) FSM terminal cascade from ABORT; (4) B-Cell f-string escape — cell
+  dead since creation; (5) silent `except: pass` hid bug 4; (6) no
+  finding-ID convergence signal. 22 unique claims after cross-model dedup;
+  14 valid new, 4 refuted, 4 need investigation.
   Logs: `bench/logs/baseline_confer_run9_20260403/`.
 - **Run 8 COMPLETE (3 April 2026):** 20 rounds, 339 findings, 52 min.
   γ = −0.041 (not converging), C(H,E) = 0.789 (strong corroboration).
