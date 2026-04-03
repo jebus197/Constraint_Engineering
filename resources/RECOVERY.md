@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 April 2026 12:18 BST
+Last updated: 3 April 2026 21:41 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,26 +19,58 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (3 April 2026, 00:59 BST)
+## Current Pending Work (3 April 2026, 21:41 BST)
 
-Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b, 8 ALL COMPLETE.
-Run 7b BUILD SESSION COMPLETE. Run 9 INFRASTRUCTURE BUILT.
+Experiments 12–18 ALL COMPLETE. Runs 5–10 ALL COMPLETE.
+
+RUN 11 PREP (3 April 2026, 21:41 BST):
+FOUR FIXES NEEDED before launch:
+1. γ_ids prefix stripping bug: line 969 of run_baseline_confer.py does
+   `base_id = f.finding_id` — comment says "strip model prefix" but doesn't.
+   174 raw IDs vs 104 stripped. γ_ids measures prefix chaos, not novelty.
+2. Sequential read instruction for ALL models: currently only in
+   `_build_decomposed_prompt()` (decomposed path). CC2/Gemini/ChatGPT get
+   full prompt without instruction to read files start-to-finish.
+3. z3 confidence downgrade: `_verify_z3()` returns confidence 0.90 for proofs
+   using abstract symbols with no code grounding. Should be 0.30.
+4. LOGS_DIR → run11, experiment label → "baseline_confer_run11".
+
+γ_ids promotion REJECTED: stripped γ_ids=-0.069 vs γ_novel=0.309. Not tracking.
+Keep as shadow with stripping fix. Zero-novel-ID terminal (3 zeros) still valid.
+
+GEMINI ARCHITECTURAL FINDINGS (for future runs):
+- Cytotoxic T Cell should shift from verification (does the cited code exist?)
+  to falsification (what's the strongest condition that breaks this finding?).
+  Significant rewrite. DEFERRED to Run 12 alongside insect brain.
+- B Cell z3 intent-to-specification gap: LLMs translate claims to z3 by
+  silently restricting domains. z3 "proves" abstract symbols, not runtime
+  constraints. Partial fix (confidence downgrade) in Run 11. Full fix
+  (code-grounded z3 encoding) is an open research problem.
+
+INSECT BRAIN ARCHITECTURE (deferred to Run 12):
+- Reactive coordinator, not deliberative. Gathers/processes/tabulates/commits.
+- Does not think, direct, or evaluate content.
+- Models drive conversation under full CDSFL as peers.
+- Persistence layer = shared workspace (all models read/write directly).
+- Design notes: experimental_notes/Insect_Brain_Architecture_2026-04-03.md
+- Global mind vision: experimental_notes/Global_Mind_Architecture_2026-04-03.md
+
+RUN 10 COMPLETE (3 April 2026, 16:44 BST):
+- 7 rounds, 237 findings, 37 min. FIRST NATURAL CONVERGENCE.
+- DM kappa=1.0 at R6. γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.
+- 174 unique IDs, 26.6% churn (vs Run 9: 84.5%, Run 8: 91.2%).
+- Sequential file delivery replaced sub-area rotation for decomposed models.
+- CC2 excluded from decomposition + wall-clock timeout 5×.
+- FSM checkpoint-replay terminal fix (reset on DIMINISHED during replay).
+- Logs: bench/logs/baseline_confer_run10_20260403/
+- Analysis: experimental_notes/Run10_Results_2026-04-03.md
 
 RUN 8 COMPLETE (3 April 2026, 00:39 BST):
 - 20 rounds, 339 findings, 52 minutes. γ = −0.041, C(H,E) = 0.789
 - Terminated: MAX_ROUNDS (no convergence detected)
 - CRITICAL FINDING: 91.2% churn rate (30 unique finding IDs / 339 total)
 - Task exhausted by Round 4 — all genuine issues found. Rounds 5-19 = restatement.
-- γ detection gap identified: Duane γ measures total rate (flat), not novel rate
-  (declining). Models produce constant-volume output regardless of novelty.
-  FIX: compute γ on deduplicated findings, or after immune filtering.
-- Ω churn guard correctly benched Gemini (R6) and DeepSeek (R10)
-- Immune pipeline (observation mode): 100% UNCERTAIN — expected with CT disabled.
-  CT agent is the critical cell for code-review tasks; B-Cell/NK blind without it.
-- AQO: confidence 0.188, no useful signal (prompt features don't vary on single task)
-- Claude CLI PATH fix applied: _find_claude_cli() discovery in experiment_11_orchestrator.py
 - Analysis: experimental_notes/Run8_Analysis_2026-04-03.md
-- TTS: ~/Desktop/CDSFL_tts/Run8_Analysis_2026-04-03.txt
 - Logs: bench/logs/baseline_confer_run8_20260402/
 
 RUN 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):

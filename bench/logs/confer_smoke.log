@@ -1,0 +1,141 @@
+[17:22:46] ============================================================
+[17:22:46] CONVERSATIONAL CONFER SMOKE TEST
+[17:22:46]   Models: CC2, Gemini
+[17:22:46]   Target: immune_agents.py (47,980 chars)
+[17:22:46]   Max rounds: 8
+[17:22:46]   Convergence: 2 consecutive zero-novel rounds from both models
+[17:22:46]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/confer_smoke_20260403
+[17:22:46] ============================================================
+[17:22:46] 
+────────────────────────────────────────────────────────────
+[17:22:46] Round 0
+[17:22:46] ────────────────────────────────────────────────────────────
+[17:22:46]   Initial prompt: 49,319 chars
+[17:22:46] Dispatching to CC2 (opus) via claude_cli...
+[17:25:27]   [claude-cli:opus] done (160.9s, 9413 chars)
+[17:25:27]   CC2: 9,413 chars, 160.9s
+[17:25:27] 
+────────────────────────────── CC2 ──────────────────────────────
+[17:25:27] I've read the file top to bottom. Here's what I see — starting with the things that would actually break or produce wrong results.
+
+---
+
+**FINDING_ID:** IM_F001
+**SEVERITY:** 0.85
+**FLAW_CLASS:** 1 (logic)
+**DESCRIPTION:** The z3 "if/then" verification is structurally broken. Lines ~370–382: when the regex extracts an if/then pattern, it creates two *unrelated* symbolic booleans `X` and `Y`, then checks if `X ∧ ¬Y` is satisfiable. This is **always** satisfiable — `X` and `Y` have no relationship to each other or to the actual claim content. The regex match groups `if_then.group(1)` and `if_then.group(2)` are extracted but never used. Every if/then claim will hit `SATISFIABLE_COUNTEREXAMPLE` and be `REJECTED`, regardless of whether the claim is true or false.
+
+```python
+X = z3.Bool('X')
+Y = z3.Bool('Y')
+s = z3.Solver()
+s.add(X)
+s.add(z3.Not(Y))
+if s.check() == z3.sat:
+    print("SATISFIABLE_COUNTEREXAMPLE")  # always reaches here
+```
+
+**PROPOSED_FIX:** Either parse the actual claim content into z3 expressions (hard in the general case), or acknowledge this as a stub and return `UNCERTAIN` instead of a misleading `REJECTED` with 0.90 confidence. Minimum safe fix:
+
+```python
+if if_then:
+    # Cannot structurally verify arbitrary natural-language if/then claims
+    print("Z3_UNSTRUCTURED: if/then claim requires manual review")
+```
+
+**VERIFIED:** TRUE
+
+---
+
+**FINDING_ID:** IM_F002
+**SEVERITY:** 0.70
+**FLAW_CLASS:** 1 (logic)
+**DESCRIPTION:** The Helper T-Cell voting logic at lines ~528–545 has an asymmetric threshold design that doesn't work as documented. The comment says "rejection requires 0.6+ net confidence, confirmation requires only 0.4+", but the thresholds are checked as `reject_weight / total >= 0.6` and `confirm_weight / total >= 0.4`. These are *ratios*, not absolute confidences. The problem: if a finding gets one CONFIRMED at 0.5 and one REJECTED at 0.5, then `total = 1.0`, `reject_weight/total = 0.5` (below 0.6), `confirm_weight/total = 0.5` (above 0.4) → C...
+[17:25:27] ────────────────────────────── /CC2 ──────────────────────────────
+
+[17:25:27]   CC2: 10 findings, 10 novel
+[17:25:27]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/confer_smoke_20260403/r0_cc2_20260403T162527Z.json
+[17:25:27] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+[17:25:28]   Gemini: ERROR — RuntimeError: GEMINI_API_KEY / GOOGLE_API_KEY not set
+[17:25:45]   Immune: 40% rejection, autoimmune=False
+[17:25:45] 
+  Round 0 summary: 10 novel findings, 161.6s
+[17:25:45]     CC2: 10 novel
+[17:25:45]     Gemini: 0 novel
+[17:25:45] 
+────────────────────────────────────────────────────────────
+[17:25:45] Round 1
+[17:25:45] ────────────────────────────────────────────────────────────
+[17:25:45]   CC2 prompt: 2,322 chars (includes Gemini's response)
+[17:25:45] Dispatching to CC2 (opus) via claude_cli...
+[17:25:53]   [claude-cli:opus] done (8.1s, 551 chars)
+[17:25:53]   CC2: 551 chars, 8.1s
+[17:25:53] 
+────────────────────────────── CC2 ──────────────────────────────
+[17:25:53] Gemini's response is empty — literally nothing between the delimiters. Either they had no findings, their output was truncated, or something went wrong on their end. There's nothing to agree with, disagree with, or build on.
+
+My existing findings stand as-is. The highest-priority item remains **CC2_IM_F001** (sev 0.85) — the z3 if/then verification being structurally broken. That's the one most likely to produce silently wrong results in practice.
+
+If Gemini does produce actual observations, happy to cross-reference. Until then, nothing changes.
+[17:25:53] ────────────────────────────── /CC2 ──────────────────────────────
+
+[17:25:53]   CC2: 1 findings, 1 novel
+[17:25:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/confer_smoke_20260403/r1_cc2_20260403T162553Z.json
+[17:25:53]   Gemini prompt: 1,322 chars (includes CC2's response)
+[17:25:53] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+[17:25:53]   Gemini: ERROR — RuntimeError: GEMINI_API_KEY / GOOGLE_API_KEY not set
+[17:25:53]   Immune: 0% rejection, autoimmune=False
+[17:25:53] 
+  Round 1 summary: 1 novel findings, 8.1s
+[17:25:53]     CC2: 1 novel
+[17:25:53]     Gemini: 0 novel
+[17:25:53] 
+────────────────────────────────────────────────────────────
+[17:25:53] Round 2
+[17:25:53] ────────────────────────────────────────────────────────────
+[17:25:53]   CC2 prompt: 2,457 chars (includes Gemini's response)
+[17:25:53] Dispatching to CC2 (opus) via claude_cli...
+[17:26:11]   [claude-cli:opus] done (17.5s, 1991 chars)
+[17:26:11]   CC2: 1,991 chars, 17.5s
+[17:26:11] 
+────────────────────────────── CC2 ──────────────────────────────
+[17:26:11] Gemini sent an empty response — nothing between the delimiters. I flagged this already (CC2_UNSTRUCTURED, sev=0.30). Three possible explanations: they had no findings, their output was truncated, or the handoff format dropped their content. No way to distinguish from here.
+
+Since there's nothing to agree or disagree with, I'll stand on my existing findings. The high-severity ones that matter most:
+
+**CC2_IM_F001 (0.85)** — the z3 if/then verification is structurally broken. This is the most consequential bug: the regex-based extraction of conditionals from natural-language claims can't reliably produce valid z3 constraints, so the entire formal verification path for conditional claims silently degrades to UNCERTAIN. That's a correctness failure in the core verification pipeline.
+
+**CC2_IM_F002 (0.70)** — Helper T-Cell voting thresholds are asymmetric in a way that doesn't serve the design intent. The "confirm" threshold is stricter than "reject," which means the system is biased toward rejection under uncertainty. Whether that's a bug or a feature depends on the designer's intent, but it's not documented as intentional, so I'm treating it as a flaw.
+
+**CC2_IM_F003 (0.65)** — thread-safety on the `triaged` list during parallel NK cell verification. `list.append` is CPython-GIL-safe in practice, but that's an implementation detail, not a language guarantee. A `concurrent.futures` pattern writing to a shared list without a lock is a latent race condition.
+
+The rest (F004–F008) are real but lower consequence — the kind of things that cause confusing behaviour in edge cases rather than systematic failures.
+
+If Gemini's output was genuinely truncated and they had findings, I'd want to see them — particularly anything about cross-module interface assumptions, since that's the class of bug most likely to survive single-reviewer analysis. But I can't evaluate what doesn't exist.
+
+Nothing new to add beyond what I've already documented. The findings stand as reported.
+[17:26:11] ────────────────────────────── /CC2 ──────────────────────────────
+
+[17:26:11]   CC2: 1 findings, 0 novel
+[17:26:11]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/confer_smoke_20260403/r2_cc2_20260403T162611Z.json
+[17:26:11]   Gemini prompt: 2,762 chars (includes CC2's response)
+[17:26:11] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+[17:26:11]   Gemini: ERROR — RuntimeError: GEMINI_API_KEY / GOOGLE_API_KEY not set
+[17:26:11]   Immune: 100% rejection, autoimmune=False
+[17:26:11] 
+  Round 2 summary: 0 novel findings, 17.5s
+[17:26:11]     CC2: 0 novel
+[17:26:11]     Gemini: 0 novel
+[17:26:11]   Zero-novel streak: 1/2
+[17:26:11] 
+────────────────────────────────────────────────────────────
+[17:26:11] Round 3
+[17:26:11] ────────────────────────────────────────────────────────────
+[17:26:11]   CC2 prompt: 2,592 chars (includes Gemini's response)
+[17:26:11] Dispatching to CC2 (opus) via claude_cli...

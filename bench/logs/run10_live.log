@@ -1,0 +1,1577 @@
+[16:07:16] 
+RESUME mode — skipping preflight
+[16:07:16] ============================================================
+[16:07:16] BASELINE CONFER RUN 10: CC2 + CX + Gemini + DeepSeek + ChatGPT — B-Cell live, γ_ids shadow, visibility fix
+[16:07:16]   Max rounds: 20
+[16:07:16]   Wall clock cap: 28800s
+[16:07:16]   Task: immune (6 source files, ~244K chars)
+[16:07:16]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403
+[16:07:16] ============================================================
+[16:07:16]   Immune source files: 6 files, 293,287 raw chars → 293,609 chars with headers
+[16:07:16]   Checkpoint found: round 5 (2026-04-03T14:23:50.376244+00:00)
+[16:07:16]   RESUMED from round 6 (223 findings across 6 completed rounds)
+[16:07:17]   Replay round 3: FSM hit terminal (FSM is terminal (reason=TerminationReason.DIMINISHED). No further transitions.) — resetting to ROUND_3
+[16:07:20]   Replay round 5: FSM hit terminal (FSM is terminal (reason=TerminationReason.DIMINISHED). No further transitions.) — resetting to ROUND_5
+[16:07:20]   DynamicManager state replayed through round 5
+[16:07:20] 
+────────────────────────────────────────────────────────────
+[16:07:20] Round 6 (adaptive)
+[16:07:20] ────────────────────────────────────────────────────────────
+[16:07:20]   Base prompt (no findings): 301,682 chars
+[16:07:20]   γ_input: β=0.613, γ=0.387, R²=0.995, windows=8
+[16:07:20]   Dispatch recommendation (observation): multiturn_fff — Long (301,682 chars) + complex (γ=0.387). Multi-turn WAIT steps with FFF synthesis.
+[16:07:20]   Parallel dispatch: 5 models simultaneously
+[16:07:20]   CC2: findings context 49,840 chars (budget=80,000, full)
+[16:07:20]   Codex: findings context 49,183 chars (budget=80,000, full)
+[16:07:20]   ChatGPT: findings context 49,178 chars (budget=80,000, full)
+[16:07:20]   Gemini: findings context 51,324 chars (budget=80,000, full)
+[16:07:20]   DeepSeek: findings context 27,262 chars (budget=30,000, RESET)
+[16:07:20]   CC2: composed directives (12035 chars, CID=351daae29180...)
+[16:07:20]   ChatGPT: composed directives (5705 chars, CID=c7d9b9d32659...)
+[16:07:20]   Gemini: composed directives (5705 chars, CID=eaa7035a990f...)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_baseline_confer.py:198: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0287, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+[16:07:20]   DeepSeek: composed directives (2649 chars, CID=d1daec29baf2...)
+[16:07:20]   DeepSeek: decomposed model — using multi-turn sequential file delivery (skipping sub-area rotation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_baseline_confer.py:198: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0287, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+[16:07:20]   DeepSeek: MULTI-TURN FALLBACK — 13 chunks, ~329,236 chars total
+[16:07:20]   Codex: composed directives (2649 chars, CID=9c79a1881de6...)
+[16:07:20]   Decomposed dispatch: deepseek/deepseek-reasoner, 13 chunks, ~329,236 chars
+[16:07:20]   Codex: decomposed model — using multi-turn sequential file delivery (skipping sub-area rotation)
+[16:07:20]   Codex: MULTI-TURN FALLBACK — 13 chunks, ~351,157 chars total
+[16:07:20]   Decomposed dispatch: openrouter/openai/gpt-5.4, 13 chunks, ~351,157 chars
+[16:07:20]   [openrouter:openai/gpt-5.4] delivering chunk 1/14 (57,519 chars, Preamble + instructions)
+[16:07:20]   [deepseek:deepseek-reasoner] delivering chunk 1/14 (35,598 chars, Preamble + instructions)
+[16:07:21] Dispatching to CC2 (opus) via claude_cli...
+[16:07:21] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+[16:07:21] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[16:07:23]   [openrouter:openai/gpt-5.4] delivering chunk 2/14 (30,263 chars, bench/dm/_immune.py (103,207 chars) part 1)
+[16:07:24]   [openrouter:openai/gpt-5.4] delivering chunk 3/14 (30,254 chars, bench/dm/_immune.py (103,207 chars) part 2)
+[16:07:25]   [openrouter:openai/gpt-5.4] delivering chunk 4/14 (32,128 chars, bench/dm/_immune.py (103,207 chars) part 3)
+[16:07:26]   [openrouter:openai/gpt-5.4] delivering chunk 5/14 (10,608 chars, bench/dm/_immune.py (103,207 chars) part 4)
+[16:07:27]   [openrouter:openai/gpt-5.4] delivering chunk 6/14 (30,144 chars, bench/dm/_manager.py (74,421 chars) part 1)
+[16:07:28]   [deepseek:deepseek-reasoner] delivering chunk 2/14 (30,263 chars, bench/dm/_immune.py (103,207 chars) part 1)
+[16:07:30]   [openrouter:openai/gpt-5.4] delivering chunk 7/14 (30,599 chars, bench/dm/_manager.py (74,421 chars) part 2)
+[16:07:31]   [openrouter:openai/gpt-5.4] delivering chunk 8/14 (13,725 chars, bench/dm/_manager.py (74,421 chars) part 3)
+[16:07:32]   [openrouter:openai/gpt-5.4] delivering chunk 9/14 (25,830 chars, bench/dm/_failure_handler.py (25,773 chars))
+[16:07:34]   [openrouter:openai/gpt-5.4] delivering chunk 10/14 (24,795 chars, bench/dm/_types.py (24,748 chars))
+[16:07:34]   [deepseek:deepseek-reasoner] delivering chunk 3/14 (30,254 chars, bench/dm/_immune.py (103,207 chars) part 2)
+[16:07:35]   [openrouter:openai/gpt-5.4] delivering chunk 11/14 (17,211 chars, bench/dm/_convergence.py (17,158 chars))
+[16:07:37]   [openrouter:openai/gpt-5.4] delivering chunk 12/14 (30,240 chars, bench/immune_agents.py (47,980 chars) part 1)
+[16:07:38]   [openrouter:openai/gpt-5.4] delivering chunk 13/14 (17,841 chars, bench/immune_agents.py (47,980 chars) part 2)
+[16:07:41]   [deepseek:deepseek-reasoner] delivering chunk 4/14 (32,128 chars, bench/dm/_immune.py (103,207 chars) part 3)
+[16:07:44]   [openrouter:openai/gpt-5.4] WARNING: chunk 13 got non-WAITING response (903 chars): [
+  {
+    "finding_id": "IM_FNEW_001",
+    "severity": 0.87,
+    "flaw_class": 5...
+[16:07:44]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 14/14)
+[16:07:50]   [deepseek:deepseek-reasoner] delivering chunk 5/14 (10,608 chars, bench/dm/_immune.py (103,207 chars) part 4)
+[16:08:10]   [deepseek:deepseek-reasoner] WARNING: chunk 5 got non-WAITING response (0 chars): ...
+[16:08:10]   [deepseek:deepseek-reasoner] delivering chunk 6/14 (30,144 chars, bench/dm/_manager.py (74,421 chars) part 1)
+[16:08:16]   [openrouter:openai/gpt-5.4] synthesis complete (56.1s, 12,241 chars)
+[16:08:16]   Codex: multi-turn succeeded (56.1s, 12,241 chars)
+[16:08:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/round6_codex_20260403T150816Z.json
+[16:08:16]   Codex: sequential delivery OK (56.1s)
+[16:08:16] 
+──────────────────────────────────────── Codex RESPONSE (sequential) ────────────────────────────────────────
+[16:08:16] FINDING_ID: IM_FNEW_001  
+SEVERITY: 0.87  
+FLAW_CLASS: 5  
+ABSTRACTION_INDEX: 0.78  
+DESCRIPTION:  
+**FIND:** `bench/dm/_manager.py`, `apply_diagnosis()`, pathology-to-chain routing block near the start of the method. Per-model diagnoses emitted by `DetectorHealthMonitor.record_model_round()` use suffixed keys like `parser_yield_{model_id}`, `monotonic_decline_{model_id}`, and `cpf_spike_{model_id}`, but `apply_diagnosis()` only accepts exact chain-key matches or a tiny fallback set (`kappa`, `vocab_saturation`, `findings_decline`, `model_failure`). Evidence: `_REMEDIATION_CHAINS` defines base chains for `"parser_yield"`, `"monotonic_decline"`, and `"cpf_spike"`, while `_immune.py` emits `pathology_key=f"parser_yield_{model_id}"`, `f"monotonic_decline_{model_id}"`, and `f"cpf_spike_{model_id}"`. Those diagnoses therefore return through `if chain_key is None: return None`, making their remediation chains unreachable.
+
+**FIX:** Replace the routing block so suffixed per-model keys are canonicalised to base chain keys before fallback matching.
+
+<<<<
+        chain_key = None
+        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:
+            chain_key = diagnosis.pathology_key
+        elif diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
+            chain_key = "kappa_stuck"
+        elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
+            chain_key = "vocab_saturation"
+        elif diagnosis.detector == "findings_decline":
+            chain_key = "findings_decline"
+        elif diagnosis.detector == "model_failure":
+            chain_key = "model_failure"
+====
+        chain_key = None
+        raw_key = diagnosis.pathology_key or ""
+
+        if raw_key in self._REMEDIATION_CHAINS:
+            chain_key = raw_key
+        else:
+            for base_key in (
+                "model_failure",
+                "parser_yield",
+                "monotonic_decline",
+                "cpf_spike",
+            ):
+                if raw_key == base_key or raw_key.startswith(f"{base_key}_"):
+                    chain_key = base_key
+                    break
+
+        if chain_key is None:
+            if diagnosis.detector == "kappa" and "stuck" in diagnosis.pathology.lower():
+                chain_key = "kappa_stuck"
+            elif diagnosis.detector == "vocab_saturation" and "premature" in diagnosis.pathology.lower():
+                chain_key = "vocab_saturation"
+            elif diagnosis.detector == "findings_decline":
+                chain_key = "findings_decline"
+            elif diagnosis.detector == "model_failure":
+                chain_key = "model_failure"
+            elif diagnosis.detector == "parser_yield":
+                chain_key = "parser_yield"
+            elif diagnosis.detector == "monotonic_decline":
+                chain_key = "monotonic_decline"
+            elif diagnosis.detector == "cpf_spike":
+                chain_key = "cpf_spike"
+>>>>  
+
+**FOLLOW:** This fix restores reachability of the existing chains, but it also exposes that remediation state is still stored under the shared base `chain_key` in later `apply_diagnosis()` logic. That means two different models with `parser_yield_*` or `cpf_spike_*` pathologies will still collide in `self.health_monitor._remediation_state[chain_key]`, causing one model’s remediation lifecycle to suppress or escalate another’s. That downstream defect is architectural but already known in prior findings about shared-key remediation state; this fix does not create it, it reveals it more consistently by allowing those chains to execute at all.
+
+---
+
+FINDING_ID: IM_FNEW_002  
+SEVERITY: 0.83  
+FLAW_CLASS: 5  
+ABSTRACTION_INDEX: 0.71  
+DESCRIPTION:  
+**FIND:** `bench/dm/_manager.py`, `approve_deferred_remediation()`, damping check. The deferred-approval path applies detector-only damping and ignores the affected model. Evidence: the loop checks only `adj.get("detector") == deferred["diagnosis"]["detector"]` and round distance. In `apply_diagnosis()`, the live path was already refined to use `(detector, model_id)` so per-model pathologies do not damp each other. Deferred approval regresses that fix: approving a deferred remediation for one model can be blocked by a recent adjustment on a different model emitted by the same detector family.
+
+**FIX:** Replace the deferred damping block with the same detector+model scoping used in `apply_diagnosis()`.
+
+<<<<
+        current_round = self._process_round_count
+        for adj in self._immune_adjustments:
+            if (adj.get("detector") == deferred["diagnosis"]["detector"]
+                    and current_round - adj["round"] < self.config.immune_damping_rounds):
+                return None  # Damping: too soon to apply this deferred fix
+====
+        current_round = self._process_round_count
+        deferred_model = deferred["diagnosis"].get("evidence", {}).get("model_id", "")
+        for adj in self._immune_adjustments:
+            adj_model = adj.get("model_id", "")
+            if (
+                adj.get("detector") == deferred["diagnosis"]["detector"]
+                and adj_model == deferred_model
+                and current_round - adj["round"] < self.config.immune_damping_rounds
+            ):
+                return None  # Damping: too soon to apply this deferred fix
+>>>>  
+
+**FOLLOW:** This fix depends on `_record_adjustment()` records actually carrying `model_id`. Many `_apply_transform()` payloads for per-model transforms still omit `model_id`, so `adj_model` remains empty and damping stays under-scoped for those transforms. Specifically `add_to_pre_decompose`, `add_parsing_directive`, `add_verification_directive`, and `flag_verification_unreliable` need to include `model_id` in their adjustment payloads for this corrected damping logic to work end-to-end. That downstream gap is already visible in prior findings about missing `model_id` propagation.
+
+---
+
+FINDING_ID: IM_FNEW_003  
+SEVERITY: 0.81  
+FLAW_CLASS: 1  
+ABSTRACTION_INDEX: 0.66  
+DESCRIPTION:  
+**FIND:** `bench/dm/_manager.py`, `reject_deferred_remediation()`. Rejection changes only the queue entry status and leaves any active remediation state untouched. Evidence: the method body is just bounds check plus `self._deferred_remediations[index]["status"] = "REJECTED"; return True`. But deferred items are created from a specific chain step and may be re-diagnosed repeatedly. Without updating health-monitor state, the next identical diagnosis recomputes from the same `chain_idx`, queues the same DEFER step again, and never advances past a human-rejected step. This creates a permanent review loop for chains whose current step is DEFER.
+
+**FIX:** Advance remediation state to the next chain step when a deferred item is explicitly rejected, so the system records that this step was considered and rejected.
+
+<<<<
+    def reject_deferred_remediation(self, index: int) -> bool:
+        """Reject a deferred remediation.
+
+        Args:
+            index: Index into _deferred_remediations list.
+
+        Returns:
+            True if rejected, False if index invalid.
+        """
+        if index < 0 or index >= len(self._deferred_remediations):
+            return False
+        self._deferred_remediations[index]["status"] = "REJECTED"
+        return True
+====
+    def reject_deferred_remediation(self, index: int) -> bool:
+        """Reject a deferred remediation.
+
+        Args:
+            index: Index into _deferred_remediations list.
+
+        Returns:
+            True if rejected, False if index invalid.
+        """
+        if index < 0 or index >= len(self._deferred_remediations):
+            return False
+
+        deferred = self._deferred_remediations[index]
+        deferred["status"] = "REJECTED"
+
+        chain_key = deferred.get("chain_key", "")
+        chain = self._REMEDIATION_CHAINS.get(chain_key, [])
+        next_idx = deferred.get("chain_idx", 0) + 1
+
+        if chain_key:
+            if next_idx >= len(chain):
+                self.health_monitor.record_chain_exhaustion(chain_key)
+                self.health_monitor._remediation_state.pop(chain_key, None)
+            else:
+                existing = self.health_monitor._remediation_state.get(chain_key, {})
+                self.health_monitor._remediation_state[chain_key] = {
+                    "chain_idx": next_idx,
+                    "applied_round": existing.get("applied_round", deferred.get("round", -1)),
+                    "metric_at_apply": existing.get(
+                        "metric_at_apply",
+                        self._get_current_metric(deferred["step"]["target_metric"]),
+                    ),
+                    "target_metric": deferred["step"]["target_metric"],
+                    "verification_window": existing.get("verification_window", 2),
+                    "chain_length": len(chain),
+                }
+        return True
+>>>>  
+
+**FOLLOW:** This fix makes rejection semantically equivalent to “skip this step”, which is the only way to prevent infinite re-queueing. Downstream, `apply_diagnosis()` will now pick up the advanced `chain_idx` on the next diagnosis. If the next step is also DEFER, it will queue that next step instead of the old one. The same shared-key state collision issue remains for per-model pathologies, so two models sharing a base `chain_key` can still interfere with each other’s post-rejection progression.
+
+---
+
+FINDING_ID: IM_FNEW_004  
+SEVERITY: 0.78  
+FLAW_CLASS: 5  
+ABSTRACTION_INDEX: 0.61  
+DESCRIPTION:  
+**FIND:** `bench/dm/_immune.py`, `check_dispatch_health()`, verification miscalibration recovery branch. After hysteresis-based recovery, the code clears `_pathology_counts[key]` and `_resolution_counter[key]` but does not record the recovery as a natural resolution. Evidence: in the `else` branch for non-flagged models, the code executes only:
+`self._pathology_counts[key] = 0` and `self._resolution_counter[key] = 0`. This differs from the recovery logic used elsewhere in `record_round()` and `record_model_round()`, which increments resolved state and calls `record_natural_resolution(...)` when a pathology disappears without remediation. That omission biases `false_positive_rate` downward for verification-miscalibration diagnoses and underreports self-resolving detector errors.
+
+**FIX:** Record resolved count and natural resolution before clearing the counters.
+
+<<<<
+                    key = f"verif_miscal_{model_id}"
+                    if self._pathology_counts.get(key, 0) > 0:
+                        self._resolution_counter[key] = (
+                            self._resolution_counter.get(key, 0) + 1
+                        )
+                        hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                        if self._resolution_counter.get(key, 0) >= hysteresis:
+                            self._pathology_counts[key] = 0
+                            self._resolution_counter[key] = 0
+====
+                    key = f"verif_miscal_{model_id}"
+                    if self._pathology_counts.get(key, 0) > 0:
+                        self._resolution_counter[key] = (
+                            self._resolution_counter.get(key, 0) + 1
+                        )
+                        hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                        if self._resolution_counter.get(key, 0) >= hysteresis:
+                            self._resolved_counts[key] = (
+                                self._resolved_counts.get(key, 0) + 1
+                            )
+                            if "verification_miscalibration" not in self._remediation_state:
+                                self.record_natural_resolution(key)
+                            self._pathology_counts[key] = 0
+                            self._resolution_counter[key] = 0
+>>>>  
+
+**FOLLOW:** This change feeds `false_positive_rate` and self-diagnosis with the missing natural resolutions. Because `false_positive_rate` currently counts all diagnoses with dict evidence except `remediation_outcome`, these additional natural resolutions will increase the apparent false-positive rate for verification diagnoses as intended. No new interface changes are introduced.
+[16:08:16] ──────────────────────────────────────── /Codex ────────────────────────────────────────
+
+[16:08:16]   Codex: 4 findings parsed (sequential delivery)
+[16:08:16]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/r6_adaptive_codex_20260403T150816Z.json
+[16:08:29]   [deepseek:deepseek-reasoner] delivering chunk 7/14 (30,599 chars, bench/dm/_manager.py (74,421 chars) part 2)
+[16:08:47]   [openrouter:openai/gpt-5.4] done (84.9s, 34244 chars)
+[16:08:47]   ChatGPT: 34244 chars, 87.2s
+[16:08:47] 
+──────────────────────────────────────── ChatGPT RESPONSE ────────────────────────────────────────
+[16:08:47] FINDING_ID: IM_F071
+SEVERITY: 0.91
+FLAW_CLASS: 5
+ABSTRACTION_INDEX: 0.82
+DESCRIPTION: FIND: `bench/dm/_manager.py`, `process_round()`, failure detection block near `for model_id, response in responses.items()`. Models absent from `responses` are never entered into `failures`, never passed through `FailureHandler.detect_failure()`, never get `role_assignment.record_failure(..., True)`, and cannot trigger recovery or abort policy. Evidence: the loop iterates only over `responses.items()`, while in-scope immune code later explicitly treats `mid not in responses` as a failure signal for `record_model_round()`. That creates a split-brain failure model: the immune layer sees a missing response as failure, but the actual failure handler/fsm path ignores it. This is correctness-critical because transport failure on missing response is exactly the kind of event that should drive retry/exclusion/abort.  
+FIX: Replace the response-only iteration with iteration over all configured models and synthesize an EMPTY response for missing models so the typed failure pipeline sees them.
+
+<<<<
+        for model_id, response in responses.items():
+            failure_type = self.failure_handler.detect_failure(response)
+            failures[model_id] = failure_type
+
+            if failure_type is not None:
+                action = self.failure_handler.get_recovery(
+                    model_id, round_idx, failure_type
+                )
+                recovery_actions[model_id] = action.value
+                self.role_assignment.record_failure(model_id, True)
+
+                if action == RecoveryAction.ABORT:
+                    if not self.config.no_exclusion_mode:
+                        critical_failure = True
+                    # In no_exclusion_mode, ABORT is logged but doesn't
+                    # kill the FSM. The runner overrides it to decomposed.
+            else:
+                self.role_assignment.record_failure(model_id, False)
+====
+        for model in self.models:
+            model_id = model.model_id
+            response = responses.get(model_id)
+            if response is None:
+                response = ModelResponse(
+                    model_id=model_id,
+                    round_idx=round_idx,
+                    content="",
+                    response_time=0.0,
+                    parseable=False,
+                    format_compliant=False,
+                    finding_count=0,
+                    mean_abstraction=0.0,
+                )
+
+            failure_type = self.failure_handler.detect_failure(response)
+            failures[model_id] = failure_type
+
+            if failure_type is not None:
+                action = self.failure_handler.get_recovery(
+                    model_id, round_idx, failure_type
+                )
+                recovery_actions[model_id] = action.value
+                self.role_assignment.record_failure(model_id, True)
+
+                if action == RecoveryAction.ABORT:
+                    if not self.config.no_exclusion_mode:
+                        critical_failure = True
+                    # In no_exclusion_mode, ABORT is logged but doesn't
+                    # kill the FSM. The runner overrides it to decomposed.
+            else:
+                self.role_assignment.record_failure(model_id, False)
+>>>>
+
+FOLLOW: This fix changes downstream immune semantics and should be propagated.  
+1. `process_round()` per-model immune feed should stop re-deriving failure from response presence/parseability and instead reuse `failures[mid] is not None` or a scoped subset of hard failure types, otherwise the old inconsistency remains.  
+2. `RoundResult.failures` will now include every configured model, including absent ones; any consumer assuming only responding models appear must be updated.  
+3. Missing-response models can now drive `FailureHandler.should_abort()` via exclusion/PM failure, which is the intended closed-loop behavior.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F072
+SEVERITY: 0.89
+FLAW_CLASS: 1
+ABSTRACTION_INDEX: 0.79
+DESCRIPTION: FIND: `bench/dm/_manager.py`, `apply_diagnosis()`, DEFER branch. Deferred remediations are queued every time the same diagnosis recurs; there is no deduplication by `(chain_key, chain_idx, target model/status=PENDING)`. Evidence: the DEFER block unconditionally appends a new dict to `self._deferred_remediations` and returns. For persistent pathologies such as `findings_decline`, `verification_miscalibration` step 1, or `kappa_stuck` step 2, each round can enqueue another identical pending item. This creates an unbounded duplicate approval queue and breaks idempotency of human review.  
+FIX: Deduplicate pending deferred entries before appending.
+
+<<<<
+        if risk == "DEFER":
+            deferred = {
+                "chain_key": chain_key,
+                "chain_idx": chain_idx,
+                "step": step,
+                "diagnosis": {
+                    "detector": diagnosis.detector,
+                    "pathology": diagnosis.pathology,
+                    "severity": diagnosis.severity,
+                    "evidence": diagnosis.evidence,
+                },
+                "round": round_idx,
+                "timestamp": time.time(),
+                "status": "PENDING",
+                "rationale": (
+                    f"Remediation '{step['description']}' classified as DEFER "
+                    f"(risk of regression or structural change). Awaiting human "
+                    f"review before application."
+                ),
+            }
+            self._deferred_remediations.append(deferred)
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=(
+                        f"[IMMUNE:DEFER] {step['description']} "
+                        f"(chain {chain_key} step {chain_idx}) — "
+                        f"requires human approval. Queued for review."
+                    ),
+                    metadata={"deferred_remediation": True, **deferred},
+                )
+            )
+            return None  # Not applied — queued
+====
+        if risk == "DEFER":
+            diag_model = diagnosis.evidence.get("model_id", "")
+            for existing in self._deferred_remediations:
+                existing_model = existing.get("diagnosis", {}).get("evidence", {}).get("model_id", "")
+                if (
+                    existing.get("status") == "PENDING"
+                    and existing.get("chain_key") == chain_key
+                    and existing.get("chain_idx") == chain_idx
+                    and existing_model == diag_model
+                ):
+                    return None  # Already queued
+
+            deferred = {
+                "chain_key": chain_key,
+                "chain_idx": chain_idx,
+                "step": step,
+                "diagnosis": {
+                    "detector": diagnosis.detector,
+                    "pathology": diagnosis.pathology,
+                    "severity": diagnosis.severity,
+                    "evidence": diagnosis.evidence,
+                },
+                "round": round_idx,
+                "timestamp": time.time(),
+                "status": "PENDING",
+                "rationale": (
+                    f"Remediation '{step['description']}' classified as DEFER "
+                    f"(risk of regression or structural change). Awaiting human "
+                    f"review before application."
+                ),
+            }
+            self._deferred_remediations.append(deferred)
+            self.event_stream.emit(
+                ManagerEvent(
+                    event_type=ManagerEventType.STOP_CHECK,
+                    model_id="system",
+                    round_idx=round_idx,
+                    detail=(
+                        f"[IMMUNE:DEFER] {step['description']} "
+                        f"(chain {chain_key} step {chain_idx}) — "
+                        f"requires human approval. Queued for review."
+                    ),
+                    metadata={"deferred_remediation": True, **deferred},
+                )
+            )
+            return None  # Not applied — queued
+>>>>
+
+FOLLOW:  
+1. `pending_remediations` and human approval UI/reporting will now show one actionable item per outstanding deferred fix instead of repeated copies.  
+2. If the design wants re-queuing after rejection, current fix preserves that because only `PENDING` entries are deduped.  
+3. Similar idempotency should be considered for `approve_deferred_remediation()` to prevent duplicate side effects when the same transform was already manually applied elsewhere.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F073
+SEVERITY: 0.86
+FLAW_CLASS: 5
+ABSTRACTION_INDEX: 0.76
+DESCRIPTION: FIND: `bench/dm/_immune.py`, `record_model_round()`, parser-yield and cpf-spike branches. These pathologies increment `_pathology_counts[key]` on detection but never reset `_resolution_counter[key]` or resolve/clear on recovery. Evidence: `monotonic_decline` has explicit hysteresis-backed resolution logic; `parser_yield` and `cpf_spike` do not. Once triggered, their adaptive sensitivity state and false-positive accounting can only grow stale. This distorts persistence counts and makes recurring-vs-resolved pathology statistics incorrect.  
+FIX: Add explicit recovery paths with hysteresis for both `parser_yield_{model_id}` and `cpf_spike_{model_id}`.
+
+<<<<
+        tau_chars = 2000  # substantive response threshold
+        if response_chars > tau_chars and finding_count == 0 and not failed:
+            key = f"parser_yield_{model_id}"
+            persistence = self._pathology_counts.get(key, 0)
+            self._pathology_counts[key] = persistence + 1
+            diag = DetectorDiagnosis(
+                detector="parser_yield",
+                pathology=(
+                    f"{model_id}: {response_chars} chars produced but "
+                    f"0 findings parsed (φ=0). Format divergence likely."
+                ),
+                severity="WARNING" if persistence < 1 else "CRITICAL",
+                recommended_action=(
+                    f"Re-extract findings from {model_id} response using "
+                    f"format-adaptive parser. Check if model uses non-standard "
+                    f"finding ID format (e.g. bold markdown vs FINDING_ID prefix)."
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "response_chars": response_chars,
+                    "finding_count": finding_count,
+                    "format_yield": 0.0,
+                    "occurrence": persistence + 1,
+                },
+                pathology_key=f"parser_yield_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                round_idx=len(self._kappa_history),
+            )
+            results.append(diag)
+====
+        tau_chars = 2000  # substantive response threshold
+        key = f"parser_yield_{model_id}"
+        if response_chars > tau_chars and finding_count == 0 and not failed:
+            persistence = self._pathology_counts.get(key, 0)
+            self._pathology_counts[key] = persistence + 1
+            self._resolution_counter[key] = 0
+            diag = DetectorDiagnosis(
+                detector="parser_yield",
+                pathology=(
+                    f"{model_id}: {response_chars} chars produced but "
+                    f"0 findings parsed (φ=0). Format divergence likely."
+                ),
+                severity="WARNING" if persistence < 1 else "CRITICAL",
+                recommended_action=(
+                    f"Re-extract findings from {model_id} response using "
+                    f"format-adaptive parser. Check if model uses non-standard "
+                    f"finding ID format (e.g. bold markdown vs FINDING_ID prefix)."
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "response_chars": response_chars,
+                    "finding_count": finding_count,
+                    "format_yield": 0.0,
+                    "occurrence": persistence + 1,
+                },
+                pathology_key=f"parser_yield_{model_id}",
+                round_idx=len(self._kappa_history),
+            )
+            results.append(diag)
+        elif self._pathology_counts.get(key, 0) > 0:
+            self._resolution_counter[key] = self._resolution_counter.get(key, 0) + 1
+            hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+            if self._resolution_counter[key] >= hysteresis:
+                self._resolved_counts[key] = self._resolved_counts.get(key, 0) + 1
+                if key not in self._remediation_state:
+                    self.record_natural_resolution(key)
+                self._pathology_counts[key] = 0
+                self._resolution_counter[key] = 0
+>>>>
+
+<<<<
+                if std_cpf > 0 and current_cpf > mean_cpf + 2 * std_cpf:
+                    key = f"cpf_spike_{model_id}"
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    diag = DetectorDiagnosis(
+                        detector="cpf_spike",
+                        pathology=(
+                            f"{model_id}: cost-per-finding {current_cpf:.1f}s "
+                            f"exceeds 2σ (mean={mean_cpf:.1f}s, σ={std_cpf:.1f}s)"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Model {model_id} efficiency collapse: spending "
+                            f"{current_cpf:.0f}s per finding vs historical "
+                            f"{mean_cpf:.0f}s. Consider reducing prompt complexity, "
+                            f"adjusting decomposition, or benching temporarily."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "current_cpf": current_cpf,
+                            "mean_cpf": mean_cpf,
+                            "std_cpf": std_cpf,
+                            "threshold": mean_cpf + 2 * std_cpf,
+                            "occurrence": persistence + 1,
+                        },
+                        pathology_key=f"cpf_spike_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                        round_idx=len(self._kappa_history),
+                    )
+                    results.append(diag)
+====
+                key = f"cpf_spike_{model_id}"
+                if std_cpf > 0 and current_cpf > mean_cpf + 2 * std_cpf:
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    self._resolution_counter[key] = 0
+                    diag = DetectorDiagnosis(
+                        detector="cpf_spike",
+                        pathology=(
+                            f"{model_id}: cost-per-finding {current_cpf:.1f}s "
+                            f"exceeds 2σ (mean={mean_cpf:.1f}s, σ={std_cpf:.1f}s)"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Model {model_id} efficiency collapse: spending "
+                            f"{current_cpf:.0f}s per finding vs historical "
+                            f"{mean_cpf:.0f}s. Consider reducing prompt complexity, "
+                            f"adjusting decomposition, or benching temporarily."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "current_cpf": current_cpf,
+                            "mean_cpf": mean_cpf,
+                            "std_cpf": std_cpf,
+                            "threshold": mean_cpf + 2 * std_cpf,
+                            "occurrence": persistence + 1,
+                        },
+                        pathology_key=f"cpf_spike_{model_id}",
+                        round_idx=len(self._kappa_history),
+                    )
+                    results.append(diag)
+                elif self._pathology_counts.get(key, 0) > 0:
+                    self._resolution_counter[key] = self._resolution_counter.get(key, 0) + 1
+                    hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                    if self._resolution_counter[key] >= hysteresis:
+                        self._resolved_counts[key] = self._resolved_counts.get(key, 0) + 1
+                        if key not in self._remediation_state:
+                            self.record_natural_resolution(key)
+                        self._pathology_counts[key] = 0
+                        self._resolution_counter[key] = 0
+>>>>
+
+FOLLOW:  
+1. `false_positive_rate` now gets proper natural-resolution events for these per-model pathologies, improving Level-3 self-diagnosis inputs.  
+2. `effective_window()` uses `_resolved_counts`; these fixes will now widen sensitivity windows after real recoveries instead of accumulating one-way persistence.  
+3. `_verify_remediation_outcomes()` still verifies these chains using global `finding_count`, which remains a separate known scoping issue, not fixed here.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F074
+SEVERITY: 0.84
+FLAW_CLASS: 1
+ABSTRACTION_INDEX: 0.74
+DESCRIPTION: FIND: `bench/dm/_immune.py`, `self_diagnose()`, self-check 1 and self-check 3 defer-to-human branches. When these branches emit a `self_diagnosis` DEFER diagnosis, they do not update `_last_self_adjust_round[...]`. Evidence: in self-check 1, the `not can_adjust` branch appends a diagnosis but does not set `_last_self_adjust_round[_trigger_key_1]`; in self-check 3, the CRITICAL defer diagnosis is emitted without updating `_last_self_adjust_round[_trigger_key_3]`. As a result the same human-defer diagnosis can fire every round after threshold crossing, defeating damping and flooding outputs. Self-check 3 was already previously noted in one path; self-check 1’s bounds-defer path is still missed and both should be fixed consistently.  
+FIX: Stamp damping state when emitting non-actionable defer diagnoses.
+
+<<<<
+            if not can_adjust:
+                # At bounds — can't widen further, defer to human
+                diag = DetectorDiagnosis(
+                    detector="self_diagnosis",
+                    pathology=(
+                        f"Immune layer self-assessment: success rate "
+                        f"{success_rate:.1%} but detection windows at "
+                        f"maximum bounds (stuck={old_stuck}, mu={old_mu})"
+                    ),
+                    severity="CRITICAL",
+                    recommended_action=(
+                        "DEFER to human: detection windows at 2× original "
+                        "bounds. Manual parameter tuning or chain extension "
+                        "needed."
+                    ),
+                    evidence={
+                        "success_rate": success_rate,
+                        "stuck_window": old_stuck,
+                        "mu_window": old_mu,
+                        "bounds": {
+                            "stuck_max": max_stuck,
+                            "mu_max": max_mu,
+                        },
+                        "round": current_round,
+                    },
+                    round_idx=current_round,
+                )
+                diagnoses.append(diag)
+====
+            if not can_adjust:
+                # At bounds — can't widen further, defer to human
+                self._last_self_adjust_round[_trigger_key_1] = current_round
+                diag = DetectorDiagnosis(
+                    detector="self_diagnosis",
+                    pathology=(
+                        f"Immune layer self-assessment: success rate "
+                        f"{success_rate:.1%} but detection windows at "
+                        f"maximum bounds (stuck={old_stuck}, mu={old_mu})"
+                    ),
+                    severity="CRITICAL",
+                    recommended_action=(
+                        "DEFER to human: detection windows at 2× original "
+                        "bounds. Manual parameter tuning or chain extension "
+                        "needed."
+                    ),
+                    evidence={
+                        "success_rate": success_rate,
+                        "stuck_window": old_stuck,
+                        "mu_window": old_mu,
+                        "bounds": {
+                            "stuck_max": max_stuck,
+                            "mu_max": max_mu,
+                        },
+                        "round": current_round,
+                    },
+                    round_idx=current_round,
+                )
+                diagnoses.append(diag)
+>>>>
+
+<<<<
+        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds:
+            diag = DetectorDiagnosis(
+                detector="self_diagnosis",
+                pathology=(
+                    f"Immune layer self-assessment: chain exhaustion rate "
+                    f"{exhaust_rate:.1%} — remediation chains too short "
+                    f"or pathologies need reclassification"
+                ),
+                severity="CRITICAL",
+                recommended_action=(
+                    "DEFER to human: extend remediation chains or redefine "
+                    "pathology classification. The immune layer cannot "
+                    "self-generate new chain steps."
+                ),
+                evidence={
+                    "exhaustion_rate": exhaust_rate,
+                    "recent_exhaustions": self._chain_exhaustion_history[-5:],
+                    "round": current_round,
+                },
+                round_idx=current_round,
+            )
+            diagnoses.append(diag)
+====
+        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds:
+            self._last_self_adjust_round[_trigger_key_3] = current_round
+            diag = DetectorDiagnosis(
+                detector="self_diagnosis",
+                pathology=(
+                    f"Immune layer self-assessment: chain exhaustion rate "
+                    f"{exhaust_rate:.1%} — remediation chains too short "
+                    f"or pathologies need reclassification"
+                ),
+                severity="CRITICAL",
+                recommended_action=(
+                    "DEFER to human: extend remediation chains or redefine "
+                    "pathology classification. The immune layer cannot "
+                    "self-generate new chain steps."
+                ),
+                evidence={
+                    "exhaustion_rate": exhaust_rate,
+                    "recent_exhaustions": self._chain_exhaustion_history[-5:],
+                    "round": current_round,
+                },
+                round_idx=current_round,
+            )
+            diagnoses.append(diag)
+>>>>
+
+FOLLOW:  
+1. This makes self-diagnosis damping semantics consistent across “acted” and “deferred” outcomes.  
+2. Human-review queues and log volume will drop from every-round spam to once-per-damping-window.  
+3. If operators want every-round reminders, that should be a separate reporting layer, not repeated pathology generation.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F075
+SEVERITY: 0.83
+FLAW_CLASS: 2
+ABSTRACTION_INDEX: 0.71
+DESCRIPTION: FIND: `bench/dm/_manager.py`, `_record_adjustment()` and all callers. Per-model remediations are damped using `adj.get("model_id", "")`, but `_record_adjustment()` never copies `model_id` from `diagnosis.evidence` into the stored adjustment record. Evidence: `apply_diagnosis()` damping logic compares `(adj["detector"] == diagnosis.detector and adj_model == diag_model ...)`, where `adj_model = adj.get("model_id", "")`. `_record_adjustment()` currently writes only parameter/detector/round/severity/timestamp. Therefore every stored adjustment has `adj_model == ""`, so per-model damping only works when the incoming diagnosis also lacks `model_id`; model-scoped remediations for different models collide or fail to scope correctly. This is distinct from earlier detector-vs-target damping findings: even the intended per-model scoping field is never populated.  
+FIX: Persist `model_id` from diagnosis evidence into adjustment records.
+
+<<<<
+        record = {
+            **adjustment,
+            "detector": diagnosis.detector,
+            "round": round_idx,
+            "severity": diagnosis.severity,
+            "timestamp": time.time(),
+        }
+====
+        record = {
+            **adjustment,
+            "detector": diagnosis.detector,
+            "model_id": diagnosis.evidence.get("model_id", ""),
+            "round": round_idx,
+            "severity": diagnosis.severity,
+            "timestamp": time.time(),
+        }
+>>>>
+
+FOLLOW:  
+1. `apply_diagnosis()` and `approve_deferred_remediation()` damping checks will now at least have the data needed for per-model scoping.  
+2. This exposes a remaining issue already known: detector-based damping is still the wrong primary key when multiple transforms share a detector. This fix is necessary but not sufficient.  
+3. Audit logs and emitted event metadata will now include model scope for per-model adjustments, improving traceability.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F076
+SEVERITY: 0.78
+FLAW_CLASS: 5
+ABSTRACTION_INDEX: 0.61
+DESCRIPTION: FIND: `bench/immune_agents.py`, `run_immune_pipeline()`, stage ordering around CT/B-cell/NK futures. The same mutable `triaged` list is passed concurrently to `cytotoxic_t_cell`, `b_cell_verify`, and `nk_cell_verify`, while `nk_cell_verify` mutates each `TriagedFinding` (`is_duplicate`, `duplicate_of`, `similarity`). Evidence: `pool.submit(cytotoxic_t_cell, triaged, ...)`, `pool.submit(b_cell_verify, triaged)`, and `pool.submit(nk_cell_verify, triaged, ...)` all receive the same objects. `b_cell_verify` skips work when `tf.is_duplicate`; CT also filters on `tf.is_duplicate`. Whether those cells verify a finding thus races on NK’s mutation timing. This is a real interface/data-race bug, not just a performance issue.  
+FIX: Run NK first to produce a deduped copy, then pass that stable triage state to CT and B-cell in parallel.
+
+<<<<
+    # ── Stage 2: Parallel verification ────────────────────────────────
+    all_verdicts: List[CellVerdict] = []
+    t0 = time.monotonic()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {}
+
+        # 2a: Cytotoxic T-Cell (code FFF)
+        if ct_enabled:
+            futures["cytotoxic_t"] = pool.submit(
+                cytotoxic_t_cell, triaged, source_paths, ct_timeout,
+            )
+
+        # 2b: B-Cell (math/logic/stats)
+        futures["b_cell"] = pool.submit(b_cell_verify, triaged)
+
+        # 2c: NK Cell (pattern/dedup)
+        futures["nk_cell"] = pool.submit(
+            nk_cell_verify, triaged, prior_findings, tau_sim, false_positive_db,
+        )
+
+        # Collect results
+        for name, future in futures.items():
+            try:
+                result = future.result(timeout=ct_timeout + 30)
+                if name == "nk_cell":
+                    triaged, nk_verdicts = result
+                    all_verdicts.extend(nk_verdicts)
+                    tool_usage["similarity_dedup"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "similarity_dedup"
+                    )
+                    tool_usage["false_positive_db"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "false_positive_db"
+                    )
+                    tool_usage["anomaly_detection"] = sum(
+                        1 for v in nk_verdicts if v.tool_used == "anomaly_detection"
+                    )
+                else:
+                    cell_verdicts = result
+                    all_verdicts.extend(cell_verdicts)
+                    for v in cell_verdicts:
+                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+            except Exception as e:
+                # Cell failure is non-fatal — log and continue
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Immune cell %s failed: %s: %s", name, type(e).__name__, e
+                )
+====
+    # ── Stage 2a: NK Cell first (dedup mutates triage state) ──────────
+    all_verdicts: List[CellVerdict] = []
+    t0 = time.monotonic()
+
+    try:
+        triaged, nk_verdicts = nk_cell_verify(
+            triaged, prior_findings, tau_sim, false_positive_db,
+        )
+        all_verdicts.extend(nk_verdicts)
+        tool_usage["similarity_dedup"] = sum(
+            1 for v in nk_verdicts if v.tool_used == "similarity_dedup"
+        )
+        tool_usage["false_positive_db"] = sum(
+            1 for v in nk_verdicts if v.tool_used == "false_positive_db"
+        )
+        tool_usage["anomaly_detection"] = sum(
+            1 for v in nk_verdicts if v.tool_used == "anomaly_detection"
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Immune cell %s failed: %s: %s", "nk_cell", type(e).__name__, e
+        )
+
+    # ── Stage 2b: CT + B-Cell in parallel over stable triage state ────
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        futures = {}
+
+        if ct_enabled:
+            futures["cytotoxic_t"] = pool.submit(
+                cytotoxic_t_cell, triaged, source_paths, ct_timeout,
+            )
+
+        futures["b_cell"] = pool.submit(b_cell_verify, triaged)
+
+        for name, future in futures.items():
+            try:
+                cell_verdicts = future.result(timeout=ct_timeout + 30)
+                all_verdicts.extend(cell_verdicts)
+                for v in cell_verdicts:
+                    tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Immune cell %s failed: %s: %s", name, type(e).__name__, e
+                )
+>>>>
+
+FOLLOW:  
+1. This removes race-dependent nondeterminism from which findings CT/B-cell see as duplicates.  
+2. Timings semantics change slightly: Stage 2 is no longer fully 3-way parallel. Update comments/docstring accordingly or split timing into `nk_cell` and `parallel_verification`.  
+3. If preserving full parallelism is required, NK must operate on a copied triage structure and its duplicate decisions must be merged later; current code cannot safely do that without more redesign.
+
+VERIFIED: TRUE
+
+FINDING_ID: IM_F077
+SEVERITY: 0.76
+FLAW_CLASS: 4
+ABSTRACTION_INDEX: 0.57
+DESCRIPTION: FIND: `bench/immune_agents.py`, `ImmuneResponse` / `run_immune_pipeline()`. The pipeline computes `type_counts` and `reg_reason` but discards both from the returned structure. `reg_reason` loss was partly noted before, but `type_counts` is also dead instrumentation and the response object still lacks any field for immune health rationale or triage composition. Evidence: `type_counts` is built and never used; `reg_reason` is computed then dropped when constructing `ImmuneResponse`. This makes the verification tool lose explainability data that would be useful both to audit and to debug the run-10 fixes.  
+FIX: Add fields to `ImmuneResponse` and populate them.
+
+<<<<
+@dataclass
+class ImmuneResponse:
+    """Complete immune response for a batch of findings."""
+    triaged: List[TriagedFinding]
+    cell_verdicts: Dict[str, List[CellVerdict]]  # finding_id → verdicts
+    final_verdicts: Dict[str, str]               # finding_id → CONFIRMED/REJECTED/UNCERTAIN
+    final_confidences: Dict[str, float]           # finding_id → aggregated confidence
+    filtered_findings: List[Finding]              # findings that survived filtering
+    rejected_findings: List[Finding]              # findings removed by immune response
+    rejection_rate: float
+    autoimmune_flag: bool           # True if Regulatory T flagged over-rejection
+    stage_timings: Dict[str, float]
+    tool_usage: Dict[str, int]      # tool_name → times_used
+    observation_only: bool          # if True, filtered_findings == all findings
+====
+@dataclass
+class ImmuneResponse:
+    """Complete immune response for a batch of findings."""
+    triaged: List[TriagedFinding]
+    cell_verdicts: Dict[str, List[CellVerdict]]
+    final_verdicts: Dict[str, str]
+    final_confidences: Dict[str, float]
+    filtered_findings: List[Finding]
+    rejected_findings: List[Finding]
+    rejection_rate: float
+    autoimmune_flag: bool
+    autoimmune_reason: str
+    claim_type_counts: Dict[str, int]
+    stage_timings: Dict[str, float]
+    tool_usage: Dict[str, int]
+    observation_only: bool
+>>>>
+
+<<<<
+    return ImmuneResponse(
+        triaged=triaged,
+        cell_verdicts=verdicts_by_finding,
+        final_verdicts=final_verdicts,
+        final_confidences=final_confidences,
+        filtered_findings=filtered,
+        rejected_findings=rejected,
+        rejection_rate=round(rejection_rate, 4),
+        autoimmune_flag=autoimmune_flag,
+        stage_timings=timings,
+        tool_usage=tool_usage,
+        observation_only=observation_only,
+    )
+====
+    return ImmuneResponse(
+        triaged=triaged,
+        cell_verdicts=verdicts_by_finding,
+        final_verdicts=final_verdicts,
+        final_confidences=final_confidences,
+        filtered_findings=filtered,
+        rejected_findings=rejected,
+        rejection_rate=round(rejection_rate, 4),
+        autoimmune_flag=autoimmune_flag,
+        autoimmune_reason=reg_reason,
+        claim_type_counts=type_counts,
+        stage_timings=timings,
+        tool_usage=tool_usage,
+        observation_only=observation_only,
+    )
+>>>>
+
+FOLLOW:  
+1. Any caller constructing or destructuring `ImmuneResponse` positionally must be updated, though dataclass usage is usually keyword-based here.  
+2. This turns dead local variables into exported diagnostics; reporting/UI code can now surface why regulatory override fired and what the dendritic triage mix was.  
+3. If strict backward compatibility is required, default values should be added to the new dataclass fields.
+
+VERIFIED: TRUE
+[16:08:47] ──────────────────────────────────────── /ChatGPT ────────────────────────────────────────
+
+[16:08:47]   ChatGPT: 7 findings parsed
+[16:08:47]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/r6_adaptive_chatgpt_20260403T150847Z.json
+[16:08:51]   [deepseek:deepseek-reasoner] WARNING: chunk 7 got non-WAITING response (0 chars): ...
+[16:08:51]   [deepseek:deepseek-reasoner] delivering chunk 8/14 (13,725 chars, bench/dm/_manager.py (74,421 chars) part 3)
+[16:09:09]   [deepseek:deepseek-reasoner] WARNING: chunk 8 got non-WAITING response (0 chars): ...
+[16:09:09]   [deepseek:deepseek-reasoner] delivering chunk 9/14 (25,830 chars, bench/dm/_failure_handler.py (25,773 chars))
+[16:09:28]   [deepseek:deepseek-reasoner] WARNING: chunk 9 got non-WAITING response (0 chars): ...
+[16:09:28]   [deepseek:deepseek-reasoner] delivering chunk 10/14 (24,795 chars, bench/dm/_types.py (24,748 chars))
+[16:09:48]   [deepseek:deepseek-reasoner] WARNING: chunk 10 got non-WAITING response (0 chars): ...
+[16:09:48]   [deepseek:deepseek-reasoner] delivering chunk 11/14 (17,211 chars, bench/dm/_convergence.py (17,158 chars))
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[16:09:56]   [gemini:gemini-3.1-pro-preview] done (153.9s, 17027 chars)
+[16:09:56]   Gemini: 17027 chars, 156.7s
+[16:09:56] 
+──────────────────────────────────────── Gemini RESPONSE ────────────────────────────────────────
+[16:09:56] An architectural review of the IMMUNE RESPONSE LAYER under the Run 10 context reveals several critical misses in how diagnoses are queued, validated, and resolved, alongside vulnerabilities in the verification tools (`immune_agents.py`).
+
+Here are the findings and fixes following the Find-Fix-Follow protocol.
+
+### 1. Silent Tool Failures in B-Cell Subprocess
+**FIND:** `bench/immune_agents.py`, `_run_tool_subprocess()`
+The subprocess wrapper unconditionally returns `result.stdout.strip()` regardless of the subprocess exit status. If the dynamically generated python script fails (e.g., `ImportError`, `SyntaxError`, or unhandled exception in `sympy`), the traceback is sent to `stderr`. By ignoring `stderr` and the `returncode`, the function silently returns an empty string, causing the B-Cell to misinterpret crashes as "UNCERTAIN" verdicts rather than tool failures.
+**FIX:**
+<<<<
+    try:
+        result = sp.run(
+            [PYTHON_TOOLS, "-c", code],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        return result.stdout.strip()
+    except sp.TimeoutExpired:
+====
+    try:
+        result = sp.run(
+            [PYTHON_TOOLS, "-c", code],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        if result.returncode != 0:
+            return f"ERROR: {result.stderr.strip() or result.stdout.strip()}"
+        return result.stdout.strip()
+    except sp.TimeoutExpired:
+>>>>
+**FOLLOW:** B-Cell verifiers checking for `"VERIFIED_TRUE"` will safely fall back to the uncertain branch and print the `ERROR:` evidence rather than a blank output, correctly logging tool failures in the audit trail.
+
+### 2. Z3-Solver Logically Disconnected from Claim
+**FIND:** `bench/immune_agents.py`, `_verify_z3()`
+When the B-Cell tries to verify a logical invariant (e.g., "if X then Y"), it creates two unconstrained z3 booleans (`X=Bool('X'); Y=Bool('Y')`), asserts `X` and `Not(Y)`, and checks for satisfiability. Because these variables are completely disconnected from the actual parsed claim text, the solver unconditionally prints `SATISFIABLE_COUNTEREXAMPLE` for *any* `if/then` claim, causing the B-Cell to auto-reject all conditional findings.
+**FIX:**
+<<<<
+# Try to extract a simple logical structure:
+# "if X then Y" -> check if NOT(X implies Y) is unsatisfiable
+if_then = re.search(r'if\\s+(.+?)\\s+then\\s+(.+)', claim, re.IGNORECASE)
+if if_then:
+    # Create symbolic booleans for the conditions
+    X = z3.Bool('X')
+    Y = z3.Bool('Y')
+    s = z3.Solver()
+    # Check if "X and not Y" is satisfiable (counterexample to X->Y)
+    s.add(X)
+    s.add(z3.Not(Y))
+    if s.check() == z3.sat:
+        print("SATISFIABLE_COUNTEREXAMPLE")
+    else:
+        print("UNSAT_VALID")
+else:
+====
+# Try to extract a simple logical structure:
+# "if X then Y" -> check if NOT(X implies Y) is unsatisfiable
+if_then = re.search(r'if\\s+(.+?)\\s+then\\s+(.+)', claim, re.IGNORECASE)
+if if_then:
+    print("Z3_UNSTRUCTURED: if/then claim not parseable as constraint")
+else:
+>>>>
+**FOLLOW:** No downstream impact identified. The function will correctly emit `Z3_UNSTRUCTURED` for unparseable natural language logic, resulting in an honest `UNCERTAIN` verdict rather than a hard hallucinated `REJECTED`.
+
+### 3. Infinite DEFER Queue Duplication and Missing Pathology Key
+**FIND:** `bench/dm/_manager.py`, `apply_diagnosis()` DEFER gate.
+When a diagnosis maps to a `DEFER` chain step, the manager appends it to `self._deferred_remediations`. Because there is no check for existing PENDING duplicates, the same pathology in consecutive rounds spams the queue with identical items. Furthermore, it drops `diagnosis.pathology_key` from the payload, breaking reconstruction in `approve_deferred_remediation()`.
+**FIX:**
+<<<<
+        if risk == "DEFER":
+            deferred = {
+                "chain_key": chain_key,
+                "chain_idx": chain_idx,
+                "step": step,
+                "diagnosis": {
+                    "detector": diagnosis.detector,
+                    "pathology": diagnosis.pathology,
+                    "severity": diagnosis.severity,
+                    "evidence": diagnosis.evidence,
+                },
+====
+        if risk == "DEFER":
+            # Prevent duplicate PENDING entries
+            for p in self._deferred_remediations:
+                if p["status"] == "PENDING" and p["chain_key"] == chain_key and p["chain_idx"] == chain_idx:
+                    return None
+            
+            deferred = {
+                "chain_key": chain_key,
+                "chain_idx": chain_idx,
+                "step": step,
+                "diagnosis": {
+                    "detector": diagnosis.detector,
+                    "pathology": diagnosis.pathology,
+                    "severity": diagnosis.severity,
+                    "evidence": diagnosis.evidence,
+                    "pathology_key": diagnosis.pathology_key,
+                },
+>>>>
+**FOLLOW:** Downstream reconstruction in `approve_deferred_remediation()` requires access to this newly preserved key to prevent throwing a silent empty-string back into `set_remediation_state()`. (Fixed in the next step).
+
+### 4. Backdated Approvals and Missing Regression Snapshots for DEFER Fixes
+**FIND:** `bench/dm/_manager.py`, `approve_deferred_remediation()`
+Approved DEFER items are executed using the `round_idx` from when they were queued (e.g., Round 2), even if approved in Round 5. This backdates the outcome verification window, causing the health monitor to evaluate the fix before it has even had one round to take effect. Additionally, deferred remediations bypass the `_pre_fix_snapshots` array completely, disabling autonomous regression detection for human-approved fixes.
+**FIX:**
+<<<<
+        diag = DetectorDiagnosis(
+            detector=deferred["diagnosis"]["detector"],
+            pathology=deferred["diagnosis"]["pathology"],
+            severity=deferred["diagnosis"]["severity"],
+            recommended_action=step["description"],
+            evidence=deferred["diagnosis"].get("evidence", {}),
+        )
+        adjustment = self._apply_transform(step["transform"], diag)
+        if adjustment:
+            round_idx = deferred["round"]
+            self._record_adjustment(
+                adjustment, diag, round_idx,
+                chain_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+            )
+            deferred["status"] = "APPROVED"
+            current_metric = self._get_current_metric(step["target_metric"])
+            # F007 fix: pass chain_length for outcome verification.
+            deferred_chain = self._REMEDIATION_CHAINS.get(deferred["chain_key"], [])
+            self.health_monitor.set_remediation_state(
+                pathology_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
+                chain_length=len(deferred_chain),
+            )
+        return adjustment
+====
+        diag = DetectorDiagnosis(
+            detector=deferred["diagnosis"]["detector"],
+            pathology=deferred["diagnosis"]["pathology"],
+            severity=deferred["diagnosis"]["severity"],
+            recommended_action=step["description"],
+            evidence=deferred["diagnosis"].get("evidence", {}),
+            pathology_key=deferred["diagnosis"].get("pathology_key", ""),
+        )
+        adjustment = self._apply_transform(step["transform"], diag)
+        if adjustment:
+            round_idx = self._process_round_count
+            
+            # Capture pre-fix snapshot for regression detection
+            snapshot = {
+                "chain_key": deferred["chain_key"],
+                "chain_idx": deferred["chain_idx"],
+                "round": round_idx,
+                "metrics": {
+                    "kappa": self._get_current_metric("kappa"),
+                    "mu": self._get_current_metric("mu"),
+                    "finding_count": self._get_current_metric("finding_count"),
+                    "vocab_growth": self._get_current_metric("vocab_growth"),
+                },
+            }
+            self._pre_fix_snapshots.append(snapshot)
+            
+            self._record_adjustment(
+                adjustment, diag, round_idx,
+                chain_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+            )
+            deferred["status"] = "APPROVED"
+            current_metric = self._get_current_metric(step["target_metric"])
+            # F007 fix: pass chain_length for outcome verification.
+            deferred_chain = self._REMEDIATION_CHAINS.get(deferred["chain_key"], [])
+            self.health_monitor.set_remediation_state(
+                pathology_key=deferred["chain_key"],
+                chain_idx=deferred["chain_idx"],
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
+                chain_length=len(deferred_chain),
+            )
+        return adjustment
+>>>>
+**FOLLOW:** No downstream impact identified; pre-fix regression arrays will correctly evaluate the human-approved fix natively alongside AUTO fixes. 
+
+### 5. P-Pass Remediations Evaluating Systemic Cascade Risk on Local Parameters
+**FIND:** `bench/dm/_manager.py`, `apply_diagnosis()`
+P-pass forces `affected_model_ids = [m.model_id for m in self.models]` (i.e. ALL active models) universally, even when the remediation explicitly targets only a single model (`add_to_pre_decompose`, `add_parsing_directive`). This inadvertently triggers `Adversarial:cascade` false alarms within the extended P-pass module, which is programmed to veto adjustments that act on 3+ models simultaneously.
+**FIX:**
+<<<<
+        current_metric_val = self._get_current_metric(step["target_metric"])
+        affected_model_ids = [m.model_id for m in self.models]
+        proceed, rationale = self.health_monitor.p_pass_remediation(
+            chain_key, chain_idx, step["description"],
+            current_metric_val, step["target_metric"],
+            transform_name=step.get("transform", ""),
+            affected_models=affected_model_ids,
+        )
+====
+        current_metric_val = self._get_current_metric(step["target_metric"])
+        
+        transform_name = step.get("transform", "")
+        if transform_name in ("add_parsing_directive", "add_verification_directive", "add_to_pre_decompose", "flag_verification_unreliable"):
+            model_id = diagnosis.evidence.get("model_id", "")
+            affected_model_ids = [model_id] if model_id else []
+        elif transform_name == "add_synthesis_directive":
+            affected_model_ids = [m.model_id for m in self.models]
+        else:
+            affected_model_ids = []
+            
+        proceed, rationale = self.health_monitor.p_pass_remediation(
+            chain_key, chain_idx, step["description"],
+            current_metric_val, step["target_metric"],
+            transform_name=transform_name,
+            affected_models=affected_model_ids,
+        )
+>>>>
+**FOLLOW:** The P-pass module will correctly apply cascading adversarial constraints exclusively to global adjustments like `add_synthesis_directive`.
+
+### 6. Per-Model Pathologies Lack Resolution Decrements
+**FIND:** `bench/dm/_immune.py`, `record_model_round()`
+The `model_failure`, `cpf_spike`, and `parser_yield` trackers relentlessly increment their `self._pathology_counts[key]` variables once triggered but entirely lack an `else` branch to clear/resolve them. Consequently, the pathologies never resolve, and their adaptive detection windows irreversibly shrink. 
+**FIX:** (Demonstrating for `cpf_spike`, analogous fixes required for the other two):
+<<<<
+                if std_cpf > 0 and current_cpf > mean_cpf + 2 * std_cpf:
+                    key = f"cpf_spike_{model_id}"
+                    persistence = self._pathology_counts.get(key, 0)
+                    self._pathology_counts[key] = persistence + 1
+                    diag = DetectorDiagnosis(
+                        detector="cpf_spike",
+                        pathology=(
+                            f"{model_id}: cost-per-finding {current_cpf:.1f}s "
+                            f"exceeds 2σ (mean={mean_cpf:.1f}s, σ={std_cpf:.1f}s)"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Model {model_id} efficiency collapse: spending "
+                            f"{current_cpf:.0f}s per finding vs historical "
+                            f"{mean_cpf:.0f}s. Consider reducing prompt complexity, "
+                            f"adjusting decomposition, or benching temporarily."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "current_cpf": current_cpf,
+                            "mean_cpf": mean_cpf,
+                            "std_cpf": std_cpf,
+                            "threshold": mean_cpf + 2 * std_cpf,
+                            "occurrence": persistence + 1,
+                        },
+                        pathology_key=f"cpf_spike_{model_id}",  # PK-2 fix (Run 5), FFF-B (Run 7b)
+                        round_idx=len(self._kappa_history),
+                    )
+                    results.append(diag)
+
+        return results
+====
+                key_cpf = f"cpf_spike_{model_id}"
+                if std_cpf > 0 and current_cpf > mean_cpf + 2 * std_cpf:
+                    persistence = self._pathology_counts.get(key_cpf, 0)
+                    self._pathology_counts[key_cpf] = persistence + 1
+                    self._resolution_counter[key_cpf] = 0
+                    diag = DetectorDiagnosis(
+                        detector="cpf_spike",
+                        pathology=(
+                            f"{model_id}: cost-per-finding {current_cpf:.1f}s "
+                            f"exceeds 2σ (mean={mean_cpf:.1f}s, σ={std_cpf:.1f}s)"
+                        ),
+                        severity="WARNING",
+                        recommended_action=(
+                            f"Model {model_id} efficiency collapse: spending "
+                            f"{current_cpf:.0f}s per finding vs historical "
+                            f"{mean_cpf:.0f}s. Consider reducing prompt complexity, "
+                            f"adjusting decomposition, or benching temporarily."
+                        ),
+                        evidence={
+                            "model_id": model_id,
+                            "current_cpf": current_cpf,
+                            "mean_cpf": mean_cpf,
+                            "std_cpf": std_cpf,
+                            "threshold": mean_cpf + 2 * std_cpf,
+                            "occurrence": persistence + 1,
+                        },
+                        pathology_key=key_cpf,
+                        round_idx=len(self._kappa_history),
+                    )
+                    results.append(diag)
+                elif self._pathology_counts.get(key_cpf, 0) > 0:
+                    self._resolution_counter[key_cpf] = self._resolution_counter.get(key_cpf, 0) + 1
+                    hysteresis = getattr(self._config, "resolution_hysteresis", 2)
+                    if self._resolution_counter[key_cpf] >= hysteresis:
+                        self._resolved_counts[key_cpf] = self._resolved_counts.get(key_cpf, 0) + 1
+                        if key_cpf not in self._remediation_state:
+                            self.record_natural_resolution(key_cpf)
+                        self._pathology_counts[key_cpf] = 0
+                        self._resolution_counter[key_cpf] = 0
+
+        return results
+>>>>
+**FOLLOW:** Modifies internal state transition graphs for pathologies. Ensures that transient anomalies are eventually purged from `_pathology_counts` if normal operation is restored, preserving adaptive detection windows.
+
+### 7. Regulatory T-Cell Overlooking `DUPLICATE` Flag in Autoimmune Math
+**FIND:** `bench/immune_agents.py`, `regulatory_t_cell_check()`
+The check properly aggregates `removed = rejected + duplicated` but falls back exclusively on `rejected / total > max_rejection_rate` when evaluating the autoimmune boundary. 
+**FIX:**
+<<<<
+    # Check 1: Overall rejection rate
+    if rejected / total > max_rejection_rate:
+        reasons.append(
+            f"Rejection rate {rejected}/{total} ({rejected/total:.1%}) "
+            f"exceeds threshold ({max_rejection_rate:.0%})"
+        )
+====
+    # Check 1: Overall rejection rate
+    if removal_rate > max_rejection_rate:
+        reasons.append(
+            f"Removal rate {removed}/{total} ({removal_rate:.1%}) "
+            f"exceeds threshold ({max_rejection_rate:.0%})"
+        )
+>>>>
+**FOLLOW:** Downstream pipeline behavior will now correctly enter observation mode (passing all findings) if the duplicate rate alone blows past the `max_rejection_rate` limit.
+[16:09:56] ──────────────────────────────────────── /Gemini ────────────────────────────────────────
+
+[16:09:56]   Gemini: 1 findings parsed
+[16:09:56]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/r6_adaptive_gemini_20260403T150956Z.json
+[16:10:10]   [deepseek:deepseek-reasoner] WARNING: chunk 11 got non-WAITING response (0 chars): ...
+[16:10:10]   [deepseek:deepseek-reasoner] delivering chunk 12/14 (30,240 chars, bench/immune_agents.py (47,980 chars) part 1)
+[16:10:29]   [deepseek:deepseek-reasoner] WARNING: chunk 12 got non-WAITING response (0 chars): ...
+[16:10:29]   [deepseek:deepseek-reasoner] delivering chunk 13/14 (17,841 chars, bench/immune_agents.py (47,980 chars) part 2)
+[16:10:49]   [deepseek:deepseek-reasoner] WARNING: chunk 13 got non-WAITING response (0 chars): ...
+[16:10:49]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 14/14)
+[16:12:21]   [claude-cli:opus] attempt 1 failed (300.0s): claude CLI timed out after 300.0s
+[16:12:21]   [claude-cli:opus] retry 2/3
+[16:14:30]   [deepseek:deepseek-reasoner] synthesis complete (430.2s, 10,221 chars)
+[16:14:30]   DeepSeek: multi-turn succeeded (430.2s, 10,221 chars)
+[16:14:30]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/round6_deepseek_20260403T151430Z.json
+[16:14:30]   DeepSeek: sequential delivery OK (430.2s)
+[16:14:30] 
+──────────────────────────────────────── DeepSeek RESPONSE (sequential) ────────────────────────────────────────
+[16:14:30] **FINDING_ID:** IM_F001  
+**SEVERITY:** 0.85  
+**FLAW_CLASS:** 2 (interface)  
+**ABSTRACTION_INDEX:** 0.60  
+**DESCRIPTION:**  
+In `bench/dm/_manager.py`, the damping check in `apply_diagnosis` relies on the `model_id` key in adjustment records to prevent repeated adjustments for the same model and detector within the damping window. However, per‑model transforms in `_apply_transform` (e.g., `add_to_pre_decompose`, `add_parsing_directive`) do not include a `model_id` key in the returned adjustment dictionary. Consequently, the damping check cannot match per‑model adjustments, allowing the same parameter to be adjusted repeatedly for the same model in violation of the damping rule.  
+
+**EVIDENCE:**  
+- In `_apply_transform`, the `add_to_pre_decompose` transform returns a dict without a `model_id` key (line ~1370 in chunk 7).  
+- In `apply_diagnosis`, the damping loop uses `adj.get("model_id", "")` to compare with `diag_model` (line ~1530 in chunk 8). Because the adjustment lacks the key, `adj_model` is an empty string, so the condition `adj_model == diag_model` fails even for the same model.  
+
+**PROPOSED_FIX:**  
+Add a `"model_id"` key to the adjustment dictionary for every per‑model transform. For example, for `add_to_pre_decompose`:  
+
+<<<<
+        elif transform_name == "add_to_pre_decompose":
+            model_id = diagnosis.evidence.get("model_id", "")
+            if model_id and model_id not in self.config.pre_decompose_models:
+                self.config.pre_decompose_models.add(model_id)
+                return {"parameter": "pre_decompose_models",
+                        "old": "not in set",
+                        "new": f"added {model_id}",
+                        "reason": diagnosis.pathology}
+====
+        elif transform_name == "add_to_pre_decompose":
+            model_id = diagnosis.evidence.get("model_id", "")
+            if model_id and model_id not in self.config.pre_decompose_models:
+                self.config.pre_decompose_models.add(model_id)
+                return {"parameter": "pre_decompose_models",
+                        "old": "not in set",
+                        "new": f"added {model_id}",
+                        "reason": diagnosis.pathology,
+                        "model_id": model_id}
+>>>>
+
+Apply the same change to `add_parsing_directive`, `add_verification_directive`, `flag_verification_unreliable`, and any other transform that acts on a specific model.  
+
+**VERIFIED:** TRUE  
+
+**FOLLOW:**  
+The adjustment record is used in `_record_adjustment` and stored in `_immune_adjustments` and `_adjustment_log`. Adding `model_id` enriches the audit trail and ensures the damping check works correctly. No other code reads the adjustment dictionary in a way that would break; the change is additive and backward‑compatible.  
+
+---
+
+**FINDING_ID:** IM_F002  
+**SEVERITY:** 0.90  
+**FLAW_CLASS:** 5 (correctness)  
+**ABSTRACTION_INDEX:** 0.75  
+**DESCRIPTION:**  
+The remediation‑outcome verification in `DetectorHealthMonitor._verify_remediation_outcomes` uses global metric histories (e.g., `self._finding_counts`) for all pathologies, including per‑model ones (e.g., `model_failure_{model_id}`). This is fundamentally incorrect because per‑model remediations must be verified against per‑model metrics (e.g., that model’s finding count). The current logic cannot detect whether a per‑model fix actually improved the targeted model’s performance, leading to false escalations or premature chain exhaustion.  
+
+**EVIDENCE:**  
+- In `_verify_remediation_outcomes` (lines ~580‑620 in chunk 3), the method selects a history list based solely on `target_metric` (e.g., `"finding_count"` → `self._finding_counts`).  
+- Per‑model remediation states (set by `record_model_round` and `apply_diagnosis`) have keys like `model_failure_{model_id}` but no model‑specific metric tracking.  
+- The `_model_finding_history` dictionary exists but is not consulted during verification.  
+
+**PROPOSED_FIX:**  
+Extend `set_remediation_state` to store the model ID for per‑model pathologies, and modify `_verify_remediation_outcomes` to use per‑model histories when a model ID is present.  
+
+1. **In `set_remediation_state` (lines ~540‑560 in chunk 3), add an optional `model_id` parameter and store it:**  
+<<<<
+    def set_remediation_state(
+        self,
+        pathology_key: str,
+        chain_idx: int,
+        applied_round: int,
+        metric_at_apply: float,
+        target_metric: str,
+        verification_window: int = 2,
+        chain_length: int = 999,
+    ) -> None:
+        """Record that a remediation was applied, for outcome verification.
+
+        Args:
+            pathology_key: The pathology being remediated (e.g. "kappa_stuck").
+            chain_idx: Index in the remediation chain (0 = first fix tried).
+            applied_round: Round when the fix was applied.
+            metric_at_apply: Value of the target metric when fix was applied.
+            target_metric: Name of the metric to check ("kappa", "mu", etc.).
+            verification_window: Rounds to wait before checking outcome.
+        """
+        self._remediation_state[pathology_key] = {
+            "chain_idx": chain_idx,
+            "applied_round": applied_round,
+            "metric_at_apply": metric_at_apply,
+            "target_metric": target_metric,
+            "verification_window": verification_window,
+            "chain_length": chain_length,  # RV-1: for bounds check
+        }
+====
+    def set_remediation_state(
+        self,
+        pathology_key: str,
+        chain_idx: int,
+        applied_round: int,
+        metric_at_apply: float,
+        target_metric: str,
+        verification_window: int = 2,
+        chain_length: int = 999,
+        model_id: Optional[str] = None,
+    ) -> None:
+        """Record that a remediation was applied, for outcome verification.
+
+        Args:
+            pathology_key: The pathology being remediated (e.g. "kappa_stuck").
+            chain_idx: Index in the remediation chain (0 = first fix tried).
+            applied_round: Round when the fix was applied.
+            metric_at_apply: Value of the target metric when fix was applied.
+            target_metric: Name of the metric to check ("kappa", "mu", etc.).
+            verification_window: Rounds to wait before checking outcome.
+            model_id: Model ID for per‑model pathologies (e.g., "model_failure_m1").
+        """
+        state = {
+            "chain_idx": chain_idx,
+            "applied_round": applied_round,
+            "metric_at_apply": metric_at_apply,
+            "target_metric": target_metric,
+            "verification_window": verification_window,
+            "chain_length": chain_length,
+        }
+        if model_id is not None:
+            state["model_id"] = model_id
+        self._remediation_state[pathology_key] = state
+>>>>
+
+2. **In `_verify_remediation_outcomes`, select the correct history based on `model_id`:**  
+   Replace the metric‑value lookup block (lines ~590‑610 in chunk 3) with:  
+<<<<
+            # Get current metric value
+            target = state["target_metric"]
+            model_id = state.get("model_id")
+
+            if model_id is not None:
+                # Per‑model metric
+                if target == "finding_count":
+                    history = self._model_finding_history.get(model_id, [])
+                    current_val = float(history[-1]) if history else 0.0
+                elif target == "response_time":
+                    history = self._model_response_times.get(model_id, [])
+                    current_val = history[-1] if history else 0.0
+                elif target == "response_chars":
+                    history = self._model_response_chars.get(model_id, [])
+                    current_val = float(history[-1]) if history else 0.0
+                else:
+                    # Fall back to global metric (should not happen for per‑model)
+                    current_val = 0.0
+            else:
+                # Global metric
+                if target == "kappa" and self._kappa_history:
+                    current_val = self._kappa_history[-1]
+                elif target == "mu" and self._mu_history:
+                    current_val = self._mu_history[-1]
+                elif target == "novelty" and self._novelty_history:
+                    current_val = self._novelty_history[-1]
+                elif target == "finding_count" and self._finding_counts:
+                    current_val = float(self._finding_counts[-1])
+                elif target == "vocab_growth" and self._vocab_growth_history:
+                    current_val = self._vocab_growth_history[-1]
+                else:
+                    continue
+>>>>
+
+3. **Update all calls to `set_remediation_state` to pass the model ID when appropriate.**  
+   For example, in `apply_diagnosis` (line ~1610 in chunk 8), extract `model_id` from the diagnosis evidence and pass it:  
+<<<<
+            self.health_monitor.set_remediation_state(
+                pathology_key=chain_key,
+                chain_idx=chain_idx,
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
+                chain_length=len(chain),
+            )
+====
+            model_id = diagnosis.evidence.get("model_id")
+            self.health_monitor.set_remediation_state(
+                pathology_key=chain_key,
+                chain_idx=chain_idx,
+                applied_round=round_idx,
+                metric_at_apply=current_metric,
+                target_metric=step["target_metric"],
+                chain_length=len(chain),
+                model_id=model_id,
+            )
+>>>>
+
+**VERIFIED:** TRUE  
+
+**FOLLOW:**  
+- The change adds a new optional parameter to `set_remediation_state`; existing calls without `model_id` will continue to work (backward‑compatible).  
+- The verification logic now correctly distinguishes global and per‑model metrics, ensuring that per‑model remediations are evaluated against the right data.  
+- This fix may reveal that some per‑model pathology chains currently specify global target metrics (e.g., `finding_count` for `model_failure`); those chains should be reviewed to ensure they intend per‑model verification.
+[16:14:30] ──────────────────────────────────────── /DeepSeek ────────────────────────────────────────
+
+[16:14:30]   DeepSeek: 2 findings parsed (sequential delivery)
+[16:14:30]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/r6_adaptive_deepseek_20260403T151430Z.json
+[16:17:22]   [claude-cli:opus] attempt 2 failed (300.0s): claude CLI timed out after 300.0s
+[16:17:22]   [claude-cli:opus] retry 3/3
+[16:22:22]   [claude-cli:opus] attempt 3 failed (300.0s): claude CLI timed out after 300.0s
+[16:22:22]   CC2: RuntimeError — Claude CLI call failed after 3 attempts for opus. Last error: claude CLI timed out after 300.0s
+[16:22:22]   CC2: attempting multi-turn sequential fallback...
+[16:22:22]   CC2: MULTI-TURN FALLBACK — 13 chunks, ~351,814 chars total
+[16:22:22]   Decomposed dispatch: claude_cli/opus, 13 chunks, ~351,814 chars
+[16:22:22]   [claude-cli] multi-turn dispatch: 13 chunks + final, session=99c25875..., ~352,739 chars total
+[16:22:22]   [claude-cli] delivering chunk 1/14 (58,176 chars, Preamble + instructions)
+[16:22:29]   [claude-cli] delivering chunk 2/14 (30,263 chars, bench/dm/_immune.py (103,207 chars) part 1)
+[16:22:34]   [claude-cli] delivering chunk 3/14 (30,254 chars, bench/dm/_immune.py (103,207 chars) part 2)
+[16:22:38]   [claude-cli] delivering chunk 4/14 (32,128 chars, bench/dm/_immune.py (103,207 chars) part 3)
+[16:22:43]   [claude-cli] delivering chunk 5/14 (10,608 chars, bench/dm/_immune.py (103,207 chars) part 4)
+[16:22:48]   [claude-cli] delivering chunk 6/14 (30,144 chars, bench/dm/_manager.py (74,421 chars) part 1)
+[16:22:52]   [claude-cli] delivering chunk 7/14 (30,599 chars, bench/dm/_manager.py (74,421 chars) part 2)
+[16:22:57]   [claude-cli] delivering chunk 8/14 (13,725 chars, bench/dm/_manager.py (74,421 chars) part 3)
+[16:23:02]   [claude-cli] delivering chunk 9/14 (25,830 chars, bench/dm/_failure_handler.py (25,773 chars))
+[16:23:08]   [claude-cli] delivering chunk 10/14 (24,795 chars, bench/dm/_types.py (24,748 chars))
+[16:23:14]   [claude-cli] delivering chunk 11/14 (17,211 chars, bench/dm/_convergence.py (17,158 chars))
+[16:23:20]   [claude-cli] delivering chunk 12/14 (30,240 chars, bench/immune_agents.py (47,980 chars) part 1)
+[16:23:27]   [claude-cli] delivering chunk 13/14 (17,841 chars, bench/immune_agents.py (47,980 chars) part 2)
+[16:33:27]   [claude-cli] chunk 13 timed out after 600s
+[16:33:27]   [claude-cli] delivering final instruction (chunk 14/14)
+[16:43:27]   CC2: multi-turn ALSO FAILED — CircuitBreakerTripped: HALT [timeout] model=Claude CLI phase=dispatch: Synthesis timed out after 1265.5s
+[16:43:27]   CC2: ALL dispatch methods exhausted
+[16:43:27]   IMMUNE: CC2 → {'parameter': 'pre_decompose_models', 'old': 'not in set', 'new': 'added CC2', 'reason': 'CC2 has failed dispatch: RuntimeError: Claude CLI call failed after 3 attempts for opus. Last error: claude CLI timed out after 300.0s (multi-turn also failed)'}
+[16:43:31]   Quality gate: 4 duplicates, 10 SymPy checks, 6 AST checks
+[16:43:31]     Dedup rate: 4/14 = 29%
+[16:44:18]   Immune pipeline: 79% rejection rate, autoimmune=no
+[16:44:18]     Tools: {'ct_mechanical': 4, 'sympy': 4, 'similarity_dedup': 11, 'false_positive_db': 0, 'anomaly_detection': 0}
+[16:44:18]     Timings: {'dendritic': 0.0048, 'parallel_verification': 46.8418, 'helper_t': 0.0001, 'regulatory_t': 0.0004}
+[16:44:18] 
+  Round 6 summary: 14 findings from 4 models (2218.2s)
+[16:44:18]     ChatGPT: 7 findings
+[16:44:18]     Codex: 4 findings
+[16:44:18]     DeepSeek: 2 findings
+[16:44:18]     Gemini: 1 findings
+[16:44:18]     ChatGPT: γ_out=0.258, A=1.210, obj=0.312, est_A=1.210
+[16:44:18]     Codex: γ_out=1.000, A=0.000, obj=0.000
+[16:44:18]     DeepSeek: γ_out=0.500, A=0.816, obj=0.408, est_A=0.816
+[16:44:18]     Gemini: γ_out=0.500, A=0.816, obj=0.408, est_A=0.816
+[16:44:19]   Immune: {'Codex': 'RETRY_EXTENDED', 'ChatGPT': 'RETRY_EXTENDED', 'Gemini': 'RETRY_EXTENDED', 'DeepSeek': 'RETRY_EXTENDED'}
+[16:44:19]   DM: kappa=1.000, mu=9.410, converged=True, stop=True
+[16:44:19] 
+  DM CONVERGED at round 6
+[16:44:19]   Convergence: γ_raw=0.002, γ_novel=0.309, γ_ids=0.097 (threshold=0.5)
+[16:44:19]   Novel findings per round (clusters): [24, 18, 23, 7, 12, 4, 4]
+[16:44:19]   Novel findings per round (IDs):      [30, 21, 57, 25, 27, 14, 0]
+[16:44:19]   Convergence (γ-unified): continuing(γ_novel=0.309<0.5)
+[16:44:19]   Checkpoint saved: round 6 → checkpoint.json
+[16:44:19] 
+  CONVERGED at round 6: continuing(γ_novel=0.309<0.5)
+[16:44:19] 
+  Amplification summary (observation):
+[16:44:19]     ChatGPT: A=1.2104, obj=0.3125, n=1
+[16:44:19]     Codex: A=None, obj=None, n=1
+[16:44:19]     DeepSeek: A=0.8158, obj=0.4079, n=1
+[16:44:19]     Gemini: A=0.8158, obj=0.4079, n=1
+[16:44:19] 
+============================================================
+[16:44:19] BASELINE CONFER — 7 ROUNDS COMPLETE
+[16:44:19]   Rounds: 7
+[16:44:19]   Total findings: 237
+[16:44:19]   Per model: {'ChatGPT': 66, 'Codex': 52, 'Gemini': 20, 'CC2': 36, 'DeepSeek': 63}
+[16:44:19]   Per round: [34, 32, 64, 25, 37, 31, 14]
+[16:44:19]   γ (Duane): 0.002
+[16:44:19]   Y(t): [19.39, 20.85, 41.59, 17.6, 21.5, 19.8, 9.41]
+[16:44:19]   C(H,E) Popper: 0.8884 (strong_corroboration)
+[16:44:19]   Elapsed: 2224s
+[16:44:19]   Report: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/baseline_confer_run10_20260403/baseline_confer_report.json
+[16:44:19] ============================================================

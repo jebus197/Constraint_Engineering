@@ -529,36 +529,133 @@ def _dispatch_single_model(
         model_cdsfl = cdsfl_text
 
     # Dynamic decomposition check
+    #
+    # Run 10 fix: decomposed models (DeepSeek, Codex) go DIRECTLY to
+    # multi-turn sequential file delivery as the primary path. The old
+    # _build_decomposed_prompt() route used sub-area rotation which
+    # fragments code across arbitrary boundaries, producing stubs that
+    # models report as bugs. Run 9: 157 visibility complaints. Run 10
+    # (aborted): 9 complaints — all from models still on the sub-area
+    # path. Multi-turn sequential delivery sends complete files one at a
+    # time, which is how LLM developers recommend handling large inputs.
+    #
+    # Non-decomposed models (CC2, Gemini, ChatGPT) get the full prompt
+    # as before — their context windows handle it fine.
     model_prompt = prompt
     decomposed = False
     eff_cap = _effective_capacity(mc.label, mc.timeout)
-    if _should_decompose(mc.label, mgr):
-        model_prompt, decomposed = _build_decomposed_prompt(
-            prompt, full_code, task_key, mc.label, round_idx,
-            max_chars=eff_cap or 0)
-        _log(f"  {mc.label}: decomposed={decomposed}")
 
-    # Pre-dispatch feasibility gate
+    if _should_decompose(mc.label, mgr):
+        # Primary path: multi-turn sequential file delivery
+        _log(f"  {mc.label}: decomposed model — using multi-turn sequential "
+             f"file delivery (skipping sub-area rotation)")
+        fallback = _multiturn_fallback(
+            mc, prompt, model_cdsfl, full_code, task_key,
+            round_idx, round_type,
+        )
+        if fallback is not None:
+            text, elapsed = fallback
+            _log(f"  {mc.label}: sequential delivery OK ({elapsed:.1f}s)")
+            _record_throughput(mc.label, len(prompt), elapsed)
+
+            _log(f"\n{'─' * 40} {mc.label} RESPONSE (sequential) {'─' * 40}")
+            _log(text)
+            _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+
+            model_findings = parse_findings(mc.label, round_idx, text)
+            _log(f"  {mc.label}: {len(model_findings)} findings parsed "
+                 f"(sequential delivery)")
+
+            LOGS_DIR.mkdir(parents=True, exist_ok=True)
+            phase_label = f"r{round_idx}_{round_type}"
+            save_output(
+                LOGS_DIR, phase_label, mc.label,
+                prompt[:200] + "...", text,
+                metadata={
+                    "round": round_idx,
+                    "elapsed": round(elapsed, 1),
+                    "chars": len(text),
+                    "findings_count": len(model_findings),
+                    "decomposed": True,
+                    "multiturn": True,
+                    "prompt_chars": len(prompt),
+                })
+
+            return model_findings, text
+        else:
+            # Sequential delivery failed — fall back to sub-area rotation
+            # (degraded but better than nothing)
+            _log(f"  {mc.label}: sequential delivery FAILED, falling back "
+                 f"to sub-area rotation")
+            model_prompt, decomposed = _build_decomposed_prompt(
+                prompt, full_code, task_key, mc.label, round_idx,
+                max_chars=eff_cap or 0)
+
+    # Pre-dispatch feasibility gate (non-decomposed models only reach here)
     model_spec = _find_model_spec(mgr, mc.label)
     if model_spec:
         token_est = len(model_prompt) // 4
         ok, p_feasible = mgr.check_dispatch_feasibility(model_spec, token_est)
         if not ok:
             _log(f"  {mc.label}: DISPATCH BLOCKED (P={p_feasible:.3f}, "
-                 f"~{token_est} tokens). Auto-decomposing.")
-            model_prompt, decomposed = _build_decomposed_prompt(
-                prompt, full_code, task_key, mc.label, round_idx,
-                max_chars=eff_cap or 0)
+                 f"~{token_est} tokens). Trying multi-turn sequential.")
+            # Context too large — route to sequential delivery instead of
+            # sub-area rotation
+            fallback = _multiturn_fallback(
+                mc, prompt, model_cdsfl, full_code, task_key,
+                round_idx, round_type,
+            )
+            if fallback is not None:
+                text, elapsed = fallback
+                _log(f"  {mc.label}: sequential delivery OK ({elapsed:.1f}s)")
+                _record_throughput(mc.label, len(prompt), elapsed)
 
-    # Generous wall-clock: 3× timeout for large prompts
-    wall_limit = mc.timeout * 3
+                _log(f"\n{'─' * 40} {mc.label} RESPONSE (sequential) {'─' * 40}")
+                _log(text)
+                _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+
+                model_findings = parse_findings(mc.label, round_idx, text)
+                _log(f"  {mc.label}: {len(model_findings)} findings parsed "
+                     f"(sequential delivery)")
+
+                LOGS_DIR.mkdir(parents=True, exist_ok=True)
+                phase_label = f"r{round_idx}_{round_type}"
+                save_output(
+                    LOGS_DIR, phase_label, mc.label,
+                    prompt[:200] + "...", text,
+                    metadata={
+                        "round": round_idx,
+                        "elapsed": round(elapsed, 1),
+                        "chars": len(text),
+                        "findings_count": len(model_findings),
+                        "decomposed": True,
+                        "multiturn": True,
+                        "prompt_chars": len(prompt),
+                    })
+
+                return model_findings, text
+            else:
+                _log(f"  {mc.label}: sequential delivery failed, trying "
+                     f"sub-area rotation as last resort")
+                model_prompt, decomposed = _build_decomposed_prompt(
+                    prompt, full_code, task_key, mc.label, round_idx,
+                    max_chars=eff_cap or 0)
+
+    # Single-turn dispatch (full prompt for non-decomposed models, or
+    # sub-area fallback if sequential delivery failed above)
+    # Run 10 fix: CC2 via claude-cli needs more wall-clock time as the
+    # findings context grows (~10K per round). 3× base timeout (900s) is
+    # too tight by Round 3. 5× (1500s) gives headroom through 20 rounds.
+    if mc.label == "CC2":
+        wall_limit = mc.timeout * 5
+    else:
+        wall_limit = mc.timeout * 3
     try:
         text, elapsed = dispatch_to_model(
             mc, model_prompt, model_cdsfl, wall_clock_limit=wall_limit)
         _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
         _record_throughput(mc.label, len(model_prompt), elapsed)
 
-        # Log full model response for live monitoring
         _log(f"\n{'─' * 40} {mc.label} RESPONSE {'─' * 40}")
         _log(text)
         _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
@@ -566,7 +663,6 @@ def _dispatch_single_model(
         model_findings = parse_findings(mc.label, round_idx, text)
         _log(f"  {mc.label}: {len(model_findings)} findings parsed")
 
-        # Save individual output
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         phase_label = f"r{round_idx}_{round_type}"
         save_output(
@@ -586,9 +682,8 @@ def _dispatch_single_model(
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:
         err_type = type(e).__name__
         _log(f"  {mc.label}: {err_type} — {e}")
-        _log(f"  {mc.label}: attempting multi-turn decomposed fallback...")
+        _log(f"  {mc.label}: attempting multi-turn sequential fallback...")
 
-        # Multi-turn fallback: never exclude, always try harder
         fallback = _multiturn_fallback(
             mc, model_prompt, model_cdsfl, full_code, task_key,
             round_idx, round_type,
@@ -622,8 +717,6 @@ def _dispatch_single_model(
 
             return model_findings, text
         else:
-            # Multi-turn also failed — defer immune reporting to main thread
-            # (DynamicManager.apply_diagnosis is not thread-safe)
             _log(f"  {mc.label}: ALL dispatch methods exhausted")
             return [], f"__DISPATCH_FAILED__:{err_type}: {e} (multi-turn also failed)"
 
@@ -1209,7 +1302,11 @@ def run_confer(
                  f"({total_restored} findings across "
                  f"{len(all_findings)} completed rounds)")
 
-            # Replay findings into DynamicManager for state consistency
+            # Replay findings into DynamicManager for state consistency.
+            # The FSM may hit terminal during replay (e.g. DIMINISHED after
+            # high rejection rates). If so, reset the FSM to RUNNING so
+            # the experiment can continue — the convergence check in the
+            # main loop handles actual termination decisions.
             for ri, rnd in enumerate(all_findings):
                 replay_responses: Dict[str, ModelResponse] = {}
                 for label in BASELINE_MODELS:
@@ -1227,10 +1324,26 @@ def run_confer(
                             ),
                         )
                 if replay_responses:
-                    mgr.process_round(
-                        replay_responses, rnd, [],
-                        round_cost=0.0, duration=0.0,
-                    )
+                    try:
+                        mgr.process_round(
+                            replay_responses, rnd, [],
+                            round_cost=0.0, duration=0.0,
+                        )
+                    except RuntimeError as e:
+                        if "terminal" in str(e).lower():
+                            _log(f"  Replay round {ri}: FSM hit terminal "
+                                 f"({e}) — resetting to ROUND_{ri}")
+                            mgr.fsm.current_state = f"ROUND_{ri}"
+                            mgr.fsm.termination_reason = None
+                        else:
+                            raise
+            # If FSM is terminal after full replay, reset for continuation
+            if mgr.fsm.is_terminal:
+                _log(f"  FSM terminal after replay "
+                     f"({mgr.fsm.termination_reason}) — resetting to "
+                     f"ROUND_{start_round - 1} for continuation")
+                mgr.fsm.current_state = f"ROUND_{start_round - 1}"
+                mgr.fsm.termination_reason = None
             _log(f"  DynamicManager state replayed through round "
                  f"{start_round - 1}")
         else:

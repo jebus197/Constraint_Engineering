@@ -394,9 +394,17 @@ def _should_decompose(model_label: str, mgr: DynamicManager) -> bool:
     Codex is pre-seeded: observed R0A latencies (370-556s) at full prompt
     size are consistently 3-10x slower than other models due to CLI overhead.
     Decomposition reduces this to manageable levels.
+    CC2 is NEVER decomposed: 200K context window handles full prompt fine.
+    Run 10 R3-R6 showed that multi-turn sequential delivery is
+    counterproductive for CC2 — 13 chunks accumulate ~330K chars of
+    context + CLI round-trip overhead, causing chunk 13 to timeout
+    consistently. The original timeout was wall-clock, not context-size.
     Other models are decomposed if the immune layer added them to
     pre_decompose_models (via model_failure remediation chain).
     """
+    # CC2 has sufficient context window — decomposition hurts, not helps
+    if model_label == "CC2":
+        return False
     if model_label == "DeepSeek":
         return True
     return model_label in mgr.config.pre_decompose_models

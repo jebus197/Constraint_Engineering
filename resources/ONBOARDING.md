@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 3 April 2026 12:18 BST
+Last updated: 3 April 2026 21:41 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,6 +22,31 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
+- **Run 10 COMPLETE + Run 11 PREP (3 April 2026, 21:41 BST):**
+  Run 10: 7 rounds, 237 findings, 37 min. First natural convergence
+  (DM kappa=1.0 at R6). γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.
+  174 unique IDs (104 after prefix stripping). 26.6% churn (vs Run 9: 84.5%).
+  Sequential file delivery replaced sub-area rotation for decomposed models.
+  CC2 excluded from decomposition (330K cumulative context was worse).
+  CC2 wall-clock timeout raised to 5×. FSM checkpoint-replay terminal fix.
+  Logs: `bench/logs/baseline_confer_run10_20260403/`.
+  **Gemini architectural conversation:** 2 turns, 80s, produced 2 novel
+  insights that 237 findings in 7 rounds did not: (1) Cytotoxic T Cell should
+  shift from verification to falsification (adversarial test generation);
+  (2) B Cell z3 proofs silently restrict domains — proves things that don't
+  map to runtime constraints.
+  **Insect brain architecture proposed:** Reactive coordinator (not deliberative).
+  Gathers, processes, tabulates, commits to external memory. Does not think,
+  direct, or evaluate content. Models drive conversation under full CDSFL.
+  Persistence layer is the shared workspace. Deferred to Run 12.
+  **Run 11 FIXES PENDING:** (1) γ_ids prefix stripping bug — `base_id = f.finding_id`
+  doesn't strip model prefix despite comment saying it does; (2) Sequential
+  read instruction for all models, not just decomposed; (3) z3 confidence
+  downgrade (0.90→0.30 for ungrounded abstract proofs); (4) LOGS_DIR + experiment
+  label update.
+  γ_ids promotion REJECTED by data: stripped γ_ids=-0.069 vs γ_novel=0.309 —
+  ID-based novelty is noisier than cluster-based. Keep as shadow signal.
+  Zero-novel-ID terminal condition (3 consecutive zeros) still valid.
 - **Run 10 FIXES APPLIED (3 April 2026, 12:18 BST):** 6 bugs fixed,
   1 diagnosed. B-Cell f-string escape (dead since creation — NameError
   in `_verify_z3` crashed entire cell, hidden by silent `except: pass`).
