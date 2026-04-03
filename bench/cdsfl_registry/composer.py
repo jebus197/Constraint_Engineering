@@ -34,7 +34,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # Python < 3.11 fallback
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any

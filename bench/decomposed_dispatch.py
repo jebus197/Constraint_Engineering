@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """Decomposed Dispatch: multi-turn staged context loading for AI models.
 
 Implements the "tutor" pattern: split large payloads into ordered chunks,

@@ -48,14 +48,18 @@ RUN 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):
 - New tools: z3 4.16, statsmodels 0.14.6, uncertainties 3.2.3
 
 NEXT ACTIONS (founder-approved sequence):
-1. Collate ~30 unique findings from Run 8 (deduplicate by finding_id)
-2. Verify highest-value findings (CC2 R19 cross-cutting: deferred-remediation
-   lifecycle, pre-fix snapshot rollback, convergence-threshold ordering) against
-   actual implementation files using SymPy/z3/FFF
-3. Fix γ convergence detection — track deduplicated findings, not raw counts
-4. Run 9 — flip observation_only=False, ct_enabled=True. Full immune pipeline
-   load-bearing. CT reads actual source to verify code-structural claims.
-5. Bench Run 2 preparation after Run 9 validates immune filtering.
+1. Run 9 IN PROGRESS (3 April 2026). Immune pipeline load-bearing,
+   244K actual implementation, γ-on-clusters, calibrated tau_sim=0.33.
+2. Analyse Run 9 results — compare churn rate, convergence detection,
+   immune pipeline verdict distribution against Run 8 baseline.
+3. Bench Run 2 preparation after Run 9 validates immune filtering.
+
+RUN 10 PREP (mark for next run):
+- Switch runtime from system Python 3.9 to Homebrew 3.13
+  (/opt/homebrew/bin/python3.13). Eliminates: google-auth EOL warnings,
+  `from __future__ import annotations` workarounds in decomposed_dispatch.py,
+  tomli fallback shims in registry.py and composer.py, and puts us on a
+  supported runtime. Do this between runs, not mid-run.
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)

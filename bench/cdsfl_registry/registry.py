@@ -26,7 +26,10 @@ from __future__ import annotations
 import copy
 import json
 import sys
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # Python < 3.11 fallback
 from pathlib import Path
 from typing import Any
 
