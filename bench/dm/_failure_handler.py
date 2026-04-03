@@ -170,9 +170,11 @@ class FailureHandler:
 
         # Priority 4: FORMAT
         if not response.format_compliant:
+            # F004 fix: use FORMAT_VIOLATION instead of MALFORMED for
+            # semantic correctness — FORMAT != MALFORMED.
             self._emit_event(
                 ManagerEvent(
-                    event_type=ManagerEventType.MALFORMED,
+                    event_type=ManagerEventType.FORMAT_VIOLATION,
                     model_id=response.model_id,
                     round_idx=response.round_idx,
                     detail="Response parseable but not format-compliant",
@@ -203,6 +205,19 @@ class FailureHandler:
                 1 for p in recent_perfs if p < self.config.theta_under
             )
             if underperform_count / len(recent_perfs) >= self.config.eta_underperform:
+                # F006 fix: emit event for UNDERPERFORM (was the only failure
+                # type that didn't emit a ManagerEvent).
+                self._emit_event(
+                    ManagerEvent(
+                        event_type=ManagerEventType.UNDERPERFORM,
+                        model_id=response.model_id,
+                        round_idx=response.round_idx,
+                        detail=(
+                            f"Underperformance: {underperform_count}/{len(recent_perfs)} "
+                            f"recent rounds below threshold {self.config.theta_under}"
+                        ),
+                    )
+                )
                 return FailureType.UNDERPERFORM
 
         return None

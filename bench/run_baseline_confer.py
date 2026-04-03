@@ -108,6 +108,7 @@ from decomposed_dispatch import (
     DecomposedResult,
     save_decomposed_result,
 )
+from bench.dm._convergence import _finding_similarity
 from bench.verification_utils import run_quality_gate, QualityGateResult
 from bench.immune_agents import run_immune_pipeline, ImmuneResponse
 from input_complexity import (
@@ -131,13 +132,22 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run8_20260402"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run9_20260403"
 
 MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
 WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
 
 # Test article: immune task area (most recent fixes, highest coverage)
-TEST_ARTICLE_PATH = REPO_ROOT / "bench" / "dynamic_management.py"
+# Run 9: models receive the actual implementation files, not the re-export shim.
+# The shim (dynamic_management.py) is only 78 lines / 3785 chars — useless for review.
+TEST_ARTICLE_PATH = REPO_ROOT / "bench" / "dynamic_management.py"  # kept for backward compat
+IMMUNE_SOURCE_FILES = [
+    REPO_ROOT / "bench" / "dm" / "_immune.py",        # 102K — core immune layer
+    REPO_ROOT / "bench" / "dm" / "_manager.py",        # 72K  — manager logic
+    REPO_ROOT / "bench" / "dm" / "_failure_handler.py", # 25K  — failure handling
+    REPO_ROOT / "bench" / "dm" / "_types.py",           # 27K  — type defs (immune portions)
+    REPO_ROOT / "bench" / "dm" / "_convergence.py",     # 17K  — convergence detection
+]
 MATH_APPENDIX_PATH = REPO_ROOT / "docs" / "MATHEMATICAL_APPENDIX.md"
 VERIFICATION_CHAIN_PATH = REPO_ROOT / "bench" / "verification_chain.py"
 INTERFACE_SUMMARY_PATH = (
@@ -678,6 +688,9 @@ def _dispatch_round(
 # ─────────────────────────────────────────────────────────────────────────────
 
 GAMMA_CONVERGENCE_THRESHOLD = 0.5  # γ > 0.5 = steep enough decay to stop
+CLUSTER_THRESHOLD = 0.33           # Calibrated from Run 8: 67 clusters at 0.33 vs 30 ground-truth IDs
+                                    # Run 8 validation: γ_novel=+0.134 (vs γ_raw=-0.041)
+                                    # Centroid-based (not single-linkage), avoids flaw-class mega-chaining
 MIN_ROUNDS_FOR_GAMMA = 2           # Need ≥2 rounds to estimate γ
 
 def _estimate_gamma_from_findings(all_findings: List[List[Finding]]) -> float:
@@ -710,6 +723,67 @@ def _estimate_gamma_from_findings(all_findings: List[List[Finding]]) -> float:
         return 0.0
 
 
+def _estimate_gamma_from_clusters(
+    all_findings: List[List[Finding]],
+) -> tuple[float, List[int]]:
+    """Estimate Duane γ from cumulative unique finding clusters.
+
+    Models restate findings every round, so raw per-round counts stay flat
+    and γ_raw never shows convergence. This function deduplicates by tracking
+    cumulative unique clusters: a finding is "novel" only if its max similarity
+    to all existing cluster centroids is <= CLUSTER_THRESHOLD.
+
+    The growth rate of unique clusters naturally declines as the defect pool
+    depletes — which is exactly what γ should measure.
+
+    Returns (gamma, novel_per_round) where novel_per_round[i] is the count
+    of genuinely new findings in round i.
+    """
+    n_rounds = len(all_findings)
+    if n_rounds < MIN_ROUNDS_FOR_GAMMA:
+        return 0.0, [len(rnd) for rnd in all_findings]
+
+    # Cluster centroids: representative findings for each unique cluster
+    centroids: List[Finding] = []
+    novel_per_round: List[int] = []
+
+    for rnd_findings in all_findings:
+        novel_count = 0
+        for finding in rnd_findings:
+            # Check similarity against all existing centroids
+            is_duplicate = False
+            for centroid in centroids:
+                sim = _finding_similarity(finding, centroid)
+                if sim > CLUSTER_THRESHOLD:
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                # Genuinely novel finding — new cluster
+                centroids.append(finding)
+                novel_count += 1
+        novel_per_round.append(novel_count)
+
+    # Compute γ on cumulative novel counts (same Duane formula)
+    cumulative: List[int] = []
+    total = 0
+    for c in novel_per_round:
+        total += c
+        cumulative.append(total)
+
+    if not cumulative or cumulative[0] <= 0:
+        return 0.0 if total == 0 else 1.0, novel_per_round
+
+    if cumulative[-1] <= cumulative[0]:
+        return (0.0 if cumulative[-1] == 0 else 1.0), novel_per_round
+
+    r = n_rounds  # last round index (1-based)
+    try:
+        beta = (math.log(cumulative[-1]) - math.log(cumulative[0])) / math.log(r)
+        return 1.0 - beta, novel_per_round
+    except (ValueError, ZeroDivisionError):
+        return 0.0, novel_per_round
+
+
 def _compute_cognitive_yield(findings: List[Finding]) -> float:
     """Compute Y = count × mean_abstraction for a round's findings.
 
@@ -725,30 +799,38 @@ def _compute_cognitive_yield(findings: List[Finding]) -> float:
 def _check_convergence(
     all_findings: List[List[Finding]],
     round_idx: int,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, Optional[List[int]]]:
     """γ-unified convergence check with Y(t) abstraction guard.
 
-    Stop when γ exceeds threshold AND Y(t) is not ascending.
-    Returns (converged: bool, reason: str).
+    Uses γ_novel (cluster-based) for the convergence decision.
+    γ_raw (raw counts) is logged for comparison but not used for decisions.
+
+    Stop when γ_novel exceeds threshold AND Y(t) is not ascending.
+    Returns (converged: bool, reason: str, novel_per_round: list | None).
     """
     if round_idx < 1:
-        return False, "min_rounds"
+        return False, "min_rounds", None
 
     if len(all_findings) < MIN_ROUNDS_FOR_GAMMA:
-        return False, "insufficient_data"
+        return False, "insufficient_data", None
 
     current = all_findings[-1]
     if not current:
-        return True, "zero_findings"
+        return True, "zero_findings", None
 
-    # Estimate γ
-    gamma = _estimate_gamma_from_findings(all_findings)
-    _log(f"  Convergence: γ={gamma:.3f} (threshold={GAMMA_CONVERGENCE_THRESHOLD})")
+    # Estimate both γ values
+    gamma_raw = _estimate_gamma_from_findings(all_findings)
+    gamma_novel, novel_per_round = _estimate_gamma_from_clusters(all_findings)
+    _log(f"  Convergence: γ_raw={gamma_raw:.3f}, γ_novel={gamma_novel:.3f} "
+         f"(threshold={GAMMA_CONVERGENCE_THRESHOLD})")
+    _log(f"  Novel findings per round: {novel_per_round}")
 
-    if gamma < GAMMA_CONVERGENCE_THRESHOLD:
-        return False, f"continuing(γ={gamma:.3f}<{GAMMA_CONVERGENCE_THRESHOLD})"
+    # Use γ_novel (cluster-deduplicated) for the convergence decision
+    if gamma_novel < GAMMA_CONVERGENCE_THRESHOLD:
+        return False, (f"continuing(γ_novel={gamma_novel:.3f}"
+                       f"<{GAMMA_CONVERGENCE_THRESHOLD})"), novel_per_round
 
-    # γ says converged — but check Y(t) abstraction guard.
+    # γ_novel says converged — but check Y(t) abstraction guard.
     # If Y(t) is still ascending (findings getting deeper even as count
     # drops), we should NOT stop — the system is in ascending abstraction
     # mode, which is the most valuable analytical phase.
@@ -758,10 +840,10 @@ def _check_convergence(
         _log(f"  Abstraction guard: Y(t-1)={y_previous:.2f}, Y(t)={y_current:.2f}")
 
         if y_current > y_previous * 1.1:  # 10% margin to avoid noise
-            return False, (f"γ_converged({gamma:.3f}) but Y(t) ascending "
-                          f"({y_previous:.2f}→{y_current:.2f})")
+            return False, (f"γ_novel_converged({gamma_novel:.3f}) but Y(t) ascending "
+                          f"({y_previous:.2f}→{y_current:.2f})"), novel_per_round
 
-    return True, f"γ_converged({gamma:.3f})"
+    return True, f"γ_novel_converged({gamma_novel:.3f})", novel_per_round
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -930,21 +1012,27 @@ def run_confer(
 ) -> Dict[str, Any]:
     """Run the baseline confer: blind R1 → adaptive R2+ → stop on convergence."""
     _log("=" * 60)
-    _log("BASELINE CONFER RUN 5: CC2 + CX + Gemini + DeepSeek + ChatGPT, FFF + CDSFL + multi-turn fallback")
+    _log("BASELINE CONFER RUN 9: CC2 + CX + Gemini + DeepSeek + ChatGPT, FFF + CDSFL + multi-turn fallback")
     _log(f"  Max rounds: {MAX_ROUNDS}")
     _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
-    _log(f"  Task: immune (dynamic_management.py)")
+    _log(f"  Task: immune ({len(IMMUNE_SOURCE_FILES)} source files, ~244K chars)")
     _log(f"  Logs: {LOGS_DIR}")
     _log("=" * 60)
 
-    # Load test articles — use task-extracted code, NOT the full file.
-    # The full dynamic_management.py is 269K chars (~67K tokens). Sending
-    # that raw caused CC2 and Gemini to timeout in the first attempt.
-    # Task extraction focuses on immune-relevant code + skeletal context.
-    full_code_raw = TEST_ARTICLE_PATH.read_text(encoding="utf-8")
-    full_code = _extract_task_area(full_code_raw, "immune") or full_code_raw
-    _log(f"  Immune extraction: {len(full_code_raw):,} → {len(full_code):,} chars "
-         f"({100*(1-len(full_code)/len(full_code_raw)):.0f}% reduction)")
+    # Load test articles — Run 9: concatenate actual implementation files.
+    # The re-export shim (dynamic_management.py) is only 78 lines / 3785 chars.
+    # Models need the real implementation (~244K chars total across 5 files).
+    # Decomposed dispatch handles the size for context-limited models.
+    full_code_parts = []
+    total_raw = 0
+    for src_path in IMMUNE_SOURCE_FILES:
+        src_text = src_path.read_text(encoding="utf-8")
+        rel = src_path.relative_to(REPO_ROOT)
+        full_code_parts.append(f"=== FILE: {rel} ({len(src_text):,} chars) ===\n{src_text}")
+        total_raw += len(src_text)
+    full_code = "\n\n".join(full_code_parts)
+    _log(f"  Immune source files: {len(IMMUNE_SOURCE_FILES)} files, "
+         f"{total_raw:,} raw chars → {len(full_code):,} chars with headers")
     math_appendix = MATH_APPENDIX_PATH.read_text(encoding="utf-8")
     verification_chain = VERIFICATION_CHAIN_PATH.read_text(encoding="utf-8")
     interface_summary = ""
@@ -979,7 +1067,7 @@ def run_confer(
     experiment_start = time.monotonic()
     start_round = 0
     result = {
-        "experiment": "baseline_confer_run7",
+        "experiment": "baseline_confer_run9",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "models": [mc.label for mc in exp_config.models
                     if mc.label in BASELINE_MODELS],
@@ -1111,14 +1199,13 @@ def run_confer(
             _log(f"    Dedup rate: {qg_result.dedup_count}/{len(findings)} = "
                  f"{qg_result.dedup_count/max(1,len(findings)):.0%}")
 
-        # ── Immune pipeline (Run 9+: 6-cell parallel verification) ───
-        # observation_only=True for Run 8, False for Run 9+
+        # ── Immune pipeline (Run 9: 6-cell parallel verification, active) ──
         immune_result = run_immune_pipeline(
             findings,
             [f for rnd in all_findings[:-1] for f in rnd],
             source_paths=_immune_source_paths,
-            observation_only=True,   # flip to False for Run 9
-            ct_enabled=False,        # flip to True for Run 9 (requires claude CLI)
+            observation_only=False,  # Run 9: active immune filtering
+            ct_enabled=True,         # Run 9: claude CLI tool enabled
             tau_sim=0.8,
         )
         _log(f"  Immune pipeline: {immune_result.rejection_rate:.0%} rejection rate, "
@@ -1339,9 +1426,17 @@ def run_confer(
             result["convergence_reason"] = "dm_diminishing_returns"
             break
 
-        # γ-unified convergence check
-        converged, reason = _check_convergence(all_findings, round_idx)
+        # γ-unified convergence check (uses γ_novel for decisions)
+        converged, reason, novel_per_round = _check_convergence(all_findings, round_idx)
         _log(f"  Convergence (γ-unified): {reason}")
+
+        # Add novelty data to round report
+        if novel_per_round is not None:
+            round_data["novelty"] = {
+                "novel_this_round": novel_per_round[-1] if novel_per_round else 0,
+                "novel_per_round": novel_per_round,
+                "total_unique_clusters": sum(novel_per_round),
+            }
 
         # Checkpoint after every round — survives process death
         _save_checkpoint(LOGS_DIR, round_idx, all_findings, result)

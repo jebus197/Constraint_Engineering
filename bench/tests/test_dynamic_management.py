@@ -1904,7 +1904,7 @@ class TestRemediationChains:
         return DynamicManager(config=config, models=models)
 
     def test_kappa_chain_step_0(self):
-        """Kappa stuck diagnosis triggers tau_sim reduction."""
+        """Kappa stuck diagnosis triggers tau_sim reduction (respects 0.3 floor)."""
         mgr = self._make_manager()
         old_tau = mgr.config.tau_sim
         diag = DetectorDiagnosis(
@@ -1916,7 +1916,9 @@ class TestRemediationChains:
         adj = mgr.apply_diagnosis(diag, round_idx=0)
         assert adj is not None
         assert adj["parameter"] == "tau_sim"
-        assert mgr.config.tau_sim == old_tau - 0.1
+        # lower_tau_sim_01 applies max(0.3, old - 0.1) — floor prevents
+        # false convergence from overly permissive similarity threshold
+        assert mgr.config.tau_sim == max(0.3, old_tau - 0.1)
 
     def test_kappa_chain_escalation(self):
         """When chain step 0 fails, escalation uses step 1."""
@@ -1936,7 +1938,7 @@ class TestRemediationChains:
         )
         adj = mgr.apply_diagnosis(diag, round_idx=5)
         assert adj is not None
-        assert mgr.config.tau_sim == old_tau - 0.1  # step 1 also lowers by 0.1
+        assert mgr.config.tau_sim == max(0.3, old_tau - 0.1)  # step 1 also lowers by 0.1, floor applies
 
     def test_kappa_chain_exhaustion(self):
         """When all chain steps exhausted, immune reports exhaustion."""

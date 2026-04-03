@@ -258,6 +258,10 @@ class DynamicManager:
         self._pre_fix_snapshots: List[Dict[str, Any]] = []
         # PR-3 fix: flag to defer autonomous remediation after regression
         self._regression_defer: bool = False
+        # F008 fix: initialize in __init__ instead of lazy hasattr in process_round
+        self._process_round_count: int = 0
+        # F005 fix: counter for consecutive healthy rounds (no regression detected)
+        self._healthy_rounds_since_regression: int = 0
 
         # --- Phase E: Dispatch health tracking ---
         # Records dispatch blocking events per model for false-positive detection.
@@ -367,12 +371,13 @@ class DynamicManager:
         Returns:
             RoundResult with all metrics and decisions.
         """
+        # F003 fix: reset per-round state at round boundary before processing.
+        self.failure_handler.reset_round_state()
+
         # The FSM advances current_round at the END of this method (via
         # select_event → COMPLETE).  So reading fsm.current_round here gives
         # the PREVIOUS round's index for rounds > 0.  Track the actual count
         # of process_round calls instead.
-        if not hasattr(self, '_process_round_count'):
-            self._process_round_count = 0
         round_idx = self._process_round_count
         self._process_round_count += 1
 
@@ -633,6 +638,26 @@ class DynamicManager:
                 s for s in self._pre_fix_snapshots
                 if round_idx - s["round"] < 2
             ]
+
+        # F005 fix: reset regression defer after resolution_hysteresis
+        # consecutive healthy rounds (no regression detected). The one-way
+        # latch otherwise permanently blocks autonomous remediation.
+        if self._regression_defer:
+            # If no regression was detected this round, increment healthy counter
+            regression_this_round = any(
+                round_idx - s["round"] >= 2
+                and s.get("metrics", {}).get("finding_count", 0) > 0
+                and self._get_current_metric("finding_count")
+                < s["metrics"].get("finding_count", 0) * 0.7
+                for s in self._pre_fix_snapshots
+            )
+            if not regression_this_round:
+                self._healthy_rounds_since_regression += 1
+            else:
+                self._healthy_rounds_since_regression = 0
+            if self._healthy_rounds_since_regression >= self.config.resolution_hysteresis:
+                self._regression_defer = False
+                self._healthy_rounds_since_regression = 0
 
         # --- Area 3: FSM transition ---
         event = self.fsm.select_event(
@@ -1233,7 +1258,7 @@ class DynamicManager:
             return None
 
         # PR-3 fix: skip autonomous remediation if regression detected
-        if getattr(self, '_regression_defer', False):
+        if self._regression_defer:
             return None
 
         # Check damping: was this parameter adjusted recently?
@@ -1469,12 +1494,15 @@ class DynamicManager:
 
             # Set remediation state for outcome verification
             current_metric = self._get_current_metric(step["target_metric"])
+            # F007 fix: pass chain_length so outcome verification knows
+            # whether escalation is possible or the chain is exhausted.
             self.health_monitor.set_remediation_state(
                 pathology_key=chain_key,
                 chain_idx=chain_idx,
                 applied_round=round_idx,
                 metric_at_apply=current_metric,
                 target_metric=step["target_metric"],
+                chain_length=len(chain),
             )
 
         return adjustment
@@ -1499,7 +1527,7 @@ class DynamicManager:
         step = deferred["step"]
 
         # PR-2 fix: check immune_damping_rounds before applying deferred fix
-        current_round = getattr(self, '_process_round_count', 0)
+        current_round = self._process_round_count
         for adj in self._immune_adjustments:
             if (adj.get("detector") == deferred["diagnosis"]["detector"]
                     and current_round - adj["round"] < self.config.immune_damping_rounds):
@@ -1522,12 +1550,15 @@ class DynamicManager:
             )
             deferred["status"] = "APPROVED"
             current_metric = self._get_current_metric(step["target_metric"])
+            # F007 fix: pass chain_length for outcome verification.
+            deferred_chain = self._REMEDIATION_CHAINS.get(deferred["chain_key"], [])
             self.health_monitor.set_remediation_state(
                 pathology_key=deferred["chain_key"],
                 chain_idx=deferred["chain_idx"],
                 applied_round=round_idx,
                 metric_at_apply=current_metric,
                 target_metric=step["target_metric"],
+                chain_length=len(deferred_chain),
             )
         return adjustment
 

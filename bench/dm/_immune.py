@@ -1019,6 +1019,12 @@ class DetectorHealthMonitor:
         "findings_decline": "findings_decline",
         "vocab_saturation": "vocab_saturation",
         "mu_novelty_disagree": "mu_novelty_disagree",
+        "model_failure": "model_failure",
+        "parser_yield": "parser_yield",
+        "monotonic_decline": "monotonic_decline",
+        "cpf_spike": "cpf_spike",
+        "dispatch_false_positive": "dispatch_false_positive",
+        "verification_miscalibration": "verification_miscalibration",
     }
 
     # --- Multi-modular fix classification ---
@@ -1145,6 +1151,14 @@ class DetectorHealthMonitor:
                         abs(recent_3[i]) <= abs(recent_3[i - 1]) * 1.05
                         for i in range(1, len(recent_3))
                     )
+                elif target_metric == "vocab_growth":
+                    # F010 fix: for vocab_growth, non-declining means the
+                    # saturation persists (problem WORSENING). Require
+                    # strictly increasing values to consider "improving".
+                    improving = all(
+                        recent_3[i] > recent_3[i - 1] * 1.05
+                        for i in range(1, len(recent_3))
+                    )
                 else:
                     improving = all(
                         recent_3[i] >= recent_3[i - 1] * 0.95
@@ -1251,6 +1265,19 @@ class DetectorHealthMonitor:
                 elif target_metric in ("mu",):
                     improving = all(
                         abs(recent_3[i]) <= abs(recent_3[i - 1]) * 1.05
+                        for i in range(1, len(recent_3))
+                    )
+                    if improving:
+                        iteration_failures.append(
+                            f"Module:trend — {target_metric} already improving "
+                            f"({[f'{v:.3f}' for v in recent_3]}), intervention "
+                            f"may be counterproductive"
+                        )
+                elif target_metric == "vocab_growth":
+                    # F010 fix: for vocab_growth, non-declining means the
+                    # saturation persists. Require strictly increasing.
+                    improving = all(
+                        recent_3[i] > recent_3[i - 1] * 1.05
                         for i in range(1, len(recent_3))
                     )
                     if improving:
