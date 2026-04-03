@@ -47,12 +47,32 @@ RUN 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):
 - CT agent Level 3 enforcement: schema + mechanical verification
 - New tools: z3 4.16, statsmodels 0.14.6, uncertainties 3.2.3
 
-NEXT ACTIONS (founder-approved sequence):
-1. Run 9 IN PROGRESS (3 April 2026). Immune pipeline load-bearing,
-   244K actual implementation, γ-on-clusters, calibrated tau_sim=0.33.
-2. Analyse Run 9 results — compare churn rate, convergence detection,
-   immune pipeline verdict distribution against Run 8 baseline.
-3. Bench Run 2 preparation after Run 9 validates immune filtering.
+RUN 9 COMPLETE (3 April 2026, 05:44 BST):
+- 20 rounds, 425 findings, 120 min. γ_raw=+0.157, C(H,E)=0.828.
+- 65 unique finding IDs (vs Run 8: 30). Churn 84.5% (vs 91.2%).
+- All 5 models produced implementation-level findings (task packet fix worked).
+- Immune: 21 DUPLICATE, 404 UNCERTAIN. B-Cell: 0 usage. CT: UNCERTAIN only.
+- THREE INFRASTRUCTURE BUGS — all must be fixed before Run 10:
+  1. `continue` bypass (line 1399): DM FSM terminal → exception handler
+     skips γ-on-clusters convergence check. Ran for R2-R4 only. Fix: move
+     convergence check outside try/except or into finally.
+  2. Hardcoded `tau_sim=0.8` (line 1209): overrides calibrated 0.33. NK Cell
+     dedup threshold unreachable. Fix: remove explicit kwarg, use default.
+  3. DM FSM TERMINAL(FAILURE) at R5, never recovers. All immune dispatch
+     recommendations flow through no-exclusion override only. Fix: investigate
+     FSM state machine — why does EXCLUDE cascade into unrecoverable FAILURE?
+- ADDITIONAL: B-Cell SymPy/z3 not firing (0 false_positive_db, 0 anomaly).
+  CT returns UNCERTAIN on all but near-exact duplicates. Both need investigation.
+
+NEXT ACTIONS (Run 10 prep):
+1. Fix continue bypass — convergence check must run every round
+2. Fix hardcoded tau_sim=0.8 — remove explicit kwarg
+3. Investigate/fix DM FSM terminal failure at R5
+4. Investigate B-Cell non-firing (SymPy/z3 never invoked)
+5. Investigate CT UNCERTAIN-only verdicts
+6. Switch runtime to Python 3.13 (/opt/homebrew/bin/python3.13)
+7. Cross-reference 65 unique Run 9 findings against already-applied fixes
+8. Run 10 with all infrastructure bugs fixed
 
 RUN 10 PREP (mark for next run):
 - Switch runtime from system Python 3.9 to Homebrew 3.13

@@ -22,17 +22,20 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
+- **Run 9 COMPLETE (3 April 2026):** 20 rounds, 425 findings, 120 min.
+  γ_raw=+0.157, C(H,E)=0.828. Terminated MAX_ROUNDS. 65 unique finding
+  IDs (vs Run 8: 30). Churn 84.5% (vs 91.2%). All 5 models produced
+  implementation-level findings (task packet fix worked). Immune pipeline
+  active: 21 DUPLICATE verdicts, 404 UNCERTAIN. Gemini benched at R5.
+  THREE INFRASTRUCTURE BUGS FOUND: (1) `continue` bypass — DM FSM terminal
+  at R5 skips γ-on-clusters convergence check for rounds 5-19; (2) hardcoded
+  `tau_sim=0.8` overrides calibrated 0.33 — NK Cell dedup threshold
+  unreachable; (3) DM FSM goes TERMINAL(FAILURE) at R5, never recovers.
+  B-Cell SymPy/z3 tools not firing (0 usage). CT fires but returns UNCERTAIN.
+  Logs: `bench/logs/baseline_confer_run9_20260403/`.
 - **Run 8 COMPLETE (3 April 2026):** 20 rounds, 339 findings, 52 min.
   γ = −0.041 (not converging), C(H,E) = 0.789 (strong corroboration).
-  CRITICAL: 91.2% churn rate (30 unique finding IDs / 339 total). Task
-  exhausted by Round 4 — Rounds 5-19 are restatement. γ detection gap
-  identified: Duane γ measures total rate (flat ~17/round), not novel rate.
-  Fix needed: compute γ on deduplicated findings. Immune pipeline (observation
-  mode): 100% UNCERTAIN — CT disabled, B-Cell/NK can't verify code-structural
-  claims. CT is the critical cell for code-review tasks. AQO: no signal
-  (prompt features don't vary on single task). Ω guard correctly benched
-  Gemini (R6) and DeepSeek (R10). Claude CLI PATH fix applied.
-  Analysis: `experimental_notes/Run8_Analysis_2026-04-03.md`.
+  91.2% churn rate (30 unique / 339 total). Task exhausted by Round 1.
   Logs: `bench/logs/baseline_confer_run8_20260402/`.
 - **Bench Run 1:** 27 tasks x 4 conditions = 108 runs, 5 models per run.
   ~78 of 108 complete. Known confounds (BENCH_RUN_1_ANALYSIS.md). Run 2 planned.
