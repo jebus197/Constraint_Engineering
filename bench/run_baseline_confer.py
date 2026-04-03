@@ -147,6 +147,11 @@ IMMUNE_SOURCE_FILES = [
     REPO_ROOT / "bench" / "dm" / "_failure_handler.py", # 25K  — failure handling
     REPO_ROOT / "bench" / "dm" / "_types.py",           # 27K  — type defs (immune portions)
     REPO_ROOT / "bench" / "dm" / "_convergence.py",     # 17K  — convergence detection
+    REPO_ROOT / "bench" / "immune_agents.py",           # 52K  — 6-cell immune pipeline
+    # ↑ Run 10: immune_agents.py added so models can review the pipeline that
+    # processes their findings. 6 bugs fixed in this file for Run 10, including
+    # f-string escaping that killed B-Cell since creation. Models should examine
+    # ALL commented-out code, pending fixes, and their downstream effects.
 ]
 MATH_APPENDIX_PATH = REPO_ROOT / "docs" / "MATHEMATICAL_APPENDIX.md"
 VERIFICATION_CHAIN_PATH = REPO_ROOT / "bench" / "verification_chain.py"
@@ -784,6 +789,67 @@ def _estimate_gamma_from_clusters(
         return 0.0, novel_per_round
 
 
+def _estimate_gamma_from_ids(
+    all_findings: List[List[Finding]],
+) -> tuple[float, List[int]]:
+    """Estimate Duane γ from novel finding-ID discovery rate.
+
+    Run 10 shadow signal: computed and logged but not used for convergence
+    decisions. Measures convergence by tracking which base finding IDs
+    (e.g. IM_F001) have appeared before. A finding is "novel" only if its
+    base ID (stripped of model prefix) has not been seen in any prior round.
+
+    This is more direct than cluster-based novelty: models explicitly assign
+    IDs, so restatement is self-declared rather than inferred from similarity.
+    The decay of novel IDs IS convergence — not a proxy for it.
+
+    The Duane model fitted to this series gives a continuous measure of
+    discovery exhaustion. When γ_ids >> threshold, the finding space is
+    genuinely depleted. The binary "3 consecutive zeros" check is a
+    degenerate endpoint of this curve (γ → ∞).
+
+    # NOTE FOR RUN 11: If γ_ids tracks γ_novel (cluster-based) consistently,
+    # promote γ_ids to a primary convergence signal. It avoids the threshold
+    # calibration sensitivity that plagues cluster-based dedup (tau_sim).
+    """
+    n_rounds = len(all_findings)
+    if n_rounds < MIN_ROUNDS_FOR_GAMMA:
+        return 0.0, [len(rnd) for rnd in all_findings]
+
+    seen_ids: set[str] = set()
+    novel_per_round: List[int] = []
+
+    for rnd_findings in all_findings:
+        novel_count = 0
+        for f in rnd_findings:
+            # Strip model prefix to get base ID (e.g. "IM_F001")
+            base_id = f.finding_id
+            if base_id not in seen_ids:
+                seen_ids.add(base_id)
+                novel_count += 1
+        novel_per_round.append(novel_count)
+
+    # Same Duane formula as cluster-based γ
+    cumulative: List[int] = []
+    total = 0
+    for c in novel_per_round:
+        total += c
+        cumulative.append(total)
+
+    if not cumulative or cumulative[0] <= 0:
+        return 0.0 if total == 0 else 1.0, novel_per_round
+
+    if cumulative[-1] <= cumulative[0]:
+        return (0.0 if cumulative[-1] == 0 else 1.0), novel_per_round
+
+    r = n_rounds
+    try:
+        beta = (math.log(cumulative[-1]) - math.log(cumulative[0])) / math.log(r)
+        return 1.0 - beta, novel_per_round
+    except (ValueError, ZeroDivisionError):
+        return 0.0, novel_per_round
+
+
 def _compute_cognitive_yield(findings: List[Finding]) -> float:
     """Compute Y = count × mean_abstraction for a round's findings.
 
@@ -818,12 +884,16 @@ def _check_convergence(
     if not current:
         return True, "zero_findings", None
 
-    # Estimate both γ values
+    # Estimate all three γ values
     gamma_raw = _estimate_gamma_from_findings(all_findings)
     gamma_novel, novel_per_round = _estimate_gamma_from_clusters(all_findings)
-    _log(f"  Convergence: γ_raw={gamma_raw:.3f}, γ_novel={gamma_novel:.3f} "
-         f"(threshold={GAMMA_CONVERGENCE_THRESHOLD})")
-    _log(f"  Novel findings per round: {novel_per_round}")
+    gamma_ids, novel_ids_per_round = _estimate_gamma_from_ids(all_findings)
+    _log(f"  Convergence: γ_raw={gamma_raw:.3f}, γ_novel={gamma_novel:.3f}, "
+         f"γ_ids={gamma_ids:.3f} (threshold={GAMMA_CONVERGENCE_THRESHOLD})")
+    _log(f"  Novel findings per round (clusters): {novel_per_round}")
+    _log(f"  Novel findings per round (IDs):      {novel_ids_per_round}")
+    # NOTE: γ_ids is a shadow signal for Run 10 — logged but not used for
+    # convergence decisions. If it tracks γ_novel reliably, promote in Run 11.
 
     # Use γ_novel (cluster-deduplicated) for the convergence decision
     if gamma_novel < GAMMA_CONVERGENCE_THRESHOLD:
@@ -1012,7 +1082,7 @@ def run_confer(
 ) -> Dict[str, Any]:
     """Run the baseline confer: blind R1 → adaptive R2+ → stop on convergence."""
     _log("=" * 60)
-    _log("BASELINE CONFER RUN 9: CC2 + CX + Gemini + DeepSeek + ChatGPT, FFF + CDSFL + multi-turn fallback")
+    _log("BASELINE CONFER RUN 10: CC2 + CX + Gemini + DeepSeek + ChatGPT — B-Cell live, γ_ids shadow, visibility fix")
     _log(f"  Max rounds: {MAX_ROUNDS}")
     _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
     _log(f"  Task: immune ({len(IMMUNE_SOURCE_FILES)} source files, ~244K chars)")
