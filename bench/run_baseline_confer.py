@@ -309,34 +309,83 @@ MULTITURN_CHUNK_TARGET = 30_000  # ~7.5K tokens — well within Codex comfort zo
 def _build_chunks(prompt: str, full_code: str, task_key: str) -> list[DecomposedChunk]:
     """Split a large prompt into WAIT-step chunks for multi-turn delivery.
 
-    Strategy: separate the preamble/instructions from the code artifact and
-    any appendices. Each becomes its own chunk. If any chunk exceeds
-    MULTITURN_CHUNK_TARGET, split it at natural boundaries (class/def/blank
-    line) or hard-split if no boundary found within target.
+    Run 10 strategy: SEQUENTIAL FILE DELIVERY.
 
-    Run 6 fix: previous threshold (80K) meant 100K artifacts landed in one
-    chunk, causing Codex timeouts. Now 30K with guaranteed hard-split fallback.
+    Instead of splitting code at arbitrary class/def boundaries (which
+    produces fragments and stubs that models report as bugs), split at
+    FILE boundaries. Each source file becomes its own chunk, delivered
+    complete. The model reads one file at a time, building understanding
+    incrementally. This mirrors how humans read codebases and how LLM
+    developers recommend handling large files.
+
+    Previous approach (Run 6-9): split at class/def boundaries within
+    files, producing "skeletal context" fragments. Result: 117 visibility
+    complaints from Codex (55) and DeepSeek (62) in Run 9, 4 INVALID
+    findings about "stubs" that don't exist in the real code.
+
+    New approach: complete files, sequential delivery, explicit instruction
+    to read fully before analysing. No file is split. If a single file
+    exceeds model capacity, fall back to the old class/def splitting for
+    that file only.
     """
     chunks: list[DecomposedChunk] = []
 
-    # Split at artifact boundary
+    # Extract preamble (everything before the artifact)
     if "=== ARTIFACT" in prompt:
         preamble, rest = prompt.split("=== ARTIFACT", 1)
-        chunks.append(DecomposedChunk(preamble.strip(), label="Preamble + instructions"))
+    else:
+        preamble = prompt
+        rest = ""
 
-        # Find each artifact block
-        parts = rest.split("=== END ARTIFACT")
+    # Sequential reading instruction
+    preamble_text = preamble.strip()
+    if "=== FILE:" in (rest or full_code):
+        n_files = (rest or full_code).count("=== FILE:")
+        preamble_text += (
+            f"\n\nYou will receive {n_files} source files delivered one at a "
+            f"time. Read each file carefully and in sequential order from "
+            f"start to finish. Do not attempt to absorb everything at once. "
+            f"Build your understanding incrementally. Only begin your "
+            f"analysis once you have seen all files.\n"
+        )
+    chunks.append(DecomposedChunk(preamble_text, label="Preamble + instructions"))
+
+    # Split at file boundaries (=== FILE: ... ===)
+    artifact_text = rest if rest else full_code
+    if "=== FILE:" in artifact_text:
+        import re as _re
+        file_blocks = _re.split(r"(?==== FILE:)", artifact_text)
+        for block in file_blocks:
+            block = block.strip()
+            if not block or not block.startswith("=== FILE:"):
+                continue
+
+            # Extract filename for the label
+            header_match = _re.match(r"=== FILE: (.+?) ===", block)
+            label = header_match.group(1) if header_match else "Source file"
+
+            if len(block) > MULTITURN_CHUNK_TARGET:
+                # Single file too large — fall back to class/def splitting
+                # (only _immune.py at ~103K should trigger this)
+                sub_chunks = _split_artifact(block, MULTITURN_CHUNK_TARGET)
+                for si, sc in enumerate(sub_chunks):
+                    chunks.append(DecomposedChunk(
+                        sc, label=f"{label} part {si+1}",
+                    ))
+            else:
+                chunks.append(DecomposedChunk(block, label=label))
+    elif "=== ARTIFACT" in prompt:
+        # Legacy artifact format (no FILE markers) — use old splitting
+        parts = artifact_text.split("=== END ARTIFACT")
         for i, part in enumerate(parts):
             text = part.strip()
             if not text:
                 continue
-            # Re-add the delimiter prefix if it was split off
             if not text.startswith("=== ARTIFACT"):
                 text = "=== ARTIFACT" + text
             text += "\n=== END ARTIFACT ==="
 
             if len(text) > MULTITURN_CHUNK_TARGET:
-                # Split large artifact at class/def boundaries, with hard-split fallback
                 sub_chunks = _split_artifact(text, MULTITURN_CHUNK_TARGET)
                 for si, sc in enumerate(sub_chunks):
                     chunks.append(DecomposedChunk(
@@ -345,13 +394,14 @@ def _build_chunks(prompt: str, full_code: str, task_key: str) -> list[Decomposed
             else:
                 chunks.append(DecomposedChunk(text, label=f"Artifact {i+1}"))
     else:
-        # No artifact structure — split by size
+        # No structure at all — split by size
         if len(prompt) <= MULTITURN_CHUNK_TARGET:
             chunks.append(DecomposedChunk(prompt, label="Full prompt"))
         else:
             for i in range(0, len(prompt), MULTITURN_CHUNK_TARGET):
                 chunk_text = prompt[i:i + MULTITURN_CHUNK_TARGET]
-                chunks.append(DecomposedChunk(chunk_text, label=f"Part {i // MULTITURN_CHUNK_TARGET + 1}"))
+                chunks.append(DecomposedChunk(
+                    chunk_text, label=f"Part {i // MULTITURN_CHUNK_TARGET + 1}"))
 
     return chunks
 
