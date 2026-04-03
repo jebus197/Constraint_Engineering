@@ -112,6 +112,7 @@ if "ANTHROPIC_API_KEY" in os.environ:
           file=sys.stderr, flush=True)
     del os.environ["ANTHROPIC_API_KEY"]
 
+from experiment_11_orchestrator import CLAUDE_CLI
 from run_benchmark import (
     ADVERSARIAL_PASS_TEMPLATE,
     CDSFL_DIRECTIVES,
@@ -1797,7 +1798,8 @@ def _call_cc_inner(system_prompt: str | None, user_prompt: str) -> str:
     under the same directive conditions as other models. System-level
     directives are injected via --system-prompt (CDSFL) or omitted (Control/HIL).
     """
-    cmd = ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
+    _cli = CLAUDE_CLI or "claude"
+    cmd = [_cli, "-p", "--model", "claude-opus-4-6", "--output-format", "text"]
 
     if _cc_bare_mode:
         cmd.append("--bare")
@@ -4099,7 +4101,7 @@ def run_task(
                     f"Reply in one sentence."
                 )
                 arbiter_response = _call_cli(
-                    ["claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"],
+                    [CLAUDE_CLI or "claude", "-p", "--model", "claude-opus-4-6", "--output-format", "text"],
                     input_text=arbiter_prompt,
                     timeout=arbiter_timeout,
                     label="cc_arbiter",
@@ -4450,10 +4452,10 @@ def main() -> None:
 
         # Validate environment — required CLIs must be available
         env_ok = True
-        required_clis = ["claude", "codex"]
-        for cli_name in required_clis:
+        required_clis = {"claude": CLAUDE_CLI or "claude", "codex": "codex"}
+        for cli_name, cli_path in required_clis.items():
             try:
-                sp.run([cli_name, "--version"], capture_output=True, timeout=10)
+                sp.run([cli_path, "--version"], capture_output=True, timeout=10)
             except (FileNotFoundError, sp.TimeoutExpired):
                 _err(f"  WARNING: {cli_name} CLI not found or not responding")
                 env_ok = False
@@ -4469,10 +4471,10 @@ def main() -> None:
         sys.exit(0)
 
     # Validate environment (non-dry-run) — required CLIs must be available
-    required_clis = ["claude", "codex"]
-    for cli_name in required_clis:
+    required_clis = {"claude": CLAUDE_CLI or "claude", "codex": "codex"}
+    for cli_name, cli_path in required_clis.items():
         try:
-            sp.run([cli_name, "--version"], capture_output=True, timeout=10)
+            sp.run([cli_path, "--version"], capture_output=True, timeout=10)
         except (FileNotFoundError, sp.TimeoutExpired):
             _err(f"ERROR: {cli_name} CLI not found or not responding")
             sys.exit(1)

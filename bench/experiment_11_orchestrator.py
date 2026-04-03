@@ -10,15 +10,45 @@ All settings from EXECUTION_PLAN_EXPERIMENT_11.md.
 
 from __future__ import annotations
 
+import glob as globmod
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Optional
+
+
+# ---------------------------------------------------------------------------
+# Claude CLI discovery (shared by all dispatch code)
+# ---------------------------------------------------------------------------
+
+def _find_claude_cli() -> Optional[str]:
+    """Find claude CLI binary — checks PATH then macOS app bundle locations."""
+    found = shutil.which("claude")
+    if found:
+        return found
+
+    # macOS app bundle locations (newest version first)
+    app_support = Path.home() / "Library" / "Application Support" / "Claude"
+    patterns = [
+        str(app_support / "claude-code" / "*" / "claude.app" / "Contents" / "MacOS" / "claude"),
+        str(app_support / "claude-code-vm" / "*" / "claude"),
+    ]
+    for pattern in patterns:
+        matches = sorted(globmod.glob(pattern), reverse=True)
+        if matches and os.path.isfile(matches[0]):
+            return matches[0]
+
+    return None
+
+
+CLAUDE_CLI: Optional[str] = _find_claude_cli()
+
 
 # ---------------------------------------------------------------------------
 # Configuration dataclasses (UX-readiness: all config is parameterised)
@@ -255,8 +285,14 @@ def call_claude_cli(
     Uses --system-prompt for native CDSFL delivery (unlike Codex which embeds
     in prompt body). Uses stdin piping for large prompts.
     """
+    cli = CLAUDE_CLI
+    if not cli:
+        raise FileNotFoundError(
+            "Claude CLI not found. Expected 'claude' in PATH or in "
+            "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+        )
     cmd = [
-        "claude", "-p",
+        cli, "-p",
         "--model", model_id,
         "--output-format", "text",
         "--no-session-persistence",

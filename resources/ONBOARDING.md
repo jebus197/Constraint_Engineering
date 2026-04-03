@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 2 April 2026 19:44 BST
+Last updated: 3 April 2026 00:59 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,6 +22,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
+- **Run 8 COMPLETE (3 April 2026):** 20 rounds, 339 findings, 52 min.
+  γ = −0.041 (not converging), C(H,E) = 0.789 (strong corroboration).
+  CRITICAL: 91.2% churn rate (30 unique finding IDs / 339 total). Task
+  exhausted by Round 4 — Rounds 5-19 are restatement. γ detection gap
+  identified: Duane γ measures total rate (flat ~17/round), not novel rate.
+  Fix needed: compute γ on deduplicated findings. Immune pipeline (observation
+  mode): 100% UNCERTAIN — CT disabled, B-Cell/NK can't verify code-structural
+  claims. CT is the critical cell for code-review tasks. AQO: no signal
+  (prompt features don't vary on single task). Ω guard correctly benched
+  Gemini (R6) and DeepSeek (R10). Claude CLI PATH fix applied.
+  Analysis: `experimental_notes/Run8_Analysis_2026-04-03.md`.
+  Logs: `bench/logs/baseline_confer_run8_20260402/`.
 - **Bench Run 1:** 27 tasks x 4 conditions = 108 runs, 5 models per run.
   ~78 of 108 complete. Known confounds (BENCH_RUN_1_ANALYSIS.md). Run 2 planned.
 - **Meta-test Stage 1 COMPLETE (27 March 2026):** 5-model blind pass on the

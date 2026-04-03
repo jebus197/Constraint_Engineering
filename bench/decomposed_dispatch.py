@@ -42,7 +42,7 @@ from typing import Any, Sequence
 # Import shared logging and circuit breaker from orchestrator
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from experiment_11_orchestrator import _log, CircuitBreakerTripped
+from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -416,6 +416,13 @@ def _decomposed_claude_cli(
     """
     import uuid
 
+    cli = CLAUDE_CLI
+    if not cli:
+        raise FileNotFoundError(
+            "Claude CLI not found. Expected 'claude' in PATH or in "
+            "~/Library/Application Support/Claude/claude-code/*/claude.app/Contents/MacOS/claude"
+        )
+
     total = len(chunks) + 1  # chunks + final instruction
     total_chars = sum(c.chars for c in chunks) + len(final_instruction)
     session_id = str(uuid.uuid4())
@@ -435,7 +442,7 @@ def _decomposed_claude_cli(
         if i == 0:
             # First chunk: create session with --session-id and --system-prompt
             cmd = [
-                "claude", "-p",
+                cli, "-p",
                 "--model", model_id,
                 "--output-format", "text",
                 "--session-id", session_id,
@@ -445,7 +452,7 @@ def _decomposed_claude_cli(
         else:
             # Subsequent chunks: resume existing session
             cmd = [
-                "claude", "-p",
+                cli, "-p",
                 "--output-format", "text",
                 "--resume", session_id,
             ]
@@ -493,7 +500,7 @@ def _decomposed_claude_cli(
     ) + final_instruction
 
     cmd_final = [
-        "claude", "-p",
+        cli, "-p",
         "--output-format", "text",
         "--resume", session_id,
     ]

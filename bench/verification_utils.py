@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from bench.dm._types import Finding
 from bench.dm._convergence import _finding_similarity
+from bench.experiment_11_orchestrator import CLAUDE_CLI
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -438,7 +439,7 @@ def pm_verify_findings(
     try:
         result = sp.run(
             [
-                "claude", "-p", prompt,
+                CLAUDE_CLI or "claude", "-p", prompt,
                 "--allowedTools", "Read,Bash,Grep,Glob",
                 "--max-turns", "3",
             ],

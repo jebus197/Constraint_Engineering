@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 April 2026 23:14 BST
+Last updated: 3 April 2026 00:59 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,41 +19,43 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (2 April 2026, 23:14 BST)
+## Current Pending Work (3 April 2026, 00:59 BST)
 
-Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b ALL COMPLETE. Run 7b sy+f COMPLETE.
-Run 7b BUILD SESSION COMPLETE. Run 9 INFRASTRUCTURE BUILT. Run 8 READY TO LAUNCH.
+Experiments 12–18 ALL COMPLETE. Runs 5, 6, 7b, 8 ALL COMPLETE.
+Run 7b BUILD SESSION COMPLETE. Run 9 INFRASTRUCTURE BUILT.
+
+RUN 8 COMPLETE (3 April 2026, 00:39 BST):
+- 20 rounds, 339 findings, 52 minutes. γ = −0.041, C(H,E) = 0.789
+- Terminated: MAX_ROUNDS (no convergence detected)
+- CRITICAL FINDING: 91.2% churn rate (30 unique finding IDs / 339 total)
+- Task exhausted by Round 4 — all genuine issues found. Rounds 5-19 = restatement.
+- γ detection gap identified: Duane γ measures total rate (flat), not novel rate
+  (declining). Models produce constant-volume output regardless of novelty.
+  FIX: compute γ on deduplicated findings, or after immune filtering.
+- Ω churn guard correctly benched Gemini (R6) and DeepSeek (R10)
+- Immune pipeline (observation mode): 100% UNCERTAIN — expected with CT disabled.
+  CT agent is the critical cell for code-review tasks; B-Cell/NK blind without it.
+- AQO: confidence 0.188, no useful signal (prompt features don't vary on single task)
+- Claude CLI PATH fix applied: _find_claude_cli() discovery in experiment_11_orchestrator.py
+- Analysis: experimental_notes/Run8_Analysis_2026-04-03.md
+- TTS: ~/Desktop/CDSFL_tts/Run8_Analysis_2026-04-03.txt
+- Logs: bench/logs/baseline_confer_run8_20260402/
 
 RUN 9 INFRASTRUCTURE BUILT (2 April 2026, `eeb7f40` + `ac0bf47`):
-- 6-cell immune agent pipeline: Dendritic Cell (triage), Cytotoxic T-Cell
-  (code FFF), B-Cell (SymPy + z3 + statsmodels), NK Cell (dedup + FP DB),
-  Helper T-Cell (synthesis), Regulatory T-Cell (autoimmune prevention)
+- 6-cell immune agent pipeline (details in ONBOARDING.md)
 - ALL 6 agents structurally constrained by code, not natural language
-- CT agent Level 3 enforcement: schema-forced evidence with file:line:code
-  citations, mechanically verified by _verify_ct_claim(). Verdict from
-  verification results, not agent opinion.
-- New tools: z3-solver 4.16, statsmodels 0.14.6, uncertainties 3.2.3
-  via Python 3.13 discovery at /Library/Frameworks/.../3.13/bin/python3
-- B-Cell class-switches SymPy → z3 on uncertain results
-- NK Cell seeded with Run 7b false-positive patterns (Codex @dataclass ×8)
-- Wired into runner: observation_only=True + ct_enabled=False for Run 8
-- 465 tests pass
-- Files: bench/immune_agents.py (~630 lines), bench/ct_verdict_schema.json,
-  bench/verification_utils.py (updated), bench/tests/test_immune_agents.py (38 tests)
-
-RUN 7b BUILD SESSION COMPLETE (2 April 2026, `4b70824`):
-- 14 of 16 verified bugs fixed, quality gate built, Layer 3 activated
-- Details in ONBOARDING.md
+- CT agent Level 3 enforcement: schema + mechanical verification
+- New tools: z3 4.16, statsmodels 0.14.6, uncertainties 3.2.3
 
 NEXT ACTIONS (founder-approved sequence):
-1. Run 8 — models examine the immune layer they are running under. Quality gate
-   + immune pipeline observe but do not filter. Layer 3 actively steers prompts.
-   Ω churn guard and context budget remain active.
-2. If quality gate + immune pipeline observations match manual sy+f results →
-   promote to load-bearing for Run 9: flip observation_only=False, ct_enabled=True.
-   Full 6-cell immune pipeline filters findings between rounds.
-3. Bench Run 2 preparation — domain tools (pint, astropy, shapely, chempy,
-   biopython) available for B-Cell class-switching on diverse tasks.
+1. Collate ~30 unique findings from Run 8 (deduplicate by finding_id)
+2. Verify highest-value findings (CC2 R19 cross-cutting: deferred-remediation
+   lifecycle, pre-fix snapshot rollback, convergence-threshold ordering) against
+   actual implementation files using SymPy/z3/FFF
+3. Fix γ convergence detection — track deduplicated findings, not raw counts
+4. Run 9 — flip observation_only=False, ct_enabled=True. Full immune pipeline
+   load-bearing. CT reads actual source to verify code-structural claims.
+5. Bench Run 2 preparation after Run 9 validates immune filtering.
 
 RUN 5 RESULTS (1 April 2026, COMPLETE):
 - 155 corrected findings, 31 unique bug clusters, 16 critical (sev ≥ 0.85)
