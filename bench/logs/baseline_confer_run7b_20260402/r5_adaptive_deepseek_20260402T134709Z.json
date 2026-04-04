@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T134709Z",
+  "phase": "r5_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2270,
+  "response": "**FINDING_ID: Claude_IM_F001**\n**SEVERITY:** 0.65\n**FLAW_CLASS:** 6 (edge-case)\n**ABSTRACTION_INDEX:** 0.45\n**DESCRIPTION:** `DetectorHealthMonitor.record_round()` Check 5 (vocab saturation) slices `self._finding_counts[-vs_window:]` without verifying that `self._finding_counts` has at least `vs_window` entries. The guard condition only checks `len(self._vocab_growth_history) >= vs_window`. If `self._finding_counts` is shorter (due to missing `record_round()` calls or different update ordering), this will either raise an `IndexError` (negative index out of range) or use a shorter window than `vs_window`, causing misaligned window comparison and potentially incorrect saturation detection.\n\n**PROPOSED_FIX:**\n```python\n# In record_round(), Check 5 block, replace the existing condition:\n# Original:\nif len(self._vocab_growth_history) >= vs_window:\n    recent_vg = self._vocab_growth_history[-vs_window:]\n    tau_vg = self._config.tau_vocab_growth if self._config else 0.04\n    if all(vg < tau_vg for vg in recent_vg):\n        recent_fc = self._finding_counts[-vs_window:]  # UNSAFE\n        if sum(recent_fc) > 0:\n            # ... emit diagnosis\n\n# Fixed:\nif (len(self._vocab_growth_history) >= vs_window and \n    len(self._finding_counts) >= vs_window):\n    recent_vg = self._vocab_growth_history[-vs_window:]\n    tau_vg = self._config.tau_vocab_growth if self._config else 0.04\n    if all(vg < tau_vg for vg in recent_vg):\n        recent_fc = self._finding_counts[-vs_window:]  # Now safe\n        if sum(recent_fc) > 0:\n            # ... emit diagnosis (same as before)\n```\n\n**VERIFIED:** TRUE — The fix is syntactically correct and directly addresses the unsafe slice. No semantic changes beyond the added guard.\n\n**FOLLOW:** This fix ensures window alignment between vocab growth and finding counts, preventing a potential `IndexError`. However, if the two lists become desynchronized (e.g., `record_vocab_growth()` called without `record_round()`), the check will be skipped entirely. This is a safe failure mode — skipping detection is preferable to crashing — but it may delay saturation detection. Downstream, no other code depends on the internal slicing of `_finding_counts` in this check. The change does not affect any other pathology detection logic.",
+  "metadata": {
+    "round": 5,
+    "elapsed": 239.4,
+    "chars": 2270,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 217469
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260401T084217Z",
+  "phase": "r1_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2313,
+  "response": "**FINDING_ID:** IM_F030  \n**SEVERITY:** 0.75  \n**FLAW_CLASS:** 1 (logic)  \n**ABSTRACTION_INDEX:** 0.40  \n**DESCRIPTION:** The cascade guard in `FailureHandler` incorrectly persists reallocation depth across rounds, permanently blocking tasks from reallocation after hitting the limit once. The `_realloc_depth` dictionary maps `task_id → depth` and is incremented by `record_reallocation()`, but never reset. The design intent is to prevent infinite reallocation loops **within a single round** (CC2 contribution). However, because depth accumulates across rounds, a task that reaches `max_realloc_depth` (default 2) in round 1 can never be reallocated in any subsequent round, even if the task is newly introduced in that round. This violates the per‑round semantics of the cascade guard and can cause unnecessary task failures in later rounds.  \n**PROPOSED_FIX:**  \nAdd a method to reset reallocation depths at round boundaries, and call it from the dynamic manager’s round‑start logic.\n\n```python\n<<<<\n    def record_reallocation(self, task_id: str) -> None:\n        \"\"\"Increment reallocation depth for a task.\"\"\"\n        self._realloc_depth[task_id] = self._realloc_depth.get(task_id, 0) + 1\n====\n    def record_reallocation(self, task_id: str) -> None:\n        \"\"\"Increment reallocation depth for a task.\"\"\"\n        self._realloc_depth[task_id] = self._realloc_depth.get(task_id, 0) + 1\n\n    def reset_reallocation_depth(self) -> None:\n        \"\"\"Reset reallocation depths for all tasks. Call at the start of each round.\"\"\"\n        self._realloc_depth.clear()\n>>>>\n```\n\n**FOLLOW:**  \n1. The dynamic manager’s `process_round()` must call `failure_handler.reset_reallocation_depth()` at the beginning of each round. Since `process_round()` is outside the provided snippet, this creates an interface requirement: the immune subsystem must expose this reset method, and the manager must use it.  \n2. All tasks that were previously blocked will now be eligible for reallocation again each round, restoring the intended per‑round cascade protection. No other functions reference `_realloc_depth` aside from `check_reallocation_depth` and `record_reallocation`, so the change is locally contained.  \n3. The `max_realloc_depth` config parameter now applies per round, which matches the original design documentation.",
+  "metadata": {
+    "round": 1,
+    "elapsed": 277.6,
+    "chars": 2313,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 119574
+  }
+}

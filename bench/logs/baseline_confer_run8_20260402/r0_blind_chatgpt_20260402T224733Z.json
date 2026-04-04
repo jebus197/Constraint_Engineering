@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T224733Z",
+  "phase": "r0_blind",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1880,
+  "response": "[\n  {\n    \"FINDING_ID\": \"IM_F001\",\n    \"SEVERITY\": 0.98,\n    \"FLAW_CLASS\": 4,\n    \"ABSTRACTION_INDEX\": 0.95,\n    \"DESCRIPTION\": \"FIND: The provided artifact is only a re-export shim (`dynamic_management.py`) and contains none of the immune-layer implementation named in the analytical boundary: `DetectorDiagnosis`, `DetectorHealthMonitor`, `FailureHandler`, `_REMEDIATION_CHAINS`, `process_round()` immune integration, `apply_diagnosis()`, `_apply_transform()`, or immune config parameters. Independent observation: the file body consists of a module docstring plus import re-exports from `bench.dm._types`, `_immune`, `_failure_handler`, and `_manager`; there are no class/function definitions or config declarations to inspect. Therefore no implementation-level immune findings can be truthfully established from this artifact alone. This is a completeness/blocking issue in the review setup, not evidence that the immune layer is correct.\",\n    \"PROPOSED_FIX\": \"FIX: Replace the review artifact set with the actual boundary files required for immune analysis: `bench/dm/_types.py`, `bench/dm/_immune.py`, `bench/dm/_failure_handler.py`, and `bench/dm/_manager.py` (or paste the definitions of `DetectorDiagnosis`, `DetectorHealthMonitor`, `FailureHandler`, `_REMEDIATION_CHAINS`, `process_round`, `apply_diagnosis`, and `_apply_transform`). Exact replacement for the artifact body is not meaningful as a code patch to the shim; the actionable correction is to supply the implementation files instead of the compatibility re-export file. FOLLOW: Downstream impact is total for this review round: all requested immune-behaviour checks remain unassessed until the actual implementation is provided. Any claim about timeout handling, remediation gating, damping, chain exhaustion, directive injection, or config mutation would otherwise be fabricated.\",\n    \"VERIFIED\": true\n  }\n]",
+  "metadata": {
+    "round": 0,
+    "elapsed": 10.0,
+    "chars": 1880,
+    "findings_count": 1,
+    "decomposed": false,
+    "prompt_chars": 10349
+  }
+}

@@ -1,0 +1,3195 @@
+{
+  "experiment": "baseline_confer_run9",
+  "start_time": "2026-04-03T01:48:46.868361+00:00",
+  "models": [
+    "CC2",
+    "Codex",
+    "ChatGPT",
+    "Gemini",
+    "DeepSeek"
+  ],
+  "task": "immune",
+  "max_rounds": 20,
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 34,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 286.8,
+      "per_model": {
+        "ChatGPT": 8,
+        "Codex": 7,
+        "DeepSeek": 5,
+        "Gemini": 4,
+        "CC2": 10
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 31,
+        "ast_checks": 15,
+        "stage_timings": {
+          "dedup": 0.0,
+          "sympy": 5.9018,
+          "ast": 0.1555,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 3,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0041,
+          "parallel_verification": 29.3546,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "ChatGPT_IM_F007": "UNCERTAIN",
+          "ChatGPT_IM_F008": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "Codex_IM_F006": "UNCERTAIN",
+          "Codex_IM_F007": "UNCERTAIN",
+          "DeepSeek_IM_F001": "UNCERTAIN",
+          "DeepSeek_IM_F002": "UNCERTAIN",
+          "DeepSeek_IM_F003": "UNCERTAIN",
+          "DeepSeek_IM_F004": "UNCERTAIN",
+          "DeepSeek_IM_F005": "UNCERTAIN",
+          "Gemini_IM_F001": "UNCERTAIN",
+          "Gemini_IM_F002": "UNCERTAIN",
+          "Gemini_IM_F003": "UNCERTAIN",
+          "Gemini_IM_F004": "UNCERTAIN",
+          "CC2_IM_F001": "UNCERTAIN",
+          "CC2_IM_F002": "UNCERTAIN",
+          "CC2_IM_F003": "UNCERTAIN",
+          "CC2_IM_F004": "UNCERTAIN",
+          "CC2_IM_F005": "UNCERTAIN",
+          "CC2_IM_F006": "UNCERTAIN",
+          "CC2_IM_F007": "UNCERTAIN",
+          "CC2_IM_F008": "UNCERTAIN",
+          "CC2_IM_F009": "UNCERTAIN",
+          "CC2_IM_F010": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5996,
+          "gamma": 0.4004,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1182,
+            "beta_output": 0.8818,
+            "A": 1.4706,
+            "compound_obj": 0.1738,
+            "dist_from_optimal": 0.3818,
+            "n_findings": 10,
+            "r_sq_output": 0.9984132469878279
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1749,
+            "beta_output": 0.8251,
+            "A": 1.376,
+            "compound_obj": 0.2407,
+            "dist_from_optimal": 0.3251,
+            "n_findings": 8,
+            "r_sq_output": 0.9993908738975135
+          },
+          "Codex": {
+            "gamma_output": 0.1357,
+            "beta_output": 0.8643,
+            "A": 1.4415,
+            "compound_obj": 0.1955,
+            "dist_from_optimal": 0.3643,
+            "n_findings": 7,
+            "r_sq_output": 0.9995107574398433
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1197,
+            "beta_output": 0.8803,
+            "A": 1.4681,
+            "compound_obj": 0.1757,
+            "dist_from_optimal": 0.3803,
+            "n_findings": 5,
+            "r_sq_output": 0.9998182612459152
+          },
+          "Gemini": {
+            "gamma_output": -0.0201,
+            "beta_output": 1.0201,
+            "A": 1.7012,
+            "compound_obj": -0.0342,
+            "dist_from_optimal": 0.5201,
+            "n_findings": 4,
+            "r_sq_output": 0.9979480500354406
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.2407,
+        "Codex": 0.1955,
+        "DeepSeek": 0.1757,
+        "Gemini": -0.0342,
+        "CC2": 0.1812
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.363,
+          "novelty_score": 1.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1518,
+        "recommendation": null,
+        "confidence": null
+      }
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 29,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 358.7,
+      "per_model": {
+        "Codex": 3,
+        "ChatGPT": 8,
+        "Gemini": 6,
+        "CC2": 8,
+        "DeepSeek": 4
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 27,
+        "ast_checks": 3,
+        "stage_timings": {
+          "dedup": 0.0356,
+          "sympy": 5.115,
+          "ast": 0.0315,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 2,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0031,
+          "parallel_verification": 40.4506,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0001
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "ChatGPT_IM_F007": "UNCERTAIN",
+          "ChatGPT_IM_F008": "UNCERTAIN",
+          "Gemini_IM_F031": "UNCERTAIN",
+          "Gemini_IM_F032": "UNCERTAIN",
+          "Gemini_IM_F033": "UNCERTAIN",
+          "Gemini_IM_F034": "UNCERTAIN",
+          "Gemini_IM_F035": "UNCERTAIN",
+          "Gemini_IM_F036": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN",
+          "CC2_CC_IM_F008": "UNCERTAIN",
+          "DeepSeek_CLAUDE_IM_F001": "UNCERTAIN",
+          "DeepSeek_prefix for all findings.\"": "UNCERTAIN",
+          "DeepSeek_CLAUDE_IM_F002": "UNCERTAIN",
+          "DeepSeek_CLAUDE_IM_F003": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0799,
+            "beta_output": 0.9201,
+            "A": 1.5298,
+            "compound_obj": 0.1223,
+            "dist_from_optimal": 0.4201,
+            "n_findings": 8,
+            "r_sq_output": 0.9920101617676726
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1653,
+            "beta_output": 0.8347,
+            "A": 1.388,
+            "compound_obj": 0.2294,
+            "dist_from_optimal": 0.3347,
+            "n_findings": 8,
+            "r_sq_output": 0.998700386386968
+          },
+          "Codex": {
+            "gamma_output": 0.1841,
+            "beta_output": 0.8159,
+            "A": 1.3567,
+            "compound_obj": 0.2497,
+            "dist_from_optimal": 0.3159,
+            "n_findings": 3,
+            "r_sq_output": 0.9973596349102178
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1478,
+            "beta_output": 0.8522,
+            "A": 1.417,
+            "compound_obj": 0.2094,
+            "dist_from_optimal": 0.3522,
+            "n_findings": 4,
+            "r_sq_output": 0.9988288958639824
+          },
+          "Gemini": {
+            "gamma_output": 0.09,
+            "beta_output": 0.91,
+            "A": 1.513,
+            "compound_obj": 0.1362,
+            "dist_from_optimal": 0.41,
+            "n_findings": 6,
+            "r_sq_output": 0.9982958679447691
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2497,
+        "ChatGPT": 0.2294,
+        "Gemini": 0.1362,
+        "CC2": 0.1223,
+        "DeepSeek": 0.2094
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1894,
+        "recommendation": null,
+        "confidence": null
+      },
+      "novelty": {
+        "novel_this_round": 20,
+        "novel_per_round": [
+          32,
+          20
+        ],
+        "total_unique_clusters": 52
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 26,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 335.7,
+      "per_model": {
+        "Codex": 4,
+        "ChatGPT": 8,
+        "DeepSeek": 5,
+        "Gemini": 3,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 23,
+        "ast_checks": 9,
+        "stage_timings": {
+          "dedup": 0.0638,
+          "sympy": 4.8163,
+          "ast": 0.101,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 3,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0026,
+          "parallel_verification": 34.2525,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "ChatGPT_IM_F007": "UNCERTAIN",
+          "ChatGPT_IM_F008": "UNCERTAIN",
+          "DeepSeek_Claude_IM_F001": "UNCERTAIN",
+          "DeepSeek_Claude_IM_F002": "UNCERTAIN",
+          "DeepSeek_Claude_IM_F003": "UNCERTAIN",
+          "DeepSeek_Claude_IM_F004": "UNCERTAIN",
+          "DeepSeek_Claude_IM_F005": "UNCERTAIN",
+          "Gemini_IM_F010": "UNCERTAIN",
+          "Gemini_IM_F011": "UNCERTAIN",
+          "Gemini_IM_F012": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1267,
+            "beta_output": 0.8733,
+            "A": 1.452,
+            "compound_obj": 0.184,
+            "dist_from_optimal": 0.3733,
+            "n_findings": 6,
+            "r_sq_output": 0.9979720665544
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1235,
+            "beta_output": 0.8765,
+            "A": 1.4574,
+            "compound_obj": 0.1799,
+            "dist_from_optimal": 0.3765,
+            "n_findings": 8,
+            "r_sq_output": 0.9943259131927595
+          },
+          "Codex": {
+            "gamma_output": 0.1308,
+            "beta_output": 0.8692,
+            "A": 1.4453,
+            "compound_obj": 0.189,
+            "dist_from_optimal": 0.3692,
+            "n_findings": 4,
+            "r_sq_output": 0.9982465345080117
+          },
+          "DeepSeek": {
+            "gamma_output": -0.0091,
+            "beta_output": 1.0091,
+            "A": 1.6779,
+            "compound_obj": -0.0153,
+            "dist_from_optimal": 0.5091,
+            "n_findings": 5,
+            "r_sq_output": 0.9953457089096054
+          },
+          "Gemini": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 3,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.189,
+        "ChatGPT": 0.1799,
+        "DeepSeek": -0.0153,
+        "Gemini": 0.0,
+        "CC2": 0.184
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 1.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1075,
+        "recommendation": null,
+        "confidence": null
+      },
+      "novelty": {
+        "novel_this_round": 13,
+        "novel_per_round": [
+          32,
+          20,
+          13
+        ],
+        "total_unique_clusters": 65
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 700.7,
+      "per_model": {
+        "Codex": 3,
+        "ChatGPT": 8,
+        "Gemini": 1,
+        "CC2": 8,
+        "DeepSeek": 1
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 21,
+        "ast_checks": 12,
+        "stage_timings": {
+          "dedup": 0.1045,
+          "sympy": 3.9887,
+          "ast": 0.2167,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0075,
+          "parallel_verification": 0.2208,
+          "helper_t": 0.0,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "ChatGPT_IM_F007": "UNCERTAIN",
+          "ChatGPT_IM_F008": "UNCERTAIN",
+          "Gemini_CDSFL_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN",
+          "CC2_CC_IM_F008": "UNCERTAIN",
+          "DeepSeek_IM_F009": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1305,
+            "beta_output": 0.8695,
+            "A": 1.4458,
+            "compound_obj": 0.1886,
+            "dist_from_optimal": 0.3695,
+            "n_findings": 8,
+            "r_sq_output": 0.9976756025779073
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1417,
+            "beta_output": 0.8583,
+            "A": 1.4271,
+            "compound_obj": 0.2022,
+            "dist_from_optimal": 0.3583,
+            "n_findings": 8,
+            "r_sq_output": 0.9924288054007836
+          },
+          "Codex": {
+            "gamma_output": 0.1666,
+            "beta_output": 0.8334,
+            "A": 1.3857,
+            "compound_obj": 0.2309,
+            "dist_from_optimal": 0.3334,
+            "n_findings": 3,
+            "r_sq_output": 0.9992798019833182
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2309,
+        "ChatGPT": 0.2022,
+        "Gemini": 0.4157,
+        "CC2": 0.1886,
+        "DeepSeek": 0.4157
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2906,
+        "recommendation": null,
+        "confidence": null
+      },
+      "novelty": {
+        "novel_this_round": 14,
+        "novel_per_round": [
+          32,
+          20,
+          13,
+          14
+        ],
+        "total_unique_clusters": 79
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 29,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 886.7,
+      "per_model": {
+        "ChatGPT": 7,
+        "Codex": 6,
+        "Gemini": 3,
+        "DeepSeek": 5,
+        "CC2": 8
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 26,
+        "ast_checks": 12,
+        "stage_timings": {
+          "dedup": 0.1402,
+          "sympy": 5.2165,
+          "ast": 0.236,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 4,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0038,
+          "parallel_verification": 21.6771,
+          "helper_t": 0.0002,
+          "regulatory_t": 0.0001
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "ChatGPT_IM_F007": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "Codex_IM_F006": "UNCERTAIN",
+          "Gemini_IM_F001": "UNCERTAIN",
+          "Gemini_IM_F002": "UNCERTAIN",
+          "Gemini_IM_F003": "UNCERTAIN",
+          "DeepSeek_CC2_VCH_F001": "UNCERTAIN",
+          "DeepSeek_CC2_VCH_F002": "UNCERTAIN",
+          "DeepSeek_CC2_VCH_F003": "UNCERTAIN",
+          "DeepSeek_CC2_VCH_F004": "UNCERTAIN",
+          "DeepSeek_CC2_VCH_F005": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN",
+          "CC2_CC_IM_F008": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0876,
+            "beta_output": 0.9124,
+            "A": 1.517,
+            "compound_obj": 0.133,
+            "dist_from_optimal": 0.4124,
+            "n_findings": 8,
+            "r_sq_output": 0.9983767368141369
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1588,
+            "beta_output": 0.8412,
+            "A": 1.3988,
+            "compound_obj": 0.2221,
+            "dist_from_optimal": 0.3412,
+            "n_findings": 7,
+            "r_sq_output": 0.9990006360521051
+          },
+          "Codex": {
+            "gamma_output": 0.1037,
+            "beta_output": 0.8963,
+            "A": 1.4903,
+            "compound_obj": 0.1546,
+            "dist_from_optimal": 0.3963,
+            "n_findings": 6,
+            "r_sq_output": 0.9999702130072761
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1254,
+            "beta_output": 0.8746,
+            "A": 1.4542,
+            "compound_obj": 0.1824,
+            "dist_from_optimal": 0.3746,
+            "n_findings": 5,
+            "r_sq_output": 0.9992861003936687
+          },
+          "Gemini": {
+            "gamma_output": 0.2491,
+            "beta_output": 0.7509,
+            "A": 1.2485,
+            "compound_obj": 0.311,
+            "dist_from_optimal": 0.2509,
+            "n_findings": 3,
+            "r_sq_output": 0.9997054259260443
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.2221,
+        "Codex": 0.1546,
+        "Gemini": 0.311,
+        "DeepSeek": 0.1824,
+        "CC2": 0.133
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2006,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -1.0, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      },
+      "novelty": {
+        "novel_this_round": 16,
+        "novel_per_round": [
+          32,
+          20,
+          13,
+          14,
+          16
+        ],
+        "total_unique_clusters": 95
+      }
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 256.0,
+      "per_model": {
+        "ChatGPT": 4,
+        "Codex": 5,
+        "Gemini": 4,
+        "DeepSeek": 2,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 21,
+        "ast_checks": 12,
+        "stage_timings": {
+          "dedup": 0.1538,
+          "sympy": 4.2114,
+          "ast": 0.1399,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0031,
+          "parallel_verification": 0.1466,
+          "helper_t": 0.0,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "Gemini_Phantom_Escalation_Bug": "UNCERTAIN",
+          "Gemini_Transform_Exhaustion_Infinite_Loop": "UNCERTAIN",
+          "Gemini_Self_Diagnose_Moving_Average_Feedback_Loop": "UNCERTAIN",
+          "Gemini_Self_Diagnose_Damping_Bypass": "UNCERTAIN",
+          "DeepSeek_DeepSeek_IM_F001": "UNCERTAIN",
+          "DeepSeek_DeepSeek_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1044,
+            "beta_output": 0.8956,
+            "A": 1.4892,
+            "compound_obj": 0.1554,
+            "dist_from_optimal": 0.3956,
+            "n_findings": 6,
+            "r_sq_output": 0.9993911175391795
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1184,
+            "beta_output": 0.8816,
+            "A": 1.4658,
+            "compound_obj": 0.1736,
+            "dist_from_optimal": 0.3816,
+            "n_findings": 4,
+            "r_sq_output": 0.9980854424741445
+          },
+          "Codex": {
+            "gamma_output": 0.1659,
+            "beta_output": 0.8341,
+            "A": 1.3868,
+            "compound_obj": 0.2301,
+            "dist_from_optimal": 0.3341,
+            "n_findings": 5,
+            "r_sq_output": 0.997214672907357
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 2,
+            "r_sq_output": 0.0
+          },
+          "Gemini": {
+            "gamma_output": 0.1848,
+            "beta_output": 0.8152,
+            "A": 1.3555,
+            "compound_obj": 0.2505,
+            "dist_from_optimal": 0.3152,
+            "n_findings": 4,
+            "r_sq_output": 0.9984829438201146
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.1736,
+        "Codex": 0.2301,
+        "Gemini": 0.2505,
+        "DeepSeek": 0.4157,
+        "CC2": 0.1554
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2451,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.5, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_count": 24,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 394.7,
+      "per_model": {
+        "Codex": 4,
+        "ChatGPT": 6,
+        "Gemini": 4,
+        "CC2": 5,
+        "DeepSeek": 5
+      },
+      "quality_gate": {
+        "dedup_count": 1,
+        "dedup_rate": 0.042,
+        "sympy_checks": 19,
+        "ast_checks": 6,
+        "stage_timings": {
+          "dedup": 0.1506,
+          "sympy": 3.8625,
+          "ast": 0.1007,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0417,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 6,
+          "similarity_dedup": 1,
+          "false_positive_db": 0,
+          "anomaly_detection": 1
+        },
+        "stage_timings": {
+          "dendritic": 0.0024,
+          "parallel_verification": 33.189,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0003
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "Gemini_CDSFL_IM_F001": "UNCERTAIN",
+          "Gemini_CDSFL_IM_F002": "UNCERTAIN",
+          "Gemini_CDSFL_IM_F003": "UNCERTAIN",
+          "Gemini_CDSFL_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "DeepSeek_IM_F119": "DUPLICATE",
+          "DeepSeek_IM_F120": "UNCERTAIN",
+          "DeepSeek_IM_F121": "UNCERTAIN",
+          "DeepSeek_IM_F122": "UNCERTAIN",
+          "DeepSeek_IM_F123": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1072,
+            "beta_output": 0.8928,
+            "A": 1.4845,
+            "compound_obj": 0.1591,
+            "dist_from_optimal": 0.3928,
+            "n_findings": 5,
+            "r_sq_output": 0.9990853879747249
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1822,
+            "beta_output": 0.8178,
+            "A": 1.3598,
+            "compound_obj": 0.2478,
+            "dist_from_optimal": 0.3178,
+            "n_findings": 6,
+            "r_sq_output": 0.9992853551749947
+          },
+          "Codex": {
+            "gamma_output": 0.1369,
+            "beta_output": 0.8631,
+            "A": 1.4351,
+            "compound_obj": 0.1965,
+            "dist_from_optimal": 0.3631,
+            "n_findings": 4,
+            "r_sq_output": 0.9992307807762416
+          },
+          "DeepSeek": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 5,
+            "r_sq_output": 0.0
+          },
+          "Gemini": {
+            "gamma_output": 0.1059,
+            "beta_output": 0.8941,
+            "A": 1.4866,
+            "compound_obj": 0.1575,
+            "dist_from_optimal": 0.3941,
+            "n_findings": 4,
+            "r_sq_output": 0.9991664797034275
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1965,
+        "ChatGPT": 0.2478,
+        "Gemini": 0.1575,
+        "CC2": 0.1591,
+        "DeepSeek": 0.0
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1522,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.5, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 7,
+      "type": "adaptive",
+      "findings_count": 22,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 925.3,
+      "per_model": {
+        "ChatGPT": 6,
+        "Codex": 6,
+        "Gemini": 1,
+        "DeepSeek": 3,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 21,
+        "ast_checks": 3,
+        "stage_timings": {
+          "dedup": 0.1788,
+          "sympy": 4.1554,
+          "ast": 0.0632,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 2,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0026,
+          "parallel_verification": 29.7927,
+          "helper_t": 0.0005,
+          "regulatory_t": 0.0003
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "Codex_IM_F006": "UNCERTAIN",
+          "Gemini_UNSTRUCTURED": "UNCERTAIN",
+          "DeepSeek_IM_F001": "UNCERTAIN",
+          "DeepSeek_IM_F002": "UNCERTAIN",
+          "DeepSeek_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0673,
+            "beta_output": 0.9327,
+            "A": 1.5508,
+            "compound_obj": 0.1044,
+            "dist_from_optimal": 0.4327,
+            "n_findings": 6,
+            "r_sq_output": 0.9993587314432543
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1828,
+            "beta_output": 0.8172,
+            "A": 1.3589,
+            "compound_obj": 0.2483,
+            "dist_from_optimal": 0.3172,
+            "n_findings": 6,
+            "r_sq_output": 0.999677273621228
+          },
+          "Codex": {
+            "gamma_output": 0.1356,
+            "beta_output": 0.8644,
+            "A": 1.4373,
+            "compound_obj": 0.1949,
+            "dist_from_optimal": 0.3644,
+            "n_findings": 6,
+            "r_sq_output": 0.9995807169240412
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1412,
+            "beta_output": 0.8588,
+            "A": 1.4279,
+            "compound_obj": 0.2016,
+            "dist_from_optimal": 0.3588,
+            "n_findings": 3,
+            "r_sq_output": 0.9932107676673353
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.2483,
+        "Codex": 0.1949,
+        "Gemini": 0.0,
+        "DeepSeek": 0.2016,
+        "CC2": 0.1044
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1498,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.333, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 8,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 294.1,
+      "per_model": {
+        "ChatGPT": 4,
+        "Codex": 6,
+        "DeepSeek": 3,
+        "Gemini": 1,
+        "CC2": 5
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 19,
+        "ast_checks": 6,
+        "stage_timings": {
+          "dedup": 0.1712,
+          "sympy": 3.6113,
+          "ast": 0.147,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 2,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0021,
+          "parallel_verification": 18.6812,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "Codex_IM_F006": "UNCERTAIN",
+          "DeepSeek_IM_F020": "UNCERTAIN",
+          "DeepSeek_IM_F021": "UNCERTAIN",
+          "DeepSeek_IM_F022": "UNCERTAIN",
+          "Gemini_UNSTRUCTURED": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.175,
+            "beta_output": 0.825,
+            "A": 1.3718,
+            "compound_obj": 0.24,
+            "dist_from_optimal": 0.325,
+            "n_findings": 5,
+            "r_sq_output": 0.9986734382316579
+          },
+          "ChatGPT": {
+            "gamma_output": 0.4134,
+            "beta_output": 0.5866,
+            "A": 0.9754,
+            "compound_obj": 0.4032,
+            "dist_from_optimal": 0.0866,
+            "n_findings": 4,
+            "r_sq_output": 0.9441533375856573
+          },
+          "Codex": {
+            "gamma_output": 0.1551,
+            "beta_output": 0.8449,
+            "A": 1.4048,
+            "compound_obj": 0.2179,
+            "dist_from_optimal": 0.3449,
+            "n_findings": 6,
+            "r_sq_output": 0.9998342688863541
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1435,
+            "beta_output": 0.8565,
+            "A": 1.4241,
+            "compound_obj": 0.2044,
+            "dist_from_optimal": 0.3565,
+            "n_findings": 3,
+            "r_sq_output": 0.9999604714452242
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.4032,
+        "Codex": 0.2179,
+        "DeepSeek": 0.2044,
+        "Gemini": 0.0,
+        "CC2": 0.24
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2131,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.333, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 9,
+      "type": "adaptive",
+      "findings_count": 16,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 308.1,
+      "per_model": {
+        "ChatGPT": 4,
+        "Codex": 5,
+        "DeepSeek": 2,
+        "CC2": 5
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 15,
+        "ast_checks": 9,
+        "stage_timings": {
+          "dedup": 0.2265,
+          "sympy": 2.9113,
+          "ast": 0.1059,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 1,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0035,
+          "parallel_verification": 40.2834,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "DeepSeek_IM_F005": "UNCERTAIN",
+          "DeepSeek_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6014,
+          "gamma": 0.3986,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0915,
+            "beta_output": 0.9085,
+            "A": 1.5105,
+            "compound_obj": 0.1383,
+            "dist_from_optimal": 0.4085,
+            "n_findings": 5,
+            "r_sq_output": 0.9970335847952362
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0465,
+            "beta_output": 0.9535,
+            "A": 1.5855,
+            "compound_obj": 0.0736,
+            "dist_from_optimal": 0.4535,
+            "n_findings": 4,
+            "r_sq_output": 0.999057140840924
+          },
+          "Codex": {
+            "gamma_output": 0.1576,
+            "beta_output": 0.8424,
+            "A": 1.4006,
+            "compound_obj": 0.2208,
+            "dist_from_optimal": 0.3424,
+            "n_findings": 5,
+            "r_sq_output": 0.9994970781146488
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8314,
+            "compound_obj": 0.4157,
+            "dist_from_optimal": 0.0,
+            "n_findings": 2,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.0736,
+        "Codex": 0.2208,
+        "DeepSeek": 0.4157,
+        "CC2": 0.1383
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.397,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2121,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.25, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 10,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 290.9,
+      "per_model": {
+        "ChatGPT": 6,
+        "Codex": 5,
+        "DeepSeek": 4,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 21,
+        "ast_checks": 6,
+        "stage_timings": {
+          "dedup": 0.2425,
+          "sympy": 11.4579,
+          "ast": 0.0595,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0028,
+          "parallel_verification": 0.246,
+          "helper_t": 0.0,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "DeepSeek_R10_IM_F001": "UNCERTAIN",
+          "DeepSeek_R10_IM_F002": "UNCERTAIN",
+          "DeepSeek_R10_IM_F003": "UNCERTAIN",
+          "DeepSeek_R10_IM_F004": "UNCERTAIN",
+          "CC2_CC2_IM_F001": "UNCERTAIN",
+          "CC2_CC2_IM_F002": "UNCERTAIN",
+          "CC2_CC2_IM_F003": "UNCERTAIN",
+          "CC2_CC2_IM_F004": "UNCERTAIN",
+          "CC2_CC2_IM_F005": "UNCERTAIN",
+          "CC2_CC2_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0807,
+            "beta_output": 0.9193,
+            "A": 1.5297,
+            "compound_obj": 0.1235,
+            "dist_from_optimal": 0.4193,
+            "n_findings": 6,
+            "r_sq_output": 0.9969932679847885
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1538,
+            "beta_output": 0.8462,
+            "A": 1.408,
+            "compound_obj": 0.2166,
+            "dist_from_optimal": 0.3462,
+            "n_findings": 6,
+            "r_sq_output": 0.9989142768231464
+          },
+          "Codex": {
+            "gamma_output": 0.1414,
+            "beta_output": 0.8586,
+            "A": 1.4286,
+            "compound_obj": 0.2021,
+            "dist_from_optimal": 0.3586,
+            "n_findings": 5,
+            "r_sq_output": 0.999799346317305
+          },
+          "DeepSeek": {
+            "gamma_output": 0.0737,
+            "beta_output": 0.9263,
+            "A": 1.5413,
+            "compound_obj": 0.1136,
+            "dist_from_optimal": 0.4263,
+            "n_findings": 4,
+            "r_sq_output": 0.9985756580168634
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.2166,
+        "Codex": 0.2021,
+        "DeepSeek": 0.1136,
+        "CC2": 0.1235
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1639,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.250). Correlations: {'referential_density': 0.25, 'novelty_score': -0.25, 'specificity': 0.0}. Based on 9 observations.",
+        "confidence": 0.5
+      }
+    },
+    {
+      "round": 11,
+      "type": "adaptive",
+      "findings_count": 17,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 191.6,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 5,
+        "DeepSeek": 1,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 17,
+        "ast_checks": 9,
+        "stage_timings": {
+          "dedup": 0.3149,
+          "sympy": 3.3356,
+          "ast": 0.1104,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.005,
+          "parallel_verification": 0.3083,
+          "helper_t": 0.0,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "DeepSeek_UNSTRUCTURED": "UNCERTAIN",
+          "CC2_CC2_IM_F001": "UNCERTAIN",
+          "CC2_CC2_IM_F002": "UNCERTAIN",
+          "CC2_CC2_IM_F003": "UNCERTAIN",
+          "CC2_CC2_IM_F004": "UNCERTAIN",
+          "CC2_CC2_IM_F005": "UNCERTAIN",
+          "CC2_CC2_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5952,
+          "gamma": 0.4048,
+          "r_squared": 0.9984,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1332,
+            "beta_output": 0.8668,
+            "A": 1.4563,
+            "compound_obj": 0.194,
+            "dist_from_optimal": 0.3668,
+            "n_findings": 6,
+            "r_sq_output": 0.9997888475315764
+          },
+          "ChatGPT": {
+            "gamma_output": 0.316,
+            "beta_output": 0.684,
+            "A": 1.1492,
+            "compound_obj": 0.3631,
+            "dist_from_optimal": 0.184,
+            "n_findings": 5,
+            "r_sq_output": 0.9959128507418831
+          },
+          "Codex": {
+            "gamma_output": 0.276,
+            "beta_output": 0.724,
+            "A": 1.2164,
+            "compound_obj": 0.3357,
+            "dist_from_optimal": 0.224,
+            "n_findings": 5,
+            "r_sq_output": 0.9948610236351353
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.84,
+            "compound_obj": 0.42,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.3357,
+        "ChatGPT": 0.3631,
+        "DeepSeek": 0.0,
+        "CC2": 0.194
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.447,
+          "novelty_score": 0.003,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2232,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.200). Correlations: {'referential_density': 0.2, 'novelty_score': -0.199, 'specificity': 0.0}. Based on 10 observations.",
+        "confidence": 0.4
+      }
+    },
+    {
+      "round": 12,
+      "type": "adaptive",
+      "findings_count": 17,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 376.1,
+      "per_model": {
+        "ChatGPT": 5,
+        "Codex": 5,
+        "CC2": 6,
+        "DeepSeek": 1
+      },
+      "quality_gate": {
+        "dedup_count": 9,
+        "dedup_rate": 0.529,
+        "sympy_checks": 7,
+        "ast_checks": 0,
+        "stage_timings": {
+          "dedup": 0.1631,
+          "sympy": 1.4691,
+          "ast": 0.0003,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.5294,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 10,
+          "similarity_dedup": 9,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0015,
+          "parallel_verification": 37.9354,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0004
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "DUPLICATE",
+          "ChatGPT_IM_F002": "DUPLICATE",
+          "ChatGPT_IM_F003": "DUPLICATE",
+          "ChatGPT_IM_F004": "DUPLICATE",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "Codex_IM_F001": "DUPLICATE",
+          "Codex_IM_F002": "DUPLICATE",
+          "Codex_IM_F003": "DUPLICATE",
+          "Codex_IM_F004": "DUPLICATE",
+          "Codex_IM_F005": "DUPLICATE",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "DeepSeek_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5952,
+          "gamma": 0.4048,
+          "r_squared": 0.9984,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0933,
+            "beta_output": 0.9067,
+            "A": 1.5233,
+            "compound_obj": 0.1421,
+            "dist_from_optimal": 0.4067,
+            "n_findings": 6,
+            "r_sq_output": 0.9972121228082754
+          },
+          "ChatGPT": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 5,
+            "r_sq_output": 0.0
+          },
+          "Codex": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 5,
+            "r_sq_output": 0.0
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.84,
+            "compound_obj": 0.42,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.0,
+        "Codex": 0.0,
+        "CC2": 0.1421,
+        "DeepSeek": 0.42
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.447,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1405,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': -0.008, 'novelty_score': -0.2, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 13,
+      "type": "adaptive",
+      "findings_count": 16,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 553.3,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 5,
+        "DeepSeek": 1,
+        "CC2": 5
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 15,
+        "ast_checks": 6,
+        "stage_timings": {
+          "dedup": 0.2785,
+          "sympy": 2.9002,
+          "ast": 0.0832,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0027,
+          "parallel_verification": 0.2776,
+          "helper_t": 0.0,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "DeepSeek_IM_F007": "UNCERTAIN",
+          "CC2_CC_R13_IM_F001": "UNCERTAIN",
+          "CC2_CC_R13_IM_F002": "UNCERTAIN",
+          "CC2_CC_R13_IM_F003": "UNCERTAIN",
+          "CC2_CC_R13_IM_F004": "UNCERTAIN",
+          "CC2_CC_R13_IM_F005": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0732,
+            "beta_output": 0.9268,
+            "A": 1.5422,
+            "compound_obj": 0.1129,
+            "dist_from_optimal": 0.4268,
+            "n_findings": 5,
+            "r_sq_output": 0.9961139042844367
+          },
+          "ChatGPT": {
+            "gamma_output": 0.2591,
+            "beta_output": 0.7409,
+            "A": 1.2328,
+            "compound_obj": 0.3194,
+            "dist_from_optimal": 0.2409,
+            "n_findings": 5,
+            "r_sq_output": 0.9971902991375485
+          },
+          "Codex": {
+            "gamma_output": 0.146,
+            "beta_output": 0.854,
+            "A": 1.421,
+            "compound_obj": 0.2075,
+            "dist_from_optimal": 0.354,
+            "n_findings": 5,
+            "r_sq_output": 0.9999082579105276
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.832,
+            "compound_obj": 0.416,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2075,
+        "ChatGPT": 0.3194,
+        "DeepSeek": 0.416,
+        "CC2": 0.1129
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.264,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.166, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 14,
+      "type": "adaptive",
+      "findings_count": 22,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 301.4,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 6,
+        "DeepSeek": 5,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 5,
+        "dedup_rate": 0.227,
+        "sympy_checks": 17,
+        "ast_checks": 12,
+        "stage_timings": {
+          "dedup": 0.4038,
+          "sympy": 3.2526,
+          "ast": 0.1303,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.2273,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 5,
+          "similarity_dedup": 5,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0038,
+          "parallel_verification": 49.0355,
+          "helper_t": 0.0002,
+          "regulatory_t": 0.0001
+        },
+        "final_verdicts": {
+          "Codex_IM_F014": "UNCERTAIN",
+          "Codex_IM_F015": "UNCERTAIN",
+          "Codex_IM_F016": "UNCERTAIN",
+          "Codex_IM_F017": "UNCERTAIN",
+          "Codex_IM_F018": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "DeepSeek_DeepSeek_IM_F001": "DUPLICATE",
+          "DeepSeek_DeepSeek_IM_F002": "DUPLICATE",
+          "DeepSeek_DeepSeek_IM_F003": "DUPLICATE",
+          "DeepSeek_DeepSeek_IM_F004": "DUPLICATE",
+          "DeepSeek_DeepSeek_IM_F005": "DUPLICATE",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.0564,
+            "beta_output": 0.9436,
+            "A": 1.5701,
+            "compound_obj": 0.0886,
+            "dist_from_optimal": 0.4436,
+            "n_findings": 6,
+            "r_sq_output": 0.999543949028045
+          },
+          "ChatGPT": {
+            "gamma_output": 0.2962,
+            "beta_output": 0.7038,
+            "A": 1.1712,
+            "compound_obj": 0.3469,
+            "dist_from_optimal": 0.2038,
+            "n_findings": 6,
+            "r_sq_output": 0.9914423144515986
+          },
+          "Codex": {
+            "gamma_output": 0.1548,
+            "beta_output": 0.8452,
+            "A": 1.4064,
+            "compound_obj": 0.2177,
+            "dist_from_optimal": 0.3452,
+            "n_findings": 5,
+            "r_sq_output": 0.9985894229916872
+          },
+          "DeepSeek": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 5,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2177,
+        "ChatGPT": 0.3469,
+        "DeepSeek": 0.0,
+        "CC2": 0.0886
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1633,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': -0.001, 'novelty_score': -0.166, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 15,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 245.2,
+      "per_model": {
+        "ChatGPT": 6,
+        "Codex": 5,
+        "DeepSeek": 1,
+        "CC2": 7
+      },
+      "quality_gate": {
+        "dedup_count": 4,
+        "dedup_rate": 0.211,
+        "sympy_checks": 14,
+        "ast_checks": 15,
+        "stage_timings": {
+          "dedup": 0.3011,
+          "sympy": 2.7552,
+          "ast": 0.1561,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.2105,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 7,
+          "similarity_dedup": 4,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0024,
+          "parallel_verification": 20.4162,
+          "helper_t": 0.0002,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "DUPLICATE",
+          "ChatGPT_IM_F002": "DUPLICATE",
+          "ChatGPT_IM_F003": "DUPLICATE",
+          "ChatGPT_IM_F004": "DUPLICATE",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "DeepSeek_IM_F019": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1188,
+            "beta_output": 0.8812,
+            "A": 1.4662,
+            "compound_obj": 0.1743,
+            "dist_from_optimal": 0.3812,
+            "n_findings": 7,
+            "r_sq_output": 0.9974162885969555
+          },
+          "ChatGPT": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 6,
+            "r_sq_output": 0.0
+          },
+          "Codex": {
+            "gamma_output": 0.1156,
+            "beta_output": 0.8844,
+            "A": 1.4716,
+            "compound_obj": 0.1701,
+            "dist_from_optimal": 0.3844,
+            "n_findings": 5,
+            "r_sq_output": 0.9986484584620356
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.832,
+            "compound_obj": 0.416,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.0,
+        "Codex": 0.1701,
+        "DeepSeek": 0.416,
+        "CC2": 0.1743
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1901,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.031, 'novelty_score': -0.142, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 16,
+      "type": "adaptive",
+      "findings_count": 17,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 260.0,
+      "per_model": {
+        "ChatGPT": 5,
+        "Codex": 5,
+        "DeepSeek": 1,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 15,
+        "ast_checks": 6,
+        "stage_timings": {
+          "dedup": 0.3554,
+          "sympy": 2.931,
+          "ast": 0.0802,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 2,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0026,
+          "parallel_verification": 19.6431,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "DeepSeek_R16_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1895,
+            "beta_output": 0.8105,
+            "A": 1.3486,
+            "compound_obj": 0.2556,
+            "dist_from_optimal": 0.3105,
+            "n_findings": 6,
+            "r_sq_output": 0.999167645353335
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0846,
+            "beta_output": 0.9154,
+            "A": 1.5232,
+            "compound_obj": 0.1288,
+            "dist_from_optimal": 0.4154,
+            "n_findings": 5,
+            "r_sq_output": 0.99831579213798
+          },
+          "Codex": {
+            "gamma_output": 0.1372,
+            "beta_output": 0.8628,
+            "A": 1.4358,
+            "compound_obj": 0.1969,
+            "dist_from_optimal": 0.3628,
+            "n_findings": 5,
+            "r_sq_output": 0.9911949065231874
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.832,
+            "compound_obj": 0.416,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "ChatGPT": 0.1288,
+        "Codex": 0.1969,
+        "DeepSeek": 0.416,
+        "CC2": 0.2556
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2493,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.003, 'novelty_score': -0.142, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 17,
+      "type": "adaptive",
+      "findings_count": 18,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 280.1,
+      "per_model": {
+        "Codex": 4,
+        "ChatGPT": 6,
+        "DeepSeek": 1,
+        "CC2": 7
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 18,
+        "ast_checks": 18,
+        "stage_timings": {
+          "dedup": 0.3731,
+          "sympy": 3.4409,
+          "ast": 0.2391,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 1,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0025,
+          "parallel_verification": 25.3777,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "DeepSeek_IM_INT_001": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.045,
+            "beta_output": 0.955,
+            "A": 1.5891,
+            "compound_obj": 0.0715,
+            "dist_from_optimal": 0.455,
+            "n_findings": 7,
+            "r_sq_output": 0.9978033668623143
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1053,
+            "beta_output": 0.8947,
+            "A": 1.4888,
+            "compound_obj": 0.1567,
+            "dist_from_optimal": 0.3947,
+            "n_findings": 6,
+            "r_sq_output": 0.9980325816196104
+          },
+          "Codex": {
+            "gamma_output": 0.1551,
+            "beta_output": 0.8449,
+            "A": 1.4059,
+            "compound_obj": 0.2181,
+            "dist_from_optimal": 0.3449,
+            "n_findings": 4,
+            "r_sq_output": 0.9992103581498906
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.832,
+            "compound_obj": 0.416,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2181,
+        "ChatGPT": 0.1567,
+        "DeepSeek": 0.416,
+        "CC2": 0.0715
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2156,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.125, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 18,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 285.3,
+      "per_model": {
+        "Codex": 4,
+        "ChatGPT": 5,
+        "CC2": 7,
+        "DeepSeek": 3
+      },
+      "quality_gate": {
+        "dedup_count": 2,
+        "dedup_rate": 0.105,
+        "sympy_checks": 17,
+        "ast_checks": 3,
+        "stage_timings": {
+          "dedup": 0.4882,
+          "sympy": 3.486,
+          "ast": 0.0341,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.1053,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 2,
+          "similarity_dedup": 2,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0045,
+          "parallel_verification": 59.5896,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN",
+          "CC2_CC_IM_F007": "UNCERTAIN",
+          "DeepSeek_IM_F018": "DUPLICATE",
+          "DeepSeek_IM_F019": "DUPLICATE",
+          "DeepSeek_IM_F020": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.143,
+            "beta_output": 0.857,
+            "A": 1.4261,
+            "compound_obj": 0.2039,
+            "dist_from_optimal": 0.357,
+            "n_findings": 7,
+            "r_sq_output": 0.998445524997033
+          },
+          "ChatGPT": {
+            "gamma_output": 0.2911,
+            "beta_output": 0.7089,
+            "A": 1.1797,
+            "compound_obj": 0.3434,
+            "dist_from_optimal": 0.2089,
+            "n_findings": 5,
+            "r_sq_output": 0.9947869394226074
+          },
+          "Codex": {
+            "gamma_output": 0.0652,
+            "beta_output": 0.9348,
+            "A": 1.5554,
+            "compound_obj": 0.1015,
+            "dist_from_optimal": 0.4348,
+            "n_findings": 4,
+            "r_sq_output": 0.9972848652206739
+          },
+          "DeepSeek": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 3,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1015,
+        "ChatGPT": 0.3434,
+        "CC2": 0.2039,
+        "DeepSeek": 0.0
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1622,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.005, 'novelty_score': -0.125, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    },
+    {
+      "round": 19,
+      "type": "adaptive",
+      "findings_count": 18,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 273.5,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 6,
+        "DeepSeek": 1,
+        "CC2": 6
+      },
+      "quality_gate": {
+        "dedup_count": 0,
+        "dedup_rate": 0.0,
+        "sympy_checks": 18,
+        "ast_checks": 12,
+        "stage_timings": {
+          "dedup": 0.3867,
+          "sympy": 3.4943,
+          "ast": 0.1395,
+          "pm": 0.0
+        }
+      },
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "observation_only": false,
+        "tool_usage": {
+          "ct_mechanical": 1,
+          "similarity_dedup": 0,
+          "false_positive_db": 0,
+          "anomaly_detection": 0
+        },
+        "stage_timings": {
+          "dendritic": 0.0023,
+          "parallel_verification": 17.5783,
+          "helper_t": 0.0001,
+          "regulatory_t": 0.0
+        },
+        "final_verdicts": {
+          "Codex_IM_F001": "UNCERTAIN",
+          "Codex_IM_F002": "UNCERTAIN",
+          "Codex_IM_F003": "UNCERTAIN",
+          "Codex_IM_F004": "UNCERTAIN",
+          "Codex_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F001": "UNCERTAIN",
+          "ChatGPT_IM_F002": "UNCERTAIN",
+          "ChatGPT_IM_F003": "UNCERTAIN",
+          "ChatGPT_IM_F004": "UNCERTAIN",
+          "ChatGPT_IM_F005": "UNCERTAIN",
+          "ChatGPT_IM_F006": "UNCERTAIN",
+          "DeepSeek_IM_F008": "UNCERTAIN",
+          "CC2_CC_IM_F001": "UNCERTAIN",
+          "CC2_CC_IM_F002": "UNCERTAIN",
+          "CC2_CC_IM_F003": "UNCERTAIN",
+          "CC2_CC_IM_F004": "UNCERTAIN",
+          "CC2_CC_IM_F005": "UNCERTAIN",
+          "CC2_CC_IM_F006": "UNCERTAIN"
+        }
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.601,
+          "gamma": 0.399,
+          "r_squared": 0.9986,
+          "n_windows": 7
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1181,
+            "beta_output": 0.8819,
+            "A": 1.4675,
+            "compound_obj": 0.1733,
+            "dist_from_optimal": 0.3819,
+            "n_findings": 6,
+            "r_sq_output": 0.9995184407363957
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1437,
+            "beta_output": 0.8563,
+            "A": 1.4249,
+            "compound_obj": 0.2047,
+            "dist_from_optimal": 0.3563,
+            "n_findings": 6,
+            "r_sq_output": 0.9990013841119354
+          },
+          "Codex": {
+            "gamma_output": 0.1702,
+            "beta_output": 0.8298,
+            "A": 1.3808,
+            "compound_obj": 0.235,
+            "dist_from_optimal": 0.3298,
+            "n_findings": 5,
+            "r_sq_output": 0.999911736904973
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.832,
+            "compound_obj": 0.416,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.235,
+        "ChatGPT": 0.2047,
+        "DeepSeek": 0.416,
+        "CC2": 0.1733
+      },
+      "benched_models": [
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 104.391,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2572,
+        "recommendation": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.111, 'specificity': 0.0}. No adjustment recommended.",
+        "confidence": 0.0
+      }
+    }
+  ],
+  "termination_reason": "MAX_ROUNDS",
+  "total_findings": 425,
+  "total_rounds": 20,
+  "total_elapsed_s": 7202.3,
+  "end_time": "2026-04-03T04:44:27.732074+00:00",
+  "per_model_totals": {
+    "ChatGPT": 118,
+    "Codex": 97,
+    "DeepSeek": 54,
+    "Gemini": 27,
+    "CC2": 129
+  },
+  "gamma": 0.1569,
+  "per_round_counts": [
+    34,
+    29,
+    26,
+    21,
+    29,
+    21,
+    24,
+    22,
+    19,
+    16,
+    21,
+    17,
+    17,
+    16,
+    22,
+    19,
+    17,
+    18,
+    19,
+    18
+  ],
+  "cognitive_yield_per_round": [
+    23.09,
+    19.36,
+    17.61,
+    13.7,
+    20.39,
+    14.53,
+    16.71,
+    14.66,
+    13.82,
+    12.11,
+    15.8,
+    13.17,
+    13.98,
+    12.5,
+    16.7,
+    14.32,
+    13.49,
+    14.0,
+    15.09,
+    14.51
+  ],
+  "amplification_summary": {
+    "CC2": {
+      "estimated_A": 1.4856,
+      "estimated_compound": 0.1579,
+      "n_observations": 18
+    },
+    "ChatGPT": {
+      "estimated_A": 1.2004,
+      "estimated_compound": 0.2128,
+      "n_observations": 18
+    },
+    "Codex": {
+      "estimated_A": 1.3393,
+      "estimated_compound": 0.1955,
+      "n_observations": 18
+    },
+    "DeepSeek": {
+      "estimated_A": 0.8811,
+      "estimated_compound": 0.2697,
+      "n_observations": 18
+    },
+    "Gemini": {
+      "estimated_A": 0.9407,
+      "estimated_compound": 0.2809,
+      "n_observations": 7
+    }
+  },
+  "omega_history": {
+    "CC2": [
+      0.184,
+      0.1886,
+      0.133,
+      0.1554,
+      0.1591,
+      0.1044,
+      0.24,
+      0.1383,
+      0.1235,
+      0.194,
+      0.1421,
+      0.1129,
+      0.0886,
+      0.1743,
+      0.2556,
+      0.0715,
+      0.2039,
+      0.1733
+    ],
+    "ChatGPT": [
+      0.1799,
+      0.2022,
+      0.2221,
+      0.1736,
+      0.2478,
+      0.2483,
+      0.4032,
+      0.0736,
+      0.2166,
+      0.3631,
+      0.0,
+      0.3194,
+      0.3469,
+      0.0,
+      0.1288,
+      0.1567,
+      0.3434,
+      0.2047
+    ],
+    "Codex": [
+      0.189,
+      0.2309,
+      0.1546,
+      0.2301,
+      0.1965,
+      0.1949,
+      0.2179,
+      0.2208,
+      0.2021,
+      0.3357,
+      0.0,
+      0.2075,
+      0.2177,
+      0.1701,
+      0.1969,
+      0.2181,
+      0.1015,
+      0.235
+    ],
+    "DeepSeek": [
+      -0.0153,
+      0.4157,
+      0.1824,
+      0.4157,
+      0.0,
+      0.2016,
+      0.2044,
+      0.4157,
+      0.1136,
+      0.0,
+      0.42,
+      0.416,
+      0.0,
+      0.416,
+      0.416,
+      0.416,
+      0.0,
+      0.416
+    ],
+    "Gemini": [
+      0.0,
+      0.4157,
+      0.311,
+      0.2505,
+      0.1575,
+      0.0,
+      0.0
+    ]
+  },
+  "question_optimiser": {
+    "observations": 18,
+    "active": true,
+    "correlations": {
+      "referential_density": 0.0,
+      "novelty_score": -0.111,
+      "specificity": 0.0
+    },
+    "recommendation": {
+      "directive": null,
+      "reasoning": "No prompt feature shows strong correlation with Ω. Correlations: {'referential_density': 0.0, 'novelty_score': -0.111, 'specificity': 0.0}. No adjustment recommended.",
+      "confidence": 0.0,
+      "predicted_lift": 0.0
+    },
+    "feature_history": [
+      {
+        "round": 2,
+        "referential_density": 104.397,
+        "novelty_score": 1.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1075
+      },
+      {
+        "round": 3,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2906
+      },
+      {
+        "round": 4,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2006
+      },
+      {
+        "round": 5,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2451
+      },
+      {
+        "round": 6,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1522
+      },
+      {
+        "round": 7,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1498
+      },
+      {
+        "round": 8,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2131
+      },
+      {
+        "round": 9,
+        "referential_density": 104.397,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2121
+      },
+      {
+        "round": 10,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1639
+      },
+      {
+        "round": 11,
+        "referential_density": 104.447,
+        "novelty_score": 0.003,
+        "specificity": 0.002,
+        "mean_omega": 0.2232
+      },
+      {
+        "round": 12,
+        "referential_density": 104.447,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1405
+      },
+      {
+        "round": 13,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.264
+      },
+      {
+        "round": 14,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1633
+      },
+      {
+        "round": 15,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1901
+      },
+      {
+        "round": 16,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2493
+      },
+      {
+        "round": 17,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2156
+      },
+      {
+        "round": 18,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1622
+      },
+      {
+        "round": 19,
+        "referential_density": 104.391,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2572
+      }
+    ]
+  },
+  "benched_models": [
+    "Gemini"
+  ],
+  "resolution_threshold": 0.5,
+  "omega_tau": 0.1,
+  "popper_corroboration": {
+    "C_HE": 0.828,
+    "P_E_given_H": 21.25,
+    "P_E": 2.0,
+    "interpretation": "strong_corroboration",
+    "note": "C(H,E) = Popper 1954 degree of corroboration. Control baseline from Bench Run 1 smoke test (10 HARD findings / 5 rounds = 2.0/round). Recalibrate after Bench Run 2 with full Control data."
+  }
+}

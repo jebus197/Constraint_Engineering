@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260403T040004Z",
+  "phase": "r11_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2852,
+  "response": "**FIND:** `bench/dm/_immune.py`, `DetectorHealthMonitor._verify_remediation_outcomes()`: The method compares the metric at remediation application time to the current metric to determine improvement. However, the metric may be influenced by other concurrent remediations, external config changes, or systemic noise. This misattribution of causality can lead to false escalation (marking an effective fix as ineffective) or false success (marking an ineffective fix as effective). Evidence: The code snippet shows it uses `state[\"metric_at_apply\"]` and the current metric from `_get_metric_history`, but there is no isolation of the remediation’s effect from other changes. This is a generalisation of prior finding CC2_CC2_IM_F002 (which noted the specific case of `tau_vocab_growth` being read at verification time).\n\n**FIX:** Extend the remediation state to capture a snapshot of all relevant config parameters and external conditions at application time. During verification, compute the expected metric under the old conditions (if possible) or adjust the baseline to account for known concurrent changes. The exact fix requires modifying the state recording and verification logic:\n\n<<<<\n# In apply_diagnosis or _apply_transform, when recording state:\nstate[\"config_snapshot\"] = {\n    \"tau_sim\": self._config.tau_sim,\n    \"tau_vocab_growth\": self._config.tau_vocab_growth,\n    \"mu_increase_window\": self._config.mu_increase_window,\n    # ... all config parameters that affect the target metric\n}\nstate[\"external_factors\"] = {\n    \"active_models\": self._active_model_counts[-1],\n    \"round_finding_count\": self._finding_counts[-1],\n}\n====\n# In _verify_remediation_outcomes, when checking improvement:\n# Re-compute what the metric would be under the old conditions, or adjust the baseline.\n# For example, for vocab_growth, if tau_vocab_growth changed, adjust the expected growth rate.\n# Implementation depends on the metric; a general approach is to simulate the metric function\n# with the old config snapshot and compare the simulated current to the actual current.\n# If simulation is infeasible, apply a discount factor when multiple remediations are active.\n>>>>\n\n**FOLLOW:** This fix introduces a new data dependency: the immune subsystem must now know exactly which config parameters affect each metric, requiring a mapping from metric to parameter set. This mapping must be maintained and kept in sync with the actual detection logic. Additionally, storing full config snapshots increases memory usage; a pruning strategy for old remediation states is needed. The fix also affects the `recommended_chain_start` and `step_effectiveness` learning, because success/failure outcomes may now be reclassified after accounting for external changes. This could lead to chain-step skipping based on corrected data, altering future remediation behavior.",
+  "metadata": {
+    "round": 11,
+    "elapsed": 135.5,
+    "chars": 2852,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 146304
+  }
+}

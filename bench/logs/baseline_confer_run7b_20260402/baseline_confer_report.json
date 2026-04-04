@@ -1,0 +1,1541 @@
+{
+  "experiment": "baseline_confer_run7",
+  "start_time": "2026-04-02T13:23:11.180777+00:00",
+  "models": [
+    "CC2",
+    "Codex",
+    "ChatGPT",
+    "Gemini",
+    "DeepSeek"
+  ],
+  "task": "immune",
+  "max_rounds": 20,
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 32,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "CC2",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 316.4,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 6,
+        "CC2": 12,
+        "Gemini": 4,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4763,
+          "gamma": 0.5237,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.063,
+            "beta_output": 0.937,
+            "A": 1.9672,
+            "compound_obj": 0.1239,
+            "dist_from_optimal": 0.437,
+            "n_findings": 12,
+            "r_sq_output": 0.9973666448633814
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0372,
+            "beta_output": 0.9628,
+            "A": 2.0212,
+            "compound_obj": 0.0753,
+            "dist_from_optimal": 0.4628,
+            "n_findings": 6,
+            "r_sq_output": 0.999817682180516
+          },
+          "Codex": {
+            "gamma_output": 0.1106,
+            "beta_output": 0.8894,
+            "A": 1.8673,
+            "compound_obj": 0.2065,
+            "dist_from_optimal": 0.3894,
+            "n_findings": 5,
+            "r_sq_output": 0.9990512892999752
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1861,
+            "beta_output": 0.8139,
+            "A": 1.7086,
+            "compound_obj": 0.3181,
+            "dist_from_optimal": 0.3139,
+            "n_findings": 5,
+            "r_sq_output": 0.997994826664196
+          },
+          "Gemini": {
+            "gamma_output": 0.1356,
+            "beta_output": 0.8644,
+            "A": 1.8148,
+            "compound_obj": 0.2461,
+            "dist_from_optimal": 0.3644,
+            "n_findings": 4,
+            "r_sq_output": 0.9983711720148948
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2065,
+        "ChatGPT": 0.0753,
+        "CC2": -0.0228,
+        "Gemini": 0.2461,
+        "DeepSeek": 0.3181
+      },
+      "benched_models": [],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.428,
+          "novelty_score": 1.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1646,
+        "recommendation": null,
+        "confidence": null
+      }
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 22,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 260.7,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 5,
+        "Gemini": 1,
+        "CC2": 8,
+        "DeepSeek": 3
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": -0.0001,
+            "beta_output": 1.0001,
+            "A": 2.0991,
+            "compound_obj": -0.0002,
+            "dist_from_optimal": 0.5001,
+            "n_findings": 8,
+            "r_sq_output": 0.9903582980554447
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0089,
+            "beta_output": 0.9911,
+            "A": 2.0801,
+            "compound_obj": 0.0186,
+            "dist_from_optimal": 0.4911,
+            "n_findings": 5,
+            "r_sq_output": 0.9997766375198803
+          },
+          "Codex": {
+            "gamma_output": 0.0631,
+            "beta_output": 0.9369,
+            "A": 1.9663,
+            "compound_obj": 0.1242,
+            "dist_from_optimal": 0.4369,
+            "n_findings": 5,
+            "r_sq_output": 0.9998573103346925
+          },
+          "DeepSeek": {
+            "gamma_output": 0.233,
+            "beta_output": 0.767,
+            "A": 1.6099,
+            "compound_obj": 0.3751,
+            "dist_from_optimal": 0.267,
+            "n_findings": 3,
+            "r_sq_output": 0.9854040393614423
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 1.0494,
+            "compound_obj": 0.5247,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1242,
+        "ChatGPT": 0.0186,
+        "Gemini": 0.0,
+        "CC2": -0.0002,
+        "DeepSeek": 0.3751
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1035,
+        "recommendation": null,
+        "confidence": null
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 20,
+      "models_responded": [
+        "Codex",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "elapsed_s": 208.8,
+      "per_model": {
+        "Codex": 6,
+        "DeepSeek": 10,
+        "Gemini": 4
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1737,
+            "beta_output": 0.8263,
+            "A": 1.7342,
+            "compound_obj": 0.3013,
+            "dist_from_optimal": 0.3263,
+            "n_findings": 6,
+            "r_sq_output": 0.9932796640693129
+          },
+          "DeepSeek": {
+            "gamma_output": 0.219,
+            "beta_output": 0.781,
+            "A": 1.6392,
+            "compound_obj": 0.359,
+            "dist_from_optimal": 0.281,
+            "n_findings": 10,
+            "r_sq_output": 0.9993694573992754
+          },
+          "Gemini": {
+            "gamma_output": 0.0139,
+            "beta_output": 0.9861,
+            "A": 2.0696,
+            "compound_obj": 0.0289,
+            "dist_from_optimal": 0.4861,
+            "n_findings": 4,
+            "r_sq_output": 0.9975710546525719
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.3013,
+        "DeepSeek": 0.3623,
+        "Gemini": 0.0289
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2308,
+        "recommendation": "Feature 'novelty_score' has strongest correlation with Ω (r=0.500). Correlations: {'referential_density': -0.5, 'novelty_score': 0.5, 'specificity': 0.0}. Based on 3 observations.",
+        "confidence": 1.0
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 10,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 221.8,
+      "per_model": {
+        "Codex": 5,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0744,
+            "beta_output": 0.9256,
+            "A": 1.9426,
+            "compound_obj": 0.1446,
+            "dist_from_optimal": 0.4256,
+            "n_findings": 5,
+            "r_sq_output": 0.9994943350665173
+          },
+          "DeepSeek": {
+            "gamma_output": 0.2747,
+            "beta_output": 0.7253,
+            "A": 1.5224,
+            "compound_obj": 0.4181,
+            "dist_from_optimal": 0.2253,
+            "n_findings": 5,
+            "r_sq_output": 0.9994762984227924
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1446,
+        "DeepSeek": 0.4181
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2813,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.500). Correlations: {'referential_density': 0.5, 'novelty_score': -0.5, 'specificity': 0.0}. Based on 4 observations.",
+        "confidence": 1.0
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 11,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 190.5,
+      "per_model": {
+        "Codex": 5,
+        "DeepSeek": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.091,
+            "beta_output": 0.909,
+            "A": 1.9079,
+            "compound_obj": 0.1736,
+            "dist_from_optimal": 0.409,
+            "n_findings": 5,
+            "r_sq_output": 0.9949954892398489
+          },
+          "DeepSeek": {
+            "gamma_output": 0.053,
+            "beta_output": 0.947,
+            "A": 1.9876,
+            "compound_obj": 0.1054,
+            "dist_from_optimal": 0.447,
+            "n_findings": 6,
+            "r_sq_output": 0.9999008757856341
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1736,
+        "DeepSeek": 0.1054
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1395,
+        "recommendation": "Feature 'novelty_score' has strongest correlation with Ω (r=0.333). Correlations: {'referential_density': -0.333, 'novelty_score': 0.333, 'specificity': 0.0}. Based on 5 observations.",
+        "confidence": 0.666
+      }
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_count": 7,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 239.4,
+      "per_model": {
+        "Codex": 6,
+        "DeepSeek": 1
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0847,
+            "beta_output": 0.9153,
+            "A": 1.921,
+            "compound_obj": 0.1628,
+            "dist_from_optimal": 0.4153,
+            "n_findings": 6,
+            "r_sq_output": 0.9996056104825748
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 1.0494,
+            "compound_obj": 0.5247,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1628,
+        "DeepSeek": 0.5247
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.3438,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.333). Correlations: {'referential_density': 0.333, 'novelty_score': -0.333, 'specificity': 0.0}. Based on 6 observations.",
+        "confidence": 0.666
+      }
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_count": 12,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 264.8,
+      "per_model": {
+        "Codex": 7,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1201,
+            "beta_output": 0.8799,
+            "A": 1.8469,
+            "compound_obj": 0.2217,
+            "dist_from_optimal": 0.3799,
+            "n_findings": 7,
+            "r_sq_output": 0.9970417205716416
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1706,
+            "beta_output": 0.8294,
+            "A": 1.7408,
+            "compound_obj": 0.297,
+            "dist_from_optimal": 0.3294,
+            "n_findings": 5,
+            "r_sq_output": 0.9983657027277478
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2217,
+        "DeepSeek": 0.297
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2593,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.333). Correlations: {'referential_density': 0.333, 'novelty_score': -0.333, 'specificity': 0.0}. Based on 7 observations.",
+        "confidence": 0.666
+      }
+    },
+    {
+      "round": 7,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 164.0,
+      "per_model": {
+        "Codex": 5,
+        "DeepSeek": 1
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0774,
+            "beta_output": 0.9226,
+            "A": 1.9365,
+            "compound_obj": 0.1498,
+            "dist_from_optimal": 0.4226,
+            "n_findings": 5,
+            "r_sq_output": 0.999643053600136
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 1.0494,
+            "compound_obj": 0.5247,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1498,
+        "DeepSeek": 0.5247
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.3373,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.250). Correlations: {'referential_density': 0.25, 'novelty_score': -0.25, 'specificity': 0.0}. Based on 8 observations.",
+        "confidence": 0.5
+      }
+    },
+    {
+      "round": 8,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 172.2,
+      "per_model": {
+        "Codex": 5,
+        "DeepSeek": 1
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1531,
+            "beta_output": 0.8469,
+            "A": 1.7775,
+            "compound_obj": 0.2722,
+            "dist_from_optimal": 0.3469,
+            "n_findings": 5,
+            "r_sq_output": 0.998723176326954
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 1.0494,
+            "compound_obj": 0.5247,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2722,
+        "DeepSeek": 0.5247
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.3985,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.250). Correlations: {'referential_density': 0.25, 'novelty_score': -0.25, 'specificity': 0.0}. Based on 9 observations.",
+        "confidence": 0.5
+      }
+    },
+    {
+      "round": 9,
+      "type": "adaptive",
+      "findings_count": 9,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 184.7,
+      "per_model": {
+        "Codex": 6,
+        "DeepSeek": 3
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4764,
+          "gamma": 0.5236,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0617,
+            "beta_output": 0.9383,
+            "A": 1.9693,
+            "compound_obj": 0.1216,
+            "dist_from_optimal": 0.4383,
+            "n_findings": 6,
+            "r_sq_output": 0.9997902000344288
+          },
+          "DeepSeek": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 3,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1216,
+        "DeepSeek": 0.0
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.502,
+          "novelty_score": 0.0,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.0608,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.200). Correlations: {'referential_density': 0.2, 'novelty_score': -0.2, 'specificity': 0.0}. Based on 10 observations.",
+        "confidence": 0.4
+      }
+    },
+    {
+      "round": 10,
+      "type": "adaptive",
+      "findings_count": 9,
+      "models_responded": [
+        "Codex",
+        "DeepSeek"
+      ],
+      "elapsed_s": 379.5,
+      "per_model": {
+        "Codex": 8,
+        "DeepSeek": 1
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0763,
+            "beta_output": 0.9237,
+            "A": 1.9405,
+            "compound_obj": 0.148,
+            "dist_from_optimal": 0.4237,
+            "n_findings": 8,
+            "r_sq_output": 0.9985604558538611
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 1.0503,
+            "compound_obj": 0.5252,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.148,
+        "DeepSeek": 0.0
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.074,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.241). Correlations: {'referential_density': 0.241, 'novelty_score': -0.2, 'specificity': 0.0}. Based on 11 observations.",
+        "confidence": 0.482
+      }
+    },
+    {
+      "round": 11,
+      "type": "adaptive",
+      "findings_count": 7,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 71.0,
+      "per_model": {
+        "Codex": 7
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": -0.0164,
+            "beta_output": 1.0164,
+            "A": 2.135,
+            "compound_obj": -0.0349,
+            "dist_from_optimal": 0.5164,
+            "n_findings": 7,
+            "r_sq_output": 0.9992368869737771
+          }
+        }
+      },
+      "omega": {
+        "Codex": -0.0349
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": -0.0349,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.234). Correlations: {'referential_density': 0.234, 'novelty_score': -0.167, 'specificity': 0.0}. Based on 12 observations.",
+        "confidence": 0.468
+      }
+    },
+    {
+      "round": 12,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 54.4,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1391,
+            "beta_output": 0.8609,
+            "A": 1.8084,
+            "compound_obj": 0.2516,
+            "dist_from_optimal": 0.3609,
+            "n_findings": 6,
+            "r_sq_output": 0.9992665829865288
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2516
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2516,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.205). Correlations: {'referential_density': 0.205, 'novelty_score': -0.167, 'specificity': 0.0}. Based on 13 observations.",
+        "confidence": 0.41
+      }
+    },
+    {
+      "round": 13,
+      "type": "adaptive",
+      "findings_count": 5,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 56.8,
+      "per_model": {
+        "Codex": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1124,
+            "beta_output": 0.8876,
+            "A": 1.8646,
+            "compound_obj": 0.2095,
+            "dist_from_optimal": 0.3876,
+            "n_findings": 5,
+            "r_sq_output": 0.9997271963994966
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.2095
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.2095,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.201). Correlations: {'referential_density': 0.201, 'novelty_score': -0.143, 'specificity': 0.0}. Based on 14 observations.",
+        "confidence": 0.402
+      }
+    },
+    {
+      "round": 14,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 51.2,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0583,
+            "beta_output": 0.9417,
+            "A": 1.9782,
+            "compound_obj": 0.1153,
+            "dist_from_optimal": 0.4417,
+            "n_findings": 6,
+            "r_sq_output": 0.9994785596295773
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1153
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1153,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.179). Correlations: {'referential_density': 0.179, 'novelty_score': -0.143, 'specificity': 0.0}. Based on 15 observations.",
+        "confidence": 0.358
+      }
+    },
+    {
+      "round": 15,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 58.4,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.058,
+            "beta_output": 0.942,
+            "A": 1.9788,
+            "compound_obj": 0.1147,
+            "dist_from_optimal": 0.442,
+            "n_findings": 6,
+            "r_sq_output": 0.997966558021762
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1147
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1147,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.176). Correlations: {'referential_density': 0.176, 'novelty_score': -0.125, 'specificity': 0.0}. Based on 16 observations.",
+        "confidence": 0.352
+      }
+    },
+    {
+      "round": 16,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 49.7,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.057,
+            "beta_output": 0.943,
+            "A": 1.981,
+            "compound_obj": 0.1128,
+            "dist_from_optimal": 0.443,
+            "n_findings": 6,
+            "r_sq_output": 0.9991126635101845
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1128
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1128,
+        "recommendation": "Feature 'novelty_score' has strongest correlation with Ω (r=0.111). Correlations: {'referential_density': -0.029, 'novelty_score': 0.111, 'specificity': 0.0}. Based on 17 observations.",
+        "confidence": 0.222
+      }
+    },
+    {
+      "round": 17,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 44.5,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.0227,
+            "beta_output": 0.9773,
+            "A": 2.053,
+            "compound_obj": 0.0465,
+            "dist_from_optimal": 0.4773,
+            "n_findings": 6,
+            "r_sq_output": 0.9984014269073218
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.0465
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.0465,
+        "recommendation": "Feature 'novelty_score' has strongest correlation with Ω (r=0.111). Correlations: {'referential_density': -0.021, 'novelty_score': 0.111, 'specificity': 0.0}. Based on 18 observations.",
+        "confidence": 0.222
+      }
+    },
+    {
+      "round": 18,
+      "type": "adaptive",
+      "findings_count": 6,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 56.9,
+      "per_model": {
+        "Codex": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1064,
+            "beta_output": 0.8936,
+            "A": 1.8772,
+            "compound_obj": 0.1997,
+            "dist_from_optimal": 0.3936,
+            "n_findings": 6,
+            "r_sq_output": 0.9994342678389614
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1997
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1997,
+        "recommendation": "Feature 'novelty_score' has strongest correlation with Ω (r=0.100). Correlations: {'referential_density': -0.026, 'novelty_score': 0.1, 'specificity': 0.0}. Based on 19 observations.",
+        "confidence": 0.2
+      }
+    },
+    {
+      "round": 19,
+      "type": "adaptive",
+      "findings_count": 5,
+      "models_responded": [
+        "Codex"
+      ],
+      "elapsed_s": 50.4,
+      "per_model": {
+        "Codex": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.476,
+          "gamma": 0.524,
+          "r_squared": 0.9977,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "Codex": {
+            "gamma_output": 0.1045,
+            "beta_output": 0.8955,
+            "A": 1.881,
+            "compound_obj": 0.1967,
+            "dist_from_optimal": 0.3955,
+            "n_findings": 5,
+            "r_sq_output": 0.9989213300529228
+          }
+        }
+      },
+      "omega": {
+        "Codex": 0.1967
+      },
+      "benched_models": [
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "question_optimiser": {
+        "features": {
+          "referential_density": 125.487,
+          "novelty_score": 0.001,
+          "specificity": 0.002
+        },
+        "mean_omega": 0.1967,
+        "recommendation": "Feature 'referential_density' has strongest correlation with Ω (r=0.141). Correlations: {'referential_density': 0.141, 'novelty_score': -0.1, 'specificity': 0.0}. Based on 20 observations.",
+        "confidence": 0.282
+      }
+    }
+  ],
+  "total_findings": 197,
+  "total_rounds": 20,
+  "total_elapsed_s": 3106.2,
+  "end_time": "2026-04-02T14:14:57.378170+00:00",
+  "per_model_totals": {
+    "Codex": 116,
+    "ChatGPT": 11,
+    "CC2": 20,
+    "Gemini": 9,
+    "DeepSeek": 41
+  },
+  "gamma": 0.3933,
+  "per_round_counts": [
+    32,
+    22,
+    20,
+    10,
+    11,
+    7,
+    12,
+    6,
+    6,
+    9,
+    9,
+    7,
+    6,
+    5,
+    6,
+    6,
+    6,
+    6,
+    6,
+    5
+  ],
+  "cognitive_yield_per_round": [
+    17.92,
+    12.8,
+    12.28,
+    6.96,
+    7.2,
+    4.51,
+    7.79,
+    3.8,
+    3.77,
+    5.75,
+    5.71,
+    4.45,
+    4.01,
+    3.15,
+    4.3,
+    3.53,
+    3.42,
+    3.64,
+    3.8,
+    3.12
+  ],
+  "amplification_summary": {
+    "CC2": {
+      "estimated_A": 2.0332,
+      "estimated_compound": 0.0618,
+      "n_observations": 2
+    },
+    "ChatGPT": {
+      "estimated_A": 2.0507,
+      "estimated_compound": 0.047,
+      "n_observations": 2
+    },
+    "Codex": {
+      "estimated_A": 1.9184,
+      "estimated_compound": 0.1619,
+      "n_observations": 20
+    },
+    "DeepSeek": {
+      "estimated_A": 1.3097,
+      "estimated_compound": 0.3611,
+      "n_observations": 11
+    },
+    "Gemini": {
+      "estimated_A": 1.6446,
+      "estimated_compound": 0.2666,
+      "n_observations": 3
+    }
+  },
+  "omega_history": {
+    "CC2": [
+      -0.0228,
+      -0.0002
+    ],
+    "ChatGPT": [
+      0.0753,
+      0.0186
+    ],
+    "Codex": [
+      0.2065,
+      0.1242,
+      0.3013,
+      0.1446,
+      0.1736,
+      0.1628,
+      0.2217,
+      0.1498,
+      0.2722,
+      0.1216,
+      0.148,
+      -0.0349,
+      0.2516,
+      0.2095,
+      0.1153,
+      0.1147,
+      0.1128,
+      0.0465,
+      0.1997,
+      0.1967
+    ],
+    "DeepSeek": [
+      0.3181,
+      0.3751,
+      0.3623,
+      0.4181,
+      0.1054,
+      0.5247,
+      0.297,
+      0.5247,
+      0.5247,
+      0.0,
+      0.0
+    ],
+    "Gemini": [
+      0.2461,
+      0.0,
+      0.0289
+    ]
+  },
+  "question_optimiser": {
+    "observations": 20,
+    "active": false,
+    "correlations": {
+      "referential_density": 0.141,
+      "novelty_score": -0.1,
+      "specificity": 0.0
+    },
+    "recommendation": {
+      "directive": "## Focus Directive (adaptive)\nHigher-Ω rounds in this session correlated with prompts that connected...",
+      "reasoning": "Feature 'referential_density' has strongest correlation with Ω (r=0.141). Correlations: {'referential_density': 0.141, 'novelty_score': -0.1, 'specificity': 0.0}. Based on 20 observations.",
+      "confidence": 0.282,
+      "predicted_lift": 0.0906
+    },
+    "feature_history": [
+      {
+        "round": 0,
+        "referential_density": 125.428,
+        "novelty_score": 1.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1646
+      },
+      {
+        "round": 1,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1035
+      },
+      {
+        "round": 2,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2308
+      },
+      {
+        "round": 3,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2813
+      },
+      {
+        "round": 4,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.1395
+      },
+      {
+        "round": 5,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.3438
+      },
+      {
+        "round": 6,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.2593
+      },
+      {
+        "round": 7,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.3373
+      },
+      {
+        "round": 8,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.3985
+      },
+      {
+        "round": 9,
+        "referential_density": 125.502,
+        "novelty_score": 0.0,
+        "specificity": 0.002,
+        "mean_omega": 0.0608
+      },
+      {
+        "round": 10,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.074
+      },
+      {
+        "round": 11,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": -0.0349
+      },
+      {
+        "round": 12,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.2516
+      },
+      {
+        "round": 13,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.2095
+      },
+      {
+        "round": 14,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.1153
+      },
+      {
+        "round": 15,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.1147
+      },
+      {
+        "round": 16,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.1128
+      },
+      {
+        "round": 17,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.0465
+      },
+      {
+        "round": 18,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.1997
+      },
+      {
+        "round": 19,
+        "referential_density": 125.487,
+        "novelty_score": 0.001,
+        "specificity": 0.002,
+        "mean_omega": 0.1967
+      }
+    ]
+  },
+  "benched_models": [
+    "CC2",
+    "ChatGPT",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "resolution_threshold": 0.5,
+  "omega_tau": 0.1,
+  "popper_corroboration": {
+    "C_HE": 0.6624,
+    "P_E_given_H": 9.85,
+    "P_E": 2.0,
+    "interpretation": "strong_corroboration",
+    "note": "C(H,E) = Popper 1954 degree of corroboration. Control baseline from Bench Run 1 smoke test (10 HARD findings / 5 rounds = 2.0/round). Recalibrate after Bench Run 2 with full Control data."
+  }
+}

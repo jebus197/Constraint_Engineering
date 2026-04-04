@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T135419Z",
+  "phase": "r7_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2389,
+  "response": "**FIND:** `DynamicManager`'s immune integration logs (`_immune_adjustments`, `_deferred_remediations`, `_pre_fix_snapshots`) grow without bound. Location: `DynamicManager` attributes (Interface Summary section 2). Evidence: these lists are appended to by immune actions (`apply_diagnosis()`, P‑pass gating, pre‑adjustment snapshots) but never pruned. In a long‑running system (beyond the default 5 rounds), this leads to unbounded memory consumption. The current design assumes short experiments; for general deployment, this is a memory leak.\n\n**FIX:** Add a configurable maximum log size and implement rolling‑window trimming in `DynamicManager` methods that append to these logs. Example fix for `_immune_adjustments` (similar for others):\n```python\n# In DynamicManager.__init__ or config\nself._max_immune_log_size = 1000  # configurable\n\n# In the method that appends to _immune_adjustments (e.g., apply_diagnosis)\nself._immune_adjustments.append(adjustment)\nif len(self._immune_adjustments) > self._max_immune_log_size:\n    # Remove oldest entries, keep recent history\n    self._immune_adjustments = self._immune_adjustments[-self._max_immune_log_size:]\n```\n\n**FOLLOW:** \n1. Trimming logs may break any downstream analysis that assumes full history (e.g., post‑experiment reports, debugging). Need to audit all reads of these lists.\n2. If logs are used for real‑time monitoring (e.g., dashboards), trimming may drop early events needed for trend calculation. May require summary statistics to be computed incrementally.\n3. The choice of maximum size (`1000`) is arbitrary; must be calibrated to expected round count and memory constraints. A better approach: bound by rounds (e.g., keep last 50 rounds) rather than absolute entries.\n4. If `_pre_fix_snapshots` are used for rollback, trimming could prevent recovery from earlier mis‑adjustments. Rollback capability must be limited to a window or moved to a dedicated bounded store.\n\n---\n\n**FINDING_ID:** INT_IM_F001  \n**SEVERITY:** 0.50  \n**FLAW_CLASS:** 7  \n**ABSTRACTION_INDEX:** 0.30  \n**DESCRIPTION:** Immune subsystem logs (`_immune_adjustments`, `_deferred_remediations`, `_pre_fix_snapshots`) grow indefinitely, causing memory exhaustion in long‑running deployments.  \n**PROPOSED_FIX:** Implement rolling‑window trimming with configurable maximum size in `DynamicManager` methods that append to these logs.  \n**VERIFIED:** FALSE",
+  "metadata": {
+    "round": 7,
+    "elapsed": 164.0,
+    "chars": 2389,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 109516
+  }
+}

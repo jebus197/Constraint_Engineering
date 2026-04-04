@@ -1,0 +1,912 @@
+{
+  "experiment": "baseline_confer_run6",
+  "start_time": "2026-04-01T22:35:11.499755+00:00",
+  "models": [
+    "CC2",
+    "Codex",
+    "ChatGPT",
+    "Gemini",
+    "DeepSeek"
+  ],
+  "task": "immune",
+  "max_rounds": 20,
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 29,
+      "models_responded": [
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2",
+        "Codex"
+      ],
+      "elapsed_s": 518.1,
+      "per_model": {
+        "ChatGPT": 5,
+        "DeepSeek": 3,
+        "Gemini": 4,
+        "CC2": 12,
+        "Codex": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4769,
+          "gamma": 0.5231,
+          "r_squared": 0.9995,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1079,
+            "beta_output": 0.8921,
+            "A": 1.8707,
+            "compound_obj": 0.2018,
+            "dist_from_optimal": 0.3921,
+            "n_findings": 12,
+            "r_sq_output": 0.9991907258627035
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0532,
+            "beta_output": 0.9468,
+            "A": 1.9853,
+            "compound_obj": 0.1057,
+            "dist_from_optimal": 0.4468,
+            "n_findings": 5,
+            "r_sq_output": 0.9986910654667013
+          },
+          "Codex": {
+            "gamma_output": 0.1027,
+            "beta_output": 0.8973,
+            "A": 1.8816,
+            "compound_obj": 0.1932,
+            "dist_from_optimal": 0.3973,
+            "n_findings": 5,
+            "r_sq_output": 0.9925218495732404
+          },
+          "DeepSeek": {
+            "gamma_output": 0.0806,
+            "beta_output": 0.9194,
+            "A": 1.9279,
+            "compound_obj": 0.1554,
+            "dist_from_optimal": 0.4194,
+            "n_findings": 3,
+            "r_sq_output": 0.9996864972765529
+          },
+          "Gemini": {
+            "gamma_output": -0.0375,
+            "beta_output": 1.0375,
+            "A": 2.1755,
+            "compound_obj": -0.0815,
+            "dist_from_optimal": 0.5375,
+            "n_findings": 4,
+            "r_sq_output": 0.994235280388718
+          }
+        }
+      }
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 40,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1215.6,
+      "per_model": {
+        "CC2": 10,
+        "Codex": 4,
+        "ChatGPT": 12,
+        "Gemini": 5,
+        "DeepSeek": 9
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.4632,
+          "gamma": 0.5368,
+          "r_squared": 0.9992,
+          "n_windows": 4
+        },
+        "dispatch_recommendation": "decomposed_basic",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1533,
+            "beta_output": 0.8467,
+            "A": 1.8281,
+            "compound_obj": 0.2802,
+            "dist_from_optimal": 0.3467,
+            "n_findings": 10,
+            "r_sq_output": 0.9994261467547231
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1265,
+            "beta_output": 0.8735,
+            "A": 1.8858,
+            "compound_obj": 0.2386,
+            "dist_from_optimal": 0.3735,
+            "n_findings": 12,
+            "r_sq_output": 0.9994116818405192
+          },
+          "Codex": {
+            "gamma_output": 0.1881,
+            "beta_output": 0.8119,
+            "A": 1.7529,
+            "compound_obj": 0.3298,
+            "dist_from_optimal": 0.3119,
+            "n_findings": 4,
+            "r_sq_output": 0.9987530190943819
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1042,
+            "beta_output": 0.8958,
+            "A": 1.9342,
+            "compound_obj": 0.2015,
+            "dist_from_optimal": 0.3958,
+            "n_findings": 9,
+            "r_sq_output": 0.9989454661925282
+          },
+          "Gemini": {
+            "gamma_output": 0.1404,
+            "beta_output": 0.8596,
+            "A": 1.856,
+            "compound_obj": 0.2605,
+            "dist_from_optimal": 0.3596,
+            "n_findings": 5,
+            "r_sq_output": 0.999729596686556
+          }
+        }
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 17,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 2445.4,
+      "per_model": {
+        "Codex": 5,
+        "ChatGPT": 6,
+        "Gemini": 1,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5022,
+          "gamma": 0.4978,
+          "r_squared": 0.9776,
+          "n_windows": 5
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "ChatGPT": {
+            "gamma_output": 0.1451,
+            "beta_output": 0.8549,
+            "A": 1.7023,
+            "compound_obj": 0.247,
+            "dist_from_optimal": 0.3549,
+            "n_findings": 6,
+            "r_sq_output": 0.9983388226103415
+          },
+          "Codex": {
+            "gamma_output": 0.1266,
+            "beta_output": 0.8734,
+            "A": 1.7392,
+            "compound_obj": 0.2202,
+            "dist_from_optimal": 0.3734,
+            "n_findings": 5,
+            "r_sq_output": 0.9959038263046267
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1837,
+            "beta_output": 0.8163,
+            "A": 1.6255,
+            "compound_obj": 0.2985,
+            "dist_from_optimal": 0.3163,
+            "n_findings": 5,
+            "r_sq_output": 0.9982326685345991
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.9956,
+            "compound_obj": 0.4978,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 29,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1216.0,
+      "per_model": {
+        "CC2": 8,
+        "Codex": 3,
+        "ChatGPT": 7,
+        "Gemini": 5,
+        "DeepSeek": 6
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5307,
+          "gamma": 0.4693,
+          "r_squared": 0.9701,
+          "n_windows": 5
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.2385,
+            "beta_output": 0.7615,
+            "A": 1.4351,
+            "compound_obj": 0.3422,
+            "dist_from_optimal": 0.2615,
+            "n_findings": 8,
+            "r_sq_output": 0.9965015418352818
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1105,
+            "beta_output": 0.8895,
+            "A": 1.6762,
+            "compound_obj": 0.1852,
+            "dist_from_optimal": 0.3895,
+            "n_findings": 7,
+            "r_sq_output": 0.9993480606807911
+          },
+          "Codex": {
+            "gamma_output": 0.2453,
+            "beta_output": 0.7547,
+            "A": 1.4222,
+            "compound_obj": 0.3488,
+            "dist_from_optimal": 0.2547,
+            "n_findings": 3,
+            "r_sq_output": 0.9933175886181529
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1612,
+            "beta_output": 0.8388,
+            "A": 1.5806,
+            "compound_obj": 0.2548,
+            "dist_from_optimal": 0.3388,
+            "n_findings": 6,
+            "r_sq_output": 0.9968750805529576
+          },
+          "Gemini": {
+            "gamma_output": 0.2836,
+            "beta_output": 0.7164,
+            "A": 1.3499,
+            "compound_obj": 0.3829,
+            "dist_from_optimal": 0.2164,
+            "n_findings": 5,
+            "r_sq_output": 0.9890053998739823
+          }
+        }
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 31,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 3876.7,
+      "per_model": {
+        "CC2": 10,
+        "Codex": 5,
+        "ChatGPT": 10,
+        "Gemini": 3,
+        "DeepSeek": 3
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5366,
+          "gamma": 0.4634,
+          "r_squared": 0.9847,
+          "n_windows": 5
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1399,
+            "beta_output": 0.8601,
+            "A": 1.603,
+            "compound_obj": 0.2242,
+            "dist_from_optimal": 0.3601,
+            "n_findings": 10,
+            "r_sq_output": 0.9947792175458362
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1475,
+            "beta_output": 0.8525,
+            "A": 1.5888,
+            "compound_obj": 0.2343,
+            "dist_from_optimal": 0.3525,
+            "n_findings": 10,
+            "r_sq_output": 0.9995416310708893
+          },
+          "Codex": {
+            "gamma_output": 0.1253,
+            "beta_output": 0.8747,
+            "A": 1.6302,
+            "compound_obj": 0.2042,
+            "dist_from_optimal": 0.3747,
+            "n_findings": 5,
+            "r_sq_output": 0.9887984177468513
+          },
+          "DeepSeek": {
+            "gamma_output": 0.0562,
+            "beta_output": 0.9438,
+            "A": 1.7589,
+            "compound_obj": 0.0988,
+            "dist_from_optimal": 0.4438,
+            "n_findings": 3,
+            "r_sq_output": 0.9998755075017683
+          },
+          "Gemini": {
+            "gamma_output": 0.3631,
+            "beta_output": 0.6369,
+            "A": 1.1869,
+            "compound_obj": 0.431,
+            "dist_from_optimal": 0.1369,
+            "n_findings": 3,
+            "r_sq_output": 0.9998935631177533
+          }
+        }
+      }
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_count": 20,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 6049.2,
+      "per_model": {
+        "CC2": 1,
+        "Codex": 4,
+        "ChatGPT": 7,
+        "Gemini": 4,
+        "DeepSeek": 4
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5564,
+          "gamma": 0.4436,
+          "r_squared": 0.988,
+          "n_windows": 6
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8986,
+            "compound_obj": 0.4493,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1867,
+            "beta_output": 0.8133,
+            "A": 1.4617,
+            "compound_obj": 0.2729,
+            "dist_from_optimal": 0.3133,
+            "n_findings": 7,
+            "r_sq_output": 0.9991309174119654
+          },
+          "Codex": {
+            "gamma_output": 0.1085,
+            "beta_output": 0.8915,
+            "A": 1.6022,
+            "compound_obj": 0.1739,
+            "dist_from_optimal": 0.3915,
+            "n_findings": 4,
+            "r_sq_output": 0.9995187459161773
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1778,
+            "beta_output": 0.8222,
+            "A": 1.4777,
+            "compound_obj": 0.2627,
+            "dist_from_optimal": 0.3222,
+            "n_findings": 4,
+            "r_sq_output": 0.9977576539233594
+          },
+          "Gemini": {
+            "gamma_output": 0.2851,
+            "beta_output": 0.7149,
+            "A": 1.2848,
+            "compound_obj": 0.3663,
+            "dist_from_optimal": 0.2149,
+            "n_findings": 4,
+            "r_sq_output": 0.9979241947008225
+          }
+        }
+      }
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_count": 27,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 4731.8,
+      "per_model": {
+        "CC2": 8,
+        "Codex": 4,
+        "ChatGPT": 7,
+        "Gemini": 3,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5813,
+          "gamma": 0.4187,
+          "r_squared": 0.9884,
+          "n_windows": 6
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1789,
+            "beta_output": 0.8211,
+            "A": 1.4125,
+            "compound_obj": 0.2527,
+            "dist_from_optimal": 0.3211,
+            "n_findings": 8,
+            "r_sq_output": 0.9986938727858508
+          },
+          "ChatGPT": {
+            "gamma_output": 0.0456,
+            "beta_output": 0.9544,
+            "A": 1.6419,
+            "compound_obj": 0.0749,
+            "dist_from_optimal": 0.4544,
+            "n_findings": 7,
+            "r_sq_output": 0.9989361565909052
+          },
+          "Codex": {
+            "gamma_output": 0.022,
+            "beta_output": 0.978,
+            "A": 1.6825,
+            "compound_obj": 0.037,
+            "dist_from_optimal": 0.478,
+            "n_findings": 4,
+            "r_sq_output": 0.999735823188031
+          },
+          "DeepSeek": {
+            "gamma_output": 0.0486,
+            "beta_output": 0.9514,
+            "A": 1.6367,
+            "compound_obj": 0.0796,
+            "dist_from_optimal": 0.4514,
+            "n_findings": 5,
+            "r_sq_output": 0.9954430197093889
+          },
+          "Gemini": {
+            "gamma_output": 1.0,
+            "beta_output": 0.0,
+            "A": 0.0,
+            "compound_obj": 0.0,
+            "dist_from_optimal": 0.5,
+            "n_findings": 3,
+            "r_sq_output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "round": 7,
+      "type": "adaptive",
+      "findings_count": 31,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1622.8,
+      "per_model": {
+        "CC2": 11,
+        "Codex": 4,
+        "ChatGPT": 10,
+        "Gemini": 1,
+        "DeepSeek": 5
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5824,
+          "gamma": 0.4176,
+          "r_squared": 0.9915,
+          "n_windows": 6
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1777,
+            "beta_output": 0.8223,
+            "A": 1.412,
+            "compound_obj": 0.2509,
+            "dist_from_optimal": 0.3223,
+            "n_findings": 11,
+            "r_sq_output": 0.9974097006332221
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1267,
+            "beta_output": 0.8733,
+            "A": 1.4995,
+            "compound_obj": 0.19,
+            "dist_from_optimal": 0.3733,
+            "n_findings": 10,
+            "r_sq_output": 0.9994498496861031
+          },
+          "Codex": {
+            "gamma_output": 0.1251,
+            "beta_output": 0.8749,
+            "A": 1.5022,
+            "compound_obj": 0.188,
+            "dist_from_optimal": 0.3749,
+            "n_findings": 4,
+            "r_sq_output": 0.9985609379734453
+          },
+          "DeepSeek": {
+            "gamma_output": 0.2779,
+            "beta_output": 0.7221,
+            "A": 1.2399,
+            "compound_obj": 0.3446,
+            "dist_from_optimal": 0.2221,
+            "n_findings": 5,
+            "r_sq_output": 0.9966514834518254
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.8585,
+            "compound_obj": 0.4293,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "round": 8,
+      "type": "adaptive",
+      "findings_count": 22,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 964.8,
+      "per_model": {
+        "CC2": 8,
+        "Codex": 1,
+        "ChatGPT": 8,
+        "Gemini": 2,
+        "DeepSeek": 3
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.6392,
+          "gamma": 0.3608,
+          "r_squared": 0.9885,
+          "n_windows": 5
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1319,
+            "beta_output": 0.8681,
+            "A": 1.358,
+            "compound_obj": 0.1791,
+            "dist_from_optimal": 0.3681,
+            "n_findings": 8,
+            "r_sq_output": 0.9988400881389297
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1446,
+            "beta_output": 0.8554,
+            "A": 1.3382,
+            "compound_obj": 0.1934,
+            "dist_from_optimal": 0.3554,
+            "n_findings": 8,
+            "r_sq_output": 0.9974238690128565
+          },
+          "Codex": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.7822,
+            "compound_obj": 0.3911,
+            "dist_from_optimal": 0.0,
+            "n_findings": 1,
+            "r_sq_output": 0.0
+          },
+          "DeepSeek": {
+            "gamma_output": 0.001,
+            "beta_output": 0.999,
+            "A": 1.5628,
+            "compound_obj": 0.0015,
+            "dist_from_optimal": 0.499,
+            "n_findings": 3,
+            "r_sq_output": 0.9941457636231148
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.7822,
+            "compound_obj": 0.3911,
+            "dist_from_optimal": 0.0,
+            "n_findings": 2,
+            "r_sq_output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "round": 9,
+      "type": "adaptive",
+      "findings_count": 28,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1253.3,
+      "per_model": {
+        "CC2": 10,
+        "Codex": 4,
+        "ChatGPT": 10,
+        "Gemini": 2,
+        "DeepSeek": 2
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5835,
+          "gamma": 0.4165,
+          "r_squared": 0.9925,
+          "n_windows": 6
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1684,
+            "beta_output": 0.8316,
+            "A": 1.4253,
+            "compound_obj": 0.24,
+            "dist_from_optimal": 0.3316,
+            "n_findings": 10,
+            "r_sq_output": 0.9995730537349581
+          },
+          "ChatGPT": {
+            "gamma_output": 0.1785,
+            "beta_output": 0.8215,
+            "A": 1.408,
+            "compound_obj": 0.2513,
+            "dist_from_optimal": 0.3215,
+            "n_findings": 10,
+            "r_sq_output": 0.9988033295828089
+          },
+          "Codex": {
+            "gamma_output": 0.1515,
+            "beta_output": 0.8485,
+            "A": 1.4543,
+            "compound_obj": 0.2203,
+            "dist_from_optimal": 0.3485,
+            "n_findings": 4,
+            "r_sq_output": 0.9976630529044552
+          },
+          "DeepSeek": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.857,
+            "compound_obj": 0.4285,
+            "dist_from_optimal": 0.0,
+            "n_findings": 2,
+            "r_sq_output": 0.0
+          },
+          "Gemini": {
+            "gamma_output": 0.5,
+            "beta_output": 0.5,
+            "A": 0.857,
+            "compound_obj": 0.4285,
+            "dist_from_optimal": 0.0,
+            "n_findings": 2,
+            "r_sq_output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "round": 10,
+      "type": "adaptive",
+      "findings_count": 25,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 5315.2,
+      "per_model": {
+        "CC2": 7,
+        "Codex": 4,
+        "ChatGPT": 7,
+        "Gemini": 3,
+        "DeepSeek": 4
+      },
+      "complexity": {
+        "gamma_input": {
+          "beta": 0.5663,
+          "gamma": 0.4337,
+          "r_squared": 0.993,
+          "n_windows": 6
+        },
+        "dispatch_recommendation": "multiturn_fff",
+        "per_model_amplification": {
+          "CC2": {
+            "gamma_output": 0.1086,
+            "beta_output": 0.8914,
+            "A": 1.5741,
+            "compound_obj": 0.1709,
+            "dist_from_optimal": 0.3914,
+            "n_findings": 7,
+            "r_sq_output": 0.9989241603824256
+          },
+          "ChatGPT": {
+            "gamma_output": -0.2522,
+            "beta_output": 1.2522,
+            "A": 2.2111,
+            "compound_obj": -0.5576,
+            "dist_from_optimal": 0.7522,
+            "n_findings": 7,
+            "r_sq_output": 1.0
+          },
+          "Codex": {
+            "gamma_output": 0.1198,
+            "beta_output": 0.8802,
+            "A": 1.5542,
+            "compound_obj": 0.1863,
+            "dist_from_optimal": 0.3802,
+            "n_findings": 4,
+            "r_sq_output": 0.9954750252316743
+          },
+          "DeepSeek": {
+            "gamma_output": 0.1409,
+            "beta_output": 0.8591,
+            "A": 1.517,
+            "compound_obj": 0.2138,
+            "dist_from_optimal": 0.3591,
+            "n_findings": 4,
+            "r_sq_output": 0.9771723451903813
+          },
+          "Gemini": {
+            "gamma_output": 0.4198,
+            "beta_output": 0.5802,
+            "A": 1.0246,
+            "compound_obj": 0.4301,
+            "dist_from_optimal": 0.0802,
+            "n_findings": 3,
+            "r_sq_output": 0.9999703577089469
+          }
+        }
+      }
+    }
+  ],
+  "total_findings": 299,
+  "total_rounds": 11,
+  "total_elapsed_s": 29223.0,
+  "end_time": "2026-04-02T06:42:14.066231+00:00",
+  "per_model_totals": {
+    "ChatGPT": 89,
+    "DeepSeek": 49,
+    "Gemini": 33,
+    "CC2": 85,
+    "Codex": 43
+  },
+  "gamma": 0.027,
+  "per_round_counts": [
+    29,
+    40,
+    17,
+    29,
+    31,
+    20,
+    27,
+    31,
+    22,
+    28,
+    25
+  ],
+  "cognitive_yield_per_round": [
+    16.11,
+    24.29,
+    11.28,
+    18.3,
+    19.0,
+    12.74,
+    16.47,
+    19.93,
+    15.27,
+    18.32,
+    16.52
+  ],
+  "amplification_summary": {
+    "CC2": {
+      "estimated_A": 1.4817,
+      "estimated_compound": 0.2591,
+      "n_observations": 10
+    },
+    "ChatGPT": {
+      "estimated_A": 1.6726,
+      "estimated_compound": 0.1305,
+      "n_observations": 11
+    },
+    "Codex": {
+      "estimated_A": 1.5458,
+      "estimated_compound": 0.2266,
+      "n_observations": 11
+    },
+    "DeepSeek": {
+      "estimated_A": 1.5562,
+      "estimated_compound": 0.2127,
+      "n_observations": 11
+    },
+    "Gemini": {
+      "estimated_A": 1.1246,
+      "estimated_compound": 0.3215,
+      "n_observations": 11
+    }
+  },
+  "popper_corroboration": {
+    "C_HE": 0.8629,
+    "P_E_given_H": 27.1818,
+    "P_E": 2.0,
+    "interpretation": "strong_corroboration",
+    "note": "C(H,E) = Popper 1954 degree of corroboration. Control baseline from Bench Run 1 smoke test (10 HARD findings / 5 rounds = 2.0/round). Recalibrate after Bench Run 2 with full Control data."
+  }
+}

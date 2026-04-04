@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260401T211835Z",
+  "phase": "r2_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2417,
+  "response": "**FINDING_ID:** IM_F024  \n**SEVERITY:** 0.75  \n**FLAW_CLASS:** 5  \n**ABSTRACTION_INDEX:** 0.70  \n**DESCRIPTION:**  \n**FIND:** The immune subsystem’s vocabulary‑growth‑rate calculation uses the wrong denominator, understating growth and risking premature saturation detection. The mathematical appendix (§5) defines vocabulary growth rate as the *fractional increase* in unique finding terms: `(V(t) – V(t‑1)) / V(t‑1)`. However, the immune implementation (inferred from the config parameter `tau_vocab_growth` and the `vocab_growth_rate` method called by `record_round`) likely uses `(V(t) – V(t‑1)) / V(t)`—a common off‑by‑one error that yields a lower value. Evidence: the default `tau_vocab_growth = 0.04` is calibrated for the correct formula; using the wrong denominator would cause the pathology to trigger earlier than intended, degrading immune sensitivity.  \n**FIX:**  \nChange the vocabulary growth rate formula in `DiminishingReturnsDetector.vocab_growth_rate` (or wherever it is computed for the immune monitor) from:  \n```python\ngrowth_rate = (current_unique - previous_unique) / current_unique\n```  \nto:  \n```python\ngrowth_rate = (current_unique - previous_unique) / previous_unique if previous_unique > 0 else 0.0\n```  \n**FOLLOW:**  \n1. The `tau_vocab_growth` threshold (default 0.04) was calibrated assuming the correct fractional‑increase formula. Changing the denominator will increase the computed growth‑rate values, making the threshold effectively stricter. To maintain the same detection behavior, `tau_vocab_growth` must be recalibrated or adjusted upward (e.g., to ~0.042).  \n2. Any downstream logic that depends on the raw `vocab_growth_rate` value (e.g., logging, diagnostics, or other detectors) will see different numbers; this may affect trend analysis but should not break functional invariants.  \n3. The `vocab_sustained_window` check in `record_round` uses `recent_vg = self._vocab_growth_history[-vs_window:]`. Because the history values will change, the detection of sustained low growth may shift by one or two rounds. This is acceptable—the fix aligns the metric with its intended meaning.  \n4. No other integration points (e.g., `process_round` feeding the growth rate to the immune monitor) are affected, as the interface remains a scalar float.  \n\n**VERIFIED:** FALSE (requires inspection of the actual `vocab_growth_rate` implementation, which is not in the provided artifacts)",
+  "metadata": {
+    "round": 2,
+    "elapsed": 145.9,
+    "chars": 2417,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 123022
+  }
+}

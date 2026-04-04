@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T230329Z",
+  "phase": "r3_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2056,
+  "response": "**FINDING_ID:** CC2_CC_IM_F011  \n**SEVERITY:** 0.82  \n**FLAW_CLASS:** 2 (interface)  \n**ABSTRACTION_INDEX:** 0.70  \n**DESCRIPTION:**  \n**FIND:** The backward‑compatible re‑export shim (`dynamic_management.py`) fails to expose `_REMEDIATION_CHAINS` as part of its public interface, even though the analytical boundary explicitly includes `_REMEDIATION_CHAINS` as a core immune‑layer component. The shim currently imports only `DynamicManager` from `bench.dm._manager` (line 65). External code that previously imported `_REMEDIATION_CHAINS` from the monolithic `dynamic_management` will now receive an `ImportError`. This breaks backward compatibility and hides a key immune‑layer data structure that tests, monitors, or other subsystems may need to inspect.  \n**FIX:** Add `_REMEDIATION_CHAINS` to the import statement from `bench.dm._manager`.  \n<<<<  \nfrom bench.dm._manager import DynamicManager  # noqa: F401  \n====  \nfrom bench.dm._manager import DynamicManager, _REMEDIATION_CHAINS  # noqa: F401  \n>>>>  \n**FOLLOW:**  \n1. The shim now exports a symbol that may be intended as module‑internal (prefixed with `_`). If `_REMEDIATION_CHAINS` is truly private, this change would violate Python naming conventions. However, the analytical boundary treats it as a public contract; therefore the underscore should be removed from the constant’s name in the source module (`_manager.py`). If that rename is infeasible, the shim should still re‑export it but document the exception.  \n2. Other immune‑layer symbols that are part of the analytical boundary (e.g., `apply_diagnosis`, `_apply_transform`) are methods of `DynamicManager` and are already accessible via the class. No additional shim exposure is needed for those.  \n3. No downstream impact on the immune subsystem’s own operation is expected, because `_REMEDIATION_CHAINS` is defined and used within `_manager.py` itself. The fix only affects external importers.  \n**VERIFIED:** FALSE (requires checking the actual definition in `_manager.py` to confirm the constant’s name and public/private status)",
+  "metadata": {
+    "round": 3,
+    "elapsed": 93.4,
+    "chars": 2056,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 103195
+  }
+}

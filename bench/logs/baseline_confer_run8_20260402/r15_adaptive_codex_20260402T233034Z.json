@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T233034Z",
+  "phase": "r15_adaptive",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2782,
+  "response": "FINDING_ID: IM_F001  \nSEVERITY: 0.95  \nFLAW_CLASS: 4  \nABSTRACTION_INDEX: 0.97  \nDESCRIPTION: FIND: The requested immune-layer implementation is not actually present in the supplied artifact. The analytical boundary explicitly requires review of `DetectorDiagnosis`, `DetectorHealthMonitor`, `FailureHandler`, `_REMEDIATION_CHAINS`, `process_round()` immune integration, `apply_diagnosis()`, `_apply_transform()`, and immune config parameters. But the only concrete code provided is the top-level re-export shim `dynamic_management.py`, which contains imports and a docstring only. There is no implementation text for `_immune.py`, `_failure_handler.py`, or `_manager.py` functions inside the boundary. Evidence: the artifact ends after import statements; none of the named functions/classes appear with bodies. Under the stated boundary and adversarial brief, this is an analytical incompleteness defect because cross-subsystem immune behavior cannot be verified from a shim.  \n\nFIX: Provide the actual implementation slices for the immune boundary modules, at minimum:\n<<<<\n# ── Immune layer ──────────────────────────────────────────────────────────\nfrom bench.dm._immune import DetectorHealthMonitor  # noqa: F401\nfrom bench.dm._failure_handler import (  # noqa: F401\n    FailureHandler,\n    CorrelatedFailureModel,\n)\n\n# ── Orchestrator ──────────────────────────────────────────────────────────\nfrom bench.dm._manager import DynamicManager  # noqa: F401\n====\n# REQUIRED REVIEW ARTIFACTS FOR IMMUNE LAYER\n# Include implementation bodies for:\n# - bench/dm/_immune.py:\n#     class DetectorHealthMonitor\n#     any DetectorDiagnosis-producing methods\n#     pathology counters / remediation-state logic\n# - bench/dm/_failure_handler.py:\n#     class FailureHandler\n#     detect_failure()\n#     get_recovery()\n#     reset_round_state()\n#     correlated-failure handling\n# - bench/dm/_manager.py:\n#     _REMEDIATION_CHAINS\n#     DynamicManager.process_round()\n#     DynamicManager.apply_diagnosis()\n#     DynamicManager._apply_transform()\n#     any deferred-remediation / rollback helpers\n# - relevant DynamicManagementConfig fields consumed by the above\n#\n# Without these implementations, immune-layer review is non-verifiable.\n>>>>\nFOLLOW: This blocks verification of every cross-cutting immune behavior claimed in the interface summary: threshold mutation, remediation-chain progression, event emission, failure recovery, detector feedback into FSM, and shared-state writes. The immediate downstream issue is that any further code-level finding about immune logic would be speculative unless the missing implementation is supplied. Definitive stance: the artifact is insufficient for the requested review, and the correct next step is to supply the actual immune implementation code.",
+  "metadata": {
+    "round": 15,
+    "elapsed": 13.3,
+    "chars": 2782,
+    "findings_count": 1,
+    "decomposed": true,
+    "prompt_chars": 72180
+  }
+}

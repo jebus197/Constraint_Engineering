@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T230522Z",
+  "phase": "r4_adaptive",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2944,
+  "response": "FINDING_ID: IM_F004\nSEVERITY: 0.85\nFLAW_CLASS: 2\nABSTRACTION_INDEX: 0.80\nDESCRIPTION: \n**FIND:** The shim attempts to re-export the module's public API using implicit imports (suppressed by `# noqa: F401`). According to standard Python typing semantics (PEP 484), symbols imported without an `as` alias or absent from an `__all__` declaration are treated as private to the module. Downstream code importing `DynamicManager` or configuration types from this shim will fail static type checking (e.g., in mypy or pyright).\n**FOLLOW:** Downstream static analysis tools will now correctly parse and permit imports of the public interface. The explicit list securely solidifies the API boundary, preventing private module constants (such as `_REMEDIATION_CHAINS`) or accidental imports from leaking into the public namespace.\nPROPOSED_FIX: \n**FIX:**\n<<<<\n# ── Validation ────────────────────────────────────────────────────────────\nfrom bench.dm._validation import validate_all_reductions  # noqa: F401\n====\n# ── Validation ────────────────────────────────────────────────────────────\nfrom bench.dm._validation import validate_all_reductions  # noqa: F401\n\n__all__ = [\n    \"DynamicManagementConfig\", \"Role\", \"CapabilityFingerprint\", \"ModelSpec\",\n    \"Task\", \"Finding\", \"FailureType\", \"RecoveryAction\", \"FailureRecord\",\n    \"ModelResponse\", \"DetectorDiagnosis\", \"State\", \"Event\", \"TerminationReason\",\n    \"ManagerEventType\", \"ManagerEvent\", \"RoundResult\", \"FindingEquivalenceClass\",\n    \"RoleAssignment\", \"Allocation\", \"LoadBalancer\", \"RoundProgressionFSM\",\n    \"ConvergenceDetector\", \"DiminishingReturnsDetector\", \"DetectorHealthMonitor\",\n    \"FailureHandler\", \"CorrelatedFailureModel\", \"ManagerEventStream\",\n    \"DynamicManager\", \"validate_all_reductions\"\n]\n>>>>\nVERIFIED: FALSE\n\nFINDING_ID: IM_F005\nSEVERITY: 0.70\nFLAW_CLASS: 2\nABSTRACTION_INDEX: 0.60\nDESCRIPTION: \n**FIND:** The backward-compatible shim erroneously imports and re-exports protected internal helpers (`_finding_similarity`, `_tokenize_for_similarity`, `_bigrams`, `_STOPWORDS`) from the `bench.dm._convergence` module. A public shim must only expose the documented API of the refactored monolith. Exposing private internal functions directly violates the encapsulation established by the modular refactor.\n**FOLLOW:** External test suites or scripts that erroneously accessed these protected symbols via `dynamic_management.py` will now properly encounter an `ImportError`. They must be updated to use the public `ConvergenceDetector` methods or import the internal helpers directly from `bench.dm._convergence` if performing white-box testing. No downstream impact on standard public consumers.\nPROPOSED_FIX: \n**FIX:**\n<<<<\nfrom bench.dm._convergence import (  # noqa: F401\n    ConvergenceDetector,\n    _finding_similarity,\n    _tokenize_for_similarity,\n    _bigrams,\n    _STOPWORDS,\n)\n====\nfrom bench.dm._convergence import ConvergenceDetector  # noqa: F401\n>>>>\nVERIFIED: FALSE",
+  "metadata": {
+    "round": 4,
+    "elapsed": 96.2,
+    "chars": 2944,
+    "findings_count": 2,
+    "decomposed": false,
+    "prompt_chars": 35265
+  }
+}

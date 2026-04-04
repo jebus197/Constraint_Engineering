@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260402T224743Z",
+  "phase": "r0_blind",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1027,
+  "response": "I need read access to the immune subsystem source files in `bench/dm/`. The shim file you provided only contains re-export statements — no actual immune logic, no `DetectorHealthMonitor` implementation, no `FailureHandler` body, no `_REMEDIATION_CHAINS`, no `apply_diagnosis()`, no `_apply_transform()`, no `process_round()` immune integration, and no config parameter definitions.\n\nI cannot produce legitimate findings from import statements alone. Fabricating findings without reading the code would violate `no-fabricated-certainty` and the entire P-pass framework.\n\n**What I need** (all in `bench/dm/`):\n1. `_immune.py` — `DetectorHealthMonitor`, `DetectorDiagnosis`\n2. `_manager.py` — `DynamicManager` including `process_round()`, `apply_diagnosis()`, `_apply_transform()`, `_REMEDIATION_CHAINS`\n3. `_failure_handler.py` — `FailureHandler`, `CorrelatedFailureModel`\n4. `_types.py` — config dataclass, enums, immune-relevant type definitions\n\nGrant read permission to those four files and I'll produce the full finding set.",
+  "metadata": {
+    "round": 0,
+    "elapsed": 20.3,
+    "chars": 1027,
+    "findings_count": 1,
+    "decomposed": false,
+    "prompt_chars": 10349
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "experiment": "baseline_confer_run5",
+  "start_time": "2026-04-01T07:46:40.453141+00:00",
+  "models": [
+    "CC2",
+    "Codex",
+    "ChatGPT",
+    "Gemini",
+    "DeepSeek"
+  ],
+  "task": "immune",
+  "max_rounds": 5,
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 29,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1296.7,
+      "per_model": {
+        "CC2": 16,
+        "Codex": 5,
+        "ChatGPT": 1,
+        "Gemini": 4,
+        "DeepSeek": 3
+      }
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 2040.0,
+      "per_model": {
+        "CC2": 12,
+        "Codex": 5,
+        "ChatGPT": 1,
+        "Gemini": 2,
+        "DeepSeek": 1
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 26,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 2357.9,
+      "per_model": {
+        "CC2": 14,
+        "Codex": 5,
+        "ChatGPT": 1,
+        "Gemini": 1,
+        "DeepSeek": 5
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 18,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1195.7,
+      "per_model": {
+        "CC2": 11,
+        "Codex": 2,
+        "ChatGPT": 1,
+        "Gemini": 2,
+        "DeepSeek": 2
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 27,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1263.0,
+      "per_model": {
+        "CC2": 12,
+        "Codex": 4,
+        "ChatGPT": 1,
+        "Gemini": 4,
+        "DeepSeek": 6
+      }
+    }
+  ],
+  "total_findings": 121,
+  "total_rounds": 5,
+  "total_elapsed_s": 8154.9,
+  "end_time": "2026-04-01T10:02:35.290521+00:00",
+  "per_model_totals": {
+    "CC2": 65,
+    "Codex": 21,
+    "ChatGPT": 5,
+    "Gemini": 13,
+    "DeepSeek": 17
+  },
+  "gamma": 0.1124,
+  "per_round_counts": [
+    29,
+    21,
+    26,
+    18,
+    27
+  ],
+  "cognitive_yield_per_round": [
+    15.93,
+    11.3,
+    15.57,
+    10.57,
+    16.28
+  ],
+  "popper_corroboration": {
+    "C_HE": 0.8473,
+    "P_E_given_H": 24.2,
+    "P_E": 2.0,
+    "interpretation": "strong_corroboration",
+    "note": "C(H,E) = Popper 1954 degree of corroboration. Control baseline from Bench Run 1 smoke test (10 HARD findings / 5 rounds = 2.0/round). Recalibrate after Bench Run 2 with full Control data."
+  }
+}
