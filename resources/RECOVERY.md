@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 April 2026 21:41 BST
+Last updated: 4 April 2026 01:59 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,39 +19,36 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (3 April 2026, 21:41 BST)
+## Current Pending Work (4 April 2026, 01:59 BST)
 
-Experiments 12–18 ALL COMPLETE. Runs 5–10 ALL COMPLETE.
+Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE.
 
-RUN 11 PREP (3 April 2026, 21:41 BST):
-FOUR FIXES NEEDED before launch:
-1. γ_ids prefix stripping bug: line 969 of run_baseline_confer.py does
-   `base_id = f.finding_id` — comment says "strip model prefix" but doesn't.
-   174 raw IDs vs 104 stripped. γ_ids measures prefix chaos, not novelty.
-2. Sequential read instruction for ALL models: currently only in
-   `_build_decomposed_prompt()` (decomposed path). CC2/Gemini/ChatGPT get
-   full prompt without instruction to read files start-to-finish.
-3. z3 confidence downgrade: `_verify_z3()` returns confidence 0.90 for proofs
-   using abstract symbols with no code grounding. Should be 0.30.
-4. LOGS_DIR → run11, experiment label → "baseline_confer_run11".
+RUN 11 COMPLETE (4 April 2026, 01:54 BST) = Exp 28b:
+2 rounds, 59 findings, 42 min. Fastest convergence in bench history.
+γ_novel=0.737, C(H,E)=0.873. CC2 dispatch failure (21 min timeouts),
+Gemini benched (Ω<0.1), 67% immune rejection in R1.
+Shadow v2 first production data: NK v2 caught 9 intra-round dups,
+B-Cell v2 ran 42 SMT-LIB checks. All v2 shadows fired correctly.
+Analysis: experimental_notes/Run11_Rapid_Convergence_Analysis_2026-04-04.md
+Logs: bench/logs/baseline_confer_run11_20260404/
 
-γ_ids promotion REJECTED: stripped γ_ids=-0.069 vs γ_novel=0.309. Not tracking.
-Keep as shadow with stripping fix. Zero-novel-ID terminal (3 zeros) still valid.
+EXP 29 PREP (deferred until after Run 11 analysis):
+1. Unified experiment numbering — rename "Run N" to "Exp N" throughout
+   run_baseline_confer.py, log dirs, notes, ONBOARDING/RECOVERY
+2. Review Run 11 shadow v2 data — decide v2 activations:
+   - NK v2: activate (9 intra-round dups caught, v1/v2 agree on cross-round)
+   - DC v2: activate if reclassification data shows correct routing
+   - Helper T v2: activate (hybrid domain synthesis — critical path)
+   - Regulatory T v2: activate if flag differences are correct
+   - CT v2 + B-Cell v2: activate ONLY after Helper T v2 is active
+3. Realistic HIL comparison experiment (C1 + C2 vs Gemini)
+   Design: experimental_notes/Realistic_HIL_Comparison_Design_2026-04-04.md
+4. Cell-level decomposition to fix CC2/Gemini delivery failures
+5. Ouroboros closure — models study ALL code including v2 shadows
 
-GEMINI ARCHITECTURAL FINDINGS (for future runs):
-- Cytotoxic T Cell should shift from verification (does the cited code exist?)
-  to falsification (what's the strongest condition that breaks this finding?).
-  Significant rewrite. DEFERRED to Run 12 alongside insect brain.
-- B Cell z3 intent-to-specification gap: LLMs translate claims to z3 by
-  silently restricting domains. z3 "proves" abstract symbols, not runtime
-  constraints. Partial fix (confidence downgrade) in Run 11. Full fix
-  (code-grounded z3 encoding) is an open research problem.
-
-INSECT BRAIN ARCHITECTURE (deferred to Run 12):
+INSECT BRAIN ARCHITECTURE (deferred to Exp 29):
 - Reactive coordinator, not deliberative. Gathers/processes/tabulates/commits.
-- Does not think, direct, or evaluate content.
 - Models drive conversation under full CDSFL as peers.
-- Persistence layer = shared workspace (all models read/write directly).
 - Design notes: experimental_notes/Insect_Brain_Architecture_2026-04-03.md
 - Global mind vision: experimental_notes/Global_Mind_Architecture_2026-04-03.md
 

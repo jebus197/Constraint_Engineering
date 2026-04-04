@@ -1,0 +1,17 @@
+{
+  "timestamp": "20260404T001604Z",
+  "phase": "r1_adaptive",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1936,
+  "response": "**FIND:** In `bench/immune_agents.py`, function `_verify_statistical`, the regex pattern for extracting p-values only matches ASCII less‑than or equal signs (`<` or `=`). It does not match the Unicode less‑than‑or‑equal symbol (`≤`). Evidence: the pattern `r'p\\\\s*[<=]\\\\s*(0\\\\.\\\\d+)'` is used on line (approximately) 388. This means a finding that contains “p ≤ 0.05” will not be matched, causing the claim to be misclassified as `STAT_UNPARSEABLE` and receiving an `UNCERTAIN` verdict with low confidence, even though the claim is testable.\n\n**FIX:** Extend the character class in the regex pattern to include the Unicode less‑than‑or‑equal symbol. The exact replacement is:\n\n<<<<\n        p_match = re.search(r'p\\\\s*[<=]\\\\s*(0\\\\.\\\\d+)', claim)\n====\n        p_match = re.search(r'p\\\\s*[<≤=]\\\\s*(0\\\\.\\\\d+)', claim)\n>>>>\n\n**FOLLOW:** The fix allows p‑value claims that use the Unicode symbol `≤` to be correctly recognized and verified. This change only affects the statistical verification path; no other verification tools (SymPy, z3, etc.) are impacted. The confidence scoring and verdict logic remain unchanged. No downstream impact is identified because the function’s output format and the calling code are unchanged. However, note that the same limitation may exist for the greater‑than‑or‑equal symbol (`≥`) and other Unicode inequality symbols; a thorough fix would normalize all inequality symbols to ASCII before matching, but that is out of scope for this immediate fix.\n\n---\n\n**FINDING_ID:** IM_F041  \n**SEVERITY:** 0.5  \n**FLAW_CLASS:** 2  \n**ABSTRACTION_INDEX:** 0.3  \n**DESCRIPTION:** The regex pattern for extracting p‑values in `_verify_statistical` does not match the Unicode less‑than‑or‑equal symbol (≤), causing p‑value claims that use this symbol to be missed and incorrectly classified as unparseable.  \n**PROPOSED_FIX:** Extend the character class in the regex pattern from `[<=]` to `[<≤=]`.  \n**VERIFIED:** TRUE",
+  "metadata": {
+    "round": 1,
+    "elapsed": 222.1,
+    "chars": 1936,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true,
+    "prompt_chars": 360850
+  }
+}

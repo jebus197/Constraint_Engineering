@@ -1,0 +1,998 @@
+{
+  "completed_round": 1,
+  "timestamp": "2026-04-04T00:48:59.308464+00:00",
+  "all_findings": [
+    [
+      {
+        "finding_id": "ChatGPT_IM_F001",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.95,
+        "abstraction_index": 0.82,
+        "description": "`bench/dm/_manager.py`, `apply_diagnosis()`, damping gate near the start of the method. The damping key is based on `diagnosis.detector`, but several remediation chains are keyed by pathology (`pathology_key`) while multiple distinct pathologies share detector names or use detector names that do not match the chain namespace. This causes incorrect suppression or non-suppression of remediations. Concrete evidence from code: adjustments are recorded with `\"detector\": diagnosis.detector` in `_record_adjustment()`, and the damping check compares only `adj[\"detector\"] == diagnosis.detector` plus model_id. For example, all `self_diagnosis` findings share detector `\"self_diagnosis\"` but represent different triggers; conversely, `mu_novelty_disagree` uses detector `\"mu+novelty\"` while chaining is by pathology key. Damping must apply per remediation target/pathology, not per display detector string. As written, unrelated immune actions can block each other, and related ones can evade proper damping if detector strings differ.",
+        "proposed_fix": "FIND: Damping is keyed to `diagnosis.detector` instead of machine-readable pathology/remediation key, causing cross-pathology interference in immune remediation.\n\nFIX:\n<<<<\n        # Check damping: was this parameter adjusted recently?\n        # Use composite key (detector + model_id if present) to prevent\n        # per-model pathologies from interfering across models (IM_F005).\n        diag_model = diagnosis.evidence.get(\"model_id\", \"\")\n        for adj in self._immune_adjustments:\n            adj_model = adj.get(\"model_id\", \"\")\n            if (adj[\"detector\"] == diagnosis.detector\n                    and adj_model == diag_model\n                    and round_idx - adj[\"round\"] < self.config.immune_damping_rounds):\n                return None  # Too soon — damping prevents oscillation\n====\n        # Check damping: was this pathology/remediation target adjusted recently?\n        # Key by machine-readable pathology_key when available, not human-facing\n        # detector label. Detector strings are not a stable remediation namespace.\n        diag_model = diagnosis.evidence.get(\"model_id\", \"\")\n        damping_key = diagnosis.pathology_key or diagnosis.detector\n        for adj in self._immune_adjustments:\n            adj_model = adj.get(\"model_id\", \"\")\n            adj_key = adj.get(\"damping_key\", adj.get(\"chain_key\", adj.get(\"detector\", \"\")))\n            if (adj_key == damping_key\n                    and adj_model == diag_model\n                    and round_idx - adj[\"round\"] < self.config.immune_damping_rounds):\n                return None  # Too soon — damping prevents oscillation\n>>>>\n\nAlso update `_record_adjustment()` so the same key is persisted:\n<<<<\n        record = {\n            adjustment,\n            \"detector\": diagnosis.detector,\n            \"round\": round_idx,\n            \"severity\": diagnosis.severity,\n            \"timestamp\": time.time(),\n        }\n====\n        record = {\n            adjustment,\n            \"detector\": diagnosis.detector,\n            \"damping_key\": diagnosis.pathology_key or chain_key or diagnosis.detector,\n            \"round\": round_idx,\n            \"severity\": diagnosis.severity,\n            \"timestamp\": time.time(),\n        }\n>>>>\n\nFOLLOW: This change affects deferred remediation damping in `approve_deferred_remediation()`, which currently also keys by detector only and should be aligned to `damping_key`/`chain_key` for consistency. Otherwise approved deferred fixes can still be incorrectly blocked or allowed relative to immediate fixes. `self_diagnosis` adjustments will now damp per trigger/pathology instead of globally across all self-diagnosis outputs.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F002",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.93,
+        "abstraction_index": 0.88,
+        "description": "`bench/dm/_manager.py`, `apply_diagnosis()`, P-pass rejection escalation block creates malformed remediation state. When `proceed` is `False` and no prior state exists, the code inserts `_remediation_state[chain_key]` without `chain_length`; later `_verify_remediation_outcomes()` relies on `chain_length` for exhaustion bounds and defaults to `999` if absent. Evidence: the rejection block writes only `chain_idx`, `applied_round`, `metric_at_apply`, `target_metric`, `verification_window`; `_verify_remediation_outcomes()` reads `state.get(\"chain_length\", 999)`. This reintroduces zombie-chain behavior on the exact branch that skips application. Worse, P-pass rejection is not an applied remediation and should not start a verification window at all. The state machine conflates “step rejected, try next” with “step applied, await metric verification.”",
+        "proposed_fix": "FIND: P-pass rejection incorrectly writes `_remediation_state` as if a remediation had been applied, starting fake verification and losing real chain bounds.\n\nFIX:\n<<<<\n        if not proceed:\n            # P-pass rejected — escalate to next step\n            state = self.health_monitor._remediation_state.get(chain_key, {})\n            if state:\n                state[\"chain_idx\"] = chain_idx + 1\n            else:\n                self.health_monitor._remediation_state[chain_key] = {\n                    \"chain_idx\": chain_idx + 1,\n                    \"applied_round\": round_idx,\n                    \"metric_at_apply\": current_metric_val,\n                    \"target_metric\": step[\"target_metric\"],\n                    \"verification_window\": 2,\n                }\n            return None\n====\n        if not proceed:\n            # P-pass rejected — advance the chain pointer ONLY.\n            # No remediation was applied, so do not start outcome verification.\n            next_idx = chain_idx + 1\n            if next_idx >= len(chain):\n                self.health_monitor.record_chain_exhaustion(chain_key)\n                self.health_monitor._remediation_state.pop(chain_key, None)\n            else:\n                existing = self.health_monitor._remediation_state.get(chain_key, {})\n                self.health_monitor._remediation_state[chain_key] = {\n                    existing,\n                    \"chain_idx\": next_idx,\n                    \"chain_length\": len(chain),\n                }\n            return None\n>>>>\n\nFOLLOW: `_verify_remediation_outcomes()` now sees only genuinely applied remediations with `applied_round/metric_at_apply/target_metric`. That avoids spurious “INEFFECTIVE” diagnoses for steps never executed. `recommended_chain_start()` learning remains based on actual recorded outcomes, which is correct; P-pass rejections should not poison step-effectiveness statistics. If any caller assumed `_remediation_state` always had verification fields, that assumption was already false and should remain scoped to applied states only.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F003",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.9,
+        "abstraction_index": 0.84,
+        "description": "`bench/dm/_manager.py`, `_apply_transform(\"prefer_novelty\")` sets `self.health_monitor._prefer_novelty_over_mu = True`, but no in-scope code reads this flag. The remediation chains for `mu_distortion` and `mu_novelty_disagree` therefore record an “adjustment” that has no behavioral effect. Evidence: searching provided files shows `_prefer_novelty_over_mu` is only written here and never consulted in `process_round()`, `DetectorHealthMonitor`, `_convergence.py`, or the stop/FSM logic. This is a dead remediation step that produces audit noise without changing system behavior.",
+        "proposed_fix": "FIND: The `prefer_novelty` transform is dead code; it writes a flag never consumed by stop/convergence logic.\n\nFIX:\n1) Add a real config flag in `bench/dm/_types.py`:\n<<<<\n    # No-exclusion mode: ABORT does not trigger FAIL_CRITICAL in the FSM.\n    # Run 9 bug: DM internally set critical_failure=True on ABORT, sending\n    # the FSM to TERMINAL before the runner could override. With this flag,\n    # ABORT is a recoverable action, not a state-machine-ending event.\n    no_exclusion_mode: bool = False\n====\n    # No-exclusion mode: ABORT does not trigger FAIL_CRITICAL in the FSM.\n    # Run 9 bug: DM internally set critical_failure=True on ABORT, sending\n    # the FSM to TERMINAL before the runner could override. With this flag,\n    # ABORT is a recoverable action, not a state-machine-ending event.\n    no_exclusion_mode: bool = False\n    # Immune remediation can temporarily prefer novelty_rate over mu when\n    # cost-sensitive mu is diagnosed as distorted or contradictory.\n    prefer_novelty_over_mu: bool = False\n>>>>\n\n2) Make the transform update the real config:\n<<<<\n        elif transform_name == \"prefer_novelty\":\n            hm = self.health_monitor\n            if not getattr(hm, \"_prefer_novelty_over_mu\", False):\n                hm._prefer_novelty_over_mu = True\n                return {\"parameter\": \"stop_signal_priority\",\n                        \"old\": \"default (mu + novelty)\",\n                        \"new\": \"prefer novelty_rate over mu\",\n                        \"reason\": diagnosis.pathology}\n====\n        elif transform_name == \"prefer_novelty\":\n            old_val = self.config.prefer_novelty_over_mu\n            new_val = True\n            if new_val != old_val:\n                self.config.prefer_novelty_over_mu = new_val\n                return {\"parameter\": \"stop_signal_priority\",\n                        \"old\": \"default (mu + novelty)\",\n                        \"new\": \"prefer novelty_rate over mu\",\n                        \"reason\": diagnosis.pathology}\n>>>>\n\n3) Wire it into `process_round()` stop logic:\n<<<<\n        is_diminished = self.diminishing_returns.stop(round_idx)\n====\n        is_diminished = self.diminishing_returns.stop(round_idx)\n        if self.config.prefer_novelty_over_mu:\n            is_diminished = (\n                round_idx >= self.config.r_min\n                and novelty < self.config.tau_novelty_stop\n            )\n>>>>\n\nFOLLOW: This fix changes semantics of the stop predicate, so event logging should remain accurate: the emitted STOP_CHECK for `mu` currently logs `stop={is_diminished}` but not why. If this flag is enabled, metadata should ideally include `stop_signal=\"novelty\"` to avoid silent policy drift. Also, remediation outcome verification for `prefer_novelty` still targets `\"mu\"` in the chains; that target becomes semantically weak because the fix changes policy, not mu itself. Those chain entries should use a policy/behavioral target or be marked DEFER-only unless a measurable target is defined.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F004",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.88,
+        "abstraction_index": 0.78,
+        "description": "`bench/dm/_manager.py`, `approve_deferred_remediation()` applies a deferred fix using `round_idx = deferred[\"round\"]` and passes that stale round into `_record_adjustment()` and `set_remediation_state(applied_round=round_idx, ...)`. This violates temporal correctness: approval may happen many rounds later, but the system records the remediation as if applied in the original diagnosis round. Evidence in code: `current_round = self._process_round_count` is computed for damping, but discarded when writing records and remediation state. Consequence: outcome verification can run immediately or retroactively because `_verify_remediation_outcomes()` computes `rounds_since = current_round - state[\"applied_round\"]`. A late-approved fix can appear already past its verification window before it ever had time to affect anything.",
+        "proposed_fix": "FIND: Deferred remediations are timestamped with diagnosis round, not approval/application round, corrupting damping logs and remediation outcome verification.\n\nFIX:\n<<<<\n        adjustment = self._apply_transform(step[\"transform\"], diag)\n        if adjustment:\n            round_idx = deferred[\"round\"]\n            self._record_adjustment(\n                adjustment, diag, round_idx,\n                chain_key=deferred[\"chain_key\"],\n                chain_idx=deferred[\"chain_idx\"],\n            )\n            deferred[\"status\"] = \"APPROVED\"\n            current_metric = self._get_current_metric(step[\"target_metric\"])\n            # F007 fix: pass chain_length for outcome verification.\n            deferred_chain = self._REMEDIATION_CHAINS.get(deferred[\"chain_key\"], [])\n            self.health_monitor.set_remediation_state(\n                pathology_key=deferred[\"chain_key\"],\n                chain_idx=deferred[\"chain_idx\"],\n                applied_round=round_idx,\n                metric_at_apply=current_metric,\n                target_metric=step[\"target_metric\"],\n                chain_length=len(deferred_chain),\n            )\n====\n        adjustment = self._apply_transform(step[\"transform\"], diag)\n        if adjustment:\n            applied_round = current_round\n            self._record_adjustment(\n                adjustment, diag, applied_round,\n                chain_key=deferred[\"chain_key\"],\n                chain_idx=deferred[\"chain_idx\"],\n            )\n            deferred[\"status\"] = \"APPROVED\"\n            deferred[\"approved_round\"] = applied_round\n            current_metric = self._get_current_metric(step[\"target_metric\"])\n            deferred_chain = self._REMEDIATION_CHAINS.get(deferred[\"chain_key\"], [])\n            self.health_monitor.set_remediation_state(\n                pathology_key=deferred[\"chain_key\"],\n                chain_idx=deferred[\"chain_idx\"],\n                applied_round=applied_round,\n                metric_at_apply=current_metric,\n                target_metric=step[\"target_metric\"],\n                chain_length=len(deferred_chain),\n            )\n>>>>\n\nFOLLOW: Deferred remediation event/audit consumers now have both `round` (diagnosis) and `approved_round` (application). Any reporting that treated `round` as application time must be updated. This also makes damping consistent with actual application chronology and avoids premature `remediation_outcome` diagnoses.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F005",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.84,
+        "abstraction_index": 0.72,
+        "description": "`bench/dm/_immune.py`, `false_positive_rate` counts all diagnoses in the window except `remediation_outcome`, including `self_diagnosis`, dispatch, and other non-pathology meta-diagnoses, while `record_natural_resolution()` records only actual pathology resolutions. This denominator mismatch biases the rate downward and can suppress the high-false-positive self-check. Evidence: `all_detections = [d for d in self._diagnoses if ... and d.detector not in (\"remediation_outcome\",)]`. That still includes `self_diagnosis`, potentially repeated chain-exhaustion advisories, and any future informational diagnoses. The numerator is only entries from `_false_positive_history`. These are not the same event family.",
+        "proposed_fix": "FIND: `false_positive_rate` mixes pathology detections with meta-diagnoses, so numerator and denominator are not measuring the same phenomenon.\n\nFIX:\n<<<<\n        all_detections = [\n            d for d in self._diagnoses\n            if hasattr(d, 'evidence') and isinstance(d.evidence, dict)\n            and d.detector not in (\"remediation_outcome\",)\n        ]\n====\n        all_detections = [\n            d for d in self._diagnoses\n            if hasattr(d, \"evidence\") and isinstance(d.evidence, dict)\n            and d.detector not in (\"remediation_outcome\", \"self_diagnosis\")\n            and bool(getattr(d, \"pathology_key\", \"\"))\n        ]\n>>>>\n\nFOLLOW: This changes the trigger sensitivity of `self_diagnose()` self-check 2, likely increasing observed false-positive rates to their intended level. Any dashboards using `self_diagnosis_summary[\"false_positive_rate\"]` will shift and should be interpreted as a corrected metric, not a regression. If dispatch diagnoses with generic shared `pathology_key` are retained, they still count as pathology detections, which is appropriate.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F006",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.82,
+        "abstraction_index": 0.76,
+        "description": "`bench/dm/_immune.py`, `check_dispatch_health()` emits all verification-miscalibration diagnoses with the same `pathology_key=\"verification_miscalibration\"` while tracking persistence per-model via `_pathology_counts[key]` where `key = f\"verif_miscal_{model_id}\"`. Downstream, `apply_diagnosis()` routes by the shared pathology key, but damping and remediation state are not model-scoped by pathology key. This collapses multiple model-specific pathologies into one remediation chain namespace, so one model’s active remediation or damping can suppress another’s. Evidence: diagnosis evidence contains `model_id`, but `DetectorHealthMonitor._remediation_state` and manager chain keys are single string keys; shared pathology key is reused for all models.",
+        "proposed_fix": "FIND: Verification-miscalibration is model-specific in detection state but global in remediation keying, causing cross-model interference.\n\nFIX:\n1) Emit model-specific pathology keys:\n<<<<\n                            pathology_key=\"verification_miscalibration\",\n====\n                            pathology_key=f\"verification_miscalibration_{model_id}\",\n>>>>\n\n2) Add a base-key normaliser in `apply_diagnosis()` for chain lookup:\n<<<<\n        chain_key = None\n        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:\n            chain_key = diagnosis.pathology_key\n====\n        chain_key = None\n        pathology_key = diagnosis.pathology_key or \"\"\n        base_pathology_key = (\n            \"verification_miscalibration\"\n            if pathology_key.startswith(\"verification_miscalibration_\")\n            else pathology_key\n        )\n        if base_pathology_key and base_pathology_key in self._REMEDIATION_CHAINS:\n            chain_key = base_pathology_key\n>>>>\n\n3) Use a model-scoped remediation state key:\n<<<<\n        state = self.health_monitor._remediation_state.get(chain_key, {})\n====\n        remediation_state_key = (\n            f\"{chain_key}:{diag_model}\" if diag_model else chain_key\n        )\n        state = self.health_monitor._remediation_state.get(remediation_state_key, {})\n>>>>\nand pass/use `remediation_state_key` consistently in `set_remediation_state`, exhaustion, and verification paths.\n\nFOLLOW: This is not local. `_verify_remediation_outcomes()`, suppression gates in `_immune.py` (`if \"...\" not in self._remediation_state`), and `_CHAIN_TO_COUNTER` all currently assume unscoped string keys. They must either adopt `base_key:model_id` form consistently or introduce separate `pathology_family_key` and `instance_key` fields. Without that wider follow-through, model-local pathologies remain cross-coupled.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F007",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.8,
+        "abstraction_index": 0.69,
+        "description": "`bench/dm/_manager.py`, `_REMEDIATION_CHAINS[\"verification_miscalibration\"]` uses target metric `\"finding_count\"` for both steps, but the pathology is about verification-rate divergence, not output volume. Outcome verification therefore measures the wrong variable and can mark a fix successful simply because the model produced more findings, even if its verification calibration stayed bad or worsened. Evidence: `check_dispatch_health()` diagnoses based on per-model mean verification rate versus population mean; no path in `_verify_remediation_outcomes()` supports a per-model verification metric target. This is a completeness/correctness mismatch between diagnosis semantics and remediation verification semantics.",
+        "proposed_fix": "FIND: Verification-miscalibration remediation is verified against `finding_count`, which is unrelated to the diagnosed failure mode.\n\nFIX:\n1) Change the chain to target a verification metric:\n<<<<\n        \"verification_miscalibration\": [\n            # Step 0: Add verification re-examination directive\n            {\"parameter\": \"per_model_directives\", \"transform\": \"add_verification_directive\",\n             \"target_metric\": \"finding_count\",\n             \"description\": \"add verification re-examination directive\",\n             \"risk\": \"AUTO\"},\n            # Step 1: Flag model's VERIFIED field as unreliable system-wide\n            {\"parameter\": \"verification_trust\", \"transform\": \"flag_verification_unreliable\",\n             \"target_metric\": \"finding_count\",\n             \"description\": \"flag model verification as unreliable\",\n             \"risk\": \"DEFER\"},\n        ],\n====\n        \"verification_miscalibration\": [\n            {\"parameter\": \"per_model_directives\", \"transform\": \"add_verification_directive\",\n             \"target_metric\": \"verification_rate\",\n             \"description\": \"add verification re-examination directive\",\n             \"risk\": \"AUTO\"},\n            {\"parameter\": \"verification_trust\", \"transform\": \"flag_verification_unreliable\",\n             \"target_metric\": \"verification_rate\",\n             \"description\": \"flag model verification as unreliable\",\n             \"risk\": \"DEFER\"},\n        ],\n>>>>\n\n2) Extend `_get_current_metric()` to support per-model verification rate via diagnosis evidence:\n<<<<\n    def _get_current_metric(self, metric_name: str) -> float:\n        \"\"\"Get the current value of a named metric for remediation tracking.\"\"\"\n        hm = self.health_monitor\n        if metric_name == \"kappa\" and hm._kappa_history:\n            return hm._kappa_history[-1]\n        elif metric_name == \"mu\" and hm._mu_history:\n            return hm._mu_history[-1]\n        elif metric_name == \"novelty\" and hm._novelty_history:\n            return hm._novelty_history[-1]\n        elif metric_name == \"finding_count\" and hm._finding_counts:\n            return float(hm._finding_counts[-1])\n        elif metric_name == \"vocab_growth\" and hm._vocab_growth_history:\n            return hm._vocab_growth_history[-1]\n        return 0.0\n====\n    def _get_current_metric(\n        self, metric_name: str, model_id: str = \"\"\n    ) -> float:\n        \"\"\"Get the current value of a named metric for remediation tracking.\"\"\"\n        hm = self.health_monitor\n        if metric_name == \"kappa\" and hm._kappa_history:\n            return hm._kappa_history[-1]\n        elif metric_name == \"mu\" and hm._mu_history:\n            return hm._mu_history[-1]\n        elif metric_name == \"novelty\" and hm._novelty_history:\n            return hm._novelty_history[-1]\n        elif metric_name == \"finding_count\" and hm._finding_counts:\n            return float(hm._finding_counts[-1])\n        elif metric_name == \"vocab_growth\" and hm._vocab_growth_history:\n            return hm._vocab_growth_history[-1]\n        elif metric_name == \"verification_rate\" and model_id:\n            hist = self._per_model_verification.get(model_id, [])\n            if hist:\n                return hist[-1]\n        return 0.0\n>>>>\n\nFOLLOW: All callers that verify or snapshot metrics for model-scoped remediations must thread `model_id` through, especially `apply_diagnosis()`, deferred approval, and possibly `_verify_remediation_outcomes()` state. Without that downstream change, adding the target name alone is insufficient. The current generic remediation-state schema is too coarse for per-model metrics.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F008",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.77,
+        "abstraction_index": 0.61,
+        "description": "`bench/immune_agents.py`, `regulatory_t_cell_check()` computes `removed = rejected + duplicated` and `removal_rate = removed / total`, but Check 1 still tests only `rejected / total > max_rejection_rate`. Duplicates are treated as removals elsewhere in the function and in pipeline output (`rej_count` includes both `REJECTED` and `DUPLICATE`), so the autoimmune guard undercounts actual filtering pressure. Evidence is internal inconsistency within the function itself; the v2 shadow version fixes exactly this by using `removal_rate`.",
+        "proposed_fix": "FIND: Regulatory T v1 under-detects autoimmune filtering because it ignores DUPLICATE findings in the main threshold test.\n\nFIX:\n<<<<\n    # Check 1: Overall rejection rate\n    if rejected / total > max_rejection_rate:\n        reasons.append(\n            f\"Rejection rate {rejected}/{total} ({rejected/total:.1%}) \"\n            f\"exceeds threshold ({max_rejection_rate:.0%})\"\n        )\n====\n    # Check 1: Overall removal rate (rejected + duplicates)\n    if removal_rate > max_rejection_rate:\n        reasons.append(\n            f\"Removal rate {removed}/{total} ({removal_rate:.1%}) \"\n            f\"exceeds threshold ({max_rejection_rate:.0%}) \"\n            f\"[rejected={rejected}, duplicated={duplicated}]\"\n        )\n>>>>\n\nFOLLOW: This changes when `autoimmune_flag` trips in `run_immune_pipeline()`. In non-observation mode, more high-dedup rounds may now be passed through wholesale as a safety override. That is consistent with the function’s own semantics but may require recalibration of `max_rejection_rate` if duplicates are expected to be abundant.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F009",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.74,
+        "abstraction_index": 0.57,
+        "description": "`bench/immune_agents.py`, `nk_cell_v2_shadow()` claims “Return original triaged (unchanged) — shadow doesn't mutate state”, but it appends duplicate/rejection verdicts without setting `tf.is_duplicate`, `tf.duplicate_of`, or `tf.similarity` on the returned triaged objects, unlike v1 NK behavior. That means shadow helper/regulatory stages fed `triaged` cannot evaluate what v2 dedup would have done; they only see shadow verdicts if explicitly merged, which `run_immune_pipeline()` does not do for shadow cells. So the advertised intra-round-dedup shadow comparison is structurally incomplete. Evidence: `run_immune_pipeline()` discards shadow verdicts from `nk_v2_shadow` after counting tool usage; `helper_t_v2_shadow()` is run on `all_verdicts` from v1 cells only.",
+        "proposed_fix": "FIND: NK v2 shadow cannot influence any shadow synthesis path, so its dedup behavior is unobservable except in logs.\n\nFIX:\n<<<<\n    v2_final, v2_conf = helper_t_v2_shadow(triaged, all_verdicts)\n====\n    shadow_verdicts_for_v2: List[CellVerdict] = list(all_verdicts)\n    nk_v2_result = futures.get(\"nk_v2_shadow\")\n    if nk_v2_result is not None:\n        try:\n            _, nk_v2_verdicts = nk_v2_result.result(timeout=0)\n            shadow_verdicts_for_v2.extend(nk_v2_verdicts)\n        except Exception:\n            pass\n    v2_final, v2_conf = helper_t_v2_shadow(triaged, shadow_verdicts_for_v2)\n>>>>\n\nA cleaner fix is to store shadow outputs during collection:\n<<<<\n        shadow_names = {\"ct_v2_shadow\", \"b_cell_v2_shadow\", \"nk_v2_shadow\"}\n        for name, future in futures.items():\n====\n        shadow_names = {\"ct_v2_shadow\", \"b_cell_v2_shadow\", \"nk_v2_shadow\"}\n        shadow_outputs: Dict[str, Any] = {}\n        for name, future in futures.items():\n>>>>\nand\n<<<<\n                if name in shadow_names:\n                    # Shadow cells: log output but do NOT add to all_verdicts\n                    if name == \"nk_v2_shadow\":\n                        # NK v2 returns (triaged, verdicts) tuple\n                        _, shadow_verdicts = result\n                    else:\n                        shadow_verdicts = result\n                    for v in shadow_verdicts:\n                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1\n====\n                if name in shadow_names:\n                    shadow_outputs[name] = result\n                    if name == \"nk_v2_shadow\":\n                        _, shadow_verdicts = result\n                    else:\n                        shadow_verdicts = result\n                    for v in shadow_verdicts:\n                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1\n>>>>\n\nFOLLOW: To make shadow-v2 comparisons meaningful, the same should be done for `ct_v2_shadow` and `b_cell_v2_shadow`; otherwise `helper_t_v2_shadow()` is not actually synthesizing v2 signals, only using a different aggregation algorithm over v1 evidence. This reveals a broader completeness issue in the shadow pipeline design.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F010",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.71,
+        "abstraction_index": 0.66,
+        "description": "`bench/immune_agents.py`, the shadow pipeline is only partially wired: `dendritic_cell_v2_shadow()` output (`dc_v2_triaged`) is computed and timed but never used by any downstream shadow component; `helper_t_v2_shadow()` and `regulatory_t_v2_shadow()` operate on v1 triage/verdict inputs. Therefore claims about end-to-end v2 shadow behavior are unsupported. Evidence: `dc_v2_triaged` is assigned then ignored; Stage 2 shadow calls all use `triaged`, not `dc_v2_triaged`. This is a dead shadow branch.",
+        "proposed_fix": "FIND: Dendritic Cell v2 shadow is observationally dead because its reclassified triage is not consumed anywhere.\n\nFIX:\n<<<<\n    dc_v2_triaged = dendritic_cell_v2_shadow(new_findings, triaged)\n    timings[\"dendritic_v2_shadow\"] = round(time.monotonic() - t0_dc_v2, 4)\n====\n    dc_v2_triaged = dendritic_cell_v2_shadow(new_findings, triaged)\n    timings[\"dendritic_v2_shadow\"] = round(time.monotonic() - t0_dc_v2, 4)\n    shadow_triaged = dc_v2_triaged\n>>>>\n\nAnd route shadow stage-2 cells to `shadow_triaged`:\n<<<<\n            futures[\"ct_v2_shadow\"] = pool.submit(\n                cytotoxic_t_cell_v2_shadow, triaged, source_paths, ct_timeout,\n            )\n====\n            futures[\"ct_v2_shadow\"] = pool.submit(\n                cytotoxic_t_cell_v2_shadow, shadow_triaged, source_paths, ct_timeout,\n            )\n>>>>\n<<<<\n        futures[\"b_cell_v2_shadow\"] = pool.submit(\n            b_cell_v2_shadow, triaged, source_paths,\n        )\n====\n        futures[\"b_cell_v2_shadow\"] = pool.submit(\n            b_cell_v2_shadow, shadow_triaged, source_paths,\n        )\n>>>>\n<<<<\n        futures[\"nk_v2_shadow\"] = pool.submit(\n            nk_cell_v2_shadow, triaged, prior_findings, tau_sim,\n            false_positive_db,\n        )\n====\n        futures[\"nk_v2_shadow\"] = pool.submit(\n            nk_cell_v2_shadow, shadow_triaged, prior_findings, tau_sim,\n            false_positive_db,\n        )\n>>>>\n\nFOLLOW: Once shadow triage is propagated, v2 verdict comparisons become materially different and should be logged as such. This also interacts with IM_F009: unless shadow verdicts are fed into `helper_t_v2_shadow()`, the improved triage still won’t change final shadow verdicts. The full shadow path needs coherent wiring, not isolated function execution.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F001",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.98,
+        "abstraction_index": 0.82,
+        "description": "FIND: bench/dm/_manager.py, process_round(), in the per-model immune feed block. The manager computes `failed = mid not in responses or not responses[mid].parseable` and passes that into `DetectorHealthMonitor.record_model_round()`. This is inconsistent with the actual failure interface already computed earlier in the same function via `failure_type = self.failure_handler.detect_failure(response)`. Evidence: `_failure_handler.py` defines five failure classes, but the immune path collapses them into a bespoke boolean based only on response presence and `parseable`. That drops FORMAT, TIMEOUT, EMPTY, and UNDERPERFORM distinctions, and it can classify a model with a present response but format failure as healthy for immune purposes. It also treats missing responses as failed without consulting the recorded `failures` map. This can spuriously increment `_model_failure_counts`, emit `model_failure_*` diagnoses, and trigger the `model_failure` remediation chain (`add_to_pre_decompose`) on a criterion different from the system's own failure detector.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, replace the ad hoc `failed` computation with one derived from the already-computed `failures` map.\n\n<<<<\n        for model in self.models:\n            mid = model.model_id\n            fc = _model_finding_counts.get(mid, 0)\n            failed = mid not in responses or not responses[mid].parseable\n            resp = responses.get(mid)\n            model_diags = self.health_monitor.record_model_round(\n                mid, fc, failed,\n                response_time=resp.response_time if resp and hasattr(resp, 'response_time') else 0.0,\n                response_chars=len(resp.content) if resp and resp.content else 0,\n            )\n====\n        for model in self.models:\n            mid = model.model_id\n            fc = _model_finding_counts.get(mid, 0)\n            resp = responses.get(mid)\n            failure_type = failures.get(mid)\n            failed = failure_type is not None or mid not in responses\n            model_diags = self.health_monitor.record_model_round(\n                mid, fc, failed,\n                response_time=resp.response_time if resp is not None else 0.0,\n                response_chars=len(resp.content) if resp is not None and resp.content else 0,\n            )\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F002",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.95,
+        "abstraction_index": 0.86,
+        "description": "FIND: bench/dm/_manager.py, apply_diagnosis(), P-pass rejection branch. When `proceed` is false, the manager creates or mutates `health_monitor._remediation_state` directly, but the newly-created state omits `chain_length`. In bench/dm/_immune.py, `_verify_remediation_outcomes()` reads `chain_len = state.get('chain_length', 999)` and uses it to decide whether escalation exhausts the chain. If the state was created through this rejection path, the chain is treated as length 999, so repeated ineffective escalations can become zombie state instead of exhausting at the actual chain length. Evidence: the success path uses `set_remediation_state(..., chain_length=len(chain))`, but the rejection path does not.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, replace the manual remediation-state write with a call to `set_remediation_state()` that includes the actual chain length.\n\n<<<<\n        if not proceed:\n            # P-pass rejected — escalate to next step\n            state = self.health_monitor._remediation_state.get(chain_key, {})\n            if state:\n                state[\"chain_idx\"] = chain_idx + 1\n            else:\n                self.health_monitor._remediation_state[chain_key] = {\n                    \"chain_idx\": chain_idx + 1,\n                    \"applied_round\": round_idx,\n                    \"metric_at_apply\": current_metric_val,\n                    \"target_metric\": step[\"target_metric\"],\n                    \"verification_window\": 2,\n                }\n            return None\n====\n        if not proceed:\n            # P-pass rejected — advance to the next chain step without applying.\n            next_idx = chain_idx + 1\n            if next_idx >= len(chain):\n                self.health_monitor.record_chain_exhaustion(chain_key)\n                self.health_monitor._remediation_state.pop(chain_key, None)\n            else:\n                self.health_monitor.set_remediation_state(\n                    pathology_key=chain_key,\n                    chain_idx=next_idx,\n                    applied_round=round_idx,\n                    metric_at_apply=current_metric_val,\n                    target_metric=step[\"target_metric\"],\n                    chain_length=len(chain),\n                )\n            return None\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F003",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.93,
+        "abstraction_index": 0.77,
+        "description": "FIND: bench/dm/_manager.py, apply_diagnosis(), fallback chain mapping for vocab saturation is unreachable for real diagnoses. `DetectorHealthMonitor.record_round()` emits vocab diagnoses with `detector='vocab_saturation'` and `pathology_key='vocab_saturation'`, so the primary key path works. But the legacy fallback branch checks `diagnosis.detector == 'vocab_saturation' and 'premature' in diagnosis.pathology.lower()`. The actual pathology string is `Premature vocab saturation: ...`, so fallback would work. However the kappa, findings_decline, and model_failure branches use detector names, while mu-related and parser-related legacy diagnoses are not covered at all despite remediation chains existing for them. This creates an interface mismatch: chain routing claims backward compatibility but only partially implements it. Evidence: `_REMEDIATION_CHAINS` includes `mu_distortion`, `mu_novelty_disagree`, `parser_yield`, `monotonic_decline`, `cpf_spike`, `verification_miscalibration`, but the fallback mapping only handles four families plus separate hardcoded direct fixes for two.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, replace the fragmented fallback mapping with a complete detector/pathology-key routing table.\n\n<<<<\n        chain_key = None\n        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:\n            chain_key = diagnosis.pathology_key\n        elif diagnosis.detector == \"kappa\" and \"stuck\" in diagnosis.pathology.lower():\n            chain_key = \"kappa_stuck\"\n        elif diagnosis.detector == \"vocab_saturation\" and \"premature\" in diagnosis.pathology.lower():\n            chain_key = \"vocab_saturation\"\n        elif diagnosis.detector == \"findings_decline\":\n            chain_key = \"findings_decline\"\n        elif diagnosis.detector == \"model_failure\":\n            chain_key = \"model_failure\"\n====\n        chain_key = None\n        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:\n            chain_key = diagnosis.pathology_key\n        else:\n            det = diagnosis.detector\n            path = diagnosis.pathology.lower()\n            if det == \"kappa\" and \"stuck\" in path:\n                chain_key = \"kappa_stuck\"\n            elif det == \"vocab_saturation\" and \"premature\" in path:\n                chain_key = \"vocab_saturation\"\n            elif det == \"findings_decline\":\n                chain_key = \"findings_decline\"\n            elif det == \"model_failure\":\n                chain_key = \"model_failure\"\n            elif det == \"mu\" and \"increasing\" in path:\n                chain_key = \"mu_distortion\"\n            elif det == \"mu+novelty\" and \"disagree\" in path:\n                chain_key = \"mu_novelty_disagree\"\n            elif det == \"parser_yield\":\n                chain_key = \"parser_yield\"\n            elif det == \"monotonic_decline\":\n                chain_key = \"monotonic_decline\"\n            elif det == \"cpf_spike\":\n                chain_key = \"cpf_spike\"\n            elif det == \"verification\" and \"miscalibration\" in path:\n                chain_key = \"verification_miscalibration\"\n            elif det == \"dispatch\" and \"false positive\" in path:\n                chain_key = \"dispatch_false_positive\"\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F004",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.96,
+        "abstraction_index": 0.88,
+        "description": "FIND: bench/dm/_manager.py, `_apply_transform()` implements `prefer_novelty` by setting `hm._prefer_novelty_over_mu = True`, but no consumer reads this flag. Neither `_manager.py` nor `_immune.py` nor `_convergence.py` consult `_prefer_novelty_over_mu` when computing stop conditions, diagnoses, or event selection. Therefore the `mu_distortion` and `mu_novelty_disagree` chains claim to remediate stop-signal bias, but the transform is a no-op. Evidence: search scope includes `process_round()` immune integration and no reference to `_prefer_novelty_over_mu` exists there; `is_diminished = self.diminishing_returns.stop(round_idx)` remains unchanged.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, make `prefer_novelty` affect the stop decision inside `process_round()` by checking the health-monitor flag and substituting a novelty-based stop predicate.\n\n1) Replace the stop computation block in `process_round()`:\n\n<<<<\n        mu = self.diminishing_returns.marginal_value(round_idx) if round_idx in self.diminishing_returns._cumulative_yields else 0.0\n        is_diminished = self.diminishing_returns.stop(round_idx)\n====\n        mu = self.diminishing_returns.marginal_value(round_idx) if round_idx in self.diminishing_returns._cumulative_yields else 0.0\n        if getattr(self.health_monitor, \"_prefer_novelty_over_mu\", False):\n            is_diminished = (\n                round_idx >= self.config.r_min\n                and novelty < self.config.tau_novelty_stop\n            )\n        else:\n            is_diminished = self.diminishing_returns.stop(round_idx)\n>>>>\n\n2) Keep `_apply_transform()` as-is, because its flag now has a consumer.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F005",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.94,
+        "abstraction_index": 0.84,
+        "description": "FIND: bench/dm/_manager.py, apply_diagnosis(), the hardcoded `mu_novelty_disagree` branch returns an adjustment record but does not apply the remediation. It sets no config value and does not call `_apply_transform('prefer_novelty', ...)`. This is a correctness bug independent of IM_F004: even if `process_round()` consumed the flag, this branch never sets it. Evidence: the branch constructs `adjustment = {'parameter': 'stop_signal_priority', ...}` and immediately `_record_adjustment(...)` and returns, without touching `health_monitor` or config.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, replace the hardcoded `mu_novelty_disagree` branch with an actual transform application.\n\n<<<<\n        elif diagnosis.pathology_key == \"mu_novelty_disagree\" or (\n            not diagnosis.pathology_key and diagnosis.detector == \"mu+novelty\"\n            and \"disagree\" in diagnosis.pathology.lower()\n        ):\n            # Advisory — no parameter to adjust\n            adjustment = {\n                \"parameter\": \"stop_signal_priority\",\n                \"old\": \"mu+novelty combined\",\n                \"new\": \"novelty_rate preferred (mu unreliable)\",\n                \"reason\": diagnosis.pathology,\n            }\n            self._record_adjustment(adjustment, diagnosis, round_idx)\n            return adjustment\n====\n        elif diagnosis.pathology_key == \"mu_novelty_disagree\" or (\n            not diagnosis.pathology_key and diagnosis.detector == \"mu+novelty\"\n            and \"disagree\" in diagnosis.pathology.lower()\n        ):\n            adjustment = self._apply_transform(\"prefer_novelty\", diagnosis)\n            if adjustment:\n                self._record_adjustment(adjustment, diagnosis, round_idx)\n            return adjustment\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F006",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.91,
+        "abstraction_index": 0.8,
+        "description": "FIND: bench/dm/_manager.py, `_apply_transform()` for `add_parsing_directive` and `add_verification_directive` only adds a directive if `model_id not in self.config.per_model_directives`. That means if a model already has any directive from the registry or a prior immune adjustment, the new remediation silently does nothing. This violates the intended interface of remediation chains, which promise an exact transform. Evidence: `_load_per_model_policies()` pre-populates `per_model_directives`; `_REMEDIATION_CHAINS` uses these transforms for parser_yield, cpf_spike, and verification_miscalibration. Existing directives are common, so the transform becomes spuriously non-operative.",
+        "proposed_fix": "FIX: In bench/dm/_manager.py, append or merge directives instead of requiring an empty slot.\n\n<<<<\n        elif transform_name == \"add_parsing_directive\":\n            directive = (\n                \"Return findings in strict JSON format. Each finding must \"\n                \"have: title, description, severity (0.0-1.0), location. \"\n                \"Do not embed findings in prose or markdown tables.\"\n            )\n            model_id = diagnosis.evidence.get(\"model_id\", \"\")\n            if model_id and model_id not in self.config.per_model_directives:\n                if len(directive) <= self.config.max_per_model_directive_chars:\n                    self.config.per_model_directives[model_id] = directive\n                    return {\"parameter\": \"per_model_directives\",\n                            \"old\": \"none\",\n                            \"new\": f\"parsing directive added to {model_id}\",\n                            \"reason\": diagnosis.pathology}\n====\n        elif transform_name == \"add_parsing_directive\":\n            directive = (\n                \"Return findings in strict JSON format. Each finding must \"\n                \"have: title, description, severity (0.0-1.0), location. \"\n                \"Do not embed findings in prose or markdown tables.\"\n            )\n            model_id = diagnosis.evidence.get(\"model_id\", \"\")\n            if model_id:\n                old_text = self.config.per_model_directives.get(model_id, \"\")\n                new_text = (old_text + \"\\n\\n\" + directive).strip() if old_text else directive\n                if len(new_text) <= self.config.max_per_model_directive_chars and new_text != old_text:\n                    self.config.per_model_directives[model_id] = new_text\n                    return {\"parameter\": \"per_model_directives\",\n                            \"old\": old_text or \"none\",\n                            \"new\": f\"updated directive for {model_id}\",\n                            \"reason\": diagnosis.pathology}\n>>>>\n\nApply the same pattern to `add_verification_directive`:\n\n<<<<\n        elif transform_name == \"add_verification_directive\":\n            directive = (\n                \"Re-examine findings marked VERIFIED in prior rounds. \"\n                \"Cross-check verification claims against actual code. \"\n                \"Flag any verification that lacks specific evidence.\"\n            )\n            model_id = diagnosis.evidence.get(\"model_id\", \"\")\n            if model_id and model_id not in self.config.per_model_directives:\n                if len(directive) <= self.config.max_per_model_directive_chars:\n                    self.config.per_model_directives[model_id] = directive\n                    return {\"parameter\": \"per_model_directives\",\n                            \"old\": \"none\",\n                            \"new\": f\"verification directive added to {model_id}\",\n                            \"reason\": diagnosis.pathology}\n====\n        elif transform_name == \"add_verification_directive\":\n            directive = (\n                \"Re-examine findings marked VERIFIED in prior rounds. \"\n                \"Cross-check verification claims against actual code. \"\n                \"Flag any verification that lacks specific evidence.\"\n            )\n            model_id = diagnosis.evidence.get(\"model_id\", \"\")\n            if model_id:\n                old_text = self.config.per_model_directives.get(model_id, \"\")\n                new_text = (old_text + \"\\n\\n\" + directive).strip() if old_text else directive\n                if len(new_text) <= self.config.max_per_model_directive_chars and new_text != old_text:\n                    self.config.per_model_directives[model_id] = new_text\n                    return {\"parameter\": \"per_model_directives\",\n                            \"old\": old_text or \"none\",\n                            \"new\": f\"updated directive for {model_id}\",\n                            \"reason\": diagnosis.pathology}\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F007",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.89,
+        "abstraction_index": 0.74,
+        "description": "FIND: bench/dm/_immune.py, check_dispatch_health(), verification miscalibration recovery path clears `_pathology_counts[key]` but does not call `record_natural_resolution()`, update `_resolved_counts`, or clear any active remediation state keyed to `verification_miscalibration`. This makes Check 5 unlike the other pathology lifecycles and undercounts false positives in `false_positive_rate`. Evidence: compare kappa/mu/findings/vocab resolution branches in `record_round()` with the VM-2/FFF-I branch here; the latter only zeros the counter after hysteresis.",
+        "proposed_fix": "FIX: In bench/dm/_immune.py, expand the recovery branch in `check_dispatch_health()` to mirror the lifecycle used elsewhere.\n\n<<<<\n                else:\n                    # VM-2 fix: clear pathology count when model recovers\n                    # FFF-I: use resolution_counter + hysteresis instead of immediate deletion\n                    key = f\"verif_miscal_{model_id}\"\n                    if self._pathology_counts.get(key, 0) > 0:\n                        self._resolution_counter[key] = (\n                            self._resolution_counter.get(key, 0) + 1\n                        )\n                        hysteresis = getattr(self._config, \"resolution_hysteresis\", 2)\n                        if self._resolution_counter.get(key, 0) >= hysteresis:\n                            self._pathology_counts[key] = 0\n                            self._resolution_counter[key] = 0\n====\n                else:\n                    key = f\"verif_miscal_{model_id}\"\n                    if self._pathology_counts.get(key, 0) > 0:\n                        self._resolution_counter[key] = (\n                            self._resolution_counter.get(key, 0) + 1\n                        )\n                        hysteresis = getattr(self._config, \"resolution_hysteresis\", 2)\n                        if self._resolution_counter.get(key, 0) >= hysteresis:\n                            self._resolved_counts[key] = (\n                                self._resolved_counts.get(key, 0) + 1\n                            )\n                            if \"verification_miscalibration\" not in self._remediation_state:\n                                self.record_natural_resolution(key)\n                            self._pathology_counts[key] = 0\n                            self._resolution_counter[key] = 0\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F008",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.92,
+        "abstraction_index": 0.83,
+        "description": "FIND: bench/dm/_immune.py, `_CHAIN_TO_COUNTER` contains generic keys like `'model_failure': 'model_failure'`, `'parser_yield': 'parser_yield'`, `'monotonic_decline': 'monotonic_decline'`, `'cpf_spike': 'cpf_spike'`, but the actual `_pathology_counts` keys for those pathologies are per-model, e.g. `model_failure_{model_id}`, `parser_yield_{model_id}`, `monotonic_decline_{model_id}`, `cpf_spike_{model_id}`. Therefore `_verify_remediation_outcomes()` pops the wrong counter key on successful remediation or exhaustion, leaving the real per-model pathology count stale. Evidence: record_model_round() constructs per-model keys explicitly; `_verify_remediation_outcomes()` calls `self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)`.",
+        "proposed_fix": "FIX: In bench/dm/_immune.py, add a helper that resolves the actual counter key from the pathology key plus remediation state/evidence, and use it instead of `_CHAIN_TO_COUNTER` for cleanup.\n\n1) Add this method to `DetectorHealthMonitor`:\n\n<<<<\n    # --- FFF-C fix (Run 7b): chain-key to counter-key mapping ---\n    # _pathology_counts uses detector-family keys (\"kappa\", \"mu\") but\n    # remediation chains use pathology keys (\"kappa_stuck\", \"mu_distortion\").\n    # This mapping bridges the two namespaces.\n    _CHAIN_TO_COUNTER: ClassVar[Dict[str, str]] = {\n        \"kappa_stuck\": \"kappa\",\n        \"mu_distortion\": \"mu\",\n        \"findings_decline\": \"findings_decline\",\n        \"vocab_saturation\": \"vocab_saturation\",\n        \"mu_novelty_disagree\": \"mu_novelty_disagree\",\n        \"model_failure\": \"model_failure\",\n        \"parser_yield\": \"parser_yield\",\n        \"monotonic_decline\": \"monotonic_decline\",\n        \"cpf_spike\": \"cpf_spike\",\n        \"dispatch_false_positive\": \"dispatch_false_positive\",\n        \"verification_miscalibration\": \"verification_miscalibration\",\n    }\n====\n    _CHAIN_TO_COUNTER: ClassVar[Dict[str, str]] = {\n        \"kappa_stuck\": \"kappa\",\n        \"mu_distortion\": \"mu\",\n        \"findings_decline\": \"findings_decline\",\n        \"vocab_saturation\": \"vocab_saturation\",\n        \"mu_novelty_disagree\": \"mu_novelty_disagree\",\n        \"dispatch_false_positive\": \"dispatch_false_positive\",\n        \"verification_miscalibration\": \"verification_miscalibration\",\n    }\n\n    def _counter_key_for_pathology(self, pathology_key: str) -> str:\n        \"\"\"Map remediation pathology keys to actual pathology counter keys.\"\"\"\n        if pathology_key in self._CHAIN_TO_COUNTER:\n            return self._CHAIN_TO_COUNTER[pathology_key]\n        if pathology_key == \"model_failure\":\n            return pathology_key\n        if pathology_key == \"parser_yield\":\n            return pathology_key\n        if pathology_key == \"monotonic_decline\":\n            return pathology_key\n        if pathology_key == \"cpf_spike\":\n            return pathology_key\n        return pathology_key\n>>>>\n\n2) Replace both cleanup calls in `_verify_remediation_outcomes()`:\n\n<<<<\n                self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)\n====\n                self._pathology_counts.pop(self._counter_key_for_pathology(pathology_key), None)\n>>>>\n\n<<<<\n                    self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)\n====\n                    self._pathology_counts.pop(self._counter_key_for_pathology(pathology_key), None)\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_IM_F009",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.99,
+        "abstraction_index": 0.93,
+        "description": "FIND: bench/dm/_manager.py and bench/dm/_immune.py use chain/remediation state keys that are not model-specific for per-model pathologies. `DetectorDiagnosis.pathology_key` for parser yield, monotonic decline, cpf spike, model failure, and verification miscalibration is a family key (`parser_yield`, `verification_miscalibration`) while the actual diagnoses are per-model. `apply_diagnosis()` stores remediation state under `chain_key`, and damping compares `adj['detector']` plus model_id; but `_remediation_state`, `_step_effectiveness`, remediation outcome verification, and chain exhaustion all collapse multiple models into one shared state. Evidence: record_model_round() emits `pathology_key=f'parser_yield_{model_id}'`? No: parser_yield uses `pathology_key=f'parser_yield_{model_id}'`? Actually it does for model-round pathologies, while `_REMEDIATION_CHAINS` only defines `parser_yield`, `monotonic_decline`, `cpf_spike`, and `model_failure`. Thus apply_diagnosis() cannot even route these machine-readable keys to a chain, and if it were forced through fallback, state would still be shared by family.",
+        "proposed_fix": "FIX: Canonicalise per-model pathology keys to family keys for chain lookup, but store remediation state under a model-scoped state key.\n\n1) In bench/dm/_manager.py, add helpers inside `DynamicManager`:\n\n<<<<\n    def apply_diagnosis(\n====\n    def _chain_family_key(self, diagnosis: DetectorDiagnosis) -> str:\n        \"\"\"Map a diagnosis to its remediation chain family.\"\"\"\n        pk = diagnosis.pathology_key or \"\"\n        for prefix in (\n            \"model_failure_\",\n            \"parser_yield_\",\n            \"monotonic_decline_\",\n            \"cpf_spike_\",\n            \"verif_miscal_\",\n        ):\n            if pk.startswith(prefix):\n                return {\n                    \"model_failure_\": \"model_failure\",\n                    \"parser_yield_\": \"parser_yield\",\n                    \"monotonic_decline_\": \"monotonic_decline\",\n                    \"cpf_spike_\": \"cpf_spike\",\n                    \"verif_miscal_\": \"verification_miscalibration\",\n                }[prefix]\n        return pk\n\n    def _remediation_state_key(self, diagnosis: DetectorDiagnosis, chain_key: str) -> str:\n        \"\"\"Build a state key scoped to family + model when needed.\"\"\"\n        model_id = diagnosis.evidence.get(\"model_id\", \"\")\n        if model_id and chain_key in {\n            \"model_failure\", \"parser_yield\", \"monotonic_decline\",\n            \"cpf_spike\", \"verification_miscalibration\", \"dispatch_false_positive\",\n        }:\n            return f\"{chain_key}:{model_id}\"\n        return chain_key\n\n    def apply_diagnosis(\n>>>>\n\n2) In `apply_diagnosis()`, replace chain selection and state access:\n\n<<<<\n        chain_key = None\n        if diagnosis.pathology_key and diagnosis.pathology_key in self._REMEDIATION_CHAINS:\n            chain_key = diagnosis.pathology_key\n====\n        chain_key = None\n        family_key = self._chain_family_key(diagnosis)\n        if family_key in self._REMEDIATION_CHAINS:\n            chain_key = family_key\n>>>>\n\n<<<<\n        state = self.health_monitor._remediation_state.get(chain_key, {})\n====\n        state_key = self._remediation_state_key(diagnosis, chain_key)\n        state = self.health_monitor._remediation_state.get(state_key, {})\n>>>>\n\n<<<<\n                self.health_monitor.record_chain_exhaustion(chain_key)\n                self.health_monitor._remediation_state.pop(chain_key, None)\n====\n                self.health_monitor.record_chain_exhaustion(state_key)\n                self.health_monitor._remediation_state.pop(state_key, None)\n>>>>\n\n<<<<\n                self.health_monitor.set_remediation_state(\n                    pathology_key=chain_key,\n====\n                self.health_monitor.set_remediation_state(\n                    pathology_key=state_key,\n>>>>\n\n<<<<\n            self.health_monitor.set_remediation_state(\n                pathology_key=chain_key,\n====\n            self.health_monitor.set_remediation_state(\n                pathology_key=state_key,\n>>>>\n\n3) In bench/dm/_immune.py, make `_counter_key_for_pathology()` understand model-scoped state keys:\n\n<<<<\n    def _counter_key_for_pathology(self, pathology_key: str) -> str:\n        \"\"\"Map remediation pathology keys to actual pathology counter keys.\"\"\"\n        if pathology_key in self._CHAIN_TO_COUNTER:\n            return self._CHAIN_TO_COUNTER[pathology_key]\n        if pathology_key == \"model_failure\":\n            return pathology_key\n        if pathology_key == \"parser_yield\":\n            return pathology_key\n        if pathology_key == \"monotonic_decline\":\n            return pathology_key\n        if pathology_key == \"cpf_spike\":\n            return pathology_key\n        return pathology_key\n====\n    def _counter_key_for_pathology(self, pathology_key: str) -> str:\n        \"\"\"Map remediation state keys to actual pathology counter keys.\"\"\"\n        if pathology_key in self._CHAIN_TO_COUNTER:\n            return self._CHAIN_TO_COUNTER[pathology_key]\n        if \":\" in pathology_key:\n            family, model_id = pathology_key.split(\":\", 1)\n            if family == \"model_failure\":\n                return f\"model_failure_{model_id}\"\n            if family == \"parser_yield\":\n                return f\"parser_yield_{model_id}\"\n            if family == \"monotonic_decline\":\n                return f\"monotonic_decline_{model_id}\"\n            if family == \"cpf_spike\":\n                return f\"cpf_spike_{model_id}\"\n            if family == \"verification_miscalibration\":\n                return f\"verif_miscal_{model_id}\"\n            if family == \"dispatch_false_positive\":\n                return f\"dispatch_fp_{model_id}\"\n        return pathology_key\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_IM_F010",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.9,
+        "abstraction_index": 0.78,
+        "description": "FIND: bench/immune_agents.py, `nk_cell_verify()`, after a known false-positive pattern match it appends a REJECTED verdict but does not `continue`, so the same finding can also get an anomaly-detection verdict in the same pass. The file itself documents this as a v2 shadow fix: `FP match now skips anomaly detection (continue after break)`. Evidence: in v1, the FP loop breaks only out of the loop, then the code falls through to severity anomaly detection. This can create mixed REJECTED+UNCERTAIN evidence for one known false positive, diluting helper synthesis.",
+        "proposed_fix": "FIX: In bench/immune_agents.py, add an `is_fp` flag and continue after a known false-positive match.\n\n<<<<\n        # 2. Check against known false-positive patterns\n        for fp in fp_db:\n            if fp[\"pattern\"].search(f.description):\n                model_match = (\n                    not fp.get(\"expected_model\")\n                    or fp[\"expected_model\"] == f.model_id\n                )\n                if model_match:\n                    verdicts.append(CellVerdict(\n                        cell_type=CellType.NK_CELL,\n                        finding_id=f.finding_id,\n                        verdict=\"REJECTED\",\n                        confidence=0.90,\n                        evidence=f\"Known FP: {fp['source']}\",\n                        tool_used=\"false_positive_db\",\n                    ))\n                    break\n\n        # 3. Anomaly detection: severity outliers\n        if f.severity > 0.95 and f.round_idx > 5:\n====\n        # 2. Check against known false-positive patterns\n        is_fp = False\n        for fp in fp_db:\n            if fp[\"pattern\"].search(f.description):\n                model_match = (\n                    not fp.get(\"expected_model\")\n                    or fp[\"expected_model\"] == f.model_id\n                )\n                if model_match:\n                    verdicts.append(CellVerdict(\n                        cell_type=CellType.NK_CELL,\n                        finding_id=f.finding_id,\n                        verdict=\"REJECTED\",\n                        confidence=0.90,\n                        evidence=f\"Known FP: {fp['source']}\",\n                        tool_used=\"false_positive_db\",\n                    ))\n                    is_fp = True\n                    break\n\n        if is_fp:\n            continue\n\n        # 3. Anomaly detection: severity outliers\n        if f.severity > 0.95 and f.round_idx > 5:\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F011",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.93,
+        "abstraction_index": 0.81,
+        "description": "FIND: bench/immune_agents.py, `nk_cell_verify()` performs dedup only against `prior_findings`, not within the current round. The v2 shadow code explicitly adds intra-round dedup as a fix. Without it, two near-identical findings emitted in the same batch both survive NK, inflating support and novelty. Evidence: v1 maintains no accepted-current-round set; v2 shadow introduces `accepted_this_round` and a second similarity check.",
+        "proposed_fix": "FIX: In bench/immune_agents.py, add intra-round dedup to the active NK cell.\n\n<<<<\n    verdicts: List[CellVerdict] = []\n\n    for tf in triaged:\n        f = tf.finding\n====\n    verdicts: List[CellVerdict] = []\n    accepted_this_round: List[Finding] = []\n\n    for tf in triaged:\n        f = tf.finding\n>>>>\n\nInsert after the prior-findings dedup block:\n\n<<<<\n        if best_sim >= tau_sim:\n            tf.is_duplicate = True\n            tf.duplicate_of = best_match\n            tf.similarity = best_sim\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=best_sim,\n                evidence=f\"Duplicate of {best_match} (sim={best_sim:.3f})\",\n                tool_used=\"similarity_dedup\",\n            ))\n            continue\n====\n        if best_sim >= tau_sim:\n            tf.is_duplicate = True\n            tf.duplicate_of = best_match\n            tf.similarity = best_sim\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=best_sim,\n                evidence=f\"Duplicate of {best_match} (sim={best_sim:.3f})\",\n                tool_used=\"similarity_dedup\",\n            ))\n            continue\n\n        intra_best_sim = 0.0\n        intra_best_match: Optional[str] = None\n        for af in accepted_this_round:\n            sim = _finding_similarity(f, af)\n            if sim > intra_best_sim:\n                intra_best_sim = sim\n                intra_best_match = af.finding_id\n\n        if intra_best_sim >= tau_sim:\n            tf.is_duplicate = True\n            tf.duplicate_of = intra_best_match\n            tf.similarity = intra_best_sim\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=intra_best_sim,\n                evidence=f\"Intra-round duplicate of {intra_best_match} (sim={intra_best_sim:.3f})\",\n                tool_used=\"similarity_dedup\",\n            ))\n            continue\n>>>>\n\nAppend at the end of each non-duplicate path before loop iteration ends:\n\n<<<<\n        if f.severity > 0.95 and f.round_idx > 5:\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"UNCERTAIN\",\n                confidence=0.4,\n                evidence=f\"Late-round high severity ({f.severity:.2f} at R{f.round_idx}) — possible inflation\",\n                tool_used=\"anomaly_detection\",\n            ))\n\n    return triaged, verdicts\n====\n        if f.severity > 0.95 and f.round_idx > 5:\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"UNCERTAIN\",\n                confidence=0.4,\n                evidence=f\"Late-round high severity ({f.severity:.2f} at R{f.round_idx}) — possible inflation\",\n                tool_used=\"anomaly_detection\",\n            ))\n\n        accepted_this_round.append(f)\n\n    return triaged, verdicts\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F012",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.88,
+        "abstraction_index": 0.73,
+        "description": "FIND: bench/immune_agents.py, `regulatory_t_cell_check()` computes `removal_rate = (rejected + duplicated) / total` but Check 1 gates autoimmune using only `rejected / total > max_rejection_rate`. This ignores duplicates even though duplicates are removed from the final output path exactly like rejections. The file's own v2 shadow component identifies this as a fixed bug: `Check 1 uses combined removal rate`. Evidence: in run_immune_pipeline(), non-observation mode rejects both `REJECTED` and `DUPLICATE` findings.",
+        "proposed_fix": "FIX: In bench/immune_agents.py, change the overall autoimmune threshold to use combined removal rate.\n\n<<<<\n    # Check 1: Overall rejection rate\n    if rejected / total > max_rejection_rate:\n        reasons.append(\n            f\"Rejection rate {rejected}/{total} ({rejected/total:.1%}) \"\n            f\"exceeds threshold ({max_rejection_rate:.0%})\"\n        )\n====\n    # Check 1: Overall removal rate\n    if removal_rate > max_rejection_rate:\n        reasons.append(\n            f\"Removal rate {removed}/{total} ({removal_rate:.1%}) \"\n            f\"exceeds threshold ({max_rejection_rate:.0%})\"\n        )\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F013",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.87,
+        "abstraction_index": 0.71,
+        "description": "FIND: bench/immune_agents.py, `regulatory_t_cell_check()` model-bias check counts only exact full-model rejection (`rej_m == total_m`) and excludes duplicates. But the pipeline removes both REJECTED and DUPLICATE findings, and the v2 shadow logic uses a proportional threshold. The current check misses systematic bias when 85–99% of one model's findings are removed or when all are duplicates. Evidence: active path builds `rejected` only; run_immune_pipeline() drops DUPLICATE findings too.",
+        "proposed_fix": "FIX: In bench/immune_agents.py, count removed findings and use a proportional threshold.\n\n<<<<\n    model_counts: Dict[str, int] = {}\n    model_rejected: Dict[str, int] = {}\n    for tf in triaged:\n        mid = tf.finding.model_id\n        model_counts[mid] = model_counts.get(mid, 0) + 1\n        if final_verdicts.get(tf.finding.finding_id) == \"REJECTED\":\n            model_rejected[mid] = model_rejected.get(mid, 0) + 1\n\n    for mid, total_m in model_counts.items():\n        rej_m = model_rejected.get(mid, 0)\n        if total_m >= 3 and rej_m == total_m:\n            reasons.append(\n                f\"All {total_m} findings from {mid} rejected — \"\n                f\"possible systematic bias against this model\"\n            )\n====\n    model_counts: Dict[str, int] = {}\n    model_removed: Dict[str, int] = {}\n    for tf in triaged:\n        fid = tf.finding.finding_id\n        if fid not in final_verdicts:\n            continue\n        mid = tf.finding.model_id\n        model_counts[mid] = model_counts.get(mid, 0) + 1\n        if final_verdicts.get(fid) in (\"REJECTED\", \"DUPLICATE\"):\n            model_removed[mid] = model_removed.get(mid, 0) + 1\n\n    for mid, total_m in model_counts.items():\n        rem_m = model_removed.get(mid, 0)\n        if total_m >= 3 and rem_m / total_m >= 0.85:\n            reasons.append(\n                f\"{rem_m}/{total_m} findings from {mid} removed — \"\n                f\"possible systematic bias against this model\"\n            )\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_IM_F001",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.8,
+        "description": "In `immune_agents.py`, `_confidence_to_log_odds` incorrectly treats confidence magnitudes $< 0.5$ as evidence *against* a verdict. Because an agent returning `CONFIRMED` with $0.4$ confidence expresses weak positive evidence (magnitude $0.4$), mapping it directly via `log(c / (1-c))` yields a negative log-odds ratio ($-0.405$), turning it into evidence *against* confirmation. When `helper_t_v2_shadow` aggregates multiple weak confirmations (e.g., two $0.4$ signals), their negative log-odds sum together ($-0.81$), leading the system to output `REJECTED` instead of a consensus `CONFIRMED`. Confidence must be mapped to a probability space $P \\in [0.5, 1.0]$.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F002",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.9,
+        "abstraction_index": 0.9,
+        "description": "In `_manager.py`, `apply_diagnosis()` contains direct early-return interception blocks for `dispatch_false_positive`, `mu_novelty_disagree`, and `verification_miscalibration`. When remediation chains were added for these pathologies to `_REMEDIATION_CHAINS` (which support multi-step escalation), the original direct checks were never removed. As a result, the code intercepts the diagnosis and applies a hardcoded step 0 fix, returning early and bypassing the chain executor entirely, meaning these pathologies can never escalate.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F003",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.65,
+        "abstraction_index": 0.3,
+        "description": "In `_verify_ct_claim` within `immune_agents.py`, the JSON `line_num` from the Cytotoxic T Cell's output is directly used in arithmetic operations (`line_num - 3`). Because LLMs frequently output numeric values as strings in JSON (e.g., `\"line\": \"45\"`), this raises a `TypeError` which is caught generically, causing the pipeline to falsely mark all findings for that round as `UNCERTAIN` instead of properly handling the claim.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F004",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.5,
+        "abstraction_index": 0.4,
+        "description": "In `_immune.py`, the `chain_exhaustion_rate` property calculates its denominator by adding `recent_exhaustions` and `recent_outcomes`. Despite the comment alleging that \"SymPy falsified the subset claim\" and that the execution paths are mutually exclusive, `_verify_remediation_outcomes()` executes `record_chain_exhaustion` in the exact same loop iteration as `record_remediation_outcome(success=False)` when an escalation exceeds the chain length. Adding them together double-counts the exhausted outcomes.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_IM_F005",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.55,
+        "abstraction_index": 0.4,
+        "description": "In `_immune.py`, `_p_pass_self_adjustment` blocks self-adjustments when `new_val >= max_bound`. Because `new_val` is passed in as `min(max_bound, old_val + 1)`, the check triggers immediately when `new_val` reaches the maximum bound (`new_val == max_bound`). This evaluates the transition as a failure, preventing the immune system from ever utilizing the designed maximum limit.",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_IM_F001",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.7,
+        "description": "Per-model pathology keys include model_id suffix (`f\"parser_yield_{model_id}\"`, `f\"monotonic_decline_{model_id}\"`, `f\"cpf_spike_{model_id}\"`), but `_REMEDIATION_CHAINS` uses bare names (`\"parser_yield\"`, `\"monotonic_decline\"`, `\"cpf_spike\"`). In `apply_diagnosis`, the first chain_key lookup (`diagnosis.pathology_key in self._REMEDIATION_CHAINS`) fails because `\"parser_yield_claude-3-opus\"` ≠ `\"parser_yield\"`. Unlike `model_failure`, there are no detector-name fallback `elif` branches for these three pathology types. Result: three remediation chains (parser_yield, monotonic_decline, cpf_spike) are dead code — defined but never reachable. Per-model pathologies for these types are diagnosed but never remediated.",
+        "proposed_fix": "In `apply_diagnosis`, add a chain_key resolution step that strips model_id suffixes: `if chain_key is None and diagnosis.pathology_key: base_key = diagnosis.pathology_key.rsplit(\"_\", 1)[0] if diagnosis.pathology_key not in self._REMEDIATION_CHAINS else diagnosis.pathology_key; chain_key = base_key if base_key in self._REMEDIATION_CHAINS else None`. Alternatively, add explicit detector-name fallbacks matching the model_failure pattern.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F002",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.7,
+        "description": "`_CHAIN_TO_COUNTER` maps chain keys to pathology counter keys, but per-model pathologies use suffixed keys (e.g., `_pathology_counts[\"model_failure_claude\"]`) while the mapping returns bare names (e.g., `\"model_failure\"`). In `_verify_remediation_outcomes`, when a remediation succeeds or chain exhaustion occurs, `self._pathology_counts.pop(self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key), None)` tries to pop `\"model_failure\"` but the actual key is `\"model_failure_claude\"`. Per-model pathology counts are never cleared by remediation outcomes. Consequence: adaptive severity escalation is permanently ratcheted — persistence count never resets for per-model pathologies, causing `effective_window` to keep narrowing and severity to stay CRITICAL after the first occurrence.",
+        "proposed_fix": "Store the originating counter key in `_remediation_state` when the state is created (in `apply_diagnosis` and `set_remediation_state`), then use that stored key for the pop. Example: `state[\"counter_key\"] = f\"model_failure_{model_id}\"` and `self._pathology_counts.pop(state.get(\"counter_key\", self._CHAIN_TO_COUNTER.get(pathology_key, pathology_key)), None)`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F003",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.6,
+        "description": "In `apply_diagnosis` (_manager.py), when P-pass rejects a remediation step, the code creates or updates `_remediation_state` with `chain_idx + 1`, `applied_round = round_idx`, and `metric_at_apply = current_metric_val` — but the transform was never applied. `_verify_remediation_outcomes` later checks whether the metric improved since `applied_round`, effectively verifying the outcome of a non-existent intervention. If the metric naturally improves, the system records a false \"SUCCESSFUL\" remediation and clears state. If it doesn't improve, it escalates to `chain_idx + 2`, skipping the next step entirely without ever trying it. This creates phantom remediation cycles that corrupt the step_effectiveness statistics and the corroboration model.",
+        "proposed_fix": "When P-pass rejects, do NOT create/update remediation_state. Instead, only increment the chain_idx in a separate tracking dict (e.g., `_next_chain_idx`), so the next `apply_diagnosis` call attempts the escalated step. The verification cycle should only begin after a transform is actually applied.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F004",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.75,
+        "abstraction_index": 0.5,
+        "description": "The F005 regression defer reset in `process_round` checks `self._pre_fix_snapshots` for ongoing regression, but this check runs AFTER the cleanup that removes all snapshots where `round_idx - s[\"round\"] >= 2`. Since the regression check requires `round_idx - s[\"round\"] >= 2`, and all such snapshots were just removed, `regression_this_round` is always `False`. The `_healthy_rounds_since_regression` counter unconditionally increments every round, meaning `_regression_defer` is always reset after exactly `resolution_hysteresis` (default 2) rounds — regardless of whether the regression actually persists. The F005 fix is a no-op; the one-way latch it was supposed to fix is now a fixed-duration timer.",
+        "proposed_fix": "Move the regression persistence check BEFORE the snapshot cleanup, or compute `regression_this_round` from `_pre_fix_snapshots` before they're filtered, storing the boolean result. Alternatively, move the cleanup to after the F005 block.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F005",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.4,
+        "description": "In `_verify_z3` (immune_agents.py), the if-then handler creates abstract boolean symbols `X = z3.Bool('X')`, `Y = z3.Bool('Y')`, adds `X` and `Not(Y)`, and checks satisfiability. This is trivially satisfiable (X=True, Y=False) for ANY if-then claim, since X and Y are unconstrained. Every logical claim matching the if-then pattern receives `SATISFIABLE_COUNTEREXAMPLE` → REJECTED verdict at 0.30 confidence. While the confidence was intentionally downgraded from 0.90, the z3 check still produces a systematic false-rejection signal that feeds into Helper T synthesis. Combined with the asymmetric rejection threshold (0.6), this signal alone won't reject but it adds rejection weight that can tip borderline cases.",
+        "proposed_fix": "Remove or gate the abstract if-then check. It should only fire when the solver can ground at least one variable to an extracted code value. The z3 v2 shadow (AST-grounded via SMT-LIB) is the correct architectural direction. In the interim, either return UNCERTAIN for if-then patterns (not REJECTED) or skip the check entirely when no grounding exists.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F006",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.65,
+        "abstraction_index": 0.5,
+        "description": "NK Cell v1 has a control flow leak: when a finding matches a known false-positive pattern, the inner `for fp` loop `break`s, but execution falls through to the anomaly detection check (severity > 0.95, round_idx > 5). A finding that is both a known FP AND a late-round high-severity outlier receives two contradictory verdicts: REJECTED (from FP match, confidence 0.90) and UNCERTAIN (from anomaly detection, confidence 0.40). Both feed into Helper T synthesis, where the UNCERTAIN adds noise. The v2 shadow has the fix (`is_fp` flag + `continue`) but v1 is the active code path.",
+        "proposed_fix": "Add `continue` after the `break` in the FP matching loop, or restructure using a flag variable as the v2 shadow does. Since v1 is still the active pipeline, this should be fixed in v1, not just in the shadow.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F007",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.65,
+        "abstraction_index": 0.6,
+        "description": "The explicit handlers for `mu_novelty_disagree`, `dispatch_false_positive`, and `verification_miscalibration` in `apply_diagnosis` (_manager.py) return early before reaching the chain-based remediation path. These three pathology types have entries in `_REMEDIATION_CHAINS` with multi-step escalation chains, but those chains are unreachable. For example, `mu_novelty_disagree` has a 2-step chain (prefer_novelty → widen_mu_window), but the explicit handler always returns the advisory adjustment without chain tracking. If the advisory doesn't help, there's no escalation to step 1. Similarly, `verification_miscalibration` step 1 (flag_verification_unreliable) is unreachable.",
+        "proposed_fix": "Either remove the dead chain entries to reduce maintenance burden and prevent confusion, or refactor the explicit handlers to use the chain mechanism (set chain_key and fall through to the chain-based path).",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F008",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.6,
+        "abstraction_index": 0.4,
+        "description": "In `FailureHandler.get_recovery`, when a PAR model receives DOWNGRADE_ROLE (repeated UNDERPERFORM), the code escalates to EXCLUDE: `self._active_models.discard(model_id); action = RecoveryAction.EXCLUDE`. However, `_record_failure` was already called with the original DOWNGRADE_ROLE action before the execution block. The failure history records DOWNGRADE_ROLE but the returned action is EXCLUDE, and the model is actually excluded. The audit trail (failure_history) is inconsistent with the actual action taken. Downstream consumers of `get_failure_history()` will see DOWNGRADE_ROLE but the model was actually excluded.",
+        "proposed_fix": "Move `_record_failure` to after the execution block, so the recorded action matches the actually-executed action. Alternatively, append a corrective FailureRecord when escalation occurs.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F009",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.55,
+        "abstraction_index": 0.5,
+        "description": "`self_diagnose` self-check 3 (chain exhaustion rate) does not update `_last_self_adjust_round[_trigger_key_3]` after emitting its diagnosis. Unlike self-checks 1 and 2, which both update their damping timestamps, self-check 3 fires every round once `len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds`. Since `_last_3` starts at -999 and is never updated, the damping check passes every round after round 5+damping_rounds. This produces repeated CRITICAL \"DEFER to human\" diagnoses every round, polluting the diagnosis log and inflating the false_positive_rate denominator.",
+        "proposed_fix": "Add `self._last_self_adjust_round[_trigger_key_3] = current_round` after the diagnosis is emitted, matching the pattern of self-checks 1 and 2. Even though no parameter is adjusted, damping prevents diagnosis spam.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F010",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.55,
+        "abstraction_index": 0.4,
+        "description": "`_apply_transform` for directive-injecting transforms (`add_synthesis_directive`, `add_parsing_directive`, `add_verification_directive`) checks `if model.model_id not in self.config.per_model_directives` before adding. If a model already has ANY directive (from registry, prior remediation, or a different pathology), the new directive silently fails. There is no concatenation, replacement, or priority logic. In a typical run, the first remediation that injects a directive blocks all subsequent directive-based remediations for that model. The transform returns `None`, the remediation appears to have no effect, outcome verification records failure, and the chain escalates — but the escalated step may also be a directive injection, creating an infinite loop of silent no-ops up the chain.",
+        "proposed_fix": "Implement directive concatenation with length checking: `existing = self.config.per_model_directives.get(model_id, \"\"); combined = f\"{existing}\\n{directive}\"; if len(combined) <= self.config.max_per_model_directive_chars: self.config.per_model_directives[model_id] = combined`. Or use a per-model directive list instead of a single string.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F011",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.5,
+        "abstraction_index": 0.4,
+        "description": "In `_standard_p_pass_remediation` Check 2, the \"improving\" test for default metrics (kappa, finding_count, novelty) uses `recent_3[i] >= recent_3[i - 1] * 0.95`. This classifies a steady 5% decline per round as \"improving\" and vetoes remediation. A sequence like [10.0, 9.5, 9.025] passes the test (9.5 ≥ 9.5, 9.025 ≥ 9.025). Over 5 rounds, this \"improving\" metric drops to ~77% of its starting value. The same logic is duplicated in `_extended_p_pass_remediation`. The 0.95 factor was presumably chosen to tolerate noise, but it's too permissive for sustained monotonic decline. The flatline-at-zero guard (Run 6 bug 1 fix) doesn't help here because the metric isn't at zero.",
+        "proposed_fix": "Tighten the improving check to require at least non-decline: `recent_3[i] >= recent_3[i - 1]`, or use a compound check that requires the endpoint to be at or above the start: `recent_3[-1] >= recent_3[0]`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_IM_F012",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.5,
+        "abstraction_index": 0.5,
+        "description": "In `_immune.py` Check 4 (findings decline), the resolution path requires `recent_3[-1] >= recent_3[0]` (latest count ≥ earliest in window). But when findings go [10, 5, 6], this satisfies the `else` (not strictly declining) but `6 < 10` fails the recovery check, so neither resolution nor detection fires. The pathology_count stays elevated from a prior detection, keeping severity at CRITICAL and effective_window narrowed, even though findings have stabilized. The hysteresis counter increments but never reaches threshold because any subsequent decline `[5, 6, 4]` resets it via the detection path. The pathology can become permanently latched in a choppy-but-stable findings pattern.",
+        "proposed_fix": "Relax the resolution condition to `recent_3[-1] >= recent_3[-2]` (latest ≥ previous, i.e., not still declining), or use the same 30% decline threshold as the detection path: resolve when total_decline < decline_threshold.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_IM_F001",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.3,
+        "description": "In `nk_cell_verify` (v1) in immune_agents.py, when a known false-positive pattern is matched, the function breaks out of the inner loop but continues to execute anomaly detection for the same finding. This control‑flow leak results in duplicate verdicts (one REJECTED from FP detection and one UNCERTAIN from anomaly detection) for the same finding, violating the intended “first match wins” logic.",
+        "proposed_fix": "After a false‑positive match, skip the remaining checks for that finding by adding a `continue` statement.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_f.finding_id,",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.5,
+        "abstraction_index": 0.5,
+        "description": "finding_id=f.finding_id,\n                        verdict=\"REJECTED\",\n                        confidence=0.90,\n                        evidence=f\"Known FP: {fp['source']}\",\n                        tool",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "DeepSeek_f.finding_id,",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.5,
+        "abstraction_index": 0.5,
+        "description": "finding_id=f.finding_id,\n                        verdict=\"REJECTED\",\n                        confidence=0.90,\n                        evidence=f\"Known FP: {fp['source']}\",\n                        tool",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "DeepSeek_IM_F002",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.6,
+        "abstraction_index": 0.5,
+        "description": "The Dendritic Cell v1 classifier (`_classify_claim`) does not check for file:line citations in the finding description. Consequently, findings that cite specific source locations (e.g., “file.py:123”) are incorrectly classified as MATHEMATICAL or LOGICAL and routed to the B‑Cell, rather than to the Cytotoxic T‑Cell that is designed to verify code‑based claims.",
+        "proposed_fix": "Integrate the citation‑pattern check from Dendritic Cell v2 into the v1 classifier, reordering the classification precedence to prioritise code‑behavioral claims when a citation is present.",
+        "verified": true
+      }
+    ],
+    [
+      {
+        "finding_id": "ChatGPT_IM_F014",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.93,
+        "abstraction_index": 0.86,
+        "description": "FIND: `bench/dm/_manager.py`, `process_round()`, immune integration block that feeds `DetectorHealthMonitor.record_model_round()`. The code still computes `failed = mid not in responses or not responses[mid].parseable`. This is narrower than the actual failure semantics used by `FailureHandler.detect_failure()`, which also treats EMPTY, TIMEOUT, FORMAT, and persistent UNDERPERFORM as failures. As a result, the immune layer undercounts per-model failures for valid-but-empty responses, timeouts with parseable payloads, format violations, and underperformance. Evidence: in the same function, `failures[model_id]` is already computed from `FailureHandler.detect_failure(response)` and carries the authoritative failure classification, but is ignored when feeding the immune monitor. This is distinct from the prior bug because the fix was requested contextually, but the current artifact still shows the stale boolean derived from parseability only.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F015",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 2,
+        "severity": 0.91,
+        "abstraction_index": 0.9,
+        "description": "FIND: `bench/dm/_immune.py`, `check_dispatch_health()`, verification miscalibration diagnosis keying. The pathology counter key is per-model (`key = f\"verif_miscal_{model_id}\"`), but emitted `DetectorDiagnosis.pathology_key` is the unsuffixed family key `\"verification_miscalibration\"`. In `bench/dm/_manager.py`, `apply_diagnosis()` reads remediation state by `chain_key`, so all miscalibrated models share one chain/remediation state and one damping namespace. Evidence: `_pathology_counts` and `_resolution_counter` in `_immune.py` are per-model for this pathology; meanwhile `apply_diagnosis()` uses `diag_model` only for damping, but remediation state is looked up with `self.health_monitor._remediation_state.get(chain_key, {})`, where `chain_key` becomes `\"verification_miscalibration\"`. A remediation applied for model A therefore suppresses or escalates the chain for model B.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F016",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.89,
+        "abstraction_index": 0.84,
+        "description": "FIND: `bench/dm/_manager.py`, `approve_deferred_remediation()`. Deferred approvals stamp `applied_round` with the original diagnosis round (`round_idx = deferred[\"round\"]`) instead of the approval/application round. This makes `_verify_remediation_outcomes()` evaluate the fix against a verification window that may already have elapsed before the fix was ever applied, causing immediate or premature success/failure verdicts. Evidence: `current_round = self._process_round_count` is computed for damping, but discarded; `set_remediation_state(... applied_round=round_idx ...)` uses the stale deferred round. Verification in `_immune.py` computes `rounds_since = current_round - state[\"applied_round\"]`.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F017",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 6,
+        "severity": 0.78,
+        "abstraction_index": 0.63,
+        "description": "FIND: `bench/dm/_manager.py`, `apply_diagnosis()`, DEFER branch. Every call on the same unresolved DEFER step appends a fresh pending entry to `_deferred_remediations`; there is no deduplication by `(chain_key, chain_idx, model_id, pathology instance)`. Because diagnoses can recur each round while the condition persists, the queue grows with duplicate pending remediations for the same action. Evidence: the DEFER branch unconditionally constructs `deferred = {...}` and appends it; no scan of existing pending items occurs first.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F018",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.74,
+        "abstraction_index": 0.58,
+        "description": "FIND: `bench/immune_agents.py`, `helper_t_v2_shadow()`, `_confidence_to_log_odds()`. The helper treats raw confidence as evidence sign regardless of verdict polarity. For REJECTED votes with confidence below 0.5, `log(c/(1-c))` becomes negative, so summing reject log-odds can reduce reject support instead of increasing it. Evidence: in `helper_t_v2_shadow()`, `reject_lo = sum(_confidence_to_log_odds(v.confidence) for v in rejects)`. For a reject verdict at confidence 0.3, this contributes about `-0.847`, which weakens rejection though the verdict is explicitly negative evidence. This is a shadow-path bug distinct from the known live helper implementation.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F019",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.69,
+        "abstraction_index": 0.47,
+        "description": "FIND: `bench/immune_agents.py`, `_verify_ct_claim()`. `line_num = evidence.get(\"line\", 0)` is used in integer comparisons and arithmetic before type normalization. If the CT agent outputs `\"line\": \"45\"` in JSON, `line_num < 1` and `line_num - 3` raise `TypeError`, which is not caught by the surrounding file-read try/except. Evidence: comparisons and slicing use `line_num` directly after JSON extraction. The parser accepts raw JSON objects from model output, so stringified numerals are realistic.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_IM_F020",
+        "model_id": "ChatGPT",
+        "round_idx": 1,
+        "flaw_class": 8,
+        "severity": 0.64,
+        "abstraction_index": 0.41,
+        "description": "FIND: `bench/dm/_immune.py`, adaptive sensitivity documentation in `__init__` is internally contradictory to the implemented formula. The comment says persistent true positives “narrows the window and speeds response,” but the formal block defines `+ growth * count_persistent_d`, which increases `W_d(r)`. The implementation below correctly narrows by dividing through `(1 + growth * persistent)`. Evidence: comment formula and code in `effective_window()` disagree.",
+        "proposed_fix": "",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F011",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.86,
+        "abstraction_index": 0.79,
+        "description": "FIND: `bench/dm/_manager.py`, `approve_deferred_remediation()`. The damping check for deferred fixes ignores per-model scope, unlike `apply_diagnosis()`, which compares both detector and `model_id`. Evidence: deferred approval loops over `self._immune_adjustments` and only checks `adj.get(\"detector\") == deferred[\"diagnosis\"][\"detector\"]`, so approving a deferred remediation for model B can be blocked by a recent adjustment for model A under the same detector family. This is wrong because per-model pathologies are tracked separately elsewhere (`diagnosis.evidence[\"model_id\"]`, per-model pathology keys, per-model chains).",
+        "proposed_fix": "FIX:\n<<<<\n        current_round = self._process_round_count\n        for adj in self._immune_adjustments:\n            if (adj.get(\"detector\") == deferred[\"diagnosis\"][\"detector\"]\n                    and current_round - adj[\"round\"] < self.config.immune_damping_rounds):\n                return None  # Damping: too soon to apply this deferred fix\n====\n        current_round = self._process_round_count\n        deferred_model = deferred[\"diagnosis\"].get(\"evidence\", {}).get(\"model_id\", \"\")\n        deferred_pathology = deferred.get(\"chain_key\") or deferred[\"diagnosis\"].get(\"pathology_key\", \"\")\n        for adj in self._immune_adjustments:\n            adj_model = adj.get(\"model_id\", \"\")\n            adj_pathology = adj.get(\"chain_key\", \"\")\n            if deferred_pathology:\n                same_scope = (adj_pathology == deferred_pathology and adj_model == deferred_model)\n            else:\n                same_scope = (\n                    adj.get(\"detector\") == deferred[\"diagnosis\"][\"detector\"]\n                    and adj_model == deferred_model\n                )\n            if same_scope and current_round - adj[\"round\"] < self.config.immune_damping_rounds:\n                return None  # Damping: too soon to apply this deferred fix\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F012",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.82,
+        "abstraction_index": 0.73,
+        "description": "FIND: `bench/dm/_immune.py`, `check_dispatch_health()`, dispatch false-positive detection. Once a block has any later success, the code emits a diagnosis exactly once and never resolves or clears that block-specific key. Evidence: keys are stored as `_pathology_counts[f\"dispatch_fp_{model_id}_{block_round}\"] = 1` and never decremented, never moved to `_resolved_counts`, and never suppressed by remediation state because the remediation chain key is the shared `dispatch_false_positive`. This leaves permanent pathology residue and makes self-metrics that inspect `_pathology_counts` inconsistent with actual active pathologies.",
+        "proposed_fix": "FIX:\n<<<<\n        for model_id, blocks in dispatch_blocks.items():\n            successes = dispatch_successes.get(model_id, [])\n            for block_round in blocks:\n                if any(s > block_round for s in successes):\n                    # Already diagnosed this block?\n                    key = f\"dispatch_fp_{model_id}_{block_round}\"\n                    if key not in self._pathology_counts:\n                        self._pathology_counts[key] = 1\n                        diag = DetectorDiagnosis(\n                            detector=\"dispatch\",\n                            pathology=(\n                                f\"Dispatch false positive: {model_id} blocked \"\n                                f\"at round {block_round} but succeeded later \"\n                                f\"via decomposition\"\n                            ),\n                            severity=\"WARNING\",\n                            recommended_action=(\n                                f\"Pre-decompose {model_id} in future blind rounds \"\n                                f\"to prevent false-positive blocking.\"\n                            ),\n                            evidence={\n                                \"model_id\": model_id,\n                                \"blocked_round\": block_round,\n                                \"success_rounds\": [s for s in successes if s > block_round],\n                            },\n                            pathology_key=\"dispatch_false_positive\",\n                            round_idx=round_idx,\n                        )\n                        new_diagnoses.append(diag)\n====\n        for model_id, blocks in dispatch_blocks.items():\n            successes = dispatch_successes.get(model_id, [])\n            for block_round in blocks:\n                key = f\"dispatch_fp_{model_id}_{block_round}\"\n                if any(s > block_round for s in successes):\n                    if key not in self._pathology_counts:\n                        self._pathology_counts[key] = 1\n                        self._resolution_counter[key] = 0\n                        diag = DetectorDiagnosis(\n                            detector=\"dispatch\",\n                            pathology=(\n                                f\"Dispatch false positive: {model_id} blocked \"\n                                f\"at round {block_round} but succeeded later \"\n                                f\"via decomposition\"\n                            ),\n                            severity=\"WARNING\",\n                            recommended_action=(\n                                f\"Pre-decompose {model_id} in future blind rounds \"\n                                f\"to prevent false-positive blocking.\"\n                            ),\n                            evidence={\n                                \"model_id\": model_id,\n                                \"blocked_round\": block_round,\n                                \"success_rounds\": [s for s in successes if s > block_round],\n                            },\n                            pathology_key=\"dispatch_false_positive\",\n                            round_idx=round_idx,\n                        )\n                        new_diagnoses.append(diag)\n                elif self._pathology_counts.get(key, 0) > 0:\n                    self._resolution_counter[key] = self._resolution_counter.get(key, 0) + 1\n                    hysteresis = getattr(self._config, \"resolution_hysteresis\", 2)\n                    if self._resolution_counter[key] >= hysteresis:\n                        self._resolved_counts[key] = self._resolved_counts.get(key, 0) + 1\n                        self._pathology_counts.pop(key, None)\n                        self._resolution_counter.pop(key, None)\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F013",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.79,
+        "abstraction_index": 0.69,
+        "description": "FIND: `bench/dm/_immune.py`, `self_diagnose()`, self-check 3 for chain exhaustion. The damping timestamp `_last_self_adjust_round[_trigger_key_3]` is read but never updated after emitting the CRITICAL diagnosis. Evidence: the branch computes `_last_3` and checks `current_round - _last_3 >= damping_rounds`, appends a diagnosis, then returns without writing `_last_self_adjust_round[_trigger_key_3]`. As a result, once the threshold is crossed, the same human-deferral diagnosis fires every round.",
+        "proposed_fix": "FIX:\n<<<<\n        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds:\n            diag = DetectorDiagnosis(\n                detector=\"self_diagnosis\",\n                pathology=(\n                    f\"Immune layer self-assessment: chain exhaustion rate \"\n                    f\"{exhaust_rate:.1%} — remediation chains too short \"\n                    f\"or pathologies need reclassification\"\n                ),\n                severity=\"CRITICAL\",\n                recommended_action=(\n                    \"DEFER to human: extend remediation chains or redefine \"\n                    \"pathology classification. The immune layer cannot \"\n                    \"self-generate new chain steps.\"\n                ),\n                evidence={\n                    \"exhaustion_rate\": exhaust_rate,\n                    \"recent_exhaustions\": self._chain_exhaustion_history[-5:],\n                    \"round\": current_round,\n                },\n                round_idx=current_round,\n            )\n            diagnoses.append(diag)\n====\n        if len(self._chain_exhaustion_history) >= 2 and exhaust_rate > 0.5 and current_round - _last_3 >= damping_rounds:\n            diag = DetectorDiagnosis(\n                detector=\"self_diagnosis\",\n                pathology=(\n                    f\"Immune layer self-assessment: chain exhaustion rate \"\n                    f\"{exhaust_rate:.1%} — remediation chains too short \"\n                    f\"or pathologies need reclassification\"\n                ),\n                severity=\"CRITICAL\",\n                recommended_action=(\n                    \"DEFER to human: extend remediation chains or redefine \"\n                    \"pathology classification. The immune layer cannot \"\n                    \"self-generate new chain steps.\"\n                ),\n                evidence={\n                    \"exhaustion_rate\": exhaust_rate,\n                    \"recent_exhaustions\": self._chain_exhaustion_history[-5:],\n                    \"round\": current_round,\n                },\n                round_idx=current_round,\n            )\n            diagnoses.append(diag)\n            self._last_self_adjust_round[_trigger_key_3] = current_round\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F014",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.76,
+        "abstraction_index": 0.63,
+        "description": "FIND: `bench/immune_agents.py`, `_verify_ct_claim()`. The function reads `line_num = evidence.get(\"line\", 0)` and then performs integer arithmetic/comparisons on it (`line_num < 1`, `line_num - 3`, `lines[line_num - 1]`). If the CT JSON encodes line numbers as strings, which is common for LLM-produced JSON, this raises `TypeError` and collapses verification for otherwise valid evidence. Evidence: there is no type coercion before numeric use; the parser accepts arbitrary JSON values; `_ct_evidence_to_verdict()` calls `_verify_ct_claim()` repeatedly without guarding these type mismatches.",
+        "proposed_fix": "FIX:\n<<<<\n    line_num = evidence.get(\"line\", 0)\n    snippet = evidence.get(\"code_snippet\", \"\").strip()\n\n    if not file_path or not line_num or not snippet:\n        return False, 0.0, \"Missing file, line, or code_snippet\"\n====\n    raw_line_num = evidence.get(\"line\", 0)\n    snippet = evidence.get(\"code_snippet\", \"\").strip()\n\n    try:\n        line_num = int(raw_line_num)\n    except (TypeError, ValueError):\n        return False, 0.0, f\"Invalid line value: {raw_line_num!r}\"\n\n    if not file_path or line_num <= 0 or not snippet:\n        return False, 0.0, \"Missing file, line, or code_snippet\"\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F015",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 5,
+        "severity": 0.74,
+        "abstraction_index": 0.58,
+        "description": "FIND: `bench/immune_agents.py`, `nk_cell_v2_shadow()`. The shadow v2 NK pipeline claims to add dedup behavior, but it does not mutate `TriagedFinding` duplicate state for either prior-round or intra-round duplicates. Evidence: on both duplicate branches it appends a `CellVerdict` and immediately `continue`s, but never sets `tf.is_duplicate`, `tf.duplicate_of`, or `tf.similarity`. That means downstream shadow consumers using returned triaged objects cannot observe the dedup decisions, making the shadow path structurally inconsistent with v1 NK semantics and with `helper_t_v2_shadow()`'s duplicate auto-reject contract.",
+        "proposed_fix": "FIX:\n<<<<\n        if best_sim >= tau_sim:\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=best_sim,\n                evidence=f\"[NK_v2] Duplicate of {best_match} (sim={best_sim:.3f})\",\n                tool_used=\"v2_similarity_dedup\",\n            ))\n            continue\n====\n        if best_sim >= tau_sim:\n            tf.is_duplicate = True\n            tf.duplicate_of = best_match\n            tf.similarity = best_sim\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=best_sim,\n                evidence=f\"[NK_v2] Duplicate of {best_match} (sim={best_sim:.3f})\",\n                tool_used=\"v2_similarity_dedup\",\n            ))\n            continue\n>>>>\n\nand\n\n<<<<\n        if intra_best_sim >= tau_sim:\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=intra_best_sim,\n                evidence=f\"[NK_v2] Intra-round dup of {intra_best_match} (sim={intra_best_sim:.3f})\",\n                tool_used=\"v2_intra_round_dedup\",\n            ))\n            continue\n====\n        if intra_best_sim >= tau_sim:\n            tf.is_duplicate = True\n            tf.duplicate_of = intra_best_match\n            tf.similarity = intra_best_sim\n            verdicts.append(CellVerdict(\n                cell_type=CellType.NK_CELL,\n                finding_id=f.finding_id,\n                verdict=\"DUPLICATE\",\n                confidence=intra_best_sim,\n                evidence=f\"[NK_v2] Intra-round dup of {intra_best_match} (sim={intra_best_sim:.3f})\",\n                tool_used=\"v2_intra_round_dedup\",\n            ))\n            continue\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_IM_F016",
+        "model_id": "Codex",
+        "round_idx": 1,
+        "flaw_class": 4,
+        "severity": 0.72,
+        "abstraction_index": 0.72,
+        "description": "FIND: `bench/immune_agents.py`, `run_immune_pipeline()`. The shadow v2 Dendritic output `dc_v2_triaged` is computed and timed but then discarded; all shadow Stage 2 and Stage 3 components still receive the v1 `triaged` list. Evidence: after `dc_v2_triaged = dendritic_cell_v2_shadow(new_findings, triaged)`, subsequent shadow submissions call `cytotoxic_t_cell_v2_shadow(triaged, ...)`, `b_cell_v2_shadow(triaged, ...)`, `nk_cell_v2_shadow(triaged, ...)`, and later `helper_t_v2_shadow(triaged, all_verdicts)`, `regulatory_t_v2_shadow(final_verdicts, triaged, ...)`. That means shadow comparisons do not exercise the reclassification improvements they are supposed to evaluate.",
+        "proposed_fix": "FIX:\n<<<<\n            futures[\"ct_v2_shadow\"] = pool.submit(\n                cytotoxic_t_cell_v2_shadow, triaged, source_paths, ct_timeout,\n            )\n====\n            futures[\"ct_v2_shadow\"] = pool.submit(\n                cytotoxic_t_cell_v2_shadow, dc_v2_triaged, source_paths, ct_timeout,\n            )\n>>>>\n\n<<<<\n        futures[\"b_cell_v2_shadow\"] = pool.submit(\n            b_cell_v2_shadow, triaged, source_paths,\n        )\n====\n        futures[\"b_cell_v2_shadow\"] = pool.submit(\n            b_cell_v2_shadow, dc_v2_triaged, source_paths,\n        )\n>>>>\n\n<<<<\n        futures[\"nk_v2_shadow\"] = pool.submit(\n            nk_cell_v2_shadow, triaged, prior_findings, tau_sim,\n            false_positive_db,\n        )\n====\n        futures[\"nk_v2_shadow\"] = pool.submit(\n            nk_cell_v2_shadow, dc_v2_triaged, prior_findings, tau_sim,\n            false_positive_db,\n        )\n>>>>\n\n<<<<\n    v2_final, v2_conf = helper_t_v2_shadow(triaged, all_verdicts)\n====\n    v2_final, v2_conf = helper_t_v2_shadow(dc_v2_triaged, all_verdicts)\n>>>>\n\n<<<<\n    v2_autoimmune, v2_reg_reason = regulatory_t_v2_shadow(\n        final_verdicts, triaged, max_rejection_rate,\n    )\n====\n    v2_autoimmune, v2_reg_reason = regulatory_t_v2_shadow(\n        v2_final, dc_v2_triaged, max_rejection_rate,\n    )\n>>>>",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_IM_F041",
+        "model_id": "DeepSeek",
+        "round_idx": 1,
+        "flaw_class": 2,
+        "severity": 0.5,
+        "abstraction_index": 0.3,
+        "description": "The regex pattern for extracting p‑values in `_verify_statistical` does not match the Unicode less‑than‑or‑equal symbol (≤), causing p‑value claims that use this symbol to be missed and incorrectly classified as unparseable.",
+        "proposed_fix": "Extend the character class in the regex pattern from `[<=]` to `[<≤=]`.",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_UNSTRUCTURED",
+        "model_id": "Gemini",
+        "round_idx": 1,
+        "flaw_class": 1,
+        "severity": 0.3,
+        "abstraction_index": 0.3,
+        "description": "FINDING 1: Remediation escalation deadlock via suppression gates\nFIND: In `bench/dm/_immune.py`, when a remediation fails to improve the metric, `_verify_remediation_outcomes()` increments `chain_idx` but keeps the pathology in `_remediation_state` to track the escalation. However, the five main detectors in `record_round()` use suppression gates (e.g., `if \"kappa_stuck\" not in self._remediation_state:`) that unconditionally silence the diagnosis while it remains in this state. Because the diagn",
+        "proposed_fix": "",
+        "verified": false
+      }
+    ]
+  ],
+  "result_so_far": {
+    "experiment": "baseline_confer_run11",
+    "start_time": "2026-04-04T00:07:01.452317+00:00",
+    "models": [
+      "CC2",
+      "Codex",
+      "ChatGPT",
+      "Gemini",
+      "DeepSeek"
+    ],
+    "task": "immune",
+    "max_rounds": 20,
+    "rounds": [
+      {
+        "round": 0,
+        "type": "blind",
+        "findings_count": 44,
+        "models_responded": [
+          "ChatGPT",
+          "Codex",
+          "Gemini",
+          "CC2",
+          "DeepSeek"
+        ],
+        "elapsed_s": 320.3,
+        "per_model": {
+          "ChatGPT": 10,
+          "Codex": 13,
+          "Gemini": 5,
+          "CC2": 12,
+          "DeepSeek": 4
+        },
+        "quality_gate": {
+          "dedup_count": 0,
+          "dedup_rate": 0.0,
+          "sympy_checks": 43,
+          "ast_checks": 0,
+          "stage_timings": {
+            "dedup": 0.0001,
+            "sympy": 8.1355,
+            "ast": 0.0008,
+            "pm": 0.0001
+          }
+        },
+        "immune_pipeline": {
+          "rejection_rate": 0.0,
+          "autoimmune_flag": false,
+          "observation_only": false,
+          "tool_usage": {
+            "skin_barrier": 1,
+            "ct_mechanical": 1,
+            "sympy": 36,
+            "z3": 6,
+            "statsmodels": 1,
+            "similarity_dedup": 0,
+            "false_positive_db": 0,
+            "anomaly_detection": 0,
+            "z3_v2_smt2": 42,
+            "v2_intra_round_dedup": 9
+          },
+          "stage_timings": {
+            "skin_barrier": 0.0021,
+            "dendritic": 0.0045,
+            "dendritic_v2_shadow": 0.0074,
+            "parallel_verification": 25.0728,
+            "helper_t": 0.0002,
+            "regulatory_t": 0.0001,
+            "helper_t_v2_shadow": 0.0002,
+            "regulatory_t_v2_shadow": 0.0
+          },
+          "final_verdicts": {
+            "ChatGPT_IM_F001": "UNCERTAIN",
+            "ChatGPT_IM_F002": "UNCERTAIN",
+            "ChatGPT_IM_F003": "UNCERTAIN",
+            "ChatGPT_IM_F004": "UNCERTAIN",
+            "ChatGPT_IM_F005": "UNCERTAIN",
+            "ChatGPT_IM_F006": "UNCERTAIN",
+            "ChatGPT_IM_F007": "UNCERTAIN",
+            "ChatGPT_IM_F008": "UNCERTAIN",
+            "ChatGPT_IM_F009": "UNCERTAIN",
+            "ChatGPT_IM_F010": "UNCERTAIN",
+            "Codex_IM_F001": "UNCERTAIN",
+            "Codex_IM_F002": "UNCERTAIN",
+            "Codex_IM_F003": "UNCERTAIN",
+            "Codex_IM_F004": "UNCERTAIN",
+            "Codex_IM_F005": "UNCERTAIN",
+            "Codex_IM_F006": "UNCERTAIN",
+            "Codex_IM_F007": "UNCERTAIN",
+            "Codex_IM_F008": "UNCERTAIN",
+            "Codex_IM_F009": "UNCERTAIN",
+            "Codex_IM_F010": "UNCERTAIN",
+            "Codex_IM_F011": "UNCERTAIN",
+            "Codex_IM_F012": "UNCERTAIN",
+            "Codex_IM_F013": "UNCERTAIN",
+            "Gemini_IM_F001": "UNCERTAIN",
+            "Gemini_IM_F002": "UNCERTAIN",
+            "Gemini_IM_F003": "UNCERTAIN",
+            "Gemini_IM_F004": "UNCERTAIN",
+            "Gemini_IM_F005": "UNCERTAIN",
+            "CC2_IM_F001": "UNCERTAIN",
+            "CC2_IM_F002": "UNCERTAIN",
+            "CC2_IM_F003": "UNCERTAIN",
+            "CC2_IM_F004": "UNCERTAIN",
+            "CC2_IM_F005": "UNCERTAIN",
+            "CC2_IM_F006": "UNCERTAIN",
+            "CC2_IM_F007": "UNCERTAIN",
+            "CC2_IM_F008": "UNCERTAIN",
+            "CC2_IM_F009": "UNCERTAIN",
+            "CC2_IM_F010": "UNCERTAIN",
+            "CC2_IM_F011": "CONFIRMED",
+            "CC2_IM_F012": "CONFIRMED",
+            "DeepSeek_IM_F001": "UNCERTAIN",
+            "DeepSeek_f.finding_id,": "UNCERTAIN",
+            "DeepSeek_IM_F002": "UNCERTAIN"
+          }
+        },
+        "complexity": {
+          "gamma_input": {
+            "beta": 0.6213,
+            "gamma": 0.3787,
+            "r_squared": 0.9945,
+            "n_windows": 9
+          },
+          "dispatch_recommendation": "multiturn_fff",
+          "per_model_amplification": {
+            "CC2": {
+              "gamma_output": 0.0784,
+              "beta_output": 0.9216,
+              "A": 1.4833,
+              "compound_obj": 0.1163,
+              "dist_from_optimal": 0.4216,
+              "n_findings": 12,
+              "r_sq_output": 0.9966803915861452
+            },
+            "ChatGPT": {
+              "gamma_output": 0.132,
+              "beta_output": 0.868,
+              "A": 1.3971,
+              "compound_obj": 0.1844,
+              "dist_from_optimal": 0.368,
+              "n_findings": 10,
+              "r_sq_output": 0.9970982715105846
+            },
+            "Codex": {
+              "gamma_output": 0.2151,
+              "beta_output": 0.7849,
+              "A": 1.2634,
+              "compound_obj": 0.2717,
+              "dist_from_optimal": 0.2849,
+              "n_findings": 13,
+              "r_sq_output": 0.997977669544353
+            },
+            "DeepSeek": {
+              "gamma_output": 0.1699,
+              "beta_output": 0.8301,
+              "A": 1.3361,
+              "compound_obj": 0.227,
+              "dist_from_optimal": 0.3301,
+              "n_findings": 4,
+              "r_sq_output": 0.936946992389617
+            },
+            "Gemini": {
+              "gamma_output": -0.007,
+              "beta_output": 1.007,
+              "A": 1.6207,
+              "compound_obj": -0.0113,
+              "dist_from_optimal": 0.507,
+              "n_findings": 5,
+              "r_sq_output": 0.9993471463918024
+            }
+          }
+        },
+        "omega": {
+          "ChatGPT": 0.1844,
+          "Codex": 0.2717,
+          "Gemini": -0.0113,
+          "CC2": 0.1163,
+          "DeepSeek": 0.227
+        },
+        "benched_models": [],
+        "question_optimiser": {
+          "features": {
+            "referential_density": 100.541,
+            "novelty_score": 1.0,
+            "specificity": 0.002
+          },
+          "mean_omega": 0.1576,
+          "recommendation": null,
+          "confidence": null
+        }
+      },
+      {
+        "round": 1,
+        "type": "adaptive",
+        "findings_count": 15,
+        "models_responded": [
+          "ChatGPT",
+          "Codex",
+          "DeepSeek",
+          "Gemini"
+        ],
+        "elapsed_s": 2197.3,
+        "per_model": {
+          "ChatGPT": 7,
+          "Codex": 6,
+          "DeepSeek": 1,
+          "Gemini": 1
+        },
+        "quality_gate": {
+          "dedup_count": 0,
+          "dedup_rate": 0.0,
+          "sympy_checks": 14,
+          "ast_checks": 0,
+          "stage_timings": {
+            "dedup": 0.0302,
+            "sympy": 2.6685,
+            "ast": 0.0003,
+            "pm": 0.0
+          }
+        },
+        "immune_pipeline": {
+          "rejection_rate": 0.6667,
+          "autoimmune_flag": false,
+          "observation_only": false,
+          "tool_usage": {
+            "skin_barrier": 0,
+            "ct_mechanical": 1,
+            "sympy": 5,
+            "similarity_dedup": 10,
+            "false_positive_db": 0,
+            "anomaly_detection": 0,
+            "z3_v2_smt2": 4,
+            "v2_similarity_dedup": 10
+          },
+          "stage_timings": {
+            "skin_barrier": 0.0016,
+            "dendritic": 0.0022,
+            "dendritic_v2_shadow": 0.002,
+            "parallel_verification": 29.8166,
+            "helper_t": 0.0001,
+            "regulatory_t": 0.0009,
+            "helper_t_v2_shadow": 0.0001,
+            "regulatory_t_v2_shadow": 0.0
+          },
+          "final_verdicts": {
+            "ChatGPT_IM_F014": "DUPLICATE",
+            "ChatGPT_IM_F015": "DUPLICATE",
+            "ChatGPT_IM_F016": "DUPLICATE",
+            "ChatGPT_IM_F017": "UNCERTAIN",
+            "ChatGPT_IM_F018": "DUPLICATE",
+            "ChatGPT_IM_F019": "DUPLICATE",
+            "ChatGPT_IM_F020": "UNCERTAIN",
+            "Codex_IM_F011": "DUPLICATE",
+            "Codex_IM_F012": "DUPLICATE",
+            "Codex_IM_F013": "DUPLICATE",
+            "Codex_IM_F014": "UNCERTAIN",
+            "Codex_IM_F015": "DUPLICATE",
+            "Codex_IM_F016": "DUPLICATE",
+            "DeepSeek_IM_F041": "UNCERTAIN",
+            "Gemini_UNSTRUCTURED": "UNCERTAIN"
+          }
+        },
+        "complexity": {
+          "gamma_input": {
+            "beta": 0.6226,
+            "gamma": 0.3774,
+            "r_squared": 0.9946,
+            "n_windows": 9
+          },
+          "dispatch_recommendation": "multiturn_fff",
+          "per_model_amplification": {
+            "ChatGPT": {
+              "gamma_output": 0.1683,
+              "beta_output": 0.8317,
+              "A": 1.3359,
+              "compound_obj": 0.2248,
+              "dist_from_optimal": 0.3317,
+              "n_findings": 7,
+              "r_sq_output": 0.9969593531243042
+            },
+            "Codex": {
+              "gamma_output": 0.0243,
+              "beta_output": 0.9757,
+              "A": 1.5673,
+              "compound_obj": 0.038,
+              "dist_from_optimal": 0.4757,
+              "n_findings": 6,
+              "r_sq_output": 0.9995542729720258
+            },
+            "DeepSeek": {
+              "gamma_output": 0.5,
+              "beta_output": 0.5,
+              "A": 0.8031,
+              "compound_obj": 0.4016,
+              "dist_from_optimal": 0.0,
+              "n_findings": 1,
+              "r_sq_output": 0.0
+            },
+            "Gemini": {
+              "gamma_output": 0.5,
+              "beta_output": 0.5,
+              "A": 0.8031,
+              "compound_obj": 0.4016,
+              "dist_from_optimal": 0.0,
+              "n_findings": 1,
+              "r_sq_output": 0.0
+            }
+          }
+        },
+        "omega": {
+          "ChatGPT": 0.2248,
+          "Codex": 0.038,
+          "DeepSeek": 0.4016,
+          "Gemini": 0.0
+        },
+        "benched_models": [
+          "Gemini"
+        ],
+        "question_optimiser": {
+          "features": {
+            "referential_density": 100.565,
+            "novelty_score": 0.0,
+            "specificity": 0.002
+          },
+          "mean_omega": 0.1661,
+          "recommendation": null,
+          "confidence": null
+        },
+        "novelty": {
+          "novel_this_round": 7,
+          "novel_per_round": [
+            35,
+            7
+          ],
+          "total_unique_clusters": 42
+        }
+      }
+    ]
+  }
+}

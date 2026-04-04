@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 3 April 2026 21:41 BST
+Last updated: 4 April 2026 01:59 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,31 +22,33 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
-- **Run 10 COMPLETE + Run 11 PREP (3 April 2026, 21:41 BST):**
-  Run 10: 7 rounds, 237 findings, 37 min. First natural convergence
+- **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
+  2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
+  γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),
+  R1: 15 findings (4 models — CC2 failed dispatch). 67% immune rejection in R1.
+  Three factors behind rapid convergence: (1) CC2 dispatch failure — 21 min of
+  timeouts, zero R1 findings from strongest model (A=1.48); (2) aggressive NK
+  dedup — 10/15 R1 findings classified DUPLICATE (tau_sim=0.33); (3) Gemini
+  benched — Ω<0.1 for 2 rounds. Monolithic delivery is the bottleneck.
+  **Shadow v2 first production data:** NK v2 caught 9 intra-round duplicates
+  in R0 (v1 missed all 9, inflating count from ~35 to 44). B-Cell v2 ran 42
+  AST-grounded SMT-LIB checks. NK v1/v2 agreed on all 10 R1 duplicates.
+  Helper T v2 hybrid (log-odds within domain, max-signal across) logged
+  comparison data. All v2 shadows fired correctly.
+  **Convergence assessment:** Probably real but accelerated. CC2 absence and
+  Gemini benching are confounds. The CDSFL/FFF Gemini review (13 findings,
+  12 rounds, same code) vs Run 11 Gemini (6 findings, benched) directly
+  demonstrates constraint box vs monolithic delivery.
+  Logs: `bench/logs/baseline_confer_run11_20260404/`.
+  Analysis: `experimental_notes/Run11_Rapid_Convergence_Analysis_2026-04-04.md`.
+  **Exp 29 planning:** Unified numbering (Run N → Exp N), v2 activation
+  decisions based on shadow data, realistic HIL comparison experiment,
+  cell-level decomposition to fix CC2/Gemini delivery failures.
+- **Run 10 COMPLETE (3 April 2026, 16:44 BST) = Exp 28:**
+  7 rounds, 237 findings, 37 min. First natural convergence
   (DM kappa=1.0 at R6). γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.
   174 unique IDs (104 after prefix stripping). 26.6% churn (vs Run 9: 84.5%).
-  Sequential file delivery replaced sub-area rotation for decomposed models.
-  CC2 excluded from decomposition (330K cumulative context was worse).
-  CC2 wall-clock timeout raised to 5×. FSM checkpoint-replay terminal fix.
   Logs: `bench/logs/baseline_confer_run10_20260403/`.
-  **Gemini architectural conversation:** 2 turns, 80s, produced 2 novel
-  insights that 237 findings in 7 rounds did not: (1) Cytotoxic T Cell should
-  shift from verification to falsification (adversarial test generation);
-  (2) B Cell z3 proofs silently restrict domains — proves things that don't
-  map to runtime constraints.
-  **Insect brain architecture proposed:** Reactive coordinator (not deliberative).
-  Gathers, processes, tabulates, commits to external memory. Does not think,
-  direct, or evaluate content. Models drive conversation under full CDSFL.
-  Persistence layer is the shared workspace. Deferred to Run 12.
-  **Run 11 FIXES PENDING:** (1) γ_ids prefix stripping bug — `base_id = f.finding_id`
-  doesn't strip model prefix despite comment saying it does; (2) Sequential
-  read instruction for all models, not just decomposed; (3) z3 confidence
-  downgrade (0.90→0.30 for ungrounded abstract proofs); (4) LOGS_DIR + experiment
-  label update.
-  γ_ids promotion REJECTED by data: stripped γ_ids=-0.069 vs γ_novel=0.309 —
-  ID-based novelty is noisier than cluster-based. Keep as shadow signal.
-  Zero-novel-ID terminal condition (3 consecutive zeros) still valid.
 - **Run 10 FIXES APPLIED (3 April 2026, 12:18 BST):** 6 bugs fixed,
   1 diagnosed. B-Cell f-string escape (dead since creation — NameError
   in `_verify_z3` crashed entire cell, hidden by silent `except: pass`).
