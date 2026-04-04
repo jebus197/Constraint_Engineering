@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 22:05 BST
+Last updated: 4 April 2026 23:20 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,21 +19,27 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (4 April 2026, 22:05 BST)
+## Current Pending Work (4 April 2026, 23:20 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
 
-EXP 29 COMPLETE (4 April 2026, 21:43 BST):
-9 rounds, 340 findings, 35 min. CONVERGED at R8 (κ=0.960). C(H,E)=0.899.
-γ=0.385. All 5 models survived. Conversational relay + FFF pattern.
-Best results in bench history: +43% findings vs Run 10, highest C(H,E).
-Cross-model engagement confirmed (Gemini, CC2 strongest engagers).
-Bugs fixed: DeepSeek empty response → per-model benching, resume dir mismatch.
-New code: run_exp29_persistence.py, composer presets, brain relay mode.
-Known issues: stale claude-haiku in immune shadow, NK v2 triaged field gap,
-pipeline discards NK v2 state, stale shadow docstrings.
+EXP 29 COMPLETE + VERIFIED (4 April 2026, 23:15 BST):
+9 rounds, 340 findings (365 unique), 35 min. CONVERGED R8 (κ=0.960). C(H,E)=0.899.
+All 5 mathematical claims verified via SymPy/scipy (zero discrepancies).
+365 unique findings: 155 logic bugs, 55 missing state, 54 mathematical,
+46 interface gaps, 18 security, 17 performance, 12 documentation. 92% have fixes.
+Static analysis (mypy/ruff/pyright/bandit) catches only 19/365 (5%).
+Shadow component analysis: Typed LLM Classifier BROKEN (620 API errors, invalid
+claude-haiku model ID). Autoimmune override fires 67% of rounds (threshold too low).
+Formalisation Agent ran but output not persisted (no file logging configured).
+506 tests pass.
+ACTIONS FOR NEXT SESSION:
+  1. Fix stale anthropic/claude-haiku model ID in immune_agents.py:2386
+  2. Configure shadow INFO logging to file
+  3. Raise autoimmune threshold (50% too low)
+  4. Design directed messaging for cross-model communication (Exp 30)
+  5. Fix NK v2 triaged field gap + pipeline discard
 Logs: bench/logs/exp29_persistence_20260404T193154Z/
-Next: Apply findings, design directed messaging, Exp 30 (endocrine), Bench Run 2.
 Tests: python3 -m pytest bench/tests/ -v
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
