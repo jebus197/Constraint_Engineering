@@ -26,7 +26,7 @@
 | Codex (GPT-5.4) | 13 R0, 6 R1 | 1.42 | [0.272, 0.038] | Active |
 | ChatGPT (GPT-5.4) | 10 R0, 7 R1 | 1.37 | [0.184, 0.225] | Active (Ω rising) |
 | DeepSeek | 4 R0, 1 R1 | 1.07 | [0.227, 0.402] | Active |
-| Gemini (2.5 Pro) | 5 R0, 1 R1 | 1.21 | [-0.011, 0.000] | **Benched** |
+| Gemini (3.1 Pro) | 5 R0, 1 R1 | 1.21 | [-0.011, 0.000] | **Benched** |
 
 ## Three Factors Behind Rapid Convergence
 

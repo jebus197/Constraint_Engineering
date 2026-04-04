@@ -57,7 +57,7 @@ Meta's approach: structured checklist requiring explicit premises, execution pat
 Represents what a competent developer actually does when using an LLM for code review, based on empirical evidence.
 
 **Setup:**
-- Same model (Gemini 2.5 Pro)
+- Same model (Gemini 3.1 Pro)
 - Same code (full immune pipeline — NOT decomposed into cells)
 - Single session, accumulated context
 - No structured protocol, no FFF, no SymPy verification
@@ -81,7 +81,7 @@ Total: ~650 chars across 3 turns. This is generous — the median developer inte
 Represents the most sophisticated non-CDSFL approach currently documented in the literature: Meta's semi-formal reasoning checklist applied to the same code review task.
 
 **Setup:**
-- Same model (Gemini 2.5 Pro)
+- Same model (Gemini 3.1 Pro)
 - Same code (full immune pipeline — NOT decomposed)
 - Single session, accumulated context
 - Meta's structured checklist template (premises → execution trace → formal conclusion)
@@ -111,7 +111,7 @@ Total: ~950 chars across 3 turns. This is MORE than what Meta's paper describes 
 The immune cell review experiment results we already have.
 
 **Setup:**
-- Same model (Gemini 2.5 Pro)
+- Same model (Gemini 3.1 Pro)
 - Code decomposed into individual cells (~2K chars each, not 244K full codebase)
 - Fresh instance per cell (zero accumulated context)
 - Full CDSFL/FFF protocol with "press harder" until convergence or churn
