@@ -1215,7 +1215,7 @@ def helper_t_cell_synthesize(
 def regulatory_t_cell_check(
     final_verdicts: Dict[str, str],
     triaged: List[TriagedFinding],
-    max_rejection_rate: float = 0.50,
+    max_rejection_rate: float = 0.65,
     min_findings_for_check: int = 5,
 ) -> Tuple[bool, str]:
     """Stage 3b: Check for autoimmune response (over-rejection).
@@ -1287,17 +1287,41 @@ def regulatory_t_cell_check(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SHADOW COMPONENTS (Run 11: observation only, Run 12+: active)
+# V2 IMMUNE COMPONENTS (activated WP6a, Exp 29)
 #
 # These implement architectural improvements from the Gemini CDSFL
-# conversation (3 April 2026). They run alongside existing cells, logging
-# what they WOULD have done. Their outputs do not affect pipeline decisions
-# until explicitly activated.
+# conversation (3 April 2026). All v2 components are now active in the
+# pipeline. DC v2, NK v2, Reg T v2 are PRIMARY. CT v2, B-Cell v2 run
+# in parallel with v1. Shadow logging captures v1-vs-v2 comparison data.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 import logging as _logging
 
 _shadow_log = _logging.getLogger("immune.shadow")
+
+# Configure shadow logger to write to file if not already configured.
+# This ensures v1-vs-v2 comparison data, formalisation agent output,
+# and typed LLM classifier results are persisted for analysis.
+if not _shadow_log.handlers:
+    _shadow_log.setLevel(_logging.INFO)
+    import os as _os
+    _shadow_log_dir = _os.path.join(
+        _os.path.dirname(_os.path.dirname(__file__)), "bench", "logs"
+    )
+    # Resolve correctly regardless of import path
+    _shadow_log_dir = _os.path.join(
+        _os.path.dirname(_os.path.abspath(__file__)), "logs"
+    )
+    _os.makedirs(_shadow_log_dir, exist_ok=True)
+    _shadow_fh = _logging.FileHandler(
+        _os.path.join(_shadow_log_dir, "immune_shadow.log"),
+        encoding="utf-8",
+    )
+    _shadow_fh.setLevel(_logging.INFO)
+    _shadow_fh.setFormatter(_logging.Formatter(
+        "%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+    ))
+    _shadow_log.addHandler(_shadow_fh)
 
 
 # ── 0. SKIN BARRIER — deterministic pre-filter ───────────────────────────────
@@ -1562,10 +1586,10 @@ def cytotoxic_t_cell_v2_shadow(
     source_paths: List[str],
     timeout: int = 180,
 ) -> List[CellVerdict]:
-    """Shadow Cytotoxic T Cell v2: falsifier architecture.
+    """Cytotoxic T Cell v2: falsifier architecture.
 
-    Runs alongside the existing CT Cell. Its output is logged but does
-    not affect pipeline decisions in Run 11.
+    This implementation now participates in the active pipeline. Its verdicts
+    are logged and also returned for Helper-T synthesis and reconciliation.
     """
     code_findings = [
         tf for tf in triaged
@@ -1876,10 +1900,10 @@ def b_cell_v2_shadow(
     triaged: List[TriagedFinding],
     source_paths: List[str],
 ) -> List[CellVerdict]:
-    """Shadow B Cell v2: AST-grounded z3 verification.
+    """B Cell v2: AST-grounded z3 verification.
 
-    Runs alongside the existing B Cell. Its output is logged but does
-    not affect pipeline decisions in Run 11.
+    This implementation now participates in the active pipeline. Its verdicts
+    are logged and also returned for Helper-T synthesis and reconciliation.
     """
     verdicts: List[CellVerdict] = []
 
@@ -1909,14 +1933,12 @@ def b_cell_v2_shadow(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# V2 SHADOW COMPONENTS — Gemini CDSFL/FFF Immune Cell Review (4 April 2026)
+# V2 COMPONENTS — Gemini CDSFL/FFF Immune Cell Review (4 April 2026)
 #
 # Each v2 function implements improvements identified through 4 Gemini
 # conversations under full CDSFL/FFF (12 rounds, 13 findings, 5/5 proofs).
-# All run in shadow mode (Run 11): they log what they would have done
-# differently from v1, but do not affect pipeline decisions.
-#
-# Activation target: Run 12 (after shadow data validates the improvements).
+# All v2 components are now ACTIVE in the pipeline (activated WP6a, Exp 29).
+# DC v2, NK v2, Reg T v2 are PRIMARY. CT v2, B-Cell v2 run in parallel with v1.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 import math as _math
@@ -1991,7 +2013,7 @@ def dendritic_cell_v2_shadow(
     findings: List[Finding],
     v1_triaged: List[TriagedFinding],
 ) -> List[TriagedFinding]:
-    """Shadow DC v2: compare tightened classification against v1.
+    """Dendritic Cell v2: tightened classification with v1 comparison logging.
 
     Logs every case where v2 would classify differently from v1.
     Returns v2 triaged list for shadow pipeline consumption.
@@ -2033,11 +2055,12 @@ def nk_cell_v2_shadow(
     tau_sim: float = 0.33,
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
-    """Shadow NK v2: fixes control flow leak + adds intra-round dedup.
+    """NK Cell v2: fixes control flow leak + adds intra-round dedup.
 
     Changes from v1:
     1. FP match now skips anomaly detection (continue after break)
     2. Intra-round dedup: checks against current batch, not just prior
+    3. Returned triaged state marks duplicates for downstream synthesis
     """
     fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES
     verdicts: List[CellVerdict] = []
@@ -2057,7 +2080,10 @@ def nk_cell_v2_shadow(
                 best_sim = sim
                 best_match = pf.finding_id
 
-        if best_sim >= tau_sim:
+        if best_sim >= tau_sim and best_match is not None:
+            tf.is_duplicate = True
+            tf.duplicate_of = best_match
+            tf.similarity = best_sim
             verdicts.append(CellVerdict(
                 cell_type=CellType.NK_CELL,
                 finding_id=f.finding_id,
@@ -2077,7 +2103,10 @@ def nk_cell_v2_shadow(
                 intra_best_sim = sim
                 intra_best_match = af.finding_id
 
-        if intra_best_sim >= tau_sim:
+        if intra_best_sim >= tau_sim and intra_best_match is not None:
+            tf.is_duplicate = True
+            tf.duplicate_of = intra_best_match
+            tf.similarity = intra_best_sim
             verdicts.append(CellVerdict(
                 cell_type=CellType.NK_CELL,
                 finding_id=f.finding_id,
@@ -2131,7 +2160,7 @@ def nk_cell_v2_shadow(
         sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup"),
     )
 
-    # Return original triaged (unchanged) — shadow doesn't mutate state
+    # Return updated triaged state — NK v2 now marks duplicates for downstream
     return triaged, verdicts
 
 
@@ -2184,7 +2213,7 @@ def helper_t_v2_shadow(
     all_verdicts: List[CellVerdict],
     rejection_asymmetry: float = 0.7,
 ) -> Tuple[Dict[str, str], Dict[str, float]]:
-    """Shadow Helper T v2: hybrid domain-based synthesis.
+    """Helper T Cell v2: hybrid domain-based synthesis.
 
     Two-level aggregation:
     1. Within each domain (code, math, pattern): log-odds aggregation
@@ -2291,10 +2320,10 @@ def helper_t_v2_shadow(
 def regulatory_t_v2_shadow(
     final_verdicts: Dict[str, str],
     triaged: List[TriagedFinding],
-    max_rejection_rate: float = 0.50,
+    max_rejection_rate: float = 0.65,
     min_findings_for_check: int = 5,
 ) -> Tuple[bool, str]:
-    """Shadow Regulatory T v2: fixed math.
+    """Regulatory T Cell v2: fixed math.
 
     Changes from v1:
     1. Check 1 uses combined removal rate (rejected + duplicated) / total
@@ -2383,7 +2412,7 @@ confidence intervals, or statistical significance.
 return values, incorrect state transitions, or logic errors.
 - UNCATEGORISED: the finding does not clearly fit any of the above."""
 
-_CLASSIFIER_MODEL = "anthropic/claude-haiku"  # Cheapest, fastest — classification only
+_CLASSIFIER_MODEL = "anthropic/claude-3-5-haiku-20241022"  # Cheapest, fastest — classification only
 
 
 def typed_llm_classifier_shadow(
@@ -2718,7 +2747,7 @@ def run_immune_pipeline(
     ct_timeout: int = 180,
     tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
-    max_rejection_rate: float = 0.50,
+    max_rejection_rate: float = 0.65,
 ) -> ImmuneResponse:
     """Run the full 6-cell immune pipeline.
 
@@ -2795,6 +2824,7 @@ def run_immune_pipeline(
     # MF-20 fix: deep-copy triaged list for NK to prevent race conditions
     import copy
     triaged_for_nk = copy.deepcopy(triaged)
+    nk_triaged_result = None  # Will hold NK v2's returned triaged state
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         futures = {}
@@ -2831,7 +2861,7 @@ def run_immune_pipeline(
                 result = future.result(timeout=ct_timeout + 30)
                 if name == "nk_v2":
                     # NK v2 returns (triaged, verdicts) tuple
-                    _, nk_verdicts = result
+                    nk_triaged_result, nk_verdicts = result
                     all_verdicts.extend(nk_verdicts)
                     for v in nk_verdicts:
                         tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
@@ -2848,6 +2878,10 @@ def run_immune_pipeline(
                 )
 
     timings["parallel_verification"] = round(time.monotonic() - t0, 4)
+
+    # Adopt NK v2's triaged state with duplicate flags if available
+    if nk_triaged_result is not None:
+        triaged = nk_triaged_result
 
     # ── Stage 2.5: Formalisation Agent shadow (WP3d) ─────────────────
     # Extracts preconditions, logs whether B-Cell false rejections

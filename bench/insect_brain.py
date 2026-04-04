@@ -30,12 +30,11 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bench.dm._types import DynamicManagementConfig, Finding
 from bench.dm._convergence import ConvergenceDetector
@@ -391,7 +390,7 @@ class InsectBrain:
 
         # Over budget — last round only
         last_round_idx = self.state.round_records[-1].round_idx
-        last_sections = [(r, l, t) for r, l, t in all_sections if r == last_round_idx]
+        last_sections = [(r, label, txt) for r, label, txt in all_sections if r == last_round_idx]
         last_text = self._render_response_sections(last_sections)
 
         if len(last_text) <= budget:
@@ -455,11 +454,11 @@ class InsectBrain:
         record = RoundRecord(
             round_idx=round_idx,
             timestamp=timestamp,
-            model_responses=model_responses,
-            findings=findings,
+            model_responses=dict(model_responses),
+            findings=list(findings),
             finding_count=len(findings),
             duration_s=duration_s,
-            failures=failures or {},
+            failures=dict(failures or {}),
         )
 
         # Update internal state
@@ -533,13 +532,28 @@ class InsectBrain:
                 for f in rnd
             ])
 
+        serialised_round_records = []
+        for rr in self.state.round_records:
+            serialised_round_records.append({
+                "round_idx": rr.round_idx,
+                "timestamp": rr.timestamp,
+                "finding_count": rr.finding_count,
+                "duration_s": rr.duration_s,
+                "failures": rr.failures,
+                "metrics": rr.metrics,
+                # model_responses intentionally omitted — large, already in round_XX.json
+            })
+
         checkpoint = {
             "completed_round": self.state.current_round,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "all_findings": serialised_findings,
+            "round_records": serialised_round_records,
             "active_models": self.state.active_models,
             "converged": self.state.converged,
             "convergence_reason": self.state.convergence_reason,
+            "failed": self.state.failed,
+            "failure_reason": self.state.failure_reason,
         }
         filepath.write_text(json.dumps(checkpoint, indent=2), encoding="utf-8")
 
@@ -832,16 +846,40 @@ class InsectBrain:
         self.state.active_models = data.get("active_models", [])
         self.state.converged = data.get("converged", False)
         self.state.convergence_reason = data.get("convergence_reason", "")
+        self.state.failed = data.get("failed", False)
+        self.state.failure_reason = data.get("failure_reason", "")
 
-        # Replay findings into convergence detector
+        # Restore round records from checkpoint
+        self.state.round_records = []
+        rr_by_idx = {
+            r["round_idx"]: r
+            for r in data.get("round_records", [])
+            if isinstance(r, dict) and "round_idx" in r
+        }
+
+        # Replay findings into a fresh convergence detector with persisted durations
+        self.conv_detector = ConvergenceDetector(self.config)
         for round_idx, findings in enumerate(self.state.all_findings):
-            self.conv_detector.add_round_findings(round_idx, findings, duration=0.0)
+            rr = rr_by_idx.get(round_idx, {})
+            duration = float(rr.get("duration_s", 0.0))
+            self.state.round_records.append(RoundRecord(
+                round_idx=round_idx,
+                timestamp=rr.get("timestamp", ""),
+                model_responses={},  # Not stored in checkpoint — available in round_XX.json
+                findings=findings,
+                finding_count=len(findings),
+                metrics=rr.get("metrics", {}),
+                failures=rr.get("failures", {}),
+                duration_s=duration,
+            ))
+            self.conv_detector.add_round_findings(round_idx, findings, duration=duration)
 
         logger.info(
-            "Checkpoint loaded: round %d, %d total findings, %d models",
+            "Checkpoint loaded: round %d, %d total findings, %d models, %d round records",
             self.state.current_round,
             sum(len(rnd) for rnd in self.state.all_findings),
             len(self.state.active_models),
+            len(self.state.round_records),
         )
         return True
 

@@ -510,8 +510,8 @@ class VerificationChain:
         for i, record in enumerate(self._records):
             try:
                 ok, msg = self._verify_single(i, record, verifier=verifier)
-            except (KeyError, TypeError, ValueError) as exc:
-                ok, msg = False, f"malformed record: {exc}"
+            except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+                ok, msg = False, f"record verification error: {exc}"
             if not ok:
                 errors.append(f"Record {i}: {msg}")
 
@@ -557,9 +557,12 @@ class VerificationChain:
     def verify_inclusion_proof(self, proof: dict, merkle_root: str) -> bool:
         """Verify an inclusion proof against a given Merkle root.
 
-        merkle_root should be in 'sha256:<hex>' format.
+        merkle_root should be in 'sha256:<hex>' format. If the proof embeds a
+        merkle_root field, it must match the supplied root.
         """
         try:
+            if "merkle_root" in proof and proof["merkle_root"] != merkle_root:
+                return False
             leaf_data = _digest_bytes(proof["chain_hash"])
             root_bytes = _digest_bytes(merkle_root)
             return rfc9162_verify_inclusion(leaf_data, proof["proof"], root_bytes)
@@ -706,6 +709,8 @@ class VerificationChain:
     def _verify_epoch(self, epoch: dict) -> tuple[bool, str]:
         """Verify a stored epoch's Merkle root against the chain records."""
         record_count = epoch.get("record_count", 0)
+        if record_count < 1:
+            return False, "epoch record_count must be >= 1"
         if record_count > len(self._records):
             return False, (
                 f"epoch claims {record_count} records but chain has "
