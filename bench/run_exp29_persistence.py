@@ -38,6 +38,7 @@ Usage:
     --relay-mode M  — how the brain relays between models (default: conversational)
                       findings: parsed findings only (IDs, severities, descriptions)
                       conversational: full model responses (reasoning chains visible)
+                      directed: conversational + @tag directed inter-model messaging
 """
 
 from __future__ import annotations
@@ -444,7 +445,9 @@ def _dispatch_round(
 
     # Get relay payloads from insect brain (round > 0 only)
     if round_idx > 0:
-        if relay_mode == "conversational":
+        if relay_mode == "directed":
+            relay_payloads = brain.relay_directed(round_idx)
+        elif relay_mode == "conversational":
             relay_payloads = brain.relay_conversational(round_idx)
         else:
             relay_payloads = brain.relay(round_idx)
@@ -460,7 +463,7 @@ def _dispatch_round(
             return prompt
 
         # Inject brain's relay payload into prompt
-        if relay_mode == "conversational":
+        if relay_mode in ("directed", "conversational"):
             relay_section = (
                 f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
                 f"You are reviewing the same artifact as {len(payload.active_models) - 1} "
@@ -696,7 +699,39 @@ def run_experiment(
     roster_lines = "\n".join(
         f"  - {label}: {desc}" for label, desc in sorted(MODEL_ROSTER.items())
     )
-    if relay_mode == "conversational":
+    if relay_mode == "directed":
+        awareness_preamble = (
+            "You are one of 5 AI models participating in a distributed code review "
+            "under full CDSFL constraints with FFF methodology. The participating models are:\n"
+            f"{roster_lines}\n\n"
+            "INTER-MODEL MESSAGING:\n"
+            "You can direct messages to specific models using @tags. Examples:\n"
+            "  @Gemini: Your F003 claims the Merkle root is recomputed on every read — "
+            "can you provide evidence? I see caching at line 142.\n"
+            "  @DeepSeek: Your FOLLOW trace for F007 stops at the immune pipeline. "
+            "What happens to rejected findings downstream?\n"
+            "  QUESTION_FOR: CC2\n"
+            "  Your proposed fix for F012 changes the checkpoint schema. "
+            "Have you traced whether load_checkpoint() handles the old format?\n"
+            "  RESPONSE_TO: Codex\n"
+            "  You are correct that the budget calculation double-counts. "
+            "Here is a concrete fix: ...\n\n"
+            "You WILL receive directed messages from other models in a clearly marked "
+            "ADDRESSED TO YOU section at the top of your context. You MUST respond to "
+            "these — they are direct questions or challenges about your work.\n\n"
+            "In each round after Round 0, you will also see the OTHER models' complete "
+            "analysis from the previous round. You should:\n"
+            "  - RESPOND to any directed messages addressed to you\n"
+            "  - DIRECT specific questions or challenges to other models using @tags\n"
+            "  - ENGAGE with their reasoning: challenge weak evidence, confirm strong claims\n"
+            "  - EXTEND their insights: follow implications they may have missed\n"
+            "  - FIND what everyone missed: the highest-value findings are the ones "
+            "no other model has identified\n\n"
+            "You remain under full CDSFL + FFF constraints. Every finding must have "
+            "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
+            "The conversation is rigorous, not chatty.\n\n"
+        )
+    elif relay_mode == "conversational":
         awareness_preamble = (
             "You are one of 5 AI models participating in a distributed code review "
             "under full CDSFL constraints with FFF methodology. The participating models are:\n"
@@ -791,6 +826,16 @@ def run_experiment(
         # Persist round via brain
         round_elapsed = time.monotonic() - round_start
         brain.persist(round_idx, responses, findings, duration_s=round_elapsed)
+
+        # Extract directed messages from model responses (for directed relay mode)
+        if relay_mode == "directed":
+            for model_label, response_text in responses.items():
+                if response_text:
+                    directed = brain.extract_directed_messages(
+                        model_label, response_text, round_idx,
+                    )
+                    if directed:
+                        _log(f"  {model_label}: {len(directed)} directed message(s) extracted")
 
         # Run immune pipeline through brain
         immune_result = brain.run_immune_pipeline(findings)

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -81,6 +82,21 @@ class RoundRecord:
 
 
 @dataclass
+class DirectedMessage:
+    """A directed inter-model message extracted from response text.
+
+    The brain extracts these mechanically by pattern-matching @tags,
+    QUESTION_FOR:, DIRECTED:, and RESPONSE_TO: blocks. It does not
+    evaluate the content — it routes it.
+    """
+    sender: str              # model_label of the sender
+    recipient: str           # model_label of the intended recipient
+    content: str             # the message body
+    round_idx: int           # round in which the message was produced
+    message_type: str        # question | challenge | response | extension
+
+
+@dataclass
 class BrainState:
     """Current state of the insect brain. Minimal working memory.
 
@@ -92,6 +108,7 @@ class BrainState:
     all_findings: List[List[Finding]] = field(default_factory=list)
     round_records: List[RoundRecord] = field(default_factory=list)
     active_models: List[str] = field(default_factory=list)
+    directed_messages: List[DirectedMessage] = field(default_factory=list)
     converged: bool = False
     convergence_reason: str = ""
     failed: bool = False
@@ -423,6 +440,333 @@ class InsectBrain:
         return "\n".join(parts)
 
     # ───────────────────────────────────────────────────────────────────────
+    # Core function 1c: Directed messaging
+    # ───────────────────────────────────────────────────────────────────────
+
+    # Patterns that models can use to direct messages to specific peers.
+    # The brain matches these mechanically — it does not evaluate content.
+    _DIRECTED_PATTERNS = [
+        # @ModelName followed by content (up to end of paragraph or next @tag)
+        # Captures: (recipient, content)
+        re.compile(
+            r"@(\w+)\s*[:\-—]?\s*(.+?)(?=\n@\w|\n\n|\Z)",
+            re.DOTALL,
+        ),
+        # QUESTION_FOR: ModelName\n content block
+        re.compile(
+            r"QUESTION_FOR:\s*(\w+)\s*\n(.+?)(?=\nQUESTION_FOR:|\nDIRECTED:|\nRESPONSE_TO:|\n\n\n|\Z)",
+            re.DOTALL,
+        ),
+        # DIRECTED: ModelName: content block
+        re.compile(
+            r"DIRECTED:\s*(\w+)\s*[:\-—]\s*(.+?)(?=\nQUESTION_FOR:|\nDIRECTED:|\nRESPONSE_TO:|\n\n\n|\Z)",
+            re.DOTALL,
+        ),
+        # RESPONSE_TO: ModelName content block
+        re.compile(
+            r"RESPONSE_TO:\s*(\w+)\s*[:\-—]?\s*(.+?)(?=\nQUESTION_FOR:|\nDIRECTED:|\nRESPONSE_TO:|\n\n\n|\Z)",
+            re.DOTALL,
+        ),
+    ]
+
+    # Maps pattern index to message_type
+    _PATTERN_TYPE_MAP = {
+        0: "question",    # @tag — default to question (most common use case)
+        1: "question",    # QUESTION_FOR
+        2: "challenge",   # DIRECTED — generic directed, default challenge
+        3: "response",    # RESPONSE_TO
+    }
+
+    def extract_directed_messages(
+        self,
+        model_label: str,
+        response_text: str,
+        round_idx: int,
+    ) -> List[DirectedMessage]:
+        """Extract directed messages from a model's response text.
+
+        Mechanical pattern-matching only. Matches @tags, QUESTION_FOR:,
+        DIRECTED:, and RESPONSE_TO: blocks.
+
+        Rules:
+        - Self-directed messages (sender == recipient) are discarded.
+        - Unknown model names (not in active_models) are discarded.
+        - Duplicate recipient+content pairs within a round are deduped.
+
+        Returns list of DirectedMessages, stored in state.directed_messages.
+        """
+        messages: List[DirectedMessage] = []
+        seen: set[Tuple[str, str]] = set()  # (recipient, content_hash)
+        active = set(self.state.active_models)
+
+        for pat_idx, pattern in enumerate(self._DIRECTED_PATTERNS):
+            for match in pattern.finditer(response_text):
+                recipient_raw = match.group(1).strip()
+                content = match.group(2).strip()
+
+                # Strip leading separator punctuation that leaked into content
+                content = content.lstrip(":—- \t")
+
+                if not content:
+                    continue
+
+                # Resolve recipient — case-insensitive match against active models
+                recipient = self._resolve_model_name(recipient_raw, active)
+                if recipient is None:
+                    continue
+
+                # Skip self-directed messages
+                if recipient == model_label:
+                    continue
+
+                # Dedup within this extraction
+                content_key = (recipient, content[:200])
+                if content_key in seen:
+                    continue
+                seen.add(content_key)
+
+                msg_type = self._PATTERN_TYPE_MAP.get(pat_idx, "extension")
+                messages.append(DirectedMessage(
+                    sender=model_label,
+                    recipient=recipient,
+                    content=content,
+                    round_idx=round_idx,
+                    message_type=msg_type,
+                ))
+
+        # Store in brain state
+        self.state.directed_messages.extend(messages)
+
+        if messages:
+            logger.info(
+                "Extracted %d directed messages from %s (round %d): %s",
+                len(messages), model_label, round_idx,
+                ", ".join(f"{m.recipient}({m.message_type})" for m in messages),
+            )
+
+        return messages
+
+    @staticmethod
+    def _resolve_model_name(
+        raw_name: str,
+        active_models: set[str],
+    ) -> Optional[str]:
+        """Resolve a raw model name to an active model label.
+
+        Case-insensitive match. Returns None if no match found.
+        """
+        # Exact match first
+        if raw_name in active_models:
+            return raw_name
+
+        # Case-insensitive match
+        lower_map = {m.lower(): m for m in active_models}
+        if raw_name.lower() in lower_map:
+            return lower_map[raw_name.lower()]
+
+        return None
+
+    def relay_directed(self, round_idx: int) -> Dict[str, RelayPayload]:
+        """Prepare relay payloads with directed message priority injection.
+
+        Like relay_conversational(), but:
+        1. Directed messages TO a model appear first with ADDRESSED TO YOU header
+        2. Budget priority: directed > own prior > latest round broadcast > older
+        3. Models with no directed messages get standard conversational relay
+
+        This is the recommended relay mode once models are aware of @tagging.
+        """
+        payloads: Dict[str, RelayPayload] = {}
+
+        for model_label in self.state.active_models:
+            text, context_reset = self._format_responses_with_directed(
+                model_label, round_idx,
+            )
+
+            if round_idx > 0:
+                try:
+                    kappa = self.conv_detector.kappa(round_idx - 1)
+                    conv_summary = f"Convergence: kappa={kappa:.3f} (threshold={self.config.tau_kappa})"
+                except Exception:
+                    conv_summary = "Convergence: insufficient data"
+            else:
+                conv_summary = "Round 0: blind round (no prior data)"
+
+            total_findings = sum(len(rnd) for rnd in self.state.all_findings)
+
+            payloads[model_label] = RelayPayload(
+                model_label=model_label,
+                round_idx=round_idx,
+                findings_text=text,
+                finding_count=total_findings,
+                context_reset=context_reset,
+                convergence_summary=conv_summary,
+                active_models=list(self.state.active_models),
+            )
+
+        logger.info(
+            "Directed relay for round %d: %d models",
+            round_idx, len(payloads),
+        )
+        return payloads
+
+    def _format_responses_with_directed(
+        self,
+        model_label: str,
+        round_idx: int,
+    ) -> Tuple[str, bool]:
+        """Format context with directed message priority injection.
+
+        Priority order (highest to lowest):
+        1. Directed messages addressed to this model
+        2. Broadcast: other models' responses (latest round first)
+        3. Broadcast: older rounds
+
+        Budget allocation: directed messages get first claim on budget.
+        Broadcast fills the remainder.
+        """
+        if not self.state.round_records and not self.state.directed_messages:
+            return "", False
+
+        budget = self.config.context_budget_overrides.get(
+            model_label, self.config.context_budget_chars,
+        )
+
+        # ── Priority 1: Directed messages to this model ──
+        directed_to_me = [
+            m for m in self.state.directed_messages
+            if m.recipient == model_label
+        ]
+        directed_text = ""
+        if directed_to_me:
+            directed_text = self._render_directed_messages(directed_to_me)
+
+        # Reserve budget for directed messages (they always survive)
+        directed_cost = len(directed_text)
+        broadcast_budget = max(0, budget - directed_cost)
+
+        # ── Priority 2+3: Broadcast (other models' responses) ──
+        broadcast_text = ""
+        context_reset = False
+        if self.state.round_records:
+            broadcast_text, context_reset = self._format_broadcast_within_budget(
+                model_label, broadcast_budget,
+            )
+
+        # Assemble final text: directed first, then broadcast
+        parts = []
+        if directed_text:
+            parts.append(directed_text)
+        if broadcast_text:
+            parts.append(broadcast_text)
+
+        return "\n\n".join(parts), context_reset
+
+    @staticmethod
+    def _render_directed_messages(messages: List[DirectedMessage]) -> str:
+        """Render directed messages with ADDRESSED TO YOU header."""
+        if not messages:
+            return ""
+
+        lines = [
+            "╔══════════════════════════════════════════════════════════╗",
+            "║  MESSAGES ADDRESSED TO YOU — respond to these directly  ║",
+            "╚══════════════════════════════════════════════════════════╝",
+            "",
+        ]
+        for msg in messages:
+            type_label = msg.message_type.upper()
+            lines.append(
+                f"──── FROM {msg.sender} (Round {msg.round_idx}, {type_label}) ────"
+            )
+            lines.append(msg.content)
+            lines.append("")
+
+        return "\n".join(lines)
+
+    def _format_broadcast_within_budget(
+        self,
+        model_label: str,
+        budget: int,
+    ) -> Tuple[str, bool]:
+        """Format broadcast responses within a given budget.
+
+        Degradation ladder: all rounds → last round → findings summary.
+        """
+        # Collect all other models' responses
+        all_sections: List[Tuple[int, str, str]] = []
+        for record in self.state.round_records:
+            for resp_label, resp_text in record.model_responses.items():
+                if resp_label != model_label and resp_text:
+                    all_sections.append((record.round_idx, resp_label, resp_text))
+
+        if not all_sections:
+            return "", False
+
+        # Try full responses
+        full_text = self._render_response_sections(all_sections)
+        if len(full_text) <= budget:
+            return full_text, False
+
+        # Over budget — last round only
+        last_round_idx = self.state.round_records[-1].round_idx
+        last_sections = [
+            (r, label, txt) for r, label, txt in all_sections
+            if r == last_round_idx
+        ]
+        last_text = self._render_response_sections(last_sections)
+
+        if len(last_text) <= budget:
+            n_earlier = len(all_sections) - len(last_sections)
+            header = (
+                f"(CONTEXT BUDGET: showing last round responses only. "
+                f"{n_earlier} earlier responses from other models exist.)\n\n"
+            )
+            return header + last_text, False
+
+        # Still over — fall back to findings summary (context reset)
+        cross_findings: List[Finding] = []
+        for rnd in self.state.all_findings:
+            for f in rnd:
+                if f.model_id != model_label:
+                    cross_findings.append(f)
+        return self._format_findings_summary(cross_findings), True
+
+    def get_directed_messages_for_model(
+        self,
+        model_label: str,
+        round_idx: Optional[int] = None,
+    ) -> List[DirectedMessage]:
+        """Get all directed messages addressed to a specific model.
+
+        Optionally filter by round_idx.
+        """
+        messages = [
+            m for m in self.state.directed_messages
+            if m.recipient == model_label
+        ]
+        if round_idx is not None:
+            messages = [m for m in messages if m.round_idx == round_idx]
+        return messages
+
+    def get_directed_messages_from_model(
+        self,
+        model_label: str,
+        round_idx: Optional[int] = None,
+    ) -> List[DirectedMessage]:
+        """Get all directed messages sent by a specific model.
+
+        Optionally filter by round_idx.
+        """
+        messages = [
+            m for m in self.state.directed_messages
+            if m.sender == model_label
+        ]
+        if round_idx is not None:
+            messages = [m for m in messages if m.round_idx == round_idx]
+        return messages
+
+    # ───────────────────────────────────────────────────────────────────────
     # Core function 2: persist()
     # ───────────────────────────────────────────────────────────────────────
 
@@ -544,11 +888,23 @@ class InsectBrain:
                 # model_responses intentionally omitted — large, already in round_XX.json
             })
 
+        serialised_directed = [
+            {
+                "sender": dm.sender,
+                "recipient": dm.recipient,
+                "content": dm.content,
+                "round_idx": dm.round_idx,
+                "message_type": dm.message_type,
+            }
+            for dm in self.state.directed_messages
+        ]
+
         checkpoint = {
             "completed_round": self.state.current_round,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "all_findings": serialised_findings,
             "round_records": serialised_round_records,
+            "directed_messages": serialised_directed,
             "active_models": self.state.active_models,
             "converged": self.state.converged,
             "convergence_reason": self.state.convergence_reason,
@@ -848,6 +1204,17 @@ class InsectBrain:
         self.state.convergence_reason = data.get("convergence_reason", "")
         self.state.failed = data.get("failed", False)
         self.state.failure_reason = data.get("failure_reason", "")
+
+        # Restore directed messages
+        self.state.directed_messages = []
+        for dm_data in data.get("directed_messages", []):
+            self.state.directed_messages.append(DirectedMessage(
+                sender=dm_data["sender"],
+                recipient=dm_data["recipient"],
+                content=dm_data["content"],
+                round_idx=dm_data["round_idx"],
+                message_type=dm_data.get("message_type", "question"),
+            ))
 
         # Restore round records from checkpoint
         self.state.round_records = []
