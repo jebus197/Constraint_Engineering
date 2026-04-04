@@ -540,6 +540,56 @@ This reframes the engineering problem. The diversity value is real but perishabl
 
 The deeper question, which Experiment 12 cannot answer, is whether five frontier models from four vendors constitute genuine cognitive diversity or just minor variations on the same training paradigm. The vocabulary overlap data suggests real differences in how models approach the same artifact. But with a population of five, "diversity" may be more apparent than real. The ecosystem would need to be larger — different training paradigms, different architectures, different scales — to test the strong form of the hypothesis. For now, the working conclusion is: the diversity that exists is valuable, it is fragile, and preserving it through an experiment is an engineering problem that the dynamic management layer must solve.
 
+## From Self-Orchestration to Self-Falsification (30–31 March 2026)
+
+The week after Experiment 12 was the densest experimental sequence of the project. Five experiments (14–18) in three days, each building on the previous. The pattern was: run the system, find what breaks, fix it, run it again. Classical engineering, but with the system under test being the testing infrastructure itself.
+
+Experiment 14 found the convergence blindness bug — when all models were decomposed, the convergence detector received an empty set and declared perfect agreement. Kappa = 1.0. Everything converges when there is nothing to measure. That is a clean illustration of a failure mode I should have anticipated: the instruments do not just need to be correct, they need to degrade gracefully when their inputs disappear.
+
+Experiment 16 was the first time I used the full 5-model distributed compute protocol to review an execution plan rather than code. Fifty-four findings from five models reviewing a document. Eleven convergent themes. The most valuable output was not the individual findings but the convergence pattern — when 5 out of 5 models independently flag the same structural issue, that is a different kind of evidence than when one model raises a concern. The plan was substantially redesigned before execution.
+
+Experiment 18 tested Find-Fix-Follow (FFF) — the principle that fixing a bug is not complete until you have traced every consequence of both the bug and the fix through the system. Two models, three rounds, seven genuine fixes in code that had already been reviewed by five models under standard confer. FFF finds what confer misses. The mechanism is the consequence-tracing obligation: the second model must examine the first model's fix, not just the original code. Standard confer examines artifacts. FFF examines the delta.
+
+The most striking single finding from this sequence: CX at o4-mini produced zero genuine findings on the same code where CX at GPT-5.4 with xhigh reasoning produced five. FFF amplifies the capability gap between configurations. A weak model under FFF does not become a strong model. A strong model under FFF becomes measurably stronger.
+
+## The Immune Pipeline Under Fire (2–4 April 2026)
+
+Four baseline runs (8–11) against the immune pipeline itself. The trajectory tells the story:
+
+Run 8: 339 findings, 91% churn, no convergence. Twenty rounds of models rewording the same complaints. The finding-ID convergence signal did not exist.
+
+Run 9: 425 findings, 85% churn, six infrastructure bugs discovered. The B-Cell had been dead since it was created — a NameError in the Z3 verifier, hidden by a silent `except: pass`. The convergence check was bypassed from round 5 onwards by a `continue` statement. The NK dedup threshold was hardcoded at 0.8, making it unreachable. Every one of these bugs was my code.
+
+Run 10: All six bugs fixed. 237 findings, 27% churn, natural convergence at round 6. The B-Cell came alive with 86 verdicts — 78 SymPy, 8 Z3. The system worked as designed for the first time.
+
+Run 11: Two rounds. Fifty-nine findings. Fastest convergence in bench history. The immune pipeline rejected 67% of round 1 findings as duplicates. The system was now so effective at filtering that it converged before it could fully explore.
+
+The per-model data from Run 10 is the cleanest evidence for the biodiversity hypothesis to date. Every model contributed unique findings no other model found. Unique ratios ranged from 60% (ChatGPT) to 90% (Gemini). Remove any single model and coverage drops. This is arithmetic, not argument.
+
+CC2's dispatch failure in Run 11 — total timeout on a 358K character payload — was a clean illustration of the delivery mechanism problem I first encountered with Codex in Experiment 11. The model is not incapable. The infrastructure cannot handle the payload. The fix (timeout 300→900s, retries 3→1) is plumbing, not intelligence.
+
+## Complementarity, Not Competition (4 April 2026)
+
+The HIL comparison experiments (C1–C5) settled something I had been uncertain about since the project began.
+
+C1 was a human developer — me — having a reactive conversation with Gemini. Five prompts, three minutes, twenty-five verified findings, zero false positives. Five of those findings were cross-component pipeline interactions that the automated CDSFL decomposition structurally cannot find, because cell decomposition prevents the model from seeing the full system.
+
+C4 was Gemini under CDSFL with structured Meta prompting. Sixteen survivors after self-retraction of eleven findings. Eleven formal proofs. Deep per-component analysis that conversational review cannot match.
+
+The overlap between C1 and C4 was five findings. The union was thirty-three. That 32% coverage gain from combining two approaches that find categorically different things is the complementarity thesis in one number.
+
+C5 — the three-layer schema — combined conversational mode with CDSFL constraints and structured prompting. Twenty-seven findings, including five cross-component bugs and six novel constructs. It found both what C1 finds and what C4 finds. Not perfectly — the wall-clock time was longer — but the coverage was the highest of any single condition.
+
+What I did not anticipate is where this observation leads. If the interaction pattern is secondary to the schema — if CDSFL provides quality assurance regardless of how the intelligence interacts with it — then the interaction pattern is a parameter, not architecture. The immune system processed findings from seven different interaction patterns without modification. The decay curves worked regardless of dispatch mode. The convergence detection was pattern-agnostic. The bench is the constant. The pattern is the variable.
+
+This was hiding in plain sight. The constraint box paper — protocol × focus × context — already had the dimensions identified. The C1–C5 experiments were, without my initially recognising it, a systematic exploration of coordinates in that space. Every coordinate produced valid findings under CDSFL constraints. None produced false positives. The quality assurance came from the schema, not from the interaction pattern.
+
+The practical implication: interaction patterns should be user-configurable presets in the directive composer's Situation layer. The bench should provide an environment in which new and potentially better patterns can be tested. CDSFL is not the intelligence. It never claimed to be. It is the bench on which intelligence runs. The intelligence — and its diversity — is what makes the bench productive.
+
+This also reframes the diversity argument. The per-model severity differences in Experiment 13b (Kruskal-Wallis H=44.74, p<0.0001) show that different models produce systematically different output quality, not just different output content. The interactor diversity dividend — demonstrated by C1's 32% coverage gain over C4 alone — extends beyond model architecture to whoever or whatever is interacting with the system. A human asking reactive questions finds different things than an automated pipeline. Both are valid. Both are valuable. Neither is sufficient alone.
+
+The question this leaves open is whether the persistence layer — the subject of Experiment 29 — can enable adaptive pattern-switching within a single run. If checkpointing works, a run could start in conversational mode, detect diminishing returns, switch to decomposed per-component analysis, and maintain state across the transition. That would make the interaction pattern not just configurable but adaptive. That is what Experiment 29 tests.
+
 ## Closing Reflection
 
 There is something almost ironic in the possibility that a meaningful slice of expert method — constraints, standards, review logic, failure modes, escalation rules — might be encodable in a space no larger than an old-school 3.5-inch floppy disk. Perhaps that image carries weight for me because it mirrors my own entry into computing: when I first engaged meaningfully with this world in the mid-1990s, floppies were still everywhere, and one of the first systems I owned was an IBM 386 clone. Set against today's vast and increasingly (and impractically) extractive datacentre paradigm, the contrast is striking. It points to a different way of thinking about capability: not only as a function of scale, but as a function of how well expertise can be encoded, benchmarked, exchanged, and improved. In that sense, for me, the circle has been closed. What once looked like a limitation of old machines, now reappears as a clue about the future of intelligence systems, where structure may matter as much as scale.
