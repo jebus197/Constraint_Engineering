@@ -132,7 +132,7 @@ from cdsfl_registry.composer import (
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────────
 
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run10_20260403"
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "baseline_confer_run11_20260404"
 
 MAX_ROUNDS = 20         # Convergence is the real stop criterion; 20 is the review point
 WALL_CLOCK_CAP_S = 8 * 3600  # 8 hours (convergence may take many rounds)
@@ -962,11 +962,18 @@ def _estimate_gamma_from_ids(
     seen_ids: set[str] = set()
     novel_per_round: List[int] = []
 
+    # Known model prefixes — strip to get base ID (e.g. "CC2_IM_F001" → "IM_F001")
+    _MODEL_PREFIXES = ("CC2_CC_", "CC2_", "ChatGPT_", "Codex_", "Gemini_", "DeepSeek_")
+
     for rnd_findings in all_findings:
         novel_count = 0
         for f in rnd_findings:
             # Strip model prefix to get base ID (e.g. "IM_F001")
             base_id = f.finding_id
+            for pfx in _MODEL_PREFIXES:
+                if base_id.startswith(pfx):
+                    base_id = base_id[len(pfx):]
+                    break
             if base_id not in seen_ids:
                 seen_ids.add(base_id)
                 novel_count += 1
@@ -1225,7 +1232,7 @@ def run_confer(
 ) -> Dict[str, Any]:
     """Run the baseline confer: blind R1 → adaptive R2+ → stop on convergence."""
     _log("=" * 60)
-    _log("BASELINE CONFER RUN 10: CC2 + CX + Gemini + DeepSeek + ChatGPT — B-Cell live, γ_ids shadow, visibility fix")
+    _log("BASELINE CONFER RUN 11: CC2 + CX + Gemini + DeepSeek + ChatGPT — seq-read instruction, z3 confidence fix, γ_ids prefix stripping")
     _log(f"  Max rounds: {MAX_ROUNDS}")
     _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
     _log(f"  Task: immune ({len(IMMUNE_SOURCE_FILES)} source files, ~244K chars)")
@@ -1281,7 +1288,7 @@ def run_confer(
     experiment_start = time.monotonic()
     start_round = 0
     result = {
-        "experiment": "baseline_confer_run9",
+        "experiment": "baseline_confer_run11",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "models": [mc.label for mc in exp_config.models
                     if mc.label in BASELINE_MODELS],
@@ -1373,7 +1380,22 @@ def run_confer(
             prior_findings_text="",  # injected per-model in dispatch
         )
 
-        # Layer 3: inject focus directive if optimiser is active
+        # Layer 3: sequential read instruction for non-decomposed models.
+        # Decomposed models already get this in _build_decomposed_prompt().
+        # Non-decomposed models (CC2, Gemini, ChatGPT) receive the full
+        # prompt in a single turn — tell them to read carefully.
+        n_files = full_code.count("=== FILE:")
+        if n_files > 0:
+            seq_instruction = (
+                f"\n\nIMPORTANT: This prompt contains {n_files} source files. "
+                f"Read each file carefully from start to finish before beginning "
+                f"your analysis. Do not skim. Build your understanding of each "
+                f"file's structure and logic sequentially, then produce your "
+                f"findings.\n"
+            )
+            base_prompt += seq_instruction
+
+        # Layer 4: inject focus directive if optimiser is active
         focus_directive = question_optimiser.get_directive_text()
         if focus_directive:
             base_prompt = focus_directive + base_prompt

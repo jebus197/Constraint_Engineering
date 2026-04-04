@@ -155,6 +155,7 @@ class ImmuneResponse:
     stage_timings: Dict[str, float]
     tool_usage: Dict[str, int]      # tool_name → times_used
     observation_only: bool          # if True, filtered_findings == all findings
+    barrier_results: List[Any] = field(default_factory=list)  # SkinBarrierResult list
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -758,15 +759,19 @@ else:
     elapsed = time.monotonic() - t0
 
     if "VERIFIED_TRUE" in output or "UNSAT_VALID" in output:
+        # Run 11: confidence downgraded from 0.90 to 0.30. z3 proofs use
+        # abstract symbols with no code grounding — they prove properties of
+        # the LLM's translation, not the actual runtime constraints. Full fix
+        # (AST-grounded SMT-LIB encoding) deferred to Run 12.
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
-            confidence=0.90, evidence=f"z3: {output}", tool_used="z3",
+            confidence=0.30, evidence=f"z3: {output}", tool_used="z3",
             elapsed_s=elapsed,
         )
     elif "VERIFIED_FALSE" in output or "SATISFIABLE_COUNTEREXAMPLE" in output:
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
-            confidence=0.90, evidence=f"z3: {output}", tool_used="z3",
+            confidence=0.30, evidence=f"z3: {output}", tool_used="z3",
             elapsed_s=elapsed,
         )
     else:
@@ -1155,6 +1160,1063 @@ def regulatory_t_cell_check(
 # ORCHESTRATOR — Run the full immune pipeline
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHADOW COMPONENTS (Run 11: observation only, Run 12+: active)
+#
+# These implement architectural improvements from the Gemini CDSFL
+# conversation (3 April 2026). They run alongside existing cells, logging
+# what they WOULD have done. Their outputs do not affect pipeline decisions
+# until explicitly activated.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import logging as _logging
+
+_shadow_log = _logging.getLogger("immune.shadow")
+
+
+# ── 0. SKIN BARRIER — deterministic pre-filter ───────────────────────────────
+#
+# Runs BEFORE the pipeline. Checks whether a finding's code citations
+# actually exist in the source files. A finding that cites code that isn't
+# there is likely hallucinated. In active mode, these would be dropped
+# before reaching the Dendritic Cell.
+
+@dataclass
+class SkinBarrierResult:
+    """Result of skin barrier check for a single finding."""
+    finding_id: str
+    passed: bool
+    reason: str
+    cited_file: str = ""
+    cited_line: int = 0
+
+
+def skin_barrier_check(
+    findings: List[Finding],
+    source_paths: List[str],
+) -> Tuple[List[Finding], List[SkinBarrierResult]]:
+    """Deterministic pre-filter: verify that cited code exists.
+
+    Checks each finding for file:line citations. If the cited code doesn't
+    exist at the cited location, the finding fails the barrier.
+
+    In shadow mode (Run 11), all findings pass through regardless.
+    The results are logged for observation.
+
+    Returns:
+        (all_findings, barrier_results) — findings unchanged in shadow mode
+    """
+    results: List[SkinBarrierResult] = []
+    source_set = set(str(p) for p in source_paths)
+
+    # Also build a set of relative paths and basenames for fuzzy matching
+    source_basenames: Dict[str, str] = {}
+    for p in source_paths:
+        source_basenames[os.path.basename(str(p))] = str(p)
+
+    for f in findings:
+        desc = f.description
+
+        # Extract file:line citations from the description
+        # Common patterns: "file.py:123", "line 123 of file.py",
+        # "at line 123", "file.py line 123"
+        citations = re.findall(
+            r'(\S+\.py)(?::|\s+line\s+)(\d+)', desc
+        )
+        if not citations:
+            # Also try "line N" without file
+            line_only = re.findall(r'\bline\s+(\d+)\b', desc)
+            if line_only:
+                citations = [("", int(ln)) for ln in line_only[:1]]
+
+        if not citations:
+            # No citations to check — passes by default
+            results.append(SkinBarrierResult(
+                finding_id=f.finding_id, passed=True,
+                reason="No file:line citation to verify",
+            ))
+            continue
+
+        # Check first citation (most findings cite one location)
+        cited_file_raw, cited_line_raw = citations[0]
+        cited_line = int(cited_line_raw) if isinstance(cited_line_raw, str) else cited_line_raw
+
+        # Resolve the file path
+        cited_file = ""
+        if cited_file_raw:
+            # Try exact match
+            if cited_file_raw in source_set or os.path.isfile(cited_file_raw):
+                cited_file = cited_file_raw
+            # Try basename match
+            elif os.path.basename(cited_file_raw) in source_basenames:
+                cited_file = source_basenames[os.path.basename(cited_file_raw)]
+            # Try partial path match
+            else:
+                for sp_path in source_paths:
+                    if str(sp_path).endswith(cited_file_raw):
+                        cited_file = str(sp_path)
+                        break
+
+        if not cited_file:
+            results.append(SkinBarrierResult(
+                finding_id=f.finding_id, passed=False,
+                reason=f"Cited file not found: {cited_file_raw}",
+                cited_file=cited_file_raw, cited_line=cited_line,
+            ))
+            continue
+
+        # Check the file exists and the line is in range
+        if not os.path.isfile(cited_file):
+            results.append(SkinBarrierResult(
+                finding_id=f.finding_id, passed=False,
+                reason=f"File does not exist: {cited_file}",
+                cited_file=cited_file, cited_line=cited_line,
+            ))
+            continue
+
+        try:
+            with open(cited_file, "r", encoding="utf-8") as fh:
+                lines = fh.readlines()
+        except (OSError, UnicodeDecodeError):
+            results.append(SkinBarrierResult(
+                finding_id=f.finding_id, passed=False,
+                reason=f"Cannot read file: {cited_file}",
+                cited_file=cited_file, cited_line=cited_line,
+            ))
+            continue
+
+        if cited_line < 1 or cited_line > len(lines):
+            results.append(SkinBarrierResult(
+                finding_id=f.finding_id, passed=False,
+                reason=f"Line {cited_line} out of range (file has {len(lines)} lines)",
+                cited_file=cited_file, cited_line=cited_line,
+            ))
+            continue
+
+        # Line exists — passes barrier
+        results.append(SkinBarrierResult(
+            finding_id=f.finding_id, passed=True,
+            reason=f"Citation verified: {os.path.basename(cited_file)}:{cited_line}",
+            cited_file=cited_file, cited_line=cited_line,
+        ))
+
+    # Log shadow results
+    passed = sum(1 for r in results if r.passed)
+    failed = sum(1 for r in results if not r.passed)
+    _shadow_log.info(
+        "Skin barrier (shadow): %d passed, %d failed out of %d findings",
+        passed, failed, len(findings),
+    )
+    for r in results:
+        if not r.passed:
+            _shadow_log.info("  BLOCKED: %s — %s", r.finding_id, r.reason)
+
+    # Shadow mode: return all findings unchanged
+    return findings, results
+
+
+# ── SHADOW Cytotoxic T Cell v2 — falsifier architecture ──────────────────────
+#
+# The v2 CT Cell shifts from investigator (does the cited code exist?) to
+# falsifier (what's the strongest condition that breaks this finding?).
+# It uses tertiary verdicts: FALSIFIED / CONTESTED / CORROBORATED.
+# The search_manifest is mechanically re-verified.
+
+_CT_V2_FALSIFIER_PROMPT = (
+    "You are a DEFENSE ATTORNEY for the codebase. Your job is to find "
+    "evidence that DISPROVES each finding. You are not neutral — you are "
+    "actively trying to show the finding is wrong.\n\n"
+    "For each finding:\n"
+    "1. Read the cited code and its surrounding context (±20 lines).\n"
+    "2. Search for counter-evidence: cases where the alleged bug is "
+    "handled, guarded, or irrelevant.\n"
+    "3. Check if the finding's premise is correct (does the code actually "
+    "do what the finding claims?).\n"
+    "4. Record your search_manifest: every file you read and every grep "
+    "you ran, with exact arguments.\n\n"
+    "For each finding, produce:\n"
+    "  - finding_id: the ID from the input\n"
+    "  - verdict: FALSIFIED (you found clear counter-evidence), "
+    "CONTESTED (partial counter-evidence or ambiguous), or "
+    "CORROBORATED (you tried to disprove it and failed)\n"
+    "  - counter_evidence: what you found that argues against the finding\n"
+    "  - search_manifest: list of {tool, args, result_summary} for each "
+    "search you performed\n"
+    "  - test_severity: number of distinct search operations performed "
+    "(higher = more thorough test)\n\n"
+    "Do NOT simply confirm findings. Your VALUE is in finding what's WRONG "
+    "with them. A finding that survives your scrutiny is stronger for it.\n\n"
+)
+
+
+def _build_ct_v2_prompt(
+    findings: List[TriagedFinding],
+    source_paths: List[str],
+) -> str:
+    """Build the CT v2 falsifier prompt."""
+    files_list = "\n".join(f"  - {p}" for p in source_paths)
+    findings_block = "\n".join(
+        f"  [{tf.finding.finding_id}] severity={tf.finding.severity:.2f} "
+        f"type={tf.claim_type.value}: {tf.finding.description}"
+        for tf in findings
+    )
+    return (
+        _CT_V2_FALSIFIER_PROMPT
+        + f"Source files available:\n{files_list}\n\n"
+        + f"Findings to challenge:\n{findings_block}\n\n"
+        + "Output: JSON object with 'verdicts' array.\n"
+    )
+
+
+def _verify_search_manifest(
+    manifest: List[Dict[str, Any]],
+    source_paths: List[str],
+) -> Tuple[int, int, List[str]]:
+    """Mechanically verify the CT v2 search manifest.
+
+    Checks that the agent's claimed searches could actually have been
+    performed (files exist, grep patterns are valid).
+
+    Returns:
+        (verified_count, total_count, issues)
+    """
+    verified = 0
+    issues: List[str] = []
+    source_set = set(str(p) for p in source_paths)
+    source_basenames = {os.path.basename(str(p)): str(p) for p in source_paths}
+
+    for step in manifest:
+        tool = step.get("tool", "")
+        args = step.get("args", "")
+
+        if tool in ("Read", "read", "cat"):
+            # Check file exists
+            file_arg = args if isinstance(args, str) else str(args)
+            # Try exact, then basename
+            exists = (
+                os.path.isfile(file_arg)
+                or file_arg in source_set
+                or os.path.basename(file_arg) in source_basenames
+            )
+            if exists:
+                verified += 1
+            else:
+                issues.append(f"File not found: {file_arg}")
+
+        elif tool in ("Grep", "grep", "rg"):
+            # Check pattern is valid regex
+            pattern = args if isinstance(args, str) else str(args)
+            try:
+                re.compile(pattern)
+                verified += 1  # Pattern is at least syntactically valid
+            except re.error:
+                issues.append(f"Invalid grep pattern: {pattern}")
+
+        elif tool in ("Glob", "glob"):
+            verified += 1  # Glob patterns are hard to invalidate
+
+        else:
+            issues.append(f"Unknown tool: {tool}")
+
+    return verified, len(manifest), issues
+
+
+def cytotoxic_t_cell_v2_shadow(
+    triaged: List[TriagedFinding],
+    source_paths: List[str],
+    timeout: int = 180,
+) -> List[CellVerdict]:
+    """Shadow Cytotoxic T Cell v2: falsifier architecture.
+
+    Runs alongside the existing CT Cell. Its output is logged but does
+    not affect pipeline decisions in Run 11.
+    """
+    code_findings = [
+        tf for tf in triaged
+        if tf.claim_type in (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
+        and not tf.is_duplicate
+    ]
+
+    if not code_findings:
+        _shadow_log.info("CT v2 (shadow): no code findings to investigate")
+        return []
+
+    if not CLAUDE_CLI:
+        _shadow_log.info("CT v2 (shadow): claude CLI not available")
+        return []
+
+    prompt = _build_ct_v2_prompt(code_findings, source_paths)
+    t0 = time.monotonic()
+
+    try:
+        cmd = [
+            CLAUDE_CLI, "-p", prompt,
+            "--allowedTools", "Read,Grep,Glob",
+            "--max-turns", "6",
+        ]
+        if _CT_SCHEMA_PATH.exists():
+            cmd.extend(["--output-format", "json"])
+
+        result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
+        elapsed = time.monotonic() - t0
+        output = result.stdout.strip()
+
+        # Parse response (reuse existing parser for structure)
+        raw_verdicts = _parse_ct_output(output)
+
+        verdicts: List[CellVerdict] = []
+        for rv in raw_verdicts:
+            fid = rv.get("finding_id", "")
+            if not fid:
+                continue
+
+            # Map v2 verdicts to standard pipeline verdicts for logging
+            v2_verdict = rv.get("verdict", "CONTESTED").upper()
+            manifest = rv.get("search_manifest", [])
+            test_severity = rv.get("test_severity", 0)
+
+            # Verify the search manifest mechanically
+            if manifest:
+                man_verified, man_total, man_issues = _verify_search_manifest(
+                    manifest, source_paths,
+                )
+                # Adjust test_severity: only count verified steps
+                test_severity = man_verified
+                manifest_note = f"manifest:{man_verified}/{man_total} verified"
+                if man_issues:
+                    manifest_note += f" issues:{man_issues}"
+            else:
+                manifest_note = "no manifest provided"
+
+            # Map to standard verdicts
+            if v2_verdict == "FALSIFIED":
+                std_verdict = "REJECTED"
+                confidence = min(0.90, 0.40 + 0.10 * test_severity)
+            elif v2_verdict == "CORROBORATED":
+                std_verdict = "CONFIRMED"
+                confidence = min(0.95, 0.50 + 0.10 * test_severity)
+            else:  # CONTESTED or unknown
+                std_verdict = "UNCERTAIN"
+                confidence = 0.40
+
+            counter_evidence = rv.get("counter_evidence", "")
+            verdicts.append(CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T,
+                finding_id=fid,
+                verdict=std_verdict,
+                confidence=round(confidence, 3),
+                evidence=(
+                    f"[CT_v2_shadow] {v2_verdict} severity={test_severity} "
+                    f"{manifest_note}. {counter_evidence[:200]}"
+                ),
+                tool_used="ct_v2_falsifier",
+                elapsed_s=elapsed,
+            ))
+
+        _shadow_log.info(
+            "CT v2 (shadow): %d verdicts in %.1fs — %s",
+            len(verdicts), elapsed,
+            {v.verdict: sum(1 for vv in verdicts if vv.verdict == v.verdict)
+             for v in verdicts} if verdicts else "none",
+        )
+        for v in verdicts:
+            _shadow_log.info(
+                "  %s: %s (%.2f) — %s",
+                v.finding_id, v.verdict, v.confidence, v.evidence[:100],
+            )
+
+        return verdicts
+
+    except sp.TimeoutExpired:
+        _shadow_log.warning("CT v2 (shadow): timeout after %ds", timeout)
+        return []
+    except Exception as e:
+        _shadow_log.warning("CT v2 (shadow): error: %s: %s", type(e).__name__, e)
+        return []
+
+
+# ── SHADOW B Cell v2 — AST-grounded z3 via SMT-LIB ──────────────────────────
+#
+# Instead of exec()-ing LLM-generated z3 Python, extract axioms from the
+# source code AST and pass them to z3 via parse_smt2_string(). This grounds
+# z3 proofs in actual code values, not abstract symbols.
+
+def _extract_constants_from_ast(source_path: str) -> Dict[str, Any]:
+    """Extract constant assignments from a Python source file's AST.
+
+    Returns a dict of {name: value} for simple assignments like:
+        THRESHOLD = 0.5
+        MAX_ROUNDS = 20
+        tau_sim = 0.33
+
+    Only extracts top-level and class-level constant assignments where
+    the value is a literal (number, string, bool, None).
+    """
+    constants: Dict[str, Any] = {}
+    try:
+        with open(source_path, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+    except (OSError, SyntaxError):
+        return constants
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant):
+                    constants[target.id] = node.value.value
+        elif isinstance(node, ast.AnnAssign):
+            if (isinstance(node.target, ast.Name)
+                    and node.value is not None
+                    and isinstance(node.value, ast.Constant)):
+                constants[node.target.id] = node.value.value
+
+    return constants
+
+
+def _build_smt2_from_claim(
+    claim: str,
+    constants: Dict[str, Any],
+) -> Optional[str]:
+    """Attempt to build an SMT-LIB string from a claim and code constants.
+
+    This is the T_Claim step — translating the natural language claim
+    into a formal specification grounded in actual code values.
+
+    Returns None if the claim cannot be translated.
+    """
+    # Extract variable names and numeric comparisons from the claim
+    # Pattern: "VARIABLE OP VALUE" or "VALUE OP VARIABLE"
+    comparisons = re.findall(
+        r'(\w+)\s*(>=|<=|>|<|==|!=)\s*([-+]?\d*\.?\d+)', claim
+    )
+    if not comparisons:
+        # Try reverse: "VALUE OP VARIABLE"
+        comparisons = re.findall(
+            r'([-+]?\d*\.?\d+)\s*(>=|<=|>|<|==|!=)\s*(\w+)', claim
+        )
+        # Swap to normalise: var op value
+        comparisons = [(c[2], _flip_op(c[1]), c[0]) for c in comparisons]
+
+    if not comparisons:
+        return None
+
+    declared: Set[str] = set()
+    declarations: List[str] = []
+    assertions: List[str] = []
+    has_grounding = False
+
+    for var_name, op, value_str in comparisons:
+        try:
+            value = float(value_str)
+        except ValueError:
+            continue
+
+        # Declare each variable only once (SMT-LIB rejects duplicates)
+        if var_name not in declared:
+            declarations.append(f"(declare-const {var_name} Real)")
+            declared.add(var_name)
+
+        smt_op = {">=": ">=", "<=": "<=", ">": ">", "<": "<",
+                   "==": "=", "!=": "distinct"}[op]
+
+        # Check if this variable has a grounded value from the AST
+        if var_name in constants and isinstance(constants[var_name], (int, float)):
+            grounded = float(constants[var_name])
+            # Assert the grounded value (only once per variable)
+            grounding_assert = f"(assert (= {var_name} {grounded}))"
+            if grounding_assert not in assertions:
+                assertions.append(grounding_assert)
+            # Assert the negation of the claim (to check via UNSAT)
+            assertions.append(
+                f"(assert (not ({smt_op} {var_name} {value})))"
+            )
+            has_grounding = True
+        else:
+            # Ungrounded variable — can only build abstract proof
+            assertions.append(
+                f"(assert (not ({smt_op} {var_name} {value})))"
+            )
+
+    if not assertions:
+        return None
+
+    smt2 = "\n".join(declarations + assertions + ["(check-sat)"])
+    return smt2 if has_grounding else None  # Only return if grounded
+
+
+def _flip_op(op: str) -> str:
+    """Flip a comparison operator."""
+    return {">=": "<=", "<=": ">=", ">": "<", "<": ">",
+            "==": "==", "!=": "!="}[op]
+
+
+def _verify_z3_v2_shadow(
+    claim: str,
+    source_paths: List[str],
+) -> CellVerdict:
+    """Shadow B Cell z3 v2: AST-grounded verification via SMT-LIB.
+
+    Instead of exec()-ing Python z3 code, this:
+    1. Extracts constants from source ASTs (deterministic)
+    2. Builds an SMT-LIB string from the claim + grounded values
+    3. Passes it to z3.parse_smt2_string() (no exec, no shell)
+
+    Returns a shadow verdict for logging only.
+    """
+    # Step 1: Extract constants from all source files
+    all_constants: Dict[str, Any] = {}
+    for sp_path in source_paths:
+        file_constants = _extract_constants_from_ast(str(sp_path))
+        all_constants.update(file_constants)
+
+    # Step 2: Build SMT-LIB string
+    smt2 = _build_smt2_from_claim(claim, all_constants)
+
+    if smt2 is None:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="",
+            verdict="UNCERTAIN", confidence=0.15,
+            evidence="[B_v2_shadow] Cannot ground claim in source AST",
+            tool_used="z3_v2_smt2",
+        )
+
+    # Step 3: Run z3 via parse_smt2_string (safe — no exec)
+    code = f"""
+import z3
+try:
+    assertions = z3.parse_smt2_string({repr(smt2)})
+    s = z3.Solver()
+    s.set("timeout", 5000)
+    s.add(assertions)
+    result = s.check()
+    if result == z3.unsat:
+        print("UNSAT_GROUNDED")
+    elif result == z3.sat:
+        m = s.model()
+        print(f"SAT_COUNTEREXAMPLE: {{m}}")
+    else:
+        print("UNKNOWN")
+except z3.Z3Exception as e:
+    print(f"Z3_ERROR: {{e}}")
+except Exception as e:
+    print(f"ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    grounded_vars = [k for k in all_constants if k in claim]
+
+    if "UNSAT_GROUNDED" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="",
+            verdict="CONFIRMED", confidence=0.85,
+            evidence=(
+                f"[B_v2_shadow] z3 SMT-LIB grounded proof. "
+                f"Grounded vars: {grounded_vars}. {output}"
+            ),
+            tool_used="z3_v2_smt2", elapsed_s=elapsed,
+        )
+    elif "SAT_COUNTEREXAMPLE" in output:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="",
+            verdict="REJECTED", confidence=0.85,
+            evidence=(
+                f"[B_v2_shadow] z3 SMT-LIB grounded counterexample. "
+                f"Grounded vars: {grounded_vars}. {output}"
+            ),
+            tool_used="z3_v2_smt2", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="",
+            verdict="UNCERTAIN", confidence=0.20,
+            evidence=f"[B_v2_shadow] z3 SMT-LIB: {output}",
+            tool_used="z3_v2_smt2", elapsed_s=elapsed,
+        )
+
+
+def b_cell_v2_shadow(
+    triaged: List[TriagedFinding],
+    source_paths: List[str],
+) -> List[CellVerdict]:
+    """Shadow B Cell v2: AST-grounded z3 verification.
+
+    Runs alongside the existing B Cell. Its output is logged but does
+    not affect pipeline decisions in Run 11.
+    """
+    verdicts: List[CellVerdict] = []
+
+    for tf in triaged:
+        if tf.is_duplicate:
+            continue
+        if tf.claim_type not in (ClaimType.LOGICAL, ClaimType.MATHEMATICAL):
+            continue
+
+        fid = tf.finding.finding_id
+        v = _verify_z3_v2_shadow(tf.extracted_claim, source_paths)
+        v.finding_id = fid
+        verdicts.append(v)
+
+    _shadow_log.info(
+        "B Cell v2 (shadow): %d claims checked, %d grounded proofs",
+        len(verdicts),
+        sum(1 for v in verdicts if "grounded" in v.evidence.lower()),
+    )
+    for v in verdicts:
+        _shadow_log.info(
+            "  %s: %s (%.2f) — %s",
+            v.finding_id, v.verdict, v.confidence, v.evidence[:100],
+        )
+
+    return verdicts
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# V2 SHADOW COMPONENTS — Gemini CDSFL/FFF Immune Cell Review (4 April 2026)
+#
+# Each v2 function implements improvements identified through 4 Gemini
+# conversations under full CDSFL/FFF (12 rounds, 13 findings, 5/5 proofs).
+# All run in shadow mode (Run 11): they log what they would have done
+# differently from v1, but do not affect pipeline decisions.
+#
+# Activation target: Run 12 (after shadow data validates the improvements).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import math as _math
+
+
+# ── Dendritic Cell v2 — tightened patterns, citation detection ────────
+
+_MATH_PATTERN_V2 = re.compile(
+    r"(?:"
+    r"`[^`]*[=<>!]=?[^`]*`"                     # backtick-wrapped: `x >= 0.5`
+    r"|\b\d+\.?\d*\s*[<>=!]=?\s*\d"             # numeric: 0.5 >= 0.3
+    r"|\b\w+\s*[<>=!]=\s*[-+]?\d"               # named: threshold >= 0.6
+    r"|\bsqrt\s*\(|\blog\s*\(|\bexp\s*\("       # math funcs with parens
+    r"|\bEq\(|\bGt\(|\bLt\("                    # SymPy constructors
+    r"|\bformula\b|\bequation\b|\binequality\b"  # explicit math terms
+    r")"
+)
+
+_CITATION_PATTERN = re.compile(
+    r"(?:"
+    r"\b[\w/.-]+\.py[:\s]+(?:line\s+)?\d+"  # file.py:123 or file.py line 123
+    r"|\bline\s+\d+\b"                      # line 123
+    r"|\bL\d+[-–]L\d+"                      # L10-L20
+    r"|\blines?\s+\d+\s*[-–]\s*\d+"         # lines 10-20
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
+    """V2 classifier: tightened math pattern, citation-aware routing.
+
+    Changes from v1:
+    1. Code-citing findings route to CODE_BEHAVIORAL (not MATH/LOGIC)
+    2. Math pattern requires equation context (no bare +/-/=)
+    3. Classification order: STAT → STRUCT → CITATION → MATH → LOGIC
+    4. Default is UNCATEGORISED (not CODE_BEHAVIORAL garbage-can)
+    5. Returns confidence score for downstream gating
+
+    Returns (claim_type, extracted_claim, confidence).
+    """
+    desc = finding.description
+
+    # 1. Statistical (narrow, specific — check first)
+    if _STAT_PATTERN.search(desc):
+        return ClaimType.STATISTICAL, desc, 0.85
+
+    # 2. Code structural (decorator/class patterns)
+    if _STRUCT_PATTERN.search(desc):
+        return ClaimType.CODE_STRUCTURAL, desc, 0.80
+
+    # 3. Code with file:line citations → CODE_BEHAVIORAL
+    #    This prevents math-pattern hijacking of code-citing findings
+    if _CITATION_PATTERN.search(desc):
+        return ClaimType.CODE_BEHAVIORAL, desc, 0.75
+
+    # 4. Mathematical (tightened v2 — requires equation context)
+    if _MATH_PATTERN_V2.search(desc):
+        eq_match = re.search(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
+        claim = eq_match.group(1) if eq_match else desc
+        return ClaimType.MATHEMATICAL, claim, 0.70
+
+    # 5. Logical (if/then, invariant — only without code context)
+    if _LOGIC_PATTERN.search(desc):
+        return ClaimType.LOGICAL, desc, 0.65
+
+    # 6. Default: UNCATEGORISED (v1 used CODE_BEHAVIORAL as garbage-can)
+    return ClaimType.UNCATEGORISED, desc, 0.30
+
+
+def dendritic_cell_v2_shadow(
+    findings: List[Finding],
+    v1_triaged: List[TriagedFinding],
+) -> List[TriagedFinding]:
+    """Shadow DC v2: compare tightened classification against v1.
+
+    Logs every case where v2 would classify differently from v1.
+    Returns v2 triaged list for shadow pipeline consumption.
+    """
+    v2_triaged: List[TriagedFinding] = []
+    diffs = 0
+
+    for i, f in enumerate(findings):
+        claim_type, extracted, confidence = _classify_claim_v2(f)
+        tf = TriagedFinding(
+            finding=f,
+            claim_type=claim_type,
+            extracted_claim=extracted,
+        )
+        v2_triaged.append(tf)
+
+        # Compare against v1
+        if i < len(v1_triaged):
+            v1_type = v1_triaged[i].claim_type
+            if v1_type != claim_type:
+                diffs += 1
+                _shadow_log.info(
+                    "DC v2 reclassification: %s — v1=%s → v2=%s (conf=%.2f)",
+                    f.finding_id, v1_type.value, claim_type.value, confidence,
+                )
+
+    _shadow_log.info(
+        "DC v2 (shadow): %d/%d findings reclassified",
+        diffs, len(findings),
+    )
+    return v2_triaged
+
+
+# ── NK Cell v2 — FP continue fix + intra-round dedup ─────────────────
+
+def nk_cell_v2_shadow(
+    triaged: List[TriagedFinding],
+    prior_findings: List[Finding],
+    tau_sim: float = 0.33,
+    false_positive_db: Optional[List[Dict[str, Any]]] = None,
+) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
+    """Shadow NK v2: fixes control flow leak + adds intra-round dedup.
+
+    Changes from v1:
+    1. FP match now skips anomaly detection (continue after break)
+    2. Intra-round dedup: checks against current batch, not just prior
+    """
+    fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES
+    verdicts: List[CellVerdict] = []
+
+    # Intra-round tracking: findings accepted so far in this batch
+    accepted_this_round: List[Finding] = []
+
+    for tf in triaged:
+        f = tf.finding
+
+        # 1. Dedup against prior findings
+        best_sim = 0.0
+        best_match: Optional[str] = None
+        for pf in prior_findings:
+            sim = _finding_similarity(f, pf)
+            if sim > best_sim:
+                best_sim = sim
+                best_match = pf.finding_id
+
+        if best_sim >= tau_sim:
+            verdicts.append(CellVerdict(
+                cell_type=CellType.NK_CELL,
+                finding_id=f.finding_id,
+                verdict="DUPLICATE",
+                confidence=best_sim,
+                evidence=f"[NK_v2] Duplicate of {best_match} (sim={best_sim:.3f})",
+                tool_used="v2_similarity_dedup",
+            ))
+            continue
+
+        # 1b. Intra-round dedup against already-accepted findings
+        intra_best_sim = 0.0
+        intra_best_match: Optional[str] = None
+        for af in accepted_this_round:
+            sim = _finding_similarity(f, af)
+            if sim > intra_best_sim:
+                intra_best_sim = sim
+                intra_best_match = af.finding_id
+
+        if intra_best_sim >= tau_sim:
+            verdicts.append(CellVerdict(
+                cell_type=CellType.NK_CELL,
+                finding_id=f.finding_id,
+                verdict="DUPLICATE",
+                confidence=intra_best_sim,
+                evidence=f"[NK_v2] Intra-round dup of {intra_best_match} (sim={intra_best_sim:.3f})",
+                tool_used="v2_intra_round_dedup",
+            ))
+            continue
+
+        # 2. FP check — with continue fix (v1 bug: fell through to anomaly)
+        is_fp = False
+        for fp in fp_db:
+            if fp["pattern"].search(f.description):
+                model_match = (
+                    not fp.get("expected_model")
+                    or fp["expected_model"] == f.model_id
+                )
+                if model_match:
+                    verdicts.append(CellVerdict(
+                        cell_type=CellType.NK_CELL,
+                        finding_id=f.finding_id,
+                        verdict="REJECTED",
+                        confidence=0.90,
+                        evidence=f"[NK_v2] Known FP: {fp['source']}",
+                        tool_used="v2_false_positive_db",
+                    ))
+                    is_fp = True
+                    break
+
+        if is_fp:
+            continue  # v2 FIX: skip anomaly detection for known FPs
+
+        # 3. Anomaly detection
+        if f.severity > 0.95 and f.round_idx > 5:
+            verdicts.append(CellVerdict(
+                cell_type=CellType.NK_CELL,
+                finding_id=f.finding_id,
+                verdict="UNCERTAIN",
+                confidence=0.4,
+                evidence=f"[NK_v2] Late-round high severity ({f.severity:.2f} at R{f.round_idx})",
+                tool_used="v2_anomaly_detection",
+            ))
+
+        # Track accepted finding for intra-round dedup
+        accepted_this_round.append(f)
+
+    _shadow_log.info(
+        "NK v2 (shadow): %d verdicts (%d intra-round dups)",
+        len(verdicts),
+        sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup"),
+    )
+
+    # Return original triaged (unchanged) — shadow doesn't mutate state
+    return triaged, verdicts
+
+
+# ── Helper T v2 — hybrid domain-based synthesis ──────────────────────
+#
+# Two-level aggregation:
+#   Level 1 (within domain): log-odds combines correlated signals
+#     e.g., CT v1 + CT v2 examining the same code
+#   Level 2 (across domains): max-signal combines independent domains
+#     e.g., code verification vs mathematical proof vs dedup
+#
+# In Run 11 (single signal per domain), Level 1 is an identity operation.
+# In Run 12+ (v2 components active), Level 1 becomes load-bearing.
+#
+# Fixes three proven bugs:
+#   - Dead else block: eliminated (no Pr + Pc = 1 constraint)
+#   - 1.5x rejection barrier: replaced by explicit 0.7 scaling
+#   - Orthogonal ganging: max-signal prevents weak cross-domain stacking
+
+_DOMAIN_CODE = "code"
+_DOMAIN_MATH = "math"
+_DOMAIN_PATTERN = "pattern"
+
+
+def _verdict_domain(v: CellVerdict) -> str:
+    """Map a verdict to its verification domain."""
+    tool = v.tool_used.lower()
+    if any(k in tool for k in ("ct", "falsif", "code", "snippet")):
+        return _DOMAIN_CODE
+    elif any(k in tool for k in ("sympy", "z3", "smt", "stats")):
+        return _DOMAIN_MATH
+    elif any(k in tool for k in ("dedup", "false_positive", "anomaly", "similar")):
+        return _DOMAIN_PATTERN
+    return _DOMAIN_CODE  # default
+
+
+def _confidence_to_log_odds(c: float) -> float:
+    """Convert confidence [0,1] to log-odds, clamped to avoid infinity."""
+    c = max(0.01, min(0.99, c))
+    return _math.log(c / (1.0 - c))
+
+
+def _log_odds_to_confidence(lo: float) -> float:
+    """Convert log-odds back to confidence [0,1]."""
+    return 1.0 / (1.0 + _math.exp(-lo))
+
+
+def helper_t_v2_shadow(
+    triaged: List[TriagedFinding],
+    all_verdicts: List[CellVerdict],
+    rejection_asymmetry: float = 0.7,
+) -> Tuple[Dict[str, str], Dict[str, float]]:
+    """Shadow Helper T v2: hybrid domain-based synthesis.
+
+    Two-level aggregation:
+    1. Within each domain (code, math, pattern): log-odds aggregation
+       of multiple signals from the same verification method.
+    2. Across domains: max effective signal wins, with asymmetric
+       scaling on rejection evidence (0.7 factor).
+    """
+    verdicts_by_finding: Dict[str, List[CellVerdict]] = {}
+    for v in all_verdicts:
+        verdicts_by_finding.setdefault(v.finding_id, []).append(v)
+
+    final_verdicts: Dict[str, str] = {}
+    final_confidences: Dict[str, float] = {}
+
+    for tf in triaged:
+        fid = tf.finding.finding_id
+        fv = verdicts_by_finding.get(fid, [])
+
+        # Auto-reject duplicates
+        if tf.is_duplicate:
+            final_verdicts[fid] = "DUPLICATE"
+            final_confidences[fid] = tf.similarity
+            continue
+
+        if not fv:
+            final_verdicts[fid] = "UNCERTAIN"
+            final_confidences[fid] = 0.0
+            continue
+
+        # ── Level 1: Within-domain aggregation (log-odds) ──
+        domain_verdicts: Dict[str, List[CellVerdict]] = {}
+        for v in fv:
+            d = _verdict_domain(v)
+            domain_verdicts.setdefault(d, []).append(v)
+
+        domain_results: Dict[str, Tuple[str, float]] = {}
+
+        for domain, dvs in domain_verdicts.items():
+            confirms = [v for v in dvs if v.verdict == "CONFIRMED"]
+            rejects = [v for v in dvs if v.verdict in ("REJECTED", "DUPLICATE")]
+
+            if not confirms and not rejects:
+                domain_results[domain] = ("UNCERTAIN", 0.0)
+                continue
+
+            if len(confirms) + len(rejects) == 1:
+                # Single signal: use directly (identity operation)
+                v = (confirms or rejects)[0]
+                domain_results[domain] = (v.verdict, v.confidence)
+            else:
+                # Multiple signals: log-odds aggregation
+                confirm_lo = sum(
+                    _confidence_to_log_odds(v.confidence) for v in confirms
+                )
+                reject_lo = sum(
+                    _confidence_to_log_odds(v.confidence) for v in rejects
+                )
+
+                if confirm_lo >= reject_lo:
+                    agg_conf = _log_odds_to_confidence(confirm_lo)
+                    domain_results[domain] = ("CONFIRMED", agg_conf)
+                else:
+                    agg_conf = _log_odds_to_confidence(reject_lo)
+                    domain_results[domain] = ("REJECTED", agg_conf)
+
+        # ── Level 2: Across-domain (max signal wins) ──
+        best_confirm = 0.0
+        best_reject = 0.0
+
+        for domain, (verdict, conf) in domain_results.items():
+            if verdict == "CONFIRMED":
+                best_confirm = max(best_confirm, conf)
+            elif verdict in ("REJECTED", "DUPLICATE"):
+                best_reject = max(best_reject, conf)
+
+        # Asymmetric scaling: rejection must overcome 0.7 barrier
+        effective_reject = best_reject * rejection_asymmetry
+
+        if effective_reject > best_confirm and best_reject > 0:
+            final_verdicts[fid] = "REJECTED"
+            final_confidences[fid] = round(best_reject, 4)
+        elif best_confirm > 0:
+            final_verdicts[fid] = "CONFIRMED"
+            final_confidences[fid] = round(best_confirm, 4)
+        else:
+            final_verdicts[fid] = "UNCERTAIN"
+            final_confidences[fid] = 0.0
+
+    _shadow_log.info(
+        "Helper T v2 (shadow): %d findings — %d CONFIRMED, %d REJECTED, "
+        "%d UNCERTAIN, %d DUPLICATE",
+        len(final_verdicts),
+        sum(1 for v in final_verdicts.values() if v == "CONFIRMED"),
+        sum(1 for v in final_verdicts.values() if v == "REJECTED"),
+        sum(1 for v in final_verdicts.values() if v == "UNCERTAIN"),
+        sum(1 for v in final_verdicts.values() if v == "DUPLICATE"),
+    )
+
+    return final_verdicts, final_confidences
+
+
+# ── Regulatory T v2 — fixed removal rate + proportional model check ──
+
+def regulatory_t_v2_shadow(
+    final_verdicts: Dict[str, str],
+    triaged: List[TriagedFinding],
+    max_rejection_rate: float = 0.50,
+    min_findings_for_check: int = 5,
+) -> Tuple[bool, str]:
+    """Shadow Regulatory T v2: fixed math.
+
+    Changes from v1:
+    1. Check 1 uses combined removal rate (rejected + duplicated) / total
+    2. Check 3 only counts findings present in final_verdicts (intersection)
+    3. Check 3 uses proportional threshold (>= 0.85) instead of exact match
+    """
+    total = len(final_verdicts)
+    if total < min_findings_for_check:
+        return False, f"[RT_v2] Too few findings ({total}) for meta-check"
+
+    rejected = sum(1 for v in final_verdicts.values() if v == "REJECTED")
+    duplicated = sum(1 for v in final_verdicts.values() if v == "DUPLICATE")
+    removed = rejected + duplicated
+    removal_rate = removed / total
+
+    reasons: List[str] = []
+
+    # Check 1: Combined removal rate (v2: includes duplicates)
+    if removal_rate > max_rejection_rate:
+        reasons.append(
+            f"[RT_v2] Removal rate {removed}/{total} ({removal_rate:.1%}) "
+            f"exceeds threshold ({max_rejection_rate:.0%}) "
+            f"[rejected={rejected}, duplicated={duplicated}]"
+        )
+
+    # Check 3: Per-model removal — proportional, intersection-based
+    model_counts: Dict[str, int] = {}
+    model_removed: Dict[str, int] = {}
+    for tf in triaged:
+        fid = tf.finding.finding_id
+        if fid not in final_verdicts:
+            continue  # v2 fix: only count findings present in final_verdicts
+        mid = tf.finding.model_id
+        model_counts[mid] = model_counts.get(mid, 0) + 1
+        if final_verdicts[fid] in ("REJECTED", "DUPLICATE"):
+            model_removed[mid] = model_removed.get(mid, 0) + 1
+
+    for mid, total_m in model_counts.items():
+        rem_m = model_removed.get(mid, 0)
+        # v2: proportional threshold >= 0.85 instead of exact match
+        if total_m >= 3 and rem_m / total_m >= 0.85:
+            reasons.append(
+                f"[RT_v2] {rem_m}/{total_m} ({rem_m / total_m:.0%}) findings "
+                f"from {mid} removed — possible systematic bias"
+            )
+
+    if reasons:
+        _shadow_log.info(
+            "RT v2 (shadow): AUTOIMMUNE flagged — %s", "; ".join(reasons),
+        )
+        return True, "; ".join(reasons)
+
+    _shadow_log.info(
+        "RT v2 (shadow): healthy — %.1f%% removal rate", removal_rate * 100,
+    )
+    return False, f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
+
+
 def run_immune_pipeline(
     new_findings: List[Finding],
     prior_findings: List[Finding],
@@ -1190,6 +2252,15 @@ def run_immune_pipeline(
     timings: Dict[str, float] = {}
     tool_usage: Dict[str, int] = {}
 
+    # ── Stage 0: Skin barrier pre-filter (activated Run 11) ─────────
+    # Deterministic check: do cited files/lines exist? Results logged
+    # and included in ImmuneResponse. Does not filter findings yet —
+    # that requires downstream integration (Run 12 target).
+    t0 = time.monotonic()
+    _, barrier_results = skin_barrier_check(new_findings, source_paths)
+    timings["skin_barrier"] = round(time.monotonic() - t0, 4)
+    tool_usage["skin_barrier"] = sum(1 for r in barrier_results if not r.passed)
+
     # ── Stage 1: Dendritic Cell triage ────────────────────────────────
     t0 = time.monotonic()
     triaged = dendritic_cell_triage(new_findings)
@@ -1201,11 +2272,16 @@ def run_immune_pipeline(
         key = tf.claim_type.value
         type_counts[key] = type_counts.get(key, 0) + 1
 
+    # ── Stage 1 shadow: Dendritic Cell v2 ────────────────────────────
+    t0_dc_v2 = time.monotonic()
+    dc_v2_triaged = dendritic_cell_v2_shadow(new_findings, triaged)
+    timings["dendritic_v2_shadow"] = round(time.monotonic() - t0_dc_v2, 4)
+
     # ── Stage 2: Parallel verification ────────────────────────────────
     all_verdicts: List[CellVerdict] = []
     t0 = time.monotonic()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         futures = {}
 
         # 2a: Cytotoxic T-Cell (code FFF)
@@ -1222,11 +2298,38 @@ def run_immune_pipeline(
             nk_cell_verify, triaged, prior_findings, tau_sim, false_positive_db,
         )
 
+        # 2d (shadow): CT v2 falsifier — observation only
+        if ct_enabled:
+            futures["ct_v2_shadow"] = pool.submit(
+                cytotoxic_t_cell_v2_shadow, triaged, source_paths, ct_timeout,
+            )
+
+        # 2e (shadow): B Cell v2 AST-grounded z3 — observation only
+        futures["b_cell_v2_shadow"] = pool.submit(
+            b_cell_v2_shadow, triaged, source_paths,
+        )
+
+        # 2f (shadow): NK Cell v2 — FP continue fix + intra-round dedup
+        futures["nk_v2_shadow"] = pool.submit(
+            nk_cell_v2_shadow, triaged, prior_findings, tau_sim,
+            false_positive_db,
+        )
+
         # Collect results
+        shadow_names = {"ct_v2_shadow", "b_cell_v2_shadow", "nk_v2_shadow"}
         for name, future in futures.items():
             try:
                 result = future.result(timeout=ct_timeout + 30)
-                if name == "nk_cell":
+                if name in shadow_names:
+                    # Shadow cells: log output but do NOT add to all_verdicts
+                    if name == "nk_v2_shadow":
+                        # NK v2 returns (triaged, verdicts) tuple
+                        _, shadow_verdicts = result
+                    else:
+                        shadow_verdicts = result
+                    for v in shadow_verdicts:
+                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+                elif name == "nk_cell":
                     triaged, nk_verdicts = result
                     all_verdicts.extend(nk_verdicts)
                     tool_usage["similarity_dedup"] = sum(
@@ -1263,6 +2366,41 @@ def run_immune_pipeline(
         final_verdicts, triaged, max_rejection_rate,
     )
     timings["regulatory_t"] = round(time.monotonic() - t0, 4)
+
+    # ── Stage 3 shadows: v2 synthesis + meta-check ───────────────────
+    t0 = time.monotonic()
+    v2_final, v2_conf = helper_t_v2_shadow(triaged, all_verdicts)
+    timings["helper_t_v2_shadow"] = round(time.monotonic() - t0, 4)
+
+    # Log verdict differences v1 vs v2
+    v1v2_diffs = sum(
+        1 for fid in final_verdicts
+        if final_verdicts.get(fid) != v2_final.get(fid)
+    )
+    if v1v2_diffs:
+        _shadow_log.info(
+            "Helper T v1 vs v2: %d/%d verdict differences",
+            v1v2_diffs, len(final_verdicts),
+        )
+        for fid in final_verdicts:
+            v1v = final_verdicts.get(fid)
+            v2v = v2_final.get(fid)
+            if v1v != v2v:
+                _shadow_log.info(
+                    "  %s: v1=%s → v2=%s", fid, v1v, v2v,
+                )
+
+    t0 = time.monotonic()
+    v2_autoimmune, v2_reg_reason = regulatory_t_v2_shadow(
+        final_verdicts, triaged, max_rejection_rate,
+    )
+    timings["regulatory_t_v2_shadow"] = round(time.monotonic() - t0, 4)
+
+    if v2_autoimmune != autoimmune_flag:
+        _shadow_log.info(
+            "RT v1 vs v2: flag differs — v1=%s v2=%s (%s)",
+            autoimmune_flag, v2_autoimmune, v2_reg_reason,
+        )
 
     # ── Build response ────────────────────────────────────────────────
     filtered: List[Finding] = []
@@ -1306,4 +2444,5 @@ def run_immune_pipeline(
         stage_timings=timings,
         tool_usage=tool_usage,
         observation_only=observation_only,
+        barrier_results=barrier_results,
     )
