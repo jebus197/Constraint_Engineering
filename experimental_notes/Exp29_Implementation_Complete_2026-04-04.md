@@ -5,7 +5,7 @@
 
 ## Summary
 
-Full implementation of the Exp 29 architecture across 6 work packages. 46 bug fixes applied, insect brain built, v2 immune components activated, CC2 timeout fixed. 496 tests pass (31 new integration tests). Ready for Exp 29 execution — subject: persistence layer.
+Full implementation of the Exp 29 architecture across 6 work packages. 46 bug fixes applied, insect brain built, v2 immune components activated, CC2 timeout fixed, circulatory attribution completed, structured reasoning chain added to universal directives. 506 tests pass (41 integration tests). Ready for Exp 29 execution — subject: persistence layer.
 
 ## Work Packages
 
@@ -31,8 +31,8 @@ All fixed: C5-01 (path traversal), C5-02 (empty string bypass), C5-03 (prompt in
 | Reconciliation Gate | Built | Merges v1/v2 verdicts before Reg T |
 | Epistemic Routing Layer | Built | DC v2 as primary classifier |
 | Lazy Tool Discovery | Built | Per-call retry with caching |
-| Formalisation Agent | Deferred | Post-Exp 29 |
-| Typed LLM Classifier | Deferred | Post-Exp 29 |
+| Formalisation Agent | Shadow | Wired in, logging only (commit 4c00f5d) |
+| Typed LLM Classifier | Shadow | Wired in, logging only (commit 4c00f5d) |
 
 ### WP4: CC2 Dispatch Fix + Context Budgets
 

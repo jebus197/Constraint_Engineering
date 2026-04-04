@@ -12,7 +12,7 @@ making AI-assisted technical work more reliable. It formalises the scientific
 method — specifically Popperian falsification — as a structured protocol that
 AI models follow when producing and reviewing technical output.
 
-The project is approximately 13 days old (first commit: 14 March 2026). It
+The project began on 12 March 2026 (first commit). It
 was built by a single founder (George Jackson) working with Claude Opus 4.6
 as primary collaborator and OpenAI Codex 5.3 as independent falsifier, with
 DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.

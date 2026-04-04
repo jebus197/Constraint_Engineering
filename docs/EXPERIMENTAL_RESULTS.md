@@ -201,7 +201,7 @@ Eight binary scoring criteria derived from ground truth: concentrate-end osmotic
 
 ### Experiment 3: Full Gemini Frontier Run (25 tasks)
 
-**Status:** Planned — pending diagnostic completion
+**Status:** Superseded — folded into Phase 2b (Bench Run 1) with 5-model topology.
 **Model:** gemini-3.1-pro-preview
 **Task set:** Full 25-task frontier set
 **Conditions:** Control, HIL, CDSFL, CDSFL+HIL (2x2 factorial design)
@@ -528,7 +528,7 @@ This observation has direct implications for the CDSFL framework: the G_n formul
 
 #### Experiment 7: Corrected Full Bench Run (planned)
 
-**Status:** Planned. Pending completion of Phase 2b and resource assessment.
+**Status:** Superseded by Bench Run 2 (planned post-Exp 29). All 7 confounds addressed in current architecture.
 **Task set:** 26 frontier tasks × 4 conditions = 104 runs.
 **Models:** 5 (Opus 4.6, Codex 5.3, DeepSeek V3.2, Gemini 3.1 Pro, ChatGPT 5.4).
 
@@ -1075,4 +1075,303 @@ This is correct mechanism behaviour with incorrect threshold calibration. Recomm
 
 ---
 
-*Raw data for all experiments is stored in `bench/results/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*
+### Experiment 14: Self-Adaptive CDSFL Under Load
+
+**Date:** 29–30 March 2026
+**Models:** CC2 (Opus 4.6), ChatGPT (GPT-5.4), Codex (GPT-5.4), Gemini (3.1 Pro), DeepSeek (V3.2)
+**Artifact:** `dynamic_management.py` (4,226 lines)
+**System prompt:** `cdsfl_core_formal.md`
+**Purpose:** Implement and validate self-adaptive immune response layer (Phases A–E) with per-model registry, immune feedback loop, per-model prompt adaptation, area-level vocabulary tracking, and dispatch health monitoring.
+
+#### Results
+
+Two runs: 14a (all 5 models) and 14b (3 models active after OpenRouter credit exhaustion).
+
+| Run | Findings | Rounds | Termination | Notes |
+|-----|----------|--------|-------------|-------|
+| 14a | 150 | 4 | CONVERGED (kappa 1.0, mu 0.0) | Premature — convergence blindness bug |
+| 14b | 101 | blind only | Credit exhaustion | CC2/ChatGPT lost to 402 errors |
+
+**Critical bugs found and fixed:**
+1. DeepSeek blind round blocking (P_feasible = 0.000) — pre-decomposition fix
+2. ChatGPT parser format mismatch (bare `F###` vs `FINDING ID:`) — dual parser added
+3. Convergence blindness — when all models decomposed, convergence detector received empty set, producing false kappa=1.0
+
+**Cross-model corroboration:** 14 topics independently found by 2+ models, including LoadBalancer fingerprint usage, `record_dispatch_block` never called, and kappa adoption bounds.
+
+**Tests:** 234 → 350 (post-Layer 1 fixes).
+
+**Raw data:** `bench/logs/experiment_14a/`, `bench/logs/experiment_14b/`
+**Analysis:** `docs/experimental_notes/Exp14_Results_Analysis_2026-03-29.md`
+
+---
+
+### Experiment 15: Live Wire Run with Self-Adaptive Immune Layer
+
+**Date:** 30 March 2026
+**Models:** All 5 frontier models
+**Artifact:** `dynamic_management.py` (6,100 lines)
+**System prompt:** `cdsfl_core_formal.md`
+**Purpose:** Live wire run with self-adaptive immune layer (Level 3) active; failure mode analysis and dual-track fix implementation.
+
+#### Results
+
+Three runs attempted. Runs 1–2 killed by DeepSeek CircuitBreakerTripped. Run 3 completed.
+
+| Metric | Value |
+|--------|-------|
+| Total findings | 286 |
+| Rounds | 7 |
+| Models surviving | 5/5 |
+| Parser fix recovery | +18 findings (Gemini/ChatGPT tuple format) |
+
+**Convergent findings (multi-model agreement):** 4 findings resolved:
+1. Ascending abstraction guard wired into `stop()`
+2. `reassign()` capability scores persisted
+3. Recovery actions propagated to RoundResult
+4. `_solve_greedy()` feasibility pre-check added
+
+**Failure mode analysis:** 6 failure modes classified. Dual-track fixes implemented:
+- Mathematical model: delivery feasibility (f_del), decomposition yield bounds (η_dec), format yield (φ_fmt(i))
+- Immune layer: 3 new detectors (parser yield anomaly, monotonic decline, cost-per-finding spike)
+
+**Mid-experiment fixes:** Circuit breaker catch (`aa89585`), DeepSeek CoT budget exhaustion retry (`5058d29`).
+
+**Tests:** 253 (19 new).
+
+**Raw data:** `bench/logs/experiment_15/`
+
+---
+
+### Experiment 16: Blind Plan Review of Experiment 17
+
+**Date:** 30 March 2026
+**Models:** All 5 frontier models
+**Artifact:** `experiment_17_plan.md` (Exp 17 execution plan)
+**Purpose:** CDSFL-based review of the Exp 17 execution plan before execution.
+
+#### Results
+
+All 5 models succeeded with substantive reviews:
+
+| Model | Chars | Time (s) | Findings | Improvements |
+|-------|------:|--------:|--------:|------------:|
+| CC2 | 23,955 | 145.7 | 12 | 8 |
+| Codex | 7,904 | 380.4 | 8 | 7 |
+| ChatGPT | 19,702 | 87.9 | 24 | 20 |
+| Gemini | 6,332 | 38.5 | 4 | 3 |
+| DeepSeek | 9,713 | 167.4 | 6 | 7 |
+| **Total** | **67,606** | — | **54** | **45** |
+
+**11 convergent themes (3+ models):**
+1. Blind round contradicts providing findings (4/5) → Split R0A+R0B
+2. Self-orchestration circularity (3/5) → Independent stop caps
+3. Code extract scope insufficient (5/5, unanimous) → Full file delivery
+4. Success criteria weak/circular (4/5) → Behaviour-based validation
+5. Cross-model agreement not verification (3/5) → Downgrade to corroborative
+6. SymPy partially applicable (3/5) → SymPy for math ops required
+7. Fix ordering dependency-aware (3/5) → Build fix DAG
+8. Missing telemetry (3/5) → Mandatory round-level logging
+9. Need fault injection (4/5) → 4 canary scenarios
+10. DeepSeek decomposition (5/5, unanimous) → 3-area decomposition
+11. Load balancing separate with interface (5/5, unanimous) → Test separately
+
+**Plan status:** APPROVED with all 11 themes integrated.
+
+**Raw data:** `bench/logs/experiment_16/`
+**Analysis:** `docs/experimental_notes/Exp16_Collation_Report_2026-03-30.md`
+
+---
+
+### Experiment 17: Immune Response Layer Validation + FFF Convergence
+
+**Date:** 30–31 March 2026
+**Models:** CC2 (Player Manager), Codex, ChatGPT, Gemini, DeepSeek (Players)
+**Artifacts:** `dynamic_management.py` (full file), `verification_chain.py` (~910 lines)
+**System prompt:** `cdsfl_core_formal.md` with FFF instructions
+**Purpose:** Execute immune response layer validation under CDSFL with full code delivery, independent stop caps, and fault injection. Followed by FFF (Find-Fix-Follow) methodology test.
+
+#### Design
+
+Protocol: R0A (blind discovery) → R0B (seeded validation) → R1–N (adaptive rounds). Stop conditions: primary DynamicManager predicate + independent caps (10 rounds, 4h wall-clock). DeepSeek received 3-area decomposition (detection, response, integration). Pre-condition: 35 code fixes already applied from Exp 17 triage.
+
+#### Results
+
+| Metric | Standard confer | FFF rounds |
+|--------|----------------|------------|
+| Findings | 140 | 7 |
+| Models | 5 | 2 (Gemini, CX) |
+| Rounds | 4 (R3 complete, R4 partial) | 3 |
+| Code fixes applied | 35 (4 batches) | 7 additional |
+| Tests passing | 351 | 351 |
+
+**Fix batches:**
+1. 8 Immune Manager fixes (IM_F001–F013)
+2. 9 Load Balancer fixes
+3. 14 Verification Chain fixes
+4. 4 Mathematical Model fixes
+
+**FFF convergence (three-way round-robin: Gemini → CX GPT-5.4 → Gemini):** Converged in 3 rounds with 7 additional genuine fixes in already-reviewed code. Key FFF fixes: pathology_key routing (IM_F013), remediation escalation reset (IM_F002), verify_chain exception safety, estimate_gamma correction, kappa_rate divergence fix.
+
+**Raw data:** `bench/logs/experiment_17/`, `bench/logs/experiment_18/`
+
+---
+
+### Experiment 18: Three-Way FFF Convergence Test
+
+**Date:** 31 March 2026
+**Models:** Gemini 3.1 Pro, CX GPT-5.4 (xhigh reasoning effort)
+**Artifacts:** `dynamic_management.py` (6,354 lines), `verification_chain.py` (~910 lines)
+**Purpose:** Formal test of FFF methodology. Hypothesis: FFF's resolution-and-consequence obligation forces cross-section tracing that standard multi-model confer does not achieve.
+
+#### Design
+
+Three-way round-robin under CDSFL with FFF instructions (find → fix → trace consequences). Pre-condition: 35 Exp 17 fixes already applied (codebase clean from standard confer).
+
+#### Results
+
+| Round | Model | Genuine Fixes | Key Findings |
+|-------|-------|--------------|-------------|
+| 1 | Gemini | 2 | `estimate_gamma` inf→1.0 clamping; `kappa_rate` divergence masking |
+| 2 | CX GPT-5.4 (xhigh) | 5 | `verify_chain` exception safety; `Verifier.verify` type guard; `mu+novelty` routing key unreachable; `pm_performance_warning` unwired; `estimate_gamma` zero-data refinement |
+| 3 | Gemini | 0 | Convergence declared (no findings >0.5 severity) |
+
+**Summary:** 7 genuine fixes, 3 rounds, 2 models, 0 false positives, 351 tests passing.
+
+**Model/effort configuration finding:** CX at o4-mini produced 0 genuine findings; GPT-5.4 with xhigh reasoning produced 5 genuine findings on the same code. FFF amplifies the capability gap between configurations.
+
+**Cross-model refinement:** CX refined Gemini's `estimate_gamma` fix by identifying an edge case (zero-data vs perfect convergence distinction). This demonstrates FFF's multi-model value: the consequence-tracing obligation forces the second model to examine the first model's fix, not just the original code.
+
+**Comparison with standard confer:** Standard Exp 17 confer (140 findings, 5 models, 4 rounds) → 35 fixes. FFF (7 findings, 2 models, 3 rounds) → 7 additional genuine fixes in code already reviewed by standard confer. FFF finds what confer misses.
+
+**Raw data:** `bench/logs/experiment_18/`
+**Analysis:** `docs/experimental_notes/Experiment_18_FFF_Convergence_Report_2026-03-31.md`
+
+---
+
+### Baseline Confer Runs 8–11 (Immune Pipeline Validation)
+
+**Dates:** 2–4 April 2026
+**Models:** CC2 (Opus 4.6), ChatGPT (GPT-5.4), Codex (GPT-5.4), Gemini (3.1 Pro), DeepSeek (V3.2)
+**Artifact:** `bench/immune_agents.py` (immune pipeline, ~2,800 lines)
+**System prompt:** `cdsfl_core_formal.md`
+**Purpose:** Progressive validation of the immune pipeline under live conditions. Each run incorporated fixes from the previous run's diagnostics.
+
+#### Summary
+
+| Metric | Run 8 | Run 9 | Run 10 | Run 11 |
+|--------|-------|-------|--------|--------|
+| **Date** | 2 Apr | 3 Apr | 3 Apr | 4 Apr |
+| **Rounds** | 20 | 20 | 7 | 2 |
+| **Findings** | 339 | 425 | 237 | 59 |
+| **Unique IDs** | 30 | 65 | 174 | — |
+| **Churn** | 91.2% | 84.5% | 26.6% | — |
+| **γ_novel** | −0.041 | +0.157 | +0.002 | +0.577 |
+| **C(H,E)** | 0.789 | 0.828 | 0.889 | 0.873 |
+| **Termination** | MAX_ROUNDS | MAX_ROUNDS | Convergence (R6) | Convergence (R1) |
+| **Elapsed** | 52 min | 120 min | 37 min | 42 min |
+
+#### Run 8 (2 April)
+
+First baseline confer against the immune pipeline. 339 findings, 30 unique IDs — 91.2% churn. γ = −0.041 (no convergence). Task exhausted by Round 1 — models kept rewording the same findings. CC2 dominated (126 findings, amplification 1.613). Gemini benched R6, DeepSeek benched R10.
+
+**Diagnostic:** Finding ID repetition was the primary churn mechanism. Convergence detection gap identified — no finding-ID-based convergence signal existed.
+
+#### Run 9 (3 April)
+
+425 findings, 65 unique IDs — 84.5% churn (improved from 91.2%). γ = +0.157 (sign flipped from Run 8). Terminated at MAX_ROUNDS. All 5 models contributed implementation-level findings (task packet fix worked). Gemini benched R5.
+
+**Six infrastructure bugs identified:**
+1. `continue` bypass — convergence check skipped for R5–R19
+2. Hardcoded `tau_sim=0.8` — NK dedup unreachable
+3. FSM terminal cascade from ABORT
+4. B-Cell f-string escape — cell dead since creation (NameError in `_verify_z3`, hidden by silent `except: pass`)
+5. Silent `except: pass` hid bug 4
+6. No finding-ID convergence signal
+
+All six fixed between Runs 9 and 10.
+
+#### Run 10 (3 April) — Experiment 28
+
+First natural convergence. 237 findings, 174 unique IDs — 26.6% churn. γ = +0.002. DM convergence at R6 (kappa=1.0). B-Cell revived with 86 verdicts (78 SymPy + 8 Z3).
+
+**Per-model unique contributions:**
+
+| Model | Findings | Unique | Unique Ratio |
+|-------|----------|--------|-------------|
+| Gemini | 20 | 18 | 90.0% |
+| Codex | 52 | 45 | 86.5% |
+| DeepSeek | 63 | 45 | 71.4% |
+| CC2 | 36 | 26 | 72.2% |
+| ChatGPT | 66 | 40 | 60.6% |
+
+Every model contributed unique findings no other model found.
+
+#### Run 11 (4 April) — Experiment 28b
+
+Fastest convergence in bench history. 2 rounds, 59 findings, 42 minutes. γ_novel = 0.737 (highest), C(H,E) = 0.873. R0: 44 findings (5 models), R1: 15 findings (4 models — CC2 dispatch failure). 67% immune rejection in R1 (10/15 flagged DUPLICATE).
+
+**CC2 dispatch failure:** Total timeout in R1 — 3× CLI timeouts at 300s, multi-turn fallback timed out at 600s, circuit breaker tripped. Root cause: ~358K char payload exceeding Python subprocess timeout. Led to CC2 timeout fix (300→900s, retries 3→1) as part of Exp 29 preparation.
+
+**Shadow v2 data:** First production run of v2 immune components. NK v2 shadow caught 9 intra-round duplicates in R0 that v1 missed. B-Cell v2 ran 42 AST-grounded SMT-LIB checks. Data validated v2 activation for Exp 29.
+
+**Raw data:** `bench/logs/baseline_confer_run{8,9,10,11}_*/`
+**Analysis:** `experimental_notes/Run{8,9,10,11}_*.md`
+
+---
+
+### HIL Comparison Experiments: C1, C3, C4, C5 (4 April 2026)
+
+**Date:** 4 April 2026
+**Model:** Gemini 3.1 Pro (all conditions)
+**Artifact:** `bench/immune_agents.py` (47,980 chars, 1,309 lines, pre-v2, commit 927bfbc)
+**Purpose:** Compare interaction patterns under controlled conditions to test complementarity thesis.
+
+#### Conditions
+
+| Parameter | C1 (Realistic HIL) | C3 (CDSFL/FFF) | C4 (CDSFL + Meta Structured) |
+|---|---|---|---|
+| Protocol | 5 reactive developer prompts | 4 cells × 3 rounds | 4 cells × 4 rounds |
+| Interaction | Developer dialogue (expert probing) | Automated (no interaction) | Structured certificate + FFF |
+| Time | ~187s (~3 min) | ~540s (est.) | ~761s (~13 min) |
+| Raw findings | 25 | 13 | ~27 (pre-falsification) |
+| After FFF | 25 (no self-falsification) | 13 (5 SymPy proofs) | 16 (11 retracted) |
+| Verified | 9/9 tested | 5/5 | 16/16 |
+| False positives | 0 | 0 | 0 |
+
+#### C5: Three-Layer Schema Validation
+
+**Design:** Full conversational mode + CDSFL constraints + Meta structured prompting. Single continued session, no blind round, no cell decomposition. Predicted 30+ findings.
+
+**Results:** 27 consolidated findings, 36/40 registry confirmed (90%), 6 novel, 0 false positives. 11.6 minutes. 5 cross-component findings. 100% include fixes.
+
+**Novel findings:** Path traversal file read (C5-01), empty string bypass (C5-02), prompt injection via XML tags (C5-03), OOM via unbounded streaming (C5-23), nested JSON schema blindness (C5-05), Confident Hallucination Highway (3-bug cascade, C5-26).
+
+**Novel constructs proposed:** Epistemic Routing Layer, Reconciliation Gate, Formalisation Agent, Typed LLM Classifier, Lazy Tool Discovery.
+
+#### Complementarity Thesis
+
+- C1 alone: ~25 verified findings (18 unique vs C4)
+- C4 alone: 16 verified findings (14 unique vs C1)
+- Union: ~33 unique verified findings — **32% more than best single condition**
+- Overlap: only ~5 findings
+
+C1 strength: cross-component interactions (5 unique pipeline-level bugs). C4 strength: formal per-component proofs (11 formal proofs). The two approaches find fundamentally different categories of bugs. **Complementarity thesis VALIDATED.**
+
+#### Three-Layer Schema Discovery
+
+Critical reframing of CDSFL methodology:
+1. **Layer 1:** Meta structured prompting — reasoning format (premises, trace, conclude)
+2. **Layer 2:** CDSFL constraints — rules of engagement (FFF, falsification, constraint classification)
+3. **Layer 3:** Session architecture — full conversational mode as DEFAULT, ITC as FALLBACK ONLY
+
+#### Interaction Patterns as Parameters
+
+Subsequent analysis (4 April 2026) demonstrated that the 7+ interaction patterns tested across all experiments are not competing methodologies but user-configurable parameters within the CDSFL constraint box. The schema provides quality assurance regardless of pattern. The immune system, decay curves, and convergence detection are structurally pattern-agnostic. See `experimental_notes/Interaction_Patterns_As_Parameters_2026-04-04.md` for full analysis.
+
+**Raw data:** `bench/logs/hil_comparison_c{1,4}_20260404/`, `bench/logs/c5_20260404T050417Z/`
+**Analysis:** `experimental_notes/HIL_Comparison_Analysis_2026-04-04.md`, `experimental_notes/Master_Finding_Registry_2026-04-04.md`
+
+---
+
+*Raw data for all experiments is stored in `bench/results/` and `bench/logs/`. This document is the interpretive record. For the technical methodology, see the [white paper](../PAPER.md). For the experimental design rationale, see the [experiment plan memory file](../../.claude/projects/-Users-georgejackson-Developer-Projects/memory/cdsfl_experiment_plan.md). For the full experimental methods, see [PAPER.md Part X-A — Experimental Methods](../PAPER.md).*
