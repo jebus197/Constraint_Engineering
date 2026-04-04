@@ -2353,6 +2353,304 @@ def regulatory_t_v2_shadow(
     return False, f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# WP3c SHADOW: Typed LLM Classifier (Dendritic Cell enhancement)
+#
+# Replaces regex-based claim classification with a lightweight LLM call.
+# Regex fundamentally cannot distinguish "x + y = z" (mathematical) from
+# "model A + model B = the full team" (natural language with operators).
+# MF-01/MF-02/C5-06 showed ~30% misclassification rate from regex.
+#
+# SHADOW MODE: runs alongside DC v2 (regex), logs comparison data.
+# Activated only when shadow data proves improvement over regex.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_CLASSIFIER_SYSTEM_PROMPT = """\
+You are a claim type classifier for a code verification pipeline.
+Classify the following finding description into exactly ONE category.
+Respond with ONLY the category name, nothing else.
+
+Categories:
+- MATHEMATICAL: the finding makes a claim about equations, inequalities, \
+bounds, or numeric relationships that can be verified symbolically.
+- LOGICAL: the finding makes an if/then claim, invariant assertion, or \
+reachability argument about code paths.
+- STATISTICAL: the finding makes a claim about distributions, p-values, \
+confidence intervals, or statistical significance.
+- CODE_STRUCTURAL: the finding claims a missing or incorrect code structure \
+(missing decorator, wrong class hierarchy, absent method).
+- CODE_BEHAVIORAL: the finding describes a bug in runtime behaviour, wrong \
+return values, incorrect state transitions, or logic errors.
+- UNCATEGORISED: the finding does not clearly fit any of the above."""
+
+_CLASSIFIER_MODEL = "anthropic/claude-haiku"  # Cheapest, fastest — classification only
+
+
+def typed_llm_classifier_shadow(
+    findings: List[Finding],
+    regex_triaged: List[TriagedFinding],
+) -> List[Dict[str, Any]]:
+    """WP3c shadow: classify findings via lightweight LLM call.
+
+    Runs alongside the DC v2 regex classifier. Logs every case where
+    the LLM would classify differently from regex. Returns comparison
+    records for analysis.
+
+    Does NOT modify triaged findings — shadow only.
+    """
+    comparisons: List[Dict[str, Any]] = []
+
+    try:
+        from bench.experiment_11_orchestrator import call_openrouter
+    except ImportError:
+        _shadow_log.warning("Typed LLM classifier shadow: call_openrouter not available")
+        return comparisons
+
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        _shadow_log.warning("Typed LLM classifier shadow: OPENROUTER_API_KEY not set")
+        return comparisons
+
+    _CATEGORY_MAP = {
+        "mathematical": ClaimType.MATHEMATICAL,
+        "logical": ClaimType.LOGICAL,
+        "statistical": ClaimType.STATISTICAL,
+        "code_structural": ClaimType.CODE_STRUCTURAL,
+        "code_behavioral": ClaimType.CODE_BEHAVIORAL,
+        "uncategorised": ClaimType.UNCATEGORISED,
+    }
+
+    for i, (f, regex_tf) in enumerate(zip(findings, regex_triaged)):
+        t0 = time.monotonic()
+        try:
+            response = call_openrouter(
+                model_id=_CLASSIFIER_MODEL,
+                system_prompt=_CLASSIFIER_SYSTEM_PROMPT,
+                user_prompt=f.description[:500],  # cap to prevent cost bloat
+                max_tokens=20,
+                timeout=10,
+                max_retries=1,
+            )
+            elapsed = time.monotonic() - t0
+
+            llm_category = response.strip().lower().replace(" ", "_")
+            llm_type = _CATEGORY_MAP.get(llm_category, ClaimType.UNCATEGORISED)
+
+            record = {
+                "finding_id": f.finding_id,
+                "regex_type": regex_tf.claim_type.value,
+                "llm_type": llm_type.value,
+                "llm_raw": response.strip(),
+                "match": regex_tf.claim_type == llm_type,
+                "elapsed_s": round(elapsed, 3),
+            }
+            comparisons.append(record)
+
+            if regex_tf.claim_type != llm_type:
+                _shadow_log.info(
+                    "LLM classifier: %s — regex=%s llm=%s (%.1fs)",
+                    f.finding_id, regex_tf.claim_type.value,
+                    llm_type.value, elapsed,
+                )
+        except Exception as e:
+            elapsed = time.monotonic() - t0
+            comparisons.append({
+                "finding_id": f.finding_id,
+                "regex_type": regex_tf.claim_type.value,
+                "llm_type": "ERROR",
+                "llm_raw": str(e)[:100],
+                "match": False,
+                "elapsed_s": round(elapsed, 3),
+            })
+            _shadow_log.warning(
+                "LLM classifier shadow error for %s: %s", f.finding_id, e,
+            )
+
+    match_count = sum(1 for c in comparisons if c["match"])
+    total = len(comparisons)
+    _shadow_log.info(
+        "Typed LLM classifier shadow: %d/%d agree with regex (%.1f%%)",
+        match_count, total, (match_count / max(total, 1)) * 100,
+    )
+
+    return comparisons
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WP3d SHADOW: Formalisation Agent (B-Cell enhancement)
+#
+# Translates natural language preconditions into formal Z3 invariants before
+# B-Cell verification. MF-03/MF-04/C5-07 showed context erasure strips
+# preconditions from claims, causing false rejections. E.g., "for all x > 0,
+# f(x) = x^2" gets the "x > 0" stripped before Z3, which then tests the
+# claim over ALL x (including negative), producing a false rejection.
+#
+# SHADOW MODE: runs alongside B-Cell, logs what it would have produced.
+# If the agent's Z3 constraints would have prevented false rejections,
+# the data proves its worth. Activated only when proven.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Precondition patterns — extract "for all x > 0", "when n >= 1", etc.
+_PRECONDITION_PATTERNS = [
+    re.compile(r'(?:for\s+all|for\s+every|when|where|if|given\s+that|assuming)\s+([^,;.]+(?:[<>=!]+)[^,;.]+)', re.IGNORECASE),
+    re.compile(r'(?:with|under)\s+(?:the\s+)?(?:constraint|condition|assumption)\s+(?:that\s+)?([^,;.]+)', re.IGNORECASE),
+    re.compile(r'(\b[a-z]\s*[><=!]+\s*\d+(?:\.\d+)?)', re.IGNORECASE),
+]
+
+# Variable binding patterns — "let x = ...", "where n is ..."
+_VARIABLE_PATTERNS = [
+    re.compile(r'(?:let|define)\s+([a-z])\s*=\s*([^,;.]+)', re.IGNORECASE),
+    re.compile(r'(?:where|with)\s+([a-z])\s+(?:is|=)\s+([^,;.]+)', re.IGNORECASE),
+]
+
+# Operator mapping for Z3 translation
+_OP_MAP = {
+    ">=": ">=", "<=": "<=", ">": ">", "<": "<",
+    "==": "==", "!=": "!=", "=": "==",
+}
+
+
+def _extract_preconditions(claim: str) -> List[str]:
+    """Extract natural language preconditions from a claim string.
+
+    Returns list of precondition strings like "x > 0", "n >= 1".
+    """
+    preconditions: List[str] = []
+    for pat in _PRECONDITION_PATTERNS:
+        for match in pat.finditer(claim):
+            pc = match.group(1).strip()
+            if pc and len(pc) < 100:  # sanity cap
+                preconditions.append(pc)
+    return preconditions
+
+
+def _preconditions_to_z3(preconditions: List[str], claim: str) -> Optional[str]:
+    """Translate preconditions into a Z3 constraint string.
+
+    Returns a Z3-compatible assertion string, or None if translation fails.
+    This is a best-effort mechanical translation — not an LLM call.
+    """
+    if not preconditions:
+        return None
+
+    # Extract variable names from preconditions and claim
+    vars_found: Set[str] = set()
+    for pc in preconditions:
+        vars_found.update(re.findall(r'\b([a-z])\b', pc))
+    for v in re.findall(r'\b([a-z])\b', claim):
+        if v not in ('e',):  # exclude Euler's number
+            vars_found.add(v)
+
+    if not vars_found:
+        return None
+
+    # Build Z3 script
+    lines = ["from z3 import *"]
+    for v in sorted(vars_found):
+        lines.append(f"{v} = Real('{v}')")
+
+    lines.append("s = Solver()")
+
+    # Add preconditions as constraints
+    for pc in preconditions:
+        # Simple translation: replace operators
+        z3_pc = pc.strip()
+        for nl_op, z3_op in _OP_MAP.items():
+            z3_pc = z3_pc.replace(nl_op, z3_op)
+        lines.append(f"# Precondition: {pc}")
+        lines.append(f"s.add({z3_pc})")
+
+    return "\n".join(lines)
+
+
+def formalisation_agent_shadow(
+    triaged: List[TriagedFinding],
+    b_cell_verdicts: List[CellVerdict],
+) -> List[Dict[str, Any]]:
+    """WP3d shadow: extract and formalise preconditions for B-Cell claims.
+
+    For each MATHEMATICAL or LOGICAL finding:
+    1. Extract natural language preconditions from the description
+    2. Translate to Z3 constraint fragments
+    3. Compare: did the B-Cell's verdict change when preconditions are
+       accounted for? (i.e., would the Formalisation Agent have prevented
+       a false rejection?)
+
+    Does NOT modify verdicts — shadow only. Logs comparison data.
+    """
+    comparisons: List[Dict[str, Any]] = []
+
+    # Build B-Cell verdict lookup
+    bcell_verdicts: Dict[str, CellVerdict] = {}
+    for v in b_cell_verdicts:
+        if v.cell_type == CellType.B_CELL:
+            bcell_verdicts[v.finding_id] = v
+
+    for tf in triaged:
+        if tf.claim_type not in (ClaimType.MATHEMATICAL, ClaimType.LOGICAL):
+            continue
+        if tf.is_duplicate:
+            continue
+
+        fid = tf.finding.finding_id
+        desc = tf.finding.description
+
+        # Step 1: extract preconditions
+        preconditions = _extract_preconditions(desc)
+
+        # Step 2: attempt Z3 translation
+        z3_fragment = _preconditions_to_z3(preconditions, tf.extracted_claim)
+
+        # Step 3: compare against B-Cell verdict
+        bcell_v = bcell_verdicts.get(fid)
+        bcell_verdict = bcell_v.verdict if bcell_v else "NO_VERDICT"
+
+        # Would preconditions have mattered?
+        # A REJECTED verdict on a claim with extractable preconditions
+        # is a candidate for false rejection (context erasure).
+        potential_false_rejection = (
+            bcell_verdict == "REJECTED"
+            and len(preconditions) > 0
+        )
+
+        record = {
+            "finding_id": fid,
+            "claim_type": tf.claim_type.value,
+            "preconditions_found": len(preconditions),
+            "preconditions": preconditions,
+            "z3_fragment": z3_fragment,
+            "z3_translatable": z3_fragment is not None,
+            "bcell_verdict": bcell_verdict,
+            "potential_false_rejection": potential_false_rejection,
+        }
+        comparisons.append(record)
+
+        if potential_false_rejection:
+            _shadow_log.info(
+                "Formalisation agent: %s — REJECTED with %d preconditions "
+                "(potential false rejection). Preconditions: %s",
+                fid, len(preconditions), preconditions,
+            )
+        elif preconditions:
+            _shadow_log.info(
+                "Formalisation agent: %s — %d preconditions extracted, "
+                "B-Cell verdict=%s. Z3 translatable=%s",
+                fid, len(preconditions), bcell_verdict,
+                z3_fragment is not None,
+            )
+
+    total = len(comparisons)
+    with_pc = sum(1 for c in comparisons if c["preconditions_found"] > 0)
+    potential_fr = sum(1 for c in comparisons if c["potential_false_rejection"])
+    _shadow_log.info(
+        "Formalisation agent shadow: %d math/logic findings, %d with "
+        "preconditions, %d potential false rejections",
+        total, with_pc, potential_fr,
+    )
+
+    return comparisons
+
+
 def _reconciliation_gate(
     v1_verdicts: Dict[str, str],
     v1_confidences: Dict[str, float],
@@ -2480,6 +2778,16 @@ def run_immune_pipeline(
         key = tf.claim_type.value
         type_counts[key] = type_counts.get(key, 0) + 1
 
+    # ── Stage 1.5: Typed LLM Classifier shadow (WP3c) ────────────────
+    # Runs alongside DC v2 regex — logs comparison data for activation decision
+    t0_llm_cls = time.monotonic()
+    try:
+        llm_classifier_results = typed_llm_classifier_shadow(new_findings, triaged)
+    except Exception as e:
+        _shadow_log.warning("Typed LLM classifier shadow failed: %s", e)
+        llm_classifier_results = []
+    timings["llm_classifier_shadow"] = round(time.monotonic() - t0_llm_cls, 4)
+
     # ── Stage 2: Parallel verification (WP6a: v2 components active) ──
     all_verdicts: List[CellVerdict] = []
     t0 = time.monotonic()
@@ -2540,6 +2848,17 @@ def run_immune_pipeline(
                 )
 
     timings["parallel_verification"] = round(time.monotonic() - t0, 4)
+
+    # ── Stage 2.5: Formalisation Agent shadow (WP3d) ─────────────────
+    # Extracts preconditions, logs whether B-Cell false rejections
+    # could have been prevented by preserving context
+    t0_formal = time.monotonic()
+    try:
+        formalisation_results = formalisation_agent_shadow(triaged, all_verdicts)
+    except Exception as e:
+        _shadow_log.warning("Formalisation agent shadow failed: %s", e)
+        formalisation_results = []
+    timings["formalisation_shadow"] = round(time.monotonic() - t0_formal, 4)
 
     # ── Stage 3a: Helper T v1 synthesis (kept for reconciliation) ────
     t0 = time.monotonic()

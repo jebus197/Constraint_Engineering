@@ -625,7 +625,7 @@ def format_findings_for_context(
     ]
     for f in selected:
         lines.append(
-            f"FINDING_ID: {f.finding_id}\n"
+            f"FINDING_ID: {f.finding_id}  [source: {f.model_id}]\n"
             f"  SEVERITY: {f.severity:.2f}\n"
             f"  FLAW_CLASS: {f.flaw_class}\n"
             f"  ABSTRACTION: {f.abstraction_index:.2f}\n"

@@ -41,6 +41,9 @@ from bench.immune_agents import (
     _reconciliation_gate,
     _get_python_tools,
     _get_claude_cli,
+    _extract_preconditions,
+    _preconditions_to_z3,
+    formalisation_agent_shadow,
 )
 from bench.runner_core import CONTEXT_CHAR_BUDGET, MODEL_SPECS
 
@@ -502,3 +505,116 @@ class TestEndToEnd:
         assert len(brain2.state.all_findings) == len(brain.state.all_findings)
         for r in range(3):
             assert len(brain2.state.all_findings[r]) == len(brain.state.all_findings[r])
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WP3d Shadow: Formalisation Agent
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestFormalisationAgentShadow:
+
+    def test_extract_preconditions_basic(self):
+        claim = "for all x > 0, f(x) = x^2 holds"
+        pcs = _extract_preconditions(claim)
+        assert len(pcs) >= 1
+        assert any("x" in pc and ">" in pc for pc in pcs)
+
+    def test_extract_preconditions_when(self):
+        claim = "when n >= 1, the function returns n * (n-1)"
+        pcs = _extract_preconditions(claim)
+        assert len(pcs) >= 1
+
+    def test_extract_preconditions_none(self):
+        claim = "The parser fails on empty input"
+        pcs = _extract_preconditions(claim)
+        # No mathematical preconditions in this purely behavioural claim
+        assert isinstance(pcs, list)
+
+    def test_preconditions_to_z3_produces_script(self):
+        pcs = ["x > 0"]
+        claim = "x + y == z"
+        z3_script = _preconditions_to_z3(pcs, claim)
+        assert z3_script is not None
+        assert "Real(" in z3_script
+        assert "s.add(" in z3_script
+
+    def test_preconditions_to_z3_empty(self):
+        result = _preconditions_to_z3([], "x + y")
+        assert result is None
+
+    def test_shadow_runs_on_math_findings(self):
+        """Formalisation agent should process MATHEMATICAL findings."""
+        findings = [
+            _make_finding(
+                fid="f1",
+                desc="for all x > 0, the formula `x^2 + 1 > 0` always holds",
+            ),
+        ]
+        triaged = dendritic_cell_triage(findings)
+        # Simulate a B-Cell REJECTED verdict (potential false rejection)
+        bcell_verdicts = [
+            CellVerdict(CellType.B_CELL, "f1", "REJECTED", 0.8, "", "sympy"),
+        ]
+        results = formalisation_agent_shadow(triaged, bcell_verdicts)
+        assert len(results) == 1
+        assert results[0]["finding_id"] == "f1"
+        assert results[0]["preconditions_found"] >= 1
+        assert results[0]["potential_false_rejection"] is True
+
+    def test_shadow_skips_behavioural(self):
+        """Formalisation agent should skip CODE_BEHAVIORAL findings."""
+        findings = [
+            _make_finding(fid="f1", desc="Bug in parser logic"),
+        ]
+        triaged = dendritic_cell_triage(findings)
+        results = formalisation_agent_shadow(triaged, [])
+        assert len(results) == 0  # behavioural findings are skipped
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WP3c Shadow: Typed LLM Classifier (import test only — no API call)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestTypedLLMClassifierShadow:
+
+    def test_import_and_constants(self):
+        """Verify the classifier components are importable."""
+        from bench.immune_agents import (
+            typed_llm_classifier_shadow,
+            _CLASSIFIER_SYSTEM_PROMPT,
+            _CLASSIFIER_MODEL,
+        )
+        assert "MATHEMATICAL" in _CLASSIFIER_SYSTEM_PROMPT
+        assert "LOGICAL" in _CLASSIFIER_SYSTEM_PROMPT
+        assert _CLASSIFIER_MODEL is not None
+
+    def test_no_api_key_returns_empty(self):
+        """Without API key, shadow should return empty gracefully."""
+        from bench.immune_agents import typed_llm_classifier_shadow
+        import os
+        saved = os.environ.pop("OPENROUTER_API_KEY", None)
+        try:
+            findings = [_make_finding(fid="f1", desc="Bug in parser")]
+            triaged = dendritic_cell_triage(findings)
+            results = typed_llm_classifier_shadow(findings, triaged)
+            assert results == []
+        finally:
+            if saved is not None:
+                os.environ["OPENROUTER_API_KEY"] = saved
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Circulatory System: Model Attribution in Findings
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestFindingsAttribution:
+
+    def test_format_includes_source_model(self):
+        from bench.runner_core import format_findings_for_context
+        findings = [
+            _make_finding(fid="f1", model="CC2", desc="Bug found by CC2"),
+            _make_finding(fid="f2", model="Gemini", desc="Bug found by Gemini"),
+        ]
+        text = format_findings_for_context(findings)
+        assert "[source: CC2]" in text
+        assert "[source: Gemini]" in text
