@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 23:20 BST
+Last updated: 5 April 2026 00:35 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -43,10 +43,23 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   **Known issues for next run:** stale `anthropic/claude-haiku` model ID in
   immune shadow classifier, NK v2 doesn't set TriagedFinding duplicate fields,
   `run_immune_pipeline` discards NK v2 returned state, stale shadow docstrings.
-  **Next:** Apply high-priority findings, design directed messaging for
-  cross-model communication, Exp 30 (endocrine/pacing), then Bench Run 2.
   Logs: `bench/logs/exp29_persistence_20260404T193154Z/`.
   TTS: `~/Desktop/CDSFL_tts/Exp29_Results_2026-04-04.txt`.
+- **EXP 30 READY TO RUN (5 April 2026, 00:35 BST):**
+  Endocrine layer + directed inter-model messaging. All Exp 29 critical
+  findings applied (shadow fixes, NK v2 state, checkpoint recovery,
+  verification chain bugs, autoimmune threshold raised to 65%).
+  **Endocrine layer** (`bench/endocrine.py`): health scan (pyright/ruff/bandit/
+  mypy via subprocess), fix evaluation (sandbox apply + tool verification),
+  pacing signals (slow models, budget exhaustion, novelty plateau). Closes
+  the `proposed_fix` blind spot — immune pipeline now has fix verification.
+  **Directed messaging** (added to `bench/insect_brain.py`): @tag extraction,
+  priority injection ("ADDRESSED TO YOU"), budget-aware routing. Models
+  cannot ignore addressed messages. Designed to fix ChatGPT engagement gap.
+  **Runner:** `bench/run_exp30_endocrine.py`. Default relay mode = directed.
+  571 tests pass (506 original + 44 endocrine + 21 directed messaging).
+  **Run:** `python3 bench/run_exp30_endocrine.py run --relay-mode directed --pattern fff`
+  **Next:** Run Exp 30, then Bench Run 2 (27 frontier STEM problems).
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

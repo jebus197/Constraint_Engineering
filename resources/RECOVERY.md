@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 23:20 BST
+Last updated: 5 April 2026 00:35 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,27 +19,30 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (4 April 2026, 23:20 BST)
+## Current Pending Work (5 April 2026, 00:35 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
+EXP 30 READY TO RUN.
 
-EXP 29 COMPLETE + VERIFIED (4 April 2026, 23:15 BST):
-9 rounds, 340 findings (365 unique), 35 min. CONVERGED R8 (κ=0.960). C(H,E)=0.899.
-All 5 mathematical claims verified via SymPy/scipy (zero discrepancies).
-365 unique findings: 155 logic bugs, 55 missing state, 54 mathematical,
-46 interface gaps, 18 security, 17 performance, 12 documentation. 92% have fixes.
-Static analysis (mypy/ruff/pyright/bandit) catches only 19/365 (5%).
-Shadow component analysis: Typed LLM Classifier BROKEN (620 API errors, invalid
-claude-haiku model ID). Autoimmune override fires 67% of rounds (threshold too low).
-Formalisation Agent ran but output not persisted (no file logging configured).
-506 tests pass.
-ACTIONS FOR NEXT SESSION:
-  1. Fix stale anthropic/claude-haiku model ID in immune_agents.py:2386
-  2. Configure shadow INFO logging to file
-  3. Raise autoimmune threshold (50% too low)
-  4. Design directed messaging for cross-model communication (Exp 30)
-  5. Fix NK v2 triaged field gap + pipeline discard
-Logs: bench/logs/exp29_persistence_20260404T193154Z/
+ALL EXP 29 ACTIONS COMPLETED (5 April 2026, 00:35 BST):
+  1. DONE: Fixed claude-haiku → claude-3-5-haiku-20241022
+  2. DONE: Shadow INFO logging writes to bench/logs/immune_shadow.log
+  3. DONE: Autoimmune threshold raised from 50% to 65%
+  4. DONE: Directed messaging built (extract + route + priority inject)
+  5. DONE: NK v2 sets triaged fields, pipeline adopts NK v2 state
+  6. DONE: Checkpoint save/restore includes round_records + failed state
+  7. DONE: verify_inclusion_proof checks embedded merkle_root
+  8. DONE: _verify_epoch rejects record_count < 1
+  9. DONE: verify_chain catches RuntimeError
+  10. DONE: persist() copies by value not reference
+  11. DONE: All stale shadow docstrings updated
+
+EXP 30 READY (5 April 2026, 00:35 BST):
+Endocrine layer + directed messaging. 571 tests pass.
+Runner: python3 bench/run_exp30_endocrine.py run --relay-mode directed --pattern fff
+Endocrine: health scan (pyright/ruff/bandit/mypy), fix eval (sandbox), pacing signals.
+Directed: @tag extraction, priority injection, budget-aware routing.
+Subject: same 3 files as Exp 29 (post-fix re-review).
 Tests: python3 -m pytest bench/tests/ -v
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
