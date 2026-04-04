@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 01:59 BST
+Last updated: 4 April 2026 02:57 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -41,9 +41,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   demonstrates constraint box vs monolithic delivery.
   Logs: `bench/logs/baseline_confer_run11_20260404/`.
   Analysis: `experimental_notes/Run11_Rapid_Convergence_Analysis_2026-04-04.md`.
-  **Exp 29 planning:** Unified numbering (Run N → Exp N), v2 activation
-  decisions based on shadow data, realistic HIL comparison experiment,
-  cell-level decomposition to fix CC2/Gemini delivery failures.
+  **CC2 dispatch diagnosis:** Root cause identified — 300s Python subprocess
+  timeout killing CC2 before completion (not a CLI limit). Three-layer fix:
+  (1) increase timeout to 900s (immediate, free); (2) cell-level decomposition
+  for adaptive rounds; (3) parallel split for blind rounds. All Max-funded.
+  Diagnosis: `experimental_notes/CC2_Dispatch_Diagnosis_2026-04-04.md`.
+  **Exp 29 strategic direction:** First integration test of target architecture,
+  not another calibration run. No blind round — full conversational mode with
+  insect brain relay, v2 immune activation, persistence layer, adaptive layer.
+  Sequence: (1) integrate Run 11 findings, (2) activate v2 immune components,
+  (3) build insect brain, (4) run Gemini HIL comparison, (5) Bench Run 2
+  (27 frontier STEM problems). Endocrine system (pacing signals) designed but
+  not blocking. Unified numbering (Run N → Exp N) pending.
 - **Run 10 COMPLETE (3 April 2026, 16:44 BST) = Exp 28:**
   7 rounds, 237 findings, 37 min. First natural convergence
   (DM kappa=1.0 at R6). γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.

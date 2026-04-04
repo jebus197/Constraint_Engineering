@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 01:59 BST
+Last updated: 4 April 2026 02:57 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -32,19 +32,31 @@ B-Cell v2 ran 42 SMT-LIB checks. All v2 shadows fired correctly.
 Analysis: experimental_notes/Run11_Rapid_Convergence_Analysis_2026-04-04.md
 Logs: bench/logs/baseline_confer_run11_20260404/
 
-EXP 29 PREP (deferred until after Run 11 analysis):
-1. Unified experiment numbering — rename "Run N" to "Exp N" throughout
-   run_baseline_confer.py, log dirs, notes, ONBOARDING/RECOVERY
-2. Review Run 11 shadow v2 data — decide v2 activations:
-   - NK v2: activate (9 intra-round dups caught, v1/v2 agree on cross-round)
-   - DC v2: activate if reclassification data shows correct routing
-   - Helper T v2: activate (hybrid domain synthesis — critical path)
-   - Regulatory T v2: activate if flag differences are correct
-   - CT v2 + B-Cell v2: activate ONLY after Helper T v2 is active
-3. Realistic HIL comparison experiment (C1 + C2 vs Gemini)
-   Design: experimental_notes/Realistic_HIL_Comparison_Design_2026-04-04.md
-4. Cell-level decomposition to fix CC2/Gemini delivery failures
-5. Ouroboros closure — models study ALL code including v2 shadows
+CC2 DISPATCH DIAGNOSIS (4 April 2026, 02:10 BST):
+Root cause: 300s Python subprocess timeout kills CC2 before completion.
+Not a CLI limit — entirely in our code. Three-layer fix planned:
+  Layer 1: increase timeout 300s→900s, retries 3→1 (immediate, free)
+  Layer 2: cell-level decomposition for adaptive rounds (Exp 29)
+  Layer 3: parallel split for blind rounds if retained (Exp 29)
+Diagnosis: experimental_notes/CC2_Dispatch_Diagnosis_2026-04-04.md
+
+EXP 29 STRATEGIC DIRECTION (4 April 2026, 02:57 BST):
+First integration test of the TARGET ARCHITECTURE, not another calibration.
+Full conversational mode — no blind round. Models confer as peers under
+CDSFL/FFF with insect brain as mechanical relay. Five architectural layers:
+  1. Persistence layer (built, operational)
+  2. Immune layer (operational, v2 shadows validated, ready to activate)
+  3. Adaptive layer / AQO (built, switchable)
+  4. Insect brain / nervous system (designed, not built — CRITICAL PATH)
+  5. Endocrine system / pacing signals (designed, not built — not blocking)
+
+SEQUENCE TO BENCH RUN 2:
+1. Integrate Run 11 findings (59 from Exp 28b — triage and fix)
+2. Activate v2 immune components (NK v2, Helper T v2 — shadow data justifies)
+3. Build insect brain (mechanical relay — design exists)
+4. Run Gemini HIL comparison (validates constraint box thesis)
+5. BENCH RUN 2 — 27 frontier STEM problems, full integrated architecture
+6. Unified experiment numbering (Run N → Exp N) — QC sweep
 
 INSECT BRAIN ARCHITECTURE (deferred to Exp 29):
 - Reactive coordinator, not deliberative. Gathers/processes/tabulates/commits.
