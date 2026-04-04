@@ -1,0 +1,982 @@
+#!/usr/bin/env python3
+"""Experiment 29: Persistence Layer Integration Test.
+
+First full integration test of the target architecture with the insect brain
+as the central relay. Tests whether persistence-as-memory works end-to-end
+under real multi-model CDSFL confer conditions.
+
+Subject under review: the persistence layer itself (verification_chain.py)
+plus the insect brain relay (insect_brain.py). Self-referential by design —
+the infrastructure being tested IS the infrastructure running the test.
+
+Architecture:
+  - Insect brain handles relay, persistence, metrics, convergence
+  - 5-model parallel dispatch (CC2, Codex, Gemini, DeepSeek, ChatGPT)
+  - Interaction pattern configurable via --pattern flag (default: fff)
+  - Immune pipeline called through brain.run_immune_pipeline()
+  - Convergence detected through brain.check_convergence()
+  - Checkpoint/resume via brain.load_checkpoint()
+
+Models:
+  - CC2 (Claude Opus 4.6 via OpenRouter)
+  - Codex (GPT-5.4 via codex exec CLI)
+  - Gemini (Gemini 3.1 Pro via Google SDK)
+  - DeepSeek (DeepSeek Reasoner via DeepSeek API)
+  - ChatGPT (GPT-5.4 via OpenRouter)
+
+Usage:
+    python3 bench/run_exp29_persistence.py [preflight|run|--resume]
+    python3 bench/run_exp29_persistence.py run --pattern meta_structured
+    python3 bench/run_exp29_persistence.py run --relay-mode conversational
+
+    preflight       — verify all 5 models respond
+    run             — full experiment (preflight + confer rounds)
+    --resume        — resume from last checkpoint
+    --pattern NAME  — interaction pattern preset (default: fff)
+                      Options: fff, meta_structured, conversational,
+                      three_layer_schema, unconstrained
+    --relay-mode M  — how the brain relays between models (default: conversational)
+                      findings: parsed findings only (IDs, severities, descriptions)
+                      conversational: full model responses (reasoning chains visible)
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import os
+import sys
+import time
+from copy import deepcopy
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+# Path setup
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "bench"))
+
+from experiment_11_orchestrator import (
+    load_default_config,
+    dispatch,
+    save_output,
+    _log,
+    CircuitBreakerTripped,
+    ExperimentConfig,
+    ModelConfig,
+)
+from dynamic_management import (
+    DynamicManager,
+    DynamicManagementConfig,
+    ModelSpec,
+    CapabilityFingerprint,
+    Task,
+    Finding,
+    ModelResponse,
+)
+from runner_core import (
+    source_env,
+    build_model_specs,
+    parse_findings,
+    dispatch_to_model,
+    format_findings_for_context,
+    INITIAL_FINGERPRINTS,
+    MODEL_SPECS,
+    CONVERGENCE_EXCLUDED_MODELS,
+    CONTEXT_CHAR_BUDGET,
+)
+from run_exp17_immune import (
+    TASKS,
+    TASK_MARKERS,
+    REVIEW_AREAS,
+    FINDING_FORMAT,
+    RoundTelemetry,
+    run_layer1_preflight,
+    _should_decompose,
+    _build_verified_facts,
+    _build_explicit_unknowns,
+    _find_model_spec,
+    _report_dispatch_failure,
+    _record_throughput,
+    _effective_capacity,
+)
+from decomposed_dispatch import (
+    decomposed_dispatch,
+    DecomposedChunk,
+    DecomposedResult,
+    save_decomposed_result,
+)
+from bench.insect_brain import InsectBrain
+from bench.cdsfl_registry.composer import (
+    compose,
+    DirectivePacket,
+    ComposedDirectiveSet,
+    COMPOSER_MODEL_MAP,
+    build_interaction_pattern,
+    INTERACTION_PATTERN_PRESETS,
+)
+from input_complexity import (
+    compute_gamma_input,
+    compute_gamma_output,
+    compute_amplification,
+    AmplificationHistory,
+    AdaptiveQuestionOptimiser,
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Logs directory — timestamped for new runs, discovered for resume
+def _find_or_create_logs_dir(resume: bool = False) -> Path:
+    """Find existing exp29 logs dir for resume, or create a new one."""
+    if resume:
+        logs_root = REPO_ROOT / "bench" / "logs"
+        candidates = sorted(
+            logs_root.glob("exp29_persistence_*"),
+            key=lambda p: p.name,
+            reverse=True,
+        )
+        for c in candidates:
+            if (c / "checkpoint.json").exists():
+                return c
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return REPO_ROOT / "bench" / "logs" / f"exp29_persistence_{ts}"
+
+# Default — overridden in main() for resume
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "exp29_persistence_latest"
+
+MAX_ROUNDS = 15          # Persistence test — tighter than baseline's 20
+WALL_CLOCK_CAP_S = 6 * 3600  # 6 hours
+
+# Test article: persistence layer + insect brain (self-referential)
+PERSISTENCE_SOURCE_FILES = [
+    REPO_ROOT / "bench" / "verification_chain.py",   # Merkle tree persistence
+    REPO_ROOT / "bench" / "insect_brain.py",          # relay module under test
+    REPO_ROOT / "bench" / "immune_agents.py",         # 6-cell pipeline (context)
+]
+
+# 5-model set
+BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}
+
+# Default interaction pattern (overridable via --pattern)
+DEFAULT_PATTERN = "fff"
+
+# Default relay mode (overridable via --relay-mode)
+DEFAULT_RELAY_MODE = "conversational"
+
+# Model roster for awareness preamble
+MODEL_ROSTER = {
+    "CC2": "Claude Opus 4.6 (Anthropic)",
+    "Codex": "GPT-5.4 Codex (OpenAI)",
+    "Gemini": "Gemini 3.1 Pro (Google)",
+    "DeepSeek": "DeepSeek Reasoner (DeepSeek)",
+    "ChatGPT": "GPT-5.4 (OpenAI)",
+}
+
+# Multi-turn chunk target for decomposed dispatch
+MULTITURN_CHUNK_TARGET = 30_000
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Composer integration
+# ─────────────────────────────────────────────────────────────────────────────
+
+def compose_for_model(model_label: str, pattern_name: str) -> ComposedDirectiveSet:
+    """Compose directive set with selected interaction pattern for a model."""
+    composer_model = COMPOSER_MODEL_MAP.get(model_label, model_label)
+    situation = build_interaction_pattern(pattern_name)
+    return compose(
+        task_domain="software",
+        model=composer_model,
+        situation=situation,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Multi-turn decomposed dispatch (reused from baseline confer)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_chunks(prompt: str, full_code: str) -> list[DecomposedChunk]:
+    """Split prompt into sequential file-delivery chunks."""
+    chunks: list[DecomposedChunk] = []
+
+    if "=== ARTIFACT" in prompt:
+        preamble, rest = prompt.split("=== ARTIFACT", 1)
+    else:
+        preamble = prompt
+        rest = ""
+
+    preamble_text = preamble.strip()
+    artifact_text = rest if rest else full_code
+
+    if "=== FILE:" in artifact_text:
+        import re
+        n_files = artifact_text.count("=== FILE:")
+        preamble_text += (
+            f"\n\nYou will receive {n_files} source files delivered one at a "
+            f"time. Read each file carefully in sequential order. Only begin "
+            f"your analysis once you have seen all files.\n"
+        )
+        chunks.append(DecomposedChunk(preamble_text, label="Preamble + instructions"))
+
+        file_blocks = re.split(r"(?==== FILE:)", artifact_text)
+        for block in file_blocks:
+            block = block.strip()
+            if not block or not block.startswith("=== FILE:"):
+                continue
+            header_match = re.match(r"=== FILE: (.+?) ===", block)
+            label = header_match.group(1) if header_match else "Source file"
+
+            if len(block) > MULTITURN_CHUNK_TARGET:
+                # Large file — split at class/def boundaries
+                lines = block.split("\n")
+                current: list[str] = []
+                current_len = 0
+                part_idx = 0
+                for line in lines:
+                    is_boundary = (
+                        line.startswith("class ") or
+                        (line.startswith("def ") and not line.startswith("    "))
+                    )
+                    if current_len > MULTITURN_CHUNK_TARGET and (is_boundary or line.strip() == ""):
+                        part_idx += 1
+                        chunks.append(DecomposedChunk(
+                            "\n".join(current), label=f"{label} part {part_idx}"))
+                        current = []
+                        current_len = 0
+                    current.append(line)
+                    current_len += len(line) + 1
+                if current:
+                    part_idx += 1
+                    chunks.append(DecomposedChunk(
+                        "\n".join(current), label=f"{label} part {part_idx}"))
+            else:
+                chunks.append(DecomposedChunk(block, label=label))
+    else:
+        chunks.append(DecomposedChunk(preamble_text, label="Full prompt"))
+        if len(artifact_text) > MULTITURN_CHUNK_TARGET:
+            for i in range(0, len(artifact_text), MULTITURN_CHUNK_TARGET):
+                chunks.append(DecomposedChunk(
+                    artifact_text[i:i + MULTITURN_CHUNK_TARGET],
+                    label=f"Part {i // MULTITURN_CHUNK_TARGET + 1}"))
+        elif artifact_text.strip():
+            chunks.append(DecomposedChunk(artifact_text, label="Artifact"))
+
+    return chunks
+
+
+def _multiturn_fallback(
+    mc: ModelConfig,
+    prompt: str,
+    cdsfl_text: str,
+    full_code: str,
+    round_idx: int,
+    pattern_text: str,
+) -> tuple[str, float] | None:
+    """Multi-turn decomposed dispatch fallback."""
+    chunks = _build_chunks(prompt, full_code)
+    if len(chunks) < 2:
+        return None
+
+    final_instruction = (
+        f"You now have the complete context ({len(chunks)} chunks delivered). "
+        f"This is Round {round_idx}.\n\n"
+        f"{pattern_text}\n"
+        f"Produce your findings now."
+    )
+
+    _log(f"  {mc.label}: MULTI-TURN — {len(chunks)} chunks, "
+         f"~{sum(c.chars for c in chunks):,} chars total")
+
+    try:
+        result = decomposed_dispatch(
+            api=mc.api,
+            model_id=mc.model_id,
+            system_prompt=cdsfl_text,
+            chunks=chunks,
+            final_instruction=final_instruction,
+            max_tokens=mc.max_tokens,
+            timeout=mc.timeout * 2,
+            cdsfl_directives=cdsfl_text,
+        )
+        _log(f"  {mc.label}: multi-turn OK ({result.elapsed_s:.1f}s, "
+             f"{len(result.text):,} chars)")
+        save_decomposed_result(result, LOGS_DIR, mc.label, round_idx)
+        return result.text, result.elapsed_s
+    except Exception as e:
+        _log(f"  {mc.label}: multi-turn FAILED — {type(e).__name__}: {e}")
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dispatch
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _dispatch_single_model(
+    mc: ModelConfig,
+    mgr: DynamicManager,
+    prompt: str,
+    cdsfl_text: str,
+    full_code: str,
+    round_idx: int,
+    pattern_name: str,
+) -> tuple[List[Finding], str | None]:
+    """Dispatch to one model. Returns (findings, response_text_or_None)."""
+    # Compose directives with interaction pattern
+    try:
+        composed = compose_for_model(mc.label, pattern_name)
+        model_cdsfl = composed.rendered_text
+        _log(f"  {mc.label}: composed directives "
+             f"({len(model_cdsfl)} chars, pattern={pattern_name})")
+    except Exception as e:
+        _log(f"  {mc.label}: composer failed ({e}), using raw CDSFL")
+        model_cdsfl = cdsfl_text
+
+    # Get the pattern text for multi-turn final instruction
+    pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
+
+    # Decomposed models go to multi-turn sequential delivery
+    if _should_decompose(mc.label, mgr):
+        _log(f"  {mc.label}: decomposed — multi-turn sequential delivery")
+        fallback = _multiturn_fallback(
+            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text)
+        if fallback is not None:
+            text, elapsed = fallback
+            _record_throughput(mc.label, len(prompt), elapsed)
+            _log(f"\n{'─' * 40} {mc.label} RESPONSE (sequential) {'─' * 40}")
+            _log(text)
+            _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+            model_findings = parse_findings(mc.label, round_idx, text)
+            _log(f"  {mc.label}: {len(model_findings)} findings parsed")
+            LOGS_DIR.mkdir(parents=True, exist_ok=True)
+            save_output(
+                LOGS_DIR, f"r{round_idx}", mc.label,
+                prompt[:200] + "...", text,
+                metadata={
+                    "round": round_idx, "elapsed": round(elapsed, 1),
+                    "chars": len(text), "findings_count": len(model_findings),
+                    "decomposed": True, "multiturn": True,
+                })
+            return model_findings, text
+
+    # Single-turn dispatch
+    wall_limit = mc.timeout * 5 if mc.label == "CC2" else mc.timeout * 3
+    try:
+        text, elapsed = dispatch_to_model(
+            mc, prompt, model_cdsfl, wall_clock_limit=wall_limit)
+        _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
+        _record_throughput(mc.label, len(prompt), elapsed)
+
+        _log(f"\n{'─' * 40} {mc.label} RESPONSE {'─' * 40}")
+        _log(text)
+        _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+
+        model_findings = parse_findings(mc.label, round_idx, text)
+        _log(f"  {mc.label}: {len(model_findings)} findings parsed")
+
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        save_output(
+            LOGS_DIR, f"r{round_idx}", mc.label,
+            prompt[:200] + "...", text,
+            metadata={
+                "round": round_idx, "elapsed": round(elapsed, 1),
+                "chars": len(text), "findings_count": len(model_findings),
+                "decomposed": False,
+            })
+        return model_findings, text
+
+    except (CircuitBreakerTripped, TimeoutError, Exception) as e:
+        _log(f"  {mc.label}: {type(e).__name__} — {e}")
+        fallback = _multiturn_fallback(
+            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text)
+        if fallback is not None:
+            text, elapsed = fallback
+            _log(f"  {mc.label}: RECOVERED via multi-turn ({elapsed:.1f}s)")
+            _record_throughput(mc.label, len(prompt), elapsed)
+            _log(f"\n{'─' * 40} {mc.label} RESPONSE (multi-turn) {'─' * 40}")
+            _log(text)
+            _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+            model_findings = parse_findings(mc.label, round_idx, text)
+            _log(f"  {mc.label}: {len(model_findings)} findings parsed (multi-turn)")
+            LOGS_DIR.mkdir(parents=True, exist_ok=True)
+            save_output(
+                LOGS_DIR, f"r{round_idx}", mc.label,
+                prompt[:200] + "...", text,
+                metadata={
+                    "round": round_idx, "elapsed": round(elapsed, 1),
+                    "chars": len(text), "findings_count": len(model_findings),
+                    "decomposed": True, "multiturn": True,
+                })
+            return model_findings, text
+        else:
+            _log(f"  {mc.label}: ALL dispatch methods exhausted")
+            return [], f"__DISPATCH_FAILED__:{type(e).__name__}: {e}"
+
+
+def _dispatch_round(
+    exp_config: ExperimentConfig,
+    mgr: DynamicManager,
+    brain: InsectBrain,
+    prompt: str,
+    cdsfl_text: str,
+    full_code: str,
+    round_idx: int,
+    pattern_name: str,
+    relay_mode: str = DEFAULT_RELAY_MODE,
+) -> tuple[List[Finding], Dict[str, str]]:
+    """Dispatch to all models in parallel. Returns (findings, responses).
+
+    Uses insect brain relay payloads for per-model context injection.
+    relay_mode: "findings" (parsed findings) or "conversational" (full responses).
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    findings: List[Finding] = []
+    responses: Dict[str, str] = {}
+
+    eligible = [
+        mc for mc in exp_config.models
+        if mc.label in BASELINE_MODELS and mc.role != "collator"
+    ]
+
+    # Get relay payloads from insect brain (round > 0 only)
+    if round_idx > 0:
+        if relay_mode == "conversational":
+            relay_payloads = brain.relay_conversational(round_idx)
+        else:
+            relay_payloads = brain.relay(round_idx)
+    else:
+        relay_payloads = {}
+
+    def _make_model_prompt(mc_label: str) -> str:
+        if round_idx == 0 or mc_label not in relay_payloads:
+            return prompt  # blind round — base prompt only
+
+        payload = relay_payloads[mc_label]
+        if not payload.findings_text:
+            return prompt
+
+        # Inject brain's relay payload into prompt
+        if relay_mode == "conversational":
+            relay_section = (
+                f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
+                f"You are reviewing the same artifact as {len(payload.active_models) - 1} "
+                f"other models. Below is their full analysis. Engage with their "
+                f"reasoning: challenge weak claims, confirm strong ones, extend "
+                f"insights, and find what everyone missed.\n\n"
+                f"{payload.findings_text}\n\n"
+                f"{'(NOTE: context budget exceeded — some responses truncated)' if payload.context_reset else ''}\n"
+                f"{payload.convergence_summary}\n\n"
+                f"=== END OTHER MODELS' ANALYSIS ===\n\n"
+                f"Now produce YOUR findings. Apply full CDSFL + FFF. "
+                f"Do not repeat what has already been found — build on it, "
+                f"challenge it, or go deeper.\n\n"
+            )
+        else:
+            relay_section = (
+                f"Prior findings from other models "
+                f"({payload.finding_count} total, "
+                f"{'CONTEXT RESET — summary only' if payload.context_reset else 'full text'}):\n\n"
+                f"{payload.findings_text}\n\n"
+                f"{payload.convergence_summary}\n\n"
+                f"Find what was MISSED. Do not repeat known findings.\n\n"
+            )
+        return prompt.replace(
+            "=== ARTIFACT:",
+            f"{relay_section}=== ARTIFACT:",
+        ) if "=== ARTIFACT:" in prompt else f"{relay_section}{prompt}"
+
+    _log(f"  Parallel dispatch: {len(eligible)} models")
+    deferred_failures: list[tuple[str, str]] = []
+
+    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
+        future_to_label = {
+            pool.submit(
+                _dispatch_single_model,
+                mc, mgr, _make_model_prompt(mc.label), cdsfl_text, full_code,
+                round_idx, pattern_name,
+            ): mc.label
+            for mc in eligible
+        }
+        for future in as_completed(future_to_label):
+            label = future_to_label[future]
+            try:
+                model_findings, text = future.result()
+                findings.extend(model_findings)
+                if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
+                    responses[label] = text
+                elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
+                    deferred_failures.append((label, text[20:]))
+            except Exception as e:
+                _log(f"  {label}: thread error — {type(e).__name__}: {e}")
+
+    for label, detail in deferred_failures:
+        _report_dispatch_failure(mgr, label, round_idx, detail)
+        brain.handle_model_failure(label, detail)
+
+    return findings, responses
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Safety checks
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _safety_check(
+    responses: Dict[str, str],
+    round_idx: int,
+    brain: InsectBrain,
+) -> Optional[str]:
+    """Check for problems that warrant stopping.
+
+    Per-model failures bench the model (via brain.handle_model_failure)
+    rather than killing the experiment. Only stop if ALL models fail.
+    """
+    if not responses:
+        return "all_models_failed"
+
+    failed_labels = []
+    for label, text in responses.items():
+        if len(text.strip()) < 50:
+            _log(f"  SAFETY: {label} near-empty response ({len(text)} chars) — benching")
+            brain.handle_model_failure(label, f"empty_response_round_{round_idx}")
+            failed_labels.append(label)
+        elif "[MODEL_REFUSED" in text:
+            _log(f"  SAFETY: {label} refused — benching")
+            brain.handle_model_failure(label, f"refused_round_{round_idx}")
+            failed_labels.append(label)
+
+    # Remove failed model responses so they don't pollute findings
+    for label in failed_labels:
+        responses.pop(label, None)
+
+    # Only stop if no models produced usable output
+    if not responses:
+        return "all_models_failed"
+
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gamma convergence (shadow — logged alongside brain's convergence)
+# ─────────────────────────────────────────────────────────────────────────────
+
+GAMMA_THRESHOLD = 0.5
+MIN_ROUNDS_FOR_GAMMA = 2
+CLUSTER_THRESHOLD = 0.33
+
+def _estimate_gamma(all_findings: List[List[Finding]]) -> float:
+    """Estimate Duane gamma from per-round finding counts."""
+    n = len(all_findings)
+    if n < MIN_ROUNDS_FOR_GAMMA:
+        return 0.0
+    per_round = [len(rnd) for rnd in all_findings]
+    cumulative = []
+    total = 0
+    for c in per_round:
+        total += c
+        cumulative.append(total)
+    if cumulative[0] <= 0 or cumulative[-1] <= cumulative[0]:
+        return 0.0 if cumulative[-1] == 0 else 1.0
+    try:
+        beta = (math.log(cumulative[-1]) - math.log(cumulative[0])) / math.log(n)
+        return 1.0 - beta
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main experiment loop
+# ─────────────────────────────────────────────────────────────────────────────
+
+def run_preflight(exp_config: ExperimentConfig, cdsfl_text: str) -> bool:
+    """Quick preflight: dispatch a trivial prompt to each model."""
+    _log("=" * 60)
+    _log("PREFLIGHT: Testing 5-model connectivity")
+    _log("=" * 60)
+
+    test_prompt = (
+        "This is a connectivity test. Respond with exactly:\n"
+        "STATUS: OK\n"
+        "MODEL: [your model name]\n"
+        "Nothing else."
+    )
+
+    all_ok = True
+    for mc in exp_config.models:
+        if mc.label not in BASELINE_MODELS:
+            continue
+        _log(f"  Testing {mc.label}...")
+        try:
+            text, elapsed = dispatch_to_model(mc, test_prompt, cdsfl_text)
+            ok = len(text.strip()) > 5
+            _log(f"  {mc.label}: {'OK' if ok else 'FAILED'} "
+                 f"({elapsed:.1f}s, {len(text)} chars)")
+            if not ok:
+                all_ok = False
+        except Exception as e:
+            _log(f"  {mc.label}: FAILED — {e}")
+            all_ok = False
+
+    return all_ok
+
+
+def run_experiment(
+    exp_config: ExperimentConfig,
+    cdsfl_text: str,
+    pattern_name: str = DEFAULT_PATTERN,
+    relay_mode: str = DEFAULT_RELAY_MODE,
+    resume: bool = False,
+) -> Dict[str, Any]:
+    """Run Experiment 29: persistence layer integration test."""
+    _log("=" * 60)
+    _log(f"EXPERIMENT 29: Persistence Layer Integration Test")
+    _log(f"  Pattern: {pattern_name}")
+    _log(f"  Relay mode: {relay_mode}")
+    _log(f"  Max rounds: {MAX_ROUNDS}")
+    _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
+    _log(f"  Source files: {len(PERSISTENCE_SOURCE_FILES)}")
+    _log(f"  Logs: {LOGS_DIR}")
+    _log("=" * 60)
+
+    # Load source files
+    full_code_parts = []
+    total_raw = 0
+    source_paths_str = []
+    for src_path in PERSISTENCE_SOURCE_FILES:
+        src_text = src_path.read_text(encoding="utf-8")
+        rel = src_path.relative_to(REPO_ROOT)
+        full_code_parts.append(f"=== FILE: {rel} ({len(src_text):,} chars) ===\n{src_text}")
+        total_raw += len(src_text)
+        source_paths_str.append(str(src_path))
+    full_code = "\n\n".join(full_code_parts)
+    _log(f"  Source: {len(PERSISTENCE_SOURCE_FILES)} files, "
+         f"{total_raw:,} raw chars → {len(full_code):,} with headers")
+
+    # Build DynamicManager
+    dm_config = DynamicManagementConfig(
+        pre_decompose_models={"Codex", "DeepSeek"},
+        no_exclusion_mode=True,
+    )
+    dm_config.max_rounds = MAX_ROUNDS
+    model_specs = build_model_specs(exp_config)
+    mgr = DynamicManager(model_specs, dm_config)
+
+    # Build Insect Brain — the core of Exp 29
+    brain = InsectBrain(
+        config=dm_config,
+        logs_dir=LOGS_DIR,
+        source_paths=source_paths_str,
+    )
+    brain.initialise(model_labels=sorted(BASELINE_MODELS))
+
+    # Resume from checkpoint if available
+    start_round = 0
+    if resume and brain.load_checkpoint():
+        start_round = brain.state.current_round + 1
+        total_restored = sum(len(rnd) for rnd in brain.state.all_findings)
+        _log(f"  RESUMED from round {start_round} "
+             f"({total_restored} findings, {len(brain.state.all_findings)} rounds)")
+
+    experiment_start = time.monotonic()
+    result: Dict[str, Any] = {
+        "experiment": "exp29_persistence",
+        "start_time": datetime.now(timezone.utc).isoformat(),
+        "pattern": pattern_name,
+        "relay_mode": relay_mode,
+        "models": sorted(BASELINE_MODELS),
+        "source_files": [str(p.relative_to(REPO_ROOT)) for p in PERSISTENCE_SOURCE_FILES],
+        "max_rounds": MAX_ROUNDS,
+        "rounds": [],
+    }
+
+    # Build multi-model awareness preamble
+    roster_lines = "\n".join(
+        f"  - {label}: {desc}" for label, desc in sorted(MODEL_ROSTER.items())
+    )
+    if relay_mode == "conversational":
+        awareness_preamble = (
+            "You are one of 5 AI models participating in a distributed code review "
+            "under full CDSFL constraints with FFF methodology. The participating models are:\n"
+            f"{roster_lines}\n\n"
+            "In each round after Round 0, you will see the OTHER models' complete "
+            "analysis from the previous round — their full reasoning chains, "
+            "FIND/FOLLOW/FIX traces, and conclusions. You should:\n"
+            "  - ENGAGE with their reasoning: challenge weak evidence, confirm strong claims\n"
+            "  - EXTEND their insights: follow implications they may have missed\n"
+            "  - DISAGREE where warranted: if another model's FOLLOW trace is incomplete "
+            "or their FIX introduces new problems, say so with evidence\n"
+            "  - FIND what everyone missed: the highest-value findings are the ones "
+            "no other model has identified\n\n"
+            "You remain under full CDSFL + FFF constraints. Every finding must have "
+            "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
+            "The conversation is rigorous, not chatty.\n\n"
+        )
+    else:
+        awareness_preamble = (
+            "You are one of 5 AI models participating in a distributed code review "
+            "under full CDSFL constraints. The other models are:\n"
+            f"{roster_lines}\n\n"
+            "You will see other models' findings (not their full analysis). "
+            "Do not repeat known findings — find what was missed.\n\n"
+        )
+
+    # Build base prompt
+    base_prompt = (
+        f"{awareness_preamble}"
+        "You are participating in Experiment 29 — a distributed compute P-pass "
+        "under CDSFL reviewing the PERSISTENCE LAYER of the CDSFL testbench.\n\n"
+        "The persistence layer provides:\n"
+        "  1. Merkle tree verification chain (verification_chain.py)\n"
+        "  2. Insect brain relay — reactive mechanical coordinator (insect_brain.py)\n"
+        "  3. Immune pipeline — 6-cell verification (immune_agents.py)\n\n"
+        "Your task: review ALL source files and produce structured findings.\n"
+        "For each finding, provide:\n"
+        "  FINDING_ID: unique identifier (e.g., F001)\n"
+        "  SEVERITY: 0.0 to 1.0 (1.0 = critical)\n"
+        "  FLAW_CLASS: integer category (1=logic, 2=interface, 3=notation, "
+        "4=completeness, 5=correctness, 6=edge-case, 7=performance, 8=documentation)\n"
+        "  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\n"
+        "  DESCRIPTION: what is wrong and why it matters\n"
+        "  PROPOSED_FIX: how to fix it\n"
+        "  VERIFIED: TRUE if you have a proof/test, FALSE if this is an assertion\n\n"
+        "Produce ALL findings you can identify. Do not hold back.\n\n"
+        f"=== ARTIFACT: Persistence Layer ({len(PERSISTENCE_SOURCE_FILES)} files, "
+        f"{total_raw:,} chars) ===\n\n"
+        f"{full_code}\n\n"
+        "=== END ARTIFACT ===\n\n"
+        "Produce your findings now."
+    )
+
+    # Add sequential read instruction
+    n_files = full_code.count("=== FILE:")
+    if n_files > 0:
+        base_prompt += (
+            f"\n\nIMPORTANT: This prompt contains {n_files} source files. "
+            f"Read each file carefully from start to finish before beginning "
+            f"your analysis.\n"
+        )
+
+    _log(f"  Base prompt: {len(base_prompt):,} chars")
+
+    for round_idx in range(start_round, MAX_ROUNDS):
+        round_start = time.monotonic()
+        wall_elapsed = round_start - experiment_start
+        if wall_elapsed > WALL_CLOCK_CAP_S:
+            _log(f"\nWALL CLOCK CAP reached ({wall_elapsed:.0f}s). Stopping.")
+            break
+
+        _log(f"\n{'─' * 60}")
+        round_type = "blind" if round_idx == 0 else "adaptive"
+        _log(f"Round {round_idx} ({round_type})")
+        _log(f"{'─' * 60}")
+
+        # Dispatch to all models (brain handles relay for adaptive rounds)
+        findings, responses = _dispatch_round(
+            exp_config, mgr, brain,
+            base_prompt, cdsfl_text, full_code,
+            round_idx, pattern_name,
+            relay_mode=relay_mode,
+        )
+
+        # Safety check (benches individual models, only stops if ALL fail)
+        problem = _safety_check(responses, round_idx, brain)
+        if problem:
+            _log(f"\n*** PULL THE PLUG: {problem} ***")
+            result["terminated"] = problem
+            break
+
+        # Persist round via brain
+        round_elapsed = time.monotonic() - round_start
+        brain.persist(round_idx, responses, findings, duration_s=round_elapsed)
+
+        # Run immune pipeline through brain
+        immune_result = brain.run_immune_pipeline(findings)
+
+        # Compute metrics through brain
+        metrics = brain.compute_metrics(round_idx)
+
+        # Shadow gamma for comparison
+        gamma_shadow = _estimate_gamma(brain.state.all_findings)
+        _log(f"  Shadow γ: {gamma_shadow:.3f}")
+
+        round_data = {
+            "round": round_idx,
+            "type": round_type,
+            "findings_count": len(findings),
+            "models_responded": list(responses.keys()),
+            "elapsed_s": round(round_elapsed, 1),
+            "per_model": {
+                label: len([f for f in findings if f.model_id == label])
+                for label in responses
+            },
+            "brain_metrics": metrics,
+            "gamma_shadow": round(gamma_shadow, 4),
+            "immune_pipeline": {
+                "rejection_rate": immune_result.rejection_rate,
+                "autoimmune_flag": immune_result.autoimmune_flag,
+                "survivors": len(immune_result.filtered_findings),
+            },
+        }
+        result["rounds"].append(round_data)
+
+        _log(f"\n  Round {round_idx}: {len(findings)} findings from "
+             f"{len(responses)} models ({round_elapsed:.1f}s)")
+        for label in sorted(responses.keys()):
+            model_count = len([f for f in findings if f.model_id == label])
+            _log(f"    {label}: {model_count} findings")
+
+        # Check convergence through brain
+        if brain.check_convergence(round_idx):
+            _log(f"\n  CONVERGED at round {round_idx}: "
+                 f"{brain.state.convergence_reason}")
+            result["converged_at"] = round_idx
+            result["convergence_reason"] = brain.state.convergence_reason
+            break
+
+    # Signal complete
+    signal = brain.signal_complete()
+
+    # Final summary
+    total_elapsed = time.monotonic() - experiment_start
+    total_findings = sum(len(rnd) for rnd in brain.state.all_findings)
+    result["total_findings"] = total_findings
+    result["total_rounds"] = len(brain.state.all_findings)
+    result["total_elapsed_s"] = round(total_elapsed, 1)
+    result["end_time"] = datetime.now(timezone.utc).isoformat()
+    result["completion_signal"] = signal
+
+    # Per-model totals
+    per_model_totals: Dict[str, int] = {}
+    for rnd in brain.state.all_findings:
+        for f in rnd:
+            per_model_totals[f.model_id] = per_model_totals.get(f.model_id, 0) + 1
+    result["per_model_totals"] = per_model_totals
+
+    # Gamma
+    gamma_final = _estimate_gamma(brain.state.all_findings)
+    result["gamma"] = round(gamma_final, 4)
+    result["per_round_counts"] = [len(rnd) for rnd in brain.state.all_findings]
+
+    # Popper C(H,E)
+    CONTROL_BASELINE_RATE = 2.0
+    if brain.state.all_findings:
+        cdsfl_rate = total_findings / len(brain.state.all_findings)
+        pe_h = cdsfl_rate
+        pe = CONTROL_BASELINE_RATE
+        c_he = (pe_h - pe) / (pe_h + pe) if (pe_h + pe) > 0 else 0.0
+        result["popper_corroboration"] = {
+            "C_HE": round(c_he, 4),
+            "P_E_given_H": round(pe_h, 4),
+            "P_E": round(pe, 4),
+        }
+
+    # Save report
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = LOGS_DIR / "exp29_report.json"
+    report_path.write_text(
+        json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    _log(f"\n{'=' * 60}")
+    _log(f"EXPERIMENT 29 — {len(brain.state.all_findings)} ROUNDS COMPLETE")
+    _log(f"  Rounds: {len(brain.state.all_findings)}")
+    _log(f"  Total findings: {total_findings}")
+    _log(f"  Per model: {per_model_totals}")
+    _log(f"  Per round: {[len(rnd) for rnd in brain.state.all_findings]}")
+    _log(f"  γ: {gamma_final:.3f}")
+    c_he_val = result.get("popper_corroboration", {}).get("C_HE")
+    if c_he_val is not None:
+        _log(f"  C(H,E): {c_he_val:.4f}")
+    _log(f"  Pattern: {pattern_name}")
+    _log(f"  Elapsed: {total_elapsed:.0f}s")
+    _log(f"  Report: {report_path}")
+    _log(f"  Brain signal: {signal['status']} — {signal['reason']}")
+    _log(f"{'=' * 60}")
+
+    return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
+def main():
+    global LOGS_DIR
+    source_env()
+
+    exp_config = load_default_config()
+    cdsfl_path = (REPO_ROOT / "bench" / "directives" / "universal"
+                  / "cdsfl_core_formal.md")
+    cdsfl_text = cdsfl_path.read_text(encoding="utf-8")
+
+    # Parse arguments
+    args = sys.argv[1:]
+    mode = "run"
+    resume = False
+    pattern = DEFAULT_PATTERN
+    relay_mode = DEFAULT_RELAY_MODE
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--resume":
+            resume = True
+            mode = "run"
+        elif args[i] == "--pattern" and i + 1 < len(args):
+            pattern = args[i + 1]
+            i += 1
+        elif args[i] == "--relay-mode" and i + 1 < len(args):
+            relay_mode = args[i + 1]
+            i += 1
+        elif args[i] in ("preflight", "run"):
+            mode = args[i]
+        i += 1
+
+    # Validate pattern
+    if pattern not in INTERACTION_PATTERN_PRESETS:
+        available = ", ".join(sorted(INTERACTION_PATTERN_PRESETS))
+        print(f"Unknown pattern: {pattern!r}. Available: {available}",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Validate relay mode
+    if relay_mode not in ("findings", "conversational"):
+        print(f"Unknown relay mode: {relay_mode!r}. Options: findings, conversational",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Set logs directory
+    LOGS_DIR = _find_or_create_logs_dir(resume=resume)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+    if mode == "preflight":
+        ok = run_preflight(exp_config, cdsfl_text)
+        sys.exit(0 if ok else 1)
+
+    elif mode == "run":
+        if not resume:
+            ok = run_preflight(exp_config, cdsfl_text)
+            if not ok:
+                _log("\nPREFLIGHT FAILED. Aborting.")
+                sys.exit(1)
+            _log(f"\nPreflight passed. Starting Exp 29 in 5s... "
+                 f"(pattern={pattern}, relay={relay_mode})")
+            time.sleep(5)
+        else:
+            _log(f"\nRESUME mode — skipping preflight "
+                 f"(pattern={pattern}, relay={relay_mode})")
+
+        result = run_experiment(
+            exp_config, cdsfl_text,
+            pattern_name=pattern, relay_mode=relay_mode, resume=resume)
+
+        if result.get("terminated"):
+            _log(f"\nExperiment terminated: {result['terminated']}")
+            sys.exit(2)
+
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

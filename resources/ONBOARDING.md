@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 14:47 BST
+Last updated: 4 April 2026 22:05 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,25 +22,31 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
-- **EXP 29 READY TO RUN (4 April 2026, 09:42 BST):**
-  Full architecture implementation complete. 46 bug fixes (40 MF + 6 C5
-  novel), 5 novel constructs (3 built + 2 in shadow), insect brain built, v2
-  immune components activated, CC2 timeout fixed, structured reasoning chain
-  added to universal CDSFL directives, circulatory attribution completed,
-  shadow Formalisation Agent and Typed LLM Classifier wired in.
-  506 tests pass (41 integration tests).
-  **Ready for Exp 29 execution — subject: persistence layer.**
-  Three-layer schema now standing: (1) structured reasoning chain in
-  `cdsfl_core.txt` (universal, HARD), (2) CDSFL constraints (FFF, falsification),
-  (3) conversational mode as default. Model attribution in findings formatter
-  (circulatory Phase 1 complete). Shadow components: Formalisation Agent
-  (precondition extraction, Z3 translation — logs potential false rejections),
-  Typed LLM Classifier (Haiku-based claim classification — logs regex vs LLM
-  agreement). Both shadow-only, activation gated on data.
-  Five architectural layers: (1) Persistence — built, under-tested (Exp 29
-  subject), (2) Immune — operational, v2 active + 2 shadows, (3) Adaptive/AQO
-  — built, (4) Insect brain — NOW BUILT, (5) Endocrine/pacing — designed,
-  not blocking (candidate for Exp 30).
+- **EXP 29 COMPLETE (4 April 2026, 21:43 BST):**
+  First full integration test of CDSFL persistence layer with insect brain
+  as central relay. 9 rounds, 340 findings, 35 min wall clock. **CONVERGED**
+  at R8 (κ=0.960). C(H,E)=0.899 — highest recorded. γ=0.385 (computed).
+  All 5 models survived to completion (CC2=97, DeepSeek=81, Codex=59,
+  ChatGPT=57, Gemini=46). Conversational relay mode + FFF interaction pattern.
+  **vs Run 10 (best baseline):** +43% findings, +0.010 C(H,E), +25% gamma,
+  -5% wall clock. CC2 output +169% (36→97), Gemini +130% (20→46). Model
+  spread compressed from 3.3× to 2.1×. Conversational relay is a clear win.
+  **Cross-model engagement:** Gemini and CC2 produced substantive cross-model
+  citations (RFC-grounded falsification, multi-model positioning). ChatGPT
+  never referenced another model. Engagement intermittent, not default.
+  **Bugs fixed during run:** (1) DeepSeek empty response killed experiment —
+  changed to per-model benching; (2) resume directory mismatch — added
+  checkpoint discovery logic.
+  **New code:** `bench/run_exp29_persistence.py` (runner), interaction pattern
+  presets in `bench/cdsfl_registry/composer.py`, conversational relay mode in
+  `bench/insect_brain.py`.
+  **Known issues for next run:** stale `anthropic/claude-haiku` model ID in
+  immune shadow classifier, NK v2 doesn't set TriagedFinding duplicate fields,
+  `run_immune_pipeline` discards NK v2 returned state, stale shadow docstrings.
+  **Next:** Apply high-priority findings, design directed messaging for
+  cross-model communication, Exp 30 (endocrine/pacing), then Bench Run 2.
+  Logs: `bench/logs/exp29_persistence_20260404T193154Z/`.
+  TTS: `~/Desktop/CDSFL_tts/Exp29_Results_2026-04-04.txt`.
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

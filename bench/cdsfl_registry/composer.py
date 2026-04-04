@@ -673,6 +673,133 @@ def _build_situation_packet(
 
 
 # ---------------------------------------------------------------------------
+# Interaction pattern presets (Situation layer)
+#
+# Interaction patterns are user-configurable parameters in the constraint box
+# (protocol × focus × context), not competing methodologies. Each preset is
+# a DirectivePacket factory. The runner selects one by name.
+#
+# Evidence: C1-C5 HIL comparison (4 April 2026). C1+C4 union = 32% more
+# coverage than best single condition. Different patterns find different
+# things — the choice is a Situation layer configuration, not architecture.
+# ---------------------------------------------------------------------------
+
+# Proven in Exp 18, Runs 8-11. Mandatory FFF structure.
+_PRESET_FFF = (
+    "## Find-Fix-Follow Protocol (MANDATORY for this round)\n\n"
+    "For EVERY finding, you MUST provide all three steps:\n\n"
+    "**FIND:** Describe the issue precisely. Include the specific location "
+    "(file, section, line if applicable), what is wrong, and evidence that "
+    "it is wrong.\n\n"
+    "**FIX:** Provide the exact corrected text, code, or formula. Not a "
+    "suggestion -- the actual replacement. Use <<<< (old) ==== (new) >>>> "
+    "markers for code fixes.\n\n"
+    "**FOLLOW:** After writing your fix, trace its consequences through ALL "
+    "other sections, functions, or formulas that reference the same variables, "
+    "interfaces, or assumptions. Report any new issues your fix creates or "
+    "reveals.\n\n"
+    "If your fix creates no consequences, state \"FOLLOW: No downstream "
+    "impact identified\" -- but this should be rare for non-trivial fixes.\n"
+)
+
+# From C4/C5 conditions. Structured certificates with explicit premises,
+# execution traces, and formal conclusions. Meta's semi-formal format.
+_PRESET_META_STRUCTURED = (
+    "## Structured Certificate Protocol (MANDATORY for this round)\n\n"
+    "For EVERY finding, you MUST provide:\n\n"
+    "1. **STRUCTURED CERTIFICATE:** State your premises explicitly. "
+    "Trace execution through concrete examples (with specific inputs "
+    "and expected outputs). Derive a formal conclusion.\n\n"
+    "2. **FIND-FOLLOW-FIX:** For every issue —\n"
+    "   FIND: State the bug, its location, and your evidence.\n"
+    "   FOLLOW: Before proposing any fix, trace consequences through the "
+    "entire system. What depends on this? What interfaces does it cross? "
+    "What state does it propagate? What breaks downstream?\n"
+    "   FIX: Apply the simplest sufficient correction that addresses both "
+    "the root cause AND the downstream consequences. Classify as PATCH, "
+    "NOVEL CONSTRUCT, or ARCHITECTURAL.\n\n"
+    "3. **FALSIFICATION:** Actively try to disprove your own conclusions "
+    "before presenting them. Retract claims you can disprove. Only present "
+    "claims that survive your own attempted falsification.\n\n"
+    "4. **MATHEMATICAL RIGOUR:** Where applicable, provide formal proofs "
+    "(symbolic, set-theoretic, or by contradiction).\n\n"
+    "5. **CROSS-COMPONENT AWARENESS:** This is a multi-component pipeline. "
+    "Bugs in one component cascade through others. Always consider how "
+    "findings interact across the full system.\n\n"
+    "Show your working. Depth over breadth.\n"
+)
+
+# From C1 condition. No format enforcement. Natural conversation.
+_PRESET_CONVERSATIONAL = (
+    "## Conversational Review Protocol\n\n"
+    "Review the artifact naturally. Report issues as you find them in "
+    "whatever format is most natural. Focus on cross-component interactions "
+    "and real-world failure modes. There is no required output structure — "
+    "prioritise thoroughness and genuine analysis over format compliance.\n\n"
+    "For each issue, explain what is wrong, why it matters, and how to "
+    "fix it. Trace consequences when relevant.\n"
+)
+
+# From C5 condition. Conversational default with ITC fallback.
+_PRESET_THREE_LAYER_SCHEMA = (
+    "## Three-Layer Schema Protocol\n\n"
+    "Operate in conversational mode by default. Report findings naturally, "
+    "trace consequences, and show your working.\n\n"
+    "If you find yourself repeating prior findings or producing diminishing "
+    "returns, switch to structured certificate format: explicit premises, "
+    "concrete execution traces, formal conclusions.\n\n"
+    "If structured certificates also plateau, switch to Meta structured "
+    "prompting: classify each finding as PATCH / NOVEL CONSTRUCT / "
+    "ARCHITECTURAL, provide formal proofs where applicable, and apply "
+    "systematic falsification to your own claims.\n\n"
+    "The three layers are fallback positions, not simultaneous requirements. "
+    "Start natural, escalate only when needed.\n"
+)
+
+# Control condition. No CDSFL, no structure.
+_PRESET_UNCONSTRAINED = (
+    "## Review Protocol\n\n"
+    "Review the artifact and report any issues you find.\n"
+)
+
+# Registry: name → (text, constraint_class, tags)
+INTERACTION_PATTERN_PRESETS: dict[str, tuple[str, str, set[str]]] = {
+    "fff": (_PRESET_FFF, "HARD", {"fff", "baseline"}),
+    "meta_structured": (_PRESET_META_STRUCTURED, "HARD", {"meta", "structured", "certificates"}),
+    "conversational": (_PRESET_CONVERSATIONAL, "SOFT", {"conversational", "hil", "c1"}),
+    "three_layer_schema": (_PRESET_THREE_LAYER_SCHEMA, "SOFT", {"three_layer", "c5", "adaptive"}),
+    "unconstrained": (_PRESET_UNCONSTRAINED, "SOFT", {"control", "unconstrained"}),
+}
+
+
+def build_interaction_pattern(name: str) -> DirectivePacket:
+    """Build a Situation layer DirectivePacket from a named interaction pattern.
+
+    Available patterns: fff, meta_structured, conversational,
+    three_layer_schema, unconstrained.
+
+    Usage::
+
+        situation = build_interaction_pattern("meta_structured")
+        composed = compose("software", "opus_4_6", situation=situation)
+    """
+    if name not in INTERACTION_PATTERN_PRESETS:
+        available = ", ".join(sorted(INTERACTION_PATTERN_PRESETS))
+        raise ValueError(
+            f"Unknown interaction pattern {name!r}. "
+            f"Available: {available}"
+        )
+    text, constraint_class, tags = INTERACTION_PATTERN_PRESETS[name]
+    return DirectivePacket(
+        layer="situation",
+        name=f"interaction_pattern_{name}",
+        text=text,
+        constraint_class=constraint_class,
+        tags=tags | {"interaction_pattern"},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Coherence enforcement (with intra-packet pruning — Problem 2)
 # ---------------------------------------------------------------------------
 

@@ -309,6 +309,121 @@ class InsectBrain:
         return "\n".join(lines)
 
     # ───────────────────────────────────────────────────────────────────────
+    # Core function 1b: relay_conversational()
+    # ───────────────────────────────────────────────────────────────────────
+
+    def relay_conversational(self, round_idx: int) -> Dict[str, RelayPayload]:
+        """Prepare conversational relay payloads — full model responses.
+
+        Like relay(), but passes raw response text from other models instead
+        of parsed findings. Models see each other's full FFF reasoning chains,
+        not just the extracted conclusions.
+
+        Still mechanical: no editorial changes. Budget-constrained per model.
+        Cross-pollination: each model sees other models' responses only.
+        """
+        payloads: Dict[str, RelayPayload] = {}
+
+        for model_label in self.state.active_models:
+            text, context_reset = self._format_responses_for_model(
+                model_label, round_idx,
+            )
+
+            if round_idx > 0:
+                try:
+                    kappa = self.conv_detector.kappa(round_idx - 1)
+                    conv_summary = f"Convergence: kappa={kappa:.3f} (threshold={self.config.tau_kappa})"
+                except Exception:
+                    conv_summary = "Convergence: insufficient data"
+            else:
+                conv_summary = "Round 0: blind round (no prior data)"
+
+            total_findings = sum(len(rnd) for rnd in self.state.all_findings)
+
+            payloads[model_label] = RelayPayload(
+                model_label=model_label,
+                round_idx=round_idx,
+                findings_text=text,
+                finding_count=total_findings,
+                context_reset=context_reset,
+                convergence_summary=conv_summary,
+                active_models=list(self.state.active_models),
+            )
+
+        logger.info(
+            "Conversational relay for round %d: %d models",
+            round_idx, len(payloads),
+        )
+        return payloads
+
+    def _format_responses_for_model(
+        self,
+        model_label: str,
+        round_idx: int,
+    ) -> Tuple[str, bool]:
+        """Format other models' full responses for a specific model.
+
+        Cross-pollination: exclude model's own responses.
+        Budget-aware: degrade gracefully when over budget.
+        Degradation ladder: full text → last round only → findings summary.
+        """
+        if not self.state.round_records:
+            return "", False
+
+        budget = self.config.context_budget_overrides.get(
+            model_label, self.config.context_budget_chars,
+        )
+
+        # Collect all other models' responses, attributed
+        all_sections: List[Tuple[int, str, str]] = []  # (round, label, text)
+        for record in self.state.round_records:
+            for resp_label, resp_text in record.model_responses.items():
+                if resp_label != model_label and resp_text:
+                    all_sections.append((record.round_idx, resp_label, resp_text))
+
+        if not all_sections:
+            return "", False
+
+        # Try full responses
+        full_text = self._render_response_sections(all_sections)
+        if len(full_text) <= budget:
+            return full_text, False
+
+        # Over budget — last round only
+        last_round_idx = self.state.round_records[-1].round_idx
+        last_sections = [(r, l, t) for r, l, t in all_sections if r == last_round_idx]
+        last_text = self._render_response_sections(last_sections)
+
+        if len(last_text) <= budget:
+            n_earlier = len(all_sections) - len(last_sections)
+            header = (
+                f"(CONTEXT BUDGET: showing last round responses only. "
+                f"{n_earlier} earlier responses from other models exist.)\n\n"
+            )
+            return header + last_text, False
+
+        # Still over — fall back to findings summary (context reset)
+        cross_findings: List[Finding] = []
+        for rnd in self.state.all_findings:
+            for f in rnd:
+                if f.model_id != model_label:
+                    cross_findings.append(f)
+        return self._format_findings_summary(cross_findings), True
+
+    @staticmethod
+    def _render_response_sections(
+        sections: List[Tuple[int, str, str]],
+    ) -> str:
+        """Render attributed response sections. Mechanical formatting only."""
+        parts = []
+        for round_idx, label, text in sections:
+            parts.append(
+                f"──── {label} (Round {round_idx}) ────\n"
+                f"{text}\n"
+            )
+        return "\n".join(parts)
+
+    # ───────────────────────────────────────────────────────────────────────
     # Core function 2: persist()
     # ───────────────────────────────────────────────────────────────────────
 
