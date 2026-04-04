@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 08:17 BST
+Last updated: 4 April 2026 09:42 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,28 +22,25 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
-- **EXP 29 IMPLEMENTATION COMPLETE (4 April 2026, 08:17 BST):**
-  Full implementation of the Exp 29 architecture. 46 bug fixes (40 MF + 6 C5
-  novel), 5 novel constructs (3 built, 2 deferred), insect brain built, v2
-  immune components activated, CC2 timeout fixed. 496 tests pass (31 new
-  integration tests). **Ready for Exp 29 execution — subject: persistence layer.**
-  Key changes: (1) WP1: All 40 MF immune bug fixes across P0-P3 tiers.
-  (2) WP2: 6 C5 novel bug fixes (path traversal, empty string bypass, prompt
-  injection, OOM, schema blindness, cascade). (3) WP3: Reconciliation Gate
-  built (merges v1/v2 verdicts), Epistemic Routing Layer activated (DC v2 as
-  primary), lazy tool discovery (per-call retry with caching). Formalisation
-  Agent and Typed LLM Classifier deferred post-Exp 29. (4) WP4: CC2 timeout
-  300s→900s, retries 3→1. Per-model context budgets (CC2+DeepSeek: 30K).
-  (5) WP5: Insect brain built — reactive mechanical relay, 7 core functions,
-  persistence-as-memory, checkpoint recovery, convergence detection integration.
-  (6) WP6: V2 activated — DC v2 primary, NK v2 primary, CT v1+v2 parallel,
-  B-Cell v1+v2 parallel, Reg T v2 primary, skin barrier active.
-  Changed files: `bench/immune_agents.py`, `bench/insect_brain.py` (new),
-  `bench/experiment_11_orchestrator.py`, `bench/dm/_types.py`,
-  `bench/runner_core.py`, `bench/tests/test_exp29_integration.py` (new).
+- **EXP 29 READY TO RUN (4 April 2026, 09:42 BST):**
+  Full architecture implementation complete. 46 bug fixes (40 MF + 6 C5
+  novel), 5 novel constructs (3 built + 2 in shadow), insect brain built, v2
+  immune components activated, CC2 timeout fixed, structured reasoning chain
+  added to universal CDSFL directives, circulatory attribution completed,
+  shadow Formalisation Agent and Typed LLM Classifier wired in.
+  506 tests pass (41 integration tests).
+  **Ready for Exp 29 execution — subject: persistence layer.**
+  Three-layer schema now standing: (1) structured reasoning chain in
+  `cdsfl_core.txt` (universal, HARD), (2) CDSFL constraints (FFF, falsification),
+  (3) conversational mode as default. Model attribution in findings formatter
+  (circulatory Phase 1 complete). Shadow components: Formalisation Agent
+  (precondition extraction, Z3 translation — logs potential false rejections),
+  Typed LLM Classifier (Haiku-based claim classification — logs regex vs LLM
+  agreement). Both shadow-only, activation gated on data.
   Five architectural layers: (1) Persistence — built, under-tested (Exp 29
-  subject), (2) Immune — operational, v2 now active, (3) Adaptive/AQO — built,
-  (4) Insect brain — NOW BUILT, (5) Endocrine/pacing — designed, not blocking.
+  subject), (2) Immune — operational, v2 active + 2 shadows, (3) Adaptive/AQO
+  — built, (4) Insect brain — NOW BUILT, (5) Endocrine/pacing — designed,
+  not blocking (candidate for Exp 30).
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

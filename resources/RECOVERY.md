@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 08:17 BST
+Last updated: 4 April 2026 09:42 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,25 +19,23 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (4 April 2026, 08:17 BST)
+## Current Pending Work (4 April 2026, 09:42 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE.
 
-EXP 29 IMPLEMENTATION COMPLETE (4 April 2026, 08:17 BST):
-Full implementation of the Exp 29 architecture — all 6 work packages done.
-46 bug fixes (40 MF + 6 C5 novel), insect brain built, v2 activated, CC2 fixed.
-496 tests pass (31 new integration tests). READY FOR EXP 29 EXECUTION.
+EXP 29 READY TO RUN (4 April 2026, 09:42 BST):
+Full architecture implementation complete — all work packages done.
+46 bug fixes, insect brain built, v2 activated, CC2 fixed, three-layer schema
+standing (structured reasoning chain in cdsfl_core.txt), circulatory attribution
+complete, shadow Formalisation Agent + Typed LLM Classifier wired in.
+506 tests pass (41 integration tests).
 Subject: persistence layer (under-tested — single round p-pass only).
-Changed files: bench/immune_agents.py (40+ bug fixes, v2 activation,
-reconciliation gate, lazy discovery), bench/insect_brain.py (NEW — 500 lines,
-mechanical relay), bench/experiment_11_orchestrator.py (CC2 timeout),
-bench/dm/_types.py (CC2 context budget), bench/runner_core.py (per-model budgets),
-bench/tests/test_exp29_integration.py (NEW — 31 tests).
 V2 status: DC v2 PRIMARY, NK v2 PRIMARY, CT v1+v2 PARALLEL, B-Cell v1+v2 PARALLEL,
 Reg T v2 PRIMARY, skin barrier ACTIVE, reconciliation gate ACTIVE.
-Deferred: Formalisation Agent, Typed LLM Classifier (post-Exp 29).
-Next: Run Exp 29, then other layers, then Bench Run 2.
-Tests: python3 -m pytest bench/tests/test_exp29_integration.py -v
+Shadow: Formalisation Agent (precondition extraction → Z3, logs false rejections),
+Typed LLM Classifier (Haiku, logs regex vs LLM agreement). Both shadow-only.
+Next: Run Exp 29, then other layers (endocrine = Exp 30 candidate), then Bench Run 2.
+Tests: python3 -m pytest bench/tests/ -v
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
 C1 (Realistic HIL): 25 findings, 9/9 verified, 0 FP. 5 rounds, ~3 min.
