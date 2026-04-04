@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 04:45 BST
+Last updated: 4 April 2026 07:24 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -62,9 +62,28 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   **THREE-LAYER SCHEMA DISCOVERY:** (1) Meta structured prompting = reasoning
   format, (2) CDSFL constraints (FFF, falsification) = rules of engagement,
   (3) Full conversational mode = default session architecture, ITC = fallback
-  only for model failure/context degradation. C5 experiment proposed to validate.
+  only for model failure/context degradation.
   Logs: `bench/logs/hil_comparison_c1_20260404/`, `bench/logs/hil_comparison_c4_20260404/`.
   Analysis: `experimental_notes/HIL_Comparison_Analysis_2026-04-04.md`.
+- **C5 THREE-LAYER SCHEMA VALIDATION (4 April 2026, 06:16 BST):**
+  Full continued conversation + CDSFL system prompt + Meta structured prompting.
+  8 rounds, 11.6 min, 91,731 chars output. NO ITC trigger — model sustained
+  quality across all rounds. 27 consolidated findings covering 36/40 registry
+  bugs + 6 wholly novel. 3 self-retractions (one corrected MF-28 as false).
+  5 cross-component findings (C4 found 0). 5 novel constructs proposed.
+  100% of findings include fixes (PATCH/NOVEL CONSTRUCT/ARCHITECTURAL).
+  90% prior confirmation rate. 0 false positives.
+  Automated verdict: PARTIAL (27 IDs vs 30 threshold — consolidation artifact).
+  Qualitative assessment: combines C1 breadth + C4 depth as predicted.
+  Key novel findings: path traversal file read, empty string bypass, prompt
+  injection via descriptions, Confident Hallucination Highway (3-bug cascade).
+  Key novel constructs: Epistemic Routing Layer, Reconciliation Gate,
+  Formalisation Agent, typed LLM classifier, lazy tool discovery.
+  MF-28 (regex empty string) likely false positive in registry — C5 retracted
+  with valid proof.
+  Scripts: `bench/c5_three_layer_schema.py`, `bench/c5_prompts.py`, `bench/c5_verify.py`.
+  Logs: `bench/logs/c5_20260404T050417Z/`.
+  Master Finding Registry: `experimental_notes/Master_Finding_Registry_2026-04-04.md`.
 - **Run 10 COMPLETE (3 April 2026, 16:44 BST) = Exp 28:**
   7 rounds, 237 findings, 37 min. First natural convergence
   (DM kappa=1.0 at R6). γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.

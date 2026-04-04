@@ -1,0 +1,201 @@
+{
+  "analysis": {
+    "total_findings": 27,
+    "surviving": 27,
+    "retracted": 0,
+    "retracted_ids": [],
+    "confirmed_mf_count": 36,
+    "confirmed_mf_ids": [
+      "MF-01",
+      "MF-02",
+      "MF-03",
+      "MF-04",
+      "MF-05",
+      "MF-06",
+      "MF-07",
+      "MF-08",
+      "MF-09",
+      "MF-10",
+      "MF-11",
+      "MF-12",
+      "MF-13",
+      "MF-14",
+      "MF-15",
+      "MF-16",
+      "MF-17",
+      "MF-20",
+      "MF-21",
+      "MF-22",
+      "MF-23",
+      "MF-24",
+      "MF-25",
+      "MF-26",
+      "MF-27",
+      "MF-29",
+      "MF-30",
+      "MF-31",
+      "MF-32",
+      "MF-34",
+      "MF-35",
+      "MF-36",
+      "MF-37",
+      "MF-38",
+      "MF-39",
+      "MF-40"
+    ],
+    "unconfirmed_mf_count": 4,
+    "unconfirmed_mf_ids": [
+      "MF-18",
+      "MF-19",
+      "MF-28",
+      "MF-33"
+    ],
+    "novel_count": 6,
+    "novel_ids": [
+      "C5-01",
+      "C5-02",
+      "C5-03",
+      "C5-05",
+      "C5-23",
+      "C5-26"
+    ],
+    "cross_component_count": 5,
+    "cross_component_ids": [
+      "C5-22",
+      "C5-23",
+      "C5-24",
+      "C5-25",
+      "C5-26"
+    ],
+    "findings_with_proofs": 3,
+    "fix_types": {
+      "PATCH": 16,
+      "NOVEL CONSTRUCT": 5,
+      "ARCHITECTURAL": 6,
+      "UNKNOWN": 0
+    },
+    "severities": {
+      "P0": 13,
+      "P1": 8,
+      "P2": 4,
+      "P3": 2,
+      "UNKNOWN": 0
+    },
+    "components": {
+      "** Cytotoxic T Cell": 5,
+      "** Dendritic Cell": 3,
+      "** B Cell": 7,
+      "** Helper T Cell": 3,
+      "** NK Cell": 3,
+      "** Pipeline (Cross-Component)": 4,
+      "** Cross-Component": 1,
+      "** Dead Code": 1
+    }
+  },
+  "evaluation": {
+    "success_criteria": {
+      "total_verified_ge_30": {
+        "value": 27,
+        "threshold": 30,
+        "passed": false
+      },
+      "cross_component_ge_3": {
+        "value": 5,
+        "threshold": 3,
+        "passed": true
+      },
+      "formal_proofs_ge_5": {
+        "value": 3,
+        "threshold": 5,
+        "passed": false
+      },
+      "prior_confirmed_ge_80pct": {
+        "value": "90%",
+        "threshold": "80%",
+        "passed": true
+      },
+      "novel_findings_ge_3": {
+        "value": 6,
+        "threshold": 3,
+        "passed": true
+      },
+      "fixes_ge_90pct": {
+        "value": "100%",
+        "threshold": "90%",
+        "passed": true
+      },
+      "novel_constructs_ge_3": {
+        "value": 5,
+        "threshold": 3,
+        "passed": true
+      },
+      "no_itc_trigger": {
+        "value": true,
+        "threshold": true,
+        "passed": true
+      },
+      "time_under_20_min": {
+        "value": "11.6 min",
+        "threshold": "< 20 min",
+        "passed": true
+      }
+    },
+    "success_passed": 7,
+    "success_total": 9,
+    "falsification_criteria": {
+      "below_c1_baseline": {
+        "value": 27,
+        "threshold": "< 25",
+        "triggered": false
+      },
+      "zero_cross_component": {
+        "value": 5,
+        "threshold": "== 0",
+        "triggered": false
+      },
+      "fewer_proofs_than_c4": {
+        "value": 3,
+        "threshold": "< 11 (C4 had 11)",
+        "triggered": true
+      },
+      "itc_before_r5": {
+        "value": false,
+        "threshold": true,
+        "triggered": false
+      }
+    },
+    "falsification_triggered": 1,
+    "schema_validated": false,
+    "verdict": "THREE-LAYER SCHEMA FALSIFIED"
+  },
+  "c5_findings_count": 27,
+  "c5_finding_ids": [
+    "C5-01",
+    "C5-02",
+    "C5-03",
+    "C5-04",
+    "C5-05",
+    "C5-06",
+    "C5-07",
+    "C5-08",
+    "C5-09",
+    "C5-10",
+    "C5-11",
+    "C5-12",
+    "C5-13",
+    "C5-14",
+    "C5-15",
+    "C5-16",
+    "C5-17",
+    "C5-18",
+    "C5-19",
+    "C5-20",
+    "C5-21",
+    "C5-22",
+    "C5-23",
+    "C5-24",
+    "C5-25",
+    "C5-26",
+    "C5-27"
+  ]
+}

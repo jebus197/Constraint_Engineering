@@ -1,0 +1,167 @@
+=== ROUND 7 ===
+Prompt (765 chars):
+After falsification, what remains unexplored? Consider categories of bugs that neither you nor the prior reviewers may have examined:
+
+- Timing and concurrency (race conditions, TOCTOU, thread safety)
+- Serialisation and deserialisation (pickle, JSON round-trip fidelity)
+- Error propagation (do errors in one component correctly signal to others?)
+- Resource management (file handles, memory, subprocess lifecycle)
+- Configuration sensitivity (what happens with non-default settings?)
+- Numerical stability (floating-point edge cases, overflow, underflow)
+
+For any new finding, apply the full structured certificate and FFF process. Propose fixes classified as PATCH / NOVEL CONSTRUCT / ARCHITECTURAL.
+
+This is the final discovery sweep. Find what everyone missed.
+
+=== RESPONSE (8077 chars, 70.5s) ===
+This is the final discovery sweep. By examining the system through the lenses of concurrency lifecycle, OS resource management, and configuration state machines, I have identified three deeply embedded architectural failures that both previous reviewers and my initial passes missed.
+
+Here is the formal structured analysis and the required novel constructs to fix them.
+
+---
+
+### FINDING 1: Context-Manager Deadlock (The "Fake Timeout" Illusion)
+**Location:** `run_immune_pipeline` (Line 735)
+**Category:** Concurrency / Thread Lifecycle
+
+**Structured Certificate:**
+*   **Premises:**
+    1. The thread pool is managed by a context manager (`with concurrent.futures.ThreadPoolExecutor(...) as pool:`).
+    2. The orchestrator enforces timeouts via `future.result(timeout=ct_timeout + 30)`.
+    3. `TimeoutError` is caught, logged, and the loop proceeds.
+    4. By Python specification, the `ThreadPoolExecutor.__exit__` method implicitly calls `pool.shutdown(wait=True)`.
+*   **Execution Trace:**
+    *   The `cytotoxic_t_cell` thread hangs (e.g., the `claude` CLI binary stalls due to a network hang or OS pipe deadlock, failing to honour its own timeout).
+    *   The orchestrator waits. At `ct_timeout + 30`, `future.result()` raises a `TimeoutError`.
+    *   The orchestrator catches the exception, logs "Immune cell failed", and concludes the `for` loop.
+    *   The execution reaches the end of the `with` block.
+    *   `__exit__` is invoked. It blocks the main thread, waiting for the deadlocked Claude CLI thread to naturally terminate.
+*   **Formal Conclusion:** The orchestrator's timeout mechanism is structurally useless. Any thread that exceeds the timeout will permanently hang the entire verification pipeline at the context manager exit boundary, leading to complete system deadlock.
+
+**Falsification Attempt:** Can the process continue? No. `wait=True` is hardcoded into the Python standard library's `__exit__` definition for executors. The main thread will block infinitely. 
+
+**Fix (Architectural): Decoupled Executor Lifecycle**
+*   **What it does:** Abandons the context manager for tasks requiring strict timeouts. It spawns daemonized executors that are permitted to be garbage collected, allowing the main pipeline to survive stalled children.
+*   **Classification:** ARCHITECTURAL
+```python
+    # Remove the 'with' context manager
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    futures = { ... }
+    
+    for name, future in futures.items():
+        try:
+            # Gather results
+            result = future.result(timeout=ct_timeout + 30)
+        except Exception as e:
+            logging.warning(f"Cell {name} failed: {e}")
+            # The future is cancelled if it hasn't started, but if it's running, 
+            # we must abandon it.
+            future.cancel() 
+            
+    # Asynchronously shutdown the pool without blocking the orchestrator
+    pool.shutdown(wait=False)
+```
+
+---
+
+### FINDING 2: OOM Resource Exhaustion via `readlines()`
+**Location:** `_verify_ct_claim` (Line 245)
+**Category:** Resource Management / File I/O
+
+**Structured Certificate:**
+*   **Premises:**
+    1. The agent supplies `file_path`.
+    2. `_verify_ct_claim` opens the file and calls `f.readlines()`.
+    3. `readlines()` loads the entire file into RAM simultaneously as a list of strings.
+*   **Execution Trace:**
+    *   An LLM hallucinates (or is prompt-injected to target) a massive file within the repository (e.g., `model_weights.bin`, `historic_dataset.json`, or an infinitely appending `system.log`), providing `{"file": "/path/to/50GB_file.json", "line": 5}`.
+    *   The verification mechanical check attempts to load all 50GB into memory.
+    *   The OS triggers an Out-Of-Memory (OOM) kill.
+*   **Formal Conclusion:** The verification server's memory boundary is dictated by the largest single file in the target repository, making the pipeline trivially susceptible to catastrophic crashes on monolithic codebases or data-heavy repositories.
+
+**Falsification Attempt:** Does the OS protect against this? Yes, by terminating the process. But terminating the verification server *is* the denial of service. The function should stream the file.
+
+**Fix (Patch): Bounded Line Iteration**
+*   **What it does:** Streams the file line-by-line, loading only the necessary $\pm 2$ line window into memory, with a hard cap to prevent scanning infinite character streams.
+*   **Classification:** PATCH
+```python
+    # Replace f.readlines() with a bounded iterator
+    import itertools
+    
+    target_line = line_num - 1
+    start_line = max(0, target_line - 2)
+    end_line = target_line + 3
+    
+    lines_window = []
+    actual_line = ""
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            # Fast-forward to the start of the window
+            for _ in range(start_line):
+                next(f)
+            
+            # Read only the required window
+            for current in range(start_line, end_line):
+                line = next(f)
+                lines_window.append(line)
+                if current == target_line:
+                    actual_line = line.strip()
+    except StopIteration:
+        pass # Reached EOF before window ended
+    except UnicodeDecodeError:
+        return False, 0.0, "Cannot read file: Encoding error"
+        
+    window = "".join(lines_window)
+```
+
+---
+
+### FINDING 3: Static Initialization Trap (Permanent Degradation)
+**Location:** Global scope / `_find_python_with_tools()` (Line 59)
+**Category:** Configuration State / Lifecycle
+
+**Structured Certificate:**
+*   **Premises:**
+    1. `PYTHON_TOOLS` is assigned by calling `_find_python_with_tools()` at the module level.
+    2. Module-level code runs exactly once when the file is first imported.
+*   **Execution Trace:**
+    *   A test runner, CI/CD pipeline, or benchmarking suite spins up. It imports `pipeline.py`.
+    *   The `import sympy` check executes. At this exact millisecond, the virtual environment hasn't fully finalized its `pip install` commands, or a parallel setup script is still running.
+    *   The check fails. `PYTHON_TOOLS` locks to `sys.executable` (fallback).
+    *   Ten seconds later, the environment is perfectly healthy.
+    *   For the next 12 hours of the benchmarking run, every single mathematical and logical finding is verified using the fallback executable. They all crash because `import sympy` is still missing in that specific fallback executable's path.
+*   **Formal Conclusion:** Global state initialization tightly couples the runtime capabilities of the B-Cell to the exact state of the file system at the precise millisecond of module import, resulting in irreversible, silent degradation of verification capacity.
+
+**Falsification Attempt:** Could the user just restart the script? Yes, but in automated pipelines (where CDSFL is typically deployed), no human is watching to restart it. The module caches failure permanently. 
+
+**Fix (Novel Construct): Lazy Evaluation Dependency Manager**
+*   **What it does:** Defers capability discovery until the tool is explicitly requested, and implements a cached-retry mechanism so that transient environmental states do not permanently brick the module.
+*   **Classification:** NOVEL CONSTRUCT
+```python
+class ToolChainState:
+    _python_tools_path: Optional[str] = None
+    _failed_attempts: int = 0
+
+    @classmethod
+    def get_python_tools(cls) -> str:
+        if cls._python_tools_path is not None:
+            return cls._python_tools_path
+            
+        # Backoff: if it failed previously, don't spam subprocesses, but allow retry
+        if cls._failed_attempts > 3:
+            return sys.executable 
+
+        candidates = [ ... ]
+        for py in candidates:
+            # ... run check ...
+            if "ok" in r.stdout:
+                cls._python_tools_path = py
+                return py
+                
+        cls._failed_attempts += 1
+        return sys.executable
+
+# Replace global PYTHON_TOOLS with getter:
+# result = sp.run([ToolChainState.get_python_tools(), "-c", code], ...)
+```

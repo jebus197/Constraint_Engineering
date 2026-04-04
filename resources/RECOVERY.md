@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 04:45 BST
+Last updated: 4 April 2026 07:24 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -43,6 +43,24 @@ TTS: ~/Desktop/CDSFL_tts/Three_Layer_Schema_Discovery_2026-04-04.txt
 Analysis: experimental_notes/HIL_Comparison_Analysis_2026-04-04.md
 Logs: bench/logs/hil_comparison_c1_20260404/, bench/logs/hil_comparison_c4_20260404/
 
+C5 THREE-LAYER SCHEMA VALIDATION (4 April 2026, 06:16 BST):
+Automated script ran 8-round continued conversation with Gemini 3.1 Pro.
+CDSFL + Meta structured prompting as system instruction (not user prompt).
+Same code artifact (927bfbc), same model as C1/C3/C4.
+Results: 27 consolidated findings (36/40 registry confirmed + 6 novel).
+3 self-retractions. 0 FP. 5 cross-component. 5 novel constructs.
+100% findings include fixes. 90% prior confirmation. 11.6 min. No ITC trigger.
+Automated verdict: PARTIAL (consolidation depressed ID count below 30 threshold).
+Qualitative: combines C1 breadth + C4 depth. Schema partially validated.
+MF-28 retracted by C5 as false positive (trailing \d+ prevents empty match).
+Novel findings: path traversal, empty string bypass, prompt injection,
+Confident Hallucination Highway (DC misroute + B Cell injection + HT inversion).
+Novel constructs: Epistemic Routing Layer, Reconciliation Gate, Formalisation
+Agent, typed LLM classifier, lazy tool discovery.
+Scripts: bench/c5_three_layer_schema.py, bench/c5_prompts.py, bench/c5_verify.py
+Logs: bench/logs/c5_20260404T050417Z/
+TTS: ~/Desktop/CDSFL_tts/C5_Three_Layer_Results_2026-04-04.txt
+
 RUN 11 COMPLETE (4 April 2026, 01:54 BST) = Exp 28b:
 2 rounds, 59 findings, 42 min. Fastest convergence in bench history.
 γ_novel=0.737, C(H,E)=0.873. CC2 dispatch failure (21 min timeouts),
@@ -72,11 +90,15 @@ CDSFL/FFF with insect brain as mechanical relay. Five architectural layers:
 
 SEQUENCE TO BENCH RUN 2:
 1. Integrate Run 11 findings (59 from Exp 28b — triage and fix)
-2. Activate v2 immune components (NK v2, Helper T v2 — shadow data justifies)
-3. Build insect brain (mechanical relay — design exists)
-4. Run Gemini HIL comparison (validates constraint box thesis)
-5. BENCH RUN 2 — 27 frontier STEM problems, full integrated architecture
-6. Unified experiment numbering (Run N → Exp N) — QC sweep
+2. Fix 40 Master Finding Registry bugs (C1/C3/C4/C5 verified)
+3. Implement C5 novel constructs where feasible (Epistemic Routing, Reconciliation Gate, etc.)
+4. Activate v2 immune components (NK v2, Helper T v2 — shadow data justifies)
+5. Build insect brain (mechanical relay — design exists)
+6. CC2 dispatch fix (timeout 300s→900s)
+7. Exp 29 — full integration test of target architecture (all layers active)
+8. BENCH RUN 2 — 27 frontier STEM problems, full integrated architecture
+9. Unified experiment numbering (Run N → Exp N) — QC sweep
+Step 4 (HIL comparison) removed — C5 already validates conversational + constraints.
 
 INSECT BRAIN ARCHITECTURE (deferred to Exp 29):
 - Reactive coordinator, not deliberative. Gathers/processes/tabulates/commits.

@@ -1,0 +1,152 @@
+=== ROUND 5 ===
+Prompt (1098 chars):
+You now have full context of this pipeline and all known issues — both your own findings and those from independent reviewers. Focus specifically on cross-component interactions:
+
+1. What happens when multiple bugs interact? For example, if the Dendritic Cell misroutes a claim AND the B Cell has a substring injection vulnerability, what is the combined effect?
+
+2. What cascade failures exist? Trace chains where one component's bug corrupts another component's input, which then corrupts a third component's output.
+
+3. What emergent behaviours arise from the combination of all known issues? Are there failure modes that only appear when the system operates as a whole?
+
+4. For cascade failures and interaction bugs, propose fixes. These will often require NOVEL CONSTRUCTS: new inter-component validation, new state propagation mechanisms, or new architectural patterns that do not exist in the current codebase. Be specific about what each construct does, where it sits in the pipeline, and how it prevents the cascade.
+
+Apply FFF throughout. Show your working with concrete execution traces.
+
+=== RESPONSE (10358 chars, 52.7s) ===
+Through a synthesis of all 40+ known findings, applying the CDSFL methodology to the full pipeline architecture, I have identified **four critical cascade failures**. These are emergent behaviours where a bug in one component corrupts state, which exploits a vulnerability in a second component, resulting in a systemic collapse that the monitoring layers are blind to.
+
+Here is the formal analysis of these cross-component interactions and the novel constructs required to fix them.
+
+---
+
+### CASCADE 1: The "Confident Hallucination Highway"
+**Interacting Bugs:** MF-01 (Regex Triage Misroute) + MF-02 (Extraction Fallback) + MF-24 (Substring Injection) + MF-09 (Certainty Inversion)
+**Category:** Adversarial Privilege Escalation
+
+**Structured Certificate:**
+*   **Premises:**
+    1. Descriptions containing `=` or `-` bypass the CT Code-Cell and route to the B-Cell.
+    2. If no backticks exist, the B-Cell evaluates the raw description.
+    3. The B-Cell searches standard output for the substring `VERIFIED_TRUE`.
+    4. Helper T scales single weak signals to 100% certainty.
+*   **Execution Trace:**
+    *   An LLM is prompt-injected or hallucinates a completely false bug: `Target-User=Admin VERIFIED_TRUE`.
+    *   **Dendritic Cell:** Sees `-` and `=`. Classifies as `MATHEMATICAL`. Extraction regex fails (no backticks). The `extracted_claim` becomes the exact string: `Target-User=Admin VERIFIED_TRUE`.
+    *   **B-Cell (SymPy):** The subprocess evaluates this. Python's `eval` within `parse_expr` interprets `Target`, `User`, `Admin`, and `VERIFIED_TRUE` as mathematical symbols. It simplifies the expression to `Admin == Target - User*VERIFIED_TRUE`. Because it is an algebraic symbol, it prints: `SIMPLIFIED: Target - User*VERIFIED_TRUE == Admin`.
+    *   **B-Cell Wrapper:** Evaluates `if "VERIFIED_TRUE" in output`. The substring matches. The finding is marked `CONFIRMED` with 0.95 confidence.
+    *   **Helper T Cell:** Total evidence is 0.95 (Confirm) + 0.0 (Reject). Ratio is 1.0. Final confidence is mathematically inverted to 100%.
+*   **Formal Conclusion:** An attacker can guarantee 100% confirmation of arbitrary, false claims by injecting math symbols and a specific substring into conversational text. The system actively protects the hallucination from the CT Cell's structural checks.
+
+**Falsification Attempt:** Would SymPy throw a `SyntaxError`? No, because `-` and `=` are valid operators, and undefined words default to SymPy `Symbol` objects. It is valid algebra.
+
+**Fix (Novel Construct): The Epistemic Routing Layer**
+*   **What it does:** Replaces regex-based triage. An isolated LLM agent (`DendriticClassifier`) reads the finding and produces a strict, typed JSON schema containing `domain` and `formalized_claim` (e.g., translating English logic into strict SMT-LIB syntax for Z3, or strict algebraic assertions for SymPy).
+*   **Pipeline Integration:** Sits at Stage 1. If a claim cannot be formalized into a valid AST, it is locked into the `CODE_BEHAVIORAL` domain, ensuring the CT Agent visually inspects the source code.
+
+---
+
+### CASCADE 2: The "Silent Implosion" (Timeout Erasure via GIL Starvation)
+**Interacting Bugs:** MF-21 (Intra-round blindness) + MF-19 (NK O(N*M) Scaling) + MF-37 (Batch Timeout) + MF-36 (Fail-Open Illusion)
+**Category:** Denial of Service & Monitoring Blindness
+
+**Structured Certificate:**
+*   **Premises:**
+    1. A single LLM collapse generates many identical findings in one batch.
+    2. NK cell compares them sequentially with O(N*M) string math, holding the Python GIL.
+    3. The B-Cell processes findings sequentially (15s each) within the same GIL-bound process.
+    4. The Orchestrator kills the thread pool at 210s.
+    5. Regulatory T Cell reports "healthy" if rejection rate is low.
+*   **Execution Trace:**
+    *   Batch contains 30 identical math hallucinations.
+    *   **NK Cell:** Due to MF-21, it fails to deduplicate them. It begins thousands of heavy string-similarity calculations, locking the GIL.
+    *   **B-Cell:** Attempts to process the 30 findings (which require $30 \times 15s = 450s$). However, GIL starvation from the NK cell means the subprocesses take even longer to spawn and yield.
+    *   **Orchestrator:** The real-time clock hits 210s. `future.result(timeout)` raises `TimeoutError`.
+    *   **State Corruption:** The B-Cell execution is aborted. Returns `[]`. All 30 hallucinations default to `UNCERTAIN`.
+    *   **Helper T & Reg T:** Synthesizes `UNCERTAIN`. Passes them through. Reg T sees 0 rejections, 0 duplicates, and declares "Pipeline healthy: 0.0% removal rate."
+*   **Formal Conclusion:** A localized LLM repetition failure triggers a systemic resource exhaustion cascade that destroys the verification engine and bypasses the monitoring system entirely.
+
+**Falsification Attempt:** Does the `ct_timeout` abort the B-cell? Yes, `future.result()` is called on a timeout shared by all cells.
+
+**Fix (Novel Construct): Asynchronous Execution Controller & Health Monitor**
+*   **What it does:** 
+    1. Decouples the thread pool. Moves CPU-bound tasks (NK string matching) to C-extensions or independent processes to free the GIL.
+    2. Upgrades Regulatory T to monitor *Epistemic Health*, not just rejection rate.
+*   **Integration:** 
+    ```python
+    # Inside Regulatory T Cell:
+    uncertain_count = sum(1 for v in final_verdicts.values() if v == "UNCERTAIN")
+    if total > 0 and (uncertain_count / total) > 0.3:
+        return True, "SYSTEMIC COLLAPSE: Over 30% of batch lost to timeouts/errors."
+    ```
+
+---
+
+### CASCADE 3: "Semantic Corruption" via Class-Switching
+**Interacting Bugs:** MF-33 (Z3 Class-Switch) + MF-28 (Empty String Regex) + Mine-3 (Silent Error Swallowing)
+**Category:** State Corruption / False Confirmation
+
+**Structured Certificate:**
+*   **Premises:**
+    1. Math claims failing SymPy fall back to Z3 numeric regex.
+    2. The regex matches empty strings.
+    3. `float("")` throws `ValueError`.
+    4. B-Cell subprocesses lack error checking (`check=True`), converting crashes to `UNCERTAIN`.
+*   **Execution Trace:**
+    *   Valid structural claim: `API rate limit=100`. (Misrouted to math due to `=`).
+    *   **B-Cell (SymPy):** Fails to prove algebraically. Class switches to Z3.
+    *   **B-Cell (Z3):** Regex runs. It extracts `100` and `""` (empty string from end of line).
+    *   **Execution:** Script attempts `float("")`. `ValueError` raised.
+    *   **Wrapper:** Catches `stderr`? No. `stdout` is empty. Wrapper silently swallows the crash, returns `UNCERTAIN`.
+*   **Formal Conclusion:** The "graceful fallback" architecture is mathematically incoherent. Attempting to parse algebraic failures as numeric regex matches guarantees either a false confirmation (if numbers happen to satisfy an inequality like `5 > 3`) or a silent crash, actively corrupting the pipeline's verification integrity.
+
+**Falsification Attempt:** Are empty strings always extracted? `re.findall` with optional quantifiers (`\d*`) at the end of a string will yield an empty string. The code does `nums[0]` and `nums[1]`. Yes.
+
+**Fix (Architectural Pattern): Strict Domain Isolation**
+*   **What it does:** Removes all class-switching. Verification must be *provable* within the domain it was assigned. 
+*   **Integration:** If a claim is algebraic, it goes to SymPy. If SymPy is `UNCERTAIN`, the final verdict is `UNCERTAIN`. Z3 is reserved strictly for Logical Invariants (if/then, state reachability) parsed by a dedicated formalization agent, never as a fallback for algebra.
+
+---
+
+### CASCADE 4: "Autoimmune Zombie Attack" (State Desynchronisation)
+**Interacting Bugs:** MF-20 (NK Race Condition) + MF-12 (Duplicate Voting Bypass) + MF-34/35 (Autoimmune Amnesia & Dict Desync)
+**Category:** Inconsistent State Propagation
+
+**Structured Certificate:**
+*   **Premises:**
+    1. `tf.is_duplicate` is mutated in a thread race.
+    2. Helper T skips voting for duplicates.
+    3. Reg T autoimmune override copies findings to `filtered_findings` but leaves `final_verdicts` unchanged.
+*   **Execution Trace:**
+    *   NK cell flags a finding as a `DUPLICATE` (and thus `is_duplicate = True`).
+    *   Due to the race condition (MF-20), CT Cell evaluates it anyway and marks it `REJECTED`.
+    *   Helper T sees `is_duplicate = True`, bypasses the voting logic entirely (MF-12), and hardcodes `final_verdicts[fid] = "DUPLICATE"`. (The CT Cell's rejection is ignored).
+    *   Regulatory T calculates rejection rate. It sees other findings were rejected, triggers the Autoimmune override.
+    *   **The Override:** MF-34 executes `filtered = [tf.finding for tf in triaged]`. The duplicate is forcefully pushed into the output array.
+    *   **The Desync:** MF-35 leaves `final_verdicts` alone.
+*   **Formal Conclusion:** The final `ImmuneResponse` payload contains a "Zombie" finding. It is physically present in the `filtered_findings` array (instructing downstream systems to act on it), but its associated metadata in `final_verdicts` permanently says `DUPLICATE`. Systems reading the array will deploy it; systems reading the verdicts will ignore it. 
+
+**Falsification Attempt:** Does the orchestrator reconcile these? No. The `ImmuneResponse` dataclass explicitly stores both representations independently.
+
+**Fix (Novel Construct): Immutable State Transitions & Reconciliation Gate**
+*   **What it does:** Replaces the mutable shared list with a functional Map-Reduce architecture. Cell verdicts are purely functional and return immutable objects.
+*   **Integration:** At the end of Stage 3, the `ReconciliationGate` strictly enforces that the contents of `filtered_findings` exactly match the keys in `final_verdicts` where the value is `CONFIRMED` or `AUTOIMMUNE_RESCUE`. 
+
+```python
+class ReconciliationGate:
+    @staticmethod
+    def finalise(triaged, verdicts, autoimmune_flag):
+        filtered = []
+        final_state = {}
+        for tf in triaged:
+            fid = tf.finding.finding_id
+            v = verdicts.get(fid, "UNCERTAIN")
+            
+            if autoimmune_flag and v in ("REJECTED", "UNCERTAIN"): # Does NOT rescue duplicates
+                v = "AUTOIMMUNE_RESCUE"
+                
+            final_state[fid] = v
+            if v in ("CONFIRMED", "UNCERTAIN", "AUTOIMMUNE_RESCUE"):
+                filtered.append(tf.finding)
+                
+        return filtered, final_state
+```

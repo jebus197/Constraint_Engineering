@@ -1,0 +1,303 @@
+=== ROUND 3 ===
+Prompt (13116 chars):
+Independent reviewers using different methodologies found the following 20 issues in the same code you just reviewed. For each finding:
+
+1. CONFIRM or CHALLENGE with evidence. If you confirm, state why your own analysis supports it. If you challenge, provide a concrete counterexample or proof that the claim is wrong.
+
+2. EXTEND: What NEW issues do these findings reveal when you trace their interactions through the full pipeline? Use FFF on any new discoveries.
+
+3. For every confirmed or new finding, propose a concrete fix — code patch, novel construct, or architectural recommendation. Some of these may require entirely new components or validation layers that do not currently exist in the codebase. Be specific about what the new construct should do and how it integrates.
+
+Prior findings (batch 1 of 2):
+
+### MF-01: MATH_PATTERN Overbroad Regex (Math Hijack)
+- **Sources:** C1-F14, C3, C4-DC4
+- **Status:** V2 FIXED (`_MATH_PATTERN_V2`, lines 1791–1800)
+- **Priority:** P0
+- **Description:** `_MATH_PATTERN` matches bare `=`, `-`, `!`, `/`, `+`. Any description containing a hyphen (e.g. "use-after-free"), exclamation mark, or slash is misrouted to MATHEMATICAL instead of CODE_BEHAVIORAL. 30% of standard bug descriptions hijacked in testing. Downstream: misrouted claims fail CT Cell verification, inflating rejection rate, potentially triggering autoimmune flag.
+- **Verification:** SymPy + regex testing. Confirmed worse than originally described — bare punctuation matches.
+- **Fix:** Activate `_MATH_PATTERN_V2` which requires equation context (backtick-wrapped, numeric comparisons, named variables).
+
+### MF-02: Extraction Asymmetry (T ⊄ E)
+- **Sources:** C4-DC1
+- **Status:** UNFIXED (related to MF-01 but distinct)
+- **Priority:** P1
+- **Description:** The trigger set T (patterns that activate MATHEMATICAL classification) is a strict superset of the extraction set E (patterns the backtick regex can extract). Unary operations (`-1`), functional math (`sqrt(x)`), and SymPy syntax (`Eq(x,y)`) trigger classification but fail extraction. Extraction regex requires binary operator with |L|≥1, |R|≥1.
+- **Verification:** Regex testing. `Eq(x,y)` and `sqrt(x)` provably fail extraction despite triggering.
+- **Fix:** Align trigger and extraction sets. Either narrow the trigger or broaden the extraction. V2 MATH_PATTERN partially addresses by narrowing trigger, but extraction regex also needs updating.
+
+### MF-03: Context Erasure
+- **Sources:** C4-DC2
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Backtick extraction uses `re.search` to grab the first backtick-enclosed equation. Conditional context is permanently severed. "Ensure `x < 5` only when `y == True`" extracts only `x < 5`. Downstream verifiers attempt to prove a bounded claim globally, producing false rejections.
+- **Verification:** Regex testing confirmed. First-match extracts `x < 5`, precondition lost.
+- **Fix:** Extract all backtick expressions and preserve surrounding conditional text. Or pass full description alongside extracted claim.
+
+### MF-04: First-Match Fallacy
+- **Sources:** C1-F15
+- **Status:** UNFIXED (related to MF-03)
+- **Priority:** P2
+- **Description:** `re.search()` returns only the first backtick match. If multiple backticked strings exist, the extraction grabs the wrong one.
+- **Verification:** Code inspection confirmed. Line 227: `re.search` not `re.findall`.
+- **Fix:** Use `re.findall` and select the most mathematically relevant match, or pass all matches.
+
+### MF-05: Logic/Structural Pattern Missing re.DOTALL
+- **Sources:** C4-DC3 (ReDoS context), C1-F18 (NK multiline — related)
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** `_LOGIC_PATTERN` and `_STRUCT_PATTERN` use `.*` without `re.DOTALL`. Multi-line descriptions where keywords span lines fail to match. Also creates O(N) backtracking on large inputs without the second keyword.
+- **Verification:** Timing test confirmed O(N) scaling. Code inspection confirmed no `re.DOTALL`.
+- **Fix:** Add `re.DOTALL` flag. Consider lazy quantifiers (`.*?`) to limit backtracking.
+
+### MF-06: Natural Language Hijack
+- **Sources:** C4-DC2 (R2 finding, survived falsification as part of DC-4)
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** `_LOGIC_PATTERN` matches `\balways\b.*\bnever\b`. Conversational text ("I always thought this bug would never happen") triggers LOGICAL classification. Similarly `_STRUCT_PATTERN` matches `\bno\b.*\bclass\b`, routing CSS descriptions to structural verification.
+- **Verification:** Regex testing confirmed both patterns match conversational English.
+- **Fix:** Require patterns to appear within code-context markers (backticks, indentation) or add negative lookahead for conversational phrasing.
+
+---
+
+## HELPER T CELL — Voting Logic (7 findings)
+
+### MF-07: Net Positive Contradiction (Asymmetric Thresholds)
+- **Sources:** C1-F3, C1-F12, C3 (1.5× veto barrier), C4-HT1
+- **Status:** V2 FIXED (helper_t_cell_v2_shadow, lines ~2044–2150)
+- **Priority:** P0
+- **Description:** Thresholds 0.6 (reject) and 0.4 (confirm) sum to 1.0, perfectly partitioning the probability space. Any finding not explicitly rejected is automatically confirmed. A 50/50 split → CONFIRMED. Net negative (C=0.41, R=0.59) → CONFIRMED. Docstring says "net positive confidence to survive" but code implements proportional voting that contradicts this.
+- **Verification:** SymPy proof. R/T + C/T simplifies to 1. Concrete examples: net=-0.18 still CONFIRMED.
+- **Fix:** V2 implements log-odds within-domain + max-signal across-domain. Explicit 0.7 scaling for rejection evidence. Activate v2.
+
+### MF-08: Dead Else Block
+- **Sources:** C1-F10, C1-F20 (algebraic proof), C3, C4 (retracted with nuanced loophole)
+- **Status:** V2 FIXED (dead code eliminated in v2)
+- **Priority:** P3 (dead code — no runtime impact)
+- **Description:** The else block producing UNCERTAIN is mathematically unreachable when T ≥ 0.001 (proof: T < T contradiction). Technically reachable when T ∈ (0, 0.001) via floored denominator, but minimum agent confidence = 0.2 makes this impossible in practice.
+- **Verification:** Algebraic proof (C1), SymPy confirmation, C4 found micro-total loophole and correctly assessed it as practically irrelevant.
+- **Fix:** Remove dead else block or replace with explicit assertion. V2 eliminates the structure entirely.
+
+### MF-09: Certainty Inversion Paradox
+- **Sources:** C1-F11
+- **Status:** V2 FIXED (new confidence formula in v2)
+- **Priority:** P1
+- **Description:** Final confidence = weight/total. A single weak CONFIRMED at 0.1 produces 100% confidence (0.1/0.1=1.0). A strong contested finding (CT CONFIRMED at 1.0 + B REJECTED at 0.9) produces only 52% confidence. System is blind to absolute evidence amount.
+- **Verification:** Arithmetic confirmed. Single low-confidence verdict → 100% final confidence.
+- **Fix:** V2 uses absolute evidence thresholds alongside ratios. Activate v2.
+
+### MF-10: Micro-Total Discontinuity
+- **Sources:** C4-HT2
+- **Status:** V2 FIXED (floored denominator eliminated in v2)
+- **Priority:** P1
+- **Description:** Floored denominator `max(total, 0.001)` used for threshold routing but raw total used for confidence assignment. With C=0, R=0.0006: floored denom=0.001, reject_ratio=0.6 (meets threshold), confidence=0.0006/0.0006=1.0. Near-zero evidence → 100% certainty.
+- **Verification:** SymPy confirmed. 0.0006 evidence → 1.0 confidence.
+- **Fix:** V2 eliminates the floored denominator pattern. Activate v2.
+
+### MF-11: Verdict Spam
+- **Sources:** C1-F13
+- **Status:** UNFIXED (v2 does not cap per-cell contribution)
+- **Priority:** P2
+- **Description:** Additive weighting with no per-cell cap. If a cell outputs multiple verdicts for the same finding, it gets disproportionate voting power. Three NK REJECTED at 0.4 = 1.2 rejection weight, overpowering a single CT CONFIRMED at 1.0.
+- **Verification:** Code inspection confirmed. `confirm_weight += v.confidence` sums all verdicts, no deduplication.
+- **Fix:** Cap maximum contribution per cell, or deduplicate verdicts by cell before synthesis.
+
+### MF-12: DUPLICATE Semantic Handling
+- **Sources:** C4 (retracted — docstring says auto-reject), C1 (implicit in voting)
+- **Status:** V2 FIXED (v2 separates duplicate handling from voting)
+- **Priority:** P3
+- **Description:** DUPLICATE verdicts contribute to `reject_weight`. This is documented behaviour ("DUPLICATE verdicts are auto-rejected") but creates a coupling between deduplication and voting that may not always be desirable.
+- **Verification:** Code inspection confirmed. C4 correctly retracted this as "working as documented."
+- **Fix:** V2 separates duplicate handling. No code change needed — note for architectural review only.
+
+### MF-13: Rejection Rate Discrepancy
+- **Sources:** C1-F8
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** `regulatory_t_cell_check` counts REJECTED and DUPLICATE separately. Pipeline `run_immune_pipeline` counts both together. Inconsistent accounting means autoimmune threshold can be triggered at different points depending on which count is used.
+- **Verification:** Code inspection confirmed. Lines 1113 vs 1289 use different counting.
+- **Fix:** Unify counting method. Either both include duplicates or neither does.
+
+---
+
+## NK CELL (8 findings)
+
+### MF-14: Continue Bypass (FP Check Skipped)
+- **Sources:** C1-F16, C3
+- **Status:** V2 FIXED (lines 1975–1978, `is_fp = True; break` then `if is_fp: continue`)
+- **Priority:** P1
+- **Description:** After marking a finding as DUPLICATE, `continue` skips the false-positive database check. A known hallucination pattern that also matches a prior finding gets tagged DUPLICATE instead of KNOWN_FP. This breaks Regulatory T Cell tracking of systematic model failures.
+- **Verification:** Code inspection confirmed. Line 984: `continue` after duplicate verdict.
+- **Note:** C4 retracted this arguing multi-signal emission is a feature. C1 correctly identified the downstream consequence (breaks Reg T tracking). The bug is valid — a duplicate should still be checked against the FP database.
+- **Fix:** V2 restructures the flow. Activate v2.
+
+### MF-15: Falsy Fallback Bug
+- **Sources:** C4-NK-A
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** `fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES`. Empty list `[]` is falsy in Python. Caller passing `[]` to disable FP checks gets the default database loaded instead. Violates None/empty-list contract.
+- **Verification:** Python semantics confirmed. `[] or default` evaluates to `default`.
+- **Fix:** `fp_db = _KNOWN_FALSE_POSITIVES if false_positive_db is None else false_positive_db`
+
+### MF-16: Vacuous Truth (Phantom Duplicates)
+- **Sources:** C4-NK-B
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** If `tau_sim=0.0` and `prior_findings=[]`, `best_sim` initialises to 0.0, `best_match` stays None. Condition `0.0 >= 0.0` is True. Finding flagged as "duplicate of None."
+- **Verification:** Logic confirmed. Vacuous truth creates phantom duplicates.
+- **Fix:** Guard: `if best_match is not None and best_sim >= tau_sim:`
+
+### MF-17: Toothless Anomaly Detection
+- **Sources:** C1-F17
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** Anomaly detection appends UNCERTAIN verdict with 0.4 confidence. UNCERTAIN contributes zero weight in `helper_t_cell_synthesize`. Detection does nothing to the final outcome.
+- **Verification:** Code inspection confirmed. UNCERTAIN weight = 0 at line 1069.
+- **Fix:** Either make anomaly detection produce a weighted verdict (e.g. LOW_CONFIDENCE with 0.3 reject weight) or remove dead detection code.
+
+### MF-18: Multiline Regex in FP Database
+- **Sources:** C1-F18
+- **Status:** UNFIXED
+- **Priority:** P3
+- **Description:** `_KNOWN_FALSE_POSITIVES` patterns lack `re.DOTALL`. Patterns with `.*` don't match across newlines. LLM outputs frequently contain line breaks.
+- **Verification:** Code inspection confirmed. Lines 928, 933: no `re.DOTALL`.
+- **Fix:** Add `re.DOTALL` to all FP patterns.
+
+### MF-19: O(N×M) Scaling Bottleneck
+- **Sources:** C1-F19
+- **Status:** UNFIXED
+- **Priority:** P3
+- **Description:** Deduplication compares every new finding against every prior finding. At 10,000 prior findings and 50 new findings = 500,000 synchronous similarity comparisons.
+- **Verification:** Code inspection confirmed. Nested loop with no early termination or indexing.
+- **Fix:** Add similarity index (e.g. locality-sensitive hashing) or cap comparison set to most recent N priors.
+
+### MF-20: Race Condition on Shared State
+- **Sources:** C1-F1
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** NK cell and B cell run in parallel via `ThreadPoolExecutor`. Both receive the same `triaged` list. NK cell mutates `tf.is_duplicate = True`. B cell reads `tf.is_duplicate` to skip duplicates. Non-deterministic behaviour depending on thread scheduling.
+- **Verification:** Code inspection confirmed. Lines 1208–1223: same `triaged` reference shared between threads. No locks, no copies.
+- **Fix:** Deep-copy triaged list for each cell, or use thread-safe flags, or serialize NK before B cell.
+
+=== RESPONSE (12539 chars, 70.1s) ===
+Here is the formal review, validation, and extension of the 20 provided findings under the CDSFL methodology.
+
+---
+
+### DENDRITIC CELL — Triage & Extraction (MF-01 to MF-06)
+
+#### MF-01: MATH_PATTERN Overbroad Regex
+*   **CONFIRM**: `re.compile(r"|[+\-*/^]|")` literally matches any single arithmetic character anywhere in the text. "use-after-free" matches `-`.
+*   **EXTEND (FFF)**: *Starvation of the CT Agent.* Because the triage is sequential and mutually exclusive, anything flagged as MATHEMATICAL bypasses CODE_BEHAVIORAL. By misrouting standard bugs to the B-Cell, the CT Cell (the only component that actually reads source code) is starved. The B-Cell receives English text, fails SymPy evaluation, falls back to Z3, and ultimately emits UNCERTAIN. Helper T defaults this to pass-through. The pipeline effectively acts as a `None` filter for up to 30% of valid code bugs.
+*   **FIX (ARCHITECTURAL)**: Implement an LLM-based structured classifier (`DendriticClassifier`) instead of regex. If regex must remain, use `_MATH_PATTERN_V2` with strict syntactic boundaries (e.g., matching backticks combined with operators).
+
+#### MF-02: Extraction Asymmetry (T ⊄ E)
+*   **CONFIRM**: If `_MATH_PATTERN` matches `Eq(a,b)` but the extraction regex fails (because it requires binary operators inside backticks), it falls back to `claim = desc` (Line 181).
+*   **EXTEND (FFF)**: *Subprocess Injection Payload Expansion.* Because the fallback passes the *entire finding description* to the B-Cell subprocess, any prompt-injection payload hidden in conversational text is executed by the SymPy evaluator (which, as proven in my previous review, has an RCE sandbox escape). Asymmetry turns a targeted evaluation into a systemic code-execution vector.
+*   **FIX (PATCH)**: Abort mathematical verification (return UNCERTAIN) if extraction fails, rather than defaulting to executing the entire text description.
+
+#### MF-03: Context Erasure
+*   **CONFIRM**: `re.search(r'`([^`]+)`', desc)` grabs only the raw mathematical formula, discarding natural language preconditions (e.g., "when user is admin").
+*   **EXTEND (FFF)**: *Forced Mathematical Contradictions.* The B-Cell's Z3 solver evaluates the claim globally. A valid conditional bug (`x == None`) without its precondition (`if not initialized`) is mathematically a satisfiability contradiction. The B-Cell will aggressively `REJECT` valid conditional logic with 0.90 confidence, overriding all other cells.
+*   **FIX (NOVEL CONSTRUCT)**: Create a `FormalizationAgent` (LLM prompt) that translates natural language preconditions into Z3 invariants, rather than relying on naive string extraction.
+
+#### MF-04: First-Match Fallacy
+*   **CONFIRM**: `re.search()` grabs only the first instance of backticks.
+*   **EXTEND (FFF)**: If a description says ``The function `init()` fails because `x < 0` ``. The extracted claim is `init()`. SymPy fails to parse this. The actual mathematical claim is ignored.
+*   **FIX (PATCH)**: Use `re.findall` and evaluate the match containing the highest density of mathematical operators.
+
+#### MF-05: Logic/Structural Pattern Missing re.DOTALL
+*   **CONFIRM**: `\balways\b.*\bnever\b` without `re.DOTALL` stops at newlines and exhibits O(N) backtracking.
+*   **EXTEND (FFF)**: *Denial of Service (ReDoS) Pipeline Hang.* The Dendritic Cell is Stage 1 (Sequential). An LLM outputting a 10,000-character description containing the word "always" but not "never" will cause catastrophic backtracking in the python regex engine. The thread pool will never start. The entire verification pipeline hangs infinitely.
+*   **FIX (PATCH)**: Apply `re.DOTALL` and change greedy `.*` to lazy `.*?` to bound the backtracking space.
+
+#### MF-06: Natural Language Hijack
+*   **CONFIRM**: "I always thought this would never happen" triggers `ClaimType.LOGICAL`.
+*   **EXTEND (FFF)**: Similar to MF-01, this causes verification misrouting. Natural language goes to Z3, which uses regex to find numbers or `if/then`. It fails, producing UNCERTAIN.
+*   **FIX (PATCH)**: Require keywords to be structurally bound (e.g., `(?<=`)always.*never(?=`)`).
+
+---
+
+### HELPER T CELL — Synthesis (MF-07 to MF-13)
+
+#### MF-07: Net Positive Contradiction
+*   **CONFIRM**: Proof: Let $T = C + R$. If $R/T < 0.6$, then $1 - C/T < 0.6 \implies C/T > 0.4$. The threshold conditions strictly partition the domain.
+*   **EXTEND (FFF)**: *Destruction of Precautionary Principle.* The docstring claims "A finding needs net positive confidence to survive." In reality, a finding with $C=0.41, R=0.59$ (net negative) will trigger $C/T > 0.4$ and be confirmed. The pipeline is mathematically biased to confirm highly contested, likely false findings.
+*   **FIX (ARCHITECTURAL)**: Move to Bayesian log-odds synthesis. Evidence should be calculated independently: $P(True|E) = \frac{P(E|True)P(True)}{P(E)}$.
+
+#### MF-08: Dead Else Block
+*   **CONFIRM**: As proven in MF-07, the `else` condition (`ratio < 0.4` AND `reject < 0.6`) is mathematically impossible when $C+R > 0$.
+*   **EXTEND (FFF)**: *Silent Logic masking.* The dead block gives developers the illusion that the Helper T cell handles uncertainty. It doesn't. If $T > 0$, it is a binary classifier.
+*   **FIX (PATCH)**: Remove the else block and replace it with a formal `assert False, "Unreachable"` to ensure future modifications don't break the invariant.
+
+#### MF-09: Certainty Inversion Paradox
+*   **CONFIRM**: $C=0.1, R=0 \implies C/T = 0.1/0.1 = 1.0$.
+*   **EXTEND (FFF)**: *Poisoning of Final Confidence Metric.* Downstream sorting or human review will rank complete LLM guesses (0.1 confidence) as 100% verified truths, while mathematically proven but slightly contested findings (e.g., $C=0.9, R=0.1 \implies 0.9/1.0 = 0.9$) rank lower.
+*   **FIX (PATCH)**: Final confidence must reflect absolute weight. `final_confidences[fid] = min(confirm_weight, 1.0)`.
+
+#### MF-10: Micro-Total Discontinuity
+*   **CONFIRM**: `max(total, 0.001)` creates a floor. If $R=0.0006$, ratio = 0.6 (triggers rejection), final confidence = $0.0006 / 0.0006 = 1.0$.
+*   **EXTEND (FFF)**: See MF-09. This is the exact same paradox but for rejection. 
+*   **FIX (PATCH)**: Do not floor the denominator. If `total < minimum_evidence_threshold`, explicitly return `UNCERTAIN`.
+
+#### MF-11: Verdict Spam
+*   **CONFIRM**: `confirm_weight += v.confidence` scales linearly with the number of outputs.
+*   **EXTEND (FFF)**: *Somatic Hypermutation Exploit.* The B-Cell uses "class switching" (Line 564) and appends a second verdict if SymPy fails and Z3 succeeds. Wait, looking closely at `b_cell_verify`: `v2 = _verify_z3; if v2 != UNCERTAIN: v = v2`. It replaces it. BUT if the CT cell parses a misformatted JSON array and extracts 5 copies of the same finding, the CT cell will append 5 `CONFIRMED` verdicts. This multiplies its weight by 5.
+*   **FIX (PATCH)**: Deduplicate verdicts by `(finding_id, cell_type)` before calculating weights.
+
+#### MF-12: DUPLICATE Semantic Handling
+*   **CONFIRM**: The loop contains `elif v.verdict == "DUPLICATE": reject_weight += v.confidence`.
+*   **EXTEND (FFF)**: *Dead Code Discovery.* Look at Line 662:
+    ```python
+    if tf.is_duplicate:
+        final_verdicts[fid] = "DUPLICATE"
+        continue
+    ```
+    If the NK Cell marks a finding as a duplicate, `tf.is_duplicate` is `True`. The Helper T Cell loop hits `continue` and *completely skips the voting logic*. Therefore, the line `elif v.verdict == "DUPLICATE": reject_weight += v.confidence` is completely unreachable for NK Cell verdicts.
+*   **FIX (PATCH)**: Remove the dead `elif v.verdict == "DUPLICATE"` logic from the voting loop.
+
+#### MF-13: Rejection Rate Discrepancy
+*   **CONFIRM**: `regulatory_t_cell_check` ignores duplicates in its primary `rejected / total` ratio, while the Orchestrator calculates `rejection_rate` including them.
+*   **EXTEND (FFF)**: As found in my previous review, this creates an Autoimmune Loophole.
+*   **FIX (PATCH)**: Use `removed = rejected + duplicated` universally.
+
+---
+
+### NK CELL — Memory & Dedup (MF-14 to MF-20)
+
+#### MF-14: Continue Bypass (FP Check Skipped)
+*   **CONFIRM**: `if best_sim >= tau_sim: ... continue` (Line 615) entirely skips the Known FP database check.
+*   **EXTEND (FFF)**: *Masking of Systemic Hallucinations.* If an LLM is stuck in a prompt loop and hallucinates the exact same non-existent bug 50 times, the first one is marked UNCERTAIN/REJECTED. The next 49 are marked DUPLICATE. They are never flagged as `KNOWN_FP`. The Regulatory T-Cell Check 3 (which looks for systematically rejected models) only counts `REJECTED`, not `DUPLICATE`. The model avoids being flagged for autoimmune failure because its hallucinations are hidden in the duplicate bin.
+*   **FIX (PATCH)**: Remove `continue`. Allow a finding to be marked as both a duplicate AND a known false positive, passing both verdicts to Helper T.
+
+#### MF-15: Falsy Fallback Bug
+*   **CONFIRM**: `fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES`. Passing `[]` evaluates to false, falling back to the default.
+*   **EXTEND (FFF)**: *Test Harness Contamination.* Unit tests attempting to isolate the NK Cell by passing an empty FP database will silently load production data. If the production data changes, unit tests will randomly fail.
+*   **FIX (PATCH)**: `fp_db = _KNOWN_FALSE_POSITIVES if false_positive_db is None else false_positive_db`.
+
+#### MF-16: Vacuous Truth (Phantom Duplicates)
+*   **CONFIRM**: If `best_match = None` and `best_sim = 0.0`, `best_sim >= tau_sim` evaluates to `0.0 >= 0.0` (True).
+*   **EXTEND (FFF)**: *Cold Start Deletion.* In Round 1 of verification (where `prior_findings` is empty), if `tau_sim` is set to `0.0` (perhaps for an aggressive dedup experiment), EVERY finding is flagged as a duplicate of `None` and deleted. The entire verification pipeline drops 100% of data.
+*   **FIX (PATCH)**: `if best_match is not None and best_sim >= tau_sim:`
+
+#### MF-17: Toothless Anomaly Detection
+*   **CONFIRM**: `verdict="UNCERTAIN"` contributes exactly 0 to the synthesis logic.
+*   **EXTEND (FFF)**: *Immune Evasion via Inflated Severity.* A model hallucinating a finding with `severity = 1.0` at Round 10 is flagged by anomaly detection, but because it outputs UNCERTAIN, if the CT cell hallucinates a confirmation (due to the empty string bug found earlier), the finding passes with 100% confidence. The NK Cell provides no resistance.
+*   **FIX (PATCH)**: Anomaly findings must output `verdict="REJECTED"` with an appropriate confidence (e.g., 0.5) to assert downward pressure.
+
+#### MF-18: Multiline Regex in FP Database
+*   **CONFIRM**: `_KNOWN_FALSE_POSITIVES` regexes lack `re.DOTALL`.
+*   **EXTEND (FFF)**: *Adaptive Memory Failure.* The NK Cell is supposed to prevent regressions. If an LLM hallucination inserts a line break (`@dataclass\n decorator missing`), the regex fails, the NK Cell lets it pass, and the hallucination infects the verified dataset.
+*   **FIX (PATCH)**: Add `re.DOTALL` to compiled patterns in the FP database.
+
+#### MF-19: O(N×M) Scaling Bottleneck
+*   **CONFIRM**: The dedup loop compares every new finding against every prior finding sequentially.
+*   **EXTEND (FFF)**: *Parallel Execution Collapse.* Because the NK cell runs in a `ThreadPoolExecutor` alongside the CT and B Cells, and Python possesses a Global Interpreter Lock (GIL), the NK Cell's CPU-bound $O(N \times M)$ nested loop will starve the other threads of GIL time. The CT agent subprocess might time out, not because Claude is slow, but because the NK Cell is hogging the CPU parsing strings.
+*   **FIX (ARCHITECTURAL)**: Implement TF-IDF vectorization with Cosine Similarity bounds, or delegate dedup to a highly-optimized C extension / Vector DB.
+
+#### MF-20: Race Condition on Shared State
+*   **CONFIRM**: `tf.is_duplicate` is mutated by NK Cell while B Cell and CT Cell are concurrently iterating over `triaged`.
+*   **EXTEND (FFF)**: *Stochastic Verification Costs.* The CT Cell creates its execution list at start time:
+    `code_findings = [tf for tf in triaged if ... and not tf.is_duplicate]`.
+    If the NK thread executes *before* this list comprehension, duplicates are excluded. If the NK thread executes *during or after*, duplicates are sent to Claude CLI. This causes massive, unpredictable spikes in LLM API costs and token usage, varying wildly from run to run based on OS thread scheduling.
+*   **FIX (PATCH)**: Remove `tf.is_duplicate` mutation from parallel threads entirely. Have NK Cell return a list of IDs to deduplicate, and process them safely in Stage 3 (Helper T).

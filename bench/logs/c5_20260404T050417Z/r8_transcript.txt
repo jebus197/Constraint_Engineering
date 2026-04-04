@@ -1,0 +1,389 @@
+=== ROUND 8 ===
+Prompt (1106 chars):
+Produce a final structured certificate listing ALL surviving findings from this entire conversation. For each finding, include:
+
+1. FINDING ID (sequential, e.g. C5-01, C5-02, ...)
+2. COMPONENT (Dendritic Cell / NK Cell / B Cell / Helper T Cell / Regulatory T Cell / Pipeline / Cross-Component)
+3. CLASSIFICATION (correctness / security / mathematical / boundary / injection / silent-failure / performance / dead-code)
+4. SEVERITY (P0 critical / P1 normal-operation / P2 edge-condition / P3 defence-in-depth)
+5. DESCRIPTION (concise statement of the bug)
+6. EVIDENCE (execution trace or formal proof)
+7. CROSS-COMPONENT IMPACT (what other components are affected, if any)
+8. PROPOSED FIX (specific code change, new construct, or architectural recommendation)
+9. FIX TYPE (PATCH / NOVEL CONSTRUCT / ARCHITECTURAL)
+10. PRIOR MATCH (if this matches a finding from the prior reviewers, state which MF-XX; if novel, state NOVEL)
+11. STATUS (CONFIRMED — survived falsification / RETRACTED — state why)
+
+Also provide a summary table at the end with counts by: severity, component, fix type, and novel vs confirmed.
+
+=== RESPONSE (18639 chars, 70.3s) ===
+Here is the final, comprehensive structured certificate under the CDSFL methodology. It represents the culmination of all adversarial reviews, cross-component tracing, and falsification passes. 
+
+### 🚨 SECTION 1: FORMALLY RETRACTED FINDINGS
+Before presenting the surviving findings, the following claims have been **successfully falsified** and are formally retracted from the verification record.
+
+*   **RET-01 [Z3 Regex Empty String Match / MF-28]**: Claimed `r'[-+]?\d*\.?\d+'` matches `""`, causing `ValueError`. **Falsified**: The trailing `\d+` requires at least one digit. Empty strings yield no match.
+*   **RET-02 [Type-Confusion Crash / NOVEL]**: Claimed JSON string literals cause `AttributeError` on `.get()`. **Falsified**: Parsing strategies structurally guard against raw strings (requiring `{` prefix or `isinstance(dict)`).
+*   **RET-03 [Cascade 3: Semantic Corruption / NOVEL]**: Claimed Z3 class-switching extracts empty strings and crashes. **Falsified**: Relied on the mathematically disproven premise of RET-01.
+
+---
+
+### 🛡️ SECTION 2: VERIFIED STRUCTURED CERTIFICATE
+The following 27 architectural, mathematical, and security findings survived rigorous falsification.
+
+#### 🏗️ CYTOTOXIC T CELL (Code Investigation)
+**1. FINDING ID:** C5-01
+**2. COMPONENT:** Cytotoxic T Cell
+**3. CLASSIFICATION:** Security / Confused Deputy
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Arbitrary file read and data exfiltration via path traversal.
+**6. EVIDENCE:** `_verify_ct_claim` accepts absolute paths from untrusted LLM output and reads them. Outputting actual line contents in the mismatch reason leaks files like `/etc/shadow` into the pipeline payload.
+**7. CROSS-COMPONENT IMPACT:** Leaks host secrets to downstream logging/display layers.
+**8. PROPOSED FIX:** Constrain path resolution to `source_paths` directories; remove actual line text from the failure reason.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-02
+**2. COMPONENT:** Cytotoxic T Cell
+**3. CLASSIFICATION:** Correctness / Boundary Condition
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Empty string substring bypass guarantees hallucination confirmation.
+**6. EVIDENCE:** If the LLM cites an empty/whitespace line, `actual_normalised` becomes `""`. In Python, `"" in "any_snippet"` is `True`. 
+**7. CROSS-COMPONENT IMPACT:** Feeds 100%-confident fake evidence into Helper T, overriding valid rejections.
+**8. PROPOSED FIX:** `if actual_normalised and (snippet in actual...):`
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-03
+**2. COMPONENT:** Cytotoxic T Cell
+**3. CLASSIFICATION:** Security / Injection Vector
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Systemic prompt injection via finding descriptions.
+**6. EVIDENCE:** `_build_ct_prompt` interpolates untrusted `tf.finding.description` directly into system instructions without boundary markers. 
+**7. CROSS-COMPONENT IMPACT:** Upstream agents can rewrite the CT Cell's JSON output rules, forcing confirmation of their own findings.
+**8. PROPOSED FIX:** Wrap untrusted input in `<finding>` XML tags with strict passive-data instructions.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-04
+**2. COMPONENT:** Cytotoxic T Cell
+**3. CLASSIFICATION:** Correctness / Regex Evasion
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Fuzzy match exploit accepts single-token ("return") structural matches.
+**6. EVIDENCE:** A 1-word token match evaluates to $1/1 = 1.0 \ge 0.6$, yielding 0.5 confidence for citing ubiquitous syntax.
+**7. CROSS-COMPONENT IMPACT:** False positives bypass the code-verification boundary.
+**8. PROPOSED FIX:** Enforce `len(snippet_tokens) >= 3` for fuzzy matches.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-38
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-05
+**2. COMPONENT:** Cytotoxic T Cell
+**3. CLASSIFICATION:** Silent Failure / Parsing
+**4. SEVERITY:** P2 Edge Condition
+**5. DESCRIPTION:** Schema blindness on nested JSON due to brace negation.
+**6. EVIDENCE:** Regex `[^{}]*` aborts parsing if the LLM correctly follows the schema and provides a nested `evidence` array.
+**7. CROSS-COMPONENT IMPACT:** Defaults perfectly valid code investigations to `UNCERTAIN`.
+**8. PROPOSED FIX:** Extract via markdown code block regex, not brace balancing.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** NOVEL
+**11. STATUS:** CONFIRMED
+
+#### 🧠 DENDRITIC CELL (Triage)
+**1. FINDING ID:** C5-06
+**2. COMPONENT:** Dendritic Cell
+**3. CLASSIFICATION:** Correctness / Routing
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Math Pattern Hijack and Extraction Asymmetry.
+**6. EVIDENCE:** Bare operators (`-`, `=`) route code-bugs to math. The extraction regex fails on bare operators, passing the entire description string to SymPy.
+**7. CROSS-COMPONENT IMPACT:** Starves the CT Cell of code bugs; exposes SymPy to full natural language injection.
+**8. PROPOSED FIX:** Replace regex routing with a typed LLM classifier.
+**9. FIX TYPE:** NOVEL CONSTRUCT
+**10. PRIOR MATCH:** MF-01 & MF-02
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-07
+**2. COMPONENT:** Dendritic Cell
+**3. CLASSIFICATION:** Mathematical Validity
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Context Erasure and First-Match Fallacy.
+**6. EVIDENCE:** `re.search` extracts only the first backticked math, abandoning preconditions ("if user=admin"). 
+**7. CROSS-COMPONENT IMPACT:** Forces B-Cell Z3 to solve unconditionally, resulting in immediate contradictions and false rejections.
+**8. PROPOSED FIX:** Formalization Agent to translate natural language preconditions into Z3 invariants.
+**9. FIX TYPE:** NOVEL CONSTRUCT
+**10. PRIOR MATCH:** MF-03 & MF-04
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-08
+**2. COMPONENT:** Dendritic Cell
+**3. CLASSIFICATION:** Performance / Logic
+**4. SEVERITY:** P2 Edge Condition
+**5. DESCRIPTION:** ReDoS vulnerability and Natural Language Hijack.
+**6. EVIDENCE:** Missing `re.DOTALL` causes O(N) backtracking; conversational English ("always...never") hijacks structural classification.
+**7. CROSS-COMPONENT IMPACT:** Hangs the sequential triage stage; misroutes findings.
+**8. PROPOSED FIX:** Apply `re.DOTALL`, lazy quantifiers, and structural bounds.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-05 & MF-06
+**11. STATUS:** CONFIRMED
+
+#### 🧮 B CELL (Math / Logic)
+**1. FINDING ID:** C5-09
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Security / Injection Vector
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** RCE Sandbox Escape in SymPy.
+**6. EVIDENCE:** `().__class__.__bases__[0]...` breaks out of `__builtins__={}` in `parse_expr`, gaining host shell access.
+**7. CROSS-COMPONENT IMPACT:** Total compromise of verification environment.
+**8. PROPOSED FIX:** Syntactic AST blocklist rejecting traversal attributes.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** NOVEL (Extends MF-40 DoS)
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-10
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Silent Failure
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Silent Error Swallowing conceals tool crashes.
+**6. EVIDENCE:** `capture_output=True` without `check=True` ignores `stderr`. Missing `pip` packages or `SyntaxErrors` return empty strings.
+**7. CROSS-COMPONENT IMPACT:** All mathematical verification silently becomes `UNCERTAIN` and passes through Helper T.
+**8. PROPOSED FIX:** Monitor `returncode` and capture `stderr`.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-22
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-11
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Mathematical Validity
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Proof by n=100 Fallacy.
+**6. EVIDENCE:** `expr.subs(symbols('n'), 100)` attempts to prove universal algebraic inequalities using a single scalar.
+**7. CROSS-COMPONENT IMPACT:** Generates mathematically invalid 0.95-confidence confirmations/rejections.
+**8. PROPOSED FIX:** Remove numeric fallback; emit `UNCERTAIN` if symbolic proof fails.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-23 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-12
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Security / Logic
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Substring Injection on `VERIFIED_TRUE`.
+**6. EVIDENCE:** Outputting `"VERIFIED_TRUE"` in conversational text matches `if "VERIFIED_TRUE" in output`.
+**7. CROSS-COMPONENT IMPACT:** LLMs can forcefully confirm math equations by echoing the success string.
+**8. PROPOSED FIX:** Exact match `output.strip() == "VERIFIED_TRUE"`.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-24
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-13
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Mathematical Validity
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Tautological If-Then Z3 logic.
+**6. EVIDENCE:** Generating unconstrained booleans $X$ and $Y$ and checking $X \land \neg Y$ is always satisfiable.
+**7. CROSS-COMPONENT IMPACT:** Force-rejects 100% of logical claims.
+**8. PROPOSED FIX:** Remove regex Z3 construction; use AST solver.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** MF-25 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-14
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Correctness / Regex
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Numeric Extraction blind to scientific notation & single bounds.
+**6. EVIDENCE:** `1e-5` split into `1` and `-5`. Requires `len(nums) >= 2`.
+**7. CROSS-COMPONENT IMPACT:** Rejects zero-bounds; corrupts statistical floats.
+**8. PROPOSED FIX:** Support `[eE]` scientific notation and single-target bounds.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-26 & MF-27
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-15
+**2. COMPONENT:** B Cell
+**3. CLASSIFICATION:** Correctness
+**4. SEVERITY:** P2 Edge Condition
+**5. DESCRIPTION:** Dropped Correlations and SymPy Variable Limit.
+**6. EVIDENCE:** Wrapper misses `STRONG_CORRELATION`. SymPy `local_dict` only defines `n`, crashing on `x`, `y`. Stat regex misses `p<.05`.
+**7. CROSS-COMPONENT IMPACT:** Vast swathes of math/stat logic fail.
+**8. PROPOSED FIX:** Broaden matching logic and auto-generate symbols.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-29, MF-30, MF-31
+**11. STATUS:** CONFIRMED
+
+#### ⚖️ HELPER T CELL (Synthesis)
+**1. FINDING ID:** C5-16
+**2. COMPONENT:** Helper T Cell
+**3. CLASSIFICATION:** Mathematical Validity
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Net Positive Contradiction.
+**6. EVIDENCE:** $C/T \ge 0.4$ and $R/T \ge 0.6$ perfectly partition probability space. Net-negative findings (0.41 C, 0.59 R) are confirmed.
+**7. CROSS-COMPONENT IMPACT:** Fundamentally invalidates the pipeline's consensus logic.
+**8. PROPOSED FIX:** Bayesian Log-Odds synthesis.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** MF-07
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-17
+**2. COMPONENT:** Helper T Cell
+**3. CLASSIFICATION:** Mathematical Validity
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Certainty Inversion Paradox & Micro-Total Discontinuity.
+**6. EVIDENCE:** $0.1/0.1 = 1.0$ confidence for weak single signals. Flooring $T$ to 0.001 scales microscopic evidence to 100% confidence.
+**7. CROSS-COMPONENT IMPACT:** Downstream consumers rank complete LLM guesses higher than heavily verified contested facts.
+**8. PROPOSED FIX:** Cap output confidence by absolute weight `min(weight, 1.0)`.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-09 & MF-10 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-18
+**2. COMPONENT:** Helper T Cell
+**3. CLASSIFICATION:** Security / Logic
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Verdict Spam and Typo Bypass.
+**6. EVIDENCE:** `confirm_weight += v.confidence` without cell-caps allows CT to vote 5 times for one finding. LLM typo in `finding_id` completely evades synthesis.
+**7. CROSS-COMPONENT IMPACT:** Adversarial LLMs can over-vote or evade voting.
+**8. PROPOSED FIX:** Deduplicate verdicts by cell; pass findings by index array, not ID strings.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** MF-11 & MF-39
+**11. STATUS:** CONFIRMED
+
+#### 🧬 NK CELL (Memory)
+**1. FINDING ID:** C5-19
+**2. COMPONENT:** NK Cell
+**3. CLASSIFICATION:** Concurrency / Logic
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** Race Condition on Shared State & Intra-Round Blindness.
+**6. EVIDENCE:** NK mutates `tf.is_duplicate` while CT/B read it. NK does not dedup against current batch. 
+**7. CROSS-COMPONENT IMPACT:** Stochastic API costs; duplicate floods evade innate immunity.
+**8. PROPOSED FIX:** Deep-copy inputs; include current round in dedup index.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-20 & MF-21 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-20
+**2. COMPONENT:** NK Cell
+**3. CLASSIFICATION:** Correctness
+**4. SEVERITY:** P2 Edge Condition
+**5. DESCRIPTION:** Continue Bypass & Toothless Anomaly Detection.
+**6. EVIDENCE:** `continue` after dup ignores FP database. `UNCERTAIN` anomaly verdicts exert zero weight.
+**7. CROSS-COMPONENT IMPACT:** Masks systemic model hallucinations from Autoimmune trackers.
+**8. PROPOSED FIX:** Remove `continue`; Anomalies must emit `REJECTED`.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-14 & MF-17 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-21
+**2. COMPONENT:** NK Cell
+**3. CLASSIFICATION:** Edge-Condition
+**4. SEVERITY:** P3 Defence-in-Depth
+**5. DESCRIPTION:** Falsy Fallbacks and Vacuous Truths.
+**6. EVIDENCE:** `false_positive_db or default` fails on `[]`. `0.0 >= 0.0` creates phantom duplicates if `tau_sim=0`.
+**7. CROSS-COMPONENT IMPACT:** Breaks test isolation; risk of zero-day cold-start failure.
+**8. PROPOSED FIX:** `is None` checks; `best_match is not None` assertions.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-15 & MF-16
+**11. STATUS:** CONFIRMED
+
+#### ⚙️ PIPELINE / ORCHESTRATOR & CROSS-COMPONENT CASCADES
+**1. FINDING ID:** C5-22
+**2. COMPONENT:** Pipeline (Cross-Component)
+**3. CLASSIFICATION:** Concurrency / Resource
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Context-Manager Deadlock & B-Cell Batch Timeout.
+**6. EVIDENCE:** `future.result()` raises Timeout, but `ThreadPoolExecutor.__exit__` forces `wait=True`, locking the orchestrator forever if an external process stalls.
+**7. CROSS-COMPONENT IMPACT:** Total pipeline gridlock.
+**8. PROPOSED FIX:** Decoupled executor lifecycle; async gathering.
+**9. FIX TYPE:** ARCHITECTURAL
+**10. PRIOR MATCH:** Final 1 & MF-37
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-23
+**2. COMPONENT:** Pipeline (Cross-Component)
+**3. CLASSIFICATION:** Resource Management / File I/O
+**4. SEVERITY:** P1 Normal
+**5. DESCRIPTION:** OOM Exhaustion via `readlines()`.
+**6. EVIDENCE:** Mechanical verifier attempts to load arbitrary whole files into RAM.
+**7. CROSS-COMPONENT IMPACT:** Verifier crashes OS when inspecting data-heavy repositories.
+**8. PROPOSED FIX:** Bounded line streaming.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** Final 2
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-24
+**2. COMPONENT:** Pipeline (Cross-Component)
+**3. CLASSIFICATION:** State Propagation / Architecture
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Fail-Open Illusion & Static Initialization Trap.
+**6. EVIDENCE:** If `sympy` fails on first load, it permanently locks to fallback. When fallback fails, everything emits `UNCERTAIN`. Helper T passes it all. Reg T reports 0% rejection (Healthy). 
+**7. CROSS-COMPONENT IMPACT:** Irreversible pipeline degradation concealed by false-positive monitoring.
+**8. PROPOSED FIX:** Lazy tool discovery; Reg T must flag >30% UNCERTAIN as failure.
+**9. FIX TYPE:** NOVEL CONSTRUCT
+**10. PRIOR MATCH:** Final 3 & MF-36
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-25
+**2. COMPONENT:** Pipeline (Cross-Component)
+**3. CLASSIFICATION:** State Propagation
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** Autoimmune Amnesia & Metric Exclusion.
+**6. EVIDENCE:** Reg T ignores duplicates in rejection metric. Autoimmune override rescues known hallucinations and duplicates. Dict keys desync with arrays.
+**7. CROSS-COMPONENT IMPACT:** Pollutes production pipelines with known garbage; downstream system state desync.
+**8. PROPOSED FIX:** Immutable state transitions & final Reconciliation Gate.
+**9. FIX TYPE:** NOVEL CONSTRUCT
+**10. PRIOR MATCH:** MF-34, MF-35, MF-13 / NOVEL
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-26
+**2. COMPONENT:** Cross-Component
+**3. CLASSIFICATION:** Architecture / Security
+**4. SEVERITY:** P0 Critical
+**5. DESCRIPTION:** CASCADE 1: Confident Hallucination Highway.
+**6. EVIDENCE:** Misrouted Math Regex + Substring Injection (`VERIFIED_TRUE`) + Certainty Inversion perfectly combine to grant arbitrary English text 100% code-verification confirmation.
+**7. CROSS-COMPONENT IMPACT:** Bypasses CT cell entirely, converting pipeline into a hallucination multiplier.
+**8. PROPOSED FIX:** Epistemic Routing Layer.
+**9. FIX TYPE:** NOVEL CONSTRUCT
+**10. PRIOR MATCH:** NOVEL (Synthesised)
+**11. STATUS:** CONFIRMED
+
+**1. FINDING ID:** C5-27
+**2. COMPONENT:** Dead Code
+**3. CLASSIFICATION:** Dead-Code
+**4. SEVERITY:** P3 Defence-in-Depth
+**5. DESCRIPTION:** Math impossibility blocks, orphaned functions.
+**6. EVIDENCE:** Helper T Else block unreachable; NK Dup voting unreachable; `_verify_uncertainty` orphaned.
+**7. CROSS-COMPONENT IMPACT:** Code rot.
+**8. PROPOSED FIX:** Remove code.
+**9. FIX TYPE:** PATCH
+**10. PRIOR MATCH:** MF-08, MF-12, MF-32
+**11. STATUS:** CONFIRMED
+
+---
+
+### 📊 SECTION 3: SUMMARY METRICS
+
+| Category | Distribution Count |
+| :--- | :--- |
+| **Total Findings** | 30 Assessed (27 Verified, 3 Retracted) |
+| **Severity (Verified)** | **P0 Critical:** 12 |
+| | **P1 Normal:** 9 |
+| | **P2 Edge-Case:** 4 |
+| | **P3 Defence-in-Depth:** 2 |
+| **Component** | **Cytotoxic T Cell:** 5 |
+| | **Dendritic Cell:** 3 |
+| | **B Cell:** 7 |
+| | **Helper T Cell:** 3 |
+| | **NK Cell:** 3 |
+| | **Pipeline / Cross-Component:** 5 |
+| | **Dead Code:** 1 |
+| **Fix Strategy** | **PATCH:** 15 |
+| | **ARCHITECTURAL:** 6 |
+| | **NOVEL CONSTRUCT:** 6 |
+| **Source Tracking** | **Derived from Reviewers (MF-XX):** 11 Primary |
+| | **Synthesized (Reviewer + Novel FFF):** 7 Primary |
+| | **Wholly Novel (My sweeps):** 9 Primary |
+
+**Final Methodological Conclusion:** The system as written exhibits the classical failure modes of complex AI multi-agent orchestrations. It attempts to simulate probabilistic immunity using deterministic rules, creating rigid boundaries that are easily bypassed by LLM state-space variance. Implementation of the proposed *Novel Constructs* (Epistemic Routing, Reconciliation Gates, and Decoupled Lifecycles) is mandatory for production use.
