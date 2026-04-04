@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 02:57 BST
+Last updated: 4 April 2026 04:45 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,29 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (4 April 2026, 01:59 BST)
+## Current Pending Work (4 April 2026, 04:45 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE.
+
+HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
+C1 (Realistic HIL): 25 findings, 9/9 verified, 0 FP. 5 rounds, ~3 min.
+C4 (CDSFL+Meta structured): 16 survivors (12 retracted), 16/16 verified, 0 FP. 16 rounds, ~13 min.
+Combined: ~33 unique verified findings (+32% coverage vs best single condition).
+Key: C1 finds cross-component bugs (18 unique). C4 finds formal/injection bugs (14 unique).
+Overlap: only ~5 findings. Complementarity thesis VALIDATED.
+
+THREE-LAYER SCHEMA DISCOVERY (4 April 2026, 04:45 BST):
+Critical reframing of CDSFL methodology:
+  Layer 1: Meta structured prompting — reasoning format (premises, trace, conclude)
+  Layer 2: CDSFL constraints — rules of engagement (FFF, falsification, constraint classification)
+  Layer 3: Session architecture — full conversational mode as DEFAULT, ITC as FALLBACK ONLY
+ITC (IT Crowd principle / cell decomposition) is NOT the default operating mode.
+It activates when: model fails, context degrades, single-pass problems, or diminishing returns.
+Normal mode = full continued conversation under CDSFL constraints.
+C5 experiment proposed: full conversational + CDSFL constraints + Meta prompting. Predict 30+ findings.
+TTS: ~/Desktop/CDSFL_tts/Three_Layer_Schema_Discovery_2026-04-04.txt
+Analysis: experimental_notes/HIL_Comparison_Analysis_2026-04-04.md
+Logs: bench/logs/hil_comparison_c1_20260404/, bench/logs/hil_comparison_c4_20260404/
 
 RUN 11 COMPLETE (4 April 2026, 01:54 BST) = Exp 28b:
 2 rounds, 59 findings, 42 min. Fastest convergence in bench history.

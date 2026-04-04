@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 4 April 2026 02:57 BST
+Last updated: 4 April 2026 04:45 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -53,6 +53,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   (3) build insect brain, (4) run Gemini HIL comparison, (5) Bench Run 2
   (27 frontier STEM problems). Endocrine system (pacing signals) designed but
   not blocking. Unified numbering (Run N → Exp N) pending.
+- **HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):**
+  C1 (Realistic HIL, 5 rounds): 25 findings, 9/9 verified, 0 FP — breadth.
+  C4 (CDSFL+Meta structured, 4 cells×4 rounds): 16 survivors (12 retracted
+  by self-falsification), 16/16 verified, 0 FP — depth.
+  Combined: ~33 unique verified findings (+32% vs best single condition).
+  Overlap only ~5 findings. Cross-component bugs (C1) vs formal proofs (C4).
+  **THREE-LAYER SCHEMA DISCOVERY:** (1) Meta structured prompting = reasoning
+  format, (2) CDSFL constraints (FFF, falsification) = rules of engagement,
+  (3) Full conversational mode = default session architecture, ITC = fallback
+  only for model failure/context degradation. C5 experiment proposed to validate.
+  Logs: `bench/logs/hil_comparison_c1_20260404/`, `bench/logs/hil_comparison_c4_20260404/`.
+  Analysis: `experimental_notes/HIL_Comparison_Analysis_2026-04-04.md`.
 - **Run 10 COMPLETE (3 April 2026, 16:44 BST) = Exp 28:**
   7 rounds, 237 findings, 37 min. First natural convergence
   (DM kappa=1.0 at R6). γ_novel=0.309, γ_ids=0.097, C(H,E)=0.889.
