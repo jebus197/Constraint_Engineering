@@ -95,6 +95,20 @@ DECOMPOSITION_CONTEXT_THRESHOLD = {
     "CC2": 120000,
 }
 
+# WP4b: Per-model context character budgets for findings relay.
+# When accumulated findings exceed this, the insect brain switches to
+# summary-only mode (finding IDs + one-line descriptions). This prevents
+# prompt bloat while preserving cross-pollination awareness.
+# Mirrors DynamicManagementConfig.context_budget_overrides but available
+# at the runner level for non-DM dispatch paths.
+CONTEXT_CHAR_BUDGET = {
+    "CC2": 30_000,        # WP4c: matches DeepSeek's proven limit
+    "ChatGPT": 80_000,
+    "Gemini": 200_000,    # 1M context window — generous budget
+    "DeepSeek": 30_000,   # Reasoner CoT scales with input
+    "Codex": 60_000,
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment and setup

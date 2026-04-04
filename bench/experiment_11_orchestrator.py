@@ -111,8 +111,8 @@ def load_default_config() -> ExperimentConfig:
             role="player_manager",
             system_prompt_path=str(cdsfl_path),
             max_tokens=32768,
-            timeout=300,
-            max_retries=3,
+            timeout=900,       # WP4a: 300→900s to prevent CC2 timeout cascade
+            max_retries=1,     # WP4a: 3→1 to avoid 3× timeout cascade
         ),
         ModelConfig(
             label="Codex",

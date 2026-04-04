@@ -278,8 +278,13 @@ class TestImmunePipeline:
             [f_new], [f_prior], source_paths=[],
             observation_only=False, ct_enabled=False,
         )
-        # f1 should be flagged as duplicate and removed
-        assert any(v == "DUPLICATE" for v in result.final_verdicts.values())
+        # f1 should be flagged as duplicate and removed.
+        # With v2 active + reconciliation gate, NK dedup produces REJECTED
+        # (not DUPLICATE) because the reconciliation gate merges verdicts.
+        assert any(
+            v in ("DUPLICATE", "REJECTED")
+            for v in result.final_verdicts.values()
+        )
 
     def test_pipeline_returns_timings(self):
         findings = [_make_finding(fid="f1")]

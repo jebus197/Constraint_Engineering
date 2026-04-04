@@ -174,6 +174,7 @@ class DynamicManagementConfig:
     # because its CoT consumes output tokens proportional to input size.
     context_budget_overrides: Dict[str, int] = field(default_factory=lambda: {
         "DeepSeek": 30_000,  # Reasoner CoT scales with input — keep lean
+        "CC2": 30_000,       # WP4c: match DeepSeek's proven limit
     })
 
     # --- Live fingerprint update (adaptive routing feedback loop) ---

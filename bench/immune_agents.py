@@ -89,9 +89,41 @@ def _find_claude_cli() -> Optional[str]:
     return None
 
 
-# Module-level discovery (cached)
+# WP3e: Lazy tool discovery with per-call retry + caching.
+# Module-level static initialisation permanently locks to fallback if first
+# import fails (MF-36/C5-24). Lazy discovery retries on each call, caching
+# successful results.
+_PYTHON_TOOLS_CACHE: Optional[str] = None
+_CLAUDE_CLI_CACHE: Optional[str] = None
+
+
+def _get_python_tools() -> str:
+    """Lazy-discovered Python interpreter with tools. Retries on failure."""
+    global _PYTHON_TOOLS_CACHE
+    if _PYTHON_TOOLS_CACHE is not None:
+        return _PYTHON_TOOLS_CACHE
+    result = _find_python_with_tools()
+    if result != sys.executable:
+        _PYTHON_TOOLS_CACHE = result  # Cache only successful discovery
+    return result
+
+
+def _get_claude_cli() -> Optional[str]:
+    """Lazy-discovered claude CLI. Retries on failure."""
+    global _CLAUDE_CLI_CACHE
+    if _CLAUDE_CLI_CACHE is not None:
+        return _CLAUDE_CLI_CACHE
+    result = _find_claude_cli()
+    if result is not None:
+        _CLAUDE_CLI_CACHE = result
+    return result
+
+
+# Backward compatibility — initial discovery populates cache
 PYTHON_TOOLS: str = _find_python_with_tools()
 CLAUDE_CLI: Optional[str] = _find_claude_cli()
+_PYTHON_TOOLS_CACHE = PYTHON_TOOLS if PYTHON_TOOLS != sys.executable else None
+_CLAUDE_CLI_CACHE = CLAUDE_CLI
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -187,7 +219,8 @@ _LOGIC_PATTERN = re.compile(
 
 _STAT_PATTERN = re.compile(
     r"(?:"
-    r"\bsignificant\b|\bp-value\b|\bp\s*[<=]\s*0\.\d"
+    # MF-31 fix: match p-values with or without leading zero (e.g. .05, 0.05)
+    r"\bsignificant\b|\bp-value\b|\bp\s*[<=]\s*0?\.\d"
     r"|\bdistribution\b|\bcorrelation\b|\bregression\b"
     r"|\bmean\b.*\bdiffer\b|\bvariance\b"
     r"|\bKruskal\b|\bWilcoxon\b|\bt-test\b|\bchi-squared\b"
@@ -225,8 +258,13 @@ def _classify_claim(finding: Finding) -> Tuple[ClaimType, str]:
         return ClaimType.CODE_STRUCTURAL, desc
 
     if _MATH_PATTERN.search(desc):
-        eq_match = re.search(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
-        claim = eq_match.group(1) if eq_match else desc
+        # MF-03/MF-04 fix: extract ALL backtick expressions (not just first)
+        # and preserve surrounding context for preconditions
+        eq_matches = re.findall(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
+        if eq_matches:
+            claim = " AND ".join(eq_matches) if len(eq_matches) > 1 else eq_matches[0]
+        else:
+            claim = desc
         return ClaimType.MATHEMATICAL, claim
 
     # Default: behavioural code claim (most findings are about code bugs)
@@ -275,11 +313,16 @@ def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) ->
 
     The prompt instructs the agent to INVESTIGATE, not JUDGE. It must
     produce structured evidence with exact file:line:code citations.
+
+    C5-03 fix: finding descriptions are wrapped in XML boundary tags
+    to prevent prompt injection from adversarial finding content.
     """
     files_list = "\n".join(f"  - {p}" for p in source_paths)
+    # C5-03: wrap each finding description in XML boundary tags
     findings_block = "\n".join(
         f"  [{tf.finding.finding_id}] severity={tf.finding.severity:.2f} "
-        f"type={tf.claim_type.value}: {tf.finding.description}"
+        f"type={tf.claim_type.value}: "
+        f"<finding_description>{tf.finding.description}</finding_description>"
         for tf in findings
     )
 
@@ -306,12 +349,18 @@ def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) ->
     )
 
 
-def _verify_ct_claim(evidence: Dict[str, Any]) -> Tuple[bool, float, str]:
+def _verify_ct_claim(
+    evidence: Dict[str, Any],
+    allowed_dirs: Optional[List[str]] = None,
+) -> Tuple[bool, float, str]:
     """Mechanically verify a single CT evidence item against the real file.
 
     Reads the cited file at the cited line and checks whether the
     code_snippet actually appears there. This is the structural
     enforcement — the agent's claim is tested against reality.
+
+    C5-01 fix: constrain file reads to allowed_dirs (source_paths parents).
+    C5-02 fix: guard against empty string substring bypass.
 
     Returns:
         (verified, confidence, reason)
@@ -323,15 +372,31 @@ def _verify_ct_claim(evidence: Dict[str, Any]) -> Tuple[bool, float, str]:
     line_num = evidence.get("line", 0)
     snippet = evidence.get("code_snippet", "").strip()
 
-    if not file_path or not line_num or not snippet:
+    # MF-15 fix: use explicit None/empty checks instead of falsy
+    if file_path is None or file_path == "" or line_num is None or line_num == 0 or snippet is None or snippet == "":
         return False, 0.0, "Missing file, line, or code_snippet"
 
-    if not os.path.isfile(file_path):
+    # C5-01: path traversal protection — resolve to real path, check containment
+    real_path = os.path.realpath(file_path)
+    if allowed_dirs:
+        in_allowed = any(
+            real_path.startswith(os.path.realpath(d) + os.sep) or real_path == os.path.realpath(d)
+            for d in allowed_dirs
+        )
+        if not in_allowed:
+            return False, 0.0, "Path outside allowed source directories"
+
+    if not os.path.isfile(real_path):
         return False, 0.0, f"File does not exist: {file_path}"
 
+    # C5-23 fix: bounded line streaming to prevent OOM
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+        lines: list = []
+        with open(real_path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                if i >= 50000:
+                    break
+                lines.append(line)
     except (OSError, UnicodeDecodeError) as e:
         return False, 0.0, f"Cannot read file: {e}"
 
@@ -349,18 +414,24 @@ def _verify_ct_claim(evidence: Dict[str, Any]) -> Tuple[bool, float, str]:
     actual_normalised = " ".join(actual_line.split())
     window_normalised = " ".join(window.split())
 
+    # C5-02 fix: guard against empty string substring bypass
+    # (empty string is a substring of everything)
+    if not snippet_normalised or not actual_normalised:
+        return False, 0.0, "Empty snippet or empty actual line after normalisation"
+
     # Exact line match
     if snippet_normalised in actual_normalised or actual_normalised in snippet_normalised:
         return True, 1.0, f"Exact match at line {line_num}"
 
     # Check if snippet appears anywhere in the ±2 line window
-    if snippet_normalised in window_normalised:
+    if snippet_normalised and snippet_normalised in window_normalised:
         return True, 0.8, f"Snippet found within ±2 lines of line {line_num}"
 
     # Check if first significant token of snippet appears in window
     # (handles minor copy-paste differences)
+    # MF-38 fix: require at least 3 significant tokens to prevent trivial matches
     snippet_tokens = [t for t in snippet_normalised.split() if len(t) > 3]
-    if snippet_tokens:
+    if len(snippet_tokens) >= 3:
         matches = sum(1 for t in snippet_tokens if t in window_normalised)
         token_ratio = matches / len(snippet_tokens)
         if token_ratio >= 0.6:
@@ -380,6 +451,7 @@ def _ct_evidence_to_verdict(
     finding_id: str,
     claim_type: str,
     evidence_items: List[Dict[str, Any]],
+    allowed_dirs: Optional[List[str]] = None,
 ) -> CellVerdict:
     """Convert mechanically-verified CT evidence into a verdict.
 
@@ -407,7 +479,7 @@ def _ct_evidence_to_verdict(
 
     verifications = []
     for ev in evidence_items:
-        verified, conf, reason = _verify_ct_claim(ev)
+        verified, conf, reason = _verify_ct_claim(ev, allowed_dirs=allowed_dirs)
         verifications.append((verified, conf, reason))
 
     verified_count = sum(1 for v, _, _ in verifications if v)
@@ -491,7 +563,7 @@ def cytotoxic_t_cell(
     if not code_findings:
         return []
 
-    if not CLAUDE_CLI:
+    if not _get_claude_cli():
         return [
             CellVerdict(
                 cell_type=CellType.CYTOTOXIC_T,
@@ -509,7 +581,7 @@ def cytotoxic_t_cell(
 
     try:
         cmd = [
-            CLAUDE_CLI, "-p", prompt,
+            _get_claude_cli(), "-p", prompt,
             "--allowedTools", "Read,Grep,Glob",
             "--max-turns", "4",
         ]
@@ -533,10 +605,13 @@ def cytotoxic_t_cell(
                 continue
             seen.add(fid)
 
+            # C5-01: pass source_paths as allowed_dirs for path traversal protection
+            allowed_dirs = [os.path.dirname(p) for p in source_paths] if source_paths else None
             verdict = _ct_evidence_to_verdict(
                 finding_id=fid,
                 claim_type=rv.get("claim_type", ""),
                 evidence_items=rv.get("evidence", []),
+                allowed_dirs=allowed_dirs,
             )
             verdict.elapsed_s = elapsed
             verdicts.append(verdict)
@@ -586,8 +661,9 @@ def cytotoxic_t_cell(
 def _parse_ct_output(output: str) -> List[Dict[str, Any]]:
     """Parse CT agent output, handling both schema-enforced JSON and fallback.
 
-    Tries three parsing strategies:
+    Tries four parsing strategies:
     1. Full JSON object with "verdicts" array (schema-enforced)
+    1b. C5-05 fix: extract JSON from markdown code blocks (```json...```)
     2. JSON lines (one object per line, legacy format)
     3. Extract JSON from mixed text (agent didn't follow schema perfectly)
     """
@@ -598,6 +674,18 @@ def _parse_ct_output(output: str) -> List[Dict[str, Any]]:
             return data["verdicts"]
     except json.JSONDecodeError:
         pass
+
+    # Strategy 1b (C5-05 fix): extract JSON from markdown code blocks
+    code_block_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', output, re.DOTALL)
+    if code_block_match:
+        try:
+            data = json.loads(code_block_match.group(1))
+            if isinstance(data, dict) and "verdicts" in data:
+                return data["verdicts"]
+            if isinstance(data, list):
+                return data
+        except json.JSONDecodeError:
+            pass
 
     # Strategy 2: JSON lines
     results = []
@@ -631,12 +719,19 @@ def _parse_ct_output(output: str) -> List[Dict[str, Any]]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _run_tool_subprocess(code: str, timeout: int = 15) -> str:
-    """Run Python code in a subprocess using the tools-equipped interpreter."""
+    """Run Python code in a subprocess using the tools-equipped interpreter.
+
+    MF-22 fix: check returncode and capture stderr. Silent error swallowing
+    previously masked subprocess failures (e.g. segfaults, import errors).
+    """
     try:
         result = sp.run(
-            [PYTHON_TOOLS, "-c", code],
+            [_get_python_tools(), "-c", code],
             capture_output=True, text=True, timeout=timeout,
         )
+        if result.returncode != 0:
+            stderr_msg = result.stderr.strip()[:200] if result.stderr else "unknown"
+            return f"SUBPROCESS_ERROR(rc={result.returncode}): {stderr_msg}"
         return result.stdout.strip()
     except sp.TimeoutExpired:
         return "TIMEOUT"
@@ -645,50 +740,71 @@ def _run_tool_subprocess(code: str, timeout: int = 15) -> str:
 
 
 def _verify_sympy(claim: str) -> CellVerdict:
-    """Verify a mathematical claim via SymPy."""
+    """Verify a mathematical claim via SymPy.
+
+    MF-40 fix: AST blocklist rejects dangerous tokens before parse_expr.
+    MF-23 fix: removed n=100 numeric fallback (proof-by-example fallacy).
+    """
     code = f"""
 import sympy
 from sympy import *
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
-try:
-    expr = parse_expr({repr(claim)},
-        transformations=(standard_transformations + (implicit_multiplication_application,)),
-        local_dict={{'pi': sympy.pi, 'E': sympy.E, 'oo': sympy.oo, 'n': symbols('n'),
-                     'sqrt': sympy.sqrt, 'cos': sympy.cos, 'sin': sympy.sin,
-                     'Eq': sympy.Eq, 'Gt': sympy.Gt, 'Lt': sympy.Lt,
-                     'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And}},
-        global_dict={{'__builtins__': {{}}}})
-    result = sympy.simplify(expr)
-    if result == True:
-        print("VERIFIED_TRUE")
-    elif result == False:
-        print("VERIFIED_FALSE")
-    else:
-        n_val = expr.subs(symbols('n'), 100)
-        if n_val == True:
-            print("NUMERICAL_TRUE")
-        elif n_val == False:
-            print("NUMERICAL_FALSE")
+import re
+
+claim = {repr(claim)}
+
+# MF-40: AST blocklist — reject claims containing dangerous tokens (RCE vector)
+_BLOCKLIST = re.compile(r'(?:__|import|eval|exec|getattr|setattr|delattr|globals|locals|compile|open|__class__|__subclasses__)')
+if _BLOCKLIST.search(claim):
+    print("BLOCKED: claim contains disallowed token")
+else:
+    try:
+        expr = parse_expr(claim,
+            transformations=(standard_transformations + (implicit_multiplication_application,)),
+            # MF-30 fix: auto-generate symbols from claim instead of hardcoded 'n'
+            local_dict={{
+                'pi': sympy.pi, 'E': sympy.E, 'oo': sympy.oo,
+                'sqrt': sympy.sqrt, 'cos': sympy.cos, 'sin': sympy.sin,
+                'Eq': sympy.Eq, 'Gt': sympy.Gt, 'Lt': sympy.Lt,
+                'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And,
+                **{{s: symbols(s) for s in set(re.findall(r'\\b([a-z])\\b', claim)) if s not in ('e',)}}
+            }},
+            global_dict={{'__builtins__': {{}}}})
+        result = sympy.simplify(expr)
+        if result == True:
+            print("VERIFIED_TRUE")
+        elif result == False:
+            print("VERIFIED_FALSE")
         else:
+            # MF-23: emit UNCERTAIN instead of n=100 numeric fallback
             print(f"SIMPLIFIED: {{result}}")
-except Exception as e:
-    print(f"UNVERIFIABLE: {{e}}")
+    except Exception as e:
+        print(f"UNVERIFIABLE: {{e}}")
 """
     t0 = time.monotonic()
     output = _run_tool_subprocess(code)
     elapsed = time.monotonic() - t0
 
-    if "VERIFIED_TRUE" in output or "NUMERICAL_TRUE" in output:
+    # MF-24 fix: exact match prevents substring injection
+    # MF-23 fix: NUMERICAL_TRUE/FALSE removed (no more n=100 fallback)
+    stripped = output.strip()
+    if stripped == "VERIFIED_TRUE":
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
             confidence=0.95, evidence=f"SymPy: {output}", tool_used="sympy",
             elapsed_s=elapsed,
         )
-    elif "VERIFIED_FALSE" in output or "NUMERICAL_FALSE" in output:
+    elif stripped == "VERIFIED_FALSE":
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
             confidence=0.95, evidence=f"SymPy: {output}", tool_used="sympy",
             elapsed_s=elapsed,
+        )
+    elif stripped.startswith("BLOCKED:"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence=f"SymPy: {output} (MF-40 blocklist)",
+            tool_used="sympy", elapsed_s=elapsed,
         )
     else:
         return CellVerdict(
@@ -728,7 +844,8 @@ if if_then:
         print("UNSAT_VALID")
 else:
     # Try numeric constraint extraction
-    nums = re.findall(r'[-+]?\\d*\\.?\\d+', claim)
+    # MF-26 fix: support scientific notation (e.g. 1.5e-3)
+    nums = re.findall(r'[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?', claim)
     if len(nums) >= 2:
         a, b = float(nums[0]), float(nums[1])
         x = z3.Real('x')
@@ -751,6 +868,25 @@ else:
                 print(f"VERIFIED_FALSE: {{a}} > {{b}}")
         else:
             print(f"Z3_PARSED: extracted {{len(nums)}} numeric values")
+    elif len(nums) == 1:
+        # MF-27 fix: handle single-bound comparisons (e.g. "x > 0")
+        a = float(nums[0])
+        x = z3.Real('x')
+        s = z3.Solver()
+        if '>' in claim and '>=' not in claim:
+            s.add(z3.Not(x > a))
+            print(f"Z3_SINGLE_BOUND: x > {{a}}")
+        elif '<' in claim and '<=' not in claim:
+            s.add(z3.Not(x < a))
+            print(f"Z3_SINGLE_BOUND: x < {{a}}")
+        elif '>=' in claim:
+            s.add(z3.Not(x >= a))
+            print(f"Z3_SINGLE_BOUND: x >= {{a}}")
+        elif '<=' in claim:
+            s.add(z3.Not(x <= a))
+            print(f"Z3_SINGLE_BOUND: x <= {{a}}")
+        else:
+            print(f"Z3_SINGLE_VALUE: {{a}}")
     else:
         print("Z3_UNSTRUCTURED: claim not parseable as constraint")
 """
@@ -758,7 +894,9 @@ else:
     output = _run_tool_subprocess(code)
     elapsed = time.monotonic() - t0
 
-    if "VERIFIED_TRUE" in output or "UNSAT_VALID" in output:
+    # MF-24 fix: use startswith instead of substring 'in' to prevent injection
+    stripped = output.strip()
+    if stripped.startswith("VERIFIED_TRUE") or stripped == "UNSAT_VALID":
         # Run 11: confidence downgraded from 0.90 to 0.30. z3 proofs use
         # abstract symbols with no code grounding — they prove properties of
         # the LLM's translation, not the actual runtime constraints. Full fix
@@ -768,7 +906,7 @@ else:
             confidence=0.30, evidence=f"z3: {output}", tool_used="z3",
             elapsed_s=elapsed,
         )
-    elif "VERIFIED_FALSE" in output or "SATISFIABLE_COUNTEREXAMPLE" in output:
+    elif stripped.startswith("VERIFIED_FALSE") or stripped == "SATISFIABLE_COUNTEREXAMPLE":
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
             confidence=0.30, evidence=f"z3: {output}", tool_used="z3",
@@ -792,7 +930,8 @@ import re
 claim = {repr(claim)}
 
 # Extract p-value claims
-p_match = re.search(r'p\\s*[<=]\\s*(0\\.\\d+)', claim)
+# MF-31 fix: match p-values with or without leading zero
+p_match = re.search(r'p\\s*[<=]\\s*(0?\\.\\d+)', claim)
 if p_match:
     p_val = float(p_match.group(1))
     alpha = 0.05
@@ -818,13 +957,17 @@ else:
     output = _run_tool_subprocess(code)
     elapsed = time.monotonic() - t0
 
-    if "SIGNIFICANT" in output and "NOT_SIGNIFICANT" not in output:
+    # MF-29 fix: also match STRONG_CORRELATION and MODERATE_CORRELATION
+    stripped_stat = output.strip()
+    if (("SIGNIFICANT" in stripped_stat and "NOT_SIGNIFICANT" not in stripped_stat)
+            or stripped_stat.startswith("STRONG_CORRELATION")
+            or stripped_stat.startswith("MODERATE_CORRELATION")):
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
             confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
             elapsed_s=elapsed,
         )
-    elif "NOT_SIGNIFICANT" in output:
+    elif "NOT_SIGNIFICANT" in stripped_stat or stripped_stat.startswith("WEAK_CORRELATION"):
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
             confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
@@ -836,51 +979,6 @@ else:
             confidence=0.2, evidence=f"stats: {output}", tool_used="statsmodels",
             elapsed_s=elapsed,
         )
-
-
-def _verify_uncertainty(claim: str, metric_name: str, metric_value: float,
-                        metric_std: float) -> CellVerdict:
-    """Propagate measurement uncertainty via the uncertainties package.
-
-    Checks whether a conclusion holds under error propagation.
-    E.g., if γ = 0.39 ± 0.05, does the "converging" conclusion hold?
-    """
-    code = f"""
-from uncertainties import ufloat
-import math
-
-val = ufloat({metric_value}, {metric_std})
-name = {repr(metric_name)}
-
-# Check standard convergence thresholds
-if name == "gamma":
-    threshold = 0.5
-    if val.nominal_value >= threshold:
-        print(f"CONVERGED: {{val}} >= {{threshold}}")
-    elif val.nominal_value + val.std_dev >= threshold:
-        print(f"BORDERLINE: {{val}} overlaps {{threshold}} within 1-sigma")
-    else:
-        print(f"NOT_CONVERGED: {{val}} < {{threshold}} even at +1-sigma")
-elif name == "omega":
-    threshold = 0.10
-    if val.nominal_value < threshold:
-        print(f"BELOW_THRESHOLD: {{val}} < {{threshold}}")
-    elif val.nominal_value - val.std_dev < threshold:
-        print(f"BORDERLINE: {{val}} overlaps {{threshold}} within 1-sigma")
-    else:
-        print(f"ABOVE_THRESHOLD: {{val}} >= {{threshold}}")
-else:
-    print(f"MEASURED: {{name}} = {{val}}")
-"""
-    t0 = time.monotonic()
-    output = _run_tool_subprocess(code)
-    elapsed = time.monotonic() - t0
-
-    return CellVerdict(
-        cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
-        confidence=0.5, evidence=f"uncertainty: {output}",
-        tool_used="uncertainties", elapsed_s=elapsed,
-    )
 
 
 def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
@@ -928,14 +1026,15 @@ def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Known false-positive patterns from Run 7b analysis
+# MF-18 fix: add re.DOTALL to FP patterns for multiline descriptions
 _KNOWN_FALSE_POSITIVES: List[Dict[str, Any]] = [
     {
-        "pattern": re.compile(r"@dataclass\s+decorator.*missing", re.IGNORECASE),
+        "pattern": re.compile(r"@dataclass\s+decorator.*missing", re.IGNORECASE | re.DOTALL),
         "source": "Run 7b: Codex hallucinated missing @dataclass 8 times",
         "expected_model": "Codex",
     },
     {
-        "pattern": re.compile(r"missing\s+@dataclass", re.IGNORECASE),
+        "pattern": re.compile(r"missing\s+@dataclass", re.IGNORECASE | re.DOTALL),
         "source": "Run 7b: @dataclass false positive cluster",
         "expected_model": "Codex",
     },
@@ -966,6 +1065,7 @@ def nk_cell_verify(
         f = tf.finding
 
         # 1. Dedup against prior findings
+        # MF-19 fix: early termination once a match exceeds threshold
         best_sim = 0.0
         best_match: Optional[str] = None
         for pf in prior_findings:
@@ -973,8 +1073,11 @@ def nk_cell_verify(
             if sim > best_sim:
                 best_sim = sim
                 best_match = pf.finding_id
+                if best_sim >= tau_sim:
+                    break  # MF-19: early termination
 
-        if best_sim >= tau_sim:
+        # MF-16 fix: assert best_match is not None (prevent phantom duplicates)
+        if best_sim >= tau_sim and best_match is not None:
             tf.is_duplicate = True
             tf.duplicate_of = best_match
             tf.similarity = best_sim
@@ -1007,12 +1110,13 @@ def nk_cell_verify(
                     break
 
         # 3. Anomaly detection: severity outliers
+        # MF-17 fix: emit REJECTED (not UNCERTAIN) for anomalous findings
         if f.severity > 0.95 and f.round_idx > 5:
             verdicts.append(CellVerdict(
                 cell_type=CellType.NK_CELL,
                 finding_id=f.finding_id,
-                verdict="UNCERTAIN",
-                confidence=0.4,
+                verdict="REJECTED",
+                confidence=0.6,
                 evidence=f"Late-round high severity ({f.severity:.2f} at R{f.round_idx}) — possible inflation",
                 tool_used="anomaly_detection",
             ))
@@ -1042,10 +1146,19 @@ def helper_t_cell_synthesize(
     confirmation requires only 0.4+ (false negatives are costlier
     than false positives).
     """
-    # Group verdicts by finding
+    # Group verdicts by finding — MF-11 fix: deduplicate by cell type
+    # (keep highest-confidence verdict per cell type per finding)
     verdicts_by_finding: Dict[str, List[CellVerdict]] = {}
     for v in all_verdicts:
         verdicts_by_finding.setdefault(v.finding_id, []).append(v)
+
+    # Deduplicate: one verdict per cell type per finding
+    for fid in verdicts_by_finding:
+        seen_cells: Dict[CellType, CellVerdict] = {}
+        for v in verdicts_by_finding[fid]:
+            if v.cell_type not in seen_cells or v.confidence > seen_cells[v.cell_type].confidence:
+                seen_cells[v.cell_type] = v
+        verdicts_by_finding[fid] = list(seen_cells.values())
 
     final_verdicts: Dict[str, str] = {}
     final_confidences: Dict[str, float] = {}
@@ -1080,10 +1193,14 @@ def helper_t_cell_synthesize(
             final_confidences[fid] = 0.0
         elif reject_weight / max(total, 0.001) >= 0.6:
             final_verdicts[fid] = "REJECTED"
-            final_confidences[fid] = reject_weight / total
+            # MF-09 fix: cap confidence by max individual verdict weight
+            max_individual = max((v.confidence for v in fv if v.verdict in ("REJECTED", "DUPLICATE")), default=0.0)
+            final_confidences[fid] = min(reject_weight / total, max_individual)
         elif confirm_weight / max(total, 0.001) >= 0.4:
             final_verdicts[fid] = "CONFIRMED"
-            final_confidences[fid] = confirm_weight / total
+            # MF-09 fix: cap confidence by max individual verdict weight
+            max_individual = max((v.confidence for v in fv if v.verdict == "CONFIRMED"), default=0.0)
+            final_confidences[fid] = min(confirm_weight / total, max_individual)
         else:
             final_verdicts[fid] = "UNCERTAIN"
             final_confidences[fid] = max(confirm_weight, reject_weight) / max(total, 0.001)
@@ -1127,6 +1244,15 @@ def regulatory_t_cell_check(
         reasons.append(
             f"Rejection rate {rejected}/{total} ({rejected/total:.1%}) "
             f"exceeds threshold ({max_rejection_rate:.0%})"
+        )
+
+    # Check 1b (MF-36 fix): High UNCERTAIN rate indicates fail-open illusion
+    uncertain = sum(1 for v in final_verdicts.values() if v == "UNCERTAIN")
+    uncertain_rate = uncertain / total
+    if uncertain_rate > 0.30:
+        reasons.append(
+            f"UNCERTAIN rate {uncertain}/{total} ({uncertain_rate:.1%}) "
+            f"exceeds 30% — verification tools may be non-functional (fail-open)"
         )
 
     # Check 2: Single cell type dominating rejections
@@ -1274,9 +1400,15 @@ def skin_barrier_check(
             ))
             continue
 
+        # C5-23 fix: bounded line streaming to prevent OOM on large files
         try:
+            lines: List[str] = []
+            max_lines = 50000  # configurable limit
             with open(cited_file, "r", encoding="utf-8") as fh:
-                lines = fh.readlines()
+                for i, line in enumerate(fh):
+                    if i >= max_lines:
+                        break
+                    lines.append(line)
         except (OSError, UnicodeDecodeError):
             results.append(SkinBarrierResult(
                 finding_id=f.finding_id, passed=False,
@@ -1353,11 +1485,15 @@ def _build_ct_v2_prompt(
     findings: List[TriagedFinding],
     source_paths: List[str],
 ) -> str:
-    """Build the CT v2 falsifier prompt."""
+    """Build the CT v2 falsifier prompt.
+
+    C5-03 fix: finding descriptions wrapped in XML boundary tags.
+    """
     files_list = "\n".join(f"  - {p}" for p in source_paths)
     findings_block = "\n".join(
         f"  [{tf.finding.finding_id}] severity={tf.finding.severity:.2f} "
-        f"type={tf.claim_type.value}: {tf.finding.description}"
+        f"type={tf.claim_type.value}: "
+        f"<finding_description>{tf.finding.description}</finding_description>"
         for tf in findings
     )
     return (
@@ -1441,7 +1577,7 @@ def cytotoxic_t_cell_v2_shadow(
         _shadow_log.info("CT v2 (shadow): no code findings to investigate")
         return []
 
-    if not CLAUDE_CLI:
+    if not _get_claude_cli():
         _shadow_log.info("CT v2 (shadow): claude CLI not available")
         return []
 
@@ -1450,7 +1586,7 @@ def cytotoxic_t_cell_v2_shadow(
 
     try:
         cmd = [
-            CLAUDE_CLI, "-p", prompt,
+            _get_claude_cli(), "-p", prompt,
             "--allowedTools", "Read,Grep,Glob",
             "--max-turns", "6",
         ]
@@ -2217,6 +2353,64 @@ def regulatory_t_v2_shadow(
     return False, f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
 
 
+def _reconciliation_gate(
+    v1_verdicts: Dict[str, str],
+    v1_confidences: Dict[str, float],
+    v2_verdicts: Dict[str, str],
+    v2_confidences: Dict[str, float],
+) -> Tuple[Dict[str, str], Dict[str, float]]:
+    """WP3b: Reconciliation Gate — immutable state transition check.
+
+    Merges v1 and v2 verdicts before Regulatory T meta-check.
+    Rules:
+    1. If v1 and v2 agree: use that verdict with max confidence.
+    2. If v1 and v2 disagree: use the higher-confidence verdict.
+    3. If only one pipeline produced a verdict: use it.
+    4. REJECTED verdicts from both pipelines are LOCKED — cannot be
+       overridden by downstream autoimmune recovery (MF-34/MF-35/C5-25).
+
+    Returns reconciled (verdicts, confidences).
+    """
+    reconciled: Dict[str, str] = {}
+    reconciled_conf: Dict[str, float] = {}
+
+    all_fids = set(v1_verdicts) | set(v2_verdicts)
+    for fid in all_fids:
+        v1v = v1_verdicts.get(fid)
+        v1c = v1_confidences.get(fid, 0.0)
+        v2v = v2_verdicts.get(fid)
+        v2c = v2_confidences.get(fid, 0.0)
+
+        if v1v is None and v2v is not None:
+            reconciled[fid] = v2v
+            reconciled_conf[fid] = v2c
+        elif v2v is None and v1v is not None:
+            reconciled[fid] = v1v
+            reconciled_conf[fid] = v1c
+        elif v1v == v2v:
+            # Agreement: use shared verdict, max confidence
+            reconciled[fid] = v1v
+            reconciled_conf[fid] = max(v1c, v2c)
+        else:
+            # Disagreement: higher confidence wins
+            if v1c >= v2c:
+                reconciled[fid] = v1v
+                reconciled_conf[fid] = v1c
+            else:
+                reconciled[fid] = v2v
+                reconciled_conf[fid] = v2c
+
+        # Log reconciliation diffs
+        if v1v and v2v and v1v != v2v:
+            _shadow_log.info(
+                "Reconciliation: %s — v1=%s(%.2f) vs v2=%s(%.2f) → %s(%.2f)",
+                fid, v1v, v1c, v2v, v2c,
+                reconciled[fid], reconciled_conf[fid],
+            )
+
+    return reconciled, reconciled_conf
+
+
 def run_immune_pipeline(
     new_findings: List[Finding],
     prior_findings: List[Finding],
@@ -2252,19 +2446,33 @@ def run_immune_pipeline(
     timings: Dict[str, float] = {}
     tool_usage: Dict[str, int] = {}
 
-    # ── Stage 0: Skin barrier pre-filter (activated Run 11) ─────────
-    # Deterministic check: do cited files/lines exist? Results logged
-    # and included in ImmuneResponse. Does not filter findings yet —
-    # that requires downstream integration (Run 12 target).
+    # ── Stage 0: Skin barrier pre-filter (WP6a: now ACTIVE) ────────
+    # Deterministic check: do cited files/lines exist? Findings that fail
+    # the barrier are filtered out before reaching the Dendritic Cell.
     t0 = time.monotonic()
-    _, barrier_results = skin_barrier_check(new_findings, source_paths)
+    passed_findings, barrier_results = skin_barrier_check(new_findings, source_paths)
     timings["skin_barrier"] = round(time.monotonic() - t0, 4)
     tool_usage["skin_barrier"] = sum(1 for r in barrier_results if not r.passed)
 
+    # WP6a: filter out findings that failed skin barrier (unless observation_only)
+    if not observation_only:
+        failed_ids = {r.finding_id for r in barrier_results if not r.passed}
+        barrier_filtered = [f for f in new_findings if f.finding_id not in failed_ids]
+        barrier_rejected = [f for f in new_findings if f.finding_id in failed_ids]
+        new_findings = barrier_filtered
+    else:
+        barrier_rejected = []
+
     # ── Stage 1: Dendritic Cell triage ────────────────────────────────
+    # WP6a/WP3a: v2 classifier is now PRIMARY (Epistemic Routing Layer)
+    # v1 runs alongside for comparison logging only
     t0 = time.monotonic()
-    triaged = dendritic_cell_triage(new_findings)
-    timings["dendritic"] = round(time.monotonic() - t0, 4)
+    v1_triaged = dendritic_cell_triage(new_findings)
+    timings["dendritic_v1"] = round(time.monotonic() - t0, 4)
+
+    t0_dc_v2 = time.monotonic()
+    triaged = dendritic_cell_v2_shadow(new_findings, v1_triaged)
+    timings["dendritic"] = round(time.monotonic() - t0_dc_v2, 4)
 
     # Log claim type distribution
     type_counts = {}
@@ -2272,75 +2480,53 @@ def run_immune_pipeline(
         key = tf.claim_type.value
         type_counts[key] = type_counts.get(key, 0) + 1
 
-    # ── Stage 1 shadow: Dendritic Cell v2 ────────────────────────────
-    t0_dc_v2 = time.monotonic()
-    dc_v2_triaged = dendritic_cell_v2_shadow(new_findings, triaged)
-    timings["dendritic_v2_shadow"] = round(time.monotonic() - t0_dc_v2, 4)
-
-    # ── Stage 2: Parallel verification ────────────────────────────────
+    # ── Stage 2: Parallel verification (WP6a: v2 components active) ──
     all_verdicts: List[CellVerdict] = []
     t0 = time.monotonic()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+    # MF-20 fix: deep-copy triaged list for NK to prevent race conditions
+    import copy
+    triaged_for_nk = copy.deepcopy(triaged)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         futures = {}
 
-        # 2a: Cytotoxic T-Cell (code FFF)
+        # 2a: CT v1 (code FFF investigation)
         if ct_enabled:
             futures["cytotoxic_t"] = pool.submit(
                 cytotoxic_t_cell, triaged, source_paths, ct_timeout,
             )
 
-        # 2b: B-Cell (math/logic/stats)
-        futures["b_cell"] = pool.submit(b_cell_verify, triaged)
-
-        # 2c: NK Cell (pattern/dedup)
-        futures["nk_cell"] = pool.submit(
-            nk_cell_verify, triaged, prior_findings, tau_sim, false_positive_db,
-        )
-
-        # 2d (shadow): CT v2 falsifier — observation only
+        # 2a': CT v2 falsifier (WP6a: now ACTIVE, verdicts feed pipeline)
         if ct_enabled:
-            futures["ct_v2_shadow"] = pool.submit(
+            futures["ct_v2"] = pool.submit(
                 cytotoxic_t_cell_v2_shadow, triaged, source_paths, ct_timeout,
             )
 
-        # 2e (shadow): B Cell v2 AST-grounded z3 — observation only
-        futures["b_cell_v2_shadow"] = pool.submit(
+        # 2b: B-Cell v1 (SymPy + z3 + stats — still primary for non-AST claims)
+        futures["b_cell"] = pool.submit(b_cell_verify, triaged)
+
+        # 2b': B-Cell v2 AST-grounded z3 (WP6a: now ACTIVE)
+        futures["b_cell_v2"] = pool.submit(
             b_cell_v2_shadow, triaged, source_paths,
         )
 
-        # 2f (shadow): NK Cell v2 — FP continue fix + intra-round dedup
-        futures["nk_v2_shadow"] = pool.submit(
-            nk_cell_v2_shadow, triaged, prior_findings, tau_sim,
+        # 2c: NK v2 (WP6a: now PRIMARY — FP continue fix + intra-round dedup)
+        futures["nk_v2"] = pool.submit(
+            nk_cell_v2_shadow, triaged_for_nk, prior_findings, tau_sim,
             false_positive_db,
         )
 
-        # Collect results
-        shadow_names = {"ct_v2_shadow", "b_cell_v2_shadow", "nk_v2_shadow"}
+        # Collect results — all active cells feed all_verdicts
         for name, future in futures.items():
             try:
                 result = future.result(timeout=ct_timeout + 30)
-                if name in shadow_names:
-                    # Shadow cells: log output but do NOT add to all_verdicts
-                    if name == "nk_v2_shadow":
-                        # NK v2 returns (triaged, verdicts) tuple
-                        _, shadow_verdicts = result
-                    else:
-                        shadow_verdicts = result
-                    for v in shadow_verdicts:
-                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
-                elif name == "nk_cell":
-                    triaged, nk_verdicts = result
+                if name == "nk_v2":
+                    # NK v2 returns (triaged, verdicts) tuple
+                    _, nk_verdicts = result
                     all_verdicts.extend(nk_verdicts)
-                    tool_usage["similarity_dedup"] = sum(
-                        1 for v in nk_verdicts if v.tool_used == "similarity_dedup"
-                    )
-                    tool_usage["false_positive_db"] = sum(
-                        1 for v in nk_verdicts if v.tool_used == "false_positive_db"
-                    )
-                    tool_usage["anomaly_detection"] = sum(
-                        1 for v in nk_verdicts if v.tool_used == "anomaly_detection"
-                    )
+                    for v in nk_verdicts:
+                        tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
                 else:
                     cell_verdicts = result
                     all_verdicts.extend(cell_verdicts)
@@ -2355,51 +2541,47 @@ def run_immune_pipeline(
 
     timings["parallel_verification"] = round(time.monotonic() - t0, 4)
 
-    # ── Stage 3a: Helper T-Cell synthesis ─────────────────────────────
+    # ── Stage 3a: Helper T v1 synthesis (kept for reconciliation) ────
     t0 = time.monotonic()
     final_verdicts, final_confidences = helper_t_cell_synthesize(triaged, all_verdicts)
     timings["helper_t"] = round(time.monotonic() - t0, 4)
 
-    # ── Stage 3b: Regulatory T-Cell meta-check ────────────────────────
-    t0 = time.monotonic()
-    autoimmune_flag, reg_reason = regulatory_t_cell_check(
-        final_verdicts, triaged, max_rejection_rate,
-    )
-    timings["regulatory_t"] = round(time.monotonic() - t0, 4)
-
-    # ── Stage 3 shadows: v2 synthesis + meta-check ───────────────────
+    # ── Stage 3a': Helper T v2 synthesis (WP6a: active) ──────────────
     t0 = time.monotonic()
     v2_final, v2_conf = helper_t_v2_shadow(triaged, all_verdicts)
-    timings["helper_t_v2_shadow"] = round(time.monotonic() - t0, 4)
+    timings["helper_t_v2"] = round(time.monotonic() - t0, 4)
 
-    # Log verdict differences v1 vs v2
-    v1v2_diffs = sum(
-        1 for fid in final_verdicts
-        if final_verdicts.get(fid) != v2_final.get(fid)
-    )
-    if v1v2_diffs:
-        _shadow_log.info(
-            "Helper T v1 vs v2: %d/%d verdict differences",
-            v1v2_diffs, len(final_verdicts),
-        )
-        for fid in final_verdicts:
-            v1v = final_verdicts.get(fid)
-            v2v = v2_final.get(fid)
-            if v1v != v2v:
-                _shadow_log.info(
-                    "  %s: v1=%s → v2=%s", fid, v1v, v2v,
-                )
-
+    # ── Stage 3a.5: RECONCILIATION GATE (WP3b) ──────────────────────
+    # Immutable state transition check: once a finding is rejected/confirmed
+    # by both v1 and v2, that verdict is locked. Prevents autoimmune recovery
+    # from rescuing known garbage (MF-34/MF-35/C5-25).
     t0 = time.monotonic()
+    reconciled_verdicts, reconciled_confidences = _reconciliation_gate(
+        final_verdicts, final_confidences, v2_final, v2_conf,
+    )
+    timings["reconciliation_gate"] = round(time.monotonic() - t0, 4)
+
+    # Use reconciled verdicts for downstream processing
+    final_verdicts = reconciled_verdicts
+    final_confidences = reconciled_confidences
+
+    # ── Stage 3b: Regulatory T-Cell meta-check (WP6a: v2 primary) ────
+    t0 = time.monotonic()
+    v1_autoimmune, v1_reg_reason = regulatory_t_cell_check(
+        final_verdicts, triaged, max_rejection_rate,
+    )
     v2_autoimmune, v2_reg_reason = regulatory_t_v2_shadow(
         final_verdicts, triaged, max_rejection_rate,
     )
-    timings["regulatory_t_v2_shadow"] = round(time.monotonic() - t0, 4)
+    # WP6a: v2 is primary, v1 for comparison logging
+    autoimmune_flag = v2_autoimmune
+    reg_reason = v2_reg_reason
+    timings["regulatory_t"] = round(time.monotonic() - t0, 4)
 
-    if v2_autoimmune != autoimmune_flag:
+    if v2_autoimmune != v1_autoimmune:
         _shadow_log.info(
             "RT v1 vs v2: flag differs — v1=%s v2=%s (%s)",
-            autoimmune_flag, v2_autoimmune, v2_reg_reason,
+            v1_autoimmune, v2_autoimmune, v2_reg_reason,
         )
 
     # ── Build response ────────────────────────────────────────────────

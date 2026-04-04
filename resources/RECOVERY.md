@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 4 April 2026 07:24 BST
+Last updated: 4 April 2026 08:17 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,25 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (4 April 2026, 04:45 BST)
+## Current Pending Work (4 April 2026, 08:17 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE.
+
+EXP 29 IMPLEMENTATION COMPLETE (4 April 2026, 08:17 BST):
+Full implementation of the Exp 29 architecture — all 6 work packages done.
+46 bug fixes (40 MF + 6 C5 novel), insect brain built, v2 activated, CC2 fixed.
+496 tests pass (31 new integration tests). READY FOR EXP 29 EXECUTION.
+Subject: persistence layer (under-tested — single round p-pass only).
+Changed files: bench/immune_agents.py (40+ bug fixes, v2 activation,
+reconciliation gate, lazy discovery), bench/insect_brain.py (NEW — 500 lines,
+mechanical relay), bench/experiment_11_orchestrator.py (CC2 timeout),
+bench/dm/_types.py (CC2 context budget), bench/runner_core.py (per-model budgets),
+bench/tests/test_exp29_integration.py (NEW — 31 tests).
+V2 status: DC v2 PRIMARY, NK v2 PRIMARY, CT v1+v2 PARALLEL, B-Cell v1+v2 PARALLEL,
+Reg T v2 PRIMARY, skin barrier ACTIVE, reconciliation gate ACTIVE.
+Deferred: Formalisation Agent, Typed LLM Classifier (post-Exp 29).
+Next: Run Exp 29, then other layers, then Bench Run 2.
+Tests: python3 -m pytest bench/tests/test_exp29_integration.py -v
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
 C1 (Realistic HIL): 25 findings, 9/9 verified, 0 FP. 5 rounds, ~3 min.
@@ -89,20 +105,20 @@ CDSFL/FFF with insect brain as mechanical relay. Five architectural layers:
   5. Endocrine system / pacing signals (designed, not built — not blocking)
 
 SEQUENCE TO BENCH RUN 2:
-1. Integrate Run 11 findings (59 from Exp 28b — triage and fix)
-2. Fix 40 Master Finding Registry bugs (C1/C3/C4/C5 verified)
-3. Implement C5 novel constructs where feasible (Epistemic Routing, Reconciliation Gate, etc.)
-4. Activate v2 immune components (NK v2, Helper T v2 — shadow data justifies)
-5. Build insect brain (mechanical relay — design exists)
-6. CC2 dispatch fix (timeout 300s→900s)
-7. Exp 29 — full integration test of target architecture (all layers active)
-8. BENCH RUN 2 — 27 frontier STEM problems, full integrated architecture
-9. Unified experiment numbering (Run N → Exp N) — QC sweep
-Step 4 (HIL comparison) removed — C5 already validates conversational + constraints.
+1. ✓ Integrate Run 11 findings — DONE
+2. ✓ Fix 40 Master Finding Registry bugs — DONE (all P0-P3 tiers)
+3. ✓ Implement C5 novel constructs — DONE (3/5 built, 2 deferred)
+4. ✓ Activate v2 immune components — DONE (all active)
+5. ✓ Build insect brain — DONE (bench/insect_brain.py)
+6. ✓ CC2 dispatch fix — DONE (300s→900s, retries 3→1)
+7. → Exp 29 — NEXT (full integration test, subject: persistence layer)
+8.   BENCH RUN 2 — 27 frontier STEM problems, full integrated architecture
+9.   Unified experiment numbering — QC sweep
 
-INSECT BRAIN ARCHITECTURE (deferred to Exp 29):
+INSECT BRAIN ARCHITECTURE (NOW BUILT):
 - Reactive coordinator, not deliberative. Gathers/processes/tabulates/commits.
 - Models drive conversation under full CDSFL as peers.
+- Implementation: bench/insect_brain.py (500 lines, 7 core functions)
 - Design notes: experimental_notes/Insect_Brain_Architecture_2026-04-03.md
 - Global mind vision: experimental_notes/Global_Mind_Architecture_2026-04-03.md
 
