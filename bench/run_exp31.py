@@ -196,6 +196,33 @@ MODEL_ROSTER = {
 MULTITURN_CHUNK_TARGET = 30_000
 
 # ─────────────────────────────────────────────────────────────────────────────
+# PoC context — this is a proof-of-concept, not production software
+# ─────────────────────────────────────────────────────────────────────────────
+
+_POC_CONTEXT_INSTRUCTION = (
+    "SYSTEM CONTEXT — PROOF OF CONCEPT (MANDATORY):\n"
+    "This codebase is a proof-of-concept, not production software. The goal is "
+    "end-to-end operation with all significant features firing cleanly, shipped "
+    "for human review as quickly as possible.\n\n"
+    "Your review standard must match this context:\n"
+    "  CRITICAL: anything that prevents end-to-end operation (crashes, dead "
+    "code paths, features that do not fire, data loss on the happy path)\n"
+    "  HIGH: anything that produces silently wrong results (incorrect verdicts, "
+    "corrupted state, misleading outputs that would deceive the reviewer)\n"
+    "  MEDIUM: anything that degrades quality but does not block operation "
+    "(suboptimal thresholds, missing edge case handling, inefficiencies)\n"
+    "  LOW: polish, documentation, style, edge cases that require adversarial "
+    "input to trigger\n\n"
+    "Focus on CRITICAL and HIGH. File MEDIUM only if it is quick to fix. Ignore "
+    "LOW entirely — it is not relevant at PoC stage.\n\n"
+    "Do NOT propose fixes that add complexity for marginal safety gain. The "
+    "simplest fix that makes the feature work end-to-end is the correct fix. "
+    "If a function works correctly on the common path but crashes on a bizarre "
+    "edge case that no real experiment would trigger, that is not a PoC-blocking "
+    "bug — note it and move on.\n\n"
+)
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Good Enough principle — convergence on fixes, not endless alternatives
 # ─────────────────────────────────────────────────────────────────────────────
 # Applies to all domains, not just software. When multiple agents agree an
@@ -203,6 +230,26 @@ MULTITURN_CHUNK_TARGET = 30_000
 # than endlessly proposing alternatives. This is Voltaire's "le mieux est
 # l'ennemi du bien" — the Principle of Good Enough.
 # See: https://en.wikipedia.org/wiki/Principle_of_good_enough
+
+_MACHINE_COMMS_INSTRUCTION = (
+    "INTER-MODEL COMMUNICATION PROTOCOL (MANDATORY):\n"
+    "This is a multi-machine environment. Social pleasantries, acknowledgments, "
+    "and contextual restatements are wasted tokens. Do NOT write 'Thank you for "
+    "the confirmation', 'Acknowledged', 'Your analysis is correct', or similar. "
+    "These communicate nothing that a structured verdict does not.\n\n"
+    "For cross-model references, use compressed structured verdicts:\n"
+    "  CONFIRM [Model]_[ID] — you agree the finding and fix are correct\n"
+    "  CHALLENGE [Model]_[ID] | [evidence] — the finding or fix is wrong\n"
+    "  EXTEND [Model]_[ID] | [new consequence or edge case]\n"
+    "  MERGE [Model]_[ID] ← [Your_ID] — same root cause, combining\n"
+    "  SUPERSEDE [old_ID] → [new_ID] | [reason] — replacing your own prior finding\n\n"
+    "Each verdict is one line. Evidence follows on the next line if needed. "
+    "Do not wrap verdicts in prose. Do not restate the other model's finding "
+    "before responding to it — they can read their own work.\n\n"
+    "Your FINDINGS must still include full FIND/FOLLOW/FIX detail — the compression "
+    "applies only to inter-model references and verdicts, not to the findings "
+    "themselves. Final synthesis and conclusions must be in natural language.\n\n"
+)
 
 _GOOD_ENOUGH_INSTRUCTION = (
     "CONVERGENCE ON SOLUTIONS (MANDATORY):\n"
@@ -942,9 +989,10 @@ def run_experiment(
             "  - FIND what everyone missed: the highest-value findings are the ones "
             "no other model has identified\n\n"
             "You remain under full CDSFL + FFF constraints. Every finding must have "
-            "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
-            "The conversation is rigorous, not chatty.\n\n"
-            f"{_GOOD_ENOUGH_INSTRUCTION}"
+            "FIND (evidence), FOLLOW (trace downstream consequences), and FIX "
+            "(concrete correction informed by the trace). FOLLOW comes BEFORE FIX — "
+            "you must understand the blast radius before proposing a solution.\n\n"
+            f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
     elif relay_mode == "conversational":
         awareness_preamble = (
@@ -961,9 +1009,10 @@ def run_experiment(
             "  - FIND what everyone missed: the highest-value findings are the ones "
             "no other model has identified\n\n"
             "You remain under full CDSFL + FFF constraints. Every finding must have "
-            "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
-            "The conversation is rigorous, not chatty.\n\n"
-            f"{_GOOD_ENOUGH_INSTRUCTION}"
+            "FIND (evidence), FOLLOW (trace downstream consequences), and FIX "
+            "(concrete correction informed by the trace). FOLLOW comes BEFORE FIX — "
+            "you must understand the blast radius before proposing a solution.\n\n"
+            f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
     else:
         awareness_preamble = (
@@ -972,7 +1021,7 @@ def run_experiment(
             f"{roster_lines}\n\n"
             "You will see other models' findings (not their full analysis). "
             "Do not repeat known findings — find what was missed.\n\n"
-            f"{_GOOD_ENOUGH_INSTRUCTION}"
+            f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
 
     # Load Exp 30 fix summary for injection into base prompt
@@ -1005,14 +1054,19 @@ def run_experiment(
         "and remain in the codebase.\n"
         "  3. FIND NEW ISSUES — bugs introduced BY the fixes themselves.\n"
         "  4. Focus on what is STILL WRONG, not what was already fixed.\n\n"
-        "For each finding, provide:\n"
-        "  FINDING_ID: unique identifier (e.g., F001)\n"
+        "For each finding, provide (keys in this exact order):\n"
+        "  FINDING_ID: unique identifier (e.g., F001). IMPORTANT: your finding IDs "
+        "must be STABLE across rounds. If you filed F001 in Round 3, F001 in Round 4 "
+        "must refer to the same bug. To replace a finding, use SUPERSEDES: old_ID.\n"
         "  SEVERITY: 0.0 to 1.0 (1.0 = critical)\n"
         "  FLAW_CLASS: integer category (1=logic, 2=interface, 3=notation, "
         "4=completeness, 5=correctness, 6=edge-case, 7=performance, 8=documentation)\n"
         "  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\n"
-        "  DESCRIPTION: what is wrong and why it matters\n"
-        "  PROPOSED_FIX: how to fix it\n"
+        "  DESCRIPTION: FIND — what is wrong, where, and what is the evidence\n"
+        "  FOLLOW: trace downstream consequences BEFORE proposing a fix. What "
+        "depends on this? What interfaces does it cross? What breaks if this is wrong?\n"
+        "  PROPOSED_FIX: FIX — the simplest sufficient correction that addresses "
+        "both the root cause AND the downstream consequences identified in FOLLOW\n"
         "  VERIFIED: TRUE if you have a proof/test, FALSE if this is an assertion\n\n"
         "Produce ALL NEW findings you can identify. Do not hold back. "
         "Do not repeat known fixed issues.\n\n"

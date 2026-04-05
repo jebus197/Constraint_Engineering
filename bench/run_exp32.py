@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
-"""Experiment 30: Endocrine Layer Integration Test.
+"""Experiment 32: Meta-Experiment — Convergence Prediction, Communication
+Efficiency, and Experimental Design Optimisation.
 
-Extends Exp 29 (persistence layer test) with the endocrine layer —
-whole-body health monitoring via static analysis, fix evaluation,
-and pacing signals. Default relay mode is directed (inter-model @tags).
+This is NOT a code review. It analyses convergence data from Experiments 30
+and 31 and asks models to predict, agree, and optimise.
 
-Key additions over Exp 29:
-  1. EndocrineLayer runs between rounds (health scan + fix eval + pacing)
-  2. Directed messaging is the default relay mode
-  3. Endocrine metrics feed into round reports and convergence decisions
-  4. Pacing signals (novelty_plateau) can trigger early convergence checks
-  5. Fix evaluations produce SAFE/HARMFUL/NEUTRAL/UNEVALUABLE verdicts
+Four phases across 10 rounds:
+  Phase 1 — Convergence Model Validation (Round 0):
+    Full convergence data from Exp 30 and 31. Models predict when gamma
+    should cross 0.5 in the next code review, assuming blockers are fixed.
 
-Subject under review: same 3 files as Exp 29 (verification_chain.py,
-insect_brain.py, immune_agents.py) — re-reviewing after fixes applied.
+  Phase 2 — Communication Efficiency (Rounds 1-3):
+    Models analyse inter-model communication overhead from Exp 31 and
+    design a compressed, human-readable protocol with structured verdicts.
 
-Architecture:
-  - Insect brain handles relay, persistence, metrics, convergence
-  - EndocrineLayer handles static analysis, fix evaluation, pacing
-  - 5-model parallel dispatch (CC2, Codex, Gemini, DeepSeek, ChatGPT)
-  - Directed relay: models use @tags to address each other
-  - Immune pipeline called through brain.run_immune_pipeline()
-  - Convergence detected through brain.check_convergence()
-  - Checkpoint/resume via brain.load_checkpoint()
+  Phase 3 — Experimental Design Optimisation (Rounds 4-7):
+    Models design optimal parameters for the next code review experiment.
+
+  Phase 4 — Final Synthesis (Rounds 8-9):
+    Consensus document for human-in-the-loop review: convergence prediction
+    with confidence interval, agreed protocol, recommended design, dissent.
+
+Architecture: identical to Exp 31 (insect brain relay, endocrine layer,
+5-model parallel dispatch, directed messaging, immune pipeline, convergence
+detection, checkpoint/resume, Merkle sealing).
 
 Models:
   - CC2 (Claude Opus 4.6 via OpenRouter)
@@ -32,21 +33,21 @@ Models:
   - ChatGPT (GPT-5.4 via OpenRouter)
 
 Usage:
-    python3 bench/run_exp30_endocrine.py [preflight|run|--resume]
-    python3 bench/run_exp30_endocrine.py run --relay-mode directed --pattern fff
-    python3 bench/run_exp30_endocrine.py run --pattern meta_structured
-    python3 bench/run_exp30_endocrine.py run --relay-mode conversational
+    python3 bench/run_exp32.py [preflight|run|--resume]
+    python3 bench/run_exp32.py run --relay-mode directed --pattern fff
+    python3 bench/run_exp32.py run --pattern meta_structured
+    python3 bench/run_exp32.py run --relay-mode conversational
 
-    preflight       — verify all 5 models respond
-    run             — full experiment (preflight + confer rounds)
-    --resume        — resume from last checkpoint
-    --pattern NAME  — interaction pattern preset (default: fff)
-                      Options: fff, meta_structured, conversational,
-                      three_layer_schema, unconstrained
-    --relay-mode M  — how the brain relays between models (default: directed)
-                      findings: parsed findings only (IDs, severities, descriptions)
-                      conversational: full model responses (reasoning chains visible)
-                      directed: conversational + @tag directed inter-model messaging
+    preflight       -- verify all 5 models respond
+    run             -- full experiment (preflight + confer rounds)
+    --resume        -- resume from last checkpoint
+    --pattern NAME  -- interaction pattern preset (default: fff)
+                       Options: fff, meta_structured, conversational,
+                       three_layer_schema, unconstrained
+    --relay-mode M  -- how the brain relays between models (default: directed)
+                       findings: parsed findings only (IDs, severities, descriptions)
+                       conversational: full model responses (reasoning chains visible)
+                       directed: conversational + @tag directed inter-model messaging
 """
 
 from __future__ import annotations
@@ -142,16 +143,16 @@ from bench.endocrine import (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Configuration
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def _find_or_create_logs_dir(resume: bool = False) -> Path:
-    """Find existing exp30 logs dir for resume, or create a new one."""
+    """Find existing exp32 logs dir for resume, or create a new one."""
     if resume:
         logs_root = REPO_ROOT / "bench" / "logs"
         candidates = sorted(
-            logs_root.glob("exp30_endocrine_*"),
+            logs_root.glob("exp32_meta_*"),
             key=lambda p: p.name,
             reverse=True,
         )
@@ -159,21 +160,17 @@ def _find_or_create_logs_dir(resume: bool = False) -> Path:
             if (c / "checkpoint.json").exists():
                 return c
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    return REPO_ROOT / "bench" / "logs" / f"exp30_endocrine_{ts}"
+    return REPO_ROOT / "bench" / "logs" / f"exp32_meta_{ts}"
 
 
-# Default — overridden in main() for resume
-LOGS_DIR = REPO_ROOT / "bench" / "logs" / "exp30_endocrine_latest"
+# Default -- overridden in main() for resume
+LOGS_DIR = REPO_ROOT / "bench" / "logs" / "exp32_meta_latest"
 
-MAX_ROUNDS = 15          # Same as Exp 29
+MAX_ROUNDS = 10          # Bounded meta-question, not open-ended code review
 WALL_CLOCK_CAP_S = 6 * 3600  # 6 hours
 
-# Test article: same 3 files as Exp 29 (re-reviewing after fixes applied)
-SOURCE_FILES = [
-    REPO_ROOT / "bench" / "verification_chain.py",   # Merkle tree persistence
-    REPO_ROOT / "bench" / "insect_brain.py",          # relay module under test
-    REPO_ROOT / "bench" / "immune_agents.py",         # 6-cell pipeline (context)
-]
+# No code artifact -- this experiment analyses convergence data
+SOURCE_FILES: List[Path] = []
 
 # 5-model set
 BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}
@@ -181,7 +178,7 @@ BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}
 # Default interaction pattern (overridable via --pattern)
 DEFAULT_PATTERN = "fff"
 
-# Default relay mode — DIRECTED for Exp 30 (was conversational in Exp 29)
+# Default relay mode -- DIRECTED for Exp 32 (same as Exp 31)
 DEFAULT_RELAY_MODE = "directed"
 
 # Model roster for awareness preamble
@@ -196,16 +193,17 @@ MODEL_ROSTER = {
 # Multi-turn chunk target for decomposed dispatch
 MULTITURN_CHUNK_TARGET = 30_000
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PoC context — this is a proof-of-concept, not production software
-# ─────────────────────────────────────────────────────────────────────────────
+
+# ---------------------------------------------------------------------------
+# PoC context -- tells models the codebase under analysis is a PoC
+# ---------------------------------------------------------------------------
 
 _POC_CONTEXT_INSTRUCTION = (
-    "SYSTEM CONTEXT — PROOF OF CONCEPT (MANDATORY):\n"
-    "This codebase is a proof-of-concept, not production software. The goal is "
-    "end-to-end operation with all significant features firing cleanly, shipped "
-    "for human review as quickly as possible.\n\n"
-    "Your review standard must match this context:\n"
+    "SYSTEM CONTEXT -- PROOF OF CONCEPT (MANDATORY):\n"
+    "The codebase you are analysing data about is a proof-of-concept, not "
+    "production software. The goal is end-to-end operation with all significant "
+    "features firing cleanly, shipped for human review as quickly as possible.\n\n"
+    "When evaluating findings, fixes, and experimental designs, apply PoC standard:\n"
     "  CRITICAL: anything that prevents end-to-end operation (crashes, dead "
     "code paths, features that do not fire, data loss on the happy path)\n"
     "  HIGH: anything that produces silently wrong results (incorrect verdicts, "
@@ -214,18 +212,21 @@ _POC_CONTEXT_INSTRUCTION = (
     "(suboptimal thresholds, missing edge case handling, inefficiencies)\n"
     "  LOW: polish, documentation, style, edge cases that require adversarial "
     "input to trigger\n\n"
-    "Focus on CRITICAL and HIGH. File MEDIUM only if it is quick to fix. Ignore "
-    "LOW entirely — it is not relevant at PoC stage.\n\n"
-    "Do NOT propose fixes that add complexity for marginal safety gain. The "
-    "simplest fix that makes the feature work end-to-end is the correct fix. "
-    "If a function works correctly on the common path but crashes on a bizarre "
-    "edge case that no real experiment would trigger, that is not a PoC-blocking "
-    "bug — note it and move on.\n\n"
+    "Focus recommendations on CRITICAL and HIGH. MEDIUM only if quick to fix. "
+    "Ignore LOW entirely -- it is not relevant at PoC stage.\n\n"
+    "Do NOT propose fixes or designs that add complexity for marginal safety "
+    "gain. The simplest fix that makes the feature work end-to-end is the "
+    "correct fix.\n\n"
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Machine communication protocol — no social niceties, structured verdicts
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Good Enough principle -- convergence on answers, not endless alternatives
+# ---------------------------------------------------------------------------
+# Applies to all domains, not just software. When multiple agents agree an
+# issue exists, they must converge on the simplest sufficient solution rather
+# than endlessly proposing alternatives. This is Voltaire's "le mieux est
+# l'ennemi du bien" -- the Principle of Good Enough.
+# See: https://en.wikipedia.org/wiki/Principle_of_good_enough
 
 _MACHINE_COMMS_INSTRUCTION = (
     "INTER-MODEL COMMUNICATION PROTOCOL (MANDATORY):\n"
@@ -234,37 +235,29 @@ _MACHINE_COMMS_INSTRUCTION = (
     "the confirmation', 'Acknowledged', 'Your analysis is correct', or similar. "
     "These communicate nothing that a structured verdict does not.\n\n"
     "For cross-model references, use compressed structured verdicts:\n"
-    "  CONFIRM [Model]_[ID] — you agree the finding and fix are correct\n"
-    "  CHALLENGE [Model]_[ID] | [evidence] — the finding or fix is wrong\n"
+    "  CONFIRM [Model]_[ID] -- you agree the finding and fix are correct\n"
+    "  CHALLENGE [Model]_[ID] | [evidence] -- the finding or fix is wrong\n"
     "  EXTEND [Model]_[ID] | [new consequence or edge case]\n"
-    "  MERGE [Model]_[ID] ← [Your_ID] — same root cause, combining\n"
-    "  SUPERSEDE [old_ID] → [new_ID] | [reason] — replacing your own prior finding\n\n"
+    "  MERGE [Model]_[ID] <- [Your_ID] -- same root cause, combining\n"
+    "  SUPERSEDE [old_ID] -> [new_ID] | [reason] -- replacing your own prior finding\n\n"
     "Each verdict is one line. Evidence follows on the next line if needed. "
     "Do not wrap verdicts in prose. Do not restate the other model's finding "
-    "before responding to it — they can read their own work.\n\n"
-    "Your FINDINGS must still include full FIND/FOLLOW/FIX detail — the compression "
+    "before responding to it -- they can read their own work.\n\n"
+    "Your FINDINGS must still include full FIND/FOLLOW/FIX detail -- the compression "
     "applies only to inter-model references and verdicts, not to the findings "
     "themselves. Final synthesis and conclusions must be in natural language.\n\n"
 )
-
-# Good Enough principle — convergence on fixes, not endless alternatives
-# ─────────────────────────────────────────────────────────────────────────────
-# Applies to all domains, not just software. When multiple agents agree an
-# issue exists, they must converge on the simplest sufficient solution rather
-# than endlessly proposing alternatives. This is Voltaire's "le mieux est
-# l'ennemi du bien" — the Principle of Good Enough.
-# See: https://en.wikipedia.org/wiki/Principle_of_good_enough
 
 _GOOD_ENOUGH_INSTRUCTION = (
     "CONVERGENCE ON SOLUTIONS (MANDATORY):\n"
     "When another model has already identified an issue AND proposed a fix, "
     "you have exactly three valid responses:\n"
-    "  1. AGREE — confirm the fix is correct and sufficient. The issue is closed. "
+    "  1. AGREE -- confirm the fix is correct and sufficient. The issue is closed. "
     "Move on to finding NEW issues.\n"
-    "  2. CHALLENGE — demonstrate with concrete evidence that the proposed fix "
+    "  2. CHALLENGE -- demonstrate with concrete evidence that the proposed fix "
     "is INCORRECT (introduces a regression, misses the root cause, or violates "
     "a constraint). Then propose your alternative.\n"
-    "  3. EXTEND — show that the fix is correct but INCOMPLETE (misses a "
+    "  3. EXTEND -- show that the fix is correct but INCOMPLETE (misses a "
     "downstream consequence or edge case). Propose the minimal addition.\n\n"
     "You may NOT propose an alternative fix simply because yours is 'better', "
     "'more elegant', or 'more robust' when an existing fix is correct and "
@@ -286,9 +279,305 @@ _GOOD_ENOUGH_INSTRUCTION = (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Data artifact -- convergence data from Experiments 30 and 31
+# ---------------------------------------------------------------------------
+
+DATA_ARTIFACT = """\
+=== DATA ARTIFACT: Convergence Data from Experiments 30 and 31 ===
+
+EXPERIMENT 30 — Distributed Code Review (Persistence Layer)
+  Target: 3 files (verification_chain.py, insect_brain.py, immune_agents.py)
+  Models: 5 (CC2, Codex, Gemini, DeepSeek, ChatGPT)
+  Rounds: 15
+  Termination: BUDGET_EXHAUSTED (did not converge)
+
+  Gamma trajectory (Duane reliability growth):
+    Round:  1     2     3     4     5     6     7     8     9    10    11    12    13    14
+    Gamma:  0.567 0.416 0.431 0.418 0.429 0.419 0.380 0.373 0.368 0.352 0.343 0.340 0.318 0.320
+    (Falling -- 0.567 to 0.320 over 14 rounds; diverging, not converging)
+
+  Per-round finding counts:
+    R0: 60 (blind round), R1-R14: [21, 33, 18, 21, 14, 19, 32, 20, 19, 27, 23, 19, 37, 15]
+    Total: 378 findings across 15 rounds. Gamma computed from R1 onwards.
+
+  Outcome: ~83 distinct bugs identified, 232 fixes proposed, 39 applied.
+
+
+EXPERIMENT 31 — Post-Fix Convergence Validation (same 3 files, after 39 fixes)
+  Target: same 3 files, post-fix
+  Models: 5 (CC2, Codex, Gemini, DeepSeek, ChatGPT)
+  Rounds: 15
+  Termination: BUDGET_EXHAUSTED (did not converge)
+
+  Gamma trajectory:
+    Round:  0     1      2      3     4     5     6     7     8     9    10    11    12    13    14
+    Gamma:  0.000 -0.170 -0.037 0.035 0.053 0.058 0.063 0.079 0.087 0.102 0.109 0.109 0.115 0.110 0.106
+    (Rising from negative to positive -- converging, but slowly; never approaches 0.5)
+
+  Per-round finding counts:
+    [32, 40, 28, 22, 25, 26, 25, 19, 21, 15, 18, 22, 17, 25, 25]
+    Total: 360 findings across 15 rounds
+
+  Novel findings per round (after immune deduplication):
+    [28, 30, 11, 9, 16, 11, 10, 4, 5, 5, 6, 1, 2, 5, 7]
+    Total novel: 150 of 360 (41.7% novel, 58.3% churn)
+
+  Immune rejection rates per round:
+    [15.6%, 25%, 53.6%, 54.5%, 36%, 57.7%, 56%, 73.7%, 76.2%, 66.7%, 66.7%, 95.5%, 88.2%, 80%, 72%]
+
+  Autoimmune triggers (excessive rejection): rounds 5, 7, 8, 9, 10, 11, 12, 13, 14
+
+  Per-model finding counts (Exp 31):
+    CC2: 95, Codex: 85, DeepSeek: 69, Gemini: 61, ChatGPT: 50
+
+  Inter-model agreement: kappa = 0.619 (substantial)
+
+  Known structural blockers preventing convergence in Exp 31:
+    1. Deep-copy propagation: bug-closed gate dead code -- findings for closed
+       bugs were flagged but never actually suppressed, so models kept
+       rediscovering fixed issues.
+    2. Autoimmune override threshold too low (65%): the immune system's
+       autoimmune detector fired when rejection rates exceeded 65%, but
+       genuine churn rates were legitimately above 65% in later rounds.
+       This caused the immune system to OVERRIDE its own rejections,
+       letting duplicate findings through.
+    3. Finding ID reuse across rounds: CC2_F001 meant different bugs in
+       different rounds, breaking cross-round tracking and deduplication.
+
+  Mid-experiment interventions (all applied around Round 7):
+    - Good Enough instruction: told models to converge on simplest sufficient
+      answer rather than proposing alternatives to solved problems
+    - Merge instruction: told models to merge overlapping findings
+    - B-Cell UNCERTAIN -> HIL: uncertain immune verdicts escalated to
+      human-in-the-loop rather than defaulting to accept
+    Effect: visibly reduced churn in rounds 7-14 (novel counts dropped
+    from ~16/round to ~4/round) but gamma still did not cross 0.5.
+
+
+COMMUNICATION OVERHEAD (Exp 31):
+  Total characters produced: 1,260,000 across 15 rounds
+  Per-model character production:
+    DeepSeek:  315,000 chars (25.0%)
+    Codex:     296,000 chars (23.4%)
+    CC2:       235,000 chars (18.6%)
+    ChatGPT:   216,000 chars (17.1%)
+    Gemini:    199,000 chars (15.8%)
+
+  Efficiency (findings per kilochar):
+    CC2:       0.40 findings/Kchar
+    Gemini:    0.31 findings/Kchar
+    Codex:     0.29 findings/Kchar
+    ChatGPT:   0.23 findings/Kchar
+    DeepSeek:  0.22 findings/Kchar
+
+  Cross-model reference overhead: 2.9% of total tokens
+    (models spent only 2.9% of output referencing each other's work)
+
+  FFF ordering compliance:
+    100% of findings had FIX before FOLLOW (wrong order).
+    Correct order is FIND -> FOLLOW -> FIX. This has now been corrected
+    in the finding schema for future experiments.
+
+  Cross-model verdicts:
+    Zero CHALLENGE verdicts in entire experiment. All cross-references
+    were confirmations or extensions. No model ever formally disagreed
+    with another model's finding.
+
+  Finding ID reuse:
+    CC2_F001 referred to different bugs in different rounds. Finding IDs
+    were not stable across rounds, breaking deduplication and tracking.
+
+
+DUANE RELIABILITY GROWTH MODEL (background):
+  The Duane model measures whether defect discovery rates decline over time.
+  gamma (the growth parameter) is estimated from cumulative finding counts:
+    beta = (log(cumulative[-1]) - log(cumulative[0])) / log(n_rounds)
+    gamma = 1 - beta
+  gamma > 0.5 indicates the finding rate is declining toward zero (convergence).
+  gamma < 0.5 indicates the system is still producing findings at a roughly
+  constant or increasing rate (no convergence).
+
+  In reliability engineering, gamma ~ 0.3-0.5 is typical for a system under
+  active debugging. gamma > 0.5 suggests the defect population is being
+  depleted. gamma > 0.7 is strong convergence.
+
+=== END DATA ARTIFACT ===
+"""
+
+
+# ---------------------------------------------------------------------------
+# Phase-aware prompt builder
+# ---------------------------------------------------------------------------
+
+_FINDING_SCHEMA_INSTRUCTION = (
+    "For each claim or finding, use this JSON schema (keys in this exact order):\n"
+    "  FINDING_ID: stable identifier (e.g., F001). IMPORTANT: your finding IDs\n"
+    "    must be STABLE across rounds. If you filed F001 in Round 1, F001 in\n"
+    "    Round 2 must refer to the same claim. To replace a finding, use\n"
+    "    SUPERSEDE [old_ID] -> [new_ID] | [reason].\n"
+    "  CLAIM: the specific claim or prediction being made\n"
+    "  EVIDENCE: the data supporting this claim (cite specific numbers from the\n"
+    "    data artifact)\n"
+    "  FOLLOW: trace implications -- what does this claim predict? What would\n"
+    "    falsify it? What depends on it being correct?\n"
+    "  CONCLUSION: the actionable recommendation or prediction\n"
+    "  CONFIDENCE: 0.0 to 1.0 (your confidence in this claim)\n"
+    "  DISSENT: (optional) if you disagree with the emerging consensus, state\n"
+    "    your dissenting view and evidence here\n\n"
+)
+
+_PHASE_1_PROMPT = (
+    "PHASE 1 -- CONVERGENCE MODEL VALIDATION (Round 0)\n\n"
+    "You have the full convergence data from Experiments 30 and 31 above.\n\n"
+    "The Duane reliability growth model was used to measure convergence in\n"
+    "both experiments. In Exp 30, gamma fell from 0.567 to 0.320 (finding\n"
+    "rate NOT declining -- no convergence). In Exp 31, gamma rose from\n"
+    "0.000 to 0.106 (marginal improvement but nowhere near the 0.5 threshold).\n\n"
+    "Neither experiment achieved convergence. Both hit BUDGET_EXHAUSTED after\n"
+    "15 rounds. However, Exp 31 had known structural blockers (dead code in\n"
+    "bug-closed gate, autoimmune threshold too low, finding ID reuse) that\n"
+    "artificially inflated churn. Mid-experiment interventions (Good Enough\n"
+    "instruction, merge instruction) visibly reduced churn but were applied\n"
+    "too late to affect gamma.\n\n"
+    "YOUR TASK:\n"
+    "  1. Does the Duane reliability growth model correctly capture convergence\n"
+    "     in multi-model collaborative review? Consider whether the model's\n"
+    "     assumptions (independent defect arrivals, homogeneous defect population)\n"
+    "     hold in this context.\n"
+    "  2. Given this data, predict the round at which gamma should cross 0.5\n"
+    "     in the next code review experiment, ASSUMING:\n"
+    "       - All three structural blockers are fixed\n"
+    "       - Good Enough + merge instructions active from Round 0\n"
+    "       - Finding IDs are stable across rounds\n"
+    "       - Same 5-model configuration\n"
+    "       - Same or similar codebase complexity\n"
+    "  3. State your assumptions explicitly.\n"
+    "  4. Quantify uncertainty: give a point estimate and a 90% confidence\n"
+    "     interval for the round number.\n\n"
+    "Produce your analysis as structured findings using the schema below.\n\n"
+)
+
+_PHASE_2_PROMPT = (
+    "PHASE 2 -- COMMUNICATION EFFICIENCY (Rounds 1-3)\n\n"
+    "You have seen each other's convergence predictions from Phase 1.\n"
+    "Now analyse the inter-model communication overhead from Exp 31.\n\n"
+    "Key observations from the data:\n"
+    "  - 1.26M total characters produced across 15 rounds\n"
+    "  - Only 2.9% of tokens were cross-model references\n"
+    "  - Zero CHALLENGE verdicts in the entire experiment -- all cross-references\n"
+    "    were confirmations or extensions. No formal disagreement ever occurred.\n"
+    "  - FFF ordering was wrong: 100% of findings had FIX before FOLLOW\n"
+    "  - Finding IDs were unstable: CC2_F001 meant different bugs in different rounds\n"
+    "  - Efficiency ranged from 0.22 to 0.40 findings/Kchar\n"
+    "  - DeepSeek produced the most characters (315K) but had the lowest efficiency\n"
+    "  - CC2 had the highest efficiency (0.40 findings/Kchar)\n\n"
+    "YOUR TASK:\n"
+    "Design a compressed inter-model communication protocol that:\n"
+    "  (a) Is fully human-readable and auditable -- no binary encoding, no\n"
+    "      opaque abbreviations. A human reading the transcript must be able\n"
+    "      to follow the reasoning without a decoder ring.\n"
+    "  (b) Eliminates social overhead -- no pleasantries, no restating the\n"
+    "      other model's position before responding.\n"
+    "  (c) Uses stable finding references -- finding IDs are unique across\n"
+    "      the entire experiment, never reused.\n"
+    "  (d) Supports structured verdicts: CONFIRM / CHALLENGE / EXTEND / MERGE\n"
+    "      with mandatory evidence for CHALLENGE.\n"
+    "  (e) Enforces FIND -> FOLLOW -> FIX ordering (FOLLOW before FIX).\n\n"
+    "AGREE on the protocol. Then predict what efficiency gain this protocol\n"
+    "would produce:\n"
+    "  - Expected reduction in total characters (percentage)\n"
+    "  - Expected increase in findings per kilochar\n"
+    "  - Expected effect on convergence speed (gamma trajectory)\n\n"
+    "Use structured findings for your protocol design claims.\n\n"
+)
+
+_PHASE_3_PROMPT = (
+    "PHASE 3 -- EXPERIMENTAL DESIGN OPTIMISATION (Rounds 4-7)\n\n"
+    "You have your convergence predictions (Phase 1) and your agreed\n"
+    "communication protocol (Phase 2). Now design the optimal parameters\n"
+    "for the next code review experiment.\n\n"
+    "YOUR TASK:\n"
+    "Design the following parameters and justify each choice with evidence\n"
+    "from the Exp 30/31 data:\n\n"
+    "  1. ROUND BUDGET: How many rounds? Exp 30 and 31 both used 15 and\n"
+    "     hit BUDGET_EXHAUSTED. What is the right number?\n\n"
+    "  2. RELAY TOPOLOGY: The insect brain currently relays all models'\n"
+    "     full responses to all other models (conversational mode) or\n"
+    "     directed messages plus full context (directed mode). Is there\n"
+    "     a better topology? Consider: star, ring, random pairs, specialist\n"
+    "     clusters.\n\n"
+    "  3. MODEL COUNT: Is 5 the right number? More models produce more\n"
+    "     findings but also more churn. What is the optimal count?\n\n"
+    "  4. MULTI-AGENT ARCHITECTURE: CC2 (Claude) can spawn multiple\n"
+    "     specialist sub-agents at negligible additional cost (same API\n"
+    "     call, internal tool use). Should the experiment use this?\n"
+    "     If so, what specialist roles? (e.g., one agent for logic bugs,\n"
+    "     one for interface contracts, one for edge cases)\n\n"
+    "  5. FINDING SCHEMA: What fields should each finding have? The\n"
+    "     current schema is: FINDING_ID, SEVERITY, FLAW_CLASS,\n"
+    "     ABSTRACTION_INDEX, DESCRIPTION, FOLLOW, PROPOSED_FIX, VERIFIED.\n"
+    "     Is this sufficient? Too much? Missing something?\n\n"
+    "  6. CONVERGENCE THRESHOLD: gamma > 0.5 is currently the threshold.\n"
+    "     Is this the right threshold? Should there be additional\n"
+    "     convergence criteria (e.g., minimum rounds, novelty plateau,\n"
+    "     kappa agreement threshold)?\n\n"
+    "AGREE on the design. Justify with data.\n\n"
+)
+
+_PHASE_4_PROMPT = (
+    "PHASE 4 -- FINAL SYNTHESIS (Rounds 8-9)\n\n"
+    "This is the final phase. Produce a synthesis document in NATURAL\n"
+    "LANGUAGE suitable for human review. This document will be presented\n"
+    "to the human-in-the-loop for decision.\n\n"
+    "The synthesis MUST include:\n\n"
+    "  (a) CONSENSUS CONVERGENCE PREDICTION: your agreed prediction for\n"
+    "      when gamma will cross 0.5 in the next code review experiment,\n"
+    "      with a 90% confidence interval. State what assumptions underpin\n"
+    "      the prediction and what would falsify it.\n\n"
+    "  (b) AGREED COMMUNICATION PROTOCOL SPECIFICATION: the full protocol\n"
+    "      you designed in Phase 2, written as a specification that could\n"
+    "      be injected into the next experiment's system prompt.\n\n"
+    "  (c) RECOMMENDED EXPERIMENTAL DESIGN: the complete parameter set\n"
+    "      from Phase 3, with justifications.\n\n"
+    "  (d) DISSENTING VIEWS: any points where models did not reach\n"
+    "      consensus. State the dissent, the evidence on each side, and\n"
+    "      what additional data would resolve it.\n\n"
+    "Write this as a coherent document, not as a list of findings. The\n"
+    "audience is a technically literate human who understands the Duane\n"
+    "model, the CDSFL framework, and the experimental setup, but who\n"
+    "has NOT read your round-by-round analysis.\n\n"
+    "This is the final output. Make it count.\n\n"
+)
+
+
+def _get_phase_prompt(round_idx: int) -> str:
+    """Return the phase-specific prompt for the given round index."""
+    if round_idx == 0:
+        return _PHASE_1_PROMPT
+    elif round_idx <= 3:
+        return _PHASE_2_PROMPT
+    elif round_idx <= 7:
+        return _PHASE_3_PROMPT
+    else:
+        return _PHASE_4_PROMPT
+
+
+def _get_phase_label(round_idx: int) -> str:
+    """Return a human-readable phase label for logging."""
+    if round_idx == 0:
+        return "Phase 1: Convergence Model Validation"
+    elif round_idx <= 3:
+        return "Phase 2: Communication Efficiency"
+    elif round_idx <= 7:
+        return "Phase 3: Experimental Design Optimisation"
+    else:
+        return "Phase 4: Final Synthesis"
+
+
+# ---------------------------------------------------------------------------
 # Composer integration
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def compose_for_model(model_label: str, pattern_name: str) -> ComposedDirectiveSet:
     """Compose directive set with selected interaction pattern for a model."""
@@ -301,74 +590,39 @@ def compose_for_model(model_label: str, pattern_name: str) -> ComposedDirectiveS
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Multi-turn decomposed dispatch (reused from baseline confer)
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
-def _build_chunks(prompt: str, full_code: str) -> list[DecomposedChunk]:
-    """Split prompt into sequential file-delivery chunks."""
+def _build_chunks(prompt: str, data_artifact: str) -> list[DecomposedChunk]:
+    """Split prompt into sequential delivery chunks."""
     chunks: list[DecomposedChunk] = []
 
-    if "=== ARTIFACT" in prompt:
-        preamble, rest = prompt.split("=== ARTIFACT", 1)
+    if "=== DATA ARTIFACT" in prompt:
+        preamble, rest = prompt.split("=== DATA ARTIFACT", 1)
     else:
         preamble = prompt
         rest = ""
 
     preamble_text = preamble.strip()
-    artifact_text = rest if rest else full_code
+    artifact_text = rest if rest else data_artifact
 
-    if "=== FILE:" in artifact_text:
-        import re
-        n_files = artifact_text.count("=== FILE:")
+    # For Exp 32, the artifact is a single data block (no file splits)
+    if len(artifact_text) > MULTITURN_CHUNK_TARGET:
+        # Split the data artifact into chunks for large payloads
         preamble_text += (
-            f"\n\nYou will receive {n_files} source files delivered one at a "
-            f"time. Read each file carefully in sequential order. Only begin "
-            f"your analysis once you have seen all files.\n"
+            "\n\nYou will receive the convergence data in multiple chunks. "
+            "Read all chunks carefully before beginning your analysis.\n"
         )
         chunks.append(DecomposedChunk(preamble_text, label="Preamble + instructions"))
-
-        file_blocks = re.split(r"(?==== FILE:)", artifact_text)
-        for block in file_blocks:
-            block = block.strip()
-            if not block or not block.startswith("=== FILE:"):
-                continue
-            header_match = re.match(r"=== FILE: (.+?) ===", block)
-            label = header_match.group(1) if header_match else "Source file"
-
-            if len(block) > MULTITURN_CHUNK_TARGET:
-                lines = block.split("\n")
-                current: list[str] = []
-                current_len = 0
-                part_idx = 0
-                for line in lines:
-                    is_boundary = (
-                        line.startswith("class ") or
-                        (line.startswith("def ") and not line.startswith("    "))
-                    )
-                    if current_len > MULTITURN_CHUNK_TARGET and (is_boundary or line.strip() == ""):
-                        part_idx += 1
-                        chunks.append(DecomposedChunk(
-                            "\n".join(current), label=f"{label} part {part_idx}"))
-                        current = []
-                        current_len = 0
-                    current.append(line)
-                    current_len += len(line) + 1
-                if current:
-                    part_idx += 1
-                    chunks.append(DecomposedChunk(
-                        "\n".join(current), label=f"{label} part {part_idx}"))
-            else:
-                chunks.append(DecomposedChunk(block, label=label))
+        for i in range(0, len(artifact_text), MULTITURN_CHUNK_TARGET):
+            chunks.append(DecomposedChunk(
+                artifact_text[i:i + MULTITURN_CHUNK_TARGET],
+                label=f"Data part {i // MULTITURN_CHUNK_TARGET + 1}"))
     else:
         chunks.append(DecomposedChunk(preamble_text, label="Full prompt"))
-        if len(artifact_text) > MULTITURN_CHUNK_TARGET:
-            for i in range(0, len(artifact_text), MULTITURN_CHUNK_TARGET):
-                chunks.append(DecomposedChunk(
-                    artifact_text[i:i + MULTITURN_CHUNK_TARGET],
-                    label=f"Part {i // MULTITURN_CHUNK_TARGET + 1}"))
-        elif artifact_text.strip():
-            chunks.append(DecomposedChunk(artifact_text, label="Artifact"))
+        if artifact_text.strip():
+            chunks.append(DecomposedChunk(artifact_text, label="Data artifact"))
 
     return chunks
 
@@ -377,12 +631,12 @@ def _multiturn_fallback(
     mc: ModelConfig,
     prompt: str,
     cdsfl_text: str,
-    full_code: str,
+    data_artifact: str,
     round_idx: int,
     pattern_text: str,
 ) -> tuple[str, float] | None:
     """Multi-turn decomposed dispatch fallback."""
-    chunks = _build_chunks(prompt, full_code)
+    chunks = _build_chunks(prompt, data_artifact)
     if len(chunks) < 2:
         return None
 
@@ -393,7 +647,7 @@ def _multiturn_fallback(
         f"Produce your findings now."
     )
 
-    _log(f"  {mc.label}: MULTI-TURN — {len(chunks)} chunks, "
+    _log(f"  {mc.label}: MULTI-TURN -- {len(chunks)} chunks, "
          f"~{sum(c.chars for c in chunks):,} chars total")
 
     try:
@@ -412,20 +666,20 @@ def _multiturn_fallback(
         save_decomposed_result(result, LOGS_DIR, mc.label, round_idx)
         return result.text, result.elapsed_s
     except Exception as e:
-        _log(f"  {mc.label}: multi-turn FAILED — {type(e).__name__}: {e}")
+        _log(f"  {mc.label}: multi-turn FAILED -- {type(e).__name__}: {e}")
         return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Dispatch
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def _dispatch_single_model(
     mc: ModelConfig,
     mgr: DynamicManager,
     prompt: str,
     cdsfl_text: str,
-    full_code: str,
+    data_artifact: str,
     round_idx: int,
     pattern_name: str,
 ) -> tuple[List[Finding], str | None]:
@@ -445,15 +699,15 @@ def _dispatch_single_model(
 
     # Decomposed models go to multi-turn sequential delivery
     if _should_decompose(mc.label, mgr):
-        _log(f"  {mc.label}: decomposed — multi-turn sequential delivery")
+        _log(f"  {mc.label}: decomposed -- multi-turn sequential delivery")
         fallback = _multiturn_fallback(
-            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text)
+            mc, prompt, model_cdsfl, data_artifact, round_idx, pattern_text)
         if fallback is not None:
             text, elapsed = fallback
             _record_throughput(mc.label, len(prompt), elapsed)
-            _log(f"\n{'─' * 40} {mc.label} RESPONSE (sequential) {'─' * 40}")
+            _log(f"\n{'=' * 40} {mc.label} RESPONSE (sequential) {'=' * 40}")
             _log(text)
-            _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+            _log(f"{'=' * 40} /{mc.label} {'=' * 40}\n")
             model_findings = parse_findings(mc.label, round_idx, text)
             _log(f"  {mc.label}: {len(model_findings)} findings parsed")
             LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -475,9 +729,9 @@ def _dispatch_single_model(
         _log(f"  {mc.label}: {len(text)} chars, {elapsed:.1f}s")
         _record_throughput(mc.label, len(prompt), elapsed)
 
-        _log(f"\n{'─' * 40} {mc.label} RESPONSE {'─' * 40}")
+        _log(f"\n{'=' * 40} {mc.label} RESPONSE {'=' * 40}")
         _log(text)
-        _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+        _log(f"{'=' * 40} /{mc.label} {'=' * 40}\n")
 
         model_findings = parse_findings(mc.label, round_idx, text)
         _log(f"  {mc.label}: {len(model_findings)} findings parsed")
@@ -494,16 +748,16 @@ def _dispatch_single_model(
         return model_findings, text
 
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:
-        _log(f"  {mc.label}: {type(e).__name__} — {e}")
+        _log(f"  {mc.label}: {type(e).__name__} -- {e}")
         fallback = _multiturn_fallback(
-            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text)
+            mc, prompt, model_cdsfl, data_artifact, round_idx, pattern_text)
         if fallback is not None:
             text, elapsed = fallback
             _log(f"  {mc.label}: RECOVERED via multi-turn ({elapsed:.1f}s)")
             _record_throughput(mc.label, len(prompt), elapsed)
-            _log(f"\n{'─' * 40} {mc.label} RESPONSE (multi-turn) {'─' * 40}")
+            _log(f"\n{'=' * 40} {mc.label} RESPONSE (multi-turn) {'=' * 40}")
             _log(text)
-            _log(f"{'─' * 40} /{mc.label} {'─' * 40}\n")
+            _log(f"{'=' * 40} /{mc.label} {'=' * 40}\n")
             model_findings = parse_findings(mc.label, round_idx, text)
             _log(f"  {mc.label}: {len(model_findings)} findings parsed (multi-turn)")
             LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -527,7 +781,7 @@ def _dispatch_round(
     brain: InsectBrain,
     prompt: str,
     cdsfl_text: str,
-    full_code: str,
+    data_artifact: str,
     round_idx: int,
     pattern_name: str,
     relay_mode: str = DEFAULT_RELAY_MODE,
@@ -561,7 +815,7 @@ def _dispatch_round(
 
     def _make_model_prompt(mc_label: str) -> str:
         if round_idx == 0 or mc_label not in relay_payloads:
-            return prompt  # blind round — base prompt only
+            return prompt  # blind round -- base prompt only
 
         payload = relay_payloads[mc_label]
         if not payload.findings_text:
@@ -571,31 +825,31 @@ def _dispatch_round(
         if relay_mode in ("directed", "conversational"):
             relay_section = (
                 f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
-                f"You are reviewing the same artifact as {len(payload.active_models) - 1} "
-                f"other models. Below is their full analysis. Engage with their "
-                f"reasoning: challenge weak claims, confirm strong ones, extend "
-                f"insights, and find what everyone missed.\n\n"
+                f"You are analysing convergence data alongside {len(payload.active_models) - 1} "
+                f"other models. Below is their analysis. Engage with their "
+                f"reasoning: challenge weak predictions, confirm strong ones, "
+                f"extend insights, and identify what everyone missed.\n\n"
                 f"{payload.findings_text}\n\n"
-                f"{'(NOTE: context budget exceeded — some responses truncated)' if payload.context_reset else ''}\n"
+                f"{'(NOTE: context budget exceeded -- some responses truncated)' if payload.context_reset else ''}\n"
                 f"{payload.convergence_summary}\n\n"
                 f"=== END OTHER MODELS' ANALYSIS ===\n\n"
-                f"Now produce YOUR findings. Apply full CDSFL + FFF. "
-                f"Do not repeat what has already been found — build on it, "
+                f"Now produce YOUR analysis. Apply full CDSFL + FFF. "
+                f"Do not repeat what has already been said -- build on it, "
                 f"challenge it, or go deeper.\n\n"
             )
         else:
             relay_section = (
                 f"Prior findings from other models "
                 f"({payload.finding_count} total, "
-                f"{'CONTEXT RESET — summary only' if payload.context_reset else 'full text'}):\n\n"
+                f"{'CONTEXT RESET -- summary only' if payload.context_reset else 'full text'}):\n\n"
                 f"{payload.findings_text}\n\n"
                 f"{payload.convergence_summary}\n\n"
-                f"Find what was MISSED. Do not repeat known findings.\n\n"
+                f"Extend or challenge what has been said. Do not repeat.\n\n"
             )
         return prompt.replace(
-            "=== ARTIFACT:",
-            f"{relay_section}=== ARTIFACT:",
-        ) if "=== ARTIFACT:" in prompt else f"{relay_section}{prompt}"
+            "=== DATA ARTIFACT:",
+            f"{relay_section}=== DATA ARTIFACT:",
+        ) if "=== DATA ARTIFACT:" in prompt else f"{relay_section}{prompt}"
 
     _log(f"  Parallel dispatch: {len(eligible)} models")
     deferred_failures: list[tuple[str, str]] = []
@@ -607,7 +861,7 @@ def _dispatch_round(
             dispatch_start_times[mc.label] = time.monotonic()
             future_to_label[pool.submit(
                 _dispatch_single_model,
-                mc, mgr, _make_model_prompt(mc.label), cdsfl_text, full_code,
+                mc, mgr, _make_model_prompt(mc.label), cdsfl_text, data_artifact,
                 round_idx, pattern_name,
             )] = mc.label
 
@@ -623,7 +877,7 @@ def _dispatch_round(
                 elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
                     deferred_failures.append((label, text[20:]))
             except Exception as e:
-                _log(f"  {label}: thread error — {type(e).__name__}: {e}")
+                _log(f"  {label}: thread error -- {type(e).__name__}: {e}")
 
     for label, detail in deferred_failures:
         _report_dispatch_failure(mgr, label, round_idx, detail)
@@ -632,9 +886,9 @@ def _dispatch_round(
     return findings, responses, per_model_durations
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Safety checks
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def _safety_check(
     responses: Dict[str, str],
@@ -652,11 +906,11 @@ def _safety_check(
     failed_labels = []
     for label, text in responses.items():
         if len(text.strip()) < 50:
-            _log(f"  SAFETY: {label} near-empty response ({len(text)} chars) — benching")
+            _log(f"  SAFETY: {label} near-empty response ({len(text)} chars) -- benching")
             brain.handle_model_failure(label, f"empty_response_round_{round_idx}")
             failed_labels.append(label)
         elif "[MODEL_REFUSED" in text:
-            _log(f"  SAFETY: {label} refused — benching")
+            _log(f"  SAFETY: {label} refused -- benching")
             brain.handle_model_failure(label, f"refused_round_{round_idx}")
             failed_labels.append(label)
 
@@ -669,9 +923,9 @@ def _safety_check(
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Gamma convergence (shadow — logged alongside brain's convergence)
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Gamma convergence (shadow -- logged alongside brain's convergence)
+# ---------------------------------------------------------------------------
 
 GAMMA_THRESHOLD = 0.5
 MIN_ROUNDS_FOR_GAMMA = 2
@@ -698,9 +952,9 @@ def _estimate_gamma(all_findings: List[List[Finding]]) -> float:
         return 0.0
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Endocrine helpers
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def _build_round_timings(
     responses: Dict[str, str],
@@ -772,9 +1026,9 @@ def _summarise_pacing_signals(signals: List[PacingSignal]) -> List[Dict[str, Any
     ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Main experiment loop
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def run_preflight(exp_config: ExperimentConfig, cdsfl_text: str) -> bool:
     """Quick preflight: dispatch a trivial prompt to each model."""
@@ -802,7 +1056,7 @@ def run_preflight(exp_config: ExperimentConfig, cdsfl_text: str) -> bool:
             if not ok:
                 all_ok = False
         except Exception as e:
-            _log(f"  {mc.label}: FAILED — {e}")
+            _log(f"  {mc.label}: FAILED -- {e}")
             all_ok = False
 
     return all_ok
@@ -815,30 +1069,23 @@ def run_experiment(
     relay_mode: str = DEFAULT_RELAY_MODE,
     resume: bool = False,
 ) -> Dict[str, Any]:
-    """Run Experiment 30: endocrine layer integration test."""
+    """Run Experiment 32: Meta-experiment on convergence prediction."""
     _log("=" * 60)
-    _log(f"EXPERIMENT 30: Endocrine Layer Integration Test")
+    _log(f"EXPERIMENT 32: Meta-Experiment -- Convergence, Communication, Design")
     _log(f"  Pattern: {pattern_name}")
     _log(f"  Relay mode: {relay_mode}")
     _log(f"  Max rounds: {MAX_ROUNDS}")
     _log(f"  Wall clock cap: {WALL_CLOCK_CAP_S}s")
-    _log(f"  Source files: {len(SOURCE_FILES)}")
+    _log(f"  Data artifact: {len(DATA_ARTIFACT):,} chars")
     _log(f"  Logs: {LOGS_DIR}")
     _log("=" * 60)
 
-    # Load source files
-    full_code_parts = []
-    total_raw = 0
-    source_paths_str = []
-    for src_path in SOURCE_FILES:
-        src_text = src_path.read_text(encoding="utf-8")
-        rel = src_path.relative_to(REPO_ROOT)
-        full_code_parts.append(f"=== FILE: {rel} ({len(src_text):,} chars) ===\n{src_text}")
-        total_raw += len(src_text)
-        source_paths_str.append(str(src_path))
-    full_code = "\n\n".join(full_code_parts)
-    _log(f"  Source: {len(SOURCE_FILES)} files, "
-         f"{total_raw:,} raw chars → {len(full_code):,} with headers")
+    # No source files to load -- we use a data artifact instead
+    full_code = DATA_ARTIFACT
+    total_raw = len(DATA_ARTIFACT)
+    source_paths_str: List[str] = []
+
+    _log(f"  Data artifact: {total_raw:,} chars (convergence data from Exp 30/31)")
 
     # Build DynamicManager
     dm_config = DynamicManagementConfig(
@@ -849,7 +1096,7 @@ def run_experiment(
     model_specs = build_model_specs(exp_config)
     mgr = DynamicManager(model_specs, dm_config)
 
-    # Build Insect Brain — central relay
+    # Build Insect Brain -- central relay
     brain = InsectBrain(
         config=dm_config,
         logs_dir=LOGS_DIR,
@@ -857,13 +1104,13 @@ def run_experiment(
     )
     brain.initialise(model_labels=sorted(BASELINE_MODELS))
 
-    # Build Endocrine Layer — health monitor
+    # Build Endocrine Layer -- health monitor
     endo = EndocrineLayer(
         source_paths=source_paths_str,
-        test_cmd=None,  # No test suite for the test article itself
-        max_fix_evals=20,
+        test_cmd=None,  # No test suite for meta-experiment
+        max_fix_evals=0,  # No code fixes to evaluate
     )
-    _log(f"  Endocrine layer initialised: {len(source_paths_str)} source paths")
+    _log(f"  Endocrine layer initialised (meta-experiment, no fix evals)")
 
     # Resume from checkpoint if available
     start_round = 0
@@ -884,13 +1131,20 @@ def run_experiment(
     directed_received_per_model: Dict[str, int] = {}
 
     result: Dict[str, Any] = {
-        "experiment": "exp30_endocrine",
+        "experiment": "exp32_meta",
         "start_time": datetime.now(timezone.utc).isoformat(),
         "pattern": pattern_name,
         "relay_mode": relay_mode,
         "models": sorted(BASELINE_MODELS),
-        "source_files": [str(p.relative_to(REPO_ROOT)) for p in SOURCE_FILES],
+        "source_files": [],
+        "data_artifact_chars": len(DATA_ARTIFACT),
         "max_rounds": MAX_ROUNDS,
+        "phases": {
+            "phase_1": "Convergence Model Validation (Round 0)",
+            "phase_2": "Communication Efficiency (Rounds 1-3)",
+            "phase_3": "Experimental Design Optimisation (Rounds 4-7)",
+            "phase_4": "Final Synthesis (Rounds 8-9)",
+        },
         "rounds": [],
     }
 
@@ -900,115 +1154,68 @@ def run_experiment(
     )
     if relay_mode == "directed":
         awareness_preamble = (
-            "You are one of 5 AI models participating in a distributed code review "
-            "under full CDSFL constraints with FFF methodology. The participating models are:\n"
+            "You are one of 5 AI models participating in a meta-experiment "
+            "analysing convergence data from prior distributed code reviews. "
+            "This is NOT a code review -- you are analysing experimental results "
+            "and designing the next experiment. The participating models are:\n"
             f"{roster_lines}\n\n"
             "INTER-MODEL MESSAGING:\n"
             "You can direct messages to specific models using @tags. Examples:\n"
-            "  @Gemini: Your F003 claims the Merkle root is recomputed on every read — "
-            "can you provide evidence? I see caching at line 142.\n"
-            "  @DeepSeek: Your FOLLOW trace for F007 stops at the immune pipeline. "
-            "What happens to rejected findings downstream?\n"
+            "  @Gemini: Your gamma prediction assumes linear extrapolation -- "
+            "can you justify that assumption given the non-linear Exp 31 data?\n"
+            "  @DeepSeek: Your proposed protocol eliminates severity scores. "
+            "What evidence supports dropping them?\n"
             "  QUESTION_FOR: CC2\n"
-            "  Your proposed fix for F012 changes the checkpoint schema. "
-            "Have you traced whether load_checkpoint() handles the old format?\n"
+            "  Your confidence interval seems too narrow given the structural "
+            "blocker uncertainty. How did you calibrate it?\n"
             "  RESPONSE_TO: Codex\n"
-            "  You are correct that the budget calculation double-counts. "
-            "Here is a concrete fix: ...\n\n"
+            "  You are correct that 5 models may be excessive for convergence. "
+            "Here is the evidence from Exp 30: ...\n\n"
             "You WILL receive directed messages from other models in a clearly marked "
             "ADDRESSED TO YOU section at the top of your context. You MUST respond to "
-            "these — they are direct questions or challenges about your work.\n\n"
+            "these -- they are direct questions or challenges about your work.\n\n"
             "In each round after Round 0, you will also see the OTHER models' complete "
             "analysis from the previous round. You should:\n"
             "  - RESPOND to any directed messages addressed to you\n"
             "  - DIRECT specific questions or challenges to other models using @tags\n"
-            "  - ENGAGE with their reasoning: challenge weak evidence, confirm strong claims\n"
+            "  - ENGAGE with their reasoning: challenge weak predictions, confirm strong claims\n"
             "  - EXTEND their insights: follow implications they may have missed\n"
-            "  - FIND what everyone missed: the highest-value findings are the ones "
-            "no other model has identified\n\n"
-            "You remain under full CDSFL + FFF constraints. Every finding must have "
-            "FIND (evidence), FOLLOW (trace downstream consequences), and FIX "
-            "(concrete correction informed by the trace). FOLLOW comes BEFORE FIX — "
-            "you must understand the blast radius before proposing a solution.\n\n"
+            "  - BUILD CONSENSUS: the goal is to converge on agreed predictions and designs\n\n"
+            "Every finding must have FIND (the claim with evidence), FOLLOW (trace "
+            "implications -- what does this predict? what would falsify it?), and "
+            "FIX (the actionable recommendation). FOLLOW comes BEFORE FIX -- you must "
+            "understand the implications before proposing a recommendation.\n\n"
             f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
     elif relay_mode == "conversational":
         awareness_preamble = (
-            "You are one of 5 AI models participating in a distributed code review "
-            "under full CDSFL constraints with FFF methodology. The participating models are:\n"
+            "You are one of 5 AI models participating in a meta-experiment "
+            "analysing convergence data from prior distributed code reviews. "
+            "This is NOT a code review -- you are analysing experimental results "
+            "and designing the next experiment. The participating models are:\n"
             f"{roster_lines}\n\n"
             "In each round after Round 0, you will see the OTHER models' complete "
-            "analysis from the previous round — their full reasoning chains, "
-            "FIND/FOLLOW/FIX traces, and conclusions. You should:\n"
-            "  - ENGAGE with their reasoning: challenge weak evidence, confirm strong claims\n"
+            "analysis from the previous round -- their full reasoning chains and "
+            "conclusions. You should:\n"
+            "  - ENGAGE with their reasoning: challenge weak predictions, confirm strong claims\n"
             "  - EXTEND their insights: follow implications they may have missed\n"
-            "  - DISAGREE where warranted: if another model's FOLLOW trace is incomplete "
-            "or their FIX introduces new problems, say so with evidence\n"
-            "  - FIND what everyone missed: the highest-value findings are the ones "
-            "no other model has identified\n\n"
-            "You remain under full CDSFL + FFF constraints. Every finding must have "
-            "FIND (evidence), FOLLOW (trace downstream consequences), and FIX "
-            "(concrete correction informed by the trace). FOLLOW comes BEFORE FIX — "
-            "you must understand the blast radius before proposing a solution.\n\n"
+            "  - DISAGREE where warranted: if another model's prediction is unsupported "
+            "by the data, say so with evidence\n"
+            "  - BUILD CONSENSUS: the goal is to converge on agreed predictions\n\n"
+            "Every finding must have FIND (the claim with evidence), FOLLOW (trace "
+            "implications), and FIX (the actionable recommendation). FOLLOW comes "
+            "BEFORE FIX.\n\n"
             f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
     else:
         awareness_preamble = (
-            "You are one of 5 AI models participating in a distributed code review "
-            "under full CDSFL constraints. The other models are:\n"
+            "You are one of 5 AI models participating in a meta-experiment "
+            "analysing convergence data from prior code reviews. The other models are:\n"
             f"{roster_lines}\n\n"
             "You will see other models' findings (not their full analysis). "
-            "Do not repeat known findings — find what was missed.\n\n"
+            "Do not repeat what has been said -- extend or challenge it.\n\n"
             f"{_POC_CONTEXT_INSTRUCTION}{_MACHINE_COMMS_INSTRUCTION}{_GOOD_ENOUGH_INSTRUCTION}"
         )
-
-    # Build base prompt
-    base_prompt = (
-        f"{awareness_preamble}"
-        "You are participating in Experiment 30 — a distributed compute P-pass "
-        "under CDSFL reviewing the PERSISTENCE LAYER of the CDSFL testbench, "
-        "now with endocrine layer health monitoring.\n\n"
-        "The persistence layer provides:\n"
-        "  1. Merkle tree verification chain (verification_chain.py)\n"
-        "  2. Insect brain relay — reactive mechanical coordinator (insect_brain.py)\n"
-        "  3. Immune pipeline — 6-cell verification (immune_agents.py)\n\n"
-        "These files have been previously reviewed in Exp 29. Fixes may have been "
-        "applied since then. Your task: re-review ALL source files and produce "
-        "structured findings. Look for regressions, incomplete fixes, and new "
-        "issues introduced by changes.\n\n"
-        "For each finding, provide:\n"
-        "  FINDING_ID: unique identifier (e.g., F001)\n"
-        "  SEVERITY: 0.0 to 1.0 (1.0 = critical)\n"
-        "  FLAW_CLASS: integer category (1=logic, 2=interface, 3=notation, "
-        "4=completeness, 5=correctness, 6=edge-case, 7=performance, 8=documentation)\n"
-        "  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\n"
-        "  DESCRIPTION: FIND — what is wrong, where, and what is the evidence\n"
-        "  FOLLOW: trace downstream consequences BEFORE proposing a fix. What "
-        "depends on this? What interfaces does it cross? What breaks if this is wrong?\n"
-        "  PROPOSED_FIX: FIX — the simplest sufficient correction that addresses "
-        "both the root cause AND the downstream consequences identified in FOLLOW\n"
-        "  VERIFIED: TRUE if you have a proof/test, FALSE if this is an assertion\n\n"
-        "Your finding IDs must be STABLE across rounds. If you filed F001 in Round 3, "
-        "F001 in Round 4 must refer to the same bug. To replace a finding, use "
-        "SUPERSEDES: old_ID.\n\n"
-        "Produce ALL findings you can identify. Do not hold back.\n\n"
-        f"=== ARTIFACT: Persistence Layer ({len(SOURCE_FILES)} files, "
-        f"{total_raw:,} chars) ===\n\n"
-        f"{full_code}\n\n"
-        "=== END ARTIFACT ===\n\n"
-        "Produce your findings now."
-    )
-
-    # Add sequential read instruction
-    n_files = full_code.count("=== FILE:")
-    if n_files > 0:
-        base_prompt += (
-            f"\n\nIMPORTANT: This prompt contains {n_files} source files. "
-            f"Read each file carefully from start to finish before beginning "
-            f"your analysis.\n"
-        )
-
-    _log(f"  Base prompt: {len(base_prompt):,} chars")
 
     for round_idx in range(start_round, MAX_ROUNDS):
         round_start = time.monotonic()
@@ -1017,15 +1224,42 @@ def run_experiment(
             _log(f"\nWALL CLOCK CAP reached ({wall_elapsed:.0f}s). Stopping.")
             break
 
-        _log(f"\n{'─' * 60}")
+        phase_label = _get_phase_label(round_idx)
+        phase_prompt = _get_phase_prompt(round_idx)
+
+        _log(f"\n{'=' * 60}")
         round_type = "blind" if round_idx == 0 else "adaptive"
-        _log(f"Round {round_idx} ({round_type})")
-        _log(f"{'─' * 60}")
+        _log(f"Round {round_idx} ({round_type}) -- {phase_label}")
+        _log(f"{'=' * 60}")
+
+        # Build round-specific prompt
+        base_prompt = (
+            f"{awareness_preamble}"
+            f"You are participating in Experiment 32 -- a META-EXPERIMENT about "
+            f"convergence prediction, communication efficiency, and experimental "
+            f"design optimisation.\n\n"
+            f"This experiment does NOT review code. Instead, you are analysing "
+            f"convergence data from Experiments 30 and 31 (distributed code reviews "
+            f"of the CDSFL persistence layer) and collaborating with 4 other models "
+            f"to predict, agree, and optimise.\n\n"
+            f"This experiment has 4 phases across 10 rounds:\n"
+            f"  Phase 1 (Round 0): Convergence Model Validation\n"
+            f"  Phase 2 (Rounds 1-3): Communication Efficiency\n"
+            f"  Phase 3 (Rounds 4-7): Experimental Design Optimisation\n"
+            f"  Phase 4 (Rounds 8-9): Final Synthesis for Human Review\n\n"
+            f"You are currently in Round {round_idx}.\n\n"
+            f"{_FINDING_SCHEMA_INSTRUCTION}"
+            f"{phase_prompt}"
+            f"{DATA_ARTIFACT}\n\n"
+            f"Produce your analysis now."
+        )
+
+        _log(f"  Base prompt: {len(base_prompt):,} chars")
 
         # Dispatch to all models (brain handles relay for adaptive rounds)
         findings, responses, per_model_durations = _dispatch_round(
             exp_config, mgr, brain,
-            base_prompt, cdsfl_text, full_code,
+            base_prompt, cdsfl_text, DATA_ARTIFACT,
             round_idx, pattern_name,
             relay_mode=relay_mode,
         )
@@ -1063,7 +1297,7 @@ def run_experiment(
                             )
             total_directed_messages += round_directed_count
 
-        # ── Endocrine cycle ──────────────────────────────────────────────
+        # -- Endocrine cycle ---------------------------------------------------
         # Build round timings for pacing
         round_timings = _build_round_timings(
             responses, per_model_durations, findings, round_idx,
@@ -1073,9 +1307,7 @@ def run_experiment(
         for text in responses.values():
             cumulative_context_chars += len(text)
 
-        # Count novel findings for this round (simple: all findings are
-        # "novel" in the first round; in subsequent rounds, brain's dedup
-        # gives us the actual count via immune pipeline)
+        # Count novel findings for this round
         novelty_counts.append(len(findings))
 
         # Run endocrine cycle
@@ -1103,12 +1335,12 @@ def run_experiment(
             for verdict, count in sorted(verdict_counts.items()):
                 _log(f"      {verdict}: {count}")
         else:
-            _log(f"    Fix evaluations: none (no proposed fixes)")
+            _log(f"    Fix evaluations: none (meta-experiment)")
 
         if endo_report.pacing_signals:
             _log(f"    Pacing signals: {len(endo_report.pacing_signals)}")
             for sig in endo_report.pacing_signals:
-                _log(f"      {sig.signal_type}: {sig.detail} → {sig.suggested_action}")
+                _log(f"      {sig.signal_type}: {sig.detail} -> {sig.suggested_action}")
         else:
             _log(f"    Pacing signals: none (all healthy)")
 
@@ -1117,10 +1349,9 @@ def run_experiment(
         # Use pacing signals for adaptive decisions
         for sig in endo_report.pacing_signals:
             if sig.signal_type == "novelty_plateau" and round_idx >= 3:
-                _log(f"  PACING: novelty plateau detected — checking convergence early")
+                _log(f"  PACING: novelty plateau detected -- checking convergence early")
                 if brain.check_convergence(round_idx):
                     _log(f"  PACING: converged early due to novelty plateau")
-                    # Convergence will be detected again below, but log the cause
                     break
 
         # Run immune pipeline through brain
@@ -1131,12 +1362,13 @@ def run_experiment(
 
         # Shadow gamma for comparison
         gamma_shadow = _estimate_gamma(brain.state.all_findings)
-        _log(f"  Shadow γ: {gamma_shadow:.3f}")
+        _log(f"  Shadow gamma: {gamma_shadow:.3f}")
 
         # Build round data with endocrine metrics
         round_data: Dict[str, Any] = {
             "round": round_idx,
             "type": round_type,
+            "phase": phase_label,
             "findings_count": len(findings),
             "models_responded": list(responses.keys()),
             "elapsed_s": round(round_elapsed, 1),
@@ -1230,17 +1462,100 @@ def run_experiment(
 
     # Save report
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = LOGS_DIR / "exp30_report.json"
+    report_path = LOGS_DIR / "exp32_report.json"
     report_path.write_text(
         json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    # -- Cryptographic sealing: Merkle-bundle experiment logs ----------------
+    # Take machine reasoning out of the black box. Every round's model
+    # responses, findings, and the final report are appended to a
+    # verification chain and sealed into a Merkle epoch. This produces
+    # a tamper-evident, cryptographically signed record of the entire
+    # reasoning process.
+    chain_path = LOGS_DIR / "experiment_chain.json"
+    try:
+        from bench.verification_chain import VerificationChain
+
+        chain = VerificationChain()
+
+        # Append each round's data as a record
+        for round_data_entry in result.get("rounds", []):
+            round_idx_val = round_data_entry.get("round", "?")
+            chain.append_record(
+                artifact_type="experiment_round",
+                payload=round_data_entry,
+                recorded_by="exp32_runner",
+                metadata={
+                    "experiment": "exp32",
+                    "round": round_idx_val,
+                    "phase": round_data_entry.get("phase", "unknown"),
+                    "models": round_data_entry.get("models_responded", []),
+                },
+            )
+
+        # Append per-round model responses (full transcripts)
+        round_files = sorted(LOGS_DIR.glob("r*_*.json"))
+        for rf in round_files:
+            try:
+                rf_data = json.loads(rf.read_text(encoding="utf-8"))
+                chain.append_record(
+                    artifact_type="model_response",
+                    payload=rf_data,
+                    recorded_by="exp32_runner",
+                    metadata={
+                        "source_file": rf.name,
+                        "experiment": "exp32",
+                    },
+                    storage_mode="hash_only",  # Full payload in round files
+                )
+            except Exception:
+                pass  # Non-critical: skip malformed round files
+
+        # Append the final report
+        chain.append_record(
+            artifact_type="experiment_report",
+            payload=result,
+            recorded_by="exp32_runner",
+            metadata={
+                "experiment": "exp32",
+                "status": signal.get("status", "unknown"),
+                "reason": signal.get("reason", "unknown"),
+                "total_findings": total_findings,
+                "total_rounds": len(brain.state.all_findings),
+            },
+        )
+
+        # Seal the epoch -- Merkle root covers all records
+        epoch = chain.seal_epoch()
+
+        # Persist the chain
+        chain.save_json(str(chain_path))
+
+        _log(f"\n  Merkle chain sealed: {len(chain.records)} records, "
+             f"epoch merkle_root={epoch['merkle_root'][:24]}...")
+        _log(f"  Chain saved: {chain_path}")
+        result["merkle_chain"] = {
+            "path": str(chain_path),
+            "records": len(chain.records),
+            "merkle_root": epoch["merkle_root"],
+        }
+
+        # Re-save report with chain reference
+        report_path.write_text(
+            json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    except Exception as e:
+        _log(f"\n  WARNING: Merkle sealing failed (non-fatal): {e}")
+        import traceback
+        _log(f"  {traceback.format_exc()}")
+
     _log(f"\n{'=' * 60}")
-    _log(f"EXPERIMENT 30 — {len(brain.state.all_findings)} ROUNDS COMPLETE")
+    _log(f"EXPERIMENT 32 -- {len(brain.state.all_findings)} ROUNDS COMPLETE")
     _log(f"  Rounds: {len(brain.state.all_findings)}")
     _log(f"  Total findings: {total_findings}")
     _log(f"  Per model: {per_model_totals}")
     _log(f"  Per round: {[len(rnd) for rnd in brain.state.all_findings]}")
-    _log(f"  γ: {gamma_final:.3f}")
+    _log(f"  gamma: {gamma_final:.3f}")
     c_he_val = result.get("popper_corroboration", {}).get("C_HE")
     if c_he_val is not None:
         _log(f"  C(H,E): {c_he_val:.4f}")
@@ -1252,15 +1567,15 @@ def run_experiment(
     _log(f"  Endocrine health trend: {endo.health_trend()}")
     _log(f"  Elapsed: {total_elapsed:.0f}s")
     _log(f"  Report: {report_path}")
-    _log(f"  Brain signal: {signal['status']} — {signal['reason']}")
+    _log(f"  Brain signal: {signal['status']} -- {signal['reason']}")
     _log(f"{'=' * 60}")
 
     return result
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 def main():
     global LOGS_DIR
@@ -1321,11 +1636,11 @@ def main():
             if not ok:
                 _log("\nPREFLIGHT FAILED. Aborting.")
                 sys.exit(1)
-            _log(f"\nPreflight passed. Starting Exp 30 in 5s... "
+            _log(f"\nPreflight passed. Starting Exp 32 in 5s... "
                  f"(pattern={pattern}, relay={relay_mode})")
             time.sleep(5)
         else:
-            _log(f"\nRESUME mode — skipping preflight "
+            _log(f"\nRESUME mode -- skipping preflight "
                  f"(pattern={pattern}, relay={relay_mode})")
 
         result = run_experiment(
