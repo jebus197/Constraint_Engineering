@@ -1123,21 +1123,27 @@ class InsectBrain:
         Returns True if the convergence predicate is satisfied:
         kappa >= tau_kappa AND round >= min_rounds AND NOT veto.
 
-        Also checks for maximum rounds reached.
+        Also checks for maximum rounds reached. Convergence is evaluated
+        BEFORE the budget hard-stop so that genuine convergence on the
+        final round is reported correctly (not masked as BUDGET_EXHAUSTED).
         """
-        # Maximum rounds hard stop — budget exhaustion, NOT convergence.
-        # The experiment did not converge; it ran out of rounds.
-        # Bug#36: Guard against max_rounds <= 0
-        if self.config.max_rounds > 0 and round_idx >= self.config.max_rounds - 1:
-            self.state.converged = False  # NOT converged — budget exhausted
-            self.state.convergence_reason = f"BUDGET_EXHAUSTED({self.config.max_rounds})"
-            return True  # Still terminates the experiment
+        # Fail-fast: if all models have failed, terminate immediately
+        if self.state.failed:
+            return True
 
         # Minimum rounds gate
         if round_idx < self.config.min_rounds_for_convergence:
+            # Even below min rounds, budget can still be exhausted
+            # Bug#36: Guard against max_rounds <= 0
+            if self.config.max_rounds > 0 and round_idx >= self.config.max_rounds - 1:
+                self.state.converged = False
+                self.state.convergence_reason = f"BUDGET_EXHAUSTED({self.config.max_rounds})"
+                return True
             return False
 
         # Convergence detector (delegates to existing implementation)
+        # Evaluated BEFORE budget check so genuine convergence on the
+        # final round is not falsely classified as budget exhaustion.
         try:
             converged = self.conv_detector.converged(round_idx)
             if converged:
@@ -1147,6 +1153,14 @@ class InsectBrain:
                 return True
         except Exception as e:
             logger.warning("Convergence check failed: %s", e)
+
+        # Maximum rounds hard stop — budget exhaustion, NOT convergence.
+        # Only reached if the convergence detector did NOT fire above.
+        # Bug#36: Guard against max_rounds <= 0
+        if self.config.max_rounds > 0 and round_idx >= self.config.max_rounds - 1:
+            self.state.converged = False
+            self.state.convergence_reason = f"BUDGET_EXHAUSTED({self.config.max_rounds})"
+            return True
 
         return False
 
@@ -1217,13 +1231,14 @@ class InsectBrain:
         total_findings = sum(len(rnd) for rnd in self.state.all_findings)
         total_rounds = len(self.state.round_records)
 
-        # Determine status — distinguish budget exhaustion from incomplete
+        # Determine status — FAILED must precede BUDGET_EXHAUSTED so that
+        # a fatal crash is never masked as normal budget exhaustion.
         if self.state.converged:
             status = "CONVERGED"
-        elif "BUDGET_EXHAUSTED" in self.state.convergence_reason:
-            status = "BUDGET_EXHAUSTED"
         elif self.state.failed:
             status = "FAILED"
+        elif "BUDGET_EXHAUSTED" in self.state.convergence_reason:
+            status = "BUDGET_EXHAUSTED"
         else:
             status = "INCOMPLETE"
 

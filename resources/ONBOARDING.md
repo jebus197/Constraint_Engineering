@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 04:47 BST
+Last updated: 5 April 2026 08:10 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -100,7 +100,36 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   properties, load_json validation, sub-second timestamps, error truncation.
   Plus 3 architectural changes (bug-closed gate, fix evaluation, BUDGET_EXHAUSTED).
   **Tests:** 571 passed, 0 failed.
-  **Next:** Run Exp 31 (one clean run with all fixes), then outreach.
+- **EXP 31 COMPLETE (5 April 2026, 07:38 BST):**
+  Post-fix validation run. Same 3 test articles, same 5 models, directed relay,
+  FFF pattern. Base prompt informed models of 39 applied fixes — do NOT rediscover.
+  15 rounds, 360 findings, ~190 min wall clock. **BUDGET_EXHAUSTED(15).**
+  Final κ=0.619, γ=0.106. All 5 models active throughout.
+  **Per model:** CC2=95, Codex=85, DeepSeek=69, Gemini=61, ChatGPT=50.
+  **Convergence trajectory:** γ rose from 0.000→0.063 (R0–R6), then accelerated
+  to 0.115 (R7–R12) after mid-experiment interventions, before flattening at
+  0.106 terminal. Opposite direction to Exp 30 (0.567→0.320, diverging).
+  **Mid-experiment fixes:** (1) check_convergence() ordering — convergence
+  detector before budget hard-stop; (2) signal_complete() precedence — FAILED
+  before BUDGET_EXHAUSTED; (3) check_convergence() fail-fast for failed state;
+  (4) B-Cell UNCERTAIN→HIL escalation (Stage 5.5); (5) Good Enough instruction
+  (AGREE/CHALLENGE/EXTEND); (6) Finding merge instruction; (7) Merkle sealing.
+  **18 findings catalogued (E31-01 through E31-18).** Critical: deep-copy
+  propagation severs verified/escalated flags (sev 0.95), autoimmune override
+  violates reconciliation lock (sev 0.90). 3 fixed during session, 11 queued.
+  **Late-round discoveries (R8–R14):** AST negative literal extraction, skin
+  barrier path containment gap, search manifest dict parsing, epoch schema
+  validation.
+  **Why convergence failed:** bug-closed gate is dead code (deep-copy issue
+  severs verified flag propagation). Models reached inter-rater agreement
+  (κ=0.619) but couldn't close findings between rounds.
+  **Merkle sealed:** 108 records per experiment, both chains verified.
+  Logs: `bench/logs/exp31_postfix_20260405T041753Z/`.
+  Findings: `experimental_notes/Exp31_Interim_Findings_2026-04-05.md`.
+  TTS: `~/Desktop/CDSFL_tts/Exp31_Final_Findings_2026-04-05.txt`.
+  **Next:** Exp 32 — meta-experiment on convergence prediction, communication
+  efficiency, and experimental design optimisation. Then code review with all
+  fixes applied + endocrine layer as 4th test article.
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

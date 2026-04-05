@@ -3151,6 +3151,39 @@ def run_immune_pipeline(
     if escalated_count:
         _shadow_log.info("Auto-escalated %d findings to HIL (no programmatic fix)", escalated_count)
 
+    # ── Stage 5.5: B-Cell UNCERTAIN → HIL escalation ─────────────────
+    # If the B Cell returned UNCERTAIN for a finding, the system cannot
+    # programmatically confirm the claim exists in the code. UNCERTAIN
+    # is measured ignorance — not noise, but signal that a human must
+    # review. Escalate these to the HIL rather than letting them churn
+    # across rounds as unresolvable ambiguity.
+    uncertain_escalated = 0
+    for f in filtered:
+        if f.verified or f.escalated:
+            continue  # Already resolved or already escalated
+        fid = f.finding_id
+        f_verdict = final_verdicts.get(fid, "")
+        if f_verdict == "UNCERTAIN":
+            # Check if any B-Cell verdict for this finding was UNCERTAIN
+            b_cell_uncertain = any(
+                v.cell_type == CellType.B_CELL
+                and v.verdict == "UNCERTAIN"
+                and v.finding_id == fid
+                for v in all_verdicts
+            )
+            if b_cell_uncertain:
+                object.__setattr__(f, 'escalated', True)
+                uncertain_escalated += 1
+                _shadow_log.info(
+                    "UNCERTAIN-ESCALATED to HIL: %s (B-Cell cannot ground claim in source)",
+                    fid,
+                )
+    if uncertain_escalated:
+        _shadow_log.info(
+            "Escalated %d UNCERTAIN findings to HIL (B-Cell cannot verify)",
+            uncertain_escalated,
+        )
+
     # Bug#46 fix: include barrier rejections in rejection rate and rejected list
     total = len(triaged) + len(barrier_rejected)
     rej_count = sum(1 for v in final_verdicts.values() if v in ("REJECTED", "DUPLICATE"))

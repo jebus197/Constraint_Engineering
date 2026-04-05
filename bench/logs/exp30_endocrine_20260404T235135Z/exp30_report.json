@@ -1,0 +1,2954 @@
+{
+  "experiment": "exp30_endocrine",
+  "start_time": "2026-04-05T00:16:27.184005+00:00",
+  "pattern": "fff",
+  "relay_mode": "directed",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "source_files": [
+    "bench/verification_chain.py",
+    "bench/insect_brain.py",
+    "bench/immune_agents.py"
+  ],
+  "max_rounds": 15,
+  "rounds": [
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 309.8,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 2,
+        "Gemini": 6,
+        "CC2": 10,
+        "DeepSeek": 2
+      },
+      "brain_metrics": {
+        "kappa": 1.6305335326372017e-07,
+        "kappa_set": 0.792503346775769,
+        "kappa_rate": 1.6305335326372017e-07,
+        "gamma_hat": 0.6307661903342812,
+        "novel_count": 14.0,
+        "total_findings": 81.0,
+        "findings_this_round": 21.0
+      },
+      "gamma_shadow": 0.567,
+      "immune_pipeline": {
+        "rejection_rate": 0.3333,
+        "autoimmune_flag": false,
+        "survivors": 13
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.91
+        },
+        "fix_evaluations": {
+          "total_evaluated": 17,
+          "verdicts": {
+            "UNEVALUABLE": 17
+          },
+          "details": [
+            {
+              "finding_id": "Gemini_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "Gemini_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "Gemini_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.2
+            },
+            {
+              "finding_id": "Gemini_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.04
+            },
+            {
+              "finding_id": "Gemini_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "Gemini_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "CC2_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.87
+            },
+            {
+              "finding_id": "CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.88
+            },
+            {
+              "finding_id": "CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            },
+            {
+              "finding_id": "CC2_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "CC2_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "CC2_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            },
+            {
+              "finding_id": "DeepSeek_f.finding_id,",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            }
+          ]
+        },
+        "pacing_signals": [],
+        "elapsed_s": 18.72
+      },
+      "directed_messages": {
+        "count": 4
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 33,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 309.1,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 6,
+        "Gemini": 4,
+        "CC2": 8,
+        "DeepSeek": 14
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.8033407572821067,
+        "kappa_rate": -0.26620352267057323,
+        "gamma_hat": 0.6183745307011057,
+        "novel_count": 14.0,
+        "total_findings": 114.0,
+        "findings_this_round": 33.0
+      },
+      "gamma_shadow": 0.4158,
+      "immune_pipeline": {
+        "rejection_rate": 0.5161,
+        "autoimmune_flag": false,
+        "survivors": 13
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.53
+        },
+        "fix_evaluations": {
+          "total_evaluated": 20,
+          "verdicts": {
+            "UNEVALUABLE": 20
+          },
+          "details": [
+            {
+              "finding_id": "Gemini_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.95
+            },
+            {
+              "finding_id": "Gemini_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "Gemini_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "Gemini_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.25
+            },
+            {
+              "finding_id": "CC2_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.22
+            },
+            {
+              "finding_id": "CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.12
+            },
+            {
+              "finding_id": "CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.28
+            },
+            {
+              "finding_id": "CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.07
+            },
+            {
+              "finding_id": "DeepSeek_F101",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.76
+            },
+            {
+              "finding_id": "DeepSeek_F102",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F103",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "DeepSeek_F104",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "DeepSeek_F105",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.8
+            },
+            {
+              "finding_id": "DeepSeek_F106",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "DeepSeek_F107",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            },
+            {
+              "finding_id": "DeepSeek_F108",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "DeepSeek_F109",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.89
+            },
+            {
+              "finding_id": "DeepSeek_F110",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 119% of budget (238078/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.19,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 23.08
+      },
+      "directed_messages": {
+        "count": 9
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 18,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 293.7,
+      "per_model": {
+        "ChatGPT": 8,
+        "Codex": 1,
+        "Gemini": 1,
+        "DeepSeek": 1,
+        "CC2": 7
+      },
+      "brain_metrics": {
+        "kappa": 0.111700678588467,
+        "kappa_set": 0.8650654169371088,
+        "kappa_rate": 0.111700678588467,
+        "gamma_hat": 0.6049615346871156,
+        "novel_count": 11.0,
+        "total_findings": 132.0,
+        "findings_this_round": 18.0
+      },
+      "gamma_shadow": 0.4312,
+      "immune_pipeline": {
+        "rejection_rate": 0.3529,
+        "autoimmune_flag": false,
+        "survivors": 11
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.18
+        },
+        "fix_evaluations": {
+          "total_evaluated": 15,
+          "verdicts": {
+            "UNEVALUABLE": 15
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "ChatGPT_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            },
+            {
+              "finding_id": "ChatGPT_F011",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            },
+            {
+              "finding_id": "ChatGPT_F012",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "ChatGPT_F013",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "ChatGPT_F014",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "ChatGPT_F015",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "ChatGPT_F016",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            },
+            {
+              "finding_id": "CC2_CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.45
+            },
+            {
+              "finding_id": "CC2_CC2_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "CC2_CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.05
+            },
+            {
+              "finding_id": "CC2_CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.05
+            },
+            {
+              "finding_id": "CC2_CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.19
+            },
+            {
+              "finding_id": "CC2_CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.99
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 168% of budget (336957/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.685,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 18.14
+      },
+      "directed_messages": {
+        "count": 10
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 21,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 272.6,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 4,
+        "Gemini": 1,
+        "DeepSeek": 7,
+        "CC2": 8
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.8825069832607355,
+        "kappa_rate": -0.01669786650658156,
+        "gamma_hat": 0.5957672171663919,
+        "novel_count": 11.0,
+        "total_findings": 153.0,
+        "findings_this_round": 21.0
+      },
+      "gamma_shadow": 0.4184,
+      "immune_pipeline": {
+        "rejection_rate": 0.4286,
+        "autoimmune_flag": false,
+        "survivors": 12
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 3.25
+        },
+        "fix_evaluations": {
+          "total_evaluated": 8,
+          "verdicts": {
+            "UNEVALUABLE": 7,
+            "HARMFUL": 1
+          },
+          "details": [
+            {
+              "finding_id": "CC2_CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.22
+            },
+            {
+              "finding_id": "CC2_CC2_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "CC2_CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.13
+            },
+            {
+              "finding_id": "CC2_CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.86
+            },
+            {
+              "finding_id": "CC2_CC2_F005",
+              "verdict": "HARMFUL",
+              "net_type_errors": 0,
+              "net_ruff_errors": 1,
+              "net_bandit_issues": 0,
+              "elapsed_s": 2.64
+            },
+            {
+              "finding_id": "CC2_CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.35
+            },
+            {
+              "finding_id": "CC2_CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "CC2_CC2_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.89
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 221% of budget (442750/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.214,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 14.71
+      },
+      "directed_messages": {
+        "count": 11
+      }
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_count": 14,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 301.0,
+      "per_model": {
+        "ChatGPT": 3,
+        "Codex": 1,
+        "Gemini": 1,
+        "CC2": 8,
+        "DeepSeek": 1
+      },
+      "brain_metrics": {
+        "kappa": 0.29576844720171347,
+        "kappa_set": 0.9282848545756796,
+        "kappa_rate": 0.29576844720171347,
+        "gamma_hat": 0.6131471927654586,
+        "novel_count": 7.0,
+        "total_findings": 167.0,
+        "findings_this_round": 14.0
+      },
+      "gamma_shadow": 0.4287,
+      "immune_pipeline": {
+        "rejection_rate": 0.4615,
+        "autoimmune_flag": false,
+        "survivors": 7
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.4
+        },
+        "fix_evaluations": {
+          "total_evaluated": 11,
+          "verdicts": {
+            "UNEVALUABLE": 11
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT5_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.87
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "CC2_CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "CC2_CC2_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "CC2_CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            },
+            {
+              "finding_id": "CC2_CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "CC2_CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "CC2_CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.1
+            },
+            {
+              "finding_id": "CC2_CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.87
+            },
+            {
+              "finding_id": "CC2_CC2_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 262% of budget (523296/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.616,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 13.74
+      },
+      "directed_messages": {
+        "count": 10
+      }
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 286.4,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 4,
+        "Gemini": 1,
+        "DeepSeek": 5,
+        "CC2": 8
+      },
+      "brain_metrics": {
+        "kappa": 0.08922840585409164,
+        "kappa_set": 0.9373505499860751,
+        "kappa_rate": 0.08922840585409164,
+        "gamma_hat": 0.617700999044318,
+        "novel_count": 7.0,
+        "total_findings": 186.0,
+        "findings_this_round": 19.0
+      },
+      "gamma_shadow": 0.4186,
+      "immune_pipeline": {
+        "rejection_rate": 0.5294,
+        "autoimmune_flag": false,
+        "survivors": 7
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.21
+        },
+        "fix_evaluations": {
+          "total_evaluated": 6,
+          "verdicts": {
+            "UNEVALUABLE": 6
+          },
+          "details": [
+            {
+              "finding_id": "DeepSeek_F100",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.11
+            },
+            {
+              "finding_id": "CC2_CC2_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.22
+            },
+            {
+              "finding_id": "CC2_CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.19
+            },
+            {
+              "finding_id": "CC2_CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 311% of budget (621291/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.106,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 9.21
+      },
+      "directed_messages": {
+        "count": 7
+      }
+    },
+    {
+      "round": 7,
+      "type": "adaptive",
+      "findings_count": 32,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 286.3,
+      "per_model": {
+        "ChatGPT": 5,
+        "Codex": 2,
+        "Gemini": 15,
+        "DeepSeek": 4,
+        "CC2": 6
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.9094476744317663,
+        "kappa_rate": -0.2527330262802594,
+        "gamma_hat": 0.6100249995192292,
+        "novel_count": 9.0,
+        "total_findings": 218.0,
+        "findings_this_round": 32.0
+      },
+      "gamma_shadow": 0.3796,
+      "immune_pipeline": {
+        "rejection_rate": 0.5161,
+        "autoimmune_flag": true,
+        "survivors": 31
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.36
+        },
+        "fix_evaluations": {
+          "total_evaluated": 11,
+          "verdicts": {
+            "UNEVALUABLE": 11
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT5_R7_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_R7_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_R7_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_R7_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.56
+            },
+            {
+              "finding_id": "ChatGPT_GPT5_R7_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.41
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.1
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.28
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.04
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.33
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.33
+            },
+            {
+              "finding_id": "CC2_CC2_R7_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 369% of budget (738474/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.692,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 15.86
+      },
+      "directed_messages": {
+        "count": 10
+      }
+    },
+    {
+      "round": 8,
+      "type": "adaptive",
+      "findings_count": 20,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 421.2,
+      "per_model": {
+        "ChatGPT": 5,
+        "Codex": 3,
+        "DeepSeek": 4,
+        "Gemini": 2,
+        "CC2": 6
+      },
+      "brain_metrics": {
+        "kappa": 0.22567866275657877,
+        "kappa_set": 0.9450191299496926,
+        "kappa_rate": 0.22567866275657877,
+        "gamma_hat": 0.6143781254192892,
+        "novel_count": 7.0,
+        "total_findings": 238.0,
+        "findings_this_round": 20.0
+      },
+      "gamma_shadow": 0.3729,
+      "immune_pipeline": {
+        "rejection_rate": 0.6316,
+        "autoimmune_flag": false,
+        "survivors": 7
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.33
+        },
+        "fix_evaluations": {
+          "total_evaluated": 18,
+          "verdicts": {
+            "UNEVALUABLE": 18
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT_R8_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.2
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R8_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.05
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R8_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R8_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.22
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R8_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "Codex_R8_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.99
+            },
+            {
+              "finding_id": "Codex_R8_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "Codex_R8_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            },
+            {
+              "finding_id": "DeepSeek_I001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.05
+            },
+            {
+              "finding_id": "DeepSeek_I002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "DeepSeek_V001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "DeepSeek_I003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.13
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.09
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.45
+            },
+            {
+              "finding_id": "CC2_CC2_R8_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 404% of budget (808867/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.044,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 22.13
+      },
+      "directed_messages": {
+        "count": 8
+      }
+    },
+    {
+      "round": 9,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 333.9,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 4,
+        "Gemini": 2,
+        "DeepSeek": 7,
+        "CC2": 5
+      },
+      "brain_metrics": {
+        "kappa": 0.12094747450518195,
+        "kappa_set": 0.9617328519910855,
+        "kappa_rate": 0.12094747450518195,
+        "gamma_hat": 0.6398485522173621,
+        "novel_count": 4.0,
+        "total_findings": 257.0,
+        "findings_this_round": 19.0
+      },
+      "gamma_shadow": 0.3682,
+      "immune_pipeline": {
+        "rejection_rate": 0.7778,
+        "autoimmune_flag": true,
+        "survivors": 18
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.09
+        },
+        "fix_evaluations": {
+          "total_evaluated": 9,
+          "verdicts": {
+            "UNEVALUABLE": 9
+          },
+          "details": [
+            {
+              "finding_id": "Codex_R9_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.02
+            },
+            {
+              "finding_id": "Codex_R9_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.13
+            },
+            {
+              "finding_id": "Codex_R9_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "Codex_R9_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.12
+            },
+            {
+              "finding_id": "CC2_CC2_R9_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.78
+            },
+            {
+              "finding_id": "CC2_CC2_R9_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.12
+            },
+            {
+              "finding_id": "CC2_CC2_R9_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "CC2_CC2_R9_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.11
+            },
+            {
+              "finding_id": "CC2_CC2_R9_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 460% of budget (920847/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.604,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 10.99
+      },
+      "directed_messages": {
+        "count": 7
+      }
+    },
+    {
+      "round": 10,
+      "type": "adaptive",
+      "findings_count": 27,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 419.7,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 7,
+        "DeepSeek": 10,
+        "Gemini": 7,
+        "CC2": 2
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.91957429611753,
+        "kappa_rate": -0.01002384635102005,
+        "gamma_hat": 0.6248861975910789,
+        "novel_count": 10.0,
+        "total_findings": 284.0,
+        "findings_this_round": 27.0
+      },
+      "gamma_shadow": 0.3517,
+      "immune_pipeline": {
+        "rejection_rate": 0.6296,
+        "autoimmune_flag": false,
+        "survivors": 10
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.49
+        },
+        "fix_evaluations": {
+          "total_evaluated": 9,
+          "verdicts": {
+            "UNEVALUABLE": 9
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT_R10_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.06
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.09
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.23
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "DeepSeek_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.04
+            },
+            {
+              "finding_id": "Gemini_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.04
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 509% of budget (1017989/200000 chars)",
+            "model_id": "",
+            "metric_value": 5.09,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 12.48
+      },
+      "directed_messages": {
+        "count": 12
+      }
+    },
+    {
+      "round": 11,
+      "type": "adaptive",
+      "findings_count": 23,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 265.5,
+      "per_model": {
+        "ChatGPT": 8,
+        "Codex": 1,
+        "Gemini": 7,
+        "DeepSeek": 1,
+        "CC2": 6
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.9729879484730589,
+        "kappa_rate": -0.2280957399248107,
+        "gamma_hat": 0.6483847320663327,
+        "novel_count": 3.0,
+        "total_findings": 307.0,
+        "findings_this_round": 23.0
+      },
+      "gamma_shadow": 0.343,
+      "immune_pipeline": {
+        "rejection_rate": 0.8261,
+        "autoimmune_flag": true,
+        "survivors": 23
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.08
+        },
+        "fix_evaluations": {
+          "total_evaluated": 15,
+          "verdicts": {
+            "UNEVALUABLE": 15
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT_R10_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.8
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.05
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.02
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.98
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R10_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.54
+            },
+            {
+              "finding_id": "Gemini_D004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.2
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.99
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 564% of budget (1128882/200000 chars)",
+            "model_id": "",
+            "metric_value": 5.644,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 18.24
+      },
+      "directed_messages": {
+        "count": 10
+      }
+    },
+    {
+      "round": 12,
+      "type": "adaptive",
+      "findings_count": 19,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 344.2,
+      "per_model": {
+        "ChatGPT": 5,
+        "Codex": 5,
+        "Gemini": 2,
+        "CC2": 7
+      },
+      "brain_metrics": {
+        "kappa": 0.14737589621989888,
+        "kappa_set": 0.9713237292781566,
+        "kappa_rate": 0.14737589621989888,
+        "gamma_hat": 0.655981831519765,
+        "novel_count": 3.0,
+        "total_findings": 326.0,
+        "findings_this_round": 19.0
+      },
+      "gamma_shadow": 0.3401,
+      "immune_pipeline": {
+        "rejection_rate": 0.8421,
+        "autoimmune_flag": true,
+        "survivors": 19
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.09
+        },
+        "fix_evaluations": {
+          "total_evaluated": 17,
+          "verdicts": {
+            "UNEVALUABLE": 17
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_GPT_R11_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.8
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R11_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R11_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R11_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.03
+            },
+            {
+              "finding_id": "ChatGPT_GPT_R11_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "Codex_R12_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.99
+            },
+            {
+              "finding_id": "Codex_R12_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "Codex_R12_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.8
+            },
+            {
+              "finding_id": "Codex_R12_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "Codex_R12_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.21
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.21
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.13
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R11_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.1
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 600% of budget (1199410/200000 chars)",
+            "model_id": "",
+            "metric_value": 5.997,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 19.67
+      },
+      "directed_messages": {
+        "count": 9
+      }
+    },
+    {
+      "round": 13,
+      "type": "adaptive",
+      "findings_count": 37,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 319.4,
+      "per_model": {
+        "ChatGPT": 3,
+        "Codex": 1,
+        "Gemini": 5,
+        "DeepSeek": 22,
+        "CC2": 6
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.9273104880675869,
+        "kappa_rate": -0.32725491326822365,
+        "gamma_hat": 0.6465328648387645,
+        "novel_count": 9.0,
+        "total_findings": 363.0,
+        "findings_this_round": 37.0
+      },
+      "gamma_shadow": 0.3179,
+      "immune_pipeline": {
+        "rejection_rate": 0.4865,
+        "autoimmune_flag": true,
+        "survivors": 37
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.14
+        },
+        "fix_evaluations": {
+          "total_evaluated": 19,
+          "verdicts": {
+            "UNEVALUABLE": 19
+          },
+          "details": [
+            {
+              "finding_id": "Gemini_GEMINI_R12_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.8
+            },
+            {
+              "finding_id": "Gemini_GEMINI_R12_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.08
+            },
+            {
+              "finding_id": "Gemini_GEMINI_R12_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.99
+            },
+            {
+              "finding_id": "Gemini_GEMINI_R12_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.24
+            },
+            {
+              "finding_id": "Gemini_GEMINI_R12_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.89
+            },
+            {
+              "finding_id": "DeepSeek_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "DeepSeek_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            },
+            {
+              "finding_id": "DeepSeek_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.18
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.01
+            },
+            {
+              "finding_id": "DeepSeek_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.02
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.16
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.21
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.12
+            },
+            {
+              "finding_id": "CC2_CC2_R12_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.19
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 652% of budget (1304117/200000 chars)",
+            "model_id": "",
+            "metric_value": 6.521,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 22.18
+      },
+      "directed_messages": {
+        "count": 8
+      }
+    },
+    {
+      "round": 14,
+      "type": "adaptive",
+      "findings_count": 15,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 352.1,
+      "per_model": {
+        "Codex": 3,
+        "ChatGPT": 1,
+        "Gemini": 5,
+        "CC2": 6
+      },
+      "brain_metrics": {
+        "kappa": 0.3052873870137045,
+        "kappa_set": 0.9306618093587539,
+        "kappa_rate": 0.3052873870137045,
+        "gamma_hat": 0.6320845754106881,
+        "novel_count": 9.0,
+        "total_findings": 378.0,
+        "findings_this_round": 15.0
+      },
+      "gamma_shadow": 0.3203,
+      "immune_pipeline": {
+        "rejection_rate": 0.4286,
+        "autoimmune_flag": false,
+        "survivors": 8
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 18,
+          "by_category": {
+            "null_deref": 3,
+            "type_safety": 4,
+            "style": 2,
+            "dead_code": 4,
+            "security": 5
+          },
+          "by_tool": {
+            "pyright": 7,
+            "ruff": 6,
+            "bandit": 5
+          },
+          "by_severity": {
+            "error": 7,
+            "warning": 6,
+            "info": 5
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 14,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/verification_chain.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.33
+        },
+        "fix_evaluations": {
+          "total_evaluated": 14,
+          "verdicts": {
+            "UNEVALUABLE": 14
+          },
+          "details": [
+            {
+              "finding_id": "Codex_R14_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.04
+            },
+            {
+              "finding_id": "Codex_R14_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.0
+            },
+            {
+              "finding_id": "Codex_R14_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "Gemini_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.77
+            },
+            {
+              "finding_id": "Gemini_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "Gemini_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.79
+            },
+            {
+              "finding_id": "Gemini_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.13
+            },
+            {
+              "finding_id": "Gemini_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.15
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.23
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.17
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.11
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.14
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "CC2_CC2_R13_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.19
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 686% of budget (1372330/200000 chars)",
+            "model_id": "",
+            "metric_value": 6.862,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 16.99
+      },
+      "directed_messages": {
+        "count": 11
+      }
+    }
+  ],
+  "converged_at": 14,
+  "convergence_reason": "max_rounds_reached(15)",
+  "total_findings": 378,
+  "total_rounds": 15,
+  "total_elapsed_s": 5229.9,
+  "end_time": "2026-04-05T01:43:37.174495+00:00",
+  "completion_signal": {
+    "status": "CONVERGED",
+    "reason": "max_rounds_reached(15)",
+    "total_rounds": 15,
+    "total_findings": 378,
+    "active_models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "Gemini"
+    ],
+    "timestamp": "2026-04-05T01:43:37.022263+00:00",
+    "final_kappa": 0.3052873870137045,
+    "per_model_findings": {
+      "Codex": 42,
+      "CC2": 114,
+      "Gemini": 68,
+      "DeepSeek": 103,
+      "ChatGPT": 51
+    },
+    "per_round_counts": [
+      60,
+      21,
+      33,
+      18,
+      21,
+      14,
+      19,
+      32,
+      20,
+      19,
+      27,
+      23,
+      19,
+      37,
+      15
+    ]
+  },
+  "per_model_totals": {
+    "Codex": 42,
+    "CC2": 114,
+    "Gemini": 68,
+    "DeepSeek": 103,
+    "ChatGPT": 51
+  },
+  "gamma": 0.3203,
+  "per_round_counts": [
+    60,
+    21,
+    33,
+    18,
+    21,
+    14,
+    19,
+    32,
+    20,
+    19,
+    27,
+    23,
+    19,
+    37,
+    15
+  ],
+  "popper_corroboration": {
+    "C_HE": 0.8529,
+    "P_E_given_H": 25.2,
+    "P_E": 2.0
+  },
+  "directed_messaging": {
+    "total_count": 126,
+    "sent_per_model": {
+      "ChatGPT": 44,
+      "CC2": 56,
+      "Codex": 8,
+      "Gemini": 14,
+      "DeepSeek": 4
+    },
+    "received_per_model": {
+      "CC2": 37,
+      "Gemini": 30,
+      "DeepSeek": 19,
+      "Codex": 6,
+      "ChatGPT": 34
+    }
+  },
+  "endocrine_health_trend": {
+    "null_deref": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "type_safety": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "style": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "dead_code": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "security": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ]
+  }
+}

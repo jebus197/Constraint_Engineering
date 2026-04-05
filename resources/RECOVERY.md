@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 04:47 BST
+Last updated: 5 April 2026 08:10 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -22,7 +22,21 @@ This is enough to resume most tasks.
 ## Current Pending Work (5 April 2026, 04:47 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
-EXP 30 COMPLETE. EXP 30 POST-ANALYSIS AND FIXES COMPLETE.
+EXP 30 COMPLETE. EXP 30 POST-ANALYSIS AND FIXES COMPLETE. EXP 31 COMPLETE.
+
+EXP 31 COMPLETE (5 April 2026, 07:38 BST):
+  Post-fix validation. 15 rounds, 360 findings, BUDGET_EXHAUSTED(15).
+  κ=0.619, γ=0.106. All 5 models active. γ rising (0.000→0.106) — opposite
+  to Exp 30 (0.567→0.320, diverging). 39 prior fixes reduced re-discovery.
+  Mid-experiment: convergence ordering fix, signal_complete precedence,
+  B-Cell UNCERTAIN→HIL (Stage 5.5), Good Enough + merge instructions,
+  Merkle sealing. 18 findings catalogued (E31-01 to E31-18).
+  Critical blocker: deep-copy propagation (E31-01) makes bug-closed gate
+  dead code. κ=0.619 proves models agree; γ=0.106 proves they can't close.
+  Merkle sealed: 108 records, chain verified.
+  Logs: bench/logs/exp31_postfix_20260405T041753Z/
+  Findings: experimental_notes/Exp31_Interim_Findings_2026-04-05.md
+  TTS: ~/Desktop/CDSFL_tts/Exp31_Final_Findings_2026-04-05.txt
 
 EXP 30 POST-ANALYSIS (5 April 2026, 04:47 BST):
   Deep analysis of non-convergence: fix-level churn was the root cause.
@@ -56,7 +70,13 @@ EXP 30 POST-ANALYSIS (5 April 2026, 04:47 BST):
   Tests: 571 passed, 0 failed.
 
 PENDING:
-  - Run Exp 31 (one clean run with all fixes applied)
+  - Exp 32 — meta-experiment: convergence prediction, communication efficiency,
+    experimental design optimisation. Models analyse Exp 30/31 data and predict
+    when convergence should occur. Inter-model communication protocol redesign.
+    Multi-agent CC2 architecture evaluation.
+  - Apply E31-01 through E31-18 fixes (deep-copy propagation CRITICAL)
+  - Next code review: 4 test articles (add endocrine.py), all fixes applied,
+    agreed communication protocol, theoretically grounded round budget
   - Then outreach (the system works, results exist, stop iterating)
   - Bench Run 2 (27 frontier STEM problems) — longer term
   Tests: python3 -m pytest bench/tests/ -v (571 pass)

@@ -196,6 +196,45 @@ MODEL_ROSTER = {
 # Multi-turn chunk target for decomposed dispatch
 MULTITURN_CHUNK_TARGET = 30_000
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Good Enough principle — convergence on fixes, not endless alternatives
+# ─────────────────────────────────────────────────────────────────────────────
+# Applies to all domains, not just software. When multiple agents agree an
+# issue exists, they must converge on the simplest sufficient solution rather
+# than endlessly proposing alternatives. This is Voltaire's "le mieux est
+# l'ennemi du bien" — the Principle of Good Enough.
+# See: https://en.wikipedia.org/wiki/Principle_of_good_enough
+
+_GOOD_ENOUGH_INSTRUCTION = (
+    "CONVERGENCE ON SOLUTIONS (MANDATORY):\n"
+    "When another model has already identified an issue AND proposed a fix, "
+    "you have exactly three valid responses:\n"
+    "  1. AGREE — confirm the fix is correct and sufficient. The issue is closed. "
+    "Move on to finding NEW issues.\n"
+    "  2. CHALLENGE — demonstrate with concrete evidence that the proposed fix "
+    "is INCORRECT (introduces a regression, misses the root cause, or violates "
+    "a constraint). Then propose your alternative.\n"
+    "  3. EXTEND — show that the fix is correct but INCOMPLETE (misses a "
+    "downstream consequence or edge case). Propose the minimal addition.\n\n"
+    "You may NOT propose an alternative fix simply because yours is 'better', "
+    "'more elegant', or 'more robust' when an existing fix is correct and "
+    "sufficient. The simplest sufficient fix wins. First correct solution "
+    "closes the issue.\n\n"
+    "This is the Principle of Good Enough. Endless iteration on alternative "
+    "solutions to solved problems is wasted compute and prevents convergence. "
+    "Your value is in finding what is STILL WRONG, not in re-solving what "
+    "is already fixed.\n\n"
+    "FINDING DEDUPLICATION (MANDATORY):\n"
+    "Before filing a new finding, check whether another model has already "
+    "reported the same underlying issue. If your finding overlaps with an "
+    "existing one, you MUST explicitly merge rather than filing a separate "
+    "entry. State: 'This overlaps with [Model]_[FindingID]. I confirm their "
+    "finding and merge.' If your finding adds new evidence or traces a new "
+    "consequence, extend the existing finding rather than creating a duplicate. "
+    "Five separate finding IDs for one bug is five times the wasted compute "
+    "and zero additional insight.\n\n"
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Composer integration
@@ -840,6 +879,7 @@ def run_experiment(
             "You remain under full CDSFL + FFF constraints. Every finding must have "
             "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
             "The conversation is rigorous, not chatty.\n\n"
+            f"{_GOOD_ENOUGH_INSTRUCTION}"
         )
     elif relay_mode == "conversational":
         awareness_preamble = (
@@ -858,6 +898,7 @@ def run_experiment(
             "You remain under full CDSFL + FFF constraints. Every finding must have "
             "FIND (evidence), FIX (concrete correction), and FOLLOW (downstream trace). "
             "The conversation is rigorous, not chatty.\n\n"
+            f"{_GOOD_ENOUGH_INSTRUCTION}"
         )
     else:
         awareness_preamble = (
@@ -866,6 +907,7 @@ def run_experiment(
             f"{roster_lines}\n\n"
             "You will see other models' findings (not their full analysis). "
             "Do not repeat known findings — find what was missed.\n\n"
+            f"{_GOOD_ENOUGH_INSTRUCTION}"
         )
 
     # Build base prompt
