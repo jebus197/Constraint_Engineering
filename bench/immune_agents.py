@@ -1107,20 +1107,29 @@ def nk_cell_verify(
                 and bool(matched_pf.proposed_fix.strip())
                 and matched_pf.verified
             )
+            is_escalated = (
+                matched_pf is not None
+                and matched_pf.escalated
+            )
             tf.is_duplicate = True
             tf.duplicate_of = best_match
             tf.similarity = best_sim
+            if has_fix:
+                _evidence = f"Bug CLOSED — dup of {best_match} (sim={best_sim:.3f}), fix exists"
+                _tool = "bug_closed"
+            elif is_escalated:
+                _evidence = f"Bug ESCALATED — dup of {best_match} (sim={best_sim:.3f}), awaiting HIL"
+                _tool = "escalated"
+            else:
+                _evidence = f"Duplicate of {best_match} (sim={best_sim:.3f})"
+                _tool = "similarity_dedup"
             verdicts.append(CellVerdict(
                 cell_type=CellType.NK_CELL,
                 finding_id=f.finding_id,
                 verdict="DUPLICATE",
                 confidence=best_sim,
-                evidence=(
-                    f"Bug CLOSED — dup of {best_match} (sim={best_sim:.3f}), fix exists"
-                    if has_fix
-                    else f"Duplicate of {best_match} (sim={best_sim:.3f})"
-                ),
-                tool_used="bug_closed" if has_fix else "similarity_dedup",
+                evidence=_evidence,
+                tool_used=_tool,
             ))
             continue
 
@@ -2160,12 +2169,23 @@ def nk_cell_v2_shadow(
                 and bool(best_match_finding.proposed_fix.strip())
                 and best_match_finding.verified
             )
+            is_escalated = (
+                best_match_finding is not None
+                and best_match_finding.escalated
+            )
             if has_verified_fix:
                 tool = "v2_bug_closed"
                 evidence = (
                     f"[NK_v2] Bug CLOSED — duplicate of {best_match} "
                     f"(sim={best_sim:.3f}) which has a programmatically verified fix. "
                     f"First sufficient fix wins. Move on."
+                )
+            elif is_escalated:
+                tool = "v2_escalated"
+                evidence = (
+                    f"[NK_v2] Bug ESCALATED — duplicate of {best_match} "
+                    f"(sim={best_sim:.3f}) which is escalated to human reviewer. "
+                    f"No programmatic fix possible. Do not attempt."
                 )
             else:
                 tool = "v2_similarity_dedup"
@@ -2247,10 +2267,11 @@ def nk_cell_v2_shadow(
         accepted_this_round.append(f)
 
     bugs_closed = sum(1 for v in verdicts if v.tool_used == "v2_bug_closed")
+    bugs_escalated = sum(1 for v in verdicts if v.tool_used == "v2_escalated")
     intra_dups = sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup")
     _shadow_log.info(
-        "NK v2 (shadow): %d verdicts (%d intra-round dups, %d bugs closed — fix exists)",
-        len(verdicts), intra_dups, bugs_closed,
+        "NK v2 (shadow): %d verdicts (%d intra-round dups, %d bugs closed, %d escalated to HIL)",
+        len(verdicts), intra_dups, bugs_closed, bugs_escalated,
     )
 
     # Return updated triaged state — NK v2 now marks duplicates for downstream
@@ -3088,7 +3109,7 @@ def run_immune_pipeline(
                     # Mark the finding as verified — its fix passed programmatic checks
                     for f in filtered:
                         if f.finding_id == ev.finding_id:
-                            f.verified = True
+                            object.__setattr__(f, 'verified', True)
                             break
                     _shadow_log.info(
                         "Fix VERIFIED (programmatic): %s — verdict=%s",
@@ -3105,6 +3126,30 @@ def run_immune_pipeline(
                 "Fix evaluation stage failed (non-fatal): %s", e
             )
     timings["fix_evaluation"] = round(time.monotonic() - t0_fix_eval, 4)
+
+    # ── Stage 5: Auto-escalation ─────────────────────────────────────
+    # Findings that survived the pipeline but have NO proposed fix AND
+    # match a prior finding (same bug seen before, still no fix) are
+    # auto-escalated to the HIL. They're listed but don't count toward
+    # novelty or convergence. Models are told "do not attempt to fix."
+    escalated_count = 0
+    for f in filtered:
+        if f.proposed_fix.strip() or f.verified or f.escalated:
+            continue  # Has a fix, is verified, or already escalated — skip
+        # Check if this bug was seen in a prior round with no fix
+        for pf in prior_findings:
+            if _finding_similarity(f, pf) >= tau_sim:
+                if not pf.proposed_fix.strip() and not pf.verified:
+                    # Same bug, seen before, still no fix → escalate
+                    object.__setattr__(f, 'escalated', True)
+                    escalated_count += 1
+                    _shadow_log.info(
+                        "Auto-ESCALATED to HIL: %s (matches %s, no fix after 2+ rounds)",
+                        f.finding_id, pf.finding_id,
+                    )
+                    break
+    if escalated_count:
+        _shadow_log.info("Auto-escalated %d findings to HIL (no programmatic fix)", escalated_count)
 
     # Bug#46 fix: include barrier rejections in rejection rate and rejected list
     total = len(triaged) + len(barrier_rejected)

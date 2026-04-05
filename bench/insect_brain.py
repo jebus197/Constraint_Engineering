@@ -314,29 +314,41 @@ class InsectBrain:
         """
         # CLOSED = fix exists AND programmatically verified (tools passed)
         closed = [f for f in findings if f.proposed_fix.strip() and f.verified]
+        # ESCALATED = no programmatic fix possible, awaiting human decision
+        escalated = [f for f in findings if f.escalated and not f.verified]
         # PENDING = fix proposed but not yet verified by tools
-        pending = [f for f in findings if f.proposed_fix.strip() and not f.verified]
-        # OPEN = no fix proposed
-        open_findings = [f for f in findings if not f.proposed_fix.strip()]
+        pending = [f for f in findings
+                   if f.proposed_fix.strip() and not f.verified and not f.escalated]
+        # OPEN = no fix proposed, not escalated
+        open_findings = [f for f in findings
+                         if not f.proposed_fix.strip() and not f.escalated and not f.verified]
 
         lines = []
         lines.append(
             f"(CONTEXT RESET: {len(findings)} prior findings exist. "
-            f"{len(closed)} CLOSED (verified fix), "
-            f"{len(pending)} PENDING (fix unverified), "
-            f"{len(open_findings)} OPEN (no fix). "
-            f"Do NOT propose alternative fixes for CLOSED bugs — "
-            f"first verified fix wins. Find NEW issues only.)\n"
+            f"{len(closed)} CLOSED, {len(escalated)} ESCALATED, "
+            f"{len(pending)} PENDING, {len(open_findings)} OPEN. "
+            f"Do NOT relitigate CLOSED or ESCALATED bugs. "
+            f"Find NEW issues only.)\n"
         )
 
         if closed:
-            lines.append("── CLOSED (programmatically verified fix — do not relitigate) ──")
+            lines.append("── CLOSED (verified fix — do not relitigate) ──")
             for f in closed:
-                # Bug#15: Replace newlines first, then truncate
                 desc_clean = f.description.replace("\n", " ")
                 desc_short = desc_clean[:57] + "..." if len(desc_clean) > 60 else desc_clean
                 lines.append(
                     f"  [CLOSED] {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
+                )
+            lines.append("")
+
+        if escalated:
+            lines.append("── ESCALATED (awaiting human decision — do not attempt to fix) ──")
+            for f in escalated:
+                desc_clean = f.description.replace("\n", " ")
+                desc_short = desc_clean[:57] + "..." if len(desc_clean) > 60 else desc_clean
+                lines.append(
+                    f"  [ESCALATED] {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
                 )
             lines.append("")
 
@@ -909,6 +921,7 @@ class InsectBrain:
                     "description": f.description,
                     "proposed_fix": f.proposed_fix,
                     "verified": f.verified,
+                    "escalated": f.escalated,
                 }
                 for f in record.findings
             ],
@@ -1285,6 +1298,7 @@ class InsectBrain:
                     description=fd.get("description", ""),
                     proposed_fix=fd.get("proposed_fix", ""),
                     verified=fd.get("verified", False),
+                    escalated=fd.get("escalated", False),
                 ))
             self.state.all_findings.append(findings)
 
