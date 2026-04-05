@@ -19,41 +19,105 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 09:12 BST)
+## Current Pending Work (5 April 2026, 11:26 BST)
 
-Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
-EXP 30 COMPLETE. EXP 30 POST-ANALYSIS AND FIXES COMPLETE. EXP 31 COMPLETE.
+Experiments 12–31 ALL COMPLETE. EXP 32 COMPLETE. EXP 33 RUNNER BUILT.
 
-EXP 31 POST-ANALYSIS (5 April 2026, 09:12 BST):
-  Deep analysis revealed structural convergence blockers:
-  1. Autoimmune override at 65% resurrects all findings from R7+
-  2. Finding ID reuse across rounds breaks deduplication
-  3. Deep-copy propagation makes bug-closed gate dead code
-  4. FFF ordering 100% wrong (FIX before FOLLOW in schema)
-  5. Zero CHALLENGE verdicts across 15 rounds (150 cross-refs all confirmations)
-  6. 2.9% inter-model communication overhead — models chatting at human speed
+EXP 32 COMPLETE (5 April 2026, 10:26 BST):
+  Meta-experiment: 5 models analysed convergence data from Exp 30/31.
+  10 rounds, 200 findings, 29 min. BUDGET_EXHAUSTED(10).
+  Unanimous: convergence occurred in Exp 31 but 5 instrumentation failures
+  prevented detection. 4/5 consensus on design parameters.
+  PARTIAL CONFOUND: anchoring framing biased models toward optimising for
+  convergence over scientific rigour. Models recommended fewer models (3),
+  fewer rounds (8-10), and demoting gamma — all self-serving.
+  Logs: bench/logs/exp32_meta_20260405T085629Z/
+  Results: experimental_notes/Exp32_Results_2026-04-05.md
 
-  METHODOLOGY FIXES APPLIED (commit 587fbe8):
-  - FFF ordering corrected in JSON schema (FOLLOW before PROPOSED_FIX)
-  - Finding ID stability directive added
-  - PoC context framing added to all runners
-  - Machine communication protocol (structured verdicts, no social niceties)
-  - Good Enough convergence instruction wired into all preambles
-  All fixes applied to run_exp30, run_exp31, and new run_exp32.
+  FOUNDER OVERRIDES (correcting model self-optimisation):
+  - Model count: 3+1 → 5 (diversity is a research variable)
+  - Round budget: 8-10 → 21 (mathematical model predicted 20)
+  - Gamma: telemetry-only → scale-dependent (telemetry R1-14,
+    soft gate R15-19, hard gate R20+)
+  - Earliest stop: R6 → R12
 
-  EXP 32 RUNNER BUILT (bench/run_exp32.py):
-  Meta-experiment: convergence prediction, communication efficiency,
-  experimental design optimisation. Models analyse Exp 30/31 data.
-  10-round budget, 4 phases. NOT YET RUN.
+  ADDITIONAL FIXES APPLIED (post Exp 32):
+  - E31-14: Truncation marker attribution (cosmetic, last unfixed finding)
+  - LLM classifier shadow: OpenRouter calls disabled (use CLI Haiku)
+  572 tests pass.
 
-  EXP 31 FIXES APPLIED (commit 32ed658, 09:45 BST):
-  Full audit: 13/18 verified, 3 refuted, 2 partial. 11 fixes applied.
-  572 tests pass. Bug-closed gate now functional (E31-01). Autoimmune
-  respects reconciliation locks (E31-02). All Category A + B fixes done.
+EXP 33 RUNNER BUILT (bench/run_exp33_endocrine.py):
+  First code review using star/blackboard topology. Target: endocrine.py.
+  21 rounds (extension to 24). 5 models. Neutral framing (no hypothesis).
+  FindingRegistry class implements canonical blackboard. FFF is prompt-only
+  (no enforcement, no rejection). State-based convergence gate with
+  programmatic status transitions (CONFIRMED at 2+ independent models,
+  MERGED on merge verdict, CONTESTED on late challenge) + scale-dependent gamma.
+
+EXP 34/35/36 RUNNERS BUILT (5 April 2026):
+  Three separate experiments, one per test article:
+  - Exp 34 (bench/run_exp34_endocrine.py): endocrine.py review
+  - Exp 35 (bench/run_exp35_policy_engine.py): PolicyEngine (engine.py + schema.toml)
+  - Exp 36 (bench/run_exp36_evidence.py): Evidence layer (evidence.py)
+  All runners share the corrected FindingRegistry with programmatic status
+  transitions, UNCONFIRMED (not REJECTED) status, and no FFF enforcement.
+  Star/blackboard topology. 21-round budget (extension to 24).
+
+RUNNER FITNESS CONFER (5 April 2026, ~21:08 BST):
+  CX (GPT-5.4, reasoning high) + Gemini 3.1 Pro reviewed all 3 runners under
+  full CDSFL. One round, individual convergence called by CC.
+  Logs: bench/logs/confer_runner_review/
+
+  11 CONFIRMED BUGS FIXED (all 3 runners + runner_core.py):
+  P0 — Blocking:
+  1. MERGE semantics backwards — canonical target marked MERGED, not duplicate.
+     Fix: _resolve_merge_source() records MERGE on source entry.
+  2. Convergence gate — only novelty checked across 2-round window.
+     Fix: _evaluate_gate_conditions() + gate_history tracks all 5 conditions.
+  3. contested_count ignores non-OPEN — late challenges invisible after CONFIRMED.
+     Fix: check all non-MERGED, compare challenge timing vs latest confirm.
+  P1 — High:
+  4. Resume doesn't restore registry — fresh FindingRegistry on resume.
+     Fix: runner_state.json persists registry + convergence state per round.
+  5. Gamma estimation wrong — first/last cumulative only, raw findings.
+     Fix: log-log regression over canonical novelty_counts.
+  6. Verdict parser em-dash — prompt uses U+2014, regex only matched ASCII.
+     Fix: regex accepts Unicode dashes + leading whitespace/list markers.
+  7. Multi-turn fallback split — splits on "=== FILE:" but headers differ.
+     Fix: regex split on actual TARGET/SCHEMA/CONTEXT headers.
+  8. UNSTRUCTURED fallback creates fake findings on verdict-only responses.
+     Fix: suppress fallback when verdict patterns detected (runner_core.py).
+  P2 — Medium:
+  9. Missing UNCONFIRMED sweep — OPEN findings never finalised.
+     Fix: resolve remaining OPEN to UNCONFIRMED before signal_complete().
+  10. SUPERSEDES in prompt but not parsed — removed from all prompts.
+  11. Popper C(H,E) invalid math (exp36 only) — removed entirely.
+
+  1 FALSE POSITIVE REJECTED:
+  - Alias collision (Gemini, all 3 reviews) — runner_core.py already prefixes
+    finding IDs with model_id_. Gemini missed the shared parser.
+
+CDSFL TOPOLOGY SPEC CREATED (5 April 2026, ~21:45 BST):
+  New formal specification: bench/directives/universal/cdsfl_topology_formal.md
+  8 sections (T1-T8) formalising the multi-model star/blackboard protocol:
+    T1. Star/blackboard topology definition
+    T2. Finding status model (OPEN/CONFIRMED/CONTESTED/MERGED/UNCONFIRMED FSM)
+    T3. Merge contract (explicit directionality, anti-loop invariant)
+    T4. Convergence gate (temporal conjunction over boolean gate history)
+    T5. Gamma estimation (log-log regression, canonical novel input)
+    T6. Round taxonomy (finding/verdict/mixed/empty response types)
+    T7. Durability contract (state persistence invariant for resume)
+    T8. P-pass boundary tracing (dependency-chain completeness)
+  Core spec amendments:
+    cdsfl_core_formal.md §3: boundary tracing added + cross-reference
+    cdsfl_core.txt: boundary tracing paragraph added
+  Runner implementations updated to match schema (CONTESTED state, merged_into).
+  Provenance: derived from runner fitness confer findings.
 
   PENDING:
-  - Run Exp 32 (meta-experiment, runner ready)
-  - Implement multi-agent CC2 architecture (Option A: runner-side parallelism)
+  - Run Exp 34, 35, 36
+  - Implement CC2 Option A multi-agent (3-way split: structural/semantic/integration)
+  - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 
 EXP 31 COMPLETE (5 April 2026, 07:38 BST):
   Post-fix validation. 15 rounds, 360 findings, BUDGET_EXHAUSTED(15).

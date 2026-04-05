@@ -1,0 +1,19 @@
+An analysis of the `run_exp35_policy_engine.py` runner reveals several critical logic errors in the implementation of the star/blackboard topology, verdict parsing, and convergence gating. 
+
+Here are the findings under full CDSFL constraints:
+
+### FINDING_ID: F001
+**SEVERITY:** 0.9 (CRITICAL)
+**DESCRIPTION:** FIND — The `FindingRegistry` uses a single flat dictionary for `_alias_map` keyed only by `finding.finding_id` (e.g., `"F001"`). Because models independently generate their own local IDs (like F001, F002), a local ID from Model B will overwrite the alias mapping for Model A's local ID. 
+**FOLLOW:** When Model B submits a new finding "F001", `lookup_alias("F001")` will return the canonical ID of Model A's completely unrelated "F001" from a previous round. The runner will then incorrectly treat Model B's new discovery as a `CONFIRM` verdict for Model A's finding, corrupting the registry state and silently dropping Model B's actual finding.
+**PROPOSED_FIX:** FIX — Scope the alias map by `model_id`. 
+Change registration to: `self._alias_map[f"{model_id}:{finding.finding_id}"] = canonical_id`
+Change lookup to: `def lookup_alias(self, model_id: str, model_local_id: str) -> Optional[str]: return self._alias_map.get(f"{model_id}:{model_local_id}")`
+Update the call site: `existing = registry.lookup_alias(f.model_id, f.finding_id)`
+**VERIFIED:** TRUE
+
+### FINDING_ID: F002
+**SEVERITY:** 0.8 (HIGH)
+**DESCRIPTION:** FIND — The prompt instructs models to use `MERGE C0001 <- [your_finding_id]` to combine their local finding into an existing canonical finding. However, the verdict parser extracts `C0001` as the target of the `MERGE` verdict, and `_update_finding_statuses` immediately resolves any finding with a `MERGE` verdict to the `MERGED` status (which means closed/subsumed).
+**FOLLOW:** When a model correctly identifies that its finding matches `C0001` and issues the requested MERGE command, the runner will mark the *surviving* canonical finding (`C0001`) as `MERGED` (closed), removing it from the active OPEN list and preventing it from ever reaching `CONFIRMED` status.
+**PROPOSED_FIX:** FIX — Change the prompt instruction to `MERGE [subsumed_C_ID] -> [surviving_C_ID] — same root cause, combining` and instruct models to simply issue a `CONFIRM C0001` if they are agreeing with a canonical finding rather than

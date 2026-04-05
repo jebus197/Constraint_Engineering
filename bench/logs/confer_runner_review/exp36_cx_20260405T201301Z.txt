@@ -1,0 +1,56 @@
+**Findings**
+FINDING_ID: F036-001  
+SEVERITY: 1.00  
+DESCRIPTION: FIND — `MERGE` is applied to the target canonical entry, not the duplicate being subsumed. The parser returns only `C0001`; the round loop records the verdict on `C0001`; `_update_finding_statuses()` then marks any entry carrying a `MERGE` verdict as `MERGED`. So `MERGE C0001 <- F001` retires `C0001` itself, which is backwards. Evidence: [run_exp36_evidence.py:354](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L354), [run_exp36_evidence.py:1244](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1244), [run_exp36_evidence.py:447](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L447)  
+FOLLOW: This corrupts canonical state, inverts merge lineage, leaves the real duplicate alive, and feeds bad data into open/high counts, convergence, and final reporting.  
+PROPOSED_FIX: Parse `MERGE` into `(target_canonical_id, source_local_id)`, resolve or create an alias from the source local ID to the target canonical ID, and mark the source entry merged, never the target.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-002  
+SEVERITY: 0.96  
+DESCRIPTION: FIND — the convergence gate does not enforce all five conditions for two consecutive rounds, despite its own docstring saying it does. Only `recent_novel` is checked across two rounds; open critical/high, contested findings, and gamma are checked only for the current round. Evidence: [run_exp36_evidence.py:472](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L472), [run_exp36_evidence.py:486](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L486), [run_exp36_evidence.py:489](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L489), [run_exp36_evidence.py:501](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L501), [run_exp36_evidence.py:506](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L506)  
+FOLLOW: The runner can stop one round early after a transient clean round, even if the previous round failed the state gate. That makes the “earliest R12, 5 compound conditions” claim false in live use.  
+PROPOSED_FIX: Persist a per-round boolean for each gate condition and require all five booleans to be true for the last two rounds before converging.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-003  
+SEVERITY: 0.94  
+DESCRIPTION: FIND — verdict-only responses turn into fake findings. On adaptive rounds the prompt explicitly allows “issue VERDICT payloads” without new discoveries, but `parse_findings()` fabricates a fallback `*_UNSTRUCTURED` finding whenever no structured finding is found in a non-trivial response. The round loop then registers that as novel canonical state. Evidence: [runner_core.py:583](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/runner_core.py#L583), [runner_core.py:585](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/runner_core.py#L585), [run_exp36_evidence.py:1222](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1222), [run_exp36_evidence.py:1241](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1241)  
+FOLLOW: Pure confirmation/challenge rounds pollute the registry, inflate novelty and gamma inputs, and create bogus canonical entries unrelated to the target code.  
+PROPOSED_FIX: Disable the unstructured fallback for star/blackboard rounds, or suppress fallback findings when a response contains parsed verdicts but no structured discoveries.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-004  
+SEVERITY: 0.91  
+DESCRIPTION: FIND — `--resume` restores the insect-brain history but not the canonical blackboard state. `registry` is always created empty, and `novelty_counts`/`gamma_history` restart empty after resume. Evidence: [run_exp36_evidence.py:1081](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1081), [run_exp36_evidence.py:1086](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1086), [run_exp36_evidence.py:1093](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1093), [insect_brain.py:1334](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/insect_brain.py#L1334)  
+FOLLOW: A resumed run loses canonical IDs, dedup history, verdict history, and convergence history. The next round is no longer the same experiment mathematically or operationally.  
+PROPOSED_FIX: Persist and reload the registry plus convergence histories, or rebuild them deterministically from prior round logs before dispatching the resumed round.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-005  
+SEVERITY: 0.88  
+DESCRIPTION: FIND — `_estimate_gamma()` is not a correct Duane reliability-growth estimate for this experiment. It computes `1 - beta` from only the first and last cumulative counts, while the project’s other Duane implementations use the log-log slope `gamma` itself across all rounds. It also feeds on `brain.state.all_findings`, i.e. all parsed findings, not canonical novel findings. Evidence: [run_exp36_evidence.py:382](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L382), [run_exp36_evidence.py:396](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L396), [run_exp36_evidence.py:1304](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1304), [run_exp19_fff.py:361](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp19_fff.py#L361), [decay_analysis.py:72](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/decay_analysis.py#L72)  
+FOLLOW: The gamma gate is not measuring the stated model, so convergence and extension decisions can disagree with the mathematical write-up even when the rest of the run is behaving correctly.  
+PROPOSED_FIX: Estimate Duane `gamma` from the cumulative canonical-novel series using log-log regression or the existing fitter, then calibrate thresholds against that metric explicitly.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-006  
+SEVERITY: 0.79  
+DESCRIPTION: FIND — the stated status model is not actually completed. The code comments say remaining `OPEN` findings should become `UNCONFIRMED` at experiment end, but no end-of-run pass does that. Evidence: [run_exp36_evidence.py:438](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L438), [run_exp36_evidence.py:1383](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1383), [run_exp36_evidence.py:1421](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1421)  
+FOLLOW: Final outputs can still contain `OPEN`, so the advertised transition model `OPEN -> CONFIRMED/UNCONFIRMED/MERGED` is false and downstream consumers have to guess whether `OPEN` means unresolved or effectively unconfirmed.  
+PROPOSED_FIX: Add a finalisation pass before reporting that resolves every remaining `OPEN` entry to `UNCONFIRMED`.  
+VERIFIED: TRUE
+
+FINDING_ID: F036-007  
+SEVERITY: 0.68  
+DESCRIPTION: FIND — the verdict parser is not aligned with the prompt it gives models. The prompt examples use an em dash for `CONFIRM` and also advertise `SUPERSEDES`, but the parser only accepts `|`, `<`, or `-` separators and nothing parses `SUPERSEDES` at all. The house test data for the evidence layer also uses em-dash verdict text. Evidence: [run_exp36_evidence.py:355](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L355), [run_exp36_evidence.py:583](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L583), [run_exp36_evidence.py:1136](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp36_evidence.py#L1136), [test_evidence.py:83](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_evidence.py#L83)  
+FOLLOW: Models can follow the prompt faithfully and still have their verdict evidence or finding replacement intent silently dropped. That weakens parser correctness and canonical-state stability.  
+PROPOSED_FIX: Make the parser accept Unicode dash variants and either implement `SUPERSEDES` end to end or remove it from the prompt.  
+VERIFIED: TRUE
+
+**Assessment**
+The runner is not fit for live execution in its current form. The star/blackboard shape is present, and several past mistakes are avoided: FFF is prompt-only, Gemini nested-dict findings are handled, float stringification for Merkle sealing is present, `resolve()` is live, and `has_follow` dead metadata appears gone.
+
+The blocking problems are structural: merge handling is inverted, the convergence gate is weaker than specified, verdict-only rounds can manufacture bogus findings, resume breaks canonical state, and gamma is not the stated Duane metric. I could not verify “undiscussed prompt inventions” from code alone, so I am not counting that as a finding.
+
+Definitive stance: this runner should not be used live until F036-001 through F036-005 are fixed; F036-006 and F036-007 should be cleaned up in the same pass to make the status model and prompt/protocol contract internally consistent.

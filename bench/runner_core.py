@@ -348,6 +348,80 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         except (json.JSONDecodeError, ValueError, TypeError):
             continue  # Not valid JSON — try next JSON array
 
+    # ── 1b. JSON object parser (Gemini format) ────────────────────────
+    # Gemini outputs: {"F001": {"FINDING_ID": "F001", ...}, "F002": {...}}
+    # Outer keys are finding IDs, values are finding dicts.
+    for json_obj_match in re.finditer(r'\{[\s\n]*"[^"]+"\s*:\s*\{', response):
+        start = json_obj_match.start()
+        brace_depth = 0
+        end = start
+        for i, ch in enumerate(response[start:], start):
+            if ch == '{':
+                brace_depth += 1
+            elif ch == '}':
+                brace_depth -= 1
+                if brace_depth == 0:
+                    end = i + 1
+                    break
+        json_text = response[start:end]
+        try:
+            obj = json.loads(json_text)
+            if not isinstance(obj, dict):
+                continue
+            # Check if values are dicts with finding keys
+            nested_dicts = [v for v in obj.values() if isinstance(v, dict)]
+            if not nested_dicts:
+                continue
+            has_findings_key = any(
+                _FINDINGS_KEYS & {k.upper().replace(" ", "_") for k in d}
+                for d in nested_dicts
+            )
+            if not has_findings_key:
+                continue
+            for entry in nested_dicts:
+                norm = {k.upper().replace(" ", "_"): v for k, v in entry.items()}
+                fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                if "_FOLLOW" in fid.upper():
+                    continue
+                severity = float(norm.get("SEVERITY", 0.5))
+                severity = max(0.0, min(1.0, severity))
+                flaw_raw = norm.get("FLAW_CLASS", 1)
+                if isinstance(flaw_raw, str):
+                    try:
+                        flaw_class = max(1, min(8, int(flaw_raw)))
+                    except ValueError:
+                        flaw_class = 1
+                else:
+                    flaw_class = max(1, min(8, int(flaw_raw)))
+                abstraction = float(norm.get("ABSTRACTION_INDEX", 0.5))
+                abstraction = max(0.0, min(1.0, abstraction))
+                description = str(norm.get("DESCRIPTION", ""))
+                proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                verified_raw = norm.get("VERIFIED", False)
+                if isinstance(verified_raw, str):
+                    verified = verified_raw.upper() == "TRUE"
+                else:
+                    verified = bool(verified_raw)
+                if fid.startswith(f"{model_id}_"):
+                    full_id = fid
+                else:
+                    full_id = f"{model_id}_{fid}"
+                findings.append(Finding(
+                    finding_id=full_id,
+                    model_id=model_id,
+                    round_idx=round_idx,
+                    flaw_class=flaw_class,
+                    severity=severity,
+                    abstraction_index=abstraction,
+                    description=description,
+                    proposed_fix=proposed_fix,
+                    verified=verified,
+                ))
+            if findings:
+                return findings
+        except (json.JSONDecodeError, ValueError, TypeError):
+            continue
+
     # ── 2. Tuple-format parser ───────────────────────────────────────
     # (F001, 0.9, 5, 0.8, "description", "fix", TRUE)
     # or with prefixed IDs: (LB_R2_F001, 0.88, 5, 0.42, "desc", "fix", "TRUE")
@@ -506,7 +580,14 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         ))
 
     # ── 5. Fallback ──────────────────────────────────────────────────
-    if not findings and len(response.strip()) > 50:
+    # Suppress fallback if the response contains verdict lines (CONFIRM/
+    # CHALLENGE/EXTEND/MERGE) — verdict-only responses are valid in
+    # star/blackboard topology adaptive rounds.
+    _has_verdicts = bool(re.search(
+        r'^\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE)\s+C\d{4}',
+        response, re.MULTILINE,
+    ))
+    if not findings and not _has_verdicts and len(response.strip()) > 50:
         findings.append(Finding(
             finding_id=f"{model_id}_UNSTRUCTURED",
             model_id=model_id,

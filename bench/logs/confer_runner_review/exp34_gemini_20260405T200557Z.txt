@@ -1,0 +1,22 @@
+=== CDSFL CORE DIRECTIVES APPLIED ===
+Constraint Classification: HARD (Code correctness, logic soundness, mathematical alignment).
+Falsification Loop: Executed on all claims.
+Proportionality Gate: FULL (High-consequence logic errors in experiment runner).
+
+### FINDING_ID: F001
+**SEVERITY:** 1.0 (CRITICAL)
+**DESCRIPTION:** FIND — The `FindingRegistry` uses a global namespace for model-local finding IDs, causing catastrophic cross-model collisions. In `register()`, `self._alias_map[finding.finding_id] = canonical_id` maps a local ID (e.g., `F001`) to a canonical ID. If Model A files `F001`, it becomes `C0001`. If Model B independently files its own `F001` (a completely different bug), `lookup_alias("F001")` returns `C0001`. The runner then discards Model B's finding and incorrectly records Model B as confirming Model A's finding.
+**FOLLOW:** Models frequently use standard sequential IDs (`F001`, `F002`). This collision will silently destroy the majority of novel findings from the second, third, fourth, and fifth models, converting them into false confirmations. The registry state will be entirely corrupted.
+**PROPOSED_FIX:** Scope the alias map by model ID.
+1. Update `FindingRegistry.__init__`: `self._alias_map: Dict[str, str] = {}`
+2. Update `register`: `self._alias_map[f"{model_id}:{finding.finding_id}"] = canonical_id`
+3. Update `lookup_alias`: `return self._alias_map.get(f"{model_id}:{model_local_id}")`
+4. Update the main loop: `existing = registry.lookup_alias(f.model_id, f.finding_id)`
+**VERIFIED:** TRUE
+
+### FINDING_ID: F002
+**SEVERITY:** 0.9 (HIGH)
+**DESCRIPTION:** FIND — The convergence gate fails to enforce its conditions for consecutive rounds. The requirement states: "Conditions (ALL must hold for CONSECUTIVE_ROUNDS_REQUIRED consecutive rounds)". However, `_check_state_convergence` only evaluates `open_ch`, `contested`, and `gamma` for the *current* round. If `open_ch` drops to 0 in Round 12, the gate immediately passes (assuming `novel_counts` were low for 2 rounds), violating the requirement that the *entire state* must be stable for 2 rounds.
+**FOLLOW:** The experiment will terminate prematurely the moment the state briefly flashes clean, rather than waiting for the required stabilization period. This defeats the purpose of the consecutive rounds requirement.
+**PROPOSED_FIX:** Track consecutive clean rounds in the main loop and simplify the state check to evaluate only the current round.
+1. In `_check_state_convergence`, remove the `recent

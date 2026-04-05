@@ -7,6 +7,9 @@ implementers — the benchmark runner loads `cdsfl_core.txt` (prose only).
 Mathematical formalisation is applied only where it adds genuine precision.
 Behavioural directives that cannot be meaningfully formalised remain prose-only.
 
+**Companion document:** `cdsfl_topology_formal.md` extends these core directives
+with the multi-model star/blackboard topology specification (sections T1–T8).
+
 ---
 
 ## 1. Constraint Classification
@@ -89,6 +92,15 @@ produced corrections. The corroboration model C(n) applies to convergent
 termination; for budget-exhausted runs, R_n with elevated π_k (see
 Mathematical Appendix §1) is the appropriate risk model.
 ```
+
+**Boundary tracing (amendment, 5 April 2026):**
+
+When falsifying a claim about a system component, trace the claim's
+dependency chain to the system boundary before accepting or rejecting it.
+A claim about component A that depends on the behaviour of component B is
+not falsified by examining A alone. If the dependency chain is not fully
+traced, the claim carries unresolved dependency risk equivalent to residual
+falsification debt. See `cdsfl_topology_formal.md` §T8 for formal definition.
 
 ---
 

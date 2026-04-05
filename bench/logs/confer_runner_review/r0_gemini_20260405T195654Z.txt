@@ -1,0 +1,34 @@
+=== CDSFL P-PASS FALSIFICATION ===
+
+**Claim 1: The alias map key collision drops findings and falsely confirms them.**
+*Falsifier:* The `finding_id` is globally unique across models.
+*Test:* Models are instructed to use "F001", "F002", etc. They do not prepend their model name. Therefore, CC2's "F001" and Codex's "F001" are identical strings. `_alias_map["F001"]` will be overwritten.
+*Result:* Claim stands. (CRITICAL)
+
+**Claim 2: The verdict regex fails on indented lines.**
+*Falsifier:* `re.MULTILINE` with `^` matches after spaces.
+*Test:* `^` matches the start of the string or immediately after a newline. It does *not* consume whitespace. `^\s*` is required to match an indented line. The prompt explicitly demonstrates indented verdicts (`  CONFIRM C0001`).
+*Result:* Claim stands. (HIGH)
+
+**Claim 3: MERGE verdict closes the canonical target.**
+*Falsifier:* The code closes the duplicate, not the target.
+*Test:* `registry.resolve(canonical_id, "MERGED", round_idx)`. The `canonical_id` extracted by the regex is the target (e.g., C0001 in `MERGE C0001 <- F002`). The code explicitly marks C0001 as MERGED.
+*Result:* Claim stands. (HIGH)
+
+**Claim 4: Decomposed fallback split string mismatch.**
+*Falsifier:* `full_code` contains `\n\n=== FILE:`.
+*Test:* `full_code` is constructed using `=== TARGET FILE` and `=== CONTEXT FILE`. The string `=== FILE:` is never used. `split()` will return a single chunk, causing OOM.
+*Result:* Claim stands. (HIGH)
+
+**Claim 5: Missing UNCONFIRMED transition.**
+*Falsifier:* The transition is handled elsewhere.
+*Test:* Traced `run_experiment` from loop exit to `report_path.write_text`. No iteration over `registry.entries` exists to change OPEN to UNCONFIRMED.
+*Result:* Claim stands. (MEDIUM)
+
+=== END P-PASS ===
+
+Here is the review of the three experiment runners. The runners successfully implement the star/blackboard topology and programmatic status transitions, but contain critical logic errors in state management and parsing that will corrupt the experiment results if run as-is.
+
+FINDING_ID: F001
+SEVERITY: 1.0
+DESCRIPTION: FIND — In `FindingRegistry.register` and `lookup_alias`, the `_alias_map` uses `finding.finding_id` (e.g., "F001") as the dictionary key without scoping it to the `model_id`. Since all models independently generate findings starting with "

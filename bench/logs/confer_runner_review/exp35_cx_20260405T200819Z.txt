@@ -1,0 +1,38 @@
+1. `FINDING_ID: EXP35-R001`  
+`SEVERITY: 0.96`  
+`DESCRIPTION:` The merge path is wired backwards. The prompt defines `MERGE C0001 <- [your_finding_id]` as “merge my duplicate into canonical finding `C0001`” in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L591). The parser keeps `C0001` as the target in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L365), the main loop attaches the `MERGE` verdict to that target in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L1253), and `_update_finding_statuses()` then marks the target itself as `MERGED` in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L451). The duplicate named on the right side of `<-` is never looked up or resolved.  
+`FOLLOW:` This corrupts the blackboard’s official state: the canonical finding disappears, the duplicate stays open, support counts drift, and convergence can be decided on the wrong registry state.  
+`PROPOSED_FIX:` Parse the right-hand finding ID as the finding being subsumed, look up its canonical alias, mark that duplicate as `MERGED`, and store `merged_into=C0001`. Do not mark `C0001` as merged unless it is itself being subsumed by another canonical entry.  
+`VERIFIED: TRUE`
+
+2. `FINDING_ID: EXP35-R002`  
+`SEVERITY: 0.91`  
+`DESCRIPTION:` The convergence gate says all five conditions must hold for two consecutive rounds, but the code only applies the two-round check to novelty. The contract is stated in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L477), but `open_crit_high`, `contested`, and `gamma` are checked only for the current round in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L493).  
+`FOLLOW:` A single “good” round can close the experiment even if the immediately previous round still had an open high-severity issue, an unresolved contest, or a failed gamma gate. That breaks the stated mathematical stop rule.  
+`PROPOSED_FIX:` Persist all five gate inputs per round and require each of them, not just novelty, to satisfy the threshold for the last two rounds before returning converged.  
+`VERIFIED: TRUE`
+
+3. `FINDING_ID: EXP35-R003`  
+`SEVERITY: 0.87`  
+`DESCRIPTION:` The state machine for disagreement is incomplete. `contested_count()` only counts challenges when there are no confirms at all in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L286), and `_update_finding_statuses()` can still promote a finding to `CONFIRMED` even if a `CHALLENGE` exists in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L457). The comments also rely on `PENDING_RESOLUTION`, but that status does not exist anywhere in this runner in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L193).  
+`FOLLOW:` A finding can be both challenged and confirmed, yet disappear from the “contested” gate and from the extension logic. That lets unresolved disagreement look settled.  
+`PROPOSED_FIX:` Add an explicit contested/pending-resolution state, or keep challenged findings open until the challenge is resolved. At minimum, any live `CHALLENGE` should block automatic confirmation and should count in both convergence and extension checks until cleared.  
+`VERIFIED: TRUE`
+
+4. `FINDING_ID: EXP35-R004`  
+`SEVERITY: 0.81`  
+`DESCRIPTION:` `--resume` restores the insect brain but not the star/blackboard registry. A fresh `FindingRegistry()` is always created in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L1092), then `brain.load_checkpoint()` restores only brain state in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L1097) and [insect_brain.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/insect_brain.py#L1334). No code rebuilds registry entries, alias mappings, novelty history, or prior status transitions before the next round starts.  
+`FOLLOW:` A resumed run loses its official shared memory. Models re-enter with an empty registry summary, duplicates will be re-filed, and later convergence/status decisions stop matching the pre-resume history.  
+`PROPOSED_FIX:` Persist and reload the registry, novelty counts, and gamma history alongside the checkpoint, or deterministically reconstruct them from prior round logs before resuming.  
+`VERIFIED: TRUE`
+
+5. `FINDING_ID: EXP35-R005`  
+`SEVERITY: 0.76`  
+`DESCRIPTION:` `_estimate_gamma()` is not computing Duane gamma as used elsewhere in the repo. This runner uses only the first and last cumulative points and returns `1.0 - beta` in [run_exp35_policy_engine.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp35_policy_engine.py#L387). The repo’s own Duane implementations use log-log regression over all cumulative points and call the fitted slope `gamma` in [run_exp19_fff.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp19_fff.py#L356) and [decay_analysis.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/decay_analysis.py#L72).  
+`FOLLOW:` From round 15 onward, the soft/hard gate is operating on a different quantity than the mathematical model says it is. That can block or allow convergence for the wrong reason.  
+`PROPOSED_FIX:` Fit Duane gamma from all non-zero cumulative rounds via log-log regression. If you intentionally want a “depletion score” equal to `1 - gamma`, compute it separately and gate on that under a different name.  
+`VERIFIED: TRUE`
+
+As written, I would not treat this runner as fit for live execution.
+
+The good news is that most of the known historical mistakes do look avoided: FFF is prompt-only, the verdict parser exists, Gemini nested JSON is handled in the shared parser, floats are stringified before Merkle hashing, `REJECTED` is gone, FFF ordering is `Find-Follow-Fix`, `resolve()` is live, `has_follow` dead metadata is absent, and the prompt is broadly neutral and correctly aimed at `engine.py` plus `schema.toml`. The blockers are the merge semantics, the incomplete state machine, the unsound convergence check, the broken resume path, and the gamma mismatch.

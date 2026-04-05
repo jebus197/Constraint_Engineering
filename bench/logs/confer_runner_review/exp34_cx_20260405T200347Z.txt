@@ -1,0 +1,66 @@
+Not fit for live execution yet. The star/blackboard skeleton is present, but there are several state, parsing, and convergence bugs that would make the run drift away from the intended status model and mathematical interpretation.
+
+FINDING_ID: EXP34-001  
+SEVERITY: 0.98  
+DESCRIPTION: FIND — `--resume` restores the insect-brain checkpoint but does not restore the canonical blackboard state. The runner creates a fresh registry at [bench/run_exp34_endocrine.py#L1105](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1105), loads only brain state at [bench/run_exp34_endocrine.py#L1110](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1110), then resumes with empty `novelty_counts`, `gamma_history`, and `cumulative_context_chars` at [bench/run_exp34_endocrine.py#L1117](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1117). `load_checkpoint()` restores findings and records only for the brain, not the registry, at [bench/insect_brain.py#L1334](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/insect_brain.py#L1334).  
+FOLLOW: After a resume, models lose canonical IDs, prior statuses, and verdict history; the blackboard becomes empty, repeated findings are re-registered as novel, and extension/gamma decisions are computed from partial session memory.  
+PROPOSED_FIX: Persist and restore the registry plus `novelty_counts`, `gamma_history`, and `cumulative_context_chars`, or deterministically rebuild them from saved round data before entering the next round.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-002  
+SEVERITY: 0.95  
+DESCRIPTION: FIND — the convergence gate claims that all 5 conditions must hold for 2 consecutive rounds at [bench/run_exp34_endocrine.py#L1483](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1483), but only the novel-finding condition is actually checked across the last two rounds at [bench/run_exp34_endocrine.py#L1497](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1497). Open critical/high, contested state, and gamma are evaluated only for the current round at [bench/run_exp34_endocrine.py#L1499](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1499) and [bench/run_exp34_endocrine.py#L1517](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1517).  
+FOLLOW: The runner can declare convergence even if one of the other compound conditions failed in the immediately preceding round, which violates the stated gate and can stop too early.  
+PROPOSED_FIX: Record a per-round boolean snapshot for all 5 gate conditions and require the last `CONSECUTIVE_ROUNDS_REQUIRED` snapshots to be all true.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-003  
+SEVERITY: 0.91  
+DESCRIPTION: FIND — the verdict parser rejects the exact `CONFIRM` example shown in the prompt. The prompt uses an em dash in `CONFIRM C0001 — ...` at [bench/run_exp34_endocrine.py#L594](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L594), but `_VERDICT_RE` only accepts `|`, `<`, or ASCII `-` after the canonical ID at [bench/run_exp34_endocrine.py#L365](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L365).  
+FOLLOW: Models that follow the prompt literally will emit verdict lines that are never parsed, so confirmations/challenges/extensions/merges silently disappear and status transitions stall.  
+PROPOSED_FIX: Accept em dash/en dash and plain trailing text in the parser, or change the prompt examples to match the exact parser grammar.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-004  
+SEVERITY: 0.88  
+DESCRIPTION: FIND — once a finding becomes `CONFIRMED`, later `CHALLENGE` verdicts cannot affect convergence. Challenges are stored by `add_verdict()` at [bench/run_exp34_endocrine.py#L267](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L267), but `_update_finding_statuses()` skips all non-`OPEN` findings at [bench/run_exp34_endocrine.py#L454](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L454), and `contested_count()` only inspects `OPEN` entries at [bench/run_exp34_endocrine.py#L296](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L296).  
+FOLLOW: A finding can be confirmed early, challenged later with real evidence, and still be invisible to the contested-finding gate, allowing false closure.  
+PROPOSED_FIX: Reopen confirmed findings on unresolved later challenges, or introduce a separate contested/pending-resolution state that the convergence gate inspects for all non-merged findings.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-005  
+SEVERITY: 0.76  
+DESCRIPTION: FIND — `UNCONFIRMED` exists only in comments and summaries, not in the actual transition logic. The code says remaining `OPEN` findings become `UNCONFIRMED` at experiment end at [bench/run_exp34_endocrine.py#L451](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L451), but there is no call to `resolve(..., "UNCONFIRMED", ...)` anywhere in this runner, and the final result is written directly from the live registry at [bench/run_exp34_endocrine.py#L1443](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1443).  
+FOLLOW: Final outputs violate the declared status model `OPEN -> CONFIRMED / MERGED / UNCONFIRMED`, leaving unresolved findings stuck as `OPEN` forever.  
+PROPOSED_FIX: Before final serialization, convert any remaining `OPEN` entries to `UNCONFIRMED` unless the run aborted mid-round.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-006  
+SEVERITY: 0.73  
+DESCRIPTION: FIND — the multi-turn fallback does not actually split the artifact into file chunks. It splits on `\\n\\n=== FILE:` at [bench/run_exp34_endocrine.py#L766](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L766), but the assembled artifact uses `=== TARGET FILE` and `=== CONTEXT FILE` headers at [bench/run_exp34_endocrine.py#L1058](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1058).  
+FOLLOW: Context-overflow fallback collapses to one large chunk, so the decomposition path will not relieve pressure for models that need chunked delivery.  
+PROPOSED_FIX: Build `DecomposedChunk`s directly from `target_text` and each context file, or split on the actual header format used in `full_code`.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-007  
+SEVERITY: 0.71  
+DESCRIPTION: FIND — gamma is estimated from raw per-round finding counts at [bench/run_exp34_endocrine.py#L393](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L393) and consumed at [bench/run_exp34_endocrine.py#L1325](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1325), while the bench’s own convergence machinery models cumulative equivalence classes at [bench/insect_brain.py#L1077](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/insect_brain.py#L1077) and [bench/dm/_convergence.py#L237](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/dm/_convergence.py#L237). Raw counts include duplicate rediscoveries and multi-model echoes, so they are not a stable proxy for unique fault discovery.  
+FOLLOW: Soft/hard gamma gates can disagree with canonical novelty and with the Duane-style reliability interpretation, producing convergence decisions that are mathematically inconsistent with the rest of the system.  
+PROPOSED_FIX: Compute gamma from canonical novel discoveries or cumulative equivalence classes, not raw findings.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-008  
+SEVERITY: 0.69  
+DESCRIPTION: FIND — the runner loads `cdsfl_core_formal.md` at [bench/run_exp34_endocrine.py#L1566](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1566), even though the benchmark contract you provided says the runner should load `cdsfl_core.txt` prose-only.  
+FOLLOW: Models receive extra mathematical formalization and wording that are not part of the benchmark’s prose-only directive channel, changing prompt shape and comparability across runs.  
+PROPOSED_FIX: Load `bench/directives/universal/cdsfl_core.txt` for benchmark execution and reserve the formal markdown for human reference only.  
+VERIFIED: TRUE
+
+FINDING_ID: EXP34-009  
+SEVERITY: 0.58  
+DESCRIPTION: FIND — the prompt is not neutral; it contains strong framing and suppression instructions. Examples include PoC-only severity filtering at [bench/run_exp34_endocrine.py#L568](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L568), “first correct fix wins” and mandatory dedup at [bench/run_exp34_endocrine.py#L602](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L602), and “Do NOT re-report these” prior-fix exclusions at [bench/run_exp34_endocrine.py#L640](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L640). That reintroduces the anchoring/framing confound you listed as a known past mistake.  
+FOLLOW: Findings distribution becomes partly prompt-shaped rather than artifact-shaped, which weakens the validity of the benchmark and makes cross-run comparisons harder to trust.  
+PROPOSED_FIX: Keep only neutral task, topology, and output-format instructions; remove severity steering, blacklist language, and “first correct fix wins” framing from the review prompt.  
+VERIFIED: TRUE
+
+Passed checks from the static review: FFF is prompt-only rather than programmatically enforced, the verdict parser exists, Gemini nested-dict JSON is handled in [bench/runner_core.py#L351](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/runner_core.py#L351), float stringification for Merkle sealing is present in [bench/run_exp34_endocrine.py#L1457](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py#L1457), `resolve()` is live, and `has_follow` is gone. I could not verify from code alone whether specific prompt additions were founder-approved; that part is process evidence, not code evidence.

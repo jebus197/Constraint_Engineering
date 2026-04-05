@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 09:45 BST
+Last updated: 5 April 2026 11:26 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -135,9 +135,46 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   gate now functional. Autoimmune respects reconciliation locks.
   Findings: `experimental_notes/Exp31_Interim_Findings_2026-04-05.md`.
   TTS: `~/Desktop/CDSFL_tts/Exp31_Final_Findings_2026-04-05.txt`.
-  **Next:** Exp 32 — meta-experiment on convergence prediction, communication
-  efficiency, and experimental design optimisation. Then code review with all
-  fixes applied + endocrine layer as 4th test article.
+  **Next:** Exp 32 meta-experiment, then Exp 33 endocrine layer review.
+- **EXP 32 COMPLETE (5 April 2026, 10:26 BST):**
+  Meta-experiment: 5 models analysed convergence data from Exp 30/31 over
+  10 rounds (4 phases). 200 findings, 29 min, BUDGET_EXHAUSTED(10).
+  **Unanimous verdict:** convergence occurred in Exp 31 but 5 catastrophic
+  instrumentation failures prevented detection (E31-01, 02, 05, 06, 13).
+  **4/5 consensus on design parameters** — star/blackboard topology,
+  state-based convergence gate, CC2 multi-agent, structured verdicts.
+  **PARTIAL CONFOUND:** anchoring framing ("evaluate HIL's claim that
+  convergence occurred") biased models toward optimising for convergence.
+  Models self-servingly recommended fewer models (3), fewer rounds (8-10),
+  and demoting gamma — all reducing the ability to falsify convergence.
+  **Founder overrides:** 5 models retained (diversity), 21 rounds
+  (mathematical model), scale-dependent gamma (telemetry→soft→hard gate).
+  Per-model: ChatGPT=55, Codex=54, CC2=42, Gemini=29, DeepSeek=20.
+  Final γ=0.021, κ=0.309. Methodological finding: prompt framing is a
+  confounding variable in multi-model panels.
+  Logs: `bench/logs/exp32_meta_20260405T085629Z/`.
+  Results: `experimental_notes/Exp32_Results_2026-04-05.md`.
+  TTS: `~/Desktop/CDSFL_tts/Exp32_Results_2026-04-05.txt`.
+  **Post-Exp 32 fixes:** E31-14 truncation marker attribution fixed,
+  LLM classifier shadow disabled (OpenRouter → use CLI Haiku). 572 tests pass.
+- **CDSFL TOPOLOGY SPEC (5 April 2026):**
+  New formal specification: `bench/directives/universal/cdsfl_topology_formal.md`.
+  8 sections (T1-T8) formalising the multi-model protocol: star/blackboard
+  topology, finding status model (OPEN/CONFIRMED/CONTESTED/MERGED/UNCONFIRMED),
+  merge contract, convergence gate, gamma estimation, round taxonomy, durability
+  contract, P-pass boundary tracing. Core directives amended with boundary
+  tracing. Derived from runner fitness confer (CX + Gemini, 11 bugs, 1 FP).
+- **EXP 34/35/36 RUNNERS (5 April 2026):**
+  Three runners, one per test article (endocrine, PolicyEngine, evidence).
+  All confer-identified bugs fixed. CONTESTED state implemented.
+  Status model: OPEN → CONFIRMED/CONTESTED/MERGED/UNCONFIRMED.
+  Star/blackboard topology. Ready to run.
+- **EXP 33 RUNNER BUILT (5 April 2026, 11:26 BST):**
+  First star/blackboard topology experiment. Target: endocrine.py (4th file,
+  never reviewed). 21 rounds (extension to 24). All 5 models retained.
+  FindingRegistry class implements canonical blackboard. FFF prompt-only
+  (no enforcement). State-based convergence gate (earliest R12) +
+  scale-dependent gamma. Runner: `bench/run_exp33_endocrine.py`.
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

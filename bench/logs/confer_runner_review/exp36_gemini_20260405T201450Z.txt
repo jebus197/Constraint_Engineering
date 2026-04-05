@@ -1,0 +1,45 @@
+Here is the review of the Experiment 36 runner under full CDSFL directives. 
+
+The runner correctly implements the broad strokes of the star/blackboard topology, but contains a critical state-management flaw that destroys finding independence, alongside a mathematical error and a logic flaw in the convergence gate.
+
+### FINDING_ID: F001
+**SEVERITY:** 1.0 (CRITICAL)
+**DESCRIPTION:** FIND — `FindingRegistry._alias_map` uses the model's local `finding_id` (e.g., "F001") as the dictionary key without scoping it to the `model_id`. Because all models independently start numbering at F001, Model B's F001 will overwrite Model A's F001 in the alias map.
+**FOLLOW:** When `run_experiment` processes findings, `lookup_alias(f.finding_id)` will return the canonical ID of the *first* model that used that local ID. Consequently, Model B's novel finding F001 is silently discarded and incorrectly recorded as a `CONFIRM` verdict for Model A's completely unrelated F001. This destroys the independence of the multi-model review and corrupts the canonical registry.
+**PROPOSED_FIX:** FIX — Scope the alias map keys by model ID. 
+1. In `register`: `self._alias_map[f"{model_id}:{finding.finding_id}"] = canonical_id`
+2. In `lookup_alias`: `def lookup_alias(self, model_id: str, local_id: str) -> Optional[str]: return self._alias_map.get(f"{model_id}:{local_id}")`
+3. In `run_experiment`: `existing = registry.lookup_alias(f.model_id, f.finding_id)`
+**VERIFIED:** TRUE
+
+### FINDING_ID: F002
+**SEVERITY:** 0.8 (HIGH)
+**DESCRIPTION:** FIND — The runner calculates Popper's corroboration $C(H,E) = \frac{P(E|H) - P(E)}{P(E|H) + P(E)}$ using *rates* (findings per round) instead of *probabilities*. `pe_h = total_findings / len(brain.state.all_findings)` can easily exceed 1.0 (e.g., 50 findings / 10 rounds = 5.0).
+**FOLLOW:** Plugging values $> 1$ into a probability formula is mathematically invalid and produces meaningless corroboration scores. Furthermore, this metric is an undiscussed invention not present in the CDSFL Core Directives (which specify the geometric probability model $C(n) = 1 - (1-p)^n$).
+**PROPOSED_FIX:** FIX — Remove the `Popper C(H,E)` calculation block entirely, as it violates the core directives and uses invalid mathematics.
+**VERIFIED:** TRUE
+
+### FINDING_ID: F003
+**SEVERITY:** 0.7 (HIGH)
+**DESCRIPTION:** FIND — The docstring for `_check_state_convergence` states "Conditions (ALL must hold for CONSECUTIVE_ROUNDS_REQUIRED consecutive rounds)". However, the implementation only checks if `open_ch == 0`, `contested == 0`, and `gamma_passed` are true for the *current* round. Only `novel_counts` is checked over the consecutive window.
+**FOLLOW:** The experiment may terminate prematurely if `open_ch` drops to 0 in the current round, even if it was > 0 in the immediately preceding round, violating the stability requirement of the convergence gate.
+**PROPOSED_FIX:** FIX — In `run_experiment`, maintain a `consecutive_met` counter. Increment it if `_check_state_convergence` returns True, reset to 0 if False. Break only when `consecutive_met >= CONSECUTIVE_ROUNDS_REQUIRED`.
+**VERIFIED:** TRUE
+
+### FINDING_ID: F004
+**SEVERITY:** 0.6 (HIGH)
+**DESCRIPTION:** FIND — The base prompt instructs models: "To replace a finding, use SUPERSEDES: old_ID." This is an undiscussed prompt invention. The runner contains no logic to parse, process, or apply a `SUPERSEDES` directive.
+**FOLLOW:** If a model follows this instruction, it may output `FINDING_ID: F002 (SUPERSEDES: F001)` or add a `SUPERSEDES` line. This will either break the `parse_findings` regex, corrupt the local ID string, or simply be ignored, leading to duplicate or malformed findings in the registry.
+**PROPOSED_FIX:** FIX — Remove the sentence "To replace a finding, use SUPERSEDES: old_ID." from the `base_prompt`.
+**VERIFIED:** TRUE
+
+### FINDING_ID: F005
+**SEVERITY:** 0.4 (MEDIUM)
+**DESCRIPTION:** FIND — `_VERDICT_RE` uses `^` (start of line) without allowing leading whitespace or list markers: `r'^(CONFIRM|CHALLENGE|EXTEND|MERGE)...'`.
+**FOLLOW:** If a model outputs `- CONFIRM C0001` or indents the verdict `  CONFIRM C0001`, the regex will silently fail to match, and the verdict will be lost. Models frequently use markdown lists or indentation even when instructed not to.
+**PROPOSED_FIX:** FIX — Relax the regex to allow optional leading whitespace and list markers: `_VERDICT_RE = re.compile(r'^\s*(?:-\s*|\*\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE)\s+(C\d{4})(?:\s*[\|<\-]+\s*(.*))?$', re.MULTILINE)`
+**VERIFIED:** TRUE
+
+---
+**Review Summary:**
+The runner is **NOT FIT FOR PURPOSE** in its current state due to F001, which fundamentally breaks the star/blackboard topology by merging unrelated findings across models. Apply the proposed fixes to restore state isolation and mathematical soundness.
