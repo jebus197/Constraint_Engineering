@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 09:12 BST
+Last updated: 5 April 2026 09:45 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -130,7 +130,9 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   FFF ordering 100% wrong, zero CHALLENGE verdicts, low comms efficiency.
   All methodology fixes applied to runners (commit 587fbe8). Exp 32 runner
   built: meta-experiment on convergence prediction and experimental design.
-  E31-01 to E31-18 code fixes deferred until findings review after rest.
+  Full audit complete: 13/18 verified (3 refuted, 2 partial). All 11
+  verified fixes applied (commit 32ed658). 572 tests pass. Bug-closed
+  gate now functional. Autoimmune respects reconciliation locks.
   Findings: `experimental_notes/Exp31_Interim_Findings_2026-04-05.md`.
   TTS: `~/Desktop/CDSFL_tts/Exp31_Final_Findings_2026-04-05.txt`.
   **Next:** Exp 32 — meta-experiment on convergence prediction, communication

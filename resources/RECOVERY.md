@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 09:12 BST
+Last updated: 5 April 2026 09:45 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -46,11 +46,14 @@ EXP 31 POST-ANALYSIS (5 April 2026, 09:12 BST):
   experimental design optimisation. Models analyse Exp 30/31 data.
   10-round budget, 4 phases. NOT YET RUN.
 
-  PENDING (deferred until after rest):
-  - Review Exp 31 actual code findings (E31-01 to E31-18)
-  - Apply E31 code fixes to immune_agents.py / insect_brain.py / verification_chain.py
-  - Run Exp 32
-  - Implement multi-agent CC2 architecture (discussed, not built)
+  EXP 31 FIXES APPLIED (commit 32ed658, 09:45 BST):
+  Full audit: 13/18 verified, 3 refuted, 2 partial. 11 fixes applied.
+  572 tests pass. Bug-closed gate now functional (E31-01). Autoimmune
+  respects reconciliation locks (E31-02). All Category A + B fixes done.
+
+  PENDING:
+  - Run Exp 32 (meta-experiment, runner ready)
+  - Implement multi-agent CC2 architecture (Option A: runner-side parallelism)
 
 EXP 31 COMPLETE (5 April 2026, 07:38 BST):
   Post-fix validation. 15 rounds, 360 findings, BUDGET_EXHAUSTED(15).
