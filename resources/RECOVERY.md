@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 09:45 BST
+Last updated: 5 April 2026 22:37 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,12 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 11:26 BST)
+## Current Pending Work (5 April 2026, 22:37 BST)
 
-Experiments 12–31 ALL COMPLETE. EXP 32 COMPLETE. EXP 33 RUNNER BUILT.
+Experiments 12–32 ALL COMPLETE. EXP 33 RUNNER BUILT. EXP 34/35/36 RUNNERS BUILT.
+All prior session work committed and pushed (PolicyEngine, evidence layer,
+Exp 29-33 logs, C5 logs, analysis notes — commit 568cb51).
+688 tests pass.
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
   Meta-experiment: 5 models analysed convergence data from Exp 30/31.
@@ -164,17 +167,9 @@ EXP 30 POST-ANALYSIS (5 April 2026, 04:47 BST):
 
   Tests: 571 passed, 0 failed.
 
-PENDING:
-  - Exp 32 — meta-experiment: convergence prediction, communication efficiency,
-    experimental design optimisation. Models analyse Exp 30/31 data and predict
-    when convergence should occur. Inter-model communication protocol redesign.
-    Multi-agent CC2 architecture evaluation.
-  - Apply E31-01 through E31-18 fixes (deep-copy propagation CRITICAL)
-  - Next code review: 4 test articles (add endocrine.py), all fixes applied,
-    agreed communication protocol, theoretically grounded round budget
-  - Then outreach (the system works, results exist, stop iterating)
-  - Bench Run 2 (27 frontier STEM problems) — longer term
-  Tests: python3 -m pytest bench/tests/ -v (571 pass)
+PENDING (as of Exp 30 post-analysis — now superseded, see Current Pending Work above):
+  All items below COMPLETE. Exp 32 done, E31 fixes applied (572→688 tests),
+  Exp 33/34/35/36 runners built, topology spec created.
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
 C1 (Realistic HIL): 25 findings, 9/9 verified, 0 FP. 5 rounds, ~3 min.
