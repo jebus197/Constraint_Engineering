@@ -550,7 +550,7 @@ class VerificationChain:
                         ok, msg = self._verify_epoch(epoch)
                         if ok:
                             prev_record_count = rc
-            except (KeyError, TypeError, ValueError) as exc:
+            except (KeyError, TypeError, ValueError, AttributeError) as exc:
                 ok, msg = False, f"malformed epoch: {exc}"
             if not ok:
                 errors.append(
@@ -648,6 +648,13 @@ class VerificationChain:
             raise ValueError("'records' must be a list")
         if not isinstance(epochs, list):
             raise ValueError("'epochs' must be a list")
+        # E31-18 fix: validate each epoch is a dict. Without this,
+        # non-dict epochs (strings, ints, null) pass load but crash
+        # verify_chain() with AttributeError on epoch.get() — and
+        # AttributeError is not in the except clause there.
+        for i, ep in enumerate(epochs):
+            if not isinstance(ep, dict):
+                raise ValueError(f"Epoch {i} is not a dict")
         for i, rec in enumerate(records):
             if not isinstance(rec, dict):
                 raise ValueError(f"Record {i} is not a dict")

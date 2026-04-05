@@ -1448,8 +1448,10 @@ def skin_barrier_check(
         # Resolve the file path
         cited_file = ""
         if cited_file_raw:
-            # Try exact match
-            if cited_file_raw in source_set or os.path.isfile(cited_file_raw):
+            # Try exact match — E31-16 fix: must be in source_set, not
+            # arbitrary filesystem. os.path.isfile() alone creates a
+            # file-existence oracle (e.g. /etc/passwd would pass).
+            if cited_file_raw in source_set:
                 cited_file = cited_file_raw
             # Try basename match (Bug#69: skip if ambiguous)
             elif (os.path.basename(cited_file_raw) in source_basenames
@@ -1605,8 +1607,12 @@ def _verify_search_manifest(
         args = step.get("args", "")
 
         if tool in ("Read", "read", "cat"):
-            # Check file exists
-            file_arg = args if isinstance(args, str) else str(args)
+            # E31-17 fix: reject non-string args early (dict/list → str
+            # produces an unparseable path like "{'path': 'main.py'}")
+            if not isinstance(args, str):
+                issues.append(f"Non-string args for {tool}: {type(args).__name__}")
+                continue
+            file_arg = args
             # Try exact, then basename
             exists = (
                 os.path.isfile(file_arg)
@@ -1619,13 +1625,37 @@ def _verify_search_manifest(
                 issues.append(f"File not found: {file_arg}")
 
         elif tool in ("Grep", "grep", "rg"):
-            # Check pattern is valid regex
-            pattern = args if isinstance(args, str) else str(args)
+            # E31-17 fix: reject non-string args (dict cast to string
+            # produces valid regex but meaningless pattern)
+            if not isinstance(args, str):
+                issues.append(f"Non-string args for {tool}: {type(args).__name__}")
+                continue
+            # E31-10 fix: also extract target file from step if present
+            # and verify it exists. Pattern-only syntactic check is
+            # insufficient — fabricated grep against nonexistent files
+            # should not count as verified.
+            pattern = args
+            target = step.get("target", step.get("file", ""))
             try:
                 re.compile(pattern)
-                verified += 1  # Pattern is at least syntactically valid
             except re.error:
                 issues.append(f"Invalid grep pattern: {pattern}")
+                continue
+            # If a target file was specified, verify it exists
+            if target:
+                target_str = target if isinstance(target, str) else str(target)
+                target_exists = (
+                    target_str in source_set
+                    or os.path.basename(target_str) in source_basenames
+                    or os.path.isfile(target_str)
+                )
+                if target_exists:
+                    verified += 1
+                else:
+                    issues.append(f"Grep target not found: {target_str}")
+            else:
+                # No target specified — pattern is valid, count as partial
+                verified += 1
 
         elif tool in ("Glob", "glob"):
             verified += 1  # Glob patterns are hard to invalidate
@@ -1783,16 +1813,35 @@ def _extract_constants_from_ast(source_path: str) -> Dict[str, Any]:
     except (OSError, SyntaxError):
         return constants
 
+    def _extract_value(val_node: ast.expr) -> Any:
+        """Extract constant value, handling negative literals (E31-15).
+
+        Python parses ``THRESHOLD = -0.5`` as
+        ``ast.UnaryOp(ast.USub, ast.Constant(0.5))``, not as a bare
+        ast.Constant. Without this, all negative-valued constants are
+        invisible to B-Cell v2 Z3 grounding.
+        """
+        if isinstance(val_node, ast.Constant):
+            return val_node.value
+        if (isinstance(val_node, ast.UnaryOp)
+                and isinstance(val_node.op, ast.USub)
+                and isinstance(val_node.operand, ast.Constant)):
+            return -val_node.operand.value
+        return None  # Not a constant we can extract
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for target in node.targets:
-                if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant):
-                    constants[target.id] = node.value.value
+                if isinstance(target, ast.Name):
+                    val = _extract_value(node.value)
+                    if val is not None:
+                        constants[target.id] = val
         elif isinstance(node, ast.AnnAssign):
             if (isinstance(node.target, ast.Name)
-                    and node.value is not None
-                    and isinstance(node.value, ast.Constant)):
-                constants[node.target.id] = node.value.value
+                    and node.value is not None):
+                val = _extract_value(node.value)
+                if val is not None:
+                    constants[node.target.id] = val
 
     _AST_CONSTANTS_CACHE[source_path] = constants  # Bug#67 fix: cache result
     return constants
@@ -2253,13 +2302,16 @@ def nk_cell_v2_shadow(
             continue  # v2 FIX: skip anomaly detection for known FPs
 
         # 3. Anomaly detection
+        # E31-07 fix: v2 must match v1 behaviour — emit REJECTED/0.6 so
+        # Helper T registers the anomaly signal. UNCERTAIN/0.4 contributed
+        # zero weight, effectively neutering anomaly detection in v2.
         if f.severity > 0.95 and f.round_idx > 5:
             verdicts.append(CellVerdict(
                 cell_type=CellType.NK_CELL,
                 finding_id=f.finding_id,
-                verdict="UNCERTAIN",
-                confidence=0.4,
-                evidence=f"[NK_v2] Late-round high severity ({f.severity:.2f} at R{f.round_idx})",
+                verdict="REJECTED",
+                confidence=0.6,
+                evidence=f"[NK_v2] Late-round high severity ({f.severity:.2f} at R{f.round_idx}) — possible inflation",
                 tool_used="v2_anomaly_detection",
             ))
 
@@ -2415,7 +2467,10 @@ def helper_t_v2_shadow(
 
         if effective_reject > best_confirm and best_reject > 0:
             final_verdicts[fid] = "REJECTED"
-            final_confidences[fid] = round(best_reject, 4)
+            # E31-05 fix: store effective_reject (after asymmetric scaling),
+            # not raw best_reject. The decision uses the scaled value — the
+            # stored confidence must match the decision logic.
+            final_confidences[fid] = round(effective_reject, 4)
         elif best_confirm > 0:
             final_verdicts[fid] = "CONFIRMED"
             final_confidences[fid] = round(best_confirm, 4)
@@ -2806,7 +2861,7 @@ def _reconciliation_gate(
     v1_confidences: Dict[str, float],
     v2_verdicts: Dict[str, str],
     v2_confidences: Dict[str, float],
-) -> Tuple[Dict[str, str], Dict[str, float]]:
+) -> Tuple[Dict[str, str], Dict[str, float], Set[str]]:
     """WP3b: Reconciliation Gate — immutable state transition check.
 
     Merges v1 and v2 verdicts before Regulatory T meta-check.
@@ -2817,10 +2872,13 @@ def _reconciliation_gate(
     4. REJECTED verdicts from both pipelines are LOCKED — cannot be
        overridden by downstream autoimmune recovery (MF-34/MF-35/C5-25).
 
-    Returns reconciled (verdicts, confidences).
+    Returns (reconciled_verdicts, reconciled_confidences, locked_ids).
+    locked_ids: finding IDs where both pipelines agreed REJECTED.
+    These MUST NOT be resurrected by autoimmune override (E31-02).
     """
     reconciled: Dict[str, str] = {}
     reconciled_conf: Dict[str, float] = {}
+    locked_ids: Set[str] = set()
 
     all_fids = set(v1_verdicts) | set(v2_verdicts)
     for fid in all_fids:
@@ -2839,6 +2897,13 @@ def _reconciliation_gate(
             # Agreement: use shared verdict, max confidence
             reconciled[fid] = v1v
             reconciled_conf[fid] = max(v1c, v2c)
+            # E31-02 fix: mutual REJECTED = LOCKED
+            if v1v in ("REJECTED", "DUPLICATE"):
+                locked_ids.add(fid)
+                _shadow_log.info(
+                    "Reconciliation LOCKED: %s — both pipelines REJECTED (v1=%.2f, v2=%.2f)",
+                    fid, v1c, v2c,
+                )
         else:
             # Disagreement: higher confidence wins, with minimum margin
             # Bug#16 fix: near-ties fall back to UNCERTAIN
@@ -2861,7 +2926,7 @@ def _reconciliation_gate(
                 reconciled[fid], reconciled_conf[fid],
             )
 
-    return reconciled, reconciled_conf
+    return reconciled, reconciled_conf, locked_ids
 
 
 def run_immune_pipeline(
@@ -3037,10 +3102,15 @@ def run_immune_pipeline(
     # by both v1 and v2, that verdict is locked. Prevents autoimmune recovery
     # from rescuing known garbage (MF-34/MF-35/C5-25).
     t0 = time.monotonic()
-    reconciled_verdicts, reconciled_confidences = _reconciliation_gate(
+    reconciled_verdicts, reconciled_confidences, locked_ids = _reconciliation_gate(
         final_verdicts, final_confidences, v2_final, v2_conf,
     )
     timings["reconciliation_gate"] = round(time.monotonic() - t0, 4)
+    if locked_ids:
+        _shadow_log.info(
+            "Reconciliation locked %d finding(s): %s",
+            len(locked_ids), ", ".join(sorted(locked_ids)),
+        )
 
     # Use reconciled verdicts for downstream processing
     final_verdicts = reconciled_verdicts
@@ -3083,9 +3153,23 @@ def run_immune_pipeline(
 
     # If autoimmune flagged, override immune-stage rejections only.
     # Bug#56 fix: barrier rejections are deterministic and survive autoimmune override.
+    # E31-02 fix: locked_ids (mutual rejection by both pipelines) are excluded
+    # from autoimmune resurrection. The reconciliation gate documents these as
+    # "LOCKED — cannot be overridden" and this now enforces it.
     if autoimmune_flag and not observation_only:
-        filtered = [tf.finding for tf in triaged]
-        rejected = list(barrier_rejected)
+        filtered = [
+            tf.finding for tf in triaged
+            if tf.finding.finding_id not in locked_ids
+        ]
+        rejected = list(barrier_rejected) + [
+            tf.finding for tf in triaged
+            if tf.finding.finding_id in locked_ids
+        ]
+        if locked_ids:
+            _shadow_log.info(
+                "Autoimmune override: resurrected %d findings, kept %d locked rejections",
+                len(filtered), len(locked_ids),
+            )
 
     # ── Stage 4: Programmatic fix verification ───────────────────────
     # For surviving findings with proposed fixes, evaluate the fix in a

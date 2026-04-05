@@ -297,9 +297,14 @@ class TestImmunePipeline:
         assert "helper_t" in result.stage_timings
         assert "regulatory_t" in result.stage_timings
 
-    def test_autoimmune_override_in_filtering_mode(self):
-        """When autoimmune flag fires, all findings pass through even in filtering mode."""
-        # Create 10 findings that will all be flagged as known false positives
+    def test_autoimmune_override_respects_locks(self):
+        """E31-02: autoimmune override respects reconciliation locks.
+
+        When both v1 and v2 reject a finding, the rejection is LOCKED
+        and autoimmune recovery cannot resurrect it.
+        """
+        # All 10 findings are known false positives — both pipelines
+        # will reject them → locked by reconciliation gate
         findings = [
             _make_finding(fid=f"f{i}", model="Codex",
                           desc="Missing @dataclass decorator on SomeClass")
@@ -310,10 +315,10 @@ class TestImmunePipeline:
             observation_only=False, ct_enabled=False,
             max_rejection_rate=0.50,
         )
-        # Regulatory T-Cell should flag autoimmune (>50% rejection)
-        # and override: all findings pass through
+        # Autoimmune should fire (>50% rejection) but locked findings
+        # stay rejected — they are not resurrected
         if result.autoimmune_flag:
-            assert len(result.filtered_findings) == 10
+            assert len(result.filtered_findings) == 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

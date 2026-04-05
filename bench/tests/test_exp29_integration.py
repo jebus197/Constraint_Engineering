@@ -329,7 +329,7 @@ class TestReconciliationGate:
         c1 = {"f1": 0.8}
         v2 = {"f1": "CONFIRMED"}
         c2 = {"f1": 0.9}
-        final_v, final_c = _reconciliation_gate(v1, c1, v2, c2)
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
         assert final_v["f1"] == "CONFIRMED"
         assert final_c["f1"] == 0.9  # max confidence
 
@@ -338,7 +338,7 @@ class TestReconciliationGate:
         c1 = {"f1": 0.6}
         v2 = {"f1": "REJECTED"}
         c2 = {"f1": 0.9}
-        final_v, final_c = _reconciliation_gate(v1, c1, v2, c2)
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
         assert final_v["f1"] == "REJECTED"
         assert final_c["f1"] == 0.9
 
@@ -347,7 +347,7 @@ class TestReconciliationGate:
         c1 = {"f1": 0.8, "f2": 0.7}
         v2 = {}  # v2 has nothing for these
         c2 = {}
-        final_v, final_c = _reconciliation_gate(v1, c1, v2, c2)
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
         assert final_v["f1"] == "CONFIRMED"
         assert final_v["f2"] == "REJECTED"
 
@@ -357,11 +357,22 @@ class TestReconciliationGate:
         c1 = {"f1": 0.8, "f2": 0.3}
         v2 = {"f1": "CONFIRMED", "f3": "REJECTED"}
         c2 = {"f1": 0.7, "f3": 0.85}
-        final_v, final_c = _reconciliation_gate(v1, c1, v2, c2)
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
         assert final_v["f1"] == "CONFIRMED"
         assert final_c["f1"] == 0.8  # max(0.8, 0.7)
         assert final_v["f2"] == "UNCERTAIN"
         assert final_v["f3"] == "REJECTED"
+
+    def test_mutual_rejection_locked(self):
+        """E31-02: mutual REJECTED from both pipelines creates locked IDs."""
+        v1 = {"f1": "REJECTED", "f2": "CONFIRMED"}
+        c1 = {"f1": 0.8, "f2": 0.9}
+        v2 = {"f1": "REJECTED", "f3": "REJECTED"}
+        c2 = {"f1": 0.7, "f3": 0.6}
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
+        assert "f1" in locked  # Both pipelines rejected → locked
+        assert "f2" not in locked  # Only v1 confirmed → not locked
+        assert "f3" not in locked  # Only v2 rejected → not locked (single pipeline)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

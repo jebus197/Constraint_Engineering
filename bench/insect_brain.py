@@ -685,10 +685,13 @@ class InsectBrain:
         # Only inject messages from the immediately preceding round to prevent
         # unbounded accumulation. Historical messages remain in state for
         # diagnostics via get_directed_messages_for_model().
-        current_round = self.state.current_round
+        # E31-06 fix: use round_idx parameter (the round being built), not
+        # self.state.current_round which is stale (set by previous round's
+        # persist call). With the stale value, >= (current_round - 1) included
+        # TWO rounds of messages instead of one.
         directed_to_me = [
             m for m in self.state.directed_messages
-            if m.recipient == model_label and m.round_idx >= current_round - 1
+            if m.recipient == model_label and m.round_idx == round_idx - 1
         ]
         directed_text = ""
         if directed_to_me:
@@ -1212,9 +1215,47 @@ class InsectBrain:
             response.autoimmune_flag,
         )
 
+        # ── E31-01 fix: propagate verified/escalated flags back ──────
+        # The immune pipeline deep-copies findings for NK thread safety.
+        # Stage 4 and 5 set verified/escalated on the copies. Without
+        # this propagation, the originals in all_findings never see the
+        # flags, making the bug-closed gate dead code.
+        flag_map: Dict[str, Dict[str, bool]] = {}
+        for f in response.filtered_findings:
+            if f.verified or f.escalated:
+                flag_map[f.finding_id] = {
+                    "verified": f.verified,
+                    "escalated": f.escalated,
+                }
+        if flag_map:
+            propagated = 0
+            for rnd_findings in self.state.all_findings:
+                for f in rnd_findings:
+                    flags = flag_map.get(f.finding_id)
+                    if flags:
+                        if flags["verified"] and not f.verified:
+                            object.__setattr__(f, 'verified', True)
+                            propagated += 1
+                        if flags["escalated"] and not f.escalated:
+                            object.__setattr__(f, 'escalated', True)
+                            propagated += 1
+            if propagated:
+                logger.info(
+                    "E31-01: propagated %d verified/escalated flags to canonical findings",
+                    propagated,
+                )
+
         # Store immune response in the round record
         if self.state.round_records:
             self.state.round_records[-1].immune_response = response
+
+        # E31-13 fix: re-save checkpoint after immune pipeline so
+        # verified/escalated flags are captured. The initial persist()
+        # runs BEFORE the immune pipeline (it must — convergence detector
+        # needs findings first). This second write ensures the checkpoint
+        # reflects post-immune state.
+        if flag_map:
+            self._save_checkpoint()
 
         return response
 
