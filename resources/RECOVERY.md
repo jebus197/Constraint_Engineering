@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 08:10 BST
+Last updated: 5 April 2026 09:12 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,10 +19,38 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 04:47 BST)
+## Current Pending Work (5 April 2026, 09:12 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
 EXP 30 COMPLETE. EXP 30 POST-ANALYSIS AND FIXES COMPLETE. EXP 31 COMPLETE.
+
+EXP 31 POST-ANALYSIS (5 April 2026, 09:12 BST):
+  Deep analysis revealed structural convergence blockers:
+  1. Autoimmune override at 65% resurrects all findings from R7+
+  2. Finding ID reuse across rounds breaks deduplication
+  3. Deep-copy propagation makes bug-closed gate dead code
+  4. FFF ordering 100% wrong (FIX before FOLLOW in schema)
+  5. Zero CHALLENGE verdicts across 15 rounds (150 cross-refs all confirmations)
+  6. 2.9% inter-model communication overhead — models chatting at human speed
+
+  METHODOLOGY FIXES APPLIED (commit 587fbe8):
+  - FFF ordering corrected in JSON schema (FOLLOW before PROPOSED_FIX)
+  - Finding ID stability directive added
+  - PoC context framing added to all runners
+  - Machine communication protocol (structured verdicts, no social niceties)
+  - Good Enough convergence instruction wired into all preambles
+  All fixes applied to run_exp30, run_exp31, and new run_exp32.
+
+  EXP 32 RUNNER BUILT (bench/run_exp32.py):
+  Meta-experiment: convergence prediction, communication efficiency,
+  experimental design optimisation. Models analyse Exp 30/31 data.
+  10-round budget, 4 phases. NOT YET RUN.
+
+  PENDING (deferred until after rest):
+  - Review Exp 31 actual code findings (E31-01 to E31-18)
+  - Apply E31 code fixes to immune_agents.py / insect_brain.py / verification_chain.py
+  - Run Exp 32
+  - Implement multi-agent CC2 architecture (discussed, not built)
 
 EXP 31 COMPLETE (5 April 2026, 07:38 BST):
   Post-fix validation. 15 rounds, 360 findings, BUDGET_EXHAUSTED(15).
