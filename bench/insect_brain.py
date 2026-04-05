@@ -929,9 +929,16 @@ class InsectBrain:
                 for f in record.findings
             ],
             "model_responses": {
-                # Bug#48: Add truncation marker when text is capped
-                label: (text[:10000] + "\n[TRUNCATED at 10000 chars]" if len(text) > 10000 else text)
+                # Bug#48: truncate long responses for JSON serialisation
+                # E31-14 fix: marker in metadata, not appended to text
+                # (appending made receiving models attribute it to the sender)
+                label: text[:10000]
                 for label, text in record.model_responses.items()
+            },
+            "model_responses_truncated": {
+                label: len(text) > 10000
+                for label, text in record.model_responses.items()
+                if len(text) > 10000
             },
         }
         filepath.write_text(json.dumps(data, indent=2), encoding="utf-8")

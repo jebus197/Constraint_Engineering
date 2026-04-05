@@ -13,6 +13,7 @@ from bench.dm._types import Finding
 from bench.endocrine import (
     DefectCategory,
     ToolDiagnostic,
+    ToolNotFoundError,
     HealthScan,
     FixEvaluation,
     PacingSignal,
@@ -28,6 +29,7 @@ from bench.endocrine import (
     run_bandit,
     run_mypy,
     _apply_fix_to_source,
+    _create_sandbox,
     _compute_fix_verdict,
     _find_target_file,
     _categorise_pyright,
@@ -524,3 +526,265 @@ class TestEndocrineLayer:
         )
         assert report.round_idx == 2
         assert report.elapsed_s == 1.5
+
+
+# =============================================================================
+# Test 11: Area 4 — ToolNotFoundError raised by runners
+# =============================================================================
+
+class TestToolNotFoundError:
+    def test_error_has_tool_name_and_path(self):
+        err = ToolNotFoundError("pyright", "/bin/pyright")
+        assert err.tool_name == "pyright"
+        assert err.path == "/bin/pyright"
+        assert "pyright" in str(err)
+
+    @patch("bench.endocrine._run_tool")
+    def test_pyright_raises_on_not_found(self, mock_run):
+        mock_run.return_value = sp.CompletedProcess(
+            args=[], returncode=-1, stdout="", stderr="NOT_FOUND",
+        )
+        with pytest.raises(ToolNotFoundError) as exc_info:
+            run_pyright(["test.py"])
+        assert exc_info.value.tool_name == "pyright"
+
+    @patch("bench.endocrine._run_tool")
+    def test_ruff_raises_on_not_found(self, mock_run):
+        mock_run.return_value = sp.CompletedProcess(
+            args=[], returncode=-1, stdout="", stderr="NOT_FOUND",
+        )
+        with pytest.raises(ToolNotFoundError):
+            run_ruff(["test.py"])
+
+    @patch("bench.endocrine._run_tool")
+    def test_bandit_raises_on_not_found(self, mock_run):
+        mock_run.return_value = sp.CompletedProcess(
+            args=[], returncode=-1, stdout="", stderr="NOT_FOUND",
+        )
+        with pytest.raises(ToolNotFoundError):
+            run_bandit(["test.py"])
+
+    @patch("bench.endocrine._run_tool")
+    def test_mypy_raises_on_not_found(self, mock_run):
+        mock_run.return_value = sp.CompletedProcess(
+            args=[], returncode=-1, stdout="", stderr="NOT_FOUND",
+        )
+        with pytest.raises(ToolNotFoundError):
+            run_mypy(["test.py"])
+
+    @patch("bench.endocrine.run_mypy", side_effect=ToolNotFoundError("mypy", "/bin/mypy"))
+    @patch("bench.endocrine.run_bandit", return_value=[])
+    @patch("bench.endocrine.run_ruff", return_value=[])
+    @patch("bench.endocrine.run_pyright", return_value=[])
+    def test_scan_health_marks_missing_tool_unavailable(self, *mocks):
+        path = _make_source_file("x = 1\n")
+        try:
+            result = scan_health([path])
+            assert result.tools_available["mypy"] is False
+            assert result.tools_available["pyright"] is True
+        finally:
+            os.unlink(path)
+
+
+# =============================================================================
+# Test 12: Area 2 — Independent tool verdict checking
+# =============================================================================
+
+class TestVerdictIndependentTools:
+    def test_harmful_when_type_errors_up_but_ruff_down(self):
+        """A fix that trades ruff warnings for type errors should be HARMFUL."""
+        fe = FixEvaluation(
+            finding_id="f1", original_file="x.py", fix_applied=True,
+            tests_passed=None,
+            net_type_errors=5, net_ruff_errors=-5, net_bandit_issues=0,
+        )
+        assert _compute_fix_verdict(fe) == "HARMFUL"
+
+    def test_harmful_when_bandit_up_but_others_down(self):
+        fe = FixEvaluation(
+            finding_id="f1", original_file="x.py", fix_applied=True,
+            tests_passed=None,
+            net_type_errors=-2, net_ruff_errors=-3, net_bandit_issues=1,
+        )
+        assert _compute_fix_verdict(fe) == "HARMFUL"
+
+    def test_safe_when_all_reduced(self):
+        fe = FixEvaluation(
+            finding_id="f1", original_file="x.py", fix_applied=True,
+            tests_passed=None,
+            net_type_errors=-1, net_ruff_errors=-2, net_bandit_issues=0,
+        )
+        assert _compute_fix_verdict(fe) == "SAFE"
+
+
+# =============================================================================
+# Test 13: Area 1 — Sandbox preserves directory structure
+# =============================================================================
+
+class TestCreateSandbox:
+    def test_single_file_sandbox(self):
+        """Sandbox with one file should place it in a flat tmpdir."""
+        path = _make_source_file("x = 1\n")
+        try:
+            tmpdir, patched = _create_sandbox(path, [path], "x = 2\n")
+            assert os.path.isfile(patched)
+            assert "x = 2" in open(patched).read()
+            import shutil
+            shutil.rmtree(tmpdir)
+        finally:
+            os.unlink(path)
+
+    def test_multi_file_sandbox_preserves_structure(self):
+        """Sandbox with sibling files preserves their relative layout."""
+        d = tempfile.mkdtemp()
+        try:
+            sub = os.path.join(d, "pkg")
+            os.makedirs(sub)
+            f1 = os.path.join(sub, "a.py")
+            f2 = os.path.join(sub, "b.py")
+            with open(f1, "w") as fh:
+                fh.write("import b\n")
+            with open(f2, "w") as fh:
+                fh.write("y = 1\n")
+
+            tmpdir, patched = _create_sandbox(f1, [f1, f2], "import b  # patched\n")
+            # Both files should exist in sandbox
+            assert os.path.isfile(patched)
+            assert "patched" in open(patched).read()
+            # b.py should be in the same relative location
+            patched_dir = os.path.dirname(patched)
+            sibling = os.path.join(patched_dir, "b.py")
+            assert os.path.isfile(sibling), f"Expected sibling at {sibling}"
+            assert "y = 1" in open(sibling).read()
+            import shutil
+            shutil.rmtree(tmpdir)
+        finally:
+            import shutil
+            shutil.rmtree(d)
+
+
+# =============================================================================
+# Test 14: Area 3 — Pacing signal type coercion and edge cases
+# =============================================================================
+
+class TestPacingEdgeCases:
+    def test_context_budget_string_coerced(self):
+        """TOML may deliver context_budget as a string."""
+        signals = compute_pacing_signals([], 70000, "80000", [], 2)
+        ctx = [s for s in signals if s.signal_type == "context_growth"]
+        assert len(ctx) == 1
+
+    def test_context_budget_zero_no_crash(self):
+        """Division by zero guarded when budget is 0."""
+        signals = compute_pacing_signals([], 50000, 0, [], 2)
+        # Should not raise; 0 budget after coercion becomes 80000 default
+        # (because int(0) = 0, then context_budget > 0 fails, skips signal)
+        # No crash is the requirement.
+        assert isinstance(signals, list)
+
+    def test_context_budget_nonsense_string_defaults(self):
+        """Uncastable string falls back to default."""
+        signals = compute_pacing_signals([], 70000, "not_a_number", [], 2)
+        ctx = [s for s in signals if s.signal_type == "context_growth"]
+        # 70000/80000 = 0.875 > 0.8 -> signal emitted
+        assert len(ctx) == 1
+
+    def test_novelty_plateau_not_triggered_early(self):
+        """Shouldn't trigger plateau on round 0 even if counts exist."""
+        signals = compute_pacing_signals([], 0, 80000, [0, 0, 0], 0)
+        plateau = [s for s in signals if s.signal_type == "novelty_plateau"]
+        assert len(plateau) == 0
+
+
+# =============================================================================
+# Test 15: Area 5 — Health trend zero-padding
+# =============================================================================
+
+class TestHealthTrendPadding:
+    @patch("bench.endocrine.evaluate_fixes", return_value=[])
+    @patch("bench.endocrine.scan_health")
+    def test_ragged_categories_padded(self, mock_scan, mock_eval):
+        endo = EndocrineLayer(source_paths=["x.py"])
+
+        # Round 0: type_safety only
+        mock_scan.return_value = HealthScan(
+            total=2, counts_by_category={"type_safety": 2},
+            tools_available={"pyright": True},
+        )
+        endo.run(round_idx=0, findings=[])
+
+        # Round 1: dead_code only
+        mock_scan.return_value = HealthScan(
+            total=1, counts_by_category={"dead_code": 1},
+            tools_available={"ruff": True},
+        )
+        endo.run(round_idx=1, findings=[])
+
+        trend = endo.health_trend()
+        # Both categories should have length 2
+        assert len(trend["type_safety"]) == 2
+        assert len(trend["dead_code"]) == 2
+        # type_safety: [2, 0], dead_code: [0, 1]
+        assert trend["type_safety"] == [2, 0]
+        assert trend["dead_code"] == [0, 1]
+
+
+# =============================================================================
+# Test 16: Area 8 — _find_target_file basename tightening
+# =============================================================================
+
+class TestFindTargetFileTightened:
+    def test_no_false_match_on_substring(self):
+        """'x.py' in description should not match 'extra_x.py'."""
+        finding = _make_finding(desc="Bug in x.py line 5")
+        paths = ["/src/extra_x.py", "/src/x.py"]
+        result = _find_target_file(finding, paths)
+        assert result == "/src/x.py"
+
+    def test_suffix_match_preferred(self):
+        """Full path suffix should win over basename alone."""
+        finding = _make_finding(desc="Bug in pkg/utils.py")
+        paths = ["/src/other/utils.py", "/src/pkg/utils.py"]
+        result = _find_target_file(finding, paths)
+        assert result == "/src/pkg/utils.py"
+
+
+# =============================================================================
+# Test 17: Area 7 — Line range replacement
+# =============================================================================
+
+class TestApplyFixLineRange:
+    def test_single_line_still_works(self):
+        source = "a = 1\nb = 2\nc = 3\n"
+        fix = "Line 2: b = 2 -> b = 99"
+        result = _apply_fix_to_source(source, fix)
+        assert result is not None
+        assert "b = 99" in result
+
+    def test_line_range_replacement(self):
+        """Range match: old fragment found within joined lines 2-3."""
+        source = "a = 1\nb = 2\nc = 3\nd = 4\n"
+        # Single-line old/new fragments — range tells where to look
+        fix = "Lines 2-3: b = 2 -> b = 20"
+        result = _apply_fix_to_source(source, fix)
+        assert result is not None
+        assert "b = 20" in result
+        assert "b = 2\n" not in result
+
+
+# =============================================================================
+# Test 18: Area 6 — OFF_BY_ONE / RACE_CONDITION categorisation
+# =============================================================================
+
+class TestExtendedCategorisation:
+    def test_ruff_off_by_one(self):
+        assert _categorise_ruff("B017", "index out of range") == DefectCategory.OFF_BY_ONE
+
+    def test_ruff_race_condition(self):
+        assert _categorise_ruff("B902", "race condition in thread") == DefectCategory.RACE_CONDITION
+
+    def test_pyright_index_error(self):
+        assert _categorise_pyright("Subscript out of range", "reportIndexIssue") == DefectCategory.OFF_BY_ONE
+
+    def test_ruff_boundary_keyword(self):
+        assert _categorise_ruff("B001", "boundary check missing") == DefectCategory.OFF_BY_ONE

@@ -1,0 +1,15 @@
+Produce a final structured certificate listing ALL surviving findings from this entire conversation. For each finding, include:
+
+1. FINDING ID (sequential, e.g. C5-01, C5-02, ...)
+2. COMPONENT (Dendritic Cell / NK Cell / B Cell / Helper T Cell / Regulatory T Cell / Pipeline / Cross-Component)
+3. CLASSIFICATION (correctness / security / mathematical / boundary / injection / silent-failure / performance / dead-code)
+4. SEVERITY (P0 critical / P1 normal-operation / P2 edge-condition / P3 defence-in-depth)
+5. DESCRIPTION (concise statement of the bug)
+6. EVIDENCE (execution trace or formal proof)
+7. CROSS-COMPONENT IMPACT (what other components are affected, if any)
+8. PROPOSED FIX (specific code change, new construct, or architectural recommendation)
+9. FIX TYPE (PATCH / NOVEL CONSTRUCT / ARCHITECTURAL)
+10. PRIOR MATCH (if this matches a finding from the prior reviewers, state which MF-XX; if novel, state NOVEL)
+11. STATUS (CONFIRMED — survived falsification / RETRACTED — state why)
+
+Also provide a summary table at the end with counts by: severity, component, fix type, and novel vs confirmed.

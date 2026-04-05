@@ -1,0 +1,2093 @@
+{
+  "completed_round": 0,
+  "timestamp": "2026-04-05T10:55:23.862591+00:00",
+  "all_findings": [
+    [
+      {
+        "finding_id": "ChatGPT_F003",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.84,
+        "abstraction_index": 0.41,
+        "description": "FIND \u2014 scan_health() reports tools as available even when the binary is missing. Each runner returns `[]` on `result.stderr == \"NOT_FOUND\"`, and scan_health() sets `tools_available[tool_name] = True` whenever the runner returns without raising. Evidence: run_pyright/run_ruff/run_bandit/run_mypy all swallow NOT_FOUND into empty diagnostics; scan_health has no separate availability probe and treats successful function return as availability.\nFOLLOW: Downstream health reports can claim the bench is healthy while analysis tools were never run. That is silently misleading to the human reviewer and to any insect-brain logic consuming `tools_available`. Missing pyright/ruff/bandit/mypy becomes indistinguishable from \u201czero findings\u201d, so the health-scan feature can appear to fire cleanly when it is dead.",
+        "proposed_fix": "FIX \u2014 have each tool runner return both diagnostics and an availability flag, or expose NOT_FOUND distinctly so scan_health() sets `tools_available[tool_name] = False` when the binary is absent.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_F005",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.71,
+        "abstraction_index": 0.44,
+        "description": "FIND \u2014 health_trend() produces ragged/incomplete time series that omit zero-count rounds. It only appends counts for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. If a category disappears in a later round, no 0 is appended; if it appears late, earlier rounds are missing entirely.\nFOLLOW: Downstream trend consumers cannot align series by round index reliably. A category going from 3 to 0 findings looks like a shorter list instead of improvement to zero. This can mislead any pacing or review logic that depends on worsening/improving code health over rounds and makes the history structurally inconsistent.",
+        "proposed_fix": "FIX \u2014 build the union of seen categories across scan history and emit one count per round for every category, filling absent rounds with 0.",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_F006",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.63,
+        "abstraction_index": 0.29,
+        "description": "FIND \u2014 slow-model and response-size anomaly detection use the upper median element instead of the statistical median for even-sized model sets. In compute_pacing_signals(), median is computed as `sorted(vals)[len(vals) // 2]`. With 4 or 6 models this picks the higher middle value, inflating the threshold and suppressing alerts.\nFOLLOW: Pacing signals can fail to fire when one model is materially slower/larger than peers, especially in the 5-model environment if one entry is missing/zero-filtered and the effective sample becomes even. That degrades the inter-round pacing feedback the insect brain uses for timeout/degrade decisions.",
+        "proposed_fix": "FIX \u2014 compute the true median, e.g. with `statistics.median`, for both duration and response_chars thresholds.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_F001",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.97,
+        "abstraction_index": 0.74,
+        "description": "FIND \u2014 `scan_health()` marks tools as available whenever the runner function returns without raising, even when the binary is missing or timed out. Evidence: `run_pyright/run_ruff/run_bandit/run_mypy` return `[]` on `\"NOT_FOUND\"` and also on parse failure; `scan_health()` then unconditionally sets `tools_available[tool_name] = True` inside the `try` block. This makes the health scan report success for tools that never ran.\nFOLLOW: The insect-brain-facing health signal becomes silently wrong: missing pyright/ruff/bandit/mypy installations appear healthy rather than unavailable. Downstream, reviewers and any logic consuming `HealthScan.tools_available` will trust empty diagnostics as \u201cno issues\u201d instead of \u201ctool absent / scan failed\u201d. This directly undermines the module\u2019s primary feature \u201cHealth scan \u2014 static analysis tools between rounds\u201d because the feature can fail dead-silent and still report operational.",
+        "proposed_fix": "Change each tool runner to return both diagnostics and an availability/success flag, or minimally have `scan_health()` detect `_run_tool` sentinel failures (`NOT_FOUND`, `TIMEOUT`, empty/invalid output) and set `tools_available[tool_name] = False` for those cases instead of inferring availability from absence of exceptions.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_F005",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.84,
+        "abstraction_index": 0.58,
+        "description": "FIND \u2014 the documented health scan capability says endocrine runs `pyright/ruff/bandit` and the module-level constants include `CROSSHAIR_BIN` plus `_CROSSHAIR_TIMEOUT`, but no crosshair runner exists and no crosshair invocation is wired into `scan_health()`. This is dead infrastructure/API drift inside the target file itself.\nFOLLOW: One advertised significant feature never fires. Reviewers consuming this module will assume symbolic execution support exists because the binary path, timeout, and `ToolDiagnostic.tool` docstring all mention crosshair. In a PoC focused on \u201call significant features firing cleanly,\u201d this is misleading dead code and a missing capability in the health scan surface.",
+        "proposed_fix": "Either remove crosshair from the endocrine API/docs/constants for now, or add a minimal `run_crosshair()` wired into `scan_health()` so the declared feature actually executes. For PoC speed, the simplest sufficient correction is to remove the unused crosshair claims/constants until implemented.",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_F006",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.79,
+        "abstraction_index": 0.67,
+        "description": "FIND \u2014 `compute_pacing_signals()` claims `context_budget` is an `int` but contains runtime handling for `dict`, then computes `max(context_budget.values())`. For per-model budgets this is the wrong aggregate for a system-wide `cumulative_context_chars`: it compares cumulative total context against the largest single-model budget. Evidence is the in-function comment plus `if isinstance(context_budget, dict): context_budget = max(...)`.\nFOLLOW: Context growth alerts can fail to trigger until the entire system has far exceeded the relevant budget envelope. Since insect_brain uses per-model context budgeting and endocrine is meant to warn on pacing/context pressure, this can suppress the very signal intended to trigger degradation/reset decisions, allowing context overrun to accumulate silently.",
+        "proposed_fix": "If a dict is passed, compare cumulative context against the sum of per-model budgets, not the max single-model budget.",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_F007",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.73,
+        "abstraction_index": 0.55,
+        "description": "FIND \u2014 `health_trend()` produces ragged series and drops zeros for absent categories. Evidence: it appends counts only for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. Categories absent in a round get no entry rather than `0`.\nFOLLOW: Any downstream trend consumer comparing rounds gets misaligned history lengths and cannot distinguish \u201ccategory absent this round\u201d from \u201ccategory not yet seen\u201d. This degrades the stated purpose \u201cfor the insect brain to detect worsening/improving code health\u201d because trends are structurally wrong once categories appear or disappear across rounds.",
+        "proposed_fix": "Build trends across the union of categories seen in `_scan_history` and append an explicit `0` for categories missing from each scan.",
+        "verified": true
+      },
+      {
+        "finding_id": "Gemini_F003",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.4,
+        "abstraction_index": 0.2,
+        "description": "FIND: In `EndocrineLayer.health_trend()`, the trend lists are populated by iterating over `scan_history` and appending `scan.counts_by_category.get(...)`. However, it only iterates over the keys present in the current scan's dictionary.\nFOLLOW: If a defect category has zero issues in a particular round, it will be missing from `counts_by_category` entirely. The function skips it instead of appending a `0`, causing the list for that category to be shorter than the number of recorded rounds. Downstream, consumers will misalign the trend data (e.g., reading round 5's count as round 3's count), corrupting cross-round health tracking metrics.",
+        "proposed_fix": "FIX: Pre-compute the set of all known categories across the entire history, then iterate through that set for each scan and use `.get(cat, 0)` to guarantee equal-length lists for all metrics.\ndef health_trend(self) -> Dict[str, List[int]]:\n        \"\"\"Return diagnostic count trends across rounds (by category).\"\"\"\n        trend: Dict[str, List[int]] = {}\n        all_cats = {cat for scan in self._scan_history for cat in scan.counts_by_category}\n        for scan in self._scan_history:\n            for cat in all_cats:\n                trend.setdefault(cat, []).append(scan.counts_by_category.get(cat, 0))\n        return trend",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_F004",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.3,
+        "abstraction_index": 0.1,
+        "description": "FIND: In `compute_pacing_signals`, the pacing signal generated for a response size anomaly (when a model produces unusually large output > 3x median) incorrectly hardcodes `signal_type=\"context_growth\"` instead of `\"response_size_anomaly\"`.\nFOLLOW: When this specific output size anomaly triggers, the downstream `insect_brain` or orchestrator will misinterpret the signal as a global context budget exhaustion event. This misclassification could lead to inappropriate system-wide degradation (e.g., arbitrarily degrading the relay payload) instead of properly targeting or penalizing the specific offending model.",
+        "proposed_fix": "FIX: Change the hardcoded `signal_type` to correctly identify the anomaly.\nsignals.append(PacingSignal(\n                        signal_type=\"response_size_anomaly\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n                        model_id=rt.model_id,\n                        metric_value=float(rt.response_chars),\n                        threshold=float(median_chars * 3),\n                        suggested_action=\"degrade_relay\",\n                    ))",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F004",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.7,
+        "abstraction_index": 0.3,
+        "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection (lines ~475-481) checks `len(novelty_counts) >= 3 and round_idx >= 2`, then takes `novelty_counts[-3:]`. But `novelty_counts` is a list indexed by round, and the caller (`EndocrineLayer.run`) passes `novelty_counts or []`. If `novelty_counts` has fewer entries than `round_idx` (e.g., the caller skipped rounds or the list was partially populated), the check `len(novelty_counts) >= 3` could pass while the last 3 entries don't correspond to the \"last 3 rounds\" relative to `round_idx`. More critically: the threshold `all(n <= 1 for n in recent)` means novelty plateau fires when novel findings are 0 or 1 for 3 consecutive rounds. At PoC scale with 5 models reviewing one file, finding 0-1 novel issues for 3 rounds is expected convergence behaviour, not an anomaly. This will fire on nearly every experiment once convergence begins, producing noise.\nFOLLOW: The insect brain receives a `novelty_plateau` pacing signal and the suggested action is `check_convergence`. If the brain acts on this, it could trigger early termination even when the kappa metric hasn't converged \u2014 the novelty plateau signal is redundant with and potentially contradictory to the kappa-based convergence check. At PoC scale this is noise, not signal.",
+        "proposed_fix": "This is MEDIUM severity \u2014 the signal exists but the insect brain doesn't appear to act on `check_convergence` in a way that overrides kappa. No fix needed for PoC. If desired, raise the threshold: `all(n == 0 for n in recent)` (true plateau = zero novel findings).",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F007",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.55,
+        "abstraction_index": 0.6,
+        "description": "FIND \u2014 `scan_health` runs pyright, ruff, bandit, and mypy but the `HealthScan.tools_available` dict marks a tool as `False` only if the runner raises an exception (line ~257). If a tool binary is not found, the runner returns an empty list (e.g., `run_pyright` returns `[]` when `result.stderr == \"NOT_FOUND\"`), and `tools_available` is set to `True`. The health scan reports the tool as \"available\" when it isn't installed.\nFOLLOW: `HealthScan.tools_available` feeds into logging (`%d tools` count at line ~270) and potentially into the insect brain's health assessment. A scan reporting 4 tools available with 0 diagnostics looks like \"clean code\" when it's actually \"no tools ran.\" The insect brain could make incorrect health trend decisions based on phantom clean scans.",
+        "proposed_fix": "Check tool availability before running, or detect `NOT_FOUND` returns:\nfor tool_name, runner in [(\"pyright\", run_pyright), ...]:\n    try:\n        diags = runner(existing)\n        all_diags.extend(diags)\n        # Check if tool was actually available (not just empty results)\n        tools_available[tool_name] = not (\n            len(diags) == 0 and not shutil.which(\n                {\"pyright\": PYRIGHT_BIN, \"ruff\": RUFF_BIN, \n                 \"bandit\": BANDIT_BIN, \"mypy\": MYPY_BIN}[tool_name]\n            )\n        )\n    except Exception as e:\n        logger.warning(\"Tool %s failed: %s\", tool_name, e)\n        tools_available[tool_name] = False\nSimpler: have each runner return a sentinel or have `_run_tool` propagate `NOT_FOUND` status.",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F008",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.6,
+        "abstraction_index": 0.3,
+        "description": "FIND \u2014 `compute_pacing_signals` slow model detection (lines ~445-456) computes `median_duration` as `sorted(durations)[len(durations) // 2]`. For an even number of models (e.g., 4 models \u2192 indices 0,1,2,3), this takes index 2, which is the *upper* of the two middle values, not the true median (average of indices 1 and 2). For 5 models this is correct (index 2 of 0-4). For 2 models, `len//2 = 1`, taking the larger value \u2014 so for 2 models, the \"median\" is the maximum, making it impossible to trigger the slow_model signal.\nFOLLOW: With 2 active models (e.g., after 3 model failures), slow model detection is completely disabled. With 4 models, the threshold is slightly higher than true median, making detection marginally less sensitive. At PoC scale with 5 models this is unlikely to matter.",
+        "proposed_fix": "MEDIUM \u2014 not blocking for PoC with 5 models. True median for even counts would be `(sorted[n//2-1] + sorted[n//2]) / 2`.",
+        "verified": true
+      },
+      {
+        "finding_id": "CC2_F010",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.5,
+        "abstraction_index": 0.7,
+        "description": "FIND \u2014 `EndocrineLayer` stores `_scan_history` (line ~530) for trend detection via `health_trend()` (lines ~600-607), but `health_trend()` is never called by the `run()` method or anywhere in the codebase visible in context. The insect brain receives the `EndocrineReport` but has no code path that calls `endo.health_trend()`.\nFOLLOW: The health trend feature (tracking diagnostic counts across rounds by category) is dead code. The insect brain cannot detect worsening/improving code health over time because it never queries the trend data. The `_scan_history` list grows unboundedly across rounds with no consumer.",
+        "proposed_fix": "MEDIUM for PoC \u2014 the feature is declared but unused. Either wire it into the `EndocrineReport` (add a `health_trend` field populated by `run()`), or remove the dead code. Simplest: add trend data to the report:\n# In EndocrineLayer.run(), before return:\nreport = EndocrineReport(\n    round_idx=round_idx,\n    health_scan=health,\n    fix_evaluations=fix_evals,\n    pacing_signals=pacing,\n    elapsed_s=elapsed,\n)\n# Attach trend for insect brain consumption (not in dataclass \u2014 dynamic attr)\nreport.health_trend = self.health_trend()\nreturn report",
+        "verified": false
+      },
+      {
+        "finding_id": "DeepSeek_F001",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.9,
+        "abstraction_index": 0.3,
+        "description": "`scan_health` crashes if any tool runner throws an exception \u2014 uncaught exception stops the entire health scan. The `try/except` block around `diags = runner(existing)` catches exceptions but only logs a warning. However, the exception is re\u2011thrown because the `except` block does not `continue` or handle the failure; the loop proceeds to `all_diags.extend(diags)` where `diags` is undefined, raising `UnboundLocalError`.  \nFOLLOW: If pyright fails with an exception (e.g., malformed JSON), the health scan aborts, the `HealthScan` object is incomplete, and the insect brain receives no diagnostics for that round. The endocrine layer\u2019s primary signal is broken, and the insect brain cannot make pacing decisions based on code health. This is a single point of failure \u2014 one tool crash kills the whole scan.",
+        "proposed_fix": "In the `except Exception as e:` block, set `diags = []` after logging the warning, so the loop can continue and `all_diags.extend(diags)` works. Also set `tools_available[tool_name] = False`.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F005",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.7,
+        "abstraction_index": 0.5,
+        "description": "`compute_pacing_signals` uses a hard\u2011coded context budget of 80,000 characters if `context_budget` is 0 or negative. The insect brain passes `context_budget` from config, which could be a dict (per\u2011model overrides). The function tries to handle dict by taking `max(context_budget.values())`, but if the dict is empty, `max` raises. Also, if `context_budget` is 0 (unlimited), the context growth signal will never fire because `context_fraction = cumulative_context_chars / context_budget` divides by zero.  \nFOLLOW: A crash in pacing signals prevents the insect brain from receiving pacing signals, potentially causing unbounded context growth or missed convergence checks. If `context_budget` is 0 (unlimited), the division by zero raises `ZeroDivisionError`.",
+        "proposed_fix": "If `context_budget` is 0, set `context_fraction` to 0 and skip the threshold check. If `context_budget` is a dict, extract the max only if dict non\u2011empty; else use a default (80,000). Also add a try\u2011except around the max operation.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F007",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.75,
+        "abstraction_index": 0.3,
+        "description": "`_run_tool` returns a `CompletedProcess` with `returncode=-1` and `stderr=\"NOT_FOUND\"` when the tool binary is missing. The tool runners (`run_pyright`, etc.) check `if result.stderr == \"NOT_FOUND\": return []`. However, `_run_tool` also returns the same sentinel for timeouts (`stderr=\"TIMEOUT\"`). The tool runners do not distinguish between \u201ctool not found\u201d and \u201ctool timed out\u201d; both return empty diagnostics. This hides timeouts.  \nFOLLOW: A tool timeout (e.g., pyright hanging) will be reported as \u201ctool not found\u201d in logs, misleading the operator. The health scan will miss diagnostics from that tool, reducing signal quality.",
+        "proposed_fix": "In `_run_tool`, use different sentinel strings for \u201cNOT_FOUND\u201d and \u201cTIMEOUT\u201d. In tool runners, log the difference and treat timeouts as transient failures (maybe retry once).",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F010",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.9,
+        "abstraction_index": 0.3,
+        "description": "Interface mismatch: `EndocrineLayer.run` expects `round_timings` as `List[RoundTiming]` (a custom dataclass defined in endocrine.py). However, the insect brain (context file) does not export `RoundTiming`. The insect brain uses its own timing data structures. When the insect brain calls `endo.run(...)`, it must construct `RoundTiming` objects from its internal timing data. This is an implicit interface contract that is not enforced and may cause runtime errors if the insect brain passes the wrong data.  \nFOLLOW: If the insect brain passes a list of dicts or a different dataclass, the endocrine layer will crash with AttributeError when accessing `duration_s`, `response_chars`, etc. This breaks the endocrine cycle and halts the experiment.",
+        "proposed_fix": "Change `EndocrineLayer.run` to accept a list of dicts with required keys, and convert them to `RoundTiming` inside the function. Or define `RoundTiming` in a shared module imported by both. Given PoC context, the simplest fix is to accept dicts and map keys.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F011",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.7,
+        "abstraction_index": 0.1,
+        "description": "`compute_pacing_signals` uses `median_duration * 2.5` as threshold for slow\u2011model detection. If `median_duration` is very small (e.g., 0.1s), the threshold is 0.25s, which could flag fast models as slow. Also, the absolute threshold is 30 seconds, which may be too high for a PoC with short rounds.  \nFOLLOW: Fast models may be incorrectly flagged as slow, causing the insect brain to increase timeouts unnecessarily. This wastes time and may delay convergence.",
+        "proposed_fix": "Use a relative threshold (e.g., 2.5\u00d7 median) AND an absolute minimum threshold (e.g., 5 seconds) to avoid false positives on very fast rounds.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F012",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.2,
+        "description": "`_categorise_pyright` always returns `DefectCategory.TYPE_SAFETY` as fallback, even for messages about `None` (which it catches earlier). However, the earlier check for `\"none\"` or `\"optional\"` uses `msg_lower`. If the message contains \u201cNone\u201d but not those substrings, it falls through. That\u2019s okay. The bug: the function categorises `\"could be none\"` as `NULL_DEREF`, but pyright\u2019s \u201ccould be None\u201d is a type\u2011safety issue (optional type), not a null dereference. This mis\u2011categorisation skews the health\u2011scan counts by category.  \nFOLLOW: The insect brain sees inflated NULL_DEREF counts, possibly triggering incorrect pacing signals or health trends. The mis\u2011categorisation does not break functionality but reduces signal accuracy.",
+        "proposed_fix": "Re\u2011evaluate the keyword list: \u201ccould be none\u201d is a type\u2011safety issue, not null deref. Change that phrase to map to `TYPE_SAFETY`. Keep \u201cnone\u201d and \u201coptional\u201d as `NULL_DEREF`? Actually, optional types are type\u2011safety. Better to map all pyright messages to `TYPE_SAFETY` (since pyright is a type checker). Simpler: remove the `NULL_DEREF` branch and always return `TYPE_SAFETY`.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F013",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.75,
+        "abstraction_index": 0.3,
+        "description": "`_categorise_ruff` maps `S\u2011codes` (security) to `DefectCategory.SECURITY`. However, ruff\u2019s `S` codes are from `bandit` plugin and indeed security\u2011related. That\u2019s correct. The bug: `B\u2011codes` (bugbear) are not categorised; they fall through to `STYLE`. Bugbear includes potential bugs like mutable default arguments, which should be `CODE_BEHAVIORAL` or `LOGICAL`.  \nFOLLOW: Security\u2011related ruff warnings are correctly categorised, but bugbear warnings are lumped with style, under\u2011weighting their importance in health trends.",
+        "proposed_fix": "Add a branch for `code.startswith(\"B\")` returning `DefectCategory.CODE_BEHAVIORAL`.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F014",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.95,
+        "abstraction_index": 0.5,
+        "description": "`run_mypy` uses a regex to parse mypy output. The regex expects `file.py:line:col: severity: message [error\u2011code]`. However, mypy output can span multiple lines (with `note:` lines). The regex processes line by line, so subsequent note lines are ignored. This loses information. Also, if the message contains a colon, the regex may mis\u2011parse.  \nFOLLOW: Mypy diagnostics are incomplete, leading to under\u2011counting of type errors. The health scan misses some issues, giving a false sense of code health.",
+        "proposed_fix": "Use mypy\u2019s `--json\u2011output` flag to get structured JSON instead of parsing text. If JSON is not available, fall back to line\u2011based parsing but handle continuation lines.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F015",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 3,
+        "severity": 0.8,
+        "abstraction_index": 0.1,
+        "description": "`_TOOL_TIMEOUT` is 60 seconds for pyright/ruff/bandit/mypy, but `_CROSSHAIR_TIMEOUT` is 120 seconds for crosshair. However, crosshair is never invoked in the code (no `run_crosshair` function). The constant is dead code.  \nFOLLOW: No effect on runtime, but unnecessary code clutter.",
+        "proposed_fix": "Remove the `_CROSSHAIR_TIMEOUT` constant and any references (none).",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F016",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.65,
+        "abstraction_index": 0.2,
+        "description": "`health_trend` returns a dict of category \u2192 list of counts per round. However, if a category appears in some rounds but not others, the lists will have different lengths for different categories. This makes trend analysis awkward.  \nFOLLOW: The insect brain cannot easily compute per\u2011category trends across rounds because the lists are misaligned.",
+        "proposed_fix": "Ensure each list has the same length (pad with zeros for rounds where the category was absent). Or return a list of dicts per round (round \u2192 category counts).",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F017",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 7,
+        "severity": 0.7,
+        "abstraction_index": 0.3,
+        "description": "`scan_health` runs tools sequentially. If a tool hangs (e.g., pyright infinite loop), the entire health scan hangs until the `_run_tool` timeout (60 seconds). This adds up to 4 minutes for four tools. The endocrine cycle may exceed the inter\u2011round time budget.  \nFOLLOW: A stuck tool delays the entire experiment, possibly causing round timeouts.",
+        "proposed_fix": "Run tools in parallel with a global timeout for the whole health scan. Or set a per\u2011tool timeout lower (30 seconds) and skip tools that timeout.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F022",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.8,
+        "abstraction_index": 0.3,
+        "description": "The endocrine layer uses `PYTHON_313` binary path but never uses it. The constant is defined but dead code.  \nFOLLOW: No operational impact, but dead code adds confusion.",
+        "proposed_fix": "Remove the `PYTHON_313` constant.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F023",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.85,
+        "abstraction_index": 0.2,
+        "description": "`run_bandit` maps severity: `\"LOW\"` \u2192 `\"info\"`, `\"MEDIUM\"` \u2192 `\"warning\"`, `\"HIGH\"` \u2192 `\"error\"`. However, the `ToolDiagnostic` severity is used only for counting. The mapping is fine. The bug: bandit\u2019s JSON output includes `\"issue_severity\"` which may be missing; the code uses `.get()` with default empty string, which maps to `\"warning\"` (default of `sev_map.get`). That\u2019s okay. However, bandit may output `\"UNDEFINED\"` or other values not in map, causing `sev_map.get` to return `\"warning\"` as default. That\u2019s fine. No critical issue.  \nFOLLOW: Minor mis\u2011classification of bandit severity, not critical.",
+        "proposed_fix": "None needed for PoC.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F024",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.95,
+        "abstraction_index": 0.5,
+        "description": "`scan_health` aggregates counts by category, tool, severity, and file. However, if a diagnostic has an empty category (should not happen), it will be counted under empty string key. This may cause downstream code to expect non\u2011empty keys.  \nFOLLOW: The health trend may have empty category keys, causing errors when iterating.",
+        "proposed_fix": "In the aggregation loop, use `d.category or \"unknown\"`.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F025",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 7,
+        "severity": 0.7,
+        "abstraction_index": 0.1,
+        "description": "`compute_pacing_signals` uses `novelty_counts` list (counts per round). The plateau detection checks `if all(n <= 1 for n in recent)`. If `novelty_counts` is empty, the condition fails. That\u2019s fine. However, `novelty_counts` is passed from insect brain, which may compute novelty differently (e.g., count of novel equivalence classes). The threshold `3.0` is arbitrary.  \nFOLLOW: May fire too early or too late. Not critical for PoC.",
+        "proposed_fix": "Adjust threshold to 2 consecutive rounds of zero novelty, or use a percentage of previous rounds.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F026",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 4,
+        "severity": 0.65,
+        "abstraction_index": 0.2,
+        "description": "`EndocrineLayer` initialises `_scan_history` as an empty list. `health_trend` returns a dict built from this history. If no scans have been run, returns empty dict. That\u2019s fine. However, `health_trend` does not protect against empty history.  \nFOLLOW: No crash, just empty trend. Acceptable.",
+        "proposed_fix": "None.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F028",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.75,
+        "abstraction_index": 0.1,
+        "description": "`_run_tool` catches `FileNotFoundError` and returns a sentinel. However, other `OSError` (e.g., permission denied) will raise an exception and crash the tool runner.  \nFOLLOW: Tool invocation fails, causing the health scan to miss that tool\u2019s diagnostics. The exception is caught in `scan_health` (see F001), but the `except Exception` block will catch it and log. However, if the exception is not caught in `_run_tool`, it propagates to `scan_health` and is caught there. That\u2019s okay. Wait: `_run_tool` does not have a catch\u2011all for `OSError`. It catches `FileNotFoundError` only. Permission denied will raise `PermissionError` (subclass of `OSError`) and propagate. `scan_health` catches `Exception`, so it will be caught. So no crash.  \nFOLLOW: Acceptable.",
+        "proposed_fix": "None.",
+        "verified": true
+      },
+      {
+        "finding_id": "DeepSeek_F030",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.2,
+        "description": "`compute_pacing_signals` uses `round_timings` list; if empty, it skips slow\u2011model detection. That\u2019s fine. However, if `round_timings` is `None` (the default in `run` is `None`), the function receives `[]` because `round_timings or []`. So safe.  \nFOLLOW: No issue.",
+        "proposed_fix": "None.",
+        "verified": true
+      }
+    ]
+  ],
+  "round_records": [
+    {
+      "round_idx": 0,
+      "timestamp": "2026-04-05T10:54:34.455983+00:00",
+      "finding_count": 31,
+      "duration_s": 183.07293245900001,
+      "failures": {},
+      "metrics": {},
+      "immune_response": {
+        "triaged": [
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F003",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.84,
+              "abstraction_index": 0.41,
+              "description": "FIND \u2014 scan_health() reports tools as available even when the binary is missing. Each runner returns `[]` on `result.stderr == \"NOT_FOUND\"`, and scan_health() sets `tools_available[tool_name] = True` whenever the runner returns without raising. Evidence: run_pyright/run_ruff/run_bandit/run_mypy all swallow NOT_FOUND into empty diagnostics; scan_health has no separate availability probe and treats successful function return as availability.\nFOLLOW: Downstream health reports can claim the bench is healthy while analysis tools were never run. That is silently misleading to the human reviewer and to any insect-brain logic consuming `tools_available`. Missing pyright/ruff/bandit/mypy becomes indistinguishable from \u201czero findings\u201d, so the health-scan feature can appear to fire cleanly when it is dead.",
+              "proposed_fix": "FIX \u2014 have each tool runner return both diagnostics and an availability flag, or expose NOT_FOUND distinctly so scan_health() sets `tools_available[tool_name] = False` when the binary is absent.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "result.stderr == \"NOT_FOUND\", tools_available[tool_name] = True",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F005",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.71,
+              "abstraction_index": 0.44,
+              "description": "FIND \u2014 health_trend() produces ragged/incomplete time series that omit zero-count rounds. It only appends counts for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. If a category disappears in a later round, no 0 is appended; if it appears late, earlier rounds are missing entirely.\nFOLLOW: Downstream trend consumers cannot align series by round index reliably. A category going from 3 to 0 findings looks like a shorter list instead of improvement to zero. This can mislead any pacing or review logic that depends on worsening/improving code health over rounds and makes the history structurally inconsistent.",
+              "proposed_fix": "FIX \u2014 build the union of seen categories across scan history and emit one count per round for every category, filling absent rounds with 0.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 health_trend() produces ragged/incomplete time series that omit zero-count rounds. It only appends counts for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. If a category disappears in a later round, no 0 is appended; if it appears late, earlier rounds are missing entirely.\nFOLLOW: Downstream trend consumers cannot align series by round index reliably. A category going from 3 to 0 findings looks like a shorter list instead of improvement to zero. This can mislead any pacing or review logic that depends on worsening/improving code health over rounds and makes the history structurally inconsistent.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F006",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 6,
+              "severity": 0.63,
+              "abstraction_index": 0.29,
+              "description": "FIND \u2014 slow-model and response-size anomaly detection use the upper median element instead of the statistical median for even-sized model sets. In compute_pacing_signals(), median is computed as `sorted(vals)[len(vals) // 2]`. With 4 or 6 models this picks the higher middle value, inflating the threshold and suppressing alerts.\nFOLLOW: Pacing signals can fail to fire when one model is materially slower/larger than peers, especially in the 5-model environment if one entry is missing/zero-filtered and the effective sample becomes even. That degrades the inter-round pacing feedback the insect brain uses for timeout/degrade decisions.",
+              "proposed_fix": "FIX \u2014 compute the true median, e.g. with `statistics.median`, for both duration and response_chars thresholds.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 slow-model and response-size anomaly detection use the upper median element instead of the statistical median for even-sized model sets. In compute_pacing_signals(), median is computed as `sorted(vals)[len(vals) // 2]`. With 4 or 6 models this picks the higher middle value, inflating the threshold and suppressing alerts.\nFOLLOW: Pacing signals can fail to fire when one model is materially slower/larger than peers, especially in the 5-model environment if one entry is missing/zero-filtered and the effective sample becomes even. That degrades the inter-round pacing feedback the insect brain uses for timeout/degrade decisions.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F001",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.97,
+              "abstraction_index": 0.74,
+              "description": "FIND \u2014 `scan_health()` marks tools as available whenever the runner function returns without raising, even when the binary is missing or timed out. Evidence: `run_pyright/run_ruff/run_bandit/run_mypy` return `[]` on `\"NOT_FOUND\"` and also on parse failure; `scan_health()` then unconditionally sets `tools_available[tool_name] = True` inside the `try` block. This makes the health scan report success for tools that never ran.\nFOLLOW: The insect-brain-facing health signal becomes silently wrong: missing pyright/ruff/bandit/mypy installations appear healthy rather than unavailable. Downstream, reviewers and any logic consuming `HealthScan.tools_available` will trust empty diagnostics as \u201cno issues\u201d instead of \u201ctool absent / scan failed\u201d. This directly undermines the module\u2019s primary feature \u201cHealth scan \u2014 static analysis tools between rounds\u201d because the feature can fail dead-silent and still report operational.",
+              "proposed_fix": "Change each tool runner to return both diagnostics and an availability/success flag, or minimally have `scan_health()` detect `_run_tool` sentinel failures (`NOT_FOUND`, `TIMEOUT`, empty/invalid output) and set `tools_available[tool_name] = False` for those cases instead of inferring availability from absence of exceptions.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "run_pyright/run_ruff/run_bandit/run_mypy, tools_available[tool_name] = True,  block. This makes the health scan report success for tools that never ran.\nFOLLOW: The insect-brain-facing health signal becomes silently wrong: missing pyright/ruff/bandit/mypy installations appear healthy rather than unavailable. Downstream, reviewers and any logic consuming ",
+            "is_duplicate": true,
+            "duplicate_of": "ChatGPT_F003",
+            "similarity": 0.4332318233726684
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F005",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.84,
+              "abstraction_index": 0.58,
+              "description": "FIND \u2014 the documented health scan capability says endocrine runs `pyright/ruff/bandit` and the module-level constants include `CROSSHAIR_BIN` plus `_CROSSHAIR_TIMEOUT`, but no crosshair runner exists and no crosshair invocation is wired into `scan_health()`. This is dead infrastructure/API drift inside the target file itself.\nFOLLOW: One advertised significant feature never fires. Reviewers consuming this module will assume symbolic execution support exists because the binary path, timeout, and `ToolDiagnostic.tool` docstring all mention crosshair. In a PoC focused on \u201call significant features firing cleanly,\u201d this is misleading dead code and a missing capability in the health scan surface.",
+              "proposed_fix": "Either remove crosshair from the endocrine API/docs/constants for now, or add a minimal `run_crosshair()` wired into `scan_health()` so the declared feature actually executes. For PoC speed, the simplest sufficient correction is to remove the unused crosshair claims/constants until implemented.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.STATISTICAL",
+            "extracted_claim": "FIND \u2014 the documented health scan capability says endocrine runs `pyright/ruff/bandit` and the module-level constants include `CROSSHAIR_BIN` plus `_CROSSHAIR_TIMEOUT`, but no crosshair runner exists and no crosshair invocation is wired into `scan_health()`. This is dead infrastructure/API drift inside the target file itself.\nFOLLOW: One advertised significant feature never fires. Reviewers consuming this module will assume symbolic execution support exists because the binary path, timeout, and `ToolDiagnostic.tool` docstring all mention crosshair. In a PoC focused on \u201call significant features firing cleanly,\u201d this is misleading dead code and a missing capability in the health scan surface.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F006",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.79,
+              "abstraction_index": 0.67,
+              "description": "FIND \u2014 `compute_pacing_signals()` claims `context_budget` is an `int` but contains runtime handling for `dict`, then computes `max(context_budget.values())`. For per-model budgets this is the wrong aggregate for a system-wide `cumulative_context_chars`: it compares cumulative total context against the largest single-model budget. Evidence is the in-function comment plus `if isinstance(context_budget, dict): context_budget = max(...)`.\nFOLLOW: Context growth alerts can fail to trigger until the entire system has far exceeded the relevant budget envelope. Since insect_brain uses per-model context budgeting and endocrine is meant to warn on pacing/context pressure, this can suppress the very signal intended to trigger degradation/reset decisions, allowing context overrun to accumulate silently.",
+              "proposed_fix": "If a dict is passed, compare cumulative context against the sum of per-model budgets, not the max single-model budget.",
+              "verified": false,
+              "escalated": true,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": ". For per-model budgets this is the wrong aggregate for a system-wide , : it compares cumulative total context against the largest single-model budget. Evidence is the in-function comment plus ",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F007",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.73,
+              "abstraction_index": 0.55,
+              "description": "FIND \u2014 `health_trend()` produces ragged series and drops zeros for absent categories. Evidence: it appends counts only for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. Categories absent in a round get no entry rather than `0`.\nFOLLOW: Any downstream trend consumer comparing rounds gets misaligned history lengths and cannot distinguish \u201ccategory absent this round\u201d from \u201ccategory not yet seen\u201d. This degrades the stated purpose \u201cfor the insect brain to detect worsening/improving code health\u201d because trends are structurally wrong once categories appear or disappear across rounds.",
+              "proposed_fix": "Build trends across the union of categories seen in `_scan_history` and append an explicit `0` for categories missing from each scan.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 `health_trend()` produces ragged series and drops zeros for absent categories. Evidence: it appends counts only for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. Categories absent in a round get no entry rather than `0`.\nFOLLOW: Any downstream trend consumer comparing rounds gets misaligned history lengths and cannot distinguish \u201ccategory absent this round\u201d from \u201ccategory not yet seen\u201d. This degrades the stated purpose \u201cfor the insect brain to detect worsening/improving code health\u201d because trends are structurally wrong once categories appear or disappear across rounds.",
+            "is_duplicate": true,
+            "duplicate_of": "ChatGPT_F005",
+            "similarity": 0.4413048245614035
+          },
+          {
+            "finding": {
+              "finding_id": "Gemini_F003",
+              "model_id": "Gemini",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.4,
+              "abstraction_index": 0.2,
+              "description": "FIND: In `EndocrineLayer.health_trend()`, the trend lists are populated by iterating over `scan_history` and appending `scan.counts_by_category.get(...)`. However, it only iterates over the keys present in the current scan's dictionary.\nFOLLOW: If a defect category has zero issues in a particular round, it will be missing from `counts_by_category` entirely. The function skips it instead of appending a `0`, causing the list for that category to be shorter than the number of recorded rounds. Downstream, consumers will misalign the trend data (e.g., reading round 5's count as round 3's count), corrupting cross-round health tracking metrics.",
+              "proposed_fix": "FIX: Pre-compute the set of all known categories across the entire history, then iterate through that set for each scan and use `.get(cat, 0)` to guarantee equal-length lists for all metrics.\ndef health_trend(self) -> Dict[str, List[int]]:\n        \"\"\"Return diagnostic count trends across rounds (by category).\"\"\"\n        trend: Dict[str, List[int]] = {}\n        all_cats = {cat for scan in self._scan_history for cat in scan.counts_by_category}\n        for scan in self._scan_history:\n            for cat in all_cats:\n                trend.setdefault(cat, []).append(scan.counts_by_category.get(cat, 0))\n        return trend",
+              "verified": false,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND: In `EndocrineLayer.health_trend()`, the trend lists are populated by iterating over `scan_history` and appending `scan.counts_by_category.get(...)`. However, it only iterates over the keys present in the current scan's dictionary.\nFOLLOW: If a defect category has zero issues in a particular round, it will be missing from `counts_by_category` entirely. The function skips it instead of appending a `0`, causing the list for that category to be shorter than the number of recorded rounds. Downstream, consumers will misalign the trend data (e.g., reading round 5's count as round 3's count), corrupting cross-round health tracking metrics.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Gemini_F004",
+              "model_id": "Gemini",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.3,
+              "abstraction_index": 0.1,
+              "description": "FIND: In `compute_pacing_signals`, the pacing signal generated for a response size anomaly (when a model produces unusually large output > 3x median) incorrectly hardcodes `signal_type=\"context_growth\"` instead of `\"response_size_anomaly\"`.\nFOLLOW: When this specific output size anomaly triggers, the downstream `insect_brain` or orchestrator will misinterpret the signal as a global context budget exhaustion event. This misclassification could lead to inappropriate system-wide degradation (e.g., arbitrarily degrading the relay payload) instead of properly targeting or penalizing the specific offending model.",
+              "proposed_fix": "FIX: Change the hardcoded `signal_type` to correctly identify the anomaly.\nsignals.append(PacingSignal(\n                        signal_type=\"response_size_anomaly\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n                        model_id=rt.model_id,\n                        metric_value=float(rt.response_chars),\n                        threshold=float(median_chars * 3),\n                        suggested_action=\"degrade_relay\",\n                    ))",
+              "verified": false,
+              "escalated": true,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": ", the pacing signal generated for a response size anomaly (when a model produces unusually large output > 3x median) incorrectly hardcodes ",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F004",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.7,
+              "abstraction_index": 0.3,
+              "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection (lines ~475-481) checks `len(novelty_counts) >= 3 and round_idx >= 2`, then takes `novelty_counts[-3:]`. But `novelty_counts` is a list indexed by round, and the caller (`EndocrineLayer.run`) passes `novelty_counts or []`. If `novelty_counts` has fewer entries than `round_idx` (e.g., the caller skipped rounds or the list was partially populated), the check `len(novelty_counts) >= 3` could pass while the last 3 entries don't correspond to the \"last 3 rounds\" relative to `round_idx`. More critically: the threshold `all(n <= 1 for n in recent)` means novelty plateau fires when novel findings are 0 or 1 for 3 consecutive rounds. At PoC scale with 5 models reviewing one file, finding 0-1 novel issues for 3 rounds is expected convergence behaviour, not an anomaly. This will fire on nearly every experiment once convergence begins, producing noise.\nFOLLOW: The insect brain receives a `novelty_plateau` pacing signal and the suggested action is `check_convergence`. If the brain acts on this, it could trigger early termination even when the kappa metric hasn't converged \u2014 the novelty plateau signal is redundant with and potentially contradictory to the kappa-based convergence check. At PoC scale this is noise, not signal.",
+              "proposed_fix": "This is MEDIUM severity \u2014 the signal exists but the insect brain doesn't appear to act on `check_convergence` in a way that overrides kappa. No fix needed for PoC. If desired, raise the threshold: `all(n == 0 for n in recent)` (true plateau = zero novel findings).",
+              "verified": false,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": " novelty plateau detection (lines ~475-481) checks , novelty_counts[-3:], len(novelty_counts) >= 3, all(n <= 1 for n in recent)",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F007",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.55,
+              "abstraction_index": 0.6,
+              "description": "FIND \u2014 `scan_health` runs pyright, ruff, bandit, and mypy but the `HealthScan.tools_available` dict marks a tool as `False` only if the runner raises an exception (line ~257). If a tool binary is not found, the runner returns an empty list (e.g., `run_pyright` returns `[]` when `result.stderr == \"NOT_FOUND\"`), and `tools_available` is set to `True`. The health scan reports the tool as \"available\" when it isn't installed.\nFOLLOW: `HealthScan.tools_available` feeds into logging (`%d tools` count at line ~270) and potentially into the insect brain's health assessment. A scan reporting 4 tools available with 0 diagnostics looks like \"clean code\" when it's actually \"no tools ran.\" The insect brain could make incorrect health trend decisions based on phantom clean scans.",
+              "proposed_fix": "Check tool availability before running, or detect `NOT_FOUND` returns:\nfor tool_name, runner in [(\"pyright\", run_pyright), ...]:\n    try:\n        diags = runner(existing)\n        all_diags.extend(diags)\n        # Check if tool was actually available (not just empty results)\n        tools_available[tool_name] = not (\n            len(diags) == 0 and not shutil.which(\n                {\"pyright\": PYRIGHT_BIN, \"ruff\": RUFF_BIN, \n                 \"bandit\": BANDIT_BIN, \"mypy\": MYPY_BIN}[tool_name]\n            )\n        )\n    except Exception as e:\n        logger.warning(\"Tool %s failed: %s\", tool_name, e)\n        tools_available[tool_name] = False\nSimpler: have each runner return a sentinel or have `_run_tool` propagate `NOT_FOUND` status.",
+              "verified": false,
+              "escalated": true,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "result.stderr == \"NOT_FOUND\"",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F008",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.6,
+              "abstraction_index": 0.3,
+              "description": "FIND \u2014 `compute_pacing_signals` slow model detection (lines ~445-456) computes `median_duration` as `sorted(durations)[len(durations) // 2]`. For an even number of models (e.g., 4 models \u2192 indices 0,1,2,3), this takes index 2, which is the *upper* of the two middle values, not the true median (average of indices 1 and 2). For 5 models this is correct (index 2 of 0-4). For 2 models, `len//2 = 1`, taking the larger value \u2014 so for 2 models, the \"median\" is the maximum, making it impossible to trigger the slow_model signal.\nFOLLOW: With 2 active models (e.g., after 3 model failures), slow model detection is completely disabled. With 4 models, the threshold is slightly higher than true median, making detection marginally less sensitive. At PoC scale with 5 models this is unlikely to matter.",
+              "proposed_fix": "MEDIUM \u2014 not blocking for PoC with 5 models. True median for even counts would be `(sorted[n//2-1] + sorted[n//2]) / 2`.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": " slow model detection (lines ~445-456) computes , sorted(durations)[len(durations) // 2], len//2 = 1",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F010",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.5,
+              "abstraction_index": 0.7,
+              "description": "FIND \u2014 `EndocrineLayer` stores `_scan_history` (line ~530) for trend detection via `health_trend()` (lines ~600-607), but `health_trend()` is never called by the `run()` method or anywhere in the codebase visible in context. The insect brain receives the `EndocrineReport` but has no code path that calls `endo.health_trend()`.\nFOLLOW: The health trend feature (tracking diagnostic counts across rounds by category) is dead code. The insect brain cannot detect worsening/improving code health over time because it never queries the trend data. The `_scan_history` list grows unboundedly across rounds with no consumer.",
+              "proposed_fix": "MEDIUM for PoC \u2014 the feature is declared but unused. Either wire it into the `EndocrineReport` (add a `health_trend` field populated by `run()`), or remove the dead code. Simplest: add trend data to the report:\n# In EndocrineLayer.run(), before return:\nreport = EndocrineReport(\n    round_idx=round_idx,\n    health_scan=health,\n    fix_evaluations=fix_evals,\n    pacing_signals=pacing,\n    elapsed_s=elapsed,\n)\n# Attach trend for insect brain consumption (not in dataclass \u2014 dynamic attr)\nreport.health_trend = self.health_trend()\nreturn report",
+              "verified": false,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 `EndocrineLayer` stores `_scan_history` (line ~530) for trend detection via `health_trend()` (lines ~600-607), but `health_trend()` is never called by the `run()` method or anywhere in the codebase visible in context. The insect brain receives the `EndocrineReport` but has no code path that calls `endo.health_trend()`.\nFOLLOW: The health trend feature (tracking diagnostic counts across rounds by category) is dead code. The insect brain cannot detect worsening/improving code health over time because it never queries the trend data. The `_scan_history` list grows unboundedly across rounds with no consumer.",
+            "is_duplicate": true,
+            "duplicate_of": "CC2_F007",
+            "similarity": 0.33444937474788217
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F001",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.9,
+              "abstraction_index": 0.3,
+              "description": "`scan_health` crashes if any tool runner throws an exception \u2014 uncaught exception stops the entire health scan. The `try/except` block around `diags = runner(existing)` catches exceptions but only logs a warning. However, the exception is re\u2011thrown because the `except` block does not `continue` or handle the failure; the loop proceeds to `all_diags.extend(diags)` where `diags` is undefined, raising `UnboundLocalError`.  \nFOLLOW: If pyright fails with an exception (e.g., malformed JSON), the health scan aborts, the `HealthScan` object is incomplete, and the insect brain receives no diagnostics for that round. The endocrine layer\u2019s primary signal is broken, and the insect brain cannot make pacing decisions based on code health. This is a single point of failure \u2014 one tool crash kills the whole scan.",
+              "proposed_fix": "In the `except Exception as e:` block, set `diags = []` after logging the warning, so the loop can continue and `all_diags.extend(diags)` works. Also set `tools_available[tool_name] = False`.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "try/except, diags = runner(existing)",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F005",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.7,
+              "abstraction_index": 0.5,
+              "description": "`compute_pacing_signals` uses a hard\u2011coded context budget of 80,000 characters if `context_budget` is 0 or negative. The insect brain passes `context_budget` from config, which could be a dict (per\u2011model overrides). The function tries to handle dict by taking `max(context_budget.values())`, but if the dict is empty, `max` raises. Also, if `context_budget` is 0 (unlimited), the context growth signal will never fire because `context_fraction = cumulative_context_chars / context_budget` divides by zero.  \nFOLLOW: A crash in pacing signals prevents the insect brain from receiving pacing signals, potentially causing unbounded context growth or missed convergence checks. If `context_budget` is 0 (unlimited), the division by zero raises `ZeroDivisionError`.",
+              "proposed_fix": "If `context_budget` is 0, set `context_fraction` to 0 and skip the threshold check. If `context_budget` is a dict, extract the max only if dict non\u2011empty; else use a default (80,000). Also add a try\u2011except around the max operation.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "context_fraction = cumulative_context_chars / context_budget",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F007",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.75,
+              "abstraction_index": 0.3,
+              "description": "`_run_tool` returns a `CompletedProcess` with `returncode=-1` and `stderr=\"NOT_FOUND\"` when the tool binary is missing. The tool runners (`run_pyright`, etc.) check `if result.stderr == \"NOT_FOUND\": return []`. However, `_run_tool` also returns the same sentinel for timeouts (`stderr=\"TIMEOUT\"`). The tool runners do not distinguish between \u201ctool not found\u201d and \u201ctool timed out\u201d; both return empty diagnostics. This hides timeouts.  \nFOLLOW: A tool timeout (e.g., pyright hanging) will be reported as \u201ctool not found\u201d in logs, misleading the operator. The health scan will miss diagnostics from that tool, reducing signal quality.",
+              "proposed_fix": "In `_run_tool`, use different sentinel strings for \u201cNOT_FOUND\u201d and \u201cTIMEOUT\u201d. In tool runners, log the difference and treat timeouts as transient failures (maybe retry once).",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "returncode=-1, stderr=\"NOT_FOUND\", if result.stderr == \"NOT_FOUND\": return [], stderr=\"TIMEOUT\"",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F010",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.9,
+              "abstraction_index": 0.3,
+              "description": "Interface mismatch: `EndocrineLayer.run` expects `round_timings` as `List[RoundTiming]` (a custom dataclass defined in endocrine.py). However, the insect brain (context file) does not export `RoundTiming`. The insect brain uses its own timing data structures. When the insect brain calls `endo.run(...)`, it must construct `RoundTiming` objects from its internal timing data. This is an implicit interface contract that is not enforced and may cause runtime errors if the insect brain passes the wrong data.  \nFOLLOW: If the insect brain passes a list of dicts or a different dataclass, the endocrine layer will crash with AttributeError when accessing `duration_s`, `response_chars`, etc. This breaks the endocrine cycle and halts the experiment.",
+              "proposed_fix": "Change `EndocrineLayer.run` to accept a list of dicts with required keys, and convert them to `RoundTiming` inside the function. Or define `RoundTiming` in a shared module imported by both. Given PoC context, the simplest fix is to accept dicts and map keys.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "Interface mismatch: `EndocrineLayer.run` expects `round_timings` as `List[RoundTiming]` (a custom dataclass defined in endocrine.py). However, the insect brain (context file) does not export `RoundTiming`. The insect brain uses its own timing data structures. When the insect brain calls `endo.run(...)`, it must construct `RoundTiming` objects from its internal timing data. This is an implicit interface contract that is not enforced and may cause runtime errors if the insect brain passes the wrong data.  \nFOLLOW: If the insect brain passes a list of dicts or a different dataclass, the endocrine layer will crash with AttributeError when accessing `duration_s`, `response_chars`, etc. This breaks the endocrine cycle and halts the experiment.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F011",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 6,
+              "severity": 0.7,
+              "abstraction_index": 0.1,
+              "description": "`compute_pacing_signals` uses `median_duration * 2.5` as threshold for slow\u2011model detection. If `median_duration` is very small (e.g., 0.1s), the threshold is 0.25s, which could flag fast models as slow. Also, the absolute threshold is 30 seconds, which may be too high for a PoC with short rounds.  \nFOLLOW: Fast models may be incorrectly flagged as slow, causing the insect brain to increase timeouts unnecessarily. This wastes time and may delay convergence.",
+              "proposed_fix": "Use a relative threshold (e.g., 2.5\u00d7 median) AND an absolute minimum threshold (e.g., 5 seconds) to avoid false positives on very fast rounds.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`compute_pacing_signals` uses `median_duration * 2.5` as threshold for slow\u2011model detection. If `median_duration` is very small (e.g., 0.1s), the threshold is 0.25s, which could flag fast models as slow. Also, the absolute threshold is 30 seconds, which may be too high for a PoC with short rounds.  \nFOLLOW: Fast models may be incorrectly flagged as slow, causing the insect brain to increase timeouts unnecessarily. This wastes time and may delay convergence.",
+            "is_duplicate": true,
+            "duplicate_of": "ChatGPT_F006",
+            "similarity": 0.3325637254901961
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F012",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.85,
+              "abstraction_index": 0.2,
+              "description": "`_categorise_pyright` always returns `DefectCategory.TYPE_SAFETY` as fallback, even for messages about `None` (which it catches earlier). However, the earlier check for `\"none\"` or `\"optional\"` uses `msg_lower`. If the message contains \u201cNone\u201d but not those substrings, it falls through. That\u2019s okay. The bug: the function categorises `\"could be none\"` as `NULL_DEREF`, but pyright\u2019s \u201ccould be None\u201d is a type\u2011safety issue (optional type), not a null dereference. This mis\u2011categorisation skews the health\u2011scan counts by category.  \nFOLLOW: The insect brain sees inflated NULL_DEREF counts, possibly triggering incorrect pacing signals or health trends. The mis\u2011categorisation does not break functionality but reduces signal accuracy.",
+              "proposed_fix": "Re\u2011evaluate the keyword list: \u201ccould be none\u201d is a type\u2011safety issue, not null deref. Change that phrase to map to `TYPE_SAFETY`. Keep \u201cnone\u201d and \u201coptional\u201d as `NULL_DEREF`? Actually, optional types are type\u2011safety. Better to map all pyright messages to `TYPE_SAFETY` (since pyright is a type checker). Simpler: remove the `NULL_DEREF` branch and always return `TYPE_SAFETY`.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`_categorise_pyright` always returns `DefectCategory.TYPE_SAFETY` as fallback, even for messages about `None` (which it catches earlier). However, the earlier check for `\"none\"` or `\"optional\"` uses `msg_lower`. If the message contains \u201cNone\u201d but not those substrings, it falls through. That\u2019s okay. The bug: the function categorises `\"could be none\"` as `NULL_DEREF`, but pyright\u2019s \u201ccould be None\u201d is a type\u2011safety issue (optional type), not a null dereference. This mis\u2011categorisation skews the health\u2011scan counts by category.  \nFOLLOW: The insect brain sees inflated NULL_DEREF counts, possibly triggering incorrect pacing signals or health trends. The mis\u2011categorisation does not break functionality but reduces signal accuracy.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F013",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.75,
+              "abstraction_index": 0.3,
+              "description": "`_categorise_ruff` maps `S\u2011codes` (security) to `DefectCategory.SECURITY`. However, ruff\u2019s `S` codes are from `bandit` plugin and indeed security\u2011related. That\u2019s correct. The bug: `B\u2011codes` (bugbear) are not categorised; they fall through to `STYLE`. Bugbear includes potential bugs like mutable default arguments, which should be `CODE_BEHAVIORAL` or `LOGICAL`.  \nFOLLOW: Security\u2011related ruff warnings are correctly categorised, but bugbear warnings are lumped with style, under\u2011weighting their importance in health trends.",
+              "proposed_fix": "Add a branch for `code.startswith(\"B\")` returning `DefectCategory.CODE_BEHAVIORAL`.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`_categorise_ruff` maps `S\u2011codes` (security) to `DefectCategory.SECURITY`. However, ruff\u2019s `S` codes are from `bandit` plugin and indeed security\u2011related. That\u2019s correct. The bug: `B\u2011codes` (bugbear) are not categorised; they fall through to `STYLE`. Bugbear includes potential bugs like mutable default arguments, which should be `CODE_BEHAVIORAL` or `LOGICAL`.  \nFOLLOW: Security\u2011related ruff warnings are correctly categorised, but bugbear warnings are lumped with style, under\u2011weighting their importance in health trends.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F014",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.95,
+              "abstraction_index": 0.5,
+              "description": "`run_mypy` uses a regex to parse mypy output. The regex expects `file.py:line:col: severity: message [error\u2011code]`. However, mypy output can span multiple lines (with `note:` lines). The regex processes line by line, so subsequent note lines are ignored. This loses information. Also, if the message contains a colon, the regex may mis\u2011parse.  \nFOLLOW: Mypy diagnostics are incomplete, leading to under\u2011counting of type errors. The health scan misses some issues, giving a false sense of code health.",
+              "proposed_fix": "Use mypy\u2019s `--json\u2011output` flag to get structured JSON instead of parsing text. If JSON is not available, fall back to line\u2011based parsing but handle continuation lines.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`run_mypy` uses a regex to parse mypy output. The regex expects `file.py:line:col: severity: message [error\u2011code]`. However, mypy output can span multiple lines (with `note:` lines). The regex processes line by line, so subsequent note lines are ignored. This loses information. Also, if the message contains a colon, the regex may mis\u2011parse.  \nFOLLOW: Mypy diagnostics are incomplete, leading to under\u2011counting of type errors. The health scan misses some issues, giving a false sense of code health.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F015",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 3,
+              "severity": 0.8,
+              "abstraction_index": 0.1,
+              "description": "`_TOOL_TIMEOUT` is 60 seconds for pyright/ruff/bandit/mypy, but `_CROSSHAIR_TIMEOUT` is 120 seconds for crosshair. However, crosshair is never invoked in the code (no `run_crosshair` function). The constant is dead code.  \nFOLLOW: No effect on runtime, but unnecessary code clutter.",
+              "proposed_fix": "Remove the `_CROSSHAIR_TIMEOUT` constant and any references (none).",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`_TOOL_TIMEOUT` is 60 seconds for pyright/ruff/bandit/mypy, but `_CROSSHAIR_TIMEOUT` is 120 seconds for crosshair. However, crosshair is never invoked in the code (no `run_crosshair` function). The constant is dead code.  \nFOLLOW: No effect on runtime, but unnecessary code clutter.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F016",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.65,
+              "abstraction_index": 0.2,
+              "description": "`health_trend` returns a dict of category \u2192 list of counts per round. However, if a category appears in some rounds but not others, the lists will have different lengths for different categories. This makes trend analysis awkward.  \nFOLLOW: The insect brain cannot easily compute per\u2011category trends across rounds because the lists are misaligned.",
+              "proposed_fix": "Ensure each list has the same length (pad with zeros for rounds where the category was absent). Or return a list of dicts per round (round \u2192 category counts).",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`health_trend` returns a dict of category \u2192 list of counts per round. However, if a category appears in some rounds but not others, the lists will have different lengths for different categories. This makes trend analysis awkward.  \nFOLLOW: The insect brain cannot easily compute per\u2011category trends across rounds because the lists are misaligned.",
+            "is_duplicate": true,
+            "duplicate_of": "CC2_F007",
+            "similarity": 0.33413542574832894
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F017",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 7,
+              "severity": 0.7,
+              "abstraction_index": 0.3,
+              "description": "`scan_health` runs tools sequentially. If a tool hangs (e.g., pyright infinite loop), the entire health scan hangs until the `_run_tool` timeout (60 seconds). This adds up to 4 minutes for four tools. The endocrine cycle may exceed the inter\u2011round time budget.  \nFOLLOW: A stuck tool delays the entire experiment, possibly causing round timeouts.",
+              "proposed_fix": "Run tools in parallel with a global timeout for the whole health scan. Or set a per\u2011tool timeout lower (30 seconds) and skip tools that timeout.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`scan_health` runs tools sequentially. If a tool hangs (e.g., pyright infinite loop), the entire health scan hangs until the `_run_tool` timeout (60 seconds). This adds up to 4 minutes for four tools. The endocrine cycle may exceed the inter\u2011round time budget.  \nFOLLOW: A stuck tool delays the entire experiment, possibly causing round timeouts.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F022",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.8,
+              "abstraction_index": 0.3,
+              "description": "The endocrine layer uses `PYTHON_313` binary path but never uses it. The constant is defined but dead code.  \nFOLLOW: No operational impact, but dead code adds confusion.",
+              "proposed_fix": "Remove the `PYTHON_313` constant.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "The endocrine layer uses `PYTHON_313` binary path but never uses it. The constant is defined but dead code.  \nFOLLOW: No operational impact, but dead code adds confusion.",
+            "is_duplicate": true,
+            "duplicate_of": "DeepSeek_F010",
+            "similarity": 0.33488758737955787
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F023",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.85,
+              "abstraction_index": 0.2,
+              "description": "`run_bandit` maps severity: `\"LOW\"` \u2192 `\"info\"`, `\"MEDIUM\"` \u2192 `\"warning\"`, `\"HIGH\"` \u2192 `\"error\"`. However, the `ToolDiagnostic` severity is used only for counting. The mapping is fine. The bug: bandit\u2019s JSON output includes `\"issue_severity\"` which may be missing; the code uses `.get()` with default empty string, which maps to `\"warning\"` (default of `sev_map.get`). That\u2019s okay. However, bandit may output `\"UNDEFINED\"` or other values not in map, causing `sev_map.get` to return `\"warning\"` as default. That\u2019s fine. No critical issue.  \nFOLLOW: Minor mis\u2011classification of bandit severity, not critical.",
+              "proposed_fix": "None needed for PoC.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`run_bandit` maps severity: `\"LOW\"` \u2192 `\"info\"`, `\"MEDIUM\"` \u2192 `\"warning\"`, `\"HIGH\"` \u2192 `\"error\"`. However, the `ToolDiagnostic` severity is used only for counting. The mapping is fine. The bug: bandit\u2019s JSON output includes `\"issue_severity\"` which may be missing; the code uses `.get()` with default empty string, which maps to `\"warning\"` (default of `sev_map.get`). That\u2019s okay. However, bandit may output `\"UNDEFINED\"` or other values not in map, causing `sev_map.get` to return `\"warning\"` as default. That\u2019s fine. No critical issue.  \nFOLLOW: Minor mis\u2011classification of bandit severity, not critical.",
+            "is_duplicate": true,
+            "duplicate_of": "DeepSeek_F013",
+            "similarity": 0.33379310344827584
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F024",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.95,
+              "abstraction_index": 0.5,
+              "description": "`scan_health` aggregates counts by category, tool, severity, and file. However, if a diagnostic has an empty category (should not happen), it will be counted under empty string key. This may cause downstream code to expect non\u2011empty keys.  \nFOLLOW: The health trend may have empty category keys, causing errors when iterating.",
+              "proposed_fix": "In the aggregation loop, use `d.category or \"unknown\"`.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`scan_health` aggregates counts by category, tool, severity, and file. However, if a diagnostic has an empty category (should not happen), it will be counted under empty string key. This may cause downstream code to expect non\u2011empty keys.  \nFOLLOW: The health trend may have empty category keys, causing errors when iterating.",
+            "is_duplicate": true,
+            "duplicate_of": "ChatGPT_F005",
+            "similarity": 0.3354216867469879
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F025",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 7,
+              "severity": 0.7,
+              "abstraction_index": 0.1,
+              "description": "`compute_pacing_signals` uses `novelty_counts` list (counts per round). The plateau detection checks `if all(n <= 1 for n in recent)`. If `novelty_counts` is empty, the condition fails. That\u2019s fine. However, `novelty_counts` is passed from insect brain, which may compute novelty differently (e.g., count of novel equivalence classes). The threshold `3.0` is arbitrary.  \nFOLLOW: May fire too early or too late. Not critical for PoC.",
+              "proposed_fix": "Adjust threshold to 2 consecutive rounds of zero novelty, or use a percentage of previous rounds.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "if all(n <= 1 for n in recent)",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F026",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 4,
+              "severity": 0.65,
+              "abstraction_index": 0.2,
+              "description": "`EndocrineLayer` initialises `_scan_history` as an empty list. `health_trend` returns a dict built from this history. If no scans have been run, returns empty dict. That\u2019s fine. However, `health_trend` does not protect against empty history.  \nFOLLOW: No crash, just empty trend. Acceptable.",
+              "proposed_fix": "None.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`EndocrineLayer` initialises `_scan_history` as an empty list. `health_trend` returns a dict built from this history. If no scans have been run, returns empty dict. That\u2019s fine. However, `health_trend` does not protect against empty history.  \nFOLLOW: No crash, just empty trend. Acceptable.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F028",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 6,
+              "severity": 0.75,
+              "abstraction_index": 0.1,
+              "description": "`_run_tool` catches `FileNotFoundError` and returns a sentinel. However, other `OSError` (e.g., permission denied) will raise an exception and crash the tool runner.  \nFOLLOW: Tool invocation fails, causing the health scan to miss that tool\u2019s diagnostics. The exception is caught in `scan_health` (see F001), but the `except Exception` block will catch it and log. However, if the exception is not caught in `_run_tool`, it propagates to `scan_health` and is caught there. That\u2019s okay. Wait: `_run_tool` does not have a catch\u2011all for `OSError`. It catches `FileNotFoundError` only. Permission denied will raise `PermissionError` (subclass of `OSError`) and propagate. `scan_health` catches `Exception`, so it will be caught. So no crash.  \nFOLLOW: Acceptable.",
+              "proposed_fix": "None.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`_run_tool` catches `FileNotFoundError` and returns a sentinel. However, other `OSError` (e.g., permission denied) will raise an exception and crash the tool runner.  \nFOLLOW: Tool invocation fails, causing the health scan to miss that tool\u2019s diagnostics. The exception is caught in `scan_health` (see F001), but the `except Exception` block will catch it and log. However, if the exception is not caught in `_run_tool`, it propagates to `scan_health` and is caught there. That\u2019s okay. Wait: `_run_tool` does not have a catch\u2011all for `OSError`. It catches `FileNotFoundError` only. Permission denied will raise `PermissionError` (subclass of `OSError`) and propagate. `scan_health` catches `Exception`, so it will be caught. So no crash.  \nFOLLOW: Acceptable.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F030",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.85,
+              "abstraction_index": 0.2,
+              "description": "`compute_pacing_signals` uses `round_timings` list; if empty, it skips slow\u2011model detection. That\u2019s fine. However, if `round_timings` is `None` (the default in `run` is `None`), the function receives `[]` because `round_timings or []`. So safe.  \nFOLLOW: No issue.",
+              "proposed_fix": "None.",
+              "verified": true,
+              "escalated": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "`compute_pacing_signals` uses `round_timings` list; if empty, it skips slow\u2011model detection. That\u2019s fine. However, if `round_timings` is `None` (the default in `run` is `None`), the function receives `[]` because `round_timings or []`. So safe.  \nFOLLOW: No issue.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          }
+        ],
+        "cell_verdicts": {
+          "ChatGPT_F003": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.21254120800000464
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F001": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.1902120830000058
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            },
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "Codex_F001",
+              "verdict": "DUPLICATE",
+              "confidence": 0.4332318233726684,
+              "evidence": "[NK_v2] Intra-round dup of ChatGPT_F003 (sim=0.433)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F005": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F005",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.2,
+              "evidence": "stats: STAT_UNPARSEABLE: no testable statistical claim extracted",
+              "tool_used": "statsmodels",
+              "elapsed_s": 0.02421154099999967
+            }
+          ],
+          "Codex_F006": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F006",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19687125000001515
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F006",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Gemini_F004": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Gemini_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19903379100000507
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Gemini_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F004": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F004",
+              "verdict": "CONFIRMED",
+              "confidence": 0.3,
+              "evidence": "z3: VERIFIED_TRUE: 475.0 >= -481.0 [class-switched from SymPy]",
+              "tool_used": "z3",
+              "elapsed_s": 0.06538583300002188
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F007": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F007",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: 'Symbol' object has no attribute 'stderr'",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19112870899999734
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F007",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F008": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F008",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax. Perhaps you forgot a comma? (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.1951791250000099
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F008",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F001": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19847945799998
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F005": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.1970556249999902
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F007": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.1956865410000148
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F025": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F025",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19159737500001484
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F025",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2_shadow] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F007": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "Codex_F007",
+              "verdict": "DUPLICATE",
+              "confidence": 0.4413048245614035,
+              "evidence": "[NK_v2] Intra-round dup of ChatGPT_F005 (sim=0.441)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F010": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "CC2_F010",
+              "verdict": "DUPLICATE",
+              "confidence": 0.33444937474788217,
+              "evidence": "[NK_v2] Intra-round dup of CC2_F007 (sim=0.334)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F011": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "DeepSeek_F011",
+              "verdict": "DUPLICATE",
+              "confidence": 0.3325637254901961,
+              "evidence": "[NK_v2] Intra-round dup of ChatGPT_F006 (sim=0.333)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F016": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "DeepSeek_F016",
+              "verdict": "DUPLICATE",
+              "confidence": 0.33413542574832894,
+              "evidence": "[NK_v2] Intra-round dup of CC2_F007 (sim=0.334)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F022": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "DeepSeek_F022",
+              "verdict": "DUPLICATE",
+              "confidence": 0.33488758737955787,
+              "evidence": "[NK_v2] Intra-round dup of DeepSeek_F010 (sim=0.335)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F023": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "DeepSeek_F023",
+              "verdict": "DUPLICATE",
+              "confidence": 0.33379310344827584,
+              "evidence": "[NK_v2] Intra-round dup of DeepSeek_F013 (sim=0.334)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F024": [
+            {
+              "cell_type": "CellType.NK_CELL",
+              "finding_id": "DeepSeek_F024",
+              "verdict": "DUPLICATE",
+              "confidence": 0.3354216867469879,
+              "evidence": "[NK_v2] Intra-round dup of ChatGPT_F005 (sim=0.335)",
+              "tool_used": "v2_intra_round_dedup",
+              "elapsed_s": 0.0
+            }
+          ]
+        },
+        "final_verdicts": {
+          "CC2_F008": "UNCERTAIN",
+          "DeepSeek_F001": "UNCERTAIN",
+          "CC2_F010": "DUPLICATE",
+          "Codex_F006": "UNCERTAIN",
+          "DeepSeek_F013": "UNCERTAIN",
+          "ChatGPT_F005": "UNCERTAIN",
+          "DeepSeek_F028": "UNCERTAIN",
+          "ChatGPT_F003": "UNCERTAIN",
+          "DeepSeek_F010": "UNCERTAIN",
+          "DeepSeek_F014": "UNCERTAIN",
+          "DeepSeek_F030": "UNCERTAIN",
+          "Gemini_F004": "UNCERTAIN",
+          "DeepSeek_F005": "UNCERTAIN",
+          "Codex_F007": "DUPLICATE",
+          "DeepSeek_F015": "UNCERTAIN",
+          "DeepSeek_F016": "DUPLICATE",
+          "Gemini_F003": "UNCERTAIN",
+          "DeepSeek_F011": "DUPLICATE",
+          "DeepSeek_F017": "UNCERTAIN",
+          "Codex_F005": "UNCERTAIN",
+          "DeepSeek_F022": "DUPLICATE",
+          "Codex_F001": "DUPLICATE",
+          "CC2_F004": "CONFIRMED",
+          "DeepSeek_F023": "DUPLICATE",
+          "DeepSeek_F007": "UNCERTAIN",
+          "DeepSeek_F026": "UNCERTAIN",
+          "DeepSeek_F025": "UNCERTAIN",
+          "ChatGPT_F006": "UNCERTAIN",
+          "DeepSeek_F024": "DUPLICATE",
+          "DeepSeek_F012": "UNCERTAIN",
+          "CC2_F007": "UNCERTAIN"
+        },
+        "final_confidences": {
+          "CC2_F008": 0.0,
+          "DeepSeek_F001": 0.0,
+          "CC2_F010": 0.33444937474788217,
+          "Codex_F006": 0.0,
+          "DeepSeek_F013": 0.0,
+          "ChatGPT_F005": 0.0,
+          "DeepSeek_F028": 0.0,
+          "ChatGPT_F003": 0.0,
+          "DeepSeek_F010": 0.0,
+          "DeepSeek_F014": 0.0,
+          "DeepSeek_F030": 0.0,
+          "Gemini_F004": 0.0,
+          "DeepSeek_F005": 0.0,
+          "Codex_F007": 0.4413048245614035,
+          "DeepSeek_F015": 0.0,
+          "DeepSeek_F016": 0.33413542574832894,
+          "Gemini_F003": 0.0,
+          "DeepSeek_F011": 0.3325637254901961,
+          "DeepSeek_F017": 0.0,
+          "Codex_F005": 0.0,
+          "DeepSeek_F022": 0.33488758737955787,
+          "Codex_F001": 0.4332318233726684,
+          "CC2_F004": 0.3,
+          "DeepSeek_F023": 0.33379310344827584,
+          "DeepSeek_F007": 0.0,
+          "DeepSeek_F026": 0.0,
+          "DeepSeek_F025": 0.0,
+          "ChatGPT_F006": 0.0,
+          "DeepSeek_F024": 0.3354216867469879,
+          "DeepSeek_F012": 0.0,
+          "CC2_F007": 0.0
+        },
+        "filtered_findings": [
+          {
+            "finding_id": "ChatGPT_F003",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.84,
+            "abstraction_index": 0.41,
+            "description": "FIND \u2014 scan_health() reports tools as available even when the binary is missing. Each runner returns `[]` on `result.stderr == \"NOT_FOUND\"`, and scan_health() sets `tools_available[tool_name] = True` whenever the runner returns without raising. Evidence: run_pyright/run_ruff/run_bandit/run_mypy all swallow NOT_FOUND into empty diagnostics; scan_health has no separate availability probe and treats successful function return as availability.\nFOLLOW: Downstream health reports can claim the bench is healthy while analysis tools were never run. That is silently misleading to the human reviewer and to any insect-brain logic consuming `tools_available`. Missing pyright/ruff/bandit/mypy becomes indistinguishable from \u201czero findings\u201d, so the health-scan feature can appear to fire cleanly when it is dead.",
+            "proposed_fix": "FIX \u2014 have each tool runner return both diagnostics and an availability flag, or expose NOT_FOUND distinctly so scan_health() sets `tools_available[tool_name] = False` when the binary is absent.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "ChatGPT_F005",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.71,
+            "abstraction_index": 0.44,
+            "description": "FIND \u2014 health_trend() produces ragged/incomplete time series that omit zero-count rounds. It only appends counts for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. If a category disappears in a later round, no 0 is appended; if it appears late, earlier rounds are missing entirely.\nFOLLOW: Downstream trend consumers cannot align series by round index reliably. A category going from 3 to 0 findings looks like a shorter list instead of improvement to zero. This can mislead any pacing or review logic that depends on worsening/improving code health over rounds and makes the history structurally inconsistent.",
+            "proposed_fix": "FIX \u2014 build the union of seen categories across scan history and emit one count per round for every category, filling absent rounds with 0.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "ChatGPT_F006",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 6,
+            "severity": 0.63,
+            "abstraction_index": 0.29,
+            "description": "FIND \u2014 slow-model and response-size anomaly detection use the upper median element instead of the statistical median for even-sized model sets. In compute_pacing_signals(), median is computed as `sorted(vals)[len(vals) // 2]`. With 4 or 6 models this picks the higher middle value, inflating the threshold and suppressing alerts.\nFOLLOW: Pacing signals can fail to fire when one model is materially slower/larger than peers, especially in the 5-model environment if one entry is missing/zero-filtered and the effective sample becomes even. That degrades the inter-round pacing feedback the insect brain uses for timeout/degrade decisions.",
+            "proposed_fix": "FIX \u2014 compute the true median, e.g. with `statistics.median`, for both duration and response_chars thresholds.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F005",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.84,
+            "abstraction_index": 0.58,
+            "description": "FIND \u2014 the documented health scan capability says endocrine runs `pyright/ruff/bandit` and the module-level constants include `CROSSHAIR_BIN` plus `_CROSSHAIR_TIMEOUT`, but no crosshair runner exists and no crosshair invocation is wired into `scan_health()`. This is dead infrastructure/API drift inside the target file itself.\nFOLLOW: One advertised significant feature never fires. Reviewers consuming this module will assume symbolic execution support exists because the binary path, timeout, and `ToolDiagnostic.tool` docstring all mention crosshair. In a PoC focused on \u201call significant features firing cleanly,\u201d this is misleading dead code and a missing capability in the health scan surface.",
+            "proposed_fix": "Either remove crosshair from the endocrine API/docs/constants for now, or add a minimal `run_crosshair()` wired into `scan_health()` so the declared feature actually executes. For PoC speed, the simplest sufficient correction is to remove the unused crosshair claims/constants until implemented.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F006",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.79,
+            "abstraction_index": 0.67,
+            "description": "FIND \u2014 `compute_pacing_signals()` claims `context_budget` is an `int` but contains runtime handling for `dict`, then computes `max(context_budget.values())`. For per-model budgets this is the wrong aggregate for a system-wide `cumulative_context_chars`: it compares cumulative total context against the largest single-model budget. Evidence is the in-function comment plus `if isinstance(context_budget, dict): context_budget = max(...)`.\nFOLLOW: Context growth alerts can fail to trigger until the entire system has far exceeded the relevant budget envelope. Since insect_brain uses per-model context budgeting and endocrine is meant to warn on pacing/context pressure, this can suppress the very signal intended to trigger degradation/reset decisions, allowing context overrun to accumulate silently.",
+            "proposed_fix": "If a dict is passed, compare cumulative context against the sum of per-model budgets, not the max single-model budget.",
+            "verified": false,
+            "escalated": true,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Gemini_F003",
+            "model_id": "Gemini",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.4,
+            "abstraction_index": 0.2,
+            "description": "FIND: In `EndocrineLayer.health_trend()`, the trend lists are populated by iterating over `scan_history` and appending `scan.counts_by_category.get(...)`. However, it only iterates over the keys present in the current scan's dictionary.\nFOLLOW: If a defect category has zero issues in a particular round, it will be missing from `counts_by_category` entirely. The function skips it instead of appending a `0`, causing the list for that category to be shorter than the number of recorded rounds. Downstream, consumers will misalign the trend data (e.g., reading round 5's count as round 3's count), corrupting cross-round health tracking metrics.",
+            "proposed_fix": "FIX: Pre-compute the set of all known categories across the entire history, then iterate through that set for each scan and use `.get(cat, 0)` to guarantee equal-length lists for all metrics.\ndef health_trend(self) -> Dict[str, List[int]]:\n        \"\"\"Return diagnostic count trends across rounds (by category).\"\"\"\n        trend: Dict[str, List[int]] = {}\n        all_cats = {cat for scan in self._scan_history for cat in scan.counts_by_category}\n        for scan in self._scan_history:\n            for cat in all_cats:\n                trend.setdefault(cat, []).append(scan.counts_by_category.get(cat, 0))\n        return trend",
+            "verified": false,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Gemini_F004",
+            "model_id": "Gemini",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.3,
+            "abstraction_index": 0.1,
+            "description": "FIND: In `compute_pacing_signals`, the pacing signal generated for a response size anomaly (when a model produces unusually large output > 3x median) incorrectly hardcodes `signal_type=\"context_growth\"` instead of `\"response_size_anomaly\"`.\nFOLLOW: When this specific output size anomaly triggers, the downstream `insect_brain` or orchestrator will misinterpret the signal as a global context budget exhaustion event. This misclassification could lead to inappropriate system-wide degradation (e.g., arbitrarily degrading the relay payload) instead of properly targeting or penalizing the specific offending model.",
+            "proposed_fix": "FIX: Change the hardcoded `signal_type` to correctly identify the anomaly.\nsignals.append(PacingSignal(\n                        signal_type=\"response_size_anomaly\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n                        model_id=rt.model_id,\n                        metric_value=float(rt.response_chars),\n                        threshold=float(median_chars * 3),\n                        suggested_action=\"degrade_relay\",\n                    ))",
+            "verified": false,
+            "escalated": true,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F004",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.7,
+            "abstraction_index": 0.3,
+            "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection (lines ~475-481) checks `len(novelty_counts) >= 3 and round_idx >= 2`, then takes `novelty_counts[-3:]`. But `novelty_counts` is a list indexed by round, and the caller (`EndocrineLayer.run`) passes `novelty_counts or []`. If `novelty_counts` has fewer entries than `round_idx` (e.g., the caller skipped rounds or the list was partially populated), the check `len(novelty_counts) >= 3` could pass while the last 3 entries don't correspond to the \"last 3 rounds\" relative to `round_idx`. More critically: the threshold `all(n <= 1 for n in recent)` means novelty plateau fires when novel findings are 0 or 1 for 3 consecutive rounds. At PoC scale with 5 models reviewing one file, finding 0-1 novel issues for 3 rounds is expected convergence behaviour, not an anomaly. This will fire on nearly every experiment once convergence begins, producing noise.\nFOLLOW: The insect brain receives a `novelty_plateau` pacing signal and the suggested action is `check_convergence`. If the brain acts on this, it could trigger early termination even when the kappa metric hasn't converged \u2014 the novelty plateau signal is redundant with and potentially contradictory to the kappa-based convergence check. At PoC scale this is noise, not signal.",
+            "proposed_fix": "This is MEDIUM severity \u2014 the signal exists but the insect brain doesn't appear to act on `check_convergence` in a way that overrides kappa. No fix needed for PoC. If desired, raise the threshold: `all(n == 0 for n in recent)` (true plateau = zero novel findings).",
+            "verified": false,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F007",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.55,
+            "abstraction_index": 0.6,
+            "description": "FIND \u2014 `scan_health` runs pyright, ruff, bandit, and mypy but the `HealthScan.tools_available` dict marks a tool as `False` only if the runner raises an exception (line ~257). If a tool binary is not found, the runner returns an empty list (e.g., `run_pyright` returns `[]` when `result.stderr == \"NOT_FOUND\"`), and `tools_available` is set to `True`. The health scan reports the tool as \"available\" when it isn't installed.\nFOLLOW: `HealthScan.tools_available` feeds into logging (`%d tools` count at line ~270) and potentially into the insect brain's health assessment. A scan reporting 4 tools available with 0 diagnostics looks like \"clean code\" when it's actually \"no tools ran.\" The insect brain could make incorrect health trend decisions based on phantom clean scans.",
+            "proposed_fix": "Check tool availability before running, or detect `NOT_FOUND` returns:\nfor tool_name, runner in [(\"pyright\", run_pyright), ...]:\n    try:\n        diags = runner(existing)\n        all_diags.extend(diags)\n        # Check if tool was actually available (not just empty results)\n        tools_available[tool_name] = not (\n            len(diags) == 0 and not shutil.which(\n                {\"pyright\": PYRIGHT_BIN, \"ruff\": RUFF_BIN, \n                 \"bandit\": BANDIT_BIN, \"mypy\": MYPY_BIN}[tool_name]\n            )\n        )\n    except Exception as e:\n        logger.warning(\"Tool %s failed: %s\", tool_name, e)\n        tools_available[tool_name] = False\nSimpler: have each runner return a sentinel or have `_run_tool` propagate `NOT_FOUND` status.",
+            "verified": false,
+            "escalated": true,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F008",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.6,
+            "abstraction_index": 0.3,
+            "description": "FIND \u2014 `compute_pacing_signals` slow model detection (lines ~445-456) computes `median_duration` as `sorted(durations)[len(durations) // 2]`. For an even number of models (e.g., 4 models \u2192 indices 0,1,2,3), this takes index 2, which is the *upper* of the two middle values, not the true median (average of indices 1 and 2). For 5 models this is correct (index 2 of 0-4). For 2 models, `len//2 = 1`, taking the larger value \u2014 so for 2 models, the \"median\" is the maximum, making it impossible to trigger the slow_model signal.\nFOLLOW: With 2 active models (e.g., after 3 model failures), slow model detection is completely disabled. With 4 models, the threshold is slightly higher than true median, making detection marginally less sensitive. At PoC scale with 5 models this is unlikely to matter.",
+            "proposed_fix": "MEDIUM \u2014 not blocking for PoC with 5 models. True median for even counts would be `(sorted[n//2-1] + sorted[n//2]) / 2`.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F001",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.9,
+            "abstraction_index": 0.3,
+            "description": "`scan_health` crashes if any tool runner throws an exception \u2014 uncaught exception stops the entire health scan. The `try/except` block around `diags = runner(existing)` catches exceptions but only logs a warning. However, the exception is re\u2011thrown because the `except` block does not `continue` or handle the failure; the loop proceeds to `all_diags.extend(diags)` where `diags` is undefined, raising `UnboundLocalError`.  \nFOLLOW: If pyright fails with an exception (e.g., malformed JSON), the health scan aborts, the `HealthScan` object is incomplete, and the insect brain receives no diagnostics for that round. The endocrine layer\u2019s primary signal is broken, and the insect brain cannot make pacing decisions based on code health. This is a single point of failure \u2014 one tool crash kills the whole scan.",
+            "proposed_fix": "In the `except Exception as e:` block, set `diags = []` after logging the warning, so the loop can continue and `all_diags.extend(diags)` works. Also set `tools_available[tool_name] = False`.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F005",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.7,
+            "abstraction_index": 0.5,
+            "description": "`compute_pacing_signals` uses a hard\u2011coded context budget of 80,000 characters if `context_budget` is 0 or negative. The insect brain passes `context_budget` from config, which could be a dict (per\u2011model overrides). The function tries to handle dict by taking `max(context_budget.values())`, but if the dict is empty, `max` raises. Also, if `context_budget` is 0 (unlimited), the context growth signal will never fire because `context_fraction = cumulative_context_chars / context_budget` divides by zero.  \nFOLLOW: A crash in pacing signals prevents the insect brain from receiving pacing signals, potentially causing unbounded context growth or missed convergence checks. If `context_budget` is 0 (unlimited), the division by zero raises `ZeroDivisionError`.",
+            "proposed_fix": "If `context_budget` is 0, set `context_fraction` to 0 and skip the threshold check. If `context_budget` is a dict, extract the max only if dict non\u2011empty; else use a default (80,000). Also add a try\u2011except around the max operation.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F007",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.75,
+            "abstraction_index": 0.3,
+            "description": "`_run_tool` returns a `CompletedProcess` with `returncode=-1` and `stderr=\"NOT_FOUND\"` when the tool binary is missing. The tool runners (`run_pyright`, etc.) check `if result.stderr == \"NOT_FOUND\": return []`. However, `_run_tool` also returns the same sentinel for timeouts (`stderr=\"TIMEOUT\"`). The tool runners do not distinguish between \u201ctool not found\u201d and \u201ctool timed out\u201d; both return empty diagnostics. This hides timeouts.  \nFOLLOW: A tool timeout (e.g., pyright hanging) will be reported as \u201ctool not found\u201d in logs, misleading the operator. The health scan will miss diagnostics from that tool, reducing signal quality.",
+            "proposed_fix": "In `_run_tool`, use different sentinel strings for \u201cNOT_FOUND\u201d and \u201cTIMEOUT\u201d. In tool runners, log the difference and treat timeouts as transient failures (maybe retry once).",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F010",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.9,
+            "abstraction_index": 0.3,
+            "description": "Interface mismatch: `EndocrineLayer.run` expects `round_timings` as `List[RoundTiming]` (a custom dataclass defined in endocrine.py). However, the insect brain (context file) does not export `RoundTiming`. The insect brain uses its own timing data structures. When the insect brain calls `endo.run(...)`, it must construct `RoundTiming` objects from its internal timing data. This is an implicit interface contract that is not enforced and may cause runtime errors if the insect brain passes the wrong data.  \nFOLLOW: If the insect brain passes a list of dicts or a different dataclass, the endocrine layer will crash with AttributeError when accessing `duration_s`, `response_chars`, etc. This breaks the endocrine cycle and halts the experiment.",
+            "proposed_fix": "Change `EndocrineLayer.run` to accept a list of dicts with required keys, and convert them to `RoundTiming` inside the function. Or define `RoundTiming` in a shared module imported by both. Given PoC context, the simplest fix is to accept dicts and map keys.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F012",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.85,
+            "abstraction_index": 0.2,
+            "description": "`_categorise_pyright` always returns `DefectCategory.TYPE_SAFETY` as fallback, even for messages about `None` (which it catches earlier). However, the earlier check for `\"none\"` or `\"optional\"` uses `msg_lower`. If the message contains \u201cNone\u201d but not those substrings, it falls through. That\u2019s okay. The bug: the function categorises `\"could be none\"` as `NULL_DEREF`, but pyright\u2019s \u201ccould be None\u201d is a type\u2011safety issue (optional type), not a null dereference. This mis\u2011categorisation skews the health\u2011scan counts by category.  \nFOLLOW: The insect brain sees inflated NULL_DEREF counts, possibly triggering incorrect pacing signals or health trends. The mis\u2011categorisation does not break functionality but reduces signal accuracy.",
+            "proposed_fix": "Re\u2011evaluate the keyword list: \u201ccould be none\u201d is a type\u2011safety issue, not null deref. Change that phrase to map to `TYPE_SAFETY`. Keep \u201cnone\u201d and \u201coptional\u201d as `NULL_DEREF`? Actually, optional types are type\u2011safety. Better to map all pyright messages to `TYPE_SAFETY` (since pyright is a type checker). Simpler: remove the `NULL_DEREF` branch and always return `TYPE_SAFETY`.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F013",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.75,
+            "abstraction_index": 0.3,
+            "description": "`_categorise_ruff` maps `S\u2011codes` (security) to `DefectCategory.SECURITY`. However, ruff\u2019s `S` codes are from `bandit` plugin and indeed security\u2011related. That\u2019s correct. The bug: `B\u2011codes` (bugbear) are not categorised; they fall through to `STYLE`. Bugbear includes potential bugs like mutable default arguments, which should be `CODE_BEHAVIORAL` or `LOGICAL`.  \nFOLLOW: Security\u2011related ruff warnings are correctly categorised, but bugbear warnings are lumped with style, under\u2011weighting their importance in health trends.",
+            "proposed_fix": "Add a branch for `code.startswith(\"B\")` returning `DefectCategory.CODE_BEHAVIORAL`.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F014",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.95,
+            "abstraction_index": 0.5,
+            "description": "`run_mypy` uses a regex to parse mypy output. The regex expects `file.py:line:col: severity: message [error\u2011code]`. However, mypy output can span multiple lines (with `note:` lines). The regex processes line by line, so subsequent note lines are ignored. This loses information. Also, if the message contains a colon, the regex may mis\u2011parse.  \nFOLLOW: Mypy diagnostics are incomplete, leading to under\u2011counting of type errors. The health scan misses some issues, giving a false sense of code health.",
+            "proposed_fix": "Use mypy\u2019s `--json\u2011output` flag to get structured JSON instead of parsing text. If JSON is not available, fall back to line\u2011based parsing but handle continuation lines.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F015",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 3,
+            "severity": 0.8,
+            "abstraction_index": 0.1,
+            "description": "`_TOOL_TIMEOUT` is 60 seconds for pyright/ruff/bandit/mypy, but `_CROSSHAIR_TIMEOUT` is 120 seconds for crosshair. However, crosshair is never invoked in the code (no `run_crosshair` function). The constant is dead code.  \nFOLLOW: No effect on runtime, but unnecessary code clutter.",
+            "proposed_fix": "Remove the `_CROSSHAIR_TIMEOUT` constant and any references (none).",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F017",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 7,
+            "severity": 0.7,
+            "abstraction_index": 0.3,
+            "description": "`scan_health` runs tools sequentially. If a tool hangs (e.g., pyright infinite loop), the entire health scan hangs until the `_run_tool` timeout (60 seconds). This adds up to 4 minutes for four tools. The endocrine cycle may exceed the inter\u2011round time budget.  \nFOLLOW: A stuck tool delays the entire experiment, possibly causing round timeouts.",
+            "proposed_fix": "Run tools in parallel with a global timeout for the whole health scan. Or set a per\u2011tool timeout lower (30 seconds) and skip tools that timeout.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F025",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 7,
+            "severity": 0.7,
+            "abstraction_index": 0.1,
+            "description": "`compute_pacing_signals` uses `novelty_counts` list (counts per round). The plateau detection checks `if all(n <= 1 for n in recent)`. If `novelty_counts` is empty, the condition fails. That\u2019s fine. However, `novelty_counts` is passed from insect brain, which may compute novelty differently (e.g., count of novel equivalence classes). The threshold `3.0` is arbitrary.  \nFOLLOW: May fire too early or too late. Not critical for PoC.",
+            "proposed_fix": "Adjust threshold to 2 consecutive rounds of zero novelty, or use a percentage of previous rounds.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F026",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.65,
+            "abstraction_index": 0.2,
+            "description": "`EndocrineLayer` initialises `_scan_history` as an empty list. `health_trend` returns a dict built from this history. If no scans have been run, returns empty dict. That\u2019s fine. However, `health_trend` does not protect against empty history.  \nFOLLOW: No crash, just empty trend. Acceptable.",
+            "proposed_fix": "None.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F028",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 6,
+            "severity": 0.75,
+            "abstraction_index": 0.1,
+            "description": "`_run_tool` catches `FileNotFoundError` and returns a sentinel. However, other `OSError` (e.g., permission denied) will raise an exception and crash the tool runner.  \nFOLLOW: Tool invocation fails, causing the health scan to miss that tool\u2019s diagnostics. The exception is caught in `scan_health` (see F001), but the `except Exception` block will catch it and log. However, if the exception is not caught in `_run_tool`, it propagates to `scan_health` and is caught there. That\u2019s okay. Wait: `_run_tool` does not have a catch\u2011all for `OSError`. It catches `FileNotFoundError` only. Permission denied will raise `PermissionError` (subclass of `OSError`) and propagate. `scan_health` catches `Exception`, so it will be caught. So no crash.  \nFOLLOW: Acceptable.",
+            "proposed_fix": "None.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F030",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.85,
+            "abstraction_index": 0.2,
+            "description": "`compute_pacing_signals` uses `round_timings` list; if empty, it skips slow\u2011model detection. That\u2019s fine. However, if `round_timings` is `None` (the default in `run` is `None`), the function receives `[]` because `round_timings or []`. So safe.  \nFOLLOW: No issue.",
+            "proposed_fix": "None.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          }
+        ],
+        "rejected_findings": [
+          {
+            "finding_id": "Codex_F001",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.97,
+            "abstraction_index": 0.74,
+            "description": "FIND \u2014 `scan_health()` marks tools as available whenever the runner function returns without raising, even when the binary is missing or timed out. Evidence: `run_pyright/run_ruff/run_bandit/run_mypy` return `[]` on `\"NOT_FOUND\"` and also on parse failure; `scan_health()` then unconditionally sets `tools_available[tool_name] = True` inside the `try` block. This makes the health scan report success for tools that never ran.\nFOLLOW: The insect-brain-facing health signal becomes silently wrong: missing pyright/ruff/bandit/mypy installations appear healthy rather than unavailable. Downstream, reviewers and any logic consuming `HealthScan.tools_available` will trust empty diagnostics as \u201cno issues\u201d instead of \u201ctool absent / scan failed\u201d. This directly undermines the module\u2019s primary feature \u201cHealth scan \u2014 static analysis tools between rounds\u201d because the feature can fail dead-silent and still report operational.",
+            "proposed_fix": "Change each tool runner to return both diagnostics and an availability/success flag, or minimally have `scan_health()` detect `_run_tool` sentinel failures (`NOT_FOUND`, `TIMEOUT`, empty/invalid output) and set `tools_available[tool_name] = False` for those cases instead of inferring availability from absence of exceptions.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F007",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.73,
+            "abstraction_index": 0.55,
+            "description": "FIND \u2014 `health_trend()` produces ragged series and drops zeros for absent categories. Evidence: it appends counts only for categories present in each scan: `for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. Categories absent in a round get no entry rather than `0`.\nFOLLOW: Any downstream trend consumer comparing rounds gets misaligned history lengths and cannot distinguish \u201ccategory absent this round\u201d from \u201ccategory not yet seen\u201d. This degrades the stated purpose \u201cfor the insect brain to detect worsening/improving code health\u201d because trends are structurally wrong once categories appear or disappear across rounds.",
+            "proposed_fix": "Build trends across the union of categories seen in `_scan_history` and append an explicit `0` for categories missing from each scan.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F010",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.5,
+            "abstraction_index": 0.7,
+            "description": "FIND \u2014 `EndocrineLayer` stores `_scan_history` (line ~530) for trend detection via `health_trend()` (lines ~600-607), but `health_trend()` is never called by the `run()` method or anywhere in the codebase visible in context. The insect brain receives the `EndocrineReport` but has no code path that calls `endo.health_trend()`.\nFOLLOW: The health trend feature (tracking diagnostic counts across rounds by category) is dead code. The insect brain cannot detect worsening/improving code health over time because it never queries the trend data. The `_scan_history` list grows unboundedly across rounds with no consumer.",
+            "proposed_fix": "MEDIUM for PoC \u2014 the feature is declared but unused. Either wire it into the `EndocrineReport` (add a `health_trend` field populated by `run()`), or remove the dead code. Simplest: add trend data to the report:\n# In EndocrineLayer.run(), before return:\nreport = EndocrineReport(\n    round_idx=round_idx,\n    health_scan=health,\n    fix_evaluations=fix_evals,\n    pacing_signals=pacing,\n    elapsed_s=elapsed,\n)\n# Attach trend for insect brain consumption (not in dataclass \u2014 dynamic attr)\nreport.health_trend = self.health_trend()\nreturn report",
+            "verified": false,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F011",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 6,
+            "severity": 0.7,
+            "abstraction_index": 0.1,
+            "description": "`compute_pacing_signals` uses `median_duration * 2.5` as threshold for slow\u2011model detection. If `median_duration` is very small (e.g., 0.1s), the threshold is 0.25s, which could flag fast models as slow. Also, the absolute threshold is 30 seconds, which may be too high for a PoC with short rounds.  \nFOLLOW: Fast models may be incorrectly flagged as slow, causing the insect brain to increase timeouts unnecessarily. This wastes time and may delay convergence.",
+            "proposed_fix": "Use a relative threshold (e.g., 2.5\u00d7 median) AND an absolute minimum threshold (e.g., 5 seconds) to avoid false positives on very fast rounds.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F016",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 4,
+            "severity": 0.65,
+            "abstraction_index": 0.2,
+            "description": "`health_trend` returns a dict of category \u2192 list of counts per round. However, if a category appears in some rounds but not others, the lists will have different lengths for different categories. This makes trend analysis awkward.  \nFOLLOW: The insect brain cannot easily compute per\u2011category trends across rounds because the lists are misaligned.",
+            "proposed_fix": "Ensure each list has the same length (pad with zeros for rounds where the category was absent). Or return a list of dicts per round (round \u2192 category counts).",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F022",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.8,
+            "abstraction_index": 0.3,
+            "description": "The endocrine layer uses `PYTHON_313` binary path but never uses it. The constant is defined but dead code.  \nFOLLOW: No operational impact, but dead code adds confusion.",
+            "proposed_fix": "Remove the `PYTHON_313` constant.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F023",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.85,
+            "abstraction_index": 0.2,
+            "description": "`run_bandit` maps severity: `\"LOW\"` \u2192 `\"info\"`, `\"MEDIUM\"` \u2192 `\"warning\"`, `\"HIGH\"` \u2192 `\"error\"`. However, the `ToolDiagnostic` severity is used only for counting. The mapping is fine. The bug: bandit\u2019s JSON output includes `\"issue_severity\"` which may be missing; the code uses `.get()` with default empty string, which maps to `\"warning\"` (default of `sev_map.get`). That\u2019s okay. However, bandit may output `\"UNDEFINED\"` or other values not in map, causing `sev_map.get` to return `\"warning\"` as default. That\u2019s fine. No critical issue.  \nFOLLOW: Minor mis\u2011classification of bandit severity, not critical.",
+            "proposed_fix": "None needed for PoC.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F024",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.95,
+            "abstraction_index": 0.5,
+            "description": "`scan_health` aggregates counts by category, tool, severity, and file. However, if a diagnostic has an empty category (should not happen), it will be counted under empty string key. This may cause downstream code to expect non\u2011empty keys.  \nFOLLOW: The health trend may have empty category keys, causing errors when iterating.",
+            "proposed_fix": "In the aggregation loop, use `d.category or \"unknown\"`.",
+            "verified": true,
+            "escalated": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          }
+        ],
+        "rejection_rate": 0.2581,
+        "autoimmune_flag": false,
+        "stage_timings": {
+          "skin_barrier": 0.0013,
+          "dendritic_v1": 0.0046,
+          "dendritic": 0.0065,
+          "llm_classifier_shadow": 0.0006,
+          "parallel_verification": 2.8711,
+          "formalisation_shadow": 0.0012,
+          "helper_t": 0.0,
+          "helper_t_v2": 0.0001,
+          "reconciliation_gate": 0.0002,
+          "regulatory_t": 0.0001,
+          "fix_evaluation": 21.5943
+        },
+        "tool_usage": {
+          "skin_barrier": 31,
+          "skin_barrier_blocked": 0,
+          "sympy": 10,
+          "statsmodels": 1,
+          "z3": 1,
+          "z3_v2_smt2": 11,
+          "v2_intra_round_dedup": 8
+        },
+        "observation_only": false,
+        "barrier_results": [
+          {
+            "finding_id": "ChatGPT_F003",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "ChatGPT_F005",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "ChatGPT_F006",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F005",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F006",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F007",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Gemini_F003",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Gemini_F004",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F004",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F007",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F008",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F010",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F005",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F007",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F010",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F011",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F012",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F013",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F014",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F015",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F016",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F017",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F022",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F023",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F024",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F025",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F026",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F028",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F030",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          }
+        ]
+      }
+    }
+  ],
+  "directed_messages": [],
+  "active_models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "converged": false,
+  "convergence_reason": "",
+  "failed": false,
+  "failure_reason": ""
+}

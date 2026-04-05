@@ -1,0 +1,425 @@
+# CDSFL Registry — Parameter Schema
+#
+# Defines every tunable parameter in the policy system: its type, default,
+# whether it is HARD or SOFT, and what it controls. This is the single
+# source of truth for parameter definitions.
+#
+# Types: "bool", "int", "float", "string", "enum"
+# Constraint class: "HARD" = monotonicity-enforced, "SOFT" = overridable
+# Layer: lowest layer that may define this parameter ("universal", "domain", "task", "model")
+
+# =============================================================================
+# [constraints] — core constraint flags
+# =============================================================================
+
+[constraints.anti_deference]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Schema rejects empty or deferential responses."
+
+[constraints.falsification_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Every finding must include a falsification attempt."
+
+[constraints.hard_soft_classification]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All findings must classify their constraints as HARD or SOFT."
+
+[constraints.fail_closed_unassessed]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Unassessed HARD constraints block convergence."
+
+[constraints.json_schema_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All model I/O must use structured JSON format."
+
+[constraints.sympy_auto_verify]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Verifiable mathematical claims are auto-checked via SymPy."
+
+[constraints.deterministic_output]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Code solutions must produce deterministic output."
+
+[constraints.edge_case_coverage]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Findings must address boundary conditions."
+
+[constraints.dimensional_analysis]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Check dimensional consistency of quantities."
+
+[constraints.assume_real_unless_stated]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Default to real-valued solutions unless complex stated."
+
+[constraints.physical_bounds_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Results must not violate physical plausibility bounds."
+
+[constraints.standards_reference]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Cite applicable engineering standards where relevant."
+
+[constraints.material_property_verification]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify material properties used in calculations."
+
+[constraints.shared_variable_consistency]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Variables shared across domains must agree."
+
+[constraints.significant_figures_tracking]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Track precision through calculations."
+
+# =============================================================================
+# [convergence] — convergence criteria
+# =============================================================================
+
+[convergence.method]
+type = "string"
+default = "non_compensatory"
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Convergence method. Non-compensatory means all criteria must pass independently."
+
+[convergence.v_comp_threshold]
+type = "float"
+default = 0.5
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum compositional convergence score."
+
+[convergence.v_struct_threshold]
+type = "float"
+default = 0.3
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum structural convergence score."
+
+[convergence.hard_coverage_threshold]
+type = "float"
+default = 1.0
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Fraction of HARD constraints that must be assessed. 1.0 = all."
+
+[convergence.advisory_d_after_round]
+type = "int"
+default = 3
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Round after which advisory convergence signals are emitted."
+
+[convergence.hard_veto]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Any unrefuted HARD finding blocks convergence."
+
+# =============================================================================
+# [anti_deference] — sycophancy countermeasures
+# =============================================================================
+
+[anti_deference.min_independent_observations]
+type = "int"
+default = 1
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Minimum independent observations before a finding is accepted."
+
+[anti_deference.null_find_requires_scoped_justification]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "A model reporting no findings must justify the claim."
+
+[anti_deference.agreement_requires_evidence]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Agreement with another model's finding requires independent evidence."
+
+# =============================================================================
+# [verification] — verification tool configuration
+# =============================================================================
+
+[verification.sympy_timeout_seconds]
+type = "int"
+default = 10
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "SymPy verification timeout in seconds."
+
+[verification.sympy_sandbox]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Run SymPy in a subprocess sandbox."
+
+[verification.peer_support_min_families]
+type = "int"
+default = 2
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Minimum cross-family model matches for peer support."
+
+[verification.sympy_verification]
+type = "string"
+default = "auto"
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "SymPy verification mode: 'auto', 'mandatory', 'disabled'."
+allowed_values = ["auto", "mandatory", "disabled"]
+
+[verification.proof_structure_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify logical structure of mathematical proofs."
+
+[verification.numerical_tolerance]
+type = "float"
+default = 1e-10
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Floating-point comparison tolerance."
+
+[verification.static_analysis]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Run static analysis tools on code artifacts."
+
+[verification.test_execution]
+type = "string"
+default = "disabled"
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Test execution mode: 'disabled', 'when_available', 'mandatory'."
+allowed_values = ["disabled", "when_available", "mandatory"]
+
+[verification.type_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify type consistency in typed languages."
+
+[verification.unit_consistency_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify unit/dimensional consistency of quantities."
+
+[verification.conservation_law_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify conservation laws (energy, momentum, charge)."
+
+[verification.safety_factor_required]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Engineering claims must address safety margins."
+
+[verification.cross_domain_interface_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify assumptions at domain boundaries."
+
+[verification.assumption_propagation_audit]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Track assumption propagation across domains."
+
+# =============================================================================
+# [protocol] — experiment protocol settings
+# =============================================================================
+
+[protocol.max_rounds]
+type = "int"
+default = 5
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Maximum rounds for CDSFL experiments."
+
+[protocol.stop_rule]
+type = "string"
+default = "counting_plus_verify"
+constraint_class = "HARD"
+min_layer = "universal"
+description = "Stop rule for experiment termination."
+
+[protocol.blind_first]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "First round must be blind (no prior findings shared)."
+
+[protocol.churn_detection_threshold]
+type = "float"
+default = 0.0
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Threshold for detecting oscillation between rounds."
+
+[protocol.explicit_format_instructions]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Include explicit formatting instructions in prompts."
+
+[protocol.structured_output_native]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Whether the model supports structured output natively."
+
+# =============================================================================
+# [refinements] — refinement engine settings
+# =============================================================================
+
+[refinements.independence_aware]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Use independence-aware confirmation logic."
+
+[refinements.tuple_canonicalisation]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Canonicalise finding tuples for deduplication."
+
+[refinements.validated_novelty]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Only count validated novel findings toward convergence."
+
+[refinements.min_independent_families]
+type = "int"
+default = 2
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum independent model families for confirmation."
+
+[refinements.novelty_channel_enabled]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Enable the novelty detection channel."
+
+# =============================================================================
+# [model] — model-specific settings (Layer 4 only)
+# =============================================================================
+
+[model.name]
+type = "string"
+default = ""
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Model identifier string."
+
+[model.alias]
+type = "string"
+default = ""
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Short alias for the model."
+
+[model.timeout]
+type = "int"
+default = 120
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Model API timeout in seconds."
+
+[model.reasoning_effort]
+type = "string"
+default = "high"
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Reasoning effort level for the model."
+allowed_values = ["low", "medium", "high", "xhigh"]
+
+[model.adaptive_directive]
+type = "string"
+default = ""
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Model-specific corrective directive based on observed behaviour."
+
+[model.pre_decompose]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Pre-decompose artifacts before sending to this model."

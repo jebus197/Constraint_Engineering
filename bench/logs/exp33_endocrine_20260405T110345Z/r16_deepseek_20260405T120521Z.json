@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260405T120521Z",
+  "phase": "r16",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1841,
+  "response": "**F001**\n**SEVERITY:** 0.95\n**FLAW_CLASS:** 1\n**ABSTRACTION_INDEX:** 0.4\n**DESCRIPTION:** FIND — The fix‑evaluation sandbox (`evaluate_fix`) does not provide the necessary source context for static‑analysis tools, causing false verdicts. The sandbox copies only the target file to a temporary directory and runs pyright/ruff/bandit on that single file. If the file imports from other modules in the project, the tools will report spurious errors (e.g., missing imports) that are not due to the fix. This leads to incorrectly marking safe fixes as HARMFUL and corrupts the bug‑closed gate.\n**FOLLOW:** The fix‑evaluation verdict feeds the immune pipeline’s bug‑closed gate and endocrine’s fix‑evaluation report. A false HARMFUL verdict prevents a legitimate fix from being marked `verified`, keeping the bug open across rounds. Conversely, a false SAFE verdict could allow a fix that breaks dependencies to be accepted. The entire downstream chain of bug‑closure decisions is compromised.\n**PROPOSED_FIX:** FIX — In `evaluate_fix`, copy the entire source tree (all `.py` files under the common ancestor of `source_paths`) to the temporary directory, preserving directory structure. Run the tool runners on the entire copied source set for both pre‑fix and post‑fix baselines. This ensures tools have the necessary import context. Change `_count_tool_issues` to accept a list of files and count diagnostics across the whole project.\n**VERIFIED:** FALSE\n\n**VERDICT PAYLOADS:**\n- CONFIRM C0001\n- CONFIRM C0004\n- CONFIRM C0018\n- CONFIRM C0028\n- CONFIRM C0005\n- CONFIRM C0029\n- CONFIRM C0014\n- CONFIRM C0007\n- CONFIRM C0003\n- CONFIRM C0008\n- CONFIRM C0019\n- CONFIRM C0022\n- CONFIRM C0030\n- CONFIRM C0017\n- CONFIRM C0009\n- CONFIRM C0023\n- CONFIRM C0011\n- CONFIRM C0016\n- CONFIRM C0024\n- CONFIRM C0015\n- CONFIRM C0020\n- CONFIRM C0025\n- CONFIRM C0026",
+  "metadata": {
+    "round": 16,
+    "elapsed": 118.3,
+    "chars": 1841,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

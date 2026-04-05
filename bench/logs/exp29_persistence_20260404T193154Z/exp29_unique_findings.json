@@ -1,0 +1,5521 @@
+{
+  "experiment": "exp29_persistence",
+  "timestamp": "2026-04-04T19:31:54Z",
+  "raw_finding_count": 376,
+  "unique_finding_count": 365,
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "rounds": 9,
+  "category_counts": {
+    "logic_bug": 155,
+    "missing_state": 55,
+    "mathematical": 54,
+    "interface_gap": 46,
+    "security": 18,
+    "performance": 17,
+    "documentation": 12,
+    "contract_violation": 7,
+    "type_safety": 1
+  },
+  "file_counts": {
+    "immune_agents.py": 105,
+    "verification_chain.py": 62,
+    "insect_brain.py": 47
+  },
+  "severity_distribution": {
+    "critical_gte_0.9": 40,
+    "high_0.7_to_0.89": 179,
+    "medium_0.5_to_0.69": 124,
+    "low_lt_0.5": 22
+  },
+  "fix_coverage": {
+    "with_fix": 334,
+    "without_fix": 31
+  },
+  "static_analysis_overlap": 19,
+  "findings": [
+    {
+      "finding_id": "F007",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 1.0,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "security",
+      "summary": "`bench/immune_agents.py` line 1083-1084: `_verify_search_manifest()` uses `os.path.isfile(file_arg)` to verify file existence, but `file_arg` may be a relative ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.98,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function run_immune_pipeline(), Stage 0 and final response build.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.97,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "mathematical",
+      "summary": "bench/immune_agents.py, function run_immune_pipeline(), Stage 3b autoimmune override block near the end.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.97,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "The changed `_reconciliation_gate()` return type impacts every call site.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.97,
+      "target_file": "verification_chain.py",
+      "target_function": "build_inclusion_proof",
+      "category": "mathematical",
+      "summary": "bench/verification_chain.py, method build_inclusion_proof() and method verify_inclusion_proof()/CLI _cli_verify_proof().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.96,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, method run_immune_pipeline().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.95,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `run_immune_pipeline` function has a race condition in the parallel verification stage that can cause incorrect verdict aggregation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.95,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "In `bench/insect_brain.py`, the `run_immune_pipeline()` function computes the `filtered_findings` but fails to write them back to `self.state.all_findings[-1]`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.95,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, method run_immune_pipeline().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.95,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function nk_cell_v2_shadow().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F055",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 1,
+      "severity": 0.95,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "Z3 SMT-LIB translation evaluates multiple conditions as an inherently unsatisfiable conjunction, causing false confirmations.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F_HelperT_LogOdds",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 5,
+      "severity": 0.95,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "In `helper_t_v2_shadow`, the `_confidence_to_log_odds` function mathematically translates any confidence `< 0.5` into a *negative* log-odds value.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.95,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "logic_bug",
+      "summary": "`_verify_z3` if/then logic is vacuously satisfiable \u2014 always returns `SATISFIABLE_COUNTEREXAMPLE`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.94,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "mathematical",
+      "summary": "bench/immune_agents.py, function nk_cell_v2_shadow().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.94,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "mathematical",
+      "summary": "VerificationChain.verify_inclusion_proof() and the CLI proof verifier validate only the Merkle branch against a supplied root; they do not bind that proof to an",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.93,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, method load_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.93,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "bench/immune_agents.py, function run_immune_pipeline(), parallel result collection for `nk_v2`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.92,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "security",
+      "summary": "`_reconciliation_gate` promises locked verdicts but the autoimmune override completely bypasses them.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.91,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, method load_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R2_F072",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 2,
+      "severity": 0.91,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, interaction between `cytotoxic_t_cell()`, `cytotoxic_t_cell_v2_shadow()`, `b_cell_verify()`, `b_cell_v2_shadow()`, and `helper_t_cell_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.91,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "bench/immune_agents.py, function _verify_z3().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.91,
+      "target_file": "",
+      "target_function": "records",
+      "category": "logic_bug",
+      "summary": "VerificationChain._verify_epoch() does not validate epoch ordering or monotonic record_count growth.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "This fix changes downstream behavior in both `helper_t_cell_synthesize()` and `helper_t_v2_shadow()`: duplicate findings will now be auto-labeled DUPLICATE befo",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function run_immune_pipeline(), Stage 3b.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py` line 1855-1856: `run_immune_pipeline()` uses `reconciled_verdicts` for downstream processing, but `regulatory_t_cell_check()` and `regu",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `run_immune_pipeline()`, Stage 2 result collection for `nk_v2` discards the mutated triage returned by `nk_cell_v2_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "In `immune_agents.py`, the `run_immune_pipeline` function has a parameter `ct_enabled` that defaults to `True`, but if `ct_enabled` is `False`, the CT cell is s",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "verification_chain.py",
+      "target_function": "_normalize_timestamp",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the `_normalize_timestamp` function incorrectly handles timestamps ending with 'Z'.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "verification_chain.py",
+      "target_function": "save_json",
+      "category": "interface_gap",
+      "summary": "In `verification_chain.py`, the `save_json` method uses `os.replace` for atomic write, but on Windows, `os.replace` may fail if the destination file exists and ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `_verify_ct_claim` function uses `os.path.realpath` to resolve symlinks, but the `allowed_dirs` check uses `startswith` which may fai",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F015",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "typed_llm_classifier_shadow",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `typed_llm_classifier_shadow` function calls `call_openrouter` which may not be defined (imported from `bench.experiment_11_orchestra",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F023",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "verification_chain.py",
+      "target_function": "Signer",
+      "category": "interface_gap",
+      "summary": "In `verification_chain.py`, the `Signer` class requires a `private_key` of type `Ed25519PrivateKey`, but the type is quoted, causing a forward reference that ma",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F027",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "In `immune_agents.py`, the `_verify_statistical` function uses a regex to extract p-values, but the regex `r'p\\s*[<=]\\s*(0?\\.\\d+)'` does not match p-values like",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.9,
+      "target_file": "",
+      "target_function": "build_inclusion_proof",
+      "category": "security",
+      "summary": "The `VerificationChain.build_inclusion_proof()` method computes RFC 9162 Merkle inclusion proofs over the *entire* current chain (`self._records`).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F056",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 1,
+      "severity": 0.9,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "Log-odds aggregation in `helper_t_v2_shadow` inverts weak confirmations into outright rejections.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 4,
+      "severity": 0.9,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "In `helper_t_v2_shadow`, the domain-based log-odds aggregation contains a fundamental mathematical flaw that flips positive evidence into rejection.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.9,
+      "target_file": "",
+      "target_function": "_save_checkpoint",
+      "category": "logic_bug",
+      "summary": "Both `VerificationChain.save_json` and `InsectBrain._save_checkpoint` lack POSIX durability guarantees when replacing files.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.9,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "security",
+      "summary": "In `immune_agents.py`, the `_verify_ct_claim` function's fuzzy matching logic is mathematically unsound and allows false verifications.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.9,
+      "target_file": "verification_chain.py",
+      "target_function": "seal_epoch",
+      "category": "mathematical",
+      "summary": "`bench/verification_chain.py` line 170: `_largest_power_of_two_less_than(n)` raises ValueError for n=1, but RFC 9162 requires handling n=1 as base case (single ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.9,
+      "target_file": "insect_brain.py",
+      "target_function": "compute_metrics",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py` line 412-428: `compute_metrics()` calculates `gamma_hat` using `cumulative_classes` from convergence detector, but the formula is wrong.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F160",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.89,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `run_immune_pipeline()`, Stage 3b around the calls to `regulatory_t_cell_check()` and `regulatory_t_v2_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.89,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function helper_t_cell_synthesize().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.89,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function nk_cell_v2_shadow().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.89,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "interface_gap",
+      "summary": "InsectBrain.load_checkpoint() restores only all_findings and a few scalar flags; it does not reconstruct round_records.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F006",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.89,
+      "target_file": "",
+      "target_function": "",
+      "category": "mathematical",
+      "summary": "The active pipeline still miscomputes rejection_rate after Stage 0 barrier filtering.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "After this change, all later users of `triaged` in run_immune_pipeline() receive the duplicate annotations: `formalisation_agent_shadow()`, both helper synthesi",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "In `run_immune_pipeline()`, the skin barrier filters findings out of `new_findings` *before* `triaged` is built (lines around Stage 0).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F059",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.88,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `nk_cell_v2_shadow()`, both duplicate branches.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.88,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "interface_gap",
+      "summary": "bench/verification_chain.py, method build_inclusion_proof().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "signal_complete",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.check_convergence()` conflates budget exhaustion with convergence, violating CDSFL Core Directive \u00a73.",
+      "has_proposed_fix": true,
+      "occurrences": 2
+    },
+    {
+      "finding_id": "CC2_R8_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "In `helper_t_cell_synthesize`, the deduplication step collapses v1 and v2 CT cell verdicts into one slot because both use `CellType.CYTOTOXIC_T`: When CT v1 emi",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 4,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "_verify_sympy",
+      "category": "logic_bug",
+      "summary": "In `_verify_sympy` (B-Cell), the variable extraction regex `r'\\b([a-z])\\b'` strictly matches single-letter lowercase variables.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.88,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "security",
+      "summary": "VerificationChain.load_json() accepts arbitrary top-level JSON shapes and record/epoch containers without structural validation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.87,
+      "target_file": "immune_agents.py",
+      "target_function": "regulatory_t_cell_check",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function regulatory_t_cell_check().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.87,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "security",
+      "summary": "bench/immune_agents.py, function _verify_ct_claim().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R2_F071",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 2,
+      "severity": 0.86,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `cytotoxic_t_cell_v2_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.86,
+      "target_file": "verification_chain.py",
+      "target_function": "load_checkpoint",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, methods _save_round_json(), _save_checkpoint(), and signal_complete().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.86,
+      "target_file": "verification_chain.py",
+      "target_function": "_save_checkpoint",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, methods _save_round_json() and _save_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.86,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "InsectBrain.persist() stores caller-owned mutable dicts/lists directly into RoundRecord and BrainState.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.86,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "load_checkpoint() replays all restored findings into the existing ConvergenceDetector without resetting it first.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "Autoimmune override contradicts reconciliation gate's documented invariant.",
+      "has_proposed_fix": true,
+      "occurrences": 5
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate` is documented as enforcing an immutable state transition: \"REJECTED verdicts from both pipelines are LOCKED \u2014 cannot be overridden by dow",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.85,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, method load_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 4,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`InsectBrain.run_immune_pipeline()` attaches its results to `self.state.round_records[-1].immune_response`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.85,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "security",
+      "summary": "In `verification_chain.py`, the `_compute_chain_hash` function incorrectly concatenates raw hash bytes without domain separation, enabling length-extension atta",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "logic_bug",
+      "summary": "In `bench/immune_agents.py`, the `_verify_z3` script generator for single-bound inequality claims (`elif len(nums) == 1:`) adds a negated constraint to the solv",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "_verify_ct_claim",
+      "category": "security",
+      "summary": "In `_verify_ct_claim()`, the validation check `actual_normalised in snippet_normalised` permits a severe validation bypass.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 2,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "**Bayesian aggregation in `helper_t_v2_shadow` completely discards opposing evidence.** When aggregating multiple signals within the same domain (e.g., Code Fal",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "`_verify_statistical` does not perform statistical verification.",
+      "has_proposed_fix": true,
+      "occurrences": 2
+    },
+    {
+      "finding_id": "DS_F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.85,
+      "target_file": "verification_chain.py",
+      "target_function": "Verifier",
+      "category": "interface_gap",
+      "summary": "`VerificationChain._verify_single()`'s signature verification fails to validate the `key_id` field against the verifier's actual public key, allowing substituti",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F094",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "immune_agents.py",
+      "target_function": "_preconditions_to_z3",
+      "category": "mathematical",
+      "summary": "`_preconditions_to_z3()` in `immune_agents.py` uses iterative `str.replace()` over `_OP_MAP`, which includes `\"=\": \"==\"`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, method persist(), _save_round_json(), and load_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.85,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_sympy",
+      "category": "logic_bug",
+      "summary": "In `bench/immune_agents.py`, `_verify_sympy` uses the regex `\\b([a-z])\\b` to extract variables from claims for implicit SymPy declaration.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 6,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "_verify_ct_claim",
+      "category": "logic_bug",
+      "summary": "In `_verify_ct_claim`, substring matching (`snippet_normalised in actual_normalised`) can cause false verification of CT evidence.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F007",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.85,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "logic_bug",
+      "summary": "cytotoxic_t_cell_v2_shadow() does not deduplicate verdicts by finding_id, unlike cytotoxic_t_cell().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.84,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, `run_immune_pipeline()`, Stage 0 skin-barrier telemetry.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.84,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "compute_metrics() mutates historical RoundRecord objects despite the module claiming they are immutable records.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 5,
+      "severity": 0.84,
+      "target_file": "",
+      "target_function": "",
+      "category": "missing_state",
+      "summary": "ImmuneResponse omits Stage-0 skin-barrier rejections from both rejected_findings and rejection_rate, so active pre-triage filtering is not auditable in the retu",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.84,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "mathematical",
+      "summary": "`bench/immune_agents.py`, function `_verify_ct_claim()`, exact-match branch in the snippet verification block.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F161",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.83,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `regulatory_t_cell_check()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.83,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function _verify_search_manifest().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "Codex",
+      "all_models": [
+        "ChatGPT",
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.83,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, method verify_inclusion_proof().",
+      "has_proposed_fix": true,
+      "occurrences": 2
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.83,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "mathematical",
+      "summary": "bench/immune_agents.py, function run_immune_pipeline(), Stage 2 NK collection and downstream synthesis/filtering.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.83,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "missing_state",
+      "summary": "This fix changes B-cell behavior for LOGICAL findings and SymPy class-switch fallbacks that route into `_verify_z3()`: unsupported implication claims will becom",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.83,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "missing_state",
+      "summary": "The `key_id` enforcement fix changes the verifier interface and therefore all call sites and persisted expectations that rely on `Verifier`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F008",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.83,
+      "target_file": "",
+      "target_function": "_build_smt2_from_claim",
+      "category": "logic_bug",
+      "summary": "_build_smt2_from_claim() cannot ground claims against most real code constants because its regex only matches bare decimal literals, not scientific notation or ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.83,
+      "target_file": "",
+      "target_function": "",
+      "category": "security",
+      "summary": "The skin barrier is documented and commented as an active filter on file:line citation existence, but its implementation passes any finding with no regex-extrac",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.83,
+      "target_file": "verification_chain.py",
+      "target_function": "_verify_single",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, method `_verify_single()`, signature verification block.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.82,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "NK v2 is marked \"now PRIMARY\" (WP6a), yet `helper_t_cell_synthesize` and `helper_t_v2_shadow` both check `tf.is_duplicate` for auto-reject fast-path.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R2_F073",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 2,
+      "severity": 0.82,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `formalisation_agent_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.82,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "DC v2 \u2192 verification cell classification mismatch creates an UNCATEGORISED verification black hole.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.82,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_v2_shadow",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function helper_t_v2_shadow(), level-2 across-domain synthesis.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F001",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.82,
+      "target_file": "immune_agents.py",
+      "target_function": "_preconditions_to_z3",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, `_preconditions_to_z3()` uses sequential `str.replace()` calls from `_OP_MAP` to translate operators.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F005",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.82,
+      "target_file": "",
+      "target_function": "signal_complete",
+      "category": "interface_gap",
+      "summary": "signal_complete() reports active_models directly from current state, which excludes models that failed earlier.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F162",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.81,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `run_immune_pipeline()`, final response construction after the autoimmune override.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT",
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.81,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "bench/insect_brain.py, method _save_round_json().",
+      "has_proposed_fix": true,
+      "occurrences": 3
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.81,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "`bench/immune_agents.py`, `run_immune_pipeline()`, return assembly for `ImmuneResponse.rejected_findings`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.81,
+      "target_file": "immune_agents.py",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function _reconciliation_gate().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.81,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "The checkpoint stores completed_round but not round_records, and load_checkpoint() sets current_round directly from that scalar without validating consistency a",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F007",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.81,
+      "target_file": "insect_brain.py",
+      "target_function": "signal_complete",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py`, method `signal_complete()`, field `active_models` reports the current surviving model list, not the set of participating models for the",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F009",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.8,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "formalisation_agent_shadow() builds its B-cell verdict lookup by overwriting on finding_id, but run_immune_pipeline passes the full all_verdicts list containing",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "`_verify_z3` if/then branch always produces `SATISFIABLE_COUNTEREXAMPLE`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "In `_verify_z3`, logical \"if/then\" claims are evaluated by creating two entirely independent symbolic boolean variables (`X` and `Y`) without extracting or pres",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py` line 192-195: `_format_findings_for_model()` uses `self.state.all_findings[-1]` without checking if list is empty.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, method _verify_single().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F029",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "In `immune_agents.py`, the `run_immune_pipeline` function takes a parameter `false_positive_db` but does not pass it to `nk_cell_v2_shadow` (only to `nk_cell_v2",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "verification_chain.py",
+      "target_function": "_build_sealed_body",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, method _verify_single().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "security",
+      "summary": "In `verification_chain.py`, the `_compute_chain_hash` function concatenates raw hash bytes without domain separation, risking hash collisions if the input sizes",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "insect_brain.py",
+      "target_function": "_format_findings_for_model",
+      "category": "logic_bug",
+      "summary": "In `insect_brain.py`, the `_format_findings_for_model` method uses a budget to decide between full text, last round only, or summary.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_sympy",
+      "category": "contract_violation",
+      "summary": "In `immune_agents.py`, the `_verify_sympy` function uses a blocklist regex to reject dangerous tokens, but the regex may be bypassed by using Unicode homoglyphs",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F021",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `_verify_z3_v2_shadow` function extracts constants from AST, but it only looks at top-level assignments and annotated assignments.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F013",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `_reconciliation_gate` function merges v1 and v2 verdicts, but the rule for disagreement (higher confidence wins) may flip verdicts a",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F018",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "insect_brain.py",
+      "target_function": "handle_model_failure",
+      "category": "interface_gap",
+      "summary": "In `insect_brain.py`, the `handle_model_failure` method removes a model from `active_models` but does not update the convergence detector's internal state (e.g.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F026",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "",
+      "category": "missing_state",
+      "summary": "In `immune_agents.py`, the `_KNOWN_FALSE_POSITIVES` list includes patterns from Run 7b, but these may become stale over time as code evolves.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "`_verify_statistical` is tautological \u2014 it parses the finding's OWN claimed p-value from the description text and checks whether that claimed value is < 0.05.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "`_verify_statistical()` never imports or calls statsmodels.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_smt2_from_claim",
+      "category": "logic_bug",
+      "summary": "In `bench/immune_agents.py`, `_build_smt2_from_claim()` uses `\\w+` to identify variables in claims: `re.findall(r'(\\w+)\\s*(>=|<=|>|<|==|!=)\\s*([-+]?\\d*\\.?\\d+)',",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 2,
+      "severity": 0.8,
+      "target_file": "",
+      "target_function": "_verify_sympy",
+      "category": "missing_state",
+      "summary": "**`_verify_sympy` regex constraint prevents evaluation of real-world multi-character variables.** The dynamic symbol binding uses `\\b([a-z])\\b`, which explicitl",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "verification_chain.py",
+      "target_function": "_compute_chain_hash",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py` line 218-220: `_compute_chain_hash()` concatenates raw hash bytes without domain separation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.8,
+      "target_file": "immune_agents.py",
+      "target_function": "_extract_constants_from_ast",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py` line 1306-1307: `_extract_constants_from_ast()` only extracts `ast.Constant` nodes (Python 3.8+).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.8,
+      "target_file": "insect_brain.py",
+      "target_function": "_format_findings_summary",
+      "category": "interface_gap",
+      "summary": "In `insect_brain.py`, the `_format_findings_summary` function violates the CDSFL \"no silent compliance\" constraint by truncating finding descriptions without in",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R2_F075",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 2,
+      "severity": 0.79,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py`, function `run_immune_pipeline()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.79,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "missing_state",
+      "summary": "This fix changes the semantics of `verify-record` CLI output and any caller that expected record-only checking.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.79,
+      "target_file": "verification_chain.py",
+      "target_function": "rfc9162_merkle_root",
+      "category": "performance",
+      "summary": "bench/verification_chain.py, functions rfc9162_merkle_root() and rfc9162_inclusion_proof().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.79,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "missing_state",
+      "summary": "The F001 fix changes the semantics of proof generation from 'latest tree' to 'sealed epoch'.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.79,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, method `verify_record()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 5,
+      "severity": 0.79,
+      "target_file": "",
+      "target_function": "",
+      "category": "interface_gap",
+      "summary": "The active NK v2 path returns DUPLICATE verdicts without mutating TriagedFinding state, but both helper synthesizers and later pipeline logic still treat tf.is_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.79,
+      "target_file": "immune_agents.py",
+      "target_function": "nk_cell_v2_shadow",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, function `nk_cell_v2_shadow()`, duplicate branches do not mutate the `TriagedFinding` state before returning a `DUPLICATE` verdict.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F060",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.78,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "FOLLOW for F059: `bench/immune_agents.py`, `run_immune_pipeline()` submits `triaged` unchanged to CT/B-Cell/CT-v2 while only NK gets a deep-copied `triaged_for_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.78,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "The caller `run_immune_pipeline()` already stores the reason string separately from the boolean flag, so this fix is interface-compatible.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.78,
+      "target_file": "",
+      "target_function": "_verify_ct_claim",
+      "category": "performance",
+      "summary": "skin_barrier_check() and _verify_ct_claim() load up to 50,000 lines into memory for every citation check.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.77,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`bench/immune_agents.py`, `run_immune_pipeline()`, autoimmune override loses barrier-filtered findings instead of truly \"pass[ing] everything through\" as the co",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F005",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.77,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`bench/immune_agents.py`, function `run_immune_pipeline()`, the final `ImmuneResponse.rejected_findings` omits barrier-filtered findings when `observation_only`",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.77,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "missing_state",
+      "summary": "This changes the scale of `final_confidences` from normalized share to accumulated absolute support capped by max individual evidence.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.77,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "bench/insect_brain.py, data loss in persistence.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.77,
+      "target_file": "verification_chain.py",
+      "target_function": "build_inclusion_proof",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, function verify_inclusion_proof().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R2_F074",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 2,
+      "severity": 0.77,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "mathematical",
+      "summary": "`bench/verification_chain.py`, function `load_json()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.77,
+      "target_file": "immune_agents.py",
+      "target_function": "formalisation_agent_shadow",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function _extract_preconditions().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R7_F010",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 7,
+      "severity": 0.77,
+      "target_file": "",
+      "target_function": "typed_llm_classifier_shadow",
+      "category": "interface_gap",
+      "summary": "typed_llm_classifier_shadow() silently drops findings beyond the length of regex_triaged because it iterates with zip(findings, regex_triaged).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 5,
+      "severity": 0.76,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "run_immune_pipeline() records the active v2 dendritic output in triaged, but formalisation_agent_shadow() is fed all_verdicts from both v1 and v2 B-cell paths a",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.76,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "bench/insect_brain.py, method load_checkpoint().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F009",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.76,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, function `_cli_record()`, user input parsing allows an invalid `--metadata null` to propagate as `metadata=None` into sealed bodi",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.76,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "missing_state",
+      "summary": "After giving failure precedence, `handle_model_failure()` and any external orchestrator logic that calls `signal_complete()` become consistent, but checkpoint p",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.76,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "interface_gap",
+      "summary": "VerificationChain.records and epochs properties are documented as 'Read-only access' but return shallow copies of lists containing the original mutable dict obj",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F062",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.76,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "mathematical",
+      "summary": "`bench/immune_agents.py`, function `_verify_search_manifest()`, `Read` manifest validation is not actually constrained to the reviewed source set.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F163",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.76,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "`bench/insect_brain.py`, method `persist()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.76,
+      "target_file": "insect_brain.py",
+      "target_function": "signal_complete",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, method `signal_complete()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.75,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "mathematical",
+      "summary": "`VerificationChain.records` and `.epochs` properties return shallow copies, leaking mutable internal state.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "`InsectBrain.load_checkpoint()` restores `all_findings` but not `round_records`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "nk_cell_verify",
+      "category": "logic_bug",
+      "summary": "In `nk_cell_verify` (v1), after a known false-positive pattern match, the inner loop `break`s out of the FP pattern loop but does NOT `continue` the outer loop.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.75,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.persist()` does not validate that `round_idx` is monotonic and sequential, allowing out\u2011of\u2011order or duplicate round records that corrupt convergenc",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 2,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "**`run_immune_pipeline` permanently drops skin barrier failures from the pipeline accounting.** Findings that deterministically fail the `skin_barrier_check` ar",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.75,
+      "target_file": "verification_chain.py",
+      "target_function": "_normalize_timestamp",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the `_normalize_timestamp` function incorrectly rejects valid ISO 8601 timestamps with fractional seconds and timezone offset.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 8,
+      "severity": 0.75,
+      "target_file": "immune_agents.py",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "In `bench/immune_agents.py`, function `_reconciliation_gate` merges verdicts from v1 and v2 pipelines but does not treat DUPLICATE as a special verdict.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "_extract_constants_from_ast",
+      "category": "mathematical",
+      "summary": "In `_extract_constants_from_ast()`, `ast.walk(tree)` visits every node in the file without scope awareness.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "_build_ct_prompt",
+      "category": "security",
+      "summary": "`_build_ct_prompt()` wraps finding descriptions in `<finding_description>...</finding_description>` XML tags as a C5-03 prompt injection mitigation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "seal_epoch",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.build_inclusion_proof()` is epoch-unanchored.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "skin_barrier_check",
+      "category": "logic_bug",
+      "summary": "In `skin_barrier_check`, when no `file.py` is found in a citation but a bare `line N` is extracted, the code produces `citations = [(\"\", int(ln))]`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "_build_smt2_from_claim",
+      "category": "logic_bug",
+      "summary": "`_build_smt2_from_claim()` generates individual negated assertions for each comparison in a multi-condition claim.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.75,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "security",
+      "summary": "In `bench/immune_agents.py`, the `_verify_ct_claim` function implements fuzzy matching by checking `if t in window_normalised`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.75,
+      "target_file": "immune_agents.py",
+      "target_function": "cytotoxic_t_cell",
+      "category": "security",
+      "summary": "In `bench/immune_agents.py`, `cytotoxic_t_cell_v2_shadow` mechanical verification of `test_severity` has a critical bypass.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.75,
+      "target_file": "immune_agents.py",
+      "target_function": "dendritic_cell_v2_shadow",
+      "category": "missing_state",
+      "summary": "`_classify_claim_v2` returns a confidence score (third element of the tuple) documented as enabling \"downstream gating,\" but `dendritic_cell_v2_shadow` discards",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.75,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_ct_prompt",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, `_build_ct_prompt()` and `_build_ct_v2_prompt()` wrap finding descriptions in XML boundary tags as a C5-03 prompt injection fix: This doe",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 4,
+      "severity": 0.75,
+      "target_file": "",
+      "target_function": "skin_barrier_check",
+      "category": "security",
+      "summary": "In `skin_barrier_check`, there is an explicit fallback to extract citations formatted as `\"line 123\"` (without a filename).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.74,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function regulatory_t_cell_check(), Check 3 'All findings from one model rejected'.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.74,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`bench/immune_agents.py`, `run_immune_pipeline()`, the computed `reg_reason` from Regulatory T is discarded and never exposed in `ImmuneResponse`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F006",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.74,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "mathematical",
+      "summary": "`bench/immune_agents.py`, function `run_immune_pipeline()`, `rejection_rate` is computed as `rej_count / len(triaged)`, where `rej_count` counts only final verd",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.74,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "missing_state",
+      "summary": "This fix restores consistency for `relay_conversational()` and `read_context()` after recovery.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT",
+        "Codex"
+      ],
+      "first_round": 1,
+      "severity": 0.74,
+      "target_file": "immune_agents.py",
+      "target_function": "typed_llm_classifier_shadow",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function `typed_llm_classifier_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 3
+    },
+    {
+      "finding_id": "F069",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.74,
+      "target_file": "insect_brain.py",
+      "target_function": "signal_complete",
+      "category": "mathematical",
+      "summary": "`bench/insect_brain.py`, `signal_complete()` reports `active_models` as whatever remains in `self.state.active_models`, which is mutated by `handle_model_failur",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 6,
+      "severity": 0.74,
+      "target_file": "",
+      "target_function": "records",
+      "category": "missing_state",
+      "summary": "VerificationChain._verify_single() does not validate non-signature metadata fields for authenticated records.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.74,
+      "target_file": "",
+      "target_function": "records",
+      "category": "missing_state",
+      "summary": "This fix changes the denominator used by the shadow agreement metric because malformed alignment now produces explicit non-matches instead of silent truncation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.73,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "After F002, correctness depends on identity semantics of the findings list.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 5,
+      "severity": 0.73,
+      "target_file": "",
+      "target_function": "verify_chain",
+      "category": "logic_bug",
+      "summary": "VerificationChain.verify_chain() never validates epoch ordering or uniqueness, so malformed epoch metadata can still verify as long as each merkle_root matches ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F061",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.73,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "FOLLOW for F060: once NK-mutated triage is propagated, the earlier parallel scheduling still allows CT/B-Cell to verify duplicates unnecessarily because they we",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.73,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "bench/immune_agents.py, run_immune_pipeline() docstring and comments still describe shadow-only behavior for several v2 components, but the implementation feeds",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.73,
+      "target_file": "verification_chain.py",
+      "target_function": "_cli_verify_proof",
+      "category": "interface_gap",
+      "summary": "bench/verification_chain.py, function _cli_verify_proof().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.72,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "`InsectBrain._save_checkpoint` serializes `completed_round`, `all_findings`, `active_models`, `converged`, and `convergence_reason`, but omits `failed` and `fai",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.72,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "logic_bug",
+      "summary": "Glob steps in CT v2 search_manifest are unconditionally counted as verified, enabling confidence inflation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.72,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "bench/insect_brain.py, method load_checkpoint().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F067",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.72,
+      "target_file": "verification_chain.py",
+      "target_function": "save_json",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, `save_json()` claims crash-safe atomic writes but does not fsync either the temp file or parent directory before `os.replace`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.72,
+      "target_file": "",
+      "target_function": "append_record",
+      "category": "mathematical",
+      "summary": "`VerificationChain.records` and `.epochs` properties return `list(self._records)` / `list(self._epochs)` \u2014 shallow copies.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F164",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.72,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "mathematical",
+      "summary": "`bench/verification_chain.py`, methods `save_json()` and `load_json()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.72,
+      "target_file": "",
+      "target_function": "_verify_ct_claim",
+      "category": "logic_bug",
+      "summary": "In `cytotoxic_t_cell()`, `allowed_dirs` is computed as `[os.path.dirname(p) for p in source_paths]`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.72,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "mathematical",
+      "summary": "`_reconciliation_gate` breaks ties by comparing v1 and v2 confidence values, but these are on incomparable scales, producing systematic v2 preference.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.72,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "interface_gap",
+      "summary": "In `immune_agents.py`, both CT v1 (`cytotoxic_t_cell`) and CT v2 (`cytotoxic_t_cell_v2_shadow`) produce verdicts with `cell_type=CellType.CYTOTOXIC_T`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F004",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.72,
+      "target_file": "immune_agents.py",
+      "target_function": "typed_llm_classifier_shadow",
+      "category": "interface_gap",
+      "summary": "`bench/immune_agents.py`, function `typed_llm_classifier_shadow()`, loop header `for i, (f, regex_tf) in enumerate(zip(findings, regex_triaged))`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.71,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "The fix restores the intended comparison target for `potential_false_rejection`, but it also reveals that the current function signature and parameter name are ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.71,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function helper_t_cell_synthesize(), UNCERTAIN confidence calculation misreports certainty as 1.0 whenever both confirm and reject weigh",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F010",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.71,
+      "target_file": "verification_chain.py",
+      "target_function": "build_inclusion_proof",
+      "category": "mathematical",
+      "summary": "`bench/verification_chain.py`, function `verify_inclusion_proof()`, ignores `proof[\"index\"]` entirely.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.71,
+      "target_file": "immune_agents.py",
+      "target_function": "formalisation_agent_shadow",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function `formalisation_agent_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "`InsectBrain.load_checkpoint()` restores `all_findings`, `active_models`, `current_round`, `converged`, and `convergence_reason` \u2014 but does NOT restore `round_r",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "_save_checkpoint",
+      "category": "interface_gap",
+      "summary": "`InsectBrain.persist()` writes plain JSON without hash-chaining or Merkle verification.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the `_digest_bytes` function validates digest format with a regex that requires lowercase hex, but the `sha256_digest` function outp",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`bench/immune_agents.py` line 1791-1792: `run_immune_pipeline()` uses `ThreadPoolExecutor(max_workers=6)` but submits 5 tasks (`cytotoxic_t`, `ct_v2`, `b_cell`,",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, function _atomic_write_json() as needed by F006 should not use a fixed `path.with_suffix(path.suffix + '.tmp')` if multiple writers can p",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`InsectBrain.load_checkpoint()` restores `all_findings`, `current_round`, `active_models`, `converged`, and `convergence_reason`, but does NOT restore `round_re",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "`immune_agents._run_tool_subprocess()` uses a fixed 15\u2011second timeout for all SymPy/z3/statsmodels subprocesses, which is insufficient for complex proofs and ca",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "interface_gap",
+      "summary": "This changes the on-disk schema for round JSON.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "compute_metrics",
+      "category": "missing_state",
+      "summary": "In `insect_brain.py`, the `compute_metrics` method calculates `gamma_hat` using a Duane model, but the formula uses `cum_1` (cumulative classes at round 0) whic",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the `_verify_z3` function uses a simplistic regex to extract numbers, but it does not handle negative numbers or scientific notation corr",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F014",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "formalisation_agent_shadow",
+      "category": "missing_state",
+      "summary": "In `immune_agents.py`, the `formalisation_agent_shadow` function extracts preconditions with regex, but the regex patterns are limited and may miss many natural",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F017",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "read_context",
+      "category": "logic_bug",
+      "summary": "In `insect_brain.py`, the `read_context` method returns a list of `RoundRecord` objects, but the method does not guarantee that the records are in chronological",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F019",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "check_convergence",
+      "category": "logic_bug",
+      "summary": "In `insect_brain.py`, the `check_convergence` method calls `self.conv_detector.converged(round_idx)`, but if the convergence detector raises an exception, it is",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F022",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "performance",
+      "summary": "In `immune_agents.py`, the `run_immune_pipeline` function uses a `ThreadPoolExecutor` with max_workers=6, but the number of concurrent tasks may be less than 6,",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "canonical_json",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the Ed25519 signature covers `canonical_json(sealed_body).encode(\"utf-8\")`, but the `key_id` field is stored in the `signature` bloc",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F025",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "insect_brain.py",
+      "target_function": "_format_responses_for_model",
+      "category": "logic_bug",
+      "summary": "In `insect_brain.py`, the `_format_responses_for_model` method uses a budget to decide between full responses, last round only, or findings summary.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F028",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "contract_violation",
+      "summary": "In `immune_agents.py`, the `_verify_z3` function's docstring says it returns a `CellVerdict`, but the function actually returns a `CellVerdict` with an empty `f",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "In `helper_t_v2_shadow`, the log-odds synthesis unconditionally maps aggregated rejections to `\"REJECTED\"`, erasing the semantic distinction of `\"DUPLICATE\"` ve",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`VerificationChain.records` returns `list(self._records)` \u2014 a shallow copy.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "interface_gap",
+      "summary": "The Formalisation Agent (`_preconditions_to_z3`) produces Z3 Python API code (`from z3 import *; s = Solver(); s.add(...)`), while B-Cell v2 (`_verify_z3_v2_sha",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F100",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "formalisation_agent_shadow",
+      "category": "mathematical",
+      "summary": "`_preconditions_to_z3()` generates Z3 *Python* code (e.g., `s.add(x > 0)`) but the output string is stored in `z3_fragment` and evaluated only as a boolean (`z3",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "skin_barrier_check",
+      "category": "logic_bug",
+      "summary": "`skin_barrier_check()` in `immune_agents.py` incorrectly fails findings that cite a line number without a file.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 1,
+      "severity": 0.7,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_smt2_from_claim",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the regex for extracting numerical comparisons in `_build_smt2_from_claim` does not handle scientific notation (e.g., `1.5e-3`).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 2,
+      "severity": 0.7,
+      "target_file": "",
+      "target_function": "skin_barrier_check",
+      "category": "logic_bug",
+      "summary": "**`skin_barrier_check` instantly rejects valid line-only citations in single-file reviews.** If a finding description says \"bug on line 42\", the regex correctly",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "interface_gap",
+      "summary": "`bench/verification_chain.py` line 327: `append_record()` accepts `payload: Any` but `canonical_json()` rejects floats.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 3,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "logic_bug",
+      "summary": "In `bench/verification_chain.py`, `VerificationChain.verify_record()` calls `_verify_single()` without a `try/except` block.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "seal_epoch",
+      "category": "performance",
+      "summary": "`seal_epoch` recomputes the full Merkle tree over ALL records from genesis, not just records added since the last epoch.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.7,
+      "target_file": "verification_chain.py",
+      "target_function": "canonical_json",
+      "category": "type_safety",
+      "summary": "In `verification_chain.py`, the `_reject_floats` function raises `TypeError` for any float value, but the error message suggests using string representation, wh",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.69,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, function _cli_record().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.69,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "logic_bug",
+      "summary": "This fix preserves file formats and call signatures.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "R8_F008",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 8,
+      "severity": 0.69,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "`bench/insect_brain.py`, checkpoint serialization does not persist any per-run model provenance needed by `signal_complete()` once model failures occur.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F063",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.69,
+      "target_file": "",
+      "target_function": "_verify_search_manifest",
+      "category": "logic_bug",
+      "summary": "FOLLOW for F062: `_verify_search_manifest()` also treats every `Glob` step as verified unconditionally: `elif tool in (\"Glob\", \"glob\"): verified += 1 # Glob pat",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 5,
+      "severity": 0.69,
+      "target_file": "",
+      "target_function": "signal_complete",
+      "category": "logic_bug",
+      "summary": "signal_complete() can report status FAILED while still carrying a stale convergence_reason in reason because failure does not clear prior convergence state and ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.69,
+      "target_file": "",
+      "target_function": "",
+      "category": "missing_state",
+      "summary": "After F004, the code now has three verdict spaces: v1, v2, and reconciled.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.69,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "mathematical",
+      "summary": "`bench/insect_brain.py`, `persist()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006_FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.69,
+      "target_file": "",
+      "target_function": "records",
+      "category": "missing_state",
+      "summary": "Once unknown IDs are filtered, the function may produce fewer shadow verdicts than before.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 8,
+      "severity": 0.69,
+      "target_file": "immune_agents.py",
+      "target_function": "cytotoxic_t_cell",
+      "category": "logic_bug",
+      "summary": "bench/immune_agents.py, function `cytotoxic_t_cell_v2_shadow()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 3,
+      "severity": 0.68,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "bench/insect_brain.py, method run_immune_pipeline().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F013",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.68,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "interface_gap",
+      "summary": "bench/verification_chain.py, method verify_chain().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.68,
+      "target_file": "immune_agents.py",
+      "target_function": "_find_python_with_tools",
+      "category": "interface_gap",
+      "summary": "Module-level `PYTHON_TOOLS` eager export contradicts the WP3e lazy discovery fix.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F165",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.68,
+      "target_file": "verification_chain.py",
+      "target_function": "rfc9162_verify_inclusion",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, function `rfc9162_verify_inclusion()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F002",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.68,
+      "target_file": "insect_brain.py",
+      "target_function": "_save_round_json",
+      "category": "missing_state",
+      "summary": "In `insect_brain.py`, `_save_round_json()` silently truncates `model_responses` to 10,000 characters per model with no marker: No truncation flag (e.g., `\"trunc",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.68,
+      "target_file": "",
+      "target_function": "formalisation_agent_shadow",
+      "category": "logic_bug",
+      "summary": "`formalisation_agent_shadow._preconditions_to_z3` generates Python code strings from natural language preconditions using only operator symbol replacement: The ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.67,
+      "target_file": "immune_agents.py",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate` tie-breaking systematically favors v1 over v2.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F065",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.67,
+      "target_file": "verification_chain.py",
+      "target_function": "build_inclusion_proof",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, method `verify_inclusion_proof()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.66,
+      "target_file": "",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "Once round_records are restored, checkpoint/round JSON drift becomes a possible inconsistency source.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.66,
+      "target_file": "",
+      "target_function": "append_record",
+      "category": "missing_state",
+      "summary": "This makes verification enforce the schema implied by append_record().",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F068",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.66,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "security",
+      "summary": "`bench/verification_chain.py`, `save_json()` opens the temporary file with text mode and default platform encoding/newline translation: `with os.fdopen(fd, \"w\")",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.66,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py`, `load_checkpoint()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F166",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.66,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "missing_state",
+      "summary": "`bench/verification_chain.py`, method `_verify_epoch()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`nk_cell_verify` (v1) has a control flow defect where known-FP-matched findings also receive anomaly detection verdicts.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "nk_cell_verify",
+      "category": "logic_bug",
+      "summary": "NK Cell v1 false-positive match falls through to anomaly detection.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "check_convergence",
+      "category": "logic_bug",
+      "summary": "`check_convergence` sets `self.state.converged = True` when max rounds reached, conflating budget exhaustion with genuine convergence:",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "build_inclusion_proof",
+      "category": "interface_gap",
+      "summary": "This tightens only the class API.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.load_json()` does not preserve or restore signer state.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 1,
+      "severity": 0.65,
+      "target_file": "verification_chain.py",
+      "target_function": "_normalize_timestamp",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the `_normalize_timestamp` function discards fractional seconds without warning or error.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.65,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "performance",
+      "summary": "`immune_agents.run_immune_pipeline()` hard\u2011codes `max_workers=6` in the `ThreadPoolExecutor`, which can over\u2011subscribe CPU cores on resource\u2011constrained hardwar",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.65,
+      "target_file": "insect_brain.py",
+      "target_function": "_save_checkpoint",
+      "category": "missing_state",
+      "summary": "In `insect_brain.py`, the `checkpoint.json` saving mechanism (`_save_checkpoint`) excludes the model failure state (`self.state.failed` and `self.state.failure_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "_build_smt2_from_claim",
+      "category": "mathematical",
+      "summary": "In `_build_smt2_from_claim()`, the regex extracting numerical constants is `([-+]?\\d*\\.?\\d+)`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "verify_chain",
+      "category": "mathematical",
+      "summary": "`VerificationChain.records` returns `list(self._records)` \u2014 a shallow copy.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F058",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 1,
+      "severity": 0.65,
+      "target_file": "insect_brain.py",
+      "target_function": "_format_findings_for_model",
+      "category": "security",
+      "summary": "Off-by-one budget bypass in `insect_brain.py` conversational and finding formatters.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 2,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "read_context",
+      "category": "logic_bug",
+      "summary": "**`read_context` ignores `round_idx` entirely, leaking future context.** The `read_context` method accepts `round_idx` but ignores it, slicing `self.state.round",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F096",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "`helper_t_cell_synthesize()` (v1) confidence capping via MF-09 (`min(weight_ratio, max_individual)`) completely nullifies multi-source evidence accumulation.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "_save_checkpoint",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.persist()` updates in-memory state (`self.state.all_findings.append(findings)`, `self.state.round_records.append(record)`, `self.conv_detector.add_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.65,
+      "target_file": "insect_brain.py",
+      "target_function": "compute_metrics",
+      "category": "logic_bug",
+      "summary": "In `insect_brain.py`, the `compute_metrics` function's gamma_hat calculation can produce `ZeroDivisionError` when `round_idx` is 0.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.65,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_ct_prompt",
+      "category": "logic_bug",
+      "summary": "`finding_id` is interpolated unsanitized into CT prompts, outside the XML boundary tags that protect `description`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 4,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "_extract_constants_from_ast",
+      "category": "logic_bug",
+      "summary": "In `_extract_constants_from_ast` (used by `b_cell_v2_shadow`), the docstring claims it \"only extracts top-level and class-level constant assignments\".",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F003",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "dendritic_cell_v2_shadow",
+      "category": "interface_gap",
+      "summary": "`_classify_claim_v2()` returns a 3-tuple `(ClaimType, str, float)` where the third element is a classification confidence score (0.30\u20130.85).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.65,
+      "target_file": "insect_brain.py",
+      "target_function": "read_context",
+      "category": "interface_gap",
+      "summary": "In `bench/insect_brain.py`, method `read_context` returns a slice of `self.state.round_records`, which are mutable `RoundRecord` objects.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.65,
+      "target_file": "",
+      "target_function": "nk_cell_verify",
+      "category": "performance",
+      "summary": "`nk_cell_v2_shadow` removes the MF-19 early termination optimisation present in v1.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F014",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.64,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "performance",
+      "summary": "bench/verification_chain.py, function rfc9162_merkle_root() and proof builder recurse on list slices (`leaves[:k]`, `leaves[k:]`) at every level.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.64,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, CLI handler `_cli_record()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F066",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.64,
+      "target_file": "verification_chain.py",
+      "target_function": "_cli_verify_proof",
+      "category": "missing_state",
+      "summary": "FOLLOW for F065: `bench/verification_chain.py`, CLI handler `_cli_verify_proof()` only emits a warning when the supplied root differs from the proof's embedded ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.62,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "mathematical",
+      "summary": "In `insect_brain.py`, `load_checkpoint()` replays all findings into the convergence detector with `duration=0.0`: The `kappa_rate` metric in `compute_metrics()`",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.62,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.persist()` does not validate `round_idx` ordering.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.62,
+      "target_file": "",
+      "target_function": "helper_t_cell_synthesize",
+      "category": "logic_bug",
+      "summary": "After F005, helper_t_cell_synthesize() and helper_t_v2_shadow() will short-circuit duplicate findings via tf.is_duplicate before considering any other verdicts.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.62,
+      "target_file": "verification_chain.py",
+      "target_function": "seal_epoch",
+      "category": "documentation",
+      "summary": "`bench/verification_chain.py`, method `seal_epoch()`, docstring.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F015",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.61,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "documentation",
+      "summary": "bench/insect_brain.py, method persist() docstring states `duration_s: Wall-clock duration of this round.` The distributed-systems hard constraints for this revi",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F070",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 1,
+      "severity": 0.61,
+      "target_file": "",
+      "target_function": "relay_conversational",
+      "category": "missing_state",
+      "summary": "FOLLOW for F069: `relay()` and `relay_conversational()` currently populate each `RelayPayload.active_models` from the mutable active set only.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F167",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.61,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_smt2_from_claim",
+      "category": "performance",
+      "summary": "`bench/immune_agents.py`, function `_build_smt2_from_claim()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F102",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "`run_immune_pipeline` autoimmune recovery (`if autoimmune_flag and not observation_only`) restores all `triaged` findings, but findings removed by the skin barr",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F017",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "In `run_immune_pipeline()`, autoimmune recovery overrides filtering with `filtered = [tf.finding for tf in triaged]`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "_verify_statistical",
+      "category": "logic_bug",
+      "summary": "`_verify_statistical` doesn't use statsmodels despite `tool_used=\"statsmodels\"`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F009",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate()` treats DUPLICATE and REJECTED as disagreeing verdicts.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "logic_bug",
+      "summary": "`immune_agents._verify_search_manifest()` incorrectly treats every `Glob` step as verified, allowing an attacker to claim any glob pattern without validation.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "In `immune_agents.py`, `run_immune_pipeline()` catches cell-level exceptions with bare `except Exception` and logs a warning, but does not record which cells su",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "build_inclusion_proof",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.build_inclusion_proof()` always builds the proof against the FULL current record set, not against any sealed epoch.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "performance",
+      "summary": "In `verification_chain.py`, the `verify_chain` method iterates through all records and epochs, collecting errors, but continues even after early failures.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F008",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_ct_claim",
+      "category": "logic_bug",
+      "summary": "`immune_agents._verify_ct_claim()`'s fuzzy matching uses a token\u2011ratio threshold of 0.6 with tokens longer than 3 characters, but the token extraction splits on",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "skin_barrier_check",
+      "category": "performance",
+      "summary": "In `immune_agents.py`, the `skin_barrier_check` function reads each cited file up to 50,000 lines for every finding, which can be I/O heavy if many findings cit",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F016",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "Verifier",
+      "category": "documentation",
+      "summary": "In `verification_chain.py`, the docstring for `Verifier.verify` says it returns `False` for invalid signatures, but the function also returns `False` for malfor",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F020",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "",
+      "category": "contract_violation",
+      "summary": "In `verification_chain.py`, the `GENESIS_CONSTANT` is defined as `hashlib.sha256(b\"CDSFL_GENESIS\").hexdigest()`, but it is used as a string prefixed with `\"sha2",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F024",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "canonical_json",
+      "category": "logic_bug",
+      "summary": "In `verification_chain.py`, the `canonical_json` function raises `TypeError` if any float is found, but the error message includes the float value, which may be",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 1,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "In `immune_agents.py`, the regex for extracting p-values in `_verify_statistical` does not match the inequality operator `<=` (two characters), causing claims l",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F030",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 0,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "Signer",
+      "category": "documentation",
+      "summary": "In `verification_chain.py`, the `__all__` list includes `\"VerificationChain\"`, `\"Signer\"`, etc., but `\"Verifier\"` is missing.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.persist()` does not validate that `round_idx` is sequential or monotonically increasing.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F057",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 1,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`VerificationChain` persistence operations use platform-dependent text encodings.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "_verify_z3",
+      "category": "interface_gap",
+      "summary": "`_preconditions_to_z3()` returns a multi-line Python string containing `from z3 import *`, `x = Real('x')`, and `s.add(...)` calls.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F097",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "_build_ct_prompt",
+      "category": "logic_bug",
+      "summary": "`_build_ct_prompt()` and `_build_ct_v2_prompt()` wrap finding descriptions in XML boundary tags (`<finding_description>...</finding_description>`) as a C5-03 pr",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "interface_gap",
+      "summary": "In `bench/verification_chain.py`, method `append_record` does not validate the `recorded_by` string.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 3,
+      "severity": 0.6,
+      "target_file": "verification_chain.py",
+      "target_function": "verify_chain",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py` line 478-479: `verify_chain()` catches all `KeyError, TypeError, ValueError` from `_verify_single()`, but `_verify_single()` can r",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F009",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "`helper_t_v2_shadow` Level 1 log-odds aggregation has a confirmation bias on exact ties.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "_format_findings_for_model",
+      "category": "missing_state",
+      "summary": "`_format_findings_for_model`'s budget degradation ladder has three tiers: full text \u2192 last round only \u2192 summary.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "logic_bug",
+      "summary": "`_verdict_domain` in `helper_t_v2_shadow` defaults all unrecognized `tool_used` strings to `_DOMAIN_CODE`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 6,
+      "severity": 0.6,
+      "target_file": "",
+      "target_function": "append_record",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.append_record` does not validate the `recorded_by` parameter, allowing empty strings or excessively long strings that can bloat the chain or ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.6,
+      "target_file": "insect_brain.py",
+      "target_function": "_save_round_json",
+      "category": "missing_state",
+      "summary": "In `insect_brain.py`, the `_save_round_json` function truncates `model_responses` to 10,000 characters without warning, potentially losing critical debugging in",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 8,
+      "severity": 0.6,
+      "target_file": "immune_agents.py",
+      "target_function": "_build_smt2_from_claim",
+      "category": "contract_violation",
+      "summary": "In `bench/immune_agents.py`, function `_build_smt2_from_claim` uses a regex pattern that does not match scientific notation (e.g., `1.5e-3`).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 5,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate` resolves v1-vs-v2 disagreements with `if v1c >= v2c`, which silently favors v1 on ties.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F010",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 4,
+      "severity": 0.58,
+      "target_file": "immune_agents.py",
+      "target_function": "run_immune_pipeline",
+      "category": "missing_state",
+      "summary": "`run_immune_pipeline` response doesn't account for barrier-rejected findings in `rejected_findings` or `rejection_rate`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F016",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.58,
+      "target_file": "insect_brain.py",
+      "target_function": "read_context",
+      "category": "missing_state",
+      "summary": "bench/insect_brain.py, method read_context(round_idx, window=3).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011_FOLLOW",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 0,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "rfc9162_merkle_root",
+      "category": "performance",
+      "summary": "The root fix is straightforward.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.58,
+      "target_file": "insect_brain.py",
+      "target_function": "load_checkpoint",
+      "category": "missing_state",
+      "summary": "`bench/insect_brain.py`, `_save_checkpoint()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "_save_round_json",
+      "category": "missing_state",
+      "summary": "`_save_round_json()` silently truncates `model_responses` to 10,000 characters per model with no truncation marker.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F007-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "_save_checkpoint",
+      "category": "performance",
+      "summary": "Storing full responses increases disk usage and write latency.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.58,
+      "target_file": "immune_agents.py",
+      "target_function": "dendritic_cell_v2_shadow",
+      "category": "missing_state",
+      "summary": "In `immune_agents.py`, `_classify_claim_v2()` returns a three-tuple including a classification confidence score (0.30\u20130.85), but `dendritic_cell_v2_shadow()` di",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F168",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 4,
+      "severity": 0.58,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "interface_gap",
+      "summary": "`bench/insect_brain.py`, methods `relay()` and `relay_conversational()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F004",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "",
+      "category": "interface_gap",
+      "summary": "`ImmuneResponse.barrier_results` and `ImmuneResponse.triaged` have different lengths when barrier rejects findings in active mode.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R8_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 8,
+      "severity": 0.58,
+      "target_file": "",
+      "target_function": "_find_python_with_tools",
+      "category": "performance",
+      "summary": "`_get_python_tools()` only caches successful discovery (`result != sys.executable`).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.57,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "After F008, _reconciliation_gate() will compare v1 and v2 confidences on the same effective scale more honestly.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.56,
+      "target_file": "insect_brain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`bench/insect_brain.py`, `_format_findings_for_model()` and `_format_responses_for_model()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F006",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "logic_bug",
+      "summary": "In `run_immune_pipeline`, Stage 2 submits CT v1, CT v2, and B-Cell with a shared reference to `triaged`, while NK v2 gets `triaged_for_nk = copy.deepcopy(triage",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "seal_epoch",
+      "category": "logic_bug",
+      "summary": "`seal_epoch` produces cumulative Merkle trees (every epoch contains all records from genesis).",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "_find_python_with_tools",
+      "category": "performance",
+      "summary": "Module-level eager tool discovery in `immune_agents.py` runs `_find_python_with_tools()` and `_find_claude_cli()` on import despite the WP3e comment about lazy ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F099",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate()` resolves v1/v2 disagreements purely by confidence comparison, treating DUPLICATE and REJECTED as interchangeable.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "verification_chain.py",
+      "target_function": "load_checkpoint",
+      "category": "logic_bug",
+      "summary": "`InsectBrain._save_round_json()` and `_save_checkpoint()` use `filepath.write_text(json.dumps(...))` \u2014 non-atomic writes.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F017",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 0,
+      "severity": 0.55,
+      "target_file": "verification_chain.py",
+      "target_function": "append_record",
+      "category": "logic_bug",
+      "summary": "bench/verification_chain.py, _normalize_timestamp().",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F098",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_z3",
+      "category": "mathematical",
+      "summary": "`_extract_constants_from_ast()` uses `ast.walk()` which traverses ALL nodes in the file, including inside function bodies and nested classes.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 1,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "In `immune_agents.py`, the regex for extracting correlation coefficients in `_verify_statistical` requires a decimal point (e.g., `r=0.5`), missing integer valu",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F015",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.persist()` does not validate that `round_idx` equals `len(self.state.round_records)`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "verify_chain",
+      "category": "missing_state",
+      "summary": "The CLI subcommands `verify-chain`, `verify-record`, `seal-epoch`, `prove-record`, and `verify-proof` provide no way to supply an Ed25519 public key for signatu",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "formalisation_agent_shadow",
+      "category": "mathematical",
+      "summary": "`formalisation_agent_shadow._extract_preconditions()` third pattern `r'(\\b[a-z]\\s*[><=!]+\\s*\\d+(?:\\.\\d+)?)'` matches any single lowercase letter followed by a c",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F010",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 2,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "seal_epoch",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.build_inclusion_proof()` and `verify_inclusion_proof()` operate against the *current* chain state, not against any specific sealed epoch.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F006",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "skin_barrier_check",
+      "category": "missing_state",
+      "summary": "The immune pipeline's `skin_barrier_check` function does not verify that the cited line content actually matches the finding's claim, only that the line exists.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F007",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 6,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "_verify_sympy",
+      "category": "missing_state",
+      "summary": "`_preconditions_to_z3` in the formalisation agent shadow generates Python/Z3 code strings by directly interpolating natural-language precondition fragments with",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "_find_python_with_tools",
+      "category": "security",
+      "summary": "`immune_agents.py` lines after the lazy discovery functions execute `PYTHON_TOOLS = _find_python_with_tools()` and `CLAUDE_CLI = _find_claude_cli()` at module i",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.55,
+      "target_file": "",
+      "target_function": "verify_chain",
+      "category": "interface_gap",
+      "summary": "The API change propagates to verify_chain(), verify_record(), and any CLI that may later add signature verification.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_R7_F005",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 7,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "regulatory_t_cell_check",
+      "category": "missing_state",
+      "summary": "In `immune_agents.py`, `regulatory_t_cell_check()` has a documented but unimplemented Check 2: The function receives `final_verdicts` (finding_id \u2192 verdict stri",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F009",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.55,
+      "target_file": "immune_agents.py",
+      "target_function": "_extract_constants_from_ast",
+      "category": "performance",
+      "summary": "In `immune_agents.py`, the `_extract_constants_from_ast` function uses `ast.walk(tree)` which visits every node in the AST, including expressions, statements, a",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.54,
+      "target_file": "verification_chain.py",
+      "target_function": "_cli_verify_proof",
+      "category": "security",
+      "summary": "`bench/verification_chain.py`, `_cli_verify_proof()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F006-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.53,
+      "target_file": "",
+      "target_function": "_verify_search_manifest",
+      "category": "missing_state",
+      "summary": "The same path-containment pattern appears conceptually in skin_barrier_check() and _verify_search_manifest(), though those functions are less security-critical ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F013",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.52,
+      "target_file": "insect_brain.py",
+      "target_function": "run_immune_pipeline",
+      "category": "documentation",
+      "summary": "`bench/insect_brain.py`, `run_immune_pipeline()` docstring.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F011",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "verify_chain",
+      "category": "logic_bug",
+      "summary": "`VerificationChain.load_json()` deserializes a chain without verifying integrity.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F012",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "_format_findings_summary",
+      "category": "interface_gap",
+      "summary": "`_format_findings_summary` has no final budget check.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F101",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "interface_gap",
+      "summary": "Functions labeled `_shadow` are now PRIMARY in the pipeline (per WP6a comments: \"v2 classifier is now PRIMARY\", \"WP6a: now ACTIVE\").",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 7,
+      "severity": 0.5,
+      "target_file": "verification_chain.py",
+      "target_function": "Signer",
+      "category": "documentation",
+      "summary": "In `verification_chain.py`, the docstring for `Signer` class incorrectly states that it requires the `cryptography` library, but the class is only defined if `_",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F010",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "helper_t_v2_shadow",
+      "category": "mathematical",
+      "summary": "`helper_t_v2_shadow` Level 1 log-odds aggregation sums log-odds from confirm and reject verdicts independently, then compares totals.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F008",
+      "source_model": "Gemini",
+      "all_models": [
+        "Gemini"
+      ],
+      "first_round": 0,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "_verify_statistical",
+      "category": "mathematical",
+      "summary": "In `_verify_statistical()`, the check for p-value significance tests strictly `if p_val < alpha:`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F009",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "save_json",
+      "category": "interface_gap",
+      "summary": "`VerificationChain.save_json()` / `load_json()` do not serialize the `Signer` association.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 1,
+      "severity": 0.5,
+      "target_file": "immune_agents.py",
+      "target_function": "skin_barrier_check",
+      "category": "logic_bug",
+      "summary": "In `immune_agents.py`, the regex for extracting file:line citations in `skin_barrier_check` uses `\\S+` for the filename, which breaks on spaces.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F004",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.5,
+      "target_file": "immune_agents.py",
+      "target_function": "skin_barrier_check",
+      "category": "logic_bug",
+      "summary": "In `bench/immune_agents.py`, function `skin_barrier_check` uses the regex pattern `r'(\\S+\\.py)(?::|\\s+line\\s+)(\\d+)'` to extract file:line citations.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F007",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.5,
+      "target_file": "verification_chain.py",
+      "target_function": "save_json",
+      "category": "contract_violation",
+      "summary": "`VerificationChain.save_json()`'s atomic write is not atomic on Windows when the destination exists, risking corruption during crashes.",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F014",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.5,
+      "target_file": "",
+      "target_function": "",
+      "category": "logic_bug",
+      "summary": "`_parse_ct_output` Strategy 3 uses regex `r'\\{[^{}]*\"finding_id\"[^{}]*\\}'` to extract JSON objects from mixed text.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F014",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.49,
+      "target_file": "insect_brain.py",
+      "target_function": "signal_complete",
+      "category": "missing_state",
+      "summary": "`bench/insect_brain.py`, `signal_complete()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F015",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.47,
+      "target_file": "immune_agents.py",
+      "target_function": "_verify_search_manifest",
+      "category": "contract_violation",
+      "summary": "`bench/immune_agents.py`, `_verify_search_manifest()` docstring and behavior diverge.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F010-FOLLOW",
+      "source_model": "ChatGPT",
+      "all_models": [
+        "ChatGPT"
+      ],
+      "first_round": 3,
+      "severity": 0.46,
+      "target_file": "",
+      "target_function": "",
+      "category": "missing_state",
+      "summary": "Removing the broad pattern reduces sensitivity for terse phrasing like 'x > 0, f is monotone'.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F012",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.45,
+      "target_file": "",
+      "target_function": "seal_epoch",
+      "category": "logic_bug",
+      "summary": "`_normalize_timestamp` truncates sub-second precision via `strftime(\"%Y-%m-%dT%H:%M:%SZ\")`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F013",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.45,
+      "target_file": "",
+      "target_function": "_save_round_json",
+      "category": "logic_bug",
+      "summary": "`_save_round_json` truncates model responses to 10,000 chars silently: No indicator in the JSON that truncation occurred.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F011",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 1,
+      "severity": 0.45,
+      "target_file": "",
+      "target_function": "nk_cell_v2_shadow",
+      "category": "performance",
+      "summary": "`nk_cell_v2_shadow` removes the MF-19 early termination optimization present in v1.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "DS_F008",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 2,
+      "severity": 0.45,
+      "target_file": "immune_agents.py",
+      "target_function": "nk_cell_v2_shadow",
+      "category": "mathematical",
+      "summary": "`immune_agents.nk_cell_v2_shadow()` incorrectly uses `continue` after a known false\u2011positive match, but the `continue` statement is inside a nested loop over th",
+      "has_proposed_fix": false,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "CC2_F103",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.45,
+      "target_file": "",
+      "target_function": "canonical_json",
+      "category": "missing_state",
+      "summary": "`canonical_json()` rejects `float` via `_reject_floats()` but does not reject other non-deterministic types: `decimal.Decimal`, `numpy` numeric types, or custom",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F018",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.45,
+      "target_file": "",
+      "target_function": "compute_metrics",
+      "category": "logic_bug",
+      "summary": "`InsectBrain.compute_metrics()` estimates `gamma_hat` (Duane reliability growth parameter) using only two data points: cumulative classes at round 0 and cumulat",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F016",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.45,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "logic_bug",
+      "summary": "`bench/verification_chain.py`, `Verifier.verify()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F018",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.41,
+      "target_file": "verification_chain.py",
+      "target_function": "_cli_verify_proof",
+      "category": "interface_gap",
+      "summary": "`bench/verification_chain.py`, `_cli_verify_proof()`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F014",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.4,
+      "target_file": "",
+      "target_function": "_reconciliation_gate",
+      "category": "logic_bug",
+      "summary": "`_reconciliation_gate` has an undocumented tie-breaking rule favouring v1 when confidences are equal: The `>=` means v1 wins ties.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F013",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.4,
+      "target_file": "",
+      "target_function": "read_context",
+      "category": "interface_gap",
+      "summary": "`InsectBrain.read_context(round_idx, window)` accepts `round_idx` as a parameter and documents it as \"Current round (for reference)\" but never uses it.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F003",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.4,
+      "target_file": "insect_brain.py",
+      "target_function": "compute_metrics",
+      "category": "logic_bug",
+      "summary": "In `bench/insect_brain.py`, method `compute_metrics` calculates `gamma_hat` (Duane reliability growth parameter) using a formula that divides by `log(round_idx ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F002",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 6,
+      "severity": 0.4,
+      "target_file": "",
+      "target_function": "_format_findings_summary",
+      "category": "contract_violation",
+      "summary": "In `InsectBrain._format_findings_summary`, description truncation at 80 characters ignores word boundaries, potentially cutting off mid\u2011word and reducing readab",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F019",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.39,
+      "target_file": "insect_brain.py",
+      "target_function": "_format_findings_for_model",
+      "category": "documentation",
+      "summary": "`bench/insect_brain.py`, `_format_findings_for_model()` and `_format_responses_for_model()` docstrings.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F020",
+      "source_model": "Codex",
+      "all_models": [
+        "Codex"
+      ],
+      "first_round": 4,
+      "severity": 0.37,
+      "target_file": "verification_chain.py",
+      "target_function": "persist",
+      "category": "documentation",
+      "summary": "`bench/verification_chain.py`, module docstring under `Dependencies`.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F015",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.35,
+      "target_file": "",
+      "target_function": "seal_epoch",
+      "category": "performance",
+      "summary": "`rfc9162_merkle_root` is purely recursive with no memoization.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F016",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 3,
+      "severity": 0.35,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "documentation",
+      "summary": "`skin_barrier_check()` contains the comment \"Shadow mode: return all findings unchanged\" at the end, but `run_immune_pipeline()` now actively filters based on b",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F016",
+      "source_model": "CC2",
+      "all_models": [
+        "CC2"
+      ],
+      "first_round": 0,
+      "severity": 0.3,
+      "target_file": "",
+      "target_function": "run_immune_pipeline",
+      "category": "documentation",
+      "summary": "Several v2 shadow components are documented as \"shadow mode (Run 11)\" but `run_immune_pipeline` comments say \"WP6a: now ACTIVE\" and \"now PRIMARY.\" The function ",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F001",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.3,
+      "target_file": "verification_chain.py",
+      "target_function": "rfc9162_merkle_root",
+      "category": "documentation",
+      "summary": "In `bench/verification_chain.py`, the function `rfc9162_merkle_root` returns `hashlib.sha256(b\"\").digest()` for an empty leaf list.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    },
+    {
+      "finding_id": "F005",
+      "source_model": "DeepSeek",
+      "all_models": [
+        "DeepSeek"
+      ],
+      "first_round": 5,
+      "severity": 0.25,
+      "target_file": "verification_chain.py",
+      "target_function": "_normalize_timestamp",
+      "category": "documentation",
+      "summary": "In `bench/verification_chain.py`, function `_normalize_timestamp` strips fractional seconds without warning.",
+      "has_proposed_fix": true,
+      "occurrences": 1
+    }
+  ]
+}

@@ -2602,8 +2602,22 @@ def typed_llm_classifier_shadow(
     records for analysis.
 
     Does NOT modify triaged findings — shadow only.
+
+    DISABLED: OpenRouter calls removed — CC2/Haiku available on CLI
+    under Max plan, no need for redundant OpenRouter billing.
+    Re-enable when wired to CLI-local Haiku or when activation
+    decision is made based on accumulated regex agreement data.
     """
     comparisons: List[Dict[str, Any]] = []
+    _shadow_log.info(
+        "Typed LLM classifier shadow: DISABLED (OpenRouter removed). "
+        "%d findings skipped.", len(findings),
+    )
+    return comparisons
+
+    # --- Original OpenRouter implementation (disabled) ---
+    # To re-enable, remove the early return above and uncomment below.
+    # When re-enabling, wire to CLI-local Haiku instead of OpenRouter.
 
     try:
         from bench.experiment_11_orchestrator import call_openrouter

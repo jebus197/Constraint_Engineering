@@ -1,0 +1,4490 @@
+{
+  "experiment": "exp33_endocrine",
+  "topology": "star_blackboard",
+  "start_time": "2026-04-05T11:04:56.784242+00:00",
+  "pattern": "fff",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/endocrine.py",
+  "context_files": [
+    "bench/insect_brain.py",
+    "bench/immune_agents.py"
+  ],
+  "max_rounds": 21,
+  "extension_cap": 24,
+  "convergence_config": {
+    "earliest_stop": 12,
+    "consecutive_required": 2,
+    "max_novel": 2,
+    "gamma_telemetry_until": 14,
+    "gamma_soft_until": 19,
+    "gamma_soft_threshold": 0.3,
+    "gamma_hard_threshold": 0.35
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_submitted": 31,
+      "findings_valid": 13,
+      "fff_rejected": 18,
+      "novel_this_round": 13,
+      "registry_total": 13,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "CC2",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 167.8,
+      "per_model": {
+        "ChatGPT": 3,
+        "Codex": 5,
+        "CC2": 5,
+        "Gemini": 0,
+        "DeepSeek": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 1.8181818273177441e-09,
+        "kappa_rate": 0.0,
+        "gamma_hat": 0.0,
+        "novel_count": 8.0,
+        "total_findings": 13.0,
+        "findings_this_round": 13.0
+      },
+      "gamma": 0.0,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Gamma disagrees with state closure — recommend HIL audit",
+      "immune_pipeline": {
+        "rejection_rate": 0.2308,
+        "autoimmune_flag": false,
+        "survivors": 10
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 3.75
+        },
+        "fix_evaluations": {
+          "total_evaluated": 13,
+          "verdicts": {
+            "UNEVALUABLE": 13
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.92
+            },
+            {
+              "finding_id": "ChatGPT_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.95
+            },
+            {
+              "finding_id": "ChatGPT_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            },
+            {
+              "finding_id": "Codex_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.96
+            },
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.92
+            },
+            {
+              "finding_id": "Codex_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "Codex_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            },
+            {
+              "finding_id": "Codex_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            },
+            {
+              "finding_id": "CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.95
+            },
+            {
+              "finding_id": "CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.1
+            },
+            {
+              "finding_id": "CC2_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "CC2_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.93
+            },
+            {
+              "finding_id": "CC2_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.31
+            }
+          ]
+        },
+        "pacing_signals": [],
+        "elapsed_s": 16.41
+      },
+      "convergence_gate": {
+        "open_crit_high": 8,
+        "contested": 0,
+        "recent_novel": [
+          13,
+          3,
+          4,
+          0,
+          2,
+          5,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_submitted": 23,
+      "findings_valid": 6,
+      "fff_rejected": 17,
+      "novel_this_round": 3,
+      "registry_total": 16,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 166.3,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 3,
+        "DeepSeek": 0,
+        "Gemini": 1,
+        "CC2": 1
+      },
+      "brain_metrics": {
+        "kappa": 3.326198201314412e-07,
+        "kappa_set": 0.6547619051729026,
+        "kappa_rate": 3.326198201314412e-07,
+        "gamma_hat": 0.0,
+        "novel_count": 4.0,
+        "total_findings": 19.0,
+        "findings_this_round": 6.0
+      },
+      "gamma": 0.0,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Gamma disagrees with state closure — recommend HIL audit",
+      "immune_pipeline": {
+        "rejection_rate": 0.3333,
+        "autoimmune_flag": false,
+        "survivors": 4
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.37
+        },
+        "fix_evaluations": {
+          "total_evaluated": 6,
+          "verdicts": {
+            "UNEVALUABLE": 5,
+            "HARMFUL": 1
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            },
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.92
+            },
+            {
+              "finding_id": "Codex_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.28
+            },
+            {
+              "finding_id": "Codex_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.45
+            },
+            {
+              "finding_id": "Gemini_F003",
+              "verdict": "HARMFUL",
+              "net_type_errors": 4,
+              "net_ruff_errors": -1,
+              "net_bandit_issues": -2,
+              "elapsed_s": 2.3
+            },
+            {
+              "finding_id": "CC2_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.35
+            }
+          ]
+        },
+        "pacing_signals": [],
+        "elapsed_s": 10.58
+      },
+      "convergence_gate": {
+        "open_crit_high": 9,
+        "contested": 0,
+        "recent_novel": [
+          13,
+          3
+        ]
+      }
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_submitted": 23,
+      "findings_valid": 6,
+      "fff_rejected": 17,
+      "novel_this_round": 4,
+      "registry_total": 20,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 164.3,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 2,
+        "DeepSeek": 2,
+        "CC2": 1,
+        "Gemini": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.84000000016,
+        "kappa_rate": -0.012290108590614635,
+        "gamma_hat": 0.4906157579814927,
+        "novel_count": 2.0,
+        "total_findings": 25.0,
+        "findings_this_round": 6.0
+      },
+      "gamma": 0.4048,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.6667,
+        "autoimmune_flag": true,
+        "survivors": 2
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.65
+        },
+        "fix_evaluations": {
+          "total_evaluated": 6,
+          "verdicts": {
+            "UNEVALUABLE": 6
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "ChatGPT_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.98
+            },
+            {
+              "finding_id": "ChatGPT_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.93
+            },
+            {
+              "finding_id": "DeepSeek_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            }
+          ]
+        },
+        "pacing_signals": [],
+        "elapsed_s": 8.14
+      },
+      "convergence_gate": {
+        "open_crit_high": 11,
+        "contested": 0,
+        "recent_novel": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_submitted": 19,
+      "findings_valid": 0,
+      "fff_rejected": 19,
+      "novel_this_round": 0,
+      "registry_total": 20,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 181.5,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 0,
+        "DeepSeek": 0,
+        "Gemini": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 1.0,
+        "kappa_set": 1.0,
+        "kappa_rate": 1.0,
+        "gamma_hat": 0.5963225389711979,
+        "novel_count": 0.0,
+        "total_findings": 25.0,
+        "findings_this_round": 0.0
+      },
+      "gamma": 0.5283,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Strong depletion — confirms state-based closure",
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.16
+        },
+        "fix_evaluations": {
+          "total_evaluated": 0,
+          "verdicts": {},
+          "details": []
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 81% of budget (162824/200000 chars)",
+            "model_id": "",
+            "metric_value": 0.814,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 2.16
+      },
+      "convergence_gate": {
+        "open_crit_high": 11,
+        "contested": 0,
+        "recent_novel": [
+          4,
+          0
+        ]
+      }
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_submitted": 20,
+      "findings_valid": 4,
+      "fff_rejected": 16,
+      "novel_this_round": 2,
+      "registry_total": 22,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 181.7,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 0,
+        "DeepSeek": 3,
+        "Gemini": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.267847885101435,
+        "kappa_set": 0.9351251159081324,
+        "kappa_rate": 0.267847885101435,
+        "gamma_hat": 0.6094234797341938,
+        "novel_count": 1.0,
+        "total_findings": 29.0,
+        "findings_this_round": 4.0
+      },
+      "gamma": 0.5015,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Strong depletion — confirms state-based closure",
+      "immune_pipeline": {
+        "rejection_rate": 0.75,
+        "autoimmune_flag": false,
+        "survivors": 1
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.34
+        },
+        "fix_evaluations": {
+          "total_evaluated": 4,
+          "verdicts": {
+            "UNEVALUABLE": 4
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "DeepSeek_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.96
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.95
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 103% of budget (205390/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.027,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 6.19
+      },
+      "convergence_gate": {
+        "open_crit_high": 13,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          2
+        ]
+      }
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_submitted": 28,
+      "findings_valid": 7,
+      "fff_rejected": 21,
+      "novel_this_round": 5,
+      "registry_total": 27,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 161.8,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 1,
+        "Gemini": 0,
+        "DeepSeek": 6,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.9288107203276292,
+        "kappa_rate": -0.23317686696019946,
+        "gamma_hat": 0.5793119470990553,
+        "novel_count": 2.0,
+        "total_findings": 36.0,
+        "findings_this_round": 7.0
+      },
+      "gamma": 0.4315,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.5714,
+        "autoimmune_flag": false,
+        "survivors": 3
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.33
+        },
+        "fix_evaluations": {
+          "total_evaluated": 7,
+          "verdicts": {
+            "UNEVALUABLE": 7
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.9
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.87
+            },
+            {
+              "finding_id": "DeepSeek_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.25
+            },
+            {
+              "finding_id": "DeepSeek_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            },
+            {
+              "finding_id": "DeepSeek_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.91
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 126% of budget (252786/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.264,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 8.87
+      },
+      "convergence_gate": {
+        "open_crit_high": 13,
+        "contested": 0,
+        "recent_novel": [
+          2,
+          5
+        ]
+      }
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_submitted": 16,
+      "findings_valid": 1,
+      "fff_rejected": 15,
+      "novel_this_round": 0,
+      "registry_total": 27,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 479.7,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 1,
+        "Gemini": 0,
+        "CC2": 0,
+        "DeepSeek": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.9306675424996944,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.9306675424996944,
+        "gamma_hat": 0.6437928128919778,
+        "novel_count": 0.0,
+        "total_findings": 37.0,
+        "findings_this_round": 1.0
+      },
+      "gamma": 0.4625,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Strong depletion — confirms state-based closure",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.15
+        },
+        "fix_evaluations": {
+          "total_evaluated": 1,
+          "verdicts": {
+            "UNEVALUABLE": 1
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "slow_model",
+            "detail": "DeepSeek took 479.7s (median 118.0s)",
+            "model_id": "DeepSeek",
+            "metric_value": 479.735,
+            "threshold": 295.055,
+            "suggested_action": "increase_timeout"
+          },
+          {
+            "type": "context_growth",
+            "detail": "Context at 142% of budget (284881/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.424,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 2.99
+      },
+      "convergence_gate": {
+        "open_crit_high": 13,
+        "contested": 0,
+        "recent_novel": [
+          5,
+          0
+        ]
+      }
+    },
+    {
+      "round": 7,
+      "type": "adaptive",
+      "findings_submitted": 28,
+      "findings_valid": 5,
+      "fff_rejected": 23,
+      "novel_this_round": 1,
+      "registry_total": 28,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 177.6,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 1,
+        "DeepSeek": 4,
+        "Gemini": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.06373554626575295,
+        "kappa_set": 0.9533146592406025,
+        "kappa_rate": 0.06373554626575295,
+        "gamma_hat": 0.6977031347971604,
+        "novel_count": 1.0,
+        "total_findings": 42.0,
+        "findings_this_round": 5.0
+      },
+      "gamma": 0.436,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.8,
+        "autoimmune_flag": true,
+        "survivors": 1
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.13
+        },
+        "fix_evaluations": {
+          "total_evaluated": 5,
+          "verdicts": {
+            "UNEVALUABLE": 5
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "DeepSeek_F002",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.89
+            },
+            {
+              "finding_id": "DeepSeek_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "DeepSeek_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 166% of budget (332321/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.662,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          }
+        ],
+        "elapsed_s": 6.39
+      },
+      "convergence_gate": {
+        "open_crit_high": 14,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "round": 8,
+      "type": "adaptive",
+      "findings_submitted": 19,
+      "findings_valid": 2,
+      "fff_rejected": 17,
+      "novel_this_round": 0,
+      "registry_total": 28,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 202.6,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 0,
+        "Gemini": 0,
+        "DeepSeek": 0,
+        "CC2": 1
+      },
+      "brain_metrics": {
+        "kappa": 0.6716950343229371,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.6716950343229371,
+        "gamma_hat": 0.7139078699982225,
+        "novel_count": 0.0,
+        "total_findings": 44.0,
+        "findings_this_round": 2.0
+      },
+      "gamma": 0.4451,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.05
+        },
+        "fix_evaluations": {
+          "total_evaluated": 2,
+          "verdicts": {
+            "UNEVALUABLE": 2
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "CC2_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.88
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 185% of budget (370615/200000 chars)",
+            "model_id": "",
+            "metric_value": 1.853,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 1, 0]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 3.78
+      },
+      "convergence_gate": {
+        "open_crit_high": 14,
+        "contested": 0,
+        "recent_novel": [
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "round": 9,
+      "type": "adaptive",
+      "findings_submitted": 24,
+      "findings_valid": 5,
+      "fff_rejected": 19,
+      "novel_this_round": 1,
+      "registry_total": 29,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 169.3,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 1,
+        "DeepSeek": 4,
+        "Gemini": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.017776618979817527,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.017776618979817527,
+        "gamma_hat": 0.7269987279362623,
+        "novel_count": 0.0,
+        "total_findings": 49.0,
+        "findings_this_round": 5.0
+      },
+      "gamma": 0.4237,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": true,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.03
+        },
+        "fix_evaluations": {
+          "total_evaluated": 5,
+          "verdicts": {
+            "UNEVALUABLE": 5
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "DeepSeek_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 207% of budget (413774/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.069,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [1, 0, 1]",
+            "model_id": "",
+            "metric_value": 2.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 6.24
+      },
+      "convergence_gate": {
+        "open_crit_high": 15,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "round": 10,
+      "type": "adaptive",
+      "findings_submitted": 17,
+      "findings_valid": 1,
+      "fff_rejected": 16,
+      "novel_this_round": 0,
+      "registry_total": 29,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 185.6,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 0,
+        "DeepSeek": 0,
+        "Gemini": 0,
+        "CC2": 1
+      },
+      "brain_metrics": {
+        "kappa": 0.8207388082396694,
+        "kappa_set": 0.9398108341016244,
+        "kappa_rate": 0.8207388082396694,
+        "gamma_hat": 0.7109351736821121,
+        "novel_count": 1.0,
+        "total_findings": 50.0,
+        "findings_this_round": 1.0
+      },
+      "gamma": 0.4382,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "survivors": 1
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.1
+        },
+        "fix_evaluations": {
+          "total_evaluated": 1,
+          "verdicts": {
+            "UNEVALUABLE": 1
+          },
+          "details": [
+            {
+              "finding_id": "CC2_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.19
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 224% of budget (448669/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.243,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 1, 0]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 3.3
+      },
+      "convergence_gate": {
+        "open_crit_high": 15,
+        "contested": 0,
+        "recent_novel": [
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "round": 11,
+      "type": "adaptive",
+      "findings_submitted": 22,
+      "findings_valid": 5,
+      "fff_rejected": 17,
+      "novel_this_round": 0,
+      "registry_total": 29,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "CC2",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 223.1,
+      "per_model": {
+        "ChatGPT": 2,
+        "Codex": 0,
+        "CC2": 0,
+        "Gemini": 0,
+        "DeepSeek": 3
+      },
+      "brain_metrics": {
+        "kappa": 0.2544217354907401,
+        "kappa_set": 0.9186376538139662,
+        "kappa_rate": 0.2544217354907401,
+        "gamma_hat": 0.7747940398553136,
+        "novel_count": 1.0,
+        "total_findings": 55.0,
+        "findings_this_round": 5.0
+      },
+      "gamma": 0.4195,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.8,
+        "autoimmune_flag": true,
+        "survivors": 1
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.12
+        },
+        "fix_evaluations": {
+          "total_evaluated": 5,
+          "verdicts": {
+            "UNEVALUABLE": 5
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "ChatGPT_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "DeepSeek_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 246% of budget (492821/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.464,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [1, 0, 0]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 6.32
+      },
+      "convergence_gate": {
+        "open_crit_high": 15,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 12,
+      "type": "adaptive",
+      "findings_submitted": 17,
+      "findings_valid": 0,
+      "fff_rejected": 17,
+      "novel_this_round": 0,
+      "registry_total": 29,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 179.9,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 0,
+        "Gemini": 0,
+        "DeepSeek": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 1.0,
+        "kappa_set": 1.0,
+        "kappa_rate": 1.0,
+        "gamma_hat": 0.7818218958953405,
+        "novel_count": 0.0,
+        "total_findings": 55.0,
+        "findings_this_round": 0.0
+      },
+      "gamma": 0.4377,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.12
+        },
+        "fix_evaluations": {
+          "total_evaluated": 0,
+          "verdicts": {},
+          "details": []
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 266% of budget (532321/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.662,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 2.12
+      },
+      "convergence_gate": {
+        "open_crit_high": 15,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 13,
+      "type": "adaptive",
+      "findings_submitted": 21,
+      "findings_valid": 2,
+      "fff_rejected": 19,
+      "novel_this_round": 0,
+      "registry_total": 29,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 195.8,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 0,
+        "DeepSeek": 0,
+        "Gemini": 0,
+        "CC2": 2
+      },
+      "brain_metrics": {
+        "kappa": 0.6602819394548252,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.6602819394548252,
+        "gamma_hat": 0.8160298337086591,
+        "novel_count": 0.0,
+        "total_findings": 57.0,
+        "findings_this_round": 2.0
+      },
+      "gamma": 0.4399,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.5,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.04
+        },
+        "fix_evaluations": {
+          "total_evaluated": 2,
+          "verdicts": {
+            "UNEVALUABLE": 2
+          },
+          "details": [
+            {
+              "finding_id": "CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "CC2_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 286% of budget (571322/200000 chars)",
+            "model_id": "",
+            "metric_value": 2.857,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 3.7
+      },
+      "convergence_gate": {
+        "open_crit_high": 15,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 14,
+      "type": "adaptive",
+      "findings_submitted": 22,
+      "findings_valid": 4,
+      "fff_rejected": 18,
+      "novel_this_round": 1,
+      "registry_total": 30,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "CC2",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "elapsed_s": 175.2,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 2,
+        "CC2": 0,
+        "DeepSeek": 1,
+        "Gemini": 1
+      },
+      "brain_metrics": {
+        "kappa": 0.2407574674940821,
+        "kappa_set": 0.9196141479961263,
+        "kappa_rate": 0.2407574674940821,
+        "gamma_hat": 0.8502741537276025,
+        "novel_count": 1.0,
+        "total_findings": 61.0,
+        "findings_this_round": 4.0
+      },
+      "gamma": 0.4291,
+      "gamma_gate": "telemetry",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.75,
+        "autoimmune_flag": false,
+        "survivors": 1
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.09
+        },
+        "fix_evaluations": {
+          "total_evaluated": 4,
+          "verdicts": {
+            "UNEVALUABLE": 4
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.97
+            },
+            {
+              "finding_id": "ChatGPT_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F0035",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "Gemini_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 305% of budget (610730/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.054,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 1]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 5.57
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "round": 15,
+      "type": "adaptive",
+      "findings_submitted": 15,
+      "findings_valid": 1,
+      "fff_rejected": 14,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 191.6,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 0,
+        "Gemini": 0,
+        "DeepSeek": 1,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.8263766814978764,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.8263766814978764,
+        "gamma_hat": 0.8537593748197109,
+        "novel_count": 0.0,
+        "total_findings": 62.0,
+        "findings_this_round": 1.0
+      },
+      "gamma": 0.4366,
+      "gamma_gate": "soft",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.03
+        },
+        "fix_evaluations": {
+          "total_evaluated": 1,
+          "verdicts": {
+            "UNEVALUABLE": 1
+          },
+          "details": [
+            {
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 321% of budget (642374/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.212,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 1, 0]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 2.89
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "round": 16,
+      "type": "adaptive",
+      "findings_submitted": 15,
+      "findings_valid": 0,
+      "fff_rejected": 15,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 156.0,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 0,
+        "DeepSeek": 0,
+        "CC2": 0,
+        "Gemini": 0
+      },
+      "brain_metrics": {
+        "kappa": 1.0,
+        "kappa_set": 1.0,
+        "kappa_rate": 1.0,
+        "gamma_hat": 0.8568886070797359,
+        "novel_count": 0.0,
+        "total_findings": 62.0,
+        "findings_this_round": 0.0
+      },
+      "gamma": 0.4486,
+      "gamma_gate": "soft",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.01
+        },
+        "fix_evaluations": {
+          "total_evaluated": 0,
+          "verdicts": {},
+          "details": []
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 336% of budget (672648/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.363,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [1, 0, 0]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 2.01
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 17,
+      "type": "adaptive",
+      "findings_submitted": 14,
+      "findings_valid": 0,
+      "fff_rejected": 14,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "CC2",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 423.7,
+      "per_model": {
+        "Codex": 0,
+        "ChatGPT": 0,
+        "CC2": 0,
+        "Gemini": 0,
+        "DeepSeek": 0
+      },
+      "brain_metrics": {
+        "kappa": 1.0,
+        "kappa_set": 1.0,
+        "kappa_rate": 1.0,
+        "gamma_hat": 0.8597186998521971,
+        "novel_count": 0.0,
+        "total_findings": 62.0,
+        "findings_this_round": 0.0
+      },
+      "gamma": 0.4595,
+      "gamma_gate": "soft",
+      "gamma_passed": true,
+      "gamma_interpretation": "Strong depletion — confirms state-based closure",
+      "immune_pipeline": {
+        "rejection_rate": 0.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.02
+        },
+        "fix_evaluations": {
+          "total_evaluated": 0,
+          "verdicts": {},
+          "details": []
+        },
+        "pacing_signals": [
+          {
+            "type": "slow_model",
+            "detail": "DeepSeek took 423.7s (median 153.7s)",
+            "model_id": "DeepSeek",
+            "metric_value": 423.69,
+            "threshold": 384.224,
+            "suggested_action": "increase_timeout"
+          },
+          {
+            "type": "context_growth",
+            "detail": "Context at 351% of budget (702328/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.512,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 2.02
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 18,
+      "type": "adaptive",
+      "findings_submitted": 21,
+      "findings_valid": 3,
+      "fff_rejected": 18,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 191.3,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 0,
+        "DeepSeek": 2,
+        "Gemini": 0,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.4783600209667077,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.4783600209667077,
+        "gamma_hat": 0.8622946133450012,
+        "novel_count": 0.0,
+        "total_findings": 65.0,
+        "findings_this_round": 3.0
+      },
+      "gamma": 0.4534,
+      "gamma_gate": "soft",
+      "gamma_passed": true,
+      "gamma_interpretation": "Strong depletion — confirms state-based closure",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.1
+        },
+        "fix_evaluations": {
+          "total_evaluated": 3,
+          "verdicts": {
+            "UNEVALUABLE": 3
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 373% of budget (745558/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.728,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 4.62
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 19,
+      "type": "adaptive",
+      "findings_submitted": 21,
+      "findings_valid": 6,
+      "fff_rejected": 15,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 143.6,
+      "per_model": {
+        "ChatGPT": 1,
+        "Codex": 1,
+        "DeepSeek": 4,
+        "CC2": 0,
+        "Gemini": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 1.0,
+        "kappa_rate": -0.3895484287272133,
+        "gamma_hat": 0.8646524218176744,
+        "novel_count": 0.0,
+        "total_findings": 71.0,
+        "findings_this_round": 6.0
+      },
+      "gamma": 0.4333,
+      "gamma_gate": "soft",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": true,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.1
+        },
+        "fix_evaluations": {
+          "total_evaluated": 6,
+          "verdicts": {
+            "UNEVALUABLE": 6
+          },
+          "details": [
+            {
+              "finding_id": "ChatGPT_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.86
+            },
+            {
+              "finding_id": "Codex_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 1.21
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F007",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 392% of budget (784448/200000 chars)",
+            "model_id": "",
+            "metric_value": 3.922,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 7.46
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 20,
+      "type": "adaptive",
+      "findings_submitted": 15,
+      "findings_valid": 1,
+      "fff_rejected": 14,
+      "novel_this_round": 0,
+      "registry_total": 30,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "CC2",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 153.0,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 1,
+        "CC2": 0,
+        "Gemini": 0,
+        "DeepSeek": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.7826690621516182,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.7826690621516182,
+        "gamma_hat": 0.8668214419824227,
+        "novel_count": 0.0,
+        "total_findings": 72.0,
+        "findings_this_round": 1.0
+      },
+      "gamma": 0.4378,
+      "gamma_gate": "hard",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.03
+        },
+        "fix_evaluations": {
+          "total_evaluated": 1,
+          "verdicts": {
+            "UNEVALUABLE": 1
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 408% of budget (816218/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.081,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 0]",
+            "model_id": "",
+            "metric_value": 0.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 2.88
+      },
+      "convergence_gate": {
+        "open_crit_high": 16,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "round": 21,
+      "type": "adaptive",
+      "findings_submitted": 26,
+      "findings_valid": 7,
+      "fff_rejected": 19,
+      "novel_this_round": 1,
+      "registry_total": 31,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 177.2,
+      "per_model": {
+        "ChatGPT": 0,
+        "Codex": 1,
+        "DeepSeek": 5,
+        "Gemini": 1,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.0,
+        "kappa_set": 0.95440729487902,
+        "kappa_rate": -0.12605352189858166,
+        "gamma_hat": 0.8429307189701608,
+        "novel_count": 1.0,
+        "total_findings": 79.0,
+        "findings_this_round": 7.0
+      },
+      "gamma": 0.4162,
+      "gamma_gate": "hard",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.7143,
+        "autoimmune_flag": true,
+        "survivors": 2
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.03
+        },
+        "fix_evaluations": {
+          "total_evaluated": 7,
+          "verdicts": {
+            "UNEVALUABLE": 7
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.98
+            },
+            {
+              "finding_id": "DeepSeek_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            },
+            {
+              "finding_id": "DeepSeek_F006",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F008",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "DeepSeek_F009",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            },
+            {
+              "finding_id": "DeepSeek_F010",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.83
+            },
+            {
+              "finding_id": "Gemini_F004",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.81
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 429% of budget (858676/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.293,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 0, 1]",
+            "model_id": "",
+            "metric_value": 1.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 7.94
+      },
+      "convergence_gate": {
+        "open_crit_high": 17,
+        "contested": 0,
+        "recent_novel": [
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "round": 22,
+      "type": "adaptive",
+      "findings_submitted": 18,
+      "findings_valid": 3,
+      "fff_rejected": 15,
+      "novel_this_round": 1,
+      "registry_total": 32,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek",
+        "CC2"
+      ],
+      "elapsed_s": 170.1,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 1,
+        "Gemini": 0,
+        "DeepSeek": 1,
+        "CC2": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.41348553724153714,
+        "kappa_set": 0.85111876088544,
+        "kappa_rate": 0.41348553724153714,
+        "gamma_hat": 0.7995184758342484,
+        "novel_count": 2.0,
+        "total_findings": 82.0,
+        "findings_this_round": 3.0
+      },
+      "gamma": 0.4126,
+      "gamma_gate": "hard",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 0.3333,
+        "autoimmune_flag": false,
+        "survivors": 2
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.09
+        },
+        "fix_evaluations": {
+          "total_evaluated": 3,
+          "verdicts": {
+            "UNEVALUABLE": 3
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.84
+            },
+            {
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.89
+            },
+            {
+              "finding_id": "DeepSeek_F003",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.94
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "context_growth",
+            "detail": "Context at 449% of budget (897364/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.487,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [0, 1, 1]",
+            "model_id": "",
+            "metric_value": 2.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 4.76
+      },
+      "convergence_gate": {
+        "open_crit_high": 18,
+        "contested": 0,
+        "recent_novel": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "round": 23,
+      "type": "adaptive",
+      "findings_submitted": 21,
+      "findings_valid": 2,
+      "fff_rejected": 19,
+      "novel_this_round": 0,
+      "registry_total": 32,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 472.4,
+      "per_model": {
+        "Codex": 1,
+        "ChatGPT": 1,
+        "Gemini": 0,
+        "CC2": 0,
+        "DeepSeek": 0
+      },
+      "brain_metrics": {
+        "kappa": 0.8591674557312969,
+        "kappa_set": 1.0,
+        "kappa_rate": 0.8591674557312969,
+        "gamma_hat": 0.802203268736467,
+        "novel_count": 0.0,
+        "total_findings": 84.0,
+        "findings_this_round": 2.0
+      },
+      "gamma": 0.4129,
+      "gamma_gate": "hard",
+      "gamma_passed": true,
+      "gamma_interpretation": "Moderate depletion — consistent with PoC convergence",
+      "immune_pipeline": {
+        "rejection_rate": 1.0,
+        "autoimmune_flag": false,
+        "survivors": 0
+      },
+      "endocrine": {
+        "health_scan": {
+          "total_diagnostics": 20,
+          "by_category": {
+            "type_safety": 1,
+            "null_deref": 4,
+            "dead_code": 5,
+            "style": 3,
+            "security": 7
+          },
+          "by_tool": {
+            "pyright": 5,
+            "ruff": 8,
+            "bandit": 7
+          },
+          "by_severity": {
+            "error": 5,
+            "warning": 8,
+            "info": 7
+          },
+          "by_file": {
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/immune_agents.py": 16,
+            "/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/endocrine.py": 4
+          },
+          "tools_available": {
+            "pyright": true,
+            "ruff": true,
+            "bandit": true,
+            "mypy": true
+          },
+          "elapsed_s": 2.09
+        },
+        "fix_evaluations": {
+          "total_evaluated": 2,
+          "verdicts": {
+            "UNEVALUABLE": 2
+          },
+          "details": [
+            {
+              "finding_id": "Codex_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.85
+            },
+            {
+              "finding_id": "ChatGPT_F005",
+              "verdict": "UNEVALUABLE",
+              "net_type_errors": 0,
+              "net_ruff_errors": 0,
+              "net_bandit_issues": 0,
+              "elapsed_s": 0.82
+            }
+          ]
+        },
+        "pacing_signals": [
+          {
+            "type": "slow_model",
+            "detail": "DeepSeek took 472.4s (median 90.0s)",
+            "model_id": "DeepSeek",
+            "metric_value": 472.359,
+            "threshold": 224.931,
+            "suggested_action": "increase_timeout"
+          },
+          {
+            "type": "context_growth",
+            "detail": "Context at 467% of budget (934486/200000 chars)",
+            "model_id": "",
+            "metric_value": 4.672,
+            "threshold": 0.8,
+            "suggested_action": "degrade_relay"
+          },
+          {
+            "type": "novelty_plateau",
+            "detail": "Novel findings in last 3 rounds: [1, 1, 0]",
+            "model_id": "",
+            "metric_value": 2.0,
+            "threshold": 3.0,
+            "suggested_action": "check_convergence"
+          }
+        ],
+        "elapsed_s": 3.75
+      },
+      "convergence_gate": {
+        "open_crit_high": 18,
+        "contested": 0,
+        "recent_novel": [
+          1,
+          0
+        ]
+      }
+    }
+  ],
+  "budget_extended": true,
+  "extension_reason": "Budget extended: open CRIT/HIGH: 16",
+  "total_findings": 84,
+  "total_rounds": 24,
+  "total_elapsed_s": 5579.3,
+  "end_time": "2026-04-05T12:37:56.060620+00:00",
+  "completion_signal": {
+    "status": "INCOMPLETE",
+    "reason": "",
+    "total_rounds": 24,
+    "total_findings": 84,
+    "active_models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "timestamp": "2026-04-05T12:37:56.055585+00:00",
+    "final_kappa": 0.8591674557312969,
+    "per_model_findings": {
+      "ChatGPT": 16,
+      "Codex": 18,
+      "CC2": 11,
+      "Gemini": 3,
+      "DeepSeek": 36
+    },
+    "per_round_counts": [
+      13,
+      6,
+      6,
+      0,
+      4,
+      7,
+      1,
+      5,
+      2,
+      5,
+      1,
+      5,
+      0,
+      2,
+      4,
+      1,
+      0,
+      0,
+      3,
+      6,
+      1,
+      7,
+      3,
+      2
+    ]
+  },
+  "per_model_totals": {
+    "ChatGPT": 16,
+    "Codex": 18,
+    "CC2": 11,
+    "Gemini": 3,
+    "DeepSeek": 36
+  },
+  "gamma": 0.4129,
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.4048,
+    0.5283,
+    0.5015,
+    0.4315,
+    0.4625,
+    0.436,
+    0.4451,
+    0.4237,
+    0.4382,
+    0.4195,
+    0.4377,
+    0.4399,
+    0.4291,
+    0.4366,
+    0.4486,
+    0.4595,
+    0.4534,
+    0.4333,
+    0.4378,
+    0.4162,
+    0.4126,
+    0.4129
+  ],
+  "per_round_counts": [
+    13,
+    6,
+    6,
+    0,
+    4,
+    7,
+    1,
+    5,
+    2,
+    5,
+    1,
+    5,
+    0,
+    2,
+    4,
+    1,
+    0,
+    0,
+    3,
+    6,
+    1,
+    7,
+    3,
+    2
+  ],
+  "popper_corroboration": {
+    "C_HE": 0.2727,
+    "P_E_given_H": 3.5,
+    "P_E": 2.0
+  },
+  "fff_enforcement": {
+    "total_submitted": 496,
+    "total_rejected": 412,
+    "rejection_rate": 0.8306
+  },
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.93,
+        "description": "FIND — scan_health() misreports missing tools as available. In bench/endocrine.py, each runner returns `[]` when `_run_tool()` reports `stderr == \"NOT_FOUND\"`, and scan_health() then sets `tools_available[tool_name] = True` unconditionally unless an exception was raised. Evidence: run_pyright/run_ruff/run_bandit/run_mypy all convert NOT_FOUND into empty diagnostics instead of surfacing unavailability, and scan_health has no other availability check.\nFOLLOW: This creates a fail-open health scan: ",
+        "proposed_fix": "FIX — propagate tool availability explicitly from each runner or from _run_tool returncode/stderr, and in scan_health mark a tool unavailable when invocation returned NOT_FOUND or TIMEOUT instead of treating empty diagnostics as success.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.78,
+        "description": "FIND — health_trend() produces ragged time series that omit zero-count rounds for categories absent in a scan. It appends counts only for categories present in each scan’s `counts_by_category`; categories missing in a round get no entry. After scans like `{security: 1}` then `{style: 1}`, the returned trend is `{\"security\": [1], \"style\": [1]}` instead of aligned per-round series like `{\"security\": [1,0], \"style\": [0,1]}`.\nFOLLOW: Any consumer comparing category trends across rounds receives malf",
+        "proposed_fix": "FIX — build the union of categories across scan history and emit one count per round per category, inserting 0 when a category is absent in a given scan.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 23,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.72,
+        "description": "FIND — the advertised defect-detection capability is partially dead code. endocrine.py declares DefectCategory.OFF_BY_ONE and RACE_CONDITION, and the module docstring claims defect classification for “off-by-one” and “race conditions,” but no categoriser path in run_pyright/run_ruff/run_bandit/run_mypy ever emits either category. All pyright/mypy diagnostics collapse to TYPE_SAFETY or NULL_DEREF; ruff mostly maps to DEAD_CODE/STYLE/SECURITY.\nFOLLOW: Downstream, counts_by_category and any reviewe",
+        "proposed_fix": "FIX — either add minimal pattern-based mappings that can actually emit OFF_BY_ONE and RACE_CONDITION from tool messages, or remove those categories from the advertised capability until supported. The simpler sufficient fix is to stop advertising unsupported categories.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "has_follow": false
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.96,
+        "description": "FIND — `scan_health()` marks tools as available whenever the runner function returns normally, even when the binary is missing or timed out. Evidence: `run_pyright()`, `run_ruff()`, `run_bandit()`, and `run_mypy()` all return `[]` on `_run_tool(...).stderr == \"NOT_FOUND\"`; `scan_health()` then sets `tools_available[tool_name] = True` unconditionally after `diags = runner(existing)`. The same false-positive availability occurs on timeout because `_run_tool()` returns a synthetic `CompletedProcess",
+        "proposed_fix": "FIX — make each runner return both diagnostics and an execution-status flag, or more simply have `_run_tool()` status checked in each runner and raise/propagate a sentinel on `NOT_FOUND`/`TIMEOUT`; then set `tools_available[tool_name] = False` in `scan_health()` for those cases instead of treating empty diagnostics as success.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.82,
+        "description": "FIND — the advertised defect-detection capability is only partially implemented and some declared features never fire. `DefectCategory` includes `OFF_BY_ONE` and `RACE_CONDITION`, and the module docstring promises classification for “off-by-one, race conditions”, but no categoriser path in `_categorise_pyright`, `_categorise_ruff`, `run_bandit`, or `run_mypy` ever emits those categories. `run_crosshair` is also absent despite `CROSSHAIR_BIN` and the top-level docs listing CrossHair.\nFOLLOW: This",
+        "proposed_fix": "FIX — remove unimplemented categories/tool claims from the endocrine interface for now, or wire the simplest real implementation: add a `run_crosshair()` path and only keep categories that current tool parsers can actually emit.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "has_follow": false
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.79,
+        "description": "FIND — `health_trend()` returns ragged per-category histories and omits zero counts for rounds where a category did not appear. Evidence: it iterates `for scan in self._scan_history: for cat, count in scan.counts_by_category.items(): trend.setdefault(cat, []).append(count)`. If a category is absent in a round, no `0` is appended, so list positions no longer align to round indices.\nFOLLOW: Any consumer comparing round-over-round trends can misread category trajectories because list index is not s",
+        "proposed_fix": "FIX — build trends over all known categories across all scans and append `scan.counts_by_category.get(cat, 0)` for every round so each category history has one entry per scan.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 23,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.74,
+        "description": "FIND — `compute_pacing_signals()` claims `context_budget: int` but contains runtime handling for `dict`, then immediately compares `if context_budget > 0:` and divides by it. This is an interface mismatch with the function signature and datamodel. The defensive dict branch implies callers may pass per-model budgets, but the function collapses them to `max(...)`, which understates pressure for smaller-budget models.\nFOLLOW: Downstream pacing decisions can be silently wrong in multi-model runs wit",
+        "proposed_fix": "FIX — make the interface honest: accept only an integer budget in this function and remove the dict branch; callers should pass the actual effective budget they want evaluated.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 7,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "has_follow": false
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.71,
+        "description": "FIND — slow-model and response-size “median” calculations use `sorted(values)[len(values)//2]`, which is not the statistical median for even-sized sets. With 4 or 6 models this selects the upper middle value rather than the average of the two middles. In a 5-model system this is usually fine, but the code is generic and the endocrine layer is infrastructure.\nFOLLOW: Threshold-based pacing signals can shift materially around the trigger boundary, especially with an even number of active models af",
+        "proposed_fix": "FIX — use `statistics.median()` for durations and response sizes.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "has_follow": false
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.6,
+        "description": "FIND — `compute_pacing_signals` novelty plateau detection requires `len(novelty_counts) >= 3 and round_idx >= 2`, then checks `novelty_counts[-3:]`. But `novelty_counts` is passed from the caller as a list where index = round number. If rounds are skipped or the list is shorter than `round_idx`, the check `round_idx >= 2` is redundant with `len(novelty_counts) >= 3`, but more importantly: the condition `all(n <= 1 for n in recent)` triggers on 3 consecutive rounds with ≤1 novel findings. At roun",
+        "proposed_fix": "Change the window from 3 to 4 rounds and require `round_idx >= 3`: `if len(novelty_counts) >= 4 and round_idx >= 3:` with `recent = novelty_counts[-4:]` and `if all(n <= 1 for n in recent):`. This gives models one more round to recover before plateau is signalled.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 10,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.45,
+        "description": "FIND — `EndocrineLayer` has a `health_trend()` method that returns diagnostic count trends across rounds, but it is never called by any code path in the codebase. The insect brain's interface (`insect_brain.py`) does not reference `health_trend()`, and the `EndocrineReport` dataclass doesn't include trend data. The `_scan_history` list grows unboundedly across rounds with no consumer.\n\nFOLLOW: This is dead code that never fires. The health trend feature is documented as \"for the insect brain to ",
+        "proposed_fix": "No fix needed for PoC — this is LOW/documentation-level. If trend detection is wanted, the insect brain needs to call `endo.health_trend()` and use the result.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "has_follow": false
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.55,
+        "description": "FIND — `compute_pacing_signals` receives `context_budget` which may be a dict (per-model budgets). The defensive check `if isinstance(context_budget, dict): context_budget = max(context_budget.values())` extracts the max value. But `cumulative_context_chars` is a single integer representing total chars across all models. Comparing total cumulative chars against a single model's budget is semantically wrong — `context_fraction` will be inflated by the number of models. With 5 models each at 80K b",
+        "proposed_fix": "When `context_budget` is a dict, sum all values: `context_budget = sum(context_budget.values())`. Or better: the caller should pass the per-model budget and per-model chars, not cumulative. Simplest fix for PoC:\nif isinstance(context_budget, dict):\n    context_budget = sum(context_budget.values()) if context_budget else 80_000",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F008"
+        ],
+        "severity": 0.4,
+        "description": "FIND — `compute_pacing_signals` slow model detection uses integer division for median: `sorted(durations)[len(durations) // 2]`. With an even number of models (e.g., 4), this picks the element at index 2 (the third-smallest), not the true median (average of elements at indices 1 and 2). The threshold is then `median * 2.5`, which is slightly higher than it should be, making slow model detection marginally less sensitive.\n\nFOLLOW: Minor — the median is off by one rank position for even-length lis",
+        "proposed_fix": "No fix needed for PoC. If precision matters: `median_duration = sorted(durations)[len(durations) // 2]` is adequate for odd-length lists and a reasonable approximation for even-length.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "has_follow": false
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F010"
+        ],
+        "severity": 0.3,
+        "description": "FIND — `scan_health` runs pyright, ruff, bandit, and mypy sequentially on every source file between every round. For a multi-file project, this is 4 subprocess invocations per scan. The comment says \"they're fast enough on a single file set\" but pyright in particular can take 5-15 seconds on first invocation (type inference cache cold start). With 6-8 rounds, that's 4-8 minutes spent on health scans alone.\n\nFOLLOW: Performance impact only — does not affect correctness. At PoC scale with 2-3 sour",
+        "proposed_fix": "No fix needed for PoC.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 7,
+        "has_follow": false
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.77,
+        "description": "FIND — `run_pyright()` records pyright positions without converting from pyright’s 0-based coordinates to the 1-based line numbering used elsewhere in the module (`run_mypy`, `run_bandit`, `run_ruff`) and expected by humans. It stores `rng.get(\"line\", 0)` and `rng.get(\"character\", 0)` directly. Pyright JSON positions are 0-based.\nFOLLOW: This yields inconsistent diagnostic coordinates inside a single `HealthScan`: pyright findings point one line earlier than mypy/ruff/bandit. Downstream, `counts",
+        "proposed_fix": "FIX — add 1 to pyright line and column values when constructing `ToolDiagnostic`, while keeping 0 only for truly unknown coordinates.",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "has_follow": false
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.5,
+        "description": "FIND — In `compute_pacing_signals`, the Response Size Anomaly detector (check 4) incorrectly sets the `PacingSignal` property to `signal_type=\"context_growth\"` when a model produces an unusually large string (e.g., `rt.response_chars > median_chars * 3`).\nFOLLOW: The insect brain will receive ambiguous \"context_growth\" signals for two distinct conditions: global context budget exhaustion (check 2) and individual model spew (check 4). This prevents targeted mitigations, as the orchestrator cannot",
+        "proposed_fix": "FIX — Change `signal_type=\"context_growth\"` to `signal_type=\"response_size_anomaly\"` in check 4 of `compute_pacing_signals`.",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 14,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.55,
+        "description": "FIND — `compute_pacing_signals()` check #4 (response size anomaly, lines ~503-512) emits `signal_type=\"context_growth\"`, which is identical to the signal_type used by check #2 (context budget fraction, lines ~487-494). Two semantically distinct conditions produce indistinguishable signals.\nFOLLOW: Any downstream consumer (insect brain or orchestrator) that filters or acts on `signal_type` cannot distinguish \"overall context budget at 85%\" from \"one model produced a 30K char response in a single ",
+        "proposed_fix": "Use a distinct signal_type for check #4:\nsignals.append(PacingSignal(\n    signal_type=\"response_size_anomaly\",\n    ...\n    suggested_action=\"cap_model_output\",\n))",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "has_follow": false
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.66,
+        "description": "FIND — `compute_pacing_signals()` has an interface/type contract mismatch that can crash at runtime when called with non-`int` scalar numerics. The signature says `context_budget: int`, but the implementation only special-cases `dict` and then performs `if context_budget > 0:` followed by division. If a caller passes `None`, a string from config/env parsing, or any other non-int scalar-ish value, this raises `TypeError` inside endocrine between rounds. Evidence: there is no validation/coercion a",
+        "proposed_fix": "FIX — validate/coerce at function entry: after the existing dict handling, require `context_budget` to be an `int` or `float`, otherwise default to `80_000` (or return no context-growth signal). This preserves end-to-end operation without expanding the API surface.",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "has_follow": false
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.9,
+        "description": "FIND — The endocrine layer’s pacing‑signal function `compute_pacing_signals` contains a logic error in slow‑model detection that can cause division by zero. The code calculates `median_duration = sorted(durations)[len(durations) // 2]`. If `durations` is empty (possible when `round_timings` is empty or contains only zero‑duration entries), this indexing raises `IndexError`. The function catches exceptions only for convergence metrics, not for this median calculation.\nEVIDENCE: Lines ~475‑485: `i",
+        "proposed_fix": "Add a defensive check inside the slow‑model detection block: `if durations:` before calculating the median. If `durations` is empty, skip slow‑model detection entirely. Additionally, use `try‑except` around the median calculation to catch any unexpected errors and log them without crashing.",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F005"
+        ],
+        "severity": 0.7,
+        "description": "FIND — The endocrine layer’s `run_pyright` function mis‑categorizes all pyright diagnostics as `TYPE_SAFETY` or `NULL_DEREF`. The categorisation logic `_categorise_pyright` uses keyword matching that incorrectly labels other error types (e.g., “reportMissingImports”, “reportUnknownMemberType”) as type safety. This inflates the `type_safety` count in `HealthScan` and misleads the insect brain’s health trends.\nEVIDENCE: `_categorise_pyright` checks for keywords “none”, “optional”, “could be none”,",
+        "proposed_fix": "Expand categorisation to map known pyright rule prefixes: `\"reportMissingImports\"` → `UNKNOWN`, `\"reportUnknownMemberType\"` → `TYPE_SAFETY`, `\"reportUnnecessaryComparison\"` → `STYLE`. For un‑matched rules, default to `UNKNOWN`. This preserves the existing NULL_DEREF detection.",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 3,
+        "has_follow": false
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.5,
+        "description": "FIND — `CROSSHAIR_BIN` and `_CROSSHAIR_TIMEOUT` are declared (lines ~47, 52) but no `run_crosshair()` function exists and crosshair is never invoked anywhere in the module. Similarly, `PYTHON_313` is declared (line ~48) but never used. These are dead declarations that suggest planned features that were never implemented.\n\nFOLLOW: No functional impact — these are unused constants. However, `CROSSHAIR_BIN` and `_CROSSHAIR_TIMEOUT` create the impression that symbolic execution is available as a ver",
+        "proposed_fix": "Remove `CROSSHAIR_BIN`, `_CROSSHAIR_TIMEOUT`, and `PYTHON_313` declarations, and remove crosshair from the module docstring's tool list. Three lines deleted.",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 13,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "has_follow": false
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.97,
+        "description": "FIND — `_run_tool` returns `TIMEOUT` in stderr on timeout, but the tool runners (`run_pyright`, `run_ruff`, etc.) treat this as a successful execution (return empty list) and `scan_health` marks the tool as available. This causes silent loss of static‑analysis results when a tool times out, and the health scan will incorrectly report zero diagnostics from that tool.  \nEVIDENCE: In `_run_tool`, `sp.TimeoutExpired` is caught and returns `stderr=\"TIMEOUT\"`. In `run_pyright`, the check `if result.st",
+        "proposed_fix": "In each tool runner, after checking for `\"NOT_FOUND\"`, also check for `\"TIMEOUT\"` and return an empty list (or treat as unavailable). Additionally, `scan_health` should set `tools_available[tool_name] = False` for timeout or not‑found conditions. The simplest fix: modify `_run_tool` to return a structured result (e.g., a dict with `status`, `output`, `stderr`) and have runners propagate the status, or have runners return `(diagnostics, available)` where `available` is `False` on `\"NOT_FOUND\"` or",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 15,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.7,
+        "description": "FIND — The endocrine layer’s pacing‑signal function `compute_pacing_signals` uses a hard‑coded threshold of 0.8 (80%) for context‑growth signaling, but the context budget may be as low as 20,000 characters in some experiments. At that budget, 80% is 16,000 characters, which may be reached in the first round, causing premature “degrade_relay” signals. The threshold is not calibrated to the actual budget and may be too sensitive for small‑budget runs.  \nEVIDENCE: Line ~468: `if context_fraction > ",
+        "proposed_fix": "Make the threshold configurable (e.g., via `EndocrineLayer` constructor) or adjust it dynamically based on the budget size (e.g., use 0.9 for budgets > 50k, 0.95 for smaller budgets). For PoC, the simplest fix is to raise the threshold to 0.9 to reduce false positives.",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 11,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "has_follow": false
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F006"
+        ],
+        "severity": 0.6,
+        "description": "FIND — `compute_pacing_signals()` divides by `context_budget` without checking for zero. If `context_budget` is 0 (possible when the dict is empty or the config value is zero), the line `context_fraction = cumulative_context_chars / context_budget` raises `ZeroDivisionError`. This crashes the endocrine cycle, halting the experiment.\nFOLLOW: A crash in the endocrine layer prevents the insect brain from receiving any health or pacing signals for that round. The brain may continue with stale or emp",
+        "proposed_fix": "Add a guard: `if context_budget <= 0: return signals` (or set `context_fraction = 1.0` to force a context‑growth signal). Ensure the default config value is positive.",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F007"
+        ],
+        "severity": 0.55,
+        "description": "FIND — Response‑size anomaly detection fails when all models produce zero‑length responses. The code filters `char_counts = [rt.response_chars for rt in round_timings if rt.response_chars > 0]`. If all responses are empty, `char_counts` is empty, and `median_chars = sorted(char_counts)[len(char_counts) // 2]` raises `IndexError`.\nFOLLOW: The endocrine layer crashes, breaking the pacing signal generation. The insect brain does not receive pacing signals, potentially affecting relay decisions.",
+        "proposed_fix": "Check that `char_counts` is non‑empty before computing median. If empty, skip the response‑size check.",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "has_follow": false
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F008"
+        ],
+        "severity": 0.5,
+        "description": "FIND — `scan_health()` runs all four static analysis tools sequentially on every source file between every round. For a medium‑sized codebase (e.g., 10 files), this may take 10‑30 seconds per round, adding significant overhead to the experiment timeline. The PoC goal is “shipped for human review as quickly as possible”; this delay is contrary to that goal.\nFOLLOW: Lengthened round duration reduces the number of rounds possible within a fixed wall‑clock budget, potentially preventing convergence ",
+        "proposed_fix": "Cache tool results per file hash (or modification timestamp) and only re‑run tools when source files have changed. Since the codebase is static during a multi‑model review, a single health scan per experiment is sufficient. Modify `EndocrineLayer.run()` to skip the health scan after the first round unless `source_paths` have changed.",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 7,
+        "has_follow": false
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F009"
+        ],
+        "severity": 0.45,
+        "description": "FIND — The `PacingSignal` dataclass has a field `suggested_action` that is never used. The insect brain receives the signals but does not act on the suggested action; it only logs them. This is dead code that misleads readers about the system’s capabilities.\nFOLLOW: No operational impact, but adds unnecessary complexity and confusion for future maintainers.",
+        "proposed_fix": "Remove the `suggested_action` field from `PacingSignal` and from the signal‑construction calls. The insect brain already has hard‑coded logic to map signal types to actions; the field is redundant.",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 3,
+        "has_follow": false
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F010"
+        ],
+        "severity": 0.4,
+        "description": "FIND — Docstring for `EndocrineLayer` claims it provides “4. Pacing signals — monitor timing, context growth, novelty plateau”. The novelty plateau detection uses `novelty_counts` from the insect brain, but there is no explanation of what “novelty” means or how the counts are derived. This is a documentation gap, not a code bug.\nFOLLOW: Developers extending the endocrine layer may misunderstand the input contract and provide incorrect novelty counts, leading to false pacing signals.",
+        "proposed_fix": "Extend the docstring of `compute_pacing_signals()` to clarify: “`novelty_counts` is a list of novel finding counts per round, where novelty is defined by the convergence detector’s equivalence‑class deduplication.”",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "has_follow": false
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.85,
+        "description": "FIND — `run_mypy` uses a brittle regex to parse mypy output. Mypy can emit multi‑line errors (e.g., note lines) and the regex `^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$` captures only the first line, discarding subsequent note lines. This under‑reports mypy diagnostics and misrepresents code health.  \nFOLLOW: The health scan aggregates incomplete mypy results, causing the insect brain to receive falsely low defect counts. This could delay convergence (if novelty count",
+        "proposed_fix": "Use mypy’s `--output-format=json` (available in mypy ≥0.990) to get structured output. Fall back to regex only if JSON fails. Example:  \ncmd = [MYPY_BIN, \"--output-format=json\", \"--no-color-output\", \"--show-column-numbers\", \"--no-error-summary\"] + paths\nParse the JSON array of diagnostics, extracting file, line, column, severity, message, and error code.",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.8,
+        "description": "FIND — `run_pyright()` loses diagnostics on the normal “errors found” path when pyright writes JSON to stderr instead of stdout. `_run_tool()` captures both streams, but `run_pyright()` only parses `result.stdout` and ignores `result.stderr` except for the sentinel `\"NOT_FOUND\"`. Many CLIs emit machine-readable output to stderr on nonzero exit; this wrapper assumes stdout-only and turns such runs into parse failure + empty diagnostics.\nFOLLOW: The health scan can report zero pyright findings eve",
+        "proposed_fix": "FIX — in `run_pyright()`, choose the JSON payload from `result.stdout` if non-empty, otherwise from `result.stderr` when it looks like JSON; parse that payload instead of stdout only.",
+        "status": "OPEN",
+        "open_since_round": 9,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "has_follow": false
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F0035"
+        ],
+        "severity": 0.7,
+        "description": "FIND — ToolDiagnostic severity mapping inconsistent: pyright uses \"error\"/\"warning\"/\"info\"; ruff uses \"warning\" for everything; bandit maps LOW→\"info\", MEDIUM→\"warning\", HIGH→\"error\". This makes `counts_by_severity` aggregates misleading. A bandit HIGH severity appears as \"error\", ruff error appears as \"warning\". Insect brain cannot distinguish true errors from warnings.\nFOLLOW: Insect brain's health signals (e.g., error count threshold) may trigger incorrectly. If ruff reports 100 style violati",
+        "proposed_fix": "Normalize severity across tools: map each tool's levels to common scale (ERROR, WARNING, INFO). Or keep raw but document mapping.",
+        "status": "OPEN",
+        "open_since_round": 14,
+        "last_status_change_round": 14,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 3,
+        "has_follow": false
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.88,
+        "description": "FIND — `_count_tool_issues` catches all `Exception`s and returns `0` when a static analysis tool runner crashes.\nFOLLOW: If a proposed fix severely corrupts the syntax of a file, causing a tool runner (e.g., Pyright or Ruff) to crash or raise an unhandled exception during `evaluate_fix`, it records `new_errors = 0`. If the original file had pre-existing errors, the net change becomes negative. `_compute_fix_verdict` evaluates this as successfully resolving all issues, marking the completely brok",
+        "proposed_fix": "FIX — Return a high penalty value when a tool crashes, ensuring the failure is correctly classified as an unrecoverable regression:\ndef _count_tool_issues(tool_runner, file_path: str) -> int:\n    try:\n        diags = tool_runner([file_path])\n        return len(diags)\n    except Exception:\n        return 9999  # Penalty forces HARMFUL verdict",
+        "status": "OPEN",
+        "open_since_round": 21,
+        "last_status_change_round": 21,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "has_follow": false
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.88,
+        "description": "FIND — the health scan advertises “pyright/ruff/bandit” static analysis between rounds, but `scan_health()` also runs `mypy` unconditionally and exposes its diagnostics in totals. This creates an interface mismatch with the documented endocrine contract and with downstream interpretation of health metrics. Evidence: module header and “The endocrine layer provides” list mention pyright/ruff/bandit; `scan_health()` iterates over `(\"pyright\", \"ruff\", \"bandit\", \"mypy\")`.\nFOLLOW: This is not just doc",
+        "proposed_fix": "FIX — make the contract consistent by either removing mypy from `scan_health()` for the PoC, or updating the public endocrine interface/docstrings to explicitly state that mypy is part of the health scan and fix-evaluation metrics. The simpler sufficient fix is to remove mypy from `scan_health()` until it is an intentional surfaced feature.",
+        "status": "OPEN",
+        "open_since_round": 22,
+        "last_status_change_round": 22,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "has_follow": false
+      }
+    },
+    "next_id": 33,
+    "alias_map": {
+      "ChatGPT_F002": "C0001",
+      "ChatGPT_F005": "C0002",
+      "ChatGPT_F006": "C0003",
+      "Codex_F001": "C0004",
+      "Codex_F004": "C0005",
+      "Codex_F005": "C0006",
+      "Codex_F006": "C0007",
+      "Codex_F007": "C0008",
+      "CC2_F003": "C0009",
+      "CC2_F006": "C0010",
+      "CC2_F007": "C0011",
+      "CC2_F008": "C0012",
+      "CC2_F010": "C0013",
+      "ChatGPT_F004": "C0014",
+      "Gemini_F003": "C0015",
+      "CC2_F004": "C0016",
+      "ChatGPT_F001": "C0017",
+      "DeepSeek_F003": "C0018",
+      "DeepSeek_F005": "C0019",
+      "CC2_F005": "C0020",
+      "DeepSeek_F001": "C0021",
+      "DeepSeek_F004": "C0022",
+      "DeepSeek_F006": "C0023",
+      "DeepSeek_F007": "C0024",
+      "DeepSeek_F008": "C0025",
+      "DeepSeek_F009": "C0026",
+      "DeepSeek_F010": "C0027",
+      "DeepSeek_F002": "C0028",
+      "ChatGPT_F003": "C0029",
+      "DeepSeek_F0035": "C0030",
+      "Gemini_F004": "C0031",
+      "Codex_F003": "C0032"
+    }
+  },
+  "endocrine_health_trend": {
+    "type_safety": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "null_deref": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "dead_code": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "style": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "security": [
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7
+    ]
+  }
+}

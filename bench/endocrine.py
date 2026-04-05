@@ -18,7 +18,6 @@ Tool binaries (Python 3.13, subprocess only — never imported as modules):
     /Library/Frameworks/Python.framework/Versions/3.13/bin/ruff
     /Library/Frameworks/Python.framework/Versions/3.13/bin/bandit
     /Library/Frameworks/Python.framework/Versions/3.13/bin/mypy
-    /Library/Frameworks/Python.framework/Versions/3.13/bin/crosshair
 
 Design principles (matching insect brain):
 1. Mechanical: tool invocation -> structured output, no reasoning
@@ -46,6 +45,15 @@ from bench.dm._types import Finding
 logger = logging.getLogger("endocrine")
 
 
+class ToolNotFoundError(Exception):
+    """Raised when a static analysis tool binary is not installed."""
+
+    def __init__(self, tool_name: str, path: str):
+        self.tool_name = tool_name
+        self.path = path
+        super().__init__(f"{tool_name} not found at {path}")
+
+
 # =============================================================================
 # Tool binary paths
 # =============================================================================
@@ -56,12 +64,10 @@ PYRIGHT_BIN = os.path.join(_TOOL_BIN, "pyright")
 RUFF_BIN = os.path.join(_TOOL_BIN, "ruff")
 BANDIT_BIN = os.path.join(_TOOL_BIN, "bandit")
 MYPY_BIN = os.path.join(_TOOL_BIN, "mypy")
-CROSSHAIR_BIN = os.path.join(_TOOL_BIN, "crosshair")
 PYTHON_313 = os.path.join(_TOOL_BIN, "python3")
 
 # Timeout for individual tool invocations (seconds).
 _TOOL_TIMEOUT = 60
-_CROSSHAIR_TIMEOUT = 120  # symbolic execution is slow
 
 
 # =============================================================================
@@ -86,7 +92,7 @@ class ToolDiagnostic:
 
     One pyright error, one ruff violation, one bandit finding, etc.
     """
-    tool: str               # "pyright", "ruff", "bandit", "mypy", "crosshair"
+    tool: str               # "pyright", "ruff", "bandit", "mypy"
     file_path: str          # source file
     line: int               # line number (0 if unknown)
     column: int             # column number (0 if unknown)
@@ -210,7 +216,7 @@ def run_pyright(paths: List[str]) -> List[ToolDiagnostic]:
     result = _run_tool(cmd)
 
     if result.stderr == "NOT_FOUND":
-        return []
+        raise ToolNotFoundError("pyright", PYRIGHT_BIN)
 
     diagnostics = []
     try:
@@ -244,6 +250,8 @@ def _categorise_pyright(message: str, rule: str) -> str:
     msg_lower = message.lower()
     if any(kw in msg_lower for kw in ("none", "optional", "could be none", "is not callable")):
         return DefectCategory.NULL_DEREF
+    if any(kw in msg_lower for kw in ("index", "range", "subscript", "out of")):
+        return DefectCategory.OFF_BY_ONE
     if any(kw in msg_lower for kw in ("type", "incompatible", "cannot assign", "argument")):
         return DefectCategory.TYPE_SAFETY
     return DefectCategory.TYPE_SAFETY  # pyright is primarily a type checker
@@ -257,7 +265,7 @@ def run_ruff(paths: List[str]) -> List[ToolDiagnostic]:
     result = _run_tool(cmd)
 
     if result.stderr == "NOT_FOUND":
-        return []
+        raise ToolNotFoundError("ruff", RUFF_BIN)
 
     diagnostics = []
     try:
@@ -296,10 +304,14 @@ def _categorise_ruff(code: str, message: str) -> str:
     # S-codes: bandit-derived security
     if code.startswith("S"):
         return DefectCategory.SECURITY
-    # B-codes: bugbear
+    # B-codes: bugbear — some indicate real bugs
     msg_lower = message.lower()
     if "unused" in msg_lower or "never used" in msg_lower:
         return DefectCategory.DEAD_CODE
+    if any(kw in msg_lower for kw in ("index", "range", "off by", "boundary")):
+        return DefectCategory.OFF_BY_ONE
+    if any(kw in msg_lower for kw in ("race", "concurrent", "thread", "lock")):
+        return DefectCategory.RACE_CONDITION
     return DefectCategory.STYLE
 
 
@@ -311,7 +323,7 @@ def run_bandit(paths: List[str]) -> List[ToolDiagnostic]:
     result = _run_tool(cmd)
 
     if result.stderr == "NOT_FOUND":
-        return []
+        raise ToolNotFoundError("bandit", BANDIT_BIN)
 
     diagnostics = []
     try:
@@ -344,7 +356,7 @@ def run_mypy(paths: List[str]) -> List[ToolDiagnostic]:
     result = _run_tool(cmd)
 
     if result.stderr == "NOT_FOUND":
-        return []
+        raise ToolNotFoundError("mypy", MYPY_BIN)
 
     # mypy output format: file.py:line:col: severity: message  [error-code]
     pattern = re.compile(
@@ -415,6 +427,9 @@ def scan_health(source_paths: List[str]) -> HealthScan:
             diags = runner(existing)
             all_diags.extend(diags)
             tools_available[tool_name] = True
+        except ToolNotFoundError as e:
+            logger.warning("Tool not installed: %s", e)
+            tools_available[tool_name] = False
         except Exception as e:
             logger.warning("Tool %s failed: %s", tool_name, e)
             tools_available[tool_name] = False
@@ -453,6 +468,61 @@ def scan_health(source_paths: List[str]) -> HealthScan:
 # =============================================================================
 # Fix evaluation (function 3 — the KEY new capability)
 # =============================================================================
+
+def _create_sandbox(
+    target_path: str,
+    source_paths: List[str],
+    patched_text: str,
+) -> tuple:
+    """Create a sandbox directory preserving package structure for tool analysis.
+
+    Copies all source files into a temp tree mirroring their directory layout,
+    then writes the patched version of target_path. Returns (tmpdir, patched_path)
+    as a tuple. The caller must clean up tmpdir.
+
+    Preserving structure matters because pyright/mypy resolve imports relative to
+    package roots. A flat tmpdir with one file causes spurious import errors.
+    """
+    tmpdir = tempfile.mkdtemp(prefix="endocrine_fix_")
+    try:
+        # Find the common ancestor directory of all source paths.
+        # commonpath may return a file if all paths are the same file,
+        # so ensure we always have a directory.
+        all_paths = [os.path.abspath(p) for p in source_paths]
+        all_paths.append(os.path.abspath(target_path))
+        common = os.path.commonpath(all_paths)
+        if os.path.isfile(common):
+            common = os.path.dirname(common)
+
+        patched_path = None
+
+        # Copy each source file, preserving relative paths
+        for src in source_paths:
+            abs_src = os.path.abspath(src)
+            rel = os.path.relpath(abs_src, common)
+            dst = os.path.join(tmpdir, rel)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            if abs_src == os.path.abspath(target_path):
+                # Write patched version instead of copying
+                Path(dst).write_text(patched_text, encoding="utf-8")
+                patched_path = dst
+            else:
+                shutil.copy2(abs_src, dst)
+
+        # If target_path wasn't in source_paths, write it separately
+        if patched_path is None:
+            abs_target = os.path.abspath(target_path)
+            rel = os.path.relpath(abs_target, common)
+            dst = os.path.join(tmpdir, rel)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            Path(dst).write_text(patched_text, encoding="utf-8")
+            patched_path = dst
+
+        return tmpdir, patched_path
+    except Exception:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        raise
+
 
 def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
     """Attempt to apply a proposed fix to source text.
@@ -493,17 +563,30 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
         pass
 
     # Strategy 3: line-level replacement hints
-    # Pattern: "Line N: old_code -> new_code"
-    line_pattern = re.compile(r"[Ll]ine\s+(\d+):\s*(.+?)\s*->\s*(.+)")
+    # Handles: "Line N: old -> new", "Lines N-M: old -> new", "Line N-M: old -> new"
+    line_pattern = re.compile(
+        r"[Ll]ines?\s+(\d+)(?:\s*[-–]\s*(\d+))?:\s*(.+?)\s*->\s*(.+)"
+    )
     lines = source_text.splitlines(keepends=True)
     modified = False
     for lm in line_pattern.finditer(fix):
-        lineno = int(lm.group(1)) - 1  # 0-indexed
-        old_frag = lm.group(2).strip()
-        new_frag = lm.group(3).strip()
-        if 0 <= lineno < len(lines) and old_frag in lines[lineno]:
-            lines[lineno] = lines[lineno].replace(old_frag, new_frag, 1)
-            modified = True
+        start_line = int(lm.group(1)) - 1  # 0-indexed
+        end_line = int(lm.group(2)) - 1 if lm.group(2) else start_line
+        old_frag = lm.group(3).strip()
+        new_frag = lm.group(4).strip()
+        # For single-line matches, do in-line replacement
+        if start_line == end_line:
+            if 0 <= start_line < len(lines) and old_frag in lines[start_line]:
+                lines[start_line] = lines[start_line].replace(old_frag, new_frag, 1)
+                modified = True
+        else:
+            # For ranges, join the target lines, replace, and re-split
+            if 0 <= start_line and end_line < len(lines):
+                block = "".join(lines[start_line:end_line + 1])
+                if old_frag in block:
+                    new_block = block.replace(old_frag, new_frag, 1)
+                    lines[start_line:end_line + 1] = [new_block]
+                    modified = True
     if modified:
         return "".join(lines)
 
@@ -590,10 +673,12 @@ def evaluate_fix(
 
     eval_result.fix_applied = True
 
-    # Write patched file to temp directory
-    with tempfile.TemporaryDirectory(prefix="endocrine_fix_") as tmpdir:
-        patched_path = os.path.join(tmpdir, os.path.basename(target_path))
-        Path(patched_path).write_text(patched, encoding="utf-8")
+    # Create sandbox preserving directory structure so tools resolve imports
+    tmpdir = None
+    try:
+        tmpdir, patched_path = _create_sandbox(
+            target_path, source_paths, patched,
+        )
 
         # Post-fix analysis
         eval_result.new_type_errors = _count_tool_issues(run_pyright, patched_path)
@@ -618,6 +703,9 @@ def evaluate_fix(
             except Exception as e:
                 eval_result.tests_passed = None
                 eval_result.test_output = f"Test execution failed: {e}"
+    finally:
+        if tmpdir:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     # Verdict
     eval_result.verdict = _compute_fix_verdict(eval_result)
@@ -647,10 +735,18 @@ def _find_target_file(finding: Finding, source_paths: List[str]) -> Optional[str
     desc = finding.description + " " + finding.proposed_fix
     matches = path_pattern.findall(desc)
 
+    # Pass 1: path-separator-aware suffix match (most specific).
+    # Requires a "/" before the match to prevent "x.py" matching "extra_x.py".
     for match in matches:
-        # Check if any source path ends with this match
         for sp_path in source_paths:
-            if sp_path.endswith(match) or match in sp_path:
+            if sp_path == match or sp_path.endswith(os.sep + match):
+                return sp_path
+
+    # Pass 2: basename-only match (less specific, but better than fallback).
+    for match in matches:
+        match_basename = os.path.basename(match)
+        for sp_path in source_paths:
+            if os.path.basename(sp_path) == match_basename:
                 return sp_path
 
     # Fall back to first source path
@@ -672,11 +768,15 @@ def _compute_fix_verdict(result: FixEvaluation) -> str:
     if result.tests_passed is False:
         return "HARMFUL"
 
-    # New issues introduced = harmful
-    total_net = result.net_type_errors + result.net_ruff_errors + result.net_bandit_issues
-    if total_net > 0:
+    # Any individual tool showing new issues = harmful.
+    # Checking each independently prevents a fix that introduces 5 type
+    # errors but removes 5 ruff warnings from netting to zero.
+    if (result.net_type_errors > 0
+            or result.net_ruff_errors > 0
+            or result.net_bandit_issues > 0):
         return "HARMFUL"
 
+    total_net = result.net_type_errors + result.net_ruff_errors + result.net_bandit_issues
     # Issues reduced and tests passed (or not run) = safe
     if total_net < 0:
         return "SAFE"
@@ -763,9 +863,13 @@ def compute_pacing_signals(
     Returns:
         List of PacingSignal (may be empty if everything is healthy).
     """
-    # Defensive: if context_budget is a dict, extract the max value.
+    # Defensive: coerce context_budget from TOML types (dict, str, float).
     if isinstance(context_budget, dict):
         context_budget = max(context_budget.values()) if context_budget else 80_000
+    try:
+        context_budget = int(context_budget)
+    except (TypeError, ValueError):
+        context_budget = 80_000
 
     signals: List[PacingSignal] = []
 
@@ -797,15 +901,18 @@ def compute_pacing_signals(
             ))
 
     # 3. Novelty plateau detection
-    # If novelty has been zero or near-zero for 2+ consecutive rounds
-    if len(novelty_counts) >= 3 and round_idx >= 2:
-        recent = novelty_counts[-3:]
+    # If novelty has been zero or near-zero for 3 consecutive rounds.
+    # Guard: need at least 3 data points AND round_idx must be consistent
+    # with the length of novelty_counts (they should track 1:1 with rounds).
+    window = 3
+    if len(novelty_counts) >= window and round_idx >= window - 1:
+        recent = novelty_counts[-window:]
         if all(n <= 1 for n in recent):
             signals.append(PacingSignal(
                 signal_type="novelty_plateau",
-                detail=f"Novel findings in last 3 rounds: {recent}",
+                detail=f"Novel findings in last {window} rounds: {recent}",
                 metric_value=float(sum(recent)),
-                threshold=3.0,
+                threshold=float(window),
                 suggested_action="check_convergence",
             ))
 
@@ -939,9 +1046,18 @@ class EndocrineLayer:
         """Return diagnostic count trends across rounds (by category).
 
         For the insect brain to detect worsening/improving code health.
+        All lists are the same length (one entry per scan), zero-padded
+        for rounds where a category had no diagnostics.
         """
-        trend: Dict[str, List[int]] = {}
+        n_scans = len(self._scan_history)
+        # Collect all categories first
+        all_cats: set = set()
         for scan in self._scan_history:
+            all_cats.update(scan.counts_by_category.keys())
+
+        # Build zero-padded lists
+        trend: Dict[str, List[int]] = {cat: [0] * n_scans for cat in all_cats}
+        for i, scan in enumerate(self._scan_history):
             for cat, count in scan.counts_by_category.items():
-                trend.setdefault(cat, []).append(count)
+                trend[cat][i] = count
         return trend

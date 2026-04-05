@@ -1,0 +1,11 @@
+You now have full context of this pipeline and all known issues — both your own findings and those from independent reviewers. Focus specifically on cross-component interactions:
+
+1. What happens when multiple bugs interact? For example, if the Dendritic Cell misroutes a claim AND the B Cell has a substring injection vulnerability, what is the combined effect?
+
+2. What cascade failures exist? Trace chains where one component's bug corrupts another component's input, which then corrupts a third component's output.
+
+3. What emergent behaviours arise from the combination of all known issues? Are there failure modes that only appear when the system operates as a whole?
+
+4. For cascade failures and interaction bugs, propose fixes. These will often require NOVEL CONSTRUCTS: new inter-component validation, new state propagation mechanisms, or new architectural patterns that do not exist in the current codebase. Be specific about what each construct does, where it sits in the pipeline, and how it prevents the cascade.
+
+Apply FFF throughout. Show your working with concrete execution traces.

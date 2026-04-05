@@ -1,0 +1,177 @@
+Here is the second batch of findings from independent reviewers. Same requirements as before:
+
+1. CONFIRM or CHALLENGE with evidence.
+2. EXTEND: What new issues do these findings reveal through pipeline interaction tracing?
+3. Propose concrete fixes (PATCH / NOVEL CONSTRUCT / ARCHITECTURAL) for every confirmed or new finding. Novel constructs are expected — some fixes require entirely new validation layers or architectural patterns.
+
+Prior findings (batch 2 of 2):
+
+### MF-21: Intra-Round Duplicate Blindness
+- **Sources:** C3 (state mutation leak context), NK v2 shadow data
+- **Status:** V2 FIXED (NK v2 caught 9 intra-round duplicates in Run 11)
+- **Priority:** P1
+- **Description:** NK v1 only compares against `prior_findings` (previous rounds). Duplicates within the same round are invisible.
+- **Verification:** Run 11 shadow data: NK v2 caught 9 intra-round dups that v1 missed, inflating R0 count from ~35 to 44.
+- **Fix:** NK v2 includes intra-round comparison. Activate v2.
+
+---
+
+## B CELL — Verification Engine (12 findings)
+
+### MF-22: Silent Error Swallowing
+- **Sources:** C4-BC1
+- **Status:** V2 PARTIAL (stderr captured but not checked)
+- **Priority:** P0
+- **Description:** `_run_tool_subprocess` uses `subprocess.run` with `capture_output=True` but omits `check=True`. Returns only `stdout`. If generated Python crashes, traceback goes to stderr, function returns empty string, pipeline defaults to UNCERTAIN. Completely blind to internal crashes.
+- **Verification:** Code inspection confirmed. Line 636–639: no `check=True`, stderr ignored.
+- **Fix:** Add `check=True` or inspect return code. Log stderr. Return explicit error verdict instead of empty string.
+
+### MF-23: Proof by n=100 Fallacy
+- **Sources:** C4-BC2
+- **Status:** UNFIXED
+- **Priority:** P0
+- **Description:** If symbolic simplification fails, `_verify_sympy` substitutes n=100 for "numerical truth." Tests a universal quantifier (∀n) with a single scalar. sin(100)≈−0.506 → system confirms "sin(n) is always negative." n²>5000 at n=100 → True, ignoring failure at n∈[0,70].
+- **Verification:** SymPy confirmed. sin(100)<0 but sin(π/4)>0. Single-point cannot prove universal.
+- **Fix:** Test multiple values (e.g. n=0, 1, 10, 100, 1000) and require all to agree. Or flag as UNCERTAIN when symbolic proof fails instead of falling back to numerical spot-check.
+
+### MF-24: Substring Injection (VERIFIED_TRUE)
+- **Sources:** C4-BC3
+- **Status:** UNFIXED
+- **Priority:** P0
+- **Description:** Wrapper checks `if "VERIFIED_TRUE" in output`. If a claim contains the literal text "VERIFIED_TRUE", SymPy treats it as a symbolic variable, subprocess prints "SIMPLIFIED: VERIFIED_TRUE", wrapper falsely returns CONFIRMED.
+- **Verification:** String matching confirmed. Substring check has no context guard.
+- **Fix:** Use exact line matching (`output.strip() == "VERIFIED_TRUE"`) or structured output format (JSON) instead of substring search.
+
+### MF-25: Tautological If-Then Z3 Logic
+- **Sources:** C4-BC4
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Z3 verifier extracts "if-then" conditions via regex but creates unconstrained boolean variables X, Y. Checks satisfiability of `X ∧ ¬Y`. This is always satisfiable (X=True, Y=False). Every if-then claim is unconditionally REJECTED.
+- **Verification:** Logic confirmed. Unconstrained booleans → always satisfiable → always rejected.
+- **Fix:** Parse the actual condition and consequent from the claim and encode them as Z3 constraints, not independent variables.
+
+### MF-26: Scientific Notation Blindness
+- **Sources:** C4-BC5
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Numeric fallback regex `r'[-+]?\d*\.?\d+'` splits scientific notation. "p=1e-5≥0" extracts [1, -5, 0]. Checks 1.0≥−5.0 (True), destroying exponential meaning.
+- **Verification:** Regex testing confirmed. `1e-5` split into `1` and `-5`.
+- **Fix:** Add scientific notation pattern: `r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'`
+
+### MF-27: Z3 Requires 2+ Numbers
+- **Sources:** C1-F4
+- **Status:** V2 PARTIAL (v2 shadow uses AST-grounded SMT-LIB)
+- **Priority:** P2
+- **Description:** Z3 fallback requires `len(nums) >= 2`. Claims with one number ("x≥5") fall through to Z3_UNSTRUCTURED → UNCERTAIN.
+- **Verification:** Code inspection confirmed. Lines 730–752: `if len(nums) >= 2` guard.
+- **Fix:** V2 shadow uses structural encoding. Activate v2. Additionally, handle single-number claims in v1 fallback.
+
+### MF-28: Regex Empty String Match (Z3)
+- **Sources:** C1-F2
+- **Status:** V2 PARTIAL (v2 avoids the regex entirely)
+- **Priority:** P2
+- **Description:** Z3 number extraction regex can match empty strings (both `\d*` and `\.?` are optional). Causes ValueError on float conversion.
+- **Verification:** Code inspection confirmed. Pattern `r'[-+]?\d*\.?\d+'` can match empty-ish strings.
+- **Fix:** Use `r'[-+]?(?:\d+\.?\d*|\.\d+)'` to require at least one digit. Or activate v2.
+
+### MF-29: Dropped Correlations
+- **Sources:** C4-BC6
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Three independent failures: (a) subprocess prints "STRONG_CORRELATION" but wrapper checks for "SIGNIFICANT" — all correlations silently dropped; (b) r-value regex can't match r=1.0 (requires decimal after optional zero); (c) alpha boundary uses strict `<` so p=0.05 exactly is rejected.
+- **Verification:** String matching, regex testing, and arithmetic all confirmed.
+- **Fix:** (a) Check for "STRONG_CORRELATION" as well as "SIGNIFICANT". (b) Update regex to match integers: `r'r\s*=\s*([-+]?\d+\.?\d*)'`. (c) Use `<=` not `<` for alpha comparison.
+
+### MF-30: SymPy Substitution Wrong Variable
+- **Sources:** C1-F7
+- **Status:** UNFIXED
+- **Priority:** P2
+- **Description:** `local_dict` only defines `n` as a symbol. Claims using `x`, `k`, `m` etc. fail with undefined variable error, caught silently → UNCERTAIN.
+- **Verification:** Code inspection confirmed. Line 655: only `'n': symbols('n')` in local_dict.
+- **Fix:** Add common mathematical variables to local_dict: `x, y, z, k, m, t, a, b, c`.
+
+### MF-31: Statistical Regex Missing Leading Zero
+- **Sources:** C1-F6
+- **Status:** UNFIXED
+- **Priority:** P3
+- **Description:** Stat regex requires leading zero: `p\s*[<=]\s*0\.\d`. Standard notation "p<.05" (without leading zero) fails to match.
+- **Verification:** Code inspection confirmed. Lines 188–195: requires `0.` prefix.
+- **Fix:** Make leading zero optional: `p\s*[<=]\s*0?\.\d`
+
+### MF-32: Hardcoded Stubs / Dead Code (_verify_uncertainty)
+- **Sources:** C4-BC7
+- **Status:** UNFIXED
+- **Priority:** P3
+- **Description:** `_verify_uncertainty` unconditionally returns UNCERTAIN regardless of calculation. Never called from `b_cell_verify` (no UNCERTAINTY branch). Function signature requires `metric_value: float` and `metric_std: float` but pipeline only provides strings.
+- **Verification:** Code inspection confirmed. Dead function with type mismatch.
+- **Fix:** Remove dead function or implement properly and add UNCERTAINTY routing in b_cell_verify.
+
+### MF-33: Class-Switching Contradiction
+- **Sources:** C4-BC8
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** When SymPy returns UNCERTAIN, pipeline "class-switches" to Z3. SymPy is a symbolic algebra engine; Z3 (as implemented) is a blind 2-number regex extractor. Falling back from failed symbolic proof to regex number comparison guarantees false positives from coincidental number extraction.
+- **Verification:** Architectural analysis confirmed. The fallback degrades verification integrity.
+- **Fix:** Z3 fallback should use proper constraint encoding (as in v2 shadow) not regex number extraction. Or flag Z3-fallback confirmations as LOW_CONFIDENCE.
+
+---
+
+## PIPELINE / ORCHESTRATOR (7 findings)
+
+### MF-34: Autoimmune Amnesia
+- **Sources:** C1-F21
+- **Status:** UNFIXED
+- **Priority:** P0
+- **Description:** When autoimmune flag triggers, override passes ALL findings through — including DUPLICATE and KNOWN_FP caught by NK cell. The override should only rescue findings rejected by CT/B cells, not findings flagged by innate immunity.
+- **Verification:** Code inspection confirmed. Lines 1283–1286: blanket `filtered = [tf.finding for tf in triaged]`.
+- **Fix:** Filter override to only rescue non-duplicate, non-known-FP findings: `filtered = [tf.finding for tf in triaged if not tf.is_duplicate and not tf.is_known_fp]`
+
+### MF-35: Autoimmune Inconsistent State
+- **Sources:** C1-F5
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Autoimmune override modifies `filtered_findings` and `rejected_findings` lists but does not update `final_verdicts` or `final_confidences` dictionaries. Returned `ImmuneResponse` has findings in filtered list but verdicts still say REJECTED.
+- **Verification:** Code inspection confirmed. Override at lines 1283–1286 doesn't touch verdict dicts computed at line 1257.
+- **Fix:** Update `final_verdicts` to UNCERTAIN or AUTOIMMUNE_OVERRIDE for rescued findings.
+
+### MF-36: Fail-Open Illusion
+- **Sources:** C1-F22
+- **Status:** UNFIXED
+- **Priority:** P0
+- **Description:** If all verification tools fail (API key expired, SymPy crashes, subprocesses fail), all cells return UNCERTAIN. Helper T passes 100% through. Regulatory T reports "healthy: 0% removal rate." Broken pipeline silently degrades to no-op filter.
+- **Verification:** Code inspection confirmed. UNCERTAIN → pass through. Reg T only checks rejection rate, not UNCERTAIN rate.
+- **Fix:** Regulatory T must monitor UNCERTAIN rate. If >50% UNCERTAIN, flag "Systemic Tool Failure" instead of reporting healthy.
+
+### MF-37: Batch Timeout Timebomb
+- **Sources:** C1-F23
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** Orchestrator timeout = CT timeout + 30s (usually 210s). B cell processes findings sequentially, each with 15s subprocess timeout. With 20 math findings → 300s possible. Orchestrator kills B cell thread at 210s, all verdicts lost.
+- **Verification:** Code inspection confirmed. B cell is sequential with no internal parallelism or batch timeout.
+- **Fix:** Either parallelize B cell internally, or calculate dynamic timeout: `max(ct_timeout + 30, len(math_findings) * 15 + 30)`.
+
+### MF-38: Fuzzy Match Exploit
+- **Sources:** C1-F24
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** CT cell mechanical verification accepts very short snippets. A 1-significant-token snippet matching with ratio 1/1=1.0≥0.6 passes verification at 0.5 confidence. Generic snippets like "value" or "return" match within ±2 lines of any cited location.
+- **Verification:** Code inspection confirmed. Token filter (>3 chars) helps but 1-token matches still pass.
+- **Fix:** Enforce minimum snippet length or minimum token count: `if len(snippet_tokens) < 3: return False, 0.0, "Snippet too short"`
+
+### MF-39: Typo Bypass
+- **Sources:** C1-F25
+- **Status:** UNFIXED
+- **Priority:** P1
+- **Description:** CT cell outputs JSON with `finding_id`. Helper T groups by ID using `dict.get()`. LLM typo in ID → empty verdict list → UNCERTAIN → passes through. LLM can accidentally or systematically bypass rejection.
+- **Verification:** Code inspection confirmed. Line 530: `fid = rv.get("finding_id", "")`.
+- **Fix:** Pass findings as indexed list ([1], [2]) to CT cell. LLM outputs integer index, Python maps back to real finding_id. Eliminates ID formatting dependency.
+
+### MF-40: Unsafe parse_expr (DoS)
+- **Sources:** C1-F9
+- **Status:** MITIGATED (15s subprocess timeout)
+- **Priority:** P3
+- **Description:** Claim text passed to SymPy `parse_expr`. While sandboxed with empty builtins, complex mathematical strings can cause denial of service. Mitigated by 15s subprocess timeout.
+- **Verification:** Code inspection confirmed. Line 653: claim → parse_expr. Line 637: 15s timeout.
+- **Fix:** Low priority given timeout mitigation. Consider input length/complexity cap for additional defence.
+
+---

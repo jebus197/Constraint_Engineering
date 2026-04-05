@@ -1,0 +1,13 @@
+Your initial review found 0 issues. Now apply Find-Follow-Fix more aggressively:
+
+For each existing finding:
+- FOLLOW deeper: trace consequences through the ENTIRE pipeline. What downstream components are affected? What happens when this bug interacts with other bugs you found?
+- Are there boundary conditions you missed? What about empty inputs, None values, zero-length strings, negative numbers?
+
+Then look for what you missed:
+- Injection vectors (substring matching, regex manipulation, input that mimics output markers)
+- Silent failure modes (exceptions swallowed, error paths that return success, functions that never execute)
+- Mathematical invalidity (proofs that test one case instead of all cases, quantifier errors, tautological logic)
+- Cross-component state bugs (what one component assumes about another's output)
+
+For every finding — new or deepened — propose a fix. Classify as PATCH, NOVEL CONSTRUCT, or ARCHITECTURAL. If the fix itself introduces new considerations, trace those too.

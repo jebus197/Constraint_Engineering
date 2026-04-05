@@ -1,0 +1,12 @@
+After falsification, what remains unexplored? Consider categories of bugs that neither you nor the prior reviewers may have examined:
+
+- Timing and concurrency (race conditions, TOCTOU, thread safety)
+- Serialisation and deserialisation (pickle, JSON round-trip fidelity)
+- Error propagation (do errors in one component correctly signal to others?)
+- Resource management (file handles, memory, subprocess lifecycle)
+- Configuration sensitivity (what happens with non-default settings?)
+- Numerical stability (floating-point edge cases, overflow, underflow)
+
+For any new finding, apply the full structured certificate and FFF process. Propose fixes classified as PATCH / NOVEL CONSTRUCT / ARCHITECTURAL.
+
+This is the final discovery sweep. Find what everyone missed.

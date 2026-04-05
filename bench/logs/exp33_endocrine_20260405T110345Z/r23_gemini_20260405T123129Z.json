@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260405T123129Z",
+  "phase": "r23",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2571,
+  "response": "CONFIRM C0001\nCONFIRM C0014\nCONFIRM C0015\nCONFIRM C0021\nCONFIRM C0029\nCONFIRM C0031\nCHALLENGE C0018 | The list comprehension `[rt.duration_s for rt in round_timings]` guarantees `durations` is populated since it is inside an `if round_timings:` block. The `len(durations)//2` indexing cannot fail.\nCHALLENGE C0023 | The code explicitly guards the division with `if context_budget > 0:` at line 506. A division by zero is structurally impossible.\nCHALLENGE C0024 | The code explicitly guards the median calculation with `if char_counts:` at line 530. If all models produce zero-length responses, the list is empty, the guard evaluates to False, and the code safely skips the block.\n\nFINDING_ID: F001\nSEVERITY: 1.0\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.8\nDESCRIPTION: FIND — `evaluate_fix` copies the target file into an empty temporary directory (`tmpdir`) before running static analysis and `test_cmd`.\nFOLLOW: Because the patched file is isolated from its project root, sibling modules, and `pyproject.toml`, local imports will fail to resolve. Tools like `pyright` and `mypy` will generate massive false-positive \"missing import\" errors, causing `net_type_errors` to skyrocket. Furthermore, `test_cmd` run in `tmpdir` will instantly fail because test suites and configurations do not exist there. Every valid fix will be falsely evaluated as `HARMFUL`, breaking the bug-closed gate entirely.\nPROPOSED_FIX: FIX — Mirror the project structure into the sandbox rather than isolating the file. Extract the project root (e.g., the common path of `source_paths`), use `shutil.copytree` to copy it into `tmpdir`, apply the patch to the correct relative path inside the sandbox, and run tools/tests with `cwd` set to the sandbox root.\nVERIFIED: TRUE\n\nFINDING_ID: F002\nSEVERITY: 0.85\nFLAW_CLASS: 6\nABSTRACTION_INDEX: 0.2\nDESCRIPTION: FIND — `_apply_fix_to_source` Strategy 2 uses `compile(fix, \"<fix>\", \"exec\")` to detect and apply valid whole-file replacements, but does not sanitize markdown code block fences.\nFOLLOW: LLMs routinely wrap their proposed code fixes in markdown block markers (e.g., ` ```python `). When `compile()` encounters these backticks, it throws a `SyntaxError`, immediately bypassing Strategy 2. If the regex in the other strategies also fails to match, the valid whole-file fix is silently dropped and evaluated as `UNEVALUABLE`.\nPROPOSED_FIX: FIX — Strip standard markdown code block fences before attempting any patching strategies. Add `fix = re.sub(r\"^```[a-zA-Z]*\\n|\\n```$\", \"\", fix).strip()` right after `fix = proposed_fix.strip()`.\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 23,
+    "elapsed": 90.0,
+    "chars": 2571,
+    "findings_count": 2,
+    "decomposed": false
+  }
+}

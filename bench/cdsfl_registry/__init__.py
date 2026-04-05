@@ -6,8 +6,19 @@ from .registry import (
     validate_all_policies,
 )
 
+from .engine import (
+    PolicyEngine,
+    ParameterDef,
+    ParameterValue,
+    PolicyResult,
+)
+
 __all__ = [
     "PolicyViolationError",
     "load_effective_policy",
     "validate_all_policies",
+    "PolicyEngine",
+    "ParameterDef",
+    "ParameterValue",
+    "PolicyResult",
 ]

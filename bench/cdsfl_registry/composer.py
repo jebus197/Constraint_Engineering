@@ -686,18 +686,18 @@ def _build_situation_packet(
 
 # Proven in Exp 18, Runs 8-11. Mandatory FFF structure.
 _PRESET_FFF = (
-    "## Find-Fix-Follow Protocol (MANDATORY for this round)\n\n"
+    "## Find-Follow-Fix Protocol (MANDATORY for this round)\n\n"
     "For EVERY finding, you MUST provide all three steps:\n\n"
     "**FIND:** Describe the issue precisely. Include the specific location "
     "(file, section, line if applicable), what is wrong, and evidence that "
     "it is wrong.\n\n"
+    "**FOLLOW:** After identifying the issue, trace its consequences through ALL "
+    "other sections, functions, or formulas that reference the same variables, "
+    "interfaces, or assumptions. Report any new issues the bug creates or "
+    "reveals.\n\n"
     "**FIX:** Provide the exact corrected text, code, or formula. Not a "
     "suggestion -- the actual replacement. Use <<<< (old) ==== (new) >>>> "
     "markers for code fixes.\n\n"
-    "**FOLLOW:** After writing your fix, trace its consequences through ALL "
-    "other sections, functions, or formulas that reference the same variables, "
-    "interfaces, or assumptions. Report any new issues your fix creates or "
-    "reveals.\n\n"
     "If your fix creates no consequences, state \"FOLLOW: No downstream "
     "impact identified\" -- but this should be rare for non-trivial fixes.\n"
 )
