@@ -1,0 +1,1500 @@
+[
+  {
+    "bug_id": 1,
+    "cluster_size": 13,
+    "models": [
+      "CC2",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      2,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "max_severity": 0.95,
+    "description": "SMT-LIB multi-condition negation flaw in B-Cell v2. When a claim contains multiple comparisons (e.g., `x > 0` and `x < 10`), `_build_smt2_from_claim` in `immune_agents.py` negates each condition indiv",
+    "selected_fix": "Port the v1 multi-expression extraction into v2.\n\nFIND: `bench/immune_agents.py`, `_classify_claim_v2()`, mathematical branch.\n\nFIX:\n<<<<\n    if _MATH_PATTERN_V2.search(desc):\n        eq_match = re.search(r'`([^`]+[=<>+\\-*/^][^`]+)`', desc)\n        claim = eq_match.group(1) if eq_match else desc\n        return ClaimType.MATHEMATICAL, claim, 0.70\n====\n    if _MATH_PATTERN_V2.search(desc):\n        eq_matches = re.findall(r'`([^`]+[=<>+\\-*/^][^`]+)`', desc)\n        if eq_matches:\n            claim ",
+    "fix_source": "Codex R9",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 2,
+    "cluster_size": 13,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      1,
+      2,
+      3,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13
+    ],
+    "max_severity": 0.9,
+    "description": "Context amnesia upon checkpoint recovery. `load_checkpoint()` in `insect_brain.py` restores `RoundRecord` instances but deliberately leaves `model_responses` empty (`model_responses={}`), commenting t",
+    "selected_fix": "<<<<\n        # Replay findings into a fresh convergence detector with persisted durations\n        self.conv_detector = ConvergenceDetector(self.config)\n        for round_idx, findings in enumerate(self.state.all_findings):\n            rr = rr_by_idx.get(round_idx, {})\n            duration = float(rr.get(\"duration_s\", 0.0))\n            self.state.round_records.append(RoundRecord(\n                round_idx=round_idx,\n                timestamp=rr.get(\"timestamp\", \"\"),\n                model_response",
+    "fix_source": "Gemini R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 3,
+    "cluster_size": 2,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.9,
+    "description": "In `insect_brain.py`, the `load_checkpoint` function reconstructs `RoundRecord` objects without restoring `model_responses` (they are set to an empty dict). The comment says model_responses are intent",
+    "selected_fix": "<<<<\n        # Restore round records from checkpoint\n        self.state.round_records = []\n        rr_by_idx = {\n            r[\"round_idx\"]: r\n            for r in data.get(\"round_records\", [])\n            if isinstance(r, dict) and \"round_idx\" in r\n        }\n\n        # Replay findings into a fresh convergence detector with persisted durations\n        self.conv_detector = ConvergenceDetector(self.config)\n        for round_idx, findings in enumerate(self.state.all_findings):\n            rr = rr_b",
+    "fix_source": "DeepSeek R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 4,
+    "cluster_size": 10,
+    "models": [
+      "CC2",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      2,
+      3,
+      6,
+      7,
+      10,
+      13
+    ],
+    "max_severity": 0.9,
+    "description": "In `immune_agents.py`, the `run_immune_pipeline` function uses `concurrent.futures.ThreadPoolExecutor` with `max_workers=6`. However, the `cytotoxic_t_cell` and `cytotoxic_t_cell_v2_shadow` functions ",
+    "selected_fix": "<<<<\n    # WP6a: filter out findings that failed skin barrier (unless observation_only)\n    if not observation_only:\n        failed_ids = {r.finding_id for r in barrier_results if not r.passed}\n        barrier_filtered = [f for f in new_findings if f.finding_id not in failed_ids]\n        barrier_rejected = [f for f in new_findings if f.finding_id in failed_ids]\n        new_findings = barrier_filtered\n    else:\n        barrier_rejected = []\n====\n    # Use the deterministic barrier results\n    fai",
+    "fix_source": "DeepSeek R13",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 5,
+    "cluster_size": 9,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      4,
+      6,
+      7,
+      8,
+      9,
+      13
+    ],
+    "max_severity": 0.85,
+    "description": "In `immune_agents.py`, `_verify_ct_claim()` uses `os.path.realpath()` for path traversal protection (C5-01), but the containment check compares against `os.path.realpath(d) + os.sep`. If `allowed_dirs",
+    "selected_fix": "Filter out empty strings from `allowed_dirs` before passing to `_verify_ct_claim()`. In `cytotoxic_t_cell()`:\nallowed_dirs = [d for d in (os.path.dirname(os.path.abspath(p)) for p in source_paths) if d]\nUse `os.path.abspath()` to ensure directory resolution is explicit.",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 6,
+    "cluster_size": 7,
+    "models": [
+      "CC2",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      3,
+      5,
+      6,
+      10,
+      13
+    ],
+    "max_severity": 0.85,
+    "description": "Falsified convergence status on max rounds. In `insect_brain.py` `check_convergence()`, hitting the `max_rounds` hard stop incorrectly sets `self.state.converged = True`. This causes `signal_complete(",
+    "selected_fix": "Replace positional indexing with lookup by round_idx:\n    # Find the record with matching round_idx\n    target_record = next(\n        (rr for rr in self.state.round_records if rr.round_idx == round_idx),\n        None,\n    )\n    if target_record is not None:\n        target_record.metrics = metrics\n    # For findings_this_round, index by round_idx from all_findings:",
+    "fix_source": "CC2 R3",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 7,
+    "cluster_size": 13,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      9,
+      14
+    ],
+    "max_severity": 0.85,
+    "description": "In `immune_agents.py`, the autoimmune recovery in `run_immune_pipeline()` (lines near the end) overrides ALL rejections when the autoimmune flag is set: `filtered = [tf.finding for tf in triaged]; rej",
+    "selected_fix": "The if/then z3 check must encode the *actual* predicates, not abstract booleans. Either: (a) parse the actual conditions from the regex groups and attempt symbolic encoding, or (b) return UNCERTAIN when the claim cannot be grounded (matching v2 behavior). Minimum viable fix:\nif if_then:\n    # Cannot meaningfully encode abstract predicates \u2014 return UNCERTAIN\n    print(\"Z3_UNSTRUCTURED: if/then claim requires grounded predicates\")\nThis prevents false rejections while preserving correct behavior fo",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 8,
+    "cluster_size": 2,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      13
+    ],
+    "max_severity": 0.8,
+    "description": "In `verification_chain.py`, the `_normalize_timestamp` function incorrectly rejects valid ISO 8601 timestamps with a trailing 'Z' (UTC indicator). The function attempts to replace a trailing 'Z' with ",
+    "selected_fix": "<<<<\n_DIGEST_RE = re.compile(r\"^sha256:[0-9a-f]{64}$\")\n====\n_DIGEST_RE = re.compile(r\"^sha256:[0-9a-fA-F]{64}$\")\n>>>>",
+    "fix_source": "DeepSeek R13",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 9,
+    "cluster_size": 6,
+    "models": [
+      "CC2",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      6,
+      8,
+      13
+    ],
+    "max_severity": 0.85,
+    "description": "In `immune_agents.py`, the `_verify_z3` function uses a flawed translation of natural\u2011language claims to z3 constraints. The regex for extracting numbers (`r'[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?'`) does no",
+    "selected_fix": "<<<<\n    # MF-26 fix: support scientific notation (e.g. 1.5e-3)\n    nums = re.findall(r'[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?', claim)\n====\n    # MF-26 fix: support scientific notation (e.g. 1.5e-3) and negative numbers\n    nums = re.findall(r'[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?', claim)\n    # If a negative sign is preceded by a space, it may have been missed; re\u2011scan\n    # Example: \"x > -5\" -> the regex catches \"-5\", but \"x > - 5\" (with space) would not.\n    # We'll also look for patterns like \"> - 5\" an",
+    "fix_source": "DeepSeek R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 10,
+    "cluster_size": 21,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      2,
+      3,
+      4,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "max_severity": 0.83,
+    "description": "In `insect_brain.py`, the `_format_responses_for_model` function uses `self.state.round_records` to collect responses from other models. However, `round_records` may not have `model_responses` for all",
+    "selected_fix": "FIX: guard against duplicate persist by checking round_idx. Add at the start of `persist()`:\n\n```python\n# Idempotency guard: reject duplicate round persist\nexisting_rounds = {rr.round_idx for rr in self.state.round_records}\nif round_idx in existing_rounds:\n    logger.warning(\n        \"Duplicate persist for round %d \u2014 returning existing record\",\n        round_idx,\n    )\n    return next(rr for rr in self.state.round_records if rr.round_idx == round_idx)\n```\n\nThis makes persist() idempotent on roun",
+    "fix_source": "CC2 R4",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 11,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.75,
+    "description": "In `insect_brain.py`, `compute_metrics()` computes `gamma_hat` (Duane reliability growth parameter) using `math.log(round_idx + 1)` as the denominator. When `round_idx == 0`, this is `math.log(1) == 0",
+    "selected_fix": "Return `gamma_hat = 0.0` explicitly for `round_idx == 0` and only compute the estimator for `round_idx >= 2` (minimum 3 data points for a growth rate):\nif round_idx >= 2 and len(cum_classes) > 0:\n    cum_1 = len(self.conv_detector.get_cumulative_classes(0))\n    if cum_1 > 0:\n        gamma = 1.0 - (\n            (math.log(len(cum_classes)) - math.log(cum_1))\n            / math.log(round_idx + 1)\n        )\n        metrics[\"gamma_hat\"] = gamma",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 12,
+    "cluster_size": 16,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      2,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "max_severity": 0.85,
+    "description": "Redundant AST parsing bottleneck in B-Cell v2. `_verify_z3_v2_shadow` (`immune_agents.py`) is invoked inside a loop iterating over every mathematical finding. For each finding, it re-reads and re-pars",
+    "selected_fix": "FIX: Restore the early termination in v2's prior-finding dedup loop:\n\n<<<<\n        best_sim = 0.0\n        best_match: Optional[str] = None\n        for pf in prior_findings:\n            sim = _finding_similarity(f, pf)\n            if sim > best_sim:\n                best_sim = sim\n                best_match = pf.finding_id\n>>>>\n====\n        best_sim = 0.0\n        best_match: Optional[str] = None\n        for pf in prior_findings:\n            sim = _finding_similarity(f, pf)\n            if sim > bes",
+    "fix_source": "CC2 R12",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 13,
+    "cluster_size": 14,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      10,
+      12,
+      14
+    ],
+    "max_severity": 0.9,
+    "description": "In `insect_brain.py`, `persist()` calls `self.conv_detector.add_round_findings(round_idx, findings, duration=duration_s)`. In `load_checkpoint()`, findings are replayed into a fresh `ConvergenceDetect",
+    "selected_fix": "FIX: include barrier-rejected findings in `rejected` even during autoimmune override.\n\n<<<<\n    # If autoimmune flagged, override: pass everything through\n    if autoimmune_flag and not observation_only:\n        filtered = [tf.finding for tf in triaged]\n        rejected = []\n>>>>\n====\n    # If autoimmune flagged, override: pass everything through\n    # (but preserve barrier rejections \u2014 those are deterministic, not autoimmune)\n    if autoimmune_flag and not observation_only:\n        filtered = [",
+    "fix_source": "CC2 R8",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 14,
+    "cluster_size": 7,
+    "models": [
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      2,
+      3,
+      4,
+      8,
+      9,
+      13
+    ],
+    "max_severity": 0.9,
+    "description": "Context erasure when degrading to last round. In `relay_conversational` and `_format_broadcast_within_budget` (`insect_brain.py`), if the full text exceeds budget, it degrades to providing only the `l",
+    "selected_fix": "Strictly match the immediately preceding round by using `m.round_idx == round_idx - 1`.",
+    "fix_source": "Gemini R13",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 15,
+    "cluster_size": 2,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      9
+    ],
+    "max_severity": 0.85,
+    "description": "In `insect_brain.py`, the `_format_findings_summary` function truncates the description to 80 characters but does not preserve line breaks, potentially merging separate lines into a single run\u2011on sent",
+    "selected_fix": "add method\" becomes \"missing method proposed fix: add method\"). The summary should replace newlines with spaces, not remove them entirely.  \nPROPOSED_FIX:  \n<<<<\n    @staticmethod\n    def _format_findings_summary(findings: List[Finding]) -> str:\n        \"\"\"Format findings as summary only (ID + severity + one line).\n\n        Used when full text exceeds context budget. This is a context reset.\n        \"\"\"\n        header = (\n            f\"(CONTEXT RESET: {len(findings)} prior findings exist. \"\n    ",
+    "fix_source": "DeepSeek R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 16,
+    "cluster_size": 23,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      2,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "max_severity": 0.9,
+    "description": "In `immune_agents.py`, the `_reconciliation_gate` function merges v1 and v2 verdicts. The rule \"higher confidence wins\" may cause a `REJECTED` verdict with confidence 0.6 to override a `CONFIRMED` ver",
+    "selected_fix": "FIX: `_reconciliation_gate` must return a locked set, and autoimmune recovery must respect it.\n\n1. Change return type to include locked IDs:\n```python\ndef _reconciliation_gate(\n    v1_verdicts, v1_confidences, v2_verdicts, v2_confidences,\n) -> Tuple[Dict[str, str], Dict[str, float], Set[str]]:\n    locked: Set[str] = set()\n    # ... existing reconciliation logic ...\n    # Lock when both pipelines agree on REJECTED\n    if v1v in ('REJECTED', 'DUPLICATE') and v2v in ('REJECTED', 'DUPLICATE'):\n     ",
+    "fix_source": "CC2 R11",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 17,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      10
+    ],
+    "max_severity": 0.65,
+    "description": "In `verification_chain.py`, `_cli_verify_proof()` accepts both `sha256:`-prefixed and bare hex root strings for the `--root` argument. However, `rfc9162_verify_inclusion()` expects raw leaf data as `b",
+    "selected_fix": "Either normalize `chain_hash` in the CLI to accept bare hex (like root), or require `sha256:` prefix for both inputs consistently. The latter is cleaner:\nif not root_str.startswith(\"sha256:\"):\n    root_str = \"sha256:\" + root_str\nAnd pass `root_str` to `_digest_bytes()` instead of manual hex parsing.",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 18,
+    "cluster_size": 3,
+    "models": [
+      "CC2",
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      4,
+      5
+    ],
+    "max_severity": 0.72,
+    "description": "Unhandled TypeError in CT cell verification. In `_verify_ct_claim()` within `immune_agents.py`, `line_num` is extracted directly from JSON: `line_num = evidence.get(\"line\", 0)`. If the LLM generates a",
+    "selected_fix": "FIX: When only a line number is found without a file path, pass the finding (no file to verify against). Replace the fallback block:\n\n<<<<\n        if not citations:\n            # Also try \"line N\" without file\n            line_only = re.findall(r'\\bline\\s+(\\d+)\\b', desc)\n            if line_only:\n                citations = [(\"\", int(ln)) for ln in line_only[:1]]\n>>>>\n====\n        if not citations:\n            # Line-only citations cannot be verified without a file path.\n            # Pass by de",
+    "fix_source": "CC2 R5",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 19,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.6,
+    "description": "In `verification_chain.py`, `seal_epoch()`, `build_inclusion_proof()`, and `verify_inclusion_proof()` all recompute the full Merkle tree from scratch by calling `rfc9162_merkle_root(leaves)`. For a ch",
+    "selected_fix": "Cache the Merkle root after `seal_epoch()`. Store it as `self._cached_merkle_root` and invalidate on `append_record()`. For `verify_chain()`, recomputation is intentional (verification should not trust cached values), so this optimization applies only to `build_inclusion_proof()` and operational reads.",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 20,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.6,
+    "description": "In `verification_chain.py`, the `_compute_chain_hash` function concatenates raw hash bytes without domain separation or length prefixes. The docstring notes that this relies on both inputs being exact",
+    "selected_fix": "<<<<\ndef _compute_chain_hash(prev_hash: str, entry_hash: str) -> str:\n    \"\"\"SHA-256(prev_hash_bytes || entry_hash_bytes) \u2014 hash bytes, not strings.\n\n    Design note: this construction relies on both inputs being exactly 32 bytes\n    (SHA-256 digests), producing a fixed 64-byte concatenation. This prevents\n    ambiguity without explicit length prefixing. If input sizes ever change,\n    a domain-separated construction would be required.\n    \"\"\"\n    combined = _digest_bytes(prev_hash) + _digest_by",
+    "fix_source": "DeepSeek R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 21,
+    "cluster_size": 3,
+    "models": [
+      "CC2",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      13
+    ],
+    "max_severity": 0.8,
+    "description": "In `immune_agents.py`, the `run_immune_pipeline` function returns an `ImmuneResponse` with a field `barrier_results` (list of `SkinBarrierResult`). However, the `ImmuneResponse` dataclass definition d",
+    "selected_fix": "Constrain the reconciliation gate output to the triaged ID set:\n\n<<<<\n    all_fids = set(v1_verdicts) | set(v2_verdicts)\n====\n    # Only reconcile findings that were triaged \u2014 orphan IDs from\n    # pipeline asymmetry should not appear in the final output.\n    triaged_ids = set(v1_verdicts) & set(v2_verdicts)\n    # Also include IDs present in only one pipeline (single-source verdict)\n    all_fids = set(v1_verdicts) | set(v2_verdicts)\n>>>>\n\nAlternatively, filter the returned ImmuneResponse to ensu",
+    "fix_source": "CC2 R13",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 22,
+    "cluster_size": 6,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      3,
+      5,
+      8,
+      10,
+      12
+    ],
+    "max_severity": 0.7,
+    "description": "In `verification_chain.py`, the `verify_chain` method iterates through all records and epochs, collecting errors. However, if an early record has a malformed `chain_hash`, the loop continues but later",
+    "selected_fix": "FIX: add epoch monotonicity check in `verify_chain()`.\n\n<<<<\n        # Verify epochs if any exist\n        for epoch in self._epochs:\n            try:\n                ok, msg = self._verify_epoch(epoch)\n            except (KeyError, TypeError, ValueError) as exc:\n                ok, msg = False, f\"malformed epoch: {exc}\"\n            if not ok:\n                errors.append(\n                    f\"Epoch {epoch.get('epoch_index', '?')}: {msg}\"\n                )\n>>>>\n====\n        # Verify epochs if a",
+    "fix_source": "CC2 R8",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 23,
+    "cluster_size": 2,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0,
+      12
+    ],
+    "max_severity": 0.55,
+    "description": "In `immune_agents.py`, backward compatibility module-level variables `PYTHON_TOOLS` and `CLAUDE_CLI` are assigned at import time, then the cache variables are set from them. But the lazy discovery fun",
+    "selected_fix": "Either remove the backward-compat module-level variables (breaking change) or update them on successful discovery:\ndef _get_python_tools() -> str:\n    global _PYTHON_TOOLS_CACHE, PYTHON_TOOLS\n    if _PYTHON_TOOLS_CACHE is not None:\n        return _PYTHON_TOOLS_CACHE\n    result = _find_python_with_tools()\n    if result != sys.executable:\n        _PYTHON_TOOLS_CACHE = result\n        PYTHON_TOOLS = result  # sync backward-compat variable\n    return result",
+    "fix_source": "CC2 R0",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 24,
+    "cluster_size": 2,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      0,
+      11
+    ],
+    "max_severity": 0.5,
+    "description": "finding_id = fid\n        verdicts.append(v)\n>>>>\nFOLLOW: No other callers of `_verify_z3_v2_shadow` exist. Time complexity drops drastically, preventing parallel thread stalls when scanning extensive ",
+    "selected_fix": "",
+    "fix_source": "Gemini R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 25,
+    "cluster_size": 3,
+    "models": [
+      "CC2",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      2,
+      14
+    ],
+    "max_severity": 0.78,
+    "description": "In `immune_agents.py`, the `_verify_statistical` function only checks for p\u2011value and correlation claims. It does not handle other statistical claims like confidence intervals, means, medians, etc. Th",
+    "selected_fix": "FIND: `bench/immune_agents.py`, `_classify_claim_v2()` default case and downstream cell filters.\n\nFIX: Either (a) route UNCATEGORISED to CT as a fallback (since most findings are about code), or (b) add an explicit UNCATEGORISED handler in Helper T that flags the verification gap:\n\n<<<<\n    # 6. Default: UNCATEGORISED (v1 used CODE_BEHAVIORAL as garbage-can)\n    return ClaimType.UNCATEGORISED, desc, 0.30\n====\n    # 6. Default: route to CODE_BEHAVIORAL so CT still investigates.\n    # UNCATEGORISE",
+    "fix_source": "CC2 R14",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 26,
+    "cluster_size": 8,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      2,
+      7,
+      8,
+      11,
+      13,
+      14
+    ],
+    "max_severity": 0.7,
+    "description": "In `insect_brain.py`, the `_resolve_model_name` function performs case\u2011insensitive matching of model labels. However, if two active models differ only in case (e.g., \"CC2\" and \"cc2\"), the function wil",
+    "selected_fix": "<<<<\n        desc_short = f.description[:80].replace(\"\\n\", \" \")\n        if len(f.description) > 80:\n            desc_short += \"...\"\n====\n        # Replace newlines first, then truncate to 80 chars including ellipsis\n        desc_clean = f.description.replace(\"\\n\", \" \")\n        if len(desc_clean) > 80:\n            desc_short = desc_clean[:77] + \"...\"\n        else:\n            desc_short = desc_clean\n>>>>",
+    "fix_source": "DeepSeek R13",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 27,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      1,
+      6,
+      13
+    ],
+    "max_severity": 0.6,
+    "description": "In `insect_brain.py`, the `persist` method calls `_save_round_json` and `_save_checkpoint` sequentially. Both write to disk. If the experiment has many rounds, the checkpoint file grows linearly becau",
+    "selected_fix": "<<<<\n        directed_text = \"\"\n        if directed_to_me:\n            directed_text = self._render_directed_messages(directed_to_me)\n            # Truncate directed text if it alone exceeds budget\n            if len(directed_text) > budget:\n                directed_text = directed_text[:max(0, budget - 80)] + (\n                    \"\\n\\n[TRUNCATED: directed messages exceed context budget]\"\n                )\n====\n        directed_text = \"\"\n        if directed_to_me:\n            directed_text = se",
+    "fix_source": "DeepSeek R13",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 28,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.45,
+    "description": "In `verification_chain.py`, `_normalize_timestamp()` replaces a trailing `Z` with `+00:00` before `fromisoformat()`. However, it does not handle the `+00:00` suffix that Python's own `datetime.isoform",
+    "selected_fix": "Document minimum Python version requirement (3.11+) or add a fallback parser for older versions. Given the `from __future__ import annotations` usage and other modern syntax, Python 3.9+ is likely assumed \u2014 but 3.9-3.10 still lack full `fromisoformat` timezone support.",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 29,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.45,
+    "description": "In `immune_agents.py`, `compute_metrics()` in `insect_brain.py` accesses private method `self.conv_detector._novel_classes(round_idx)`. This couples the brain to the internal implementation of `Conver",
+    "selected_fix": "Either promote `_novel_classes` to a public method in `ConvergenceDetector`, or catch only specific exceptions and let `AttributeError` propagate:\ntry:\n    novel = self.conv_detector._novel_classes(round_idx)\n    metrics[\"novel_count\"] = float(len(novel))\nexcept (ValueError, IndexError):\n    metrics[\"novel_count\"] = 0.0\n# Let AttributeError propagate \u2014 it's a code bug, not missing data",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 30,
+    "cluster_size": 5,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      10,
+      13
+    ],
+    "max_severity": 0.4,
+    "description": "In `verification_chain.py`, the `Signer` class docstring says it requires the `cryptography` library, but the `__init__` method does not check for `_HAS_CRYPTO`. If `cryptography` is not installed, th",
+    "selected_fix": "<<<<\n    def run_immune_pipeline(\n        self,",
+    "fix_source": "DeepSeek R10",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 31,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      0
+    ],
+    "max_severity": 0.3,
+    "description": "In `immune_agents.py`, the shadow logger directory resolution computes `_shadow_log_dir` twice \u2014 first relative to `__file__`'s parent's parent, then immediately overwritten with a different computati",
+    "selected_fix": "Remove the first (dead) assignment.",
+    "fix_source": "CC2 R0",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 32,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "DeepSeek"
+    ],
+    "rounds": [
+      0,
+      2,
+      3,
+      13
+    ],
+    "max_severity": 0.65,
+    "description": "In `verification_chain.py`, the `_digest_bytes` function raises a `ValueError` if the digest string does not match the regex `^sha256:[0-9a-f]{64}$`. The error message uses an f\u2011string that includes t",
+    "selected_fix": "Use word-boundary regex:\n    grounded_vars = [\n        k for k in all_constants\n        if re.search(rf'\\b{re.escape(str(k))}\\b', claim, re.IGNORECASE)\n    ]",
+    "fix_source": "CC2 R3",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 33,
+    "cluster_size": 6,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      2,
+      3,
+      5,
+      11,
+      12
+    ],
+    "max_severity": 0.95,
+    "description": "`helper_t_v2_shadow` uses `_confidence_to_log_odds` on raw confidences in the `[0,1]` range. For any confidence < 0.5, the computed log-odds is negative. When summing these negative values for multipl",
+    "selected_fix": "FIND: `_confidence_to_log_odds` and `_log_odds_to_confidence` calculate unipolar log-odds incorrectly in `bench/immune_agents.py`.\n\nFIX:\n<<<<\ndef _confidence_to_log_odds(c: float) -> float:\n    \"\"\"Convert confidence [0,1] to log-odds, clamped to avoid infinity.\"\"\"\n    c = max(0.01, min(0.99, c))\n    return _math.log(c / (1.0 - c))\n\ndef _log_odds_to_confidence(lo: float) -> float:\n    \"\"\"Convert log-odds back to confidence [0,1].\"\"\"\n    return 1.0 / (1.0 + _math.exp(-lo))\n====\ndef _confidence_to_",
+    "fix_source": "Gemini R1",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 34,
+    "cluster_size": 3,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      10,
+      11
+    ],
+    "max_severity": 0.8,
+    "description": "`_verify_sympy` uses `re.findall(r'\\b([a-z])\\b', claim)` to extract variables for SymPy's `local_dict`. This regex restricts matching to single lowercase letters. Findings citing multi-character varia",
+    "selected_fix": "FIND: SymPy dictionary variable autogeneration in `bench/immune_agents.py` uses overly restrictive regex.\n\nFIX:\n<<<<\n            # MF-30 fix: auto-generate symbols from claim instead of hardcoded 'n'\n            local_dict={{\n                'pi': sympy.pi, 'E': sympy.E, 'oo': sympy.oo,\n                'sqrt': sympy.sqrt, 'cos': sympy.cos, 'sin': sympy.sin,\n                'Eq': sympy.Eq, 'Gt': sympy.Gt, 'Lt': sympy.Lt,\n                'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And,\n          ",
+    "fix_source": "Gemini R1",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 35,
+    "cluster_size": 2,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      14
+    ],
+    "max_severity": 0.7,
+    "description": "`_extract_constants_from_ast` tests variable assignments strictly with `isinstance(node.value, ast.Constant)`. In Python's AST, negative numerical bounds (e.g., `-0.5`) parse as an `ast.UnaryOp` conta",
+    "selected_fix": "FIND: Negative numeric literal extraction defect in `bench/immune_agents.py`.\n\nFIX:\n<<<<\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Assign):\n            for target in node.targets:\n                if isinstance(target, ast.Name) and isinstance(node.value, ast.Constant):\n                    constants[target.id] = node.value.value\n        elif isinstance(node, ast.AnnAssign):\n            if (isinstance(node.target, ast.Name)\n                    and node.value is not None\n     ",
+    "fix_source": "Gemini R1",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 36,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      1
+    ],
+    "max_severity": 0.65,
+    "description": "`regulatory_t_v2_shadow` (now PRIMARY) drops the UNCERTAIN rate check that exists in v1 `regulatory_t_cell_check`. v1 contains:\nuncertain_rate = uncertain / total\nif uncertain_rate > 0.30:\n    reasons",
+    "selected_fix": "Port the UNCERTAIN rate check from v1 to v2:\n# After Check 1 in regulatory_t_v2_shadow:\nuncertain = sum(1 for v in final_verdicts.values() if v == \"UNCERTAIN\")\nuncertain_rate = uncertain / total\nif uncertain_rate > 0.30:\n    reasons.append(\n        f\"[RT_v2] UNCERTAIN rate {uncertain}/{total} ({uncertain_rate:.1%}) \"\n        f\"exceeds 30% \u2014 verification tools may be non-functional (fail-open)\"\n    )",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 37,
+    "cluster_size": 3,
+    "models": [
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      2
+    ],
+    "max_severity": 0.75,
+    "description": "`relay_directed` restricts directed messages using `m.round_idx >= current_round - 1`. Because `self.state.current_round` is updated to the *completed* `round_idx` during `persist()`, the expression e",
+    "selected_fix": "FIND: Erroneous preceding round boundary in `bench/insect_brain.py`.\n\nFIX:\n<<<<\n        current_round = self.state.current_round\n        directed_to_me = [\n            m for m in self.state.directed_messages\n            if m.recipient == model_label and m.round_idx >= current_round - 1\n        ]\n====\n        current_round = self.state.current_round\n        directed_to_me = [\n            m for m in self.state.directed_messages\n            if m.recipient == model_label and m.round_idx == current_r",
+    "fix_source": "Gemini R1",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 38,
+    "cluster_size": 6,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      3,
+      7,
+      9,
+      11,
+      12
+    ],
+    "max_severity": 0.85,
+    "description": "In `VerificationChain.verify_chain()`, if `self._records` is empty, it returns `True` immediately, skipping iteration over `self._epochs`. A maliciously assembled or tampered JSON file defining `\"reco",
+    "selected_fix": "Add an optional verify-on-load parameter:\n    @classmethod\n    def load_json(cls, path: str, verify: bool = False) -> \"VerificationChain\":\n        chain = cls()\n        chain._schema_version = data.get(\"schema_version\", SCHEMA_VERSION)\n        chain._records = data.get(\"records\", [])\n        chain._epochs = data.get(\"epochs\", [])\n        if verify:\n            valid, msg = chain.verify_chain()\n            if not valid:\n                raise ValueError(f\"Chain integrity verification failed: {msg}",
+    "fix_source": "CC2 R3",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 39,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      1
+    ],
+    "max_severity": 0.6,
+    "description": "`InsectBrain.check_convergence` sets `self.state.converged = True` when `round_idx >= self.config.max_rounds - 1` (max rounds reached), with reason `\"max_rounds_reached\"`. Per CDSFL \u00a73, budget exhaust",
+    "selected_fix": "Use a distinct state for budget exhaustion:\nif round_idx >= self.config.max_rounds - 1:\n    self.state.converged = False  # NOT converged\n    self.state.convergence_reason = f\"budget_exhausted({self.config.max_rounds})\"\n    return True  # still terminates the loop\nAnd in `signal_complete()`, add a `BUDGET_EXHAUSTED` status:\nsignal = {\n    \"status\": \"CONVERGED\" if (self.state.converged and \"budget\" not in self.state.convergence_reason) else\n              \"BUDGET_EXHAUSTED\" if \"budget\" in self.sta",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 40,
+    "cluster_size": 2,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      1,
+      9
+    ],
+    "max_severity": 0.58,
+    "description": "`VerificationChain.records` and `.epochs` properties return shallow copies (`list(self._records)`). The list is new, but the dicts inside are shared references. External code can mutate internal chain",
+    "selected_fix": "FIX: This is by-design for RFC 9162 compliance (cumulative epochs allow independent verification). Document the O(K*N) cost explicitly and add an optional `incremental=True` parameter to `verify_chain()` that skips epoch verification for epochs fully covered by a later epoch.\n\n```python\ndef verify_chain(self, verifier=None, skip_covered_epochs=False):\n    # ... existing record verification ...\n    epochs_to_check = self._epochs\n    if skip_covered_epochs and len(self._epochs) > 1:\n        # Only",
+    "fix_source": "CC2 R9",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 41,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex"
+    ],
+    "rounds": [
+      1,
+      2,
+      5,
+      6
+    ],
+    "max_severity": 0.55,
+    "description": "`run_immune_pipeline` rejection_rate calculation excludes skin barrier rejections. In active mode (not observation_only), findings that fail the skin barrier are removed from `new_findings` before the",
+    "selected_fix": "Include barrier rejections in the rate calculation:\ntotal_submitted = len(triaged) + len(barrier_rejected)\ntotal_removed = rej_count + len(barrier_rejected)\nrejection_rate = total_removed / max(total_submitted, 1)",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 42,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      1
+    ],
+    "max_severity": 0.4,
+    "description": "Dead code in shadow log directory setup. Two consecutive assignments to `_shadow_log_dir`:\n_shadow_log_dir = _os.path.join(\n    _os.path.dirname(_os.path.dirname(__file__)), \"bench\", \"logs\"\n)\n# Resolv",
+    "selected_fix": "Delete the first assignment (lines computing `dirname(dirname(__file__))` + \"bench/logs\").",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 43,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      1
+    ],
+    "max_severity": 0.35,
+    "description": "`_format_responses_with_directed` directed message round filter is broader than documented. The docstring says \"Only inject messages from the immediately preceding round.\" The filter is `m.round_idx >",
+    "selected_fix": "Either fix the filter to match the docstring (`m.round_idx == current_round`) or update the docstring to match the implementation. Recommended: use `round_idx - 1` (the parameter, not `current_round`) for clarity:\ndirected_to_me = [\n    m for m in self.state.directed_messages\n    if m.recipient == model_label and m.round_idx == round_idx - 1\n]",
+    "fix_source": "CC2 R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 44,
+    "cluster_size": 4,
+    "models": [
+      "ChatGPT",
+      "Codex",
+      "Gemini"
+    ],
+    "rounds": [
+      1,
+      4,
+      10,
+      11
+    ],
+    "max_severity": 0.3,
+    "description": "{\n  \"responses_to_addressed_messages\": [],\n  \"directed_messages\": [\n    \"@CC2: Please verify whether F004 below reproduces in your reading: load_checkpoint() reconstructs round_records by enumerate(se",
+    "selected_fix": "",
+    "fix_source": "ChatGPT R1",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 45,
+    "cluster_size": 4,
+    "models": [
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      2,
+      11,
+      13,
+      14
+    ],
+    "max_severity": 0.85,
+    "description": "In `VerificationChain._verify_epoch()`, the Merkle root verification incorrectly uses *all* chain records up to `record_count` instead of only the records belonging to that epoch. The epoch sealing in",
+    "selected_fix": "Replace the leaves extraction in `_verify_epoch()` with an explicit slice and add a safety check that the epoch's `record_count` equals the length of the chain at sealing time (or document the cumulative assumption).",
+    "fix_source": "DeepSeek R2",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 46,
+    "cluster_size": 2,
+    "models": [
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      2,
+      6
+    ],
+    "max_severity": 0.8,
+    "description": "Findings rejected by the `skin_barrier_check` disappear entirely from the `ImmuneResponse` totals. They are stripped from `new_findings` but are never added to `rejected` or `total` calculations. This",
+    "selected_fix": "Explicitly add `barrier_rejected` to the rejected tally and total length.",
+    "fix_source": "Gemini R2",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 47,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      2
+    ],
+    "max_severity": 0.7,
+    "description": "The `VerificationChain` class's `load_json` method does not validate the structure of the loaded `records` and `epochs` lists. Malformed JSON (missing keys, wrong types) will cause runtime exceptions ",
+    "selected_fix": "Add validation that `records` and `epochs` are lists, and that each record has the required keys (`sealed_body`, `entry_hash`, `prev_hash`, `chain_hash`, `signature`).",
+    "fix_source": "DeepSeek R2",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 48,
+    "cluster_size": 2,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      2,
+      6
+    ],
+    "max_severity": 0.62,
+    "description": "`immune_agents.py` \u2014 C5-03 XML boundary tag fix is incomplete. `_build_ct_prompt()` wraps finding descriptions in `<finding_description>...</finding_description>` tags, but does not escape the content",
+    "selected_fix": "FIND: `immune_agents.py`, `_build_ct_prompt()`, XML wrapping.\nFIX: Escape XML-special sequences in the description before wrapping:\ndef _escape_xml_content(text: str) -> str:\n        \"\"\"Escape content that could break XML boundary tags.\"\"\"\n        return text.replace(\"</finding_description>\", \"&lt;/finding_description&gt;\")",
+    "fix_source": "CC2 R2",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 49,
+    "cluster_size": 4,
+    "models": [
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      2,
+      3,
+      8,
+      12
+    ],
+    "max_severity": 0.76,
+    "description": "In `insect_brain.py`, the `_save_checkpoint` method serializes round records but intentionally omits `model_responses` (comment: \"model_responses intentionally omitted \u2014 large, already in round_XX.jso",
+    "selected_fix": "Either store `model_responses` in the checkpoint (compress if large) or document that checkpoint recovery is only for convergence detection and metrics, not for full conversational relay. The latter is acceptable if the checkpoint is only used to resume convergence state. We'll add a warning comment and ensure `load_checkpoint` logs that responses are missing.",
+    "fix_source": "DeepSeek R2",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 50,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      2
+    ],
+    "max_severity": 0.3,
+    "description": "@Gemini: I confirm your prior F001/F002/F003 family around Helper-T v2 and SymPy variable extraction is high-value, but there is a further downstream defect you did not trace: `_reconciliation_gate()`",
+    "selected_fix": "",
+    "fix_source": "ChatGPT R2",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 51,
+    "cluster_size": 3,
+    "models": [
+      "CC2",
+      "ChatGPT"
+    ],
+    "rounds": [
+      3,
+      5,
+      10
+    ],
+    "max_severity": 0.79,
+    "description": "FIND: `bench/immune_agents.py`, `run_immune_pipeline()` return contract. Barrier-rejected findings are dropped from both `filtered_findings` and `rejected_findings` in active mode. Evidence: when `obs",
+    "selected_fix": "FIX: The override must preserve barrier rejections and maintain finding conservation. This extends ChatGPT F013's fix with autoimmune-specific handling:\n\n<<<<\n    # If autoimmune flagged, override: pass everything through\n    if autoimmune_flag and not observation_only:\n        filtered = [tf.finding for tf in triaged]\n        rejected = []\n>>>>\n====\n    # If autoimmune flagged, override immune-stage rejections only.\n    # Barrier rejections are policy-level and persist through override.\n    if ",
+    "fix_source": "CC2 R5",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 52,
+    "cluster_size": 5,
+    "models": [
+      "ChatGPT",
+      "Gemini"
+    ],
+    "rounds": [
+      3,
+      5,
+      7,
+      8,
+      14
+    ],
+    "max_severity": 0.76,
+    "description": "FIND: `bench/verification_chain.py`, CLI proof verification uses a different acceptance contract from the library API. Evidence: `VerificationChain.verify_inclusion_proof()` requires `merkle_root` in ",
+    "selected_fix": "FIX: Verify loaded chains before appending. Patch `_cli_record()`.\n\n<<<<\n    try:\n        chain = VerificationChain.load_json(chain_path)\n    except FileNotFoundError:\n        chain = VerificationChain()\n\n    payload = json.loads(args.payload)\n    record = chain.append_record(\n>>>>\n====\n    try:\n        chain = VerificationChain.load_json(chain_path)\n    except FileNotFoundError:\n        chain = VerificationChain()\n    else:\n        valid, msg = chain.verify_chain()\n        if not valid:\n       ",
+    "fix_source": "ChatGPT R7",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 53,
+    "cluster_size": 2,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      3,
+      12
+    ],
+    "max_severity": 0.62,
+    "description": "bench/immune_agents.py \u2014 `_reconciliation_gate()` disagreement resolution selects the higher-confidence verdict with no minimum margin. Evidence: when `v1v != v2v`, the code does `if v1c >= v2c: recon",
+    "selected_fix": "Add a minimum margin for disagreement resolution; fall back to UNCERTAIN when the margin is below threshold:\n    elif v1v != v2v:\n        margin = abs(v1c - v2c)\n        if margin < 0.10:\n            # Near-tie: neither pipeline has decisive evidence\n            reconciled[fid] = \"UNCERTAIN\"\n            reconciled_conf[fid] = max(v1c, v2c)\n        elif v1c >= v2c:\n            reconciled[fid] = v1v\n            reconciled_conf[fid] = v1c\n        else:\n            reconciled[fid] = v2v\n            ",
+    "fix_source": "CC2 R3",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 54,
+    "cluster_size": 2,
+    "models": [
+      "ChatGPT",
+      "Gemini"
+    ],
+    "rounds": [
+      3,
+      4
+    ],
+    "max_severity": 0.3,
+    "description": "{\n  \"responses_to_addressed_messages\": [\n    {\n      \"recipient\": \"CC2\",\n      \"content\": \"Regarding your Question from Round 1: Yes, `seal_epoch` rehashes the entire chain. Given the size constraints",
+    "selected_fix": "",
+    "fix_source": "Gemini R3",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 55,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      4
+    ],
+    "max_severity": 0.7,
+    "description": "In `bench/immune_agents.py`, `run_immune_pipeline()`'s threadpool executes CT v1 and CT v2 concurrently, both invoking the same `claude CLI` binary. This causes resource contention and may lead to tim",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R4",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 56,
+    "cluster_size": 3,
+    "models": [
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      4,
+      7,
+      10
+    ],
+    "max_severity": 0.95,
+    "description": "In `bench/immune_agents.py`, `_verify_z3_v2_shadow()`'s `_extract_constants_from_ast` only captures assignments with `ast.Constant` nodes, missing named constants (e.g., `THRESHOLD = 0.5`) that are ex",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R4",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 57,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex"
+    ],
+    "rounds": [
+      4,
+      8,
+      11,
+      12
+    ],
+    "max_severity": 0.81,
+    "description": "FIND: `bench/insect_brain.py`, `signal_complete()`. The completion signal writes `active_models` from mutable live state: `\"active_models\": self.state.active_models`. Evidence: `handle_model_failure()",
+    "selected_fix": "FIX: (1) Include barrier rejections in regulatory T's total count. (2) Restore barrier-rejected findings during autoimmune recovery unless they failed with high-confidence structural reasons. (3) Include barrier-rejected findings in `ImmuneResponse.rejected_findings`.\n\n```python\n    # Before regulatory T check:\n    total_input = len(new_findings) + len(barrier_rejected)  # pre-barrier count\n    total_removed = rej_count + len(barrier_rejected)\n    effective_rejection_rate = total_removed / max(t",
+    "fix_source": "CC2 R11",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 58,
+    "cluster_size": 7,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex",
+      "DeepSeek",
+      "Gemini"
+    ],
+    "rounds": [
+      4,
+      5,
+      8,
+      9,
+      11,
+      13,
+      14
+    ],
+    "max_severity": 0.85,
+    "description": "In `bench/verification_chain.py`, `_verify_epoch()` validates individual epoch Merkle roots but does not verify epoch ordering and monotonicity. An attacker could reorder, duplicate, or insert gaps in",
+    "selected_fix": "FIX: Include an `authentication_method` field in `sealed_body` that records whether signing was used at creation time. This field is then covered by `entry_hash` and any tampering to the signature metadata breaks the chain.\n\nIn `_build_sealed_body()`, add:\n```python\nbody = {\n    \"schema_version\": SCHEMA_VERSION,\n    \"seq\": seq,\n    \"artifact_type\": artifact_type,\n    \"timestamp_utc\": timestamp_utc,\n    \"recorded_by\": recorded_by,\n    \"storage_mode\": storage_mode,\n    \"payload_hash\": payload_hash",
+    "fix_source": "CC2 R9",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 59,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      4
+    ],
+    "max_severity": 0.52,
+    "description": "FIND: `bench/verification_chain.py`, `_normalize_timestamp()`. The output format `dt.strftime('%Y-%m-%dT%H:%M:%SZ')` silently truncates sub-second precision. Evidence: input `2026-04-05T10:30:15.12345",
+    "selected_fix": "FIX: preserve sub-second precision in output format:\n\n```python\n# Replace strftime with isoformat for precision preservation\niso = dt.isoformat()\n# Ensure trailing Z for UTC\nif iso.endswith('+00:00'):\n    iso = iso[:-6] + 'Z'\nreturn iso\n```\n\nThis preserves microseconds when present and produces the same output for whole-second timestamps.",
+    "fix_source": "CC2 R4",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 60,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      5
+    ],
+    "max_severity": 0.63,
+    "description": "bench/verification_chain.py \u2014 `save_json()` atomic-write path does not fsync either the temp file or the containing directory before `os.replace()`. Evidence: it writes with `json.dump(...)` and immed",
+    "selected_fix": "FIND: `bench/verification_chain.py`, method `save_json()`. The implementation is rename-atomic but not crash-durable.\n\nFIX:\n<<<<\n        try:\n            with os.fdopen(fd, \"w\") as f:\n                json.dump(data, f, indent=2)\n            os.replace(tmp_path, path)\n        except BaseException:\n====\n        try:\n            with os.fdopen(fd, \"w\") as f:\n                json.dump(data, f, indent=2)\n                f.flush()\n                os.fsync(f.fileno())\n            os.replace(tmp_path, p",
+    "fix_source": "ChatGPT R5",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 61,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      5
+    ],
+    "max_severity": 0.63,
+    "description": "FIND: `bench/immune_agents.py`, `_verify_z3_v2_shadow()`. The `grounded_vars` computation uses Python string containment (`k in claim`), not word-boundary matching. Evidence: `grounded_vars = [k for k",
+    "selected_fix": "FIX: Use word-boundary regex matching instead of substring containment:\n\n<<<<\n    grounded_vars = [k for k in all_constants if k in claim]\n>>>>\n====\n    grounded_vars = [\n        k for k in all_constants\n        if re.search(rf'\\b{re.escape(str(k))}\\b', claim, re.IGNORECASE)\n    ]\n>>>>",
+    "fix_source": "CC2 R5",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 62,
+    "cluster_size": 2,
+    "models": [
+      "CC2",
+      "Gemini"
+    ],
+    "rounds": [
+      5,
+      12
+    ],
+    "max_severity": 0.85,
+    "description": "FIND: `bench/insect_brain.py`, `signal_complete()`. The completion signal file is written via `filepath.write_text(json.dumps(signal, indent=2))` \u2014 the same non-atomic pattern that ChatGPT F012 identi",
+    "selected_fix": "FIX: Apply the same `_atomic_write_json()` helper from F012 to `signal_complete()`:\n\n<<<<\n        filepath = self.logs_dir / \"completion_signal.json\"\n        filepath.write_text(json.dumps(signal, indent=2), encoding=\"utf-8\")\n>>>>\n====\n        filepath = self.logs_dir / \"completion_signal.json\"\n        self._atomic_write_json(filepath, signal)\n>>>>",
+    "fix_source": "CC2 R5",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 63,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      5
+    ],
+    "max_severity": 0.3,
+    "description": "FIND: In `bench/verification_chain.py`, the `save_json()` method (lines 248-271) attempts atomic write via `tempfile.mkstemp(dir=dir_name, suffix=\".tmp\")`, where `dir_name` is derived from the target ",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R5",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 64,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      7
+    ],
+    "max_severity": 0.85,
+    "description": "In `immune_agents.py`, `nk_cell_v2_shadow`'s intra-round deduplication misses duplicates of known false positives. If a finding is caught by the FP check, `continue` skips the `accepted_this_round.app",
+    "selected_fix": "",
+    "fix_source": "Gemini R7",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 65,
+    "cluster_size": 2,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      7,
+      10
+    ],
+    "max_severity": 0.84,
+    "description": "FIND: `bench/verification_chain.py`, method `verify_inclusion_proof()`. It verifies only cryptographic consistency of `proof['chain_hash']` with the supplied Merkle root, but it does not bind the clai",
+    "selected_fix": "FIX: Either remove `index` from the proof schema or explicitly reject unexpected proof fields that are not verified. Minimum corrective patch: stop emitting unverifiable `index` from `build_inclusion_proof()` and document membership-only semantics.\n\n<<<<\n        return {\n            \"index\": index,\n            \"chain_hash\": self._records[index][\"chain_hash\"],\n            \"proof\": proof_steps,\n            \"merkle_root\": \"sha256:\" + root.hex(),\n        }\n>>>>\n====\n        return {\n            \"cha",
+    "fix_source": "ChatGPT R7",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 66,
+    "cluster_size": 2,
+    "models": [
+      "CC2",
+      "ChatGPT"
+    ],
+    "rounds": [
+      7,
+      11
+    ],
+    "max_severity": 0.68,
+    "description": "FIND: bench/immune_agents.py, run_immune_pipeline(), autoimmune override path. When autoimmune_flag is True and observation_only is False, the override sets:\n  filtered = [tf.finding for tf in triaged",
+    "selected_fix": "FIX: Include barrier-rejected findings in the rejected list even under autoimmune override.\n\n<<<<\n    if autoimmune_flag and not observation_only:\n        filtered = [tf.finding for tf in triaged]\n        rejected = []\n====\n    if autoimmune_flag and not observation_only:\n        filtered = [tf.finding for tf in triaged]\n        rejected = list(barrier_rejected)  # Barrier rejections survive autoimmune override\n>>>>\n\nFOLLOW: This is consistent with the barrier's documented purpose as a DETERMINI",
+    "fix_source": "CC2 R7",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 67,
+    "cluster_size": 4,
+    "models": [
+      "CC2",
+      "ChatGPT",
+      "Codex"
+    ],
+    "rounds": [
+      7,
+      8,
+      10,
+      11
+    ],
+    "max_severity": 0.64,
+    "description": "FIND: bench/immune_agents.py, module-level lines. `PYTHON_TOOLS = _find_python_with_tools()` and `CLAUDE_CLI = _find_claude_cli()` execute subprocess calls at import time. _find_python_with_tools() tr",
+    "selected_fix": "FIX: Add early termination to v2, matching v1's MF-19 fix:\n\n```python\n        for pf in prior_findings:\n            sim = _finding_similarity(f, pf)\n            if sim > best_sim:\n                best_sim = sim\n                best_match = pf.finding_id\n                if best_sim >= tau_sim:\n                    break  # MF-19: early termination (v2 regression fix)\n```",
+    "fix_source": "CC2 R11",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 68,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      8
+    ],
+    "max_severity": 0.6,
+    "description": "In `insect_brain.py`, `_format_responses_with_directed` filters directed messages using `m.round_idx >= current_round - 1`, where `current_round` is the last completed round. This incorrectly includes",
+    "selected_fix": "Change the filter to `m.round_idx == current_round`.",
+    "fix_source": "DeepSeek R8",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 69,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      9
+    ],
+    "max_severity": 0.6,
+    "description": "In `verification_chain.py`, the `save_json()` method (lines ~460-480) uses atomic write (write to temp file, then rename) but does not `fsync` the directory after rename. On systems with unstable powe",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R9",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 70,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      9
+    ],
+    "max_severity": 0.3,
+    "description": "RESPONSE_TO: CC2  \nConfirmed on your dependency ordering. I adopt it. In particular, step 4 (immune response persistence) must serialize enough state to avoid replaying a different terminal outcome af",
+    "selected_fix": "",
+    "fix_source": "ChatGPT R9",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 71,
+    "cluster_size": 2,
+    "models": [
+      "CC2",
+      "Gemini"
+    ],
+    "rounds": [
+      10,
+      11
+    ],
+    "max_severity": 0.9,
+    "description": "`helper_t_v2_shadow` mathematically misinterprets CDSFL confidence magnitudes as raw probabilities in its log-odds aggregation. A `confidence=0.2` maps to a negative log-odds (`ln(0.2/0.8) = -1.38`), ",
+    "selected_fix": "FIX: DUPLICATE verdicts from NK Cell should bypass log-odds aggregation entirely. They represent a categorical determination (this finding IS a duplicate), not a probabilistic one. In `helper_t_v2_shadow`, handle DUPLICATE verdicts at the same level as the existing `if tf.is_duplicate` early exit:\n\n```python\n        # Check if ANY verdict is DUPLICATE \u2014 categorical, not probabilistic\n        dup_verdicts = [v for v in fv if v.verdict == 'DUPLICATE']\n        if dup_verdicts:\n            final_ver",
+    "fix_source": "CC2 R11",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 72,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.85,
+    "description": "`run_immune_pipeline` attaches `immune_response` to the in-memory `RoundRecord` *after* `persist()` has already written the JSON and checkpoint to disk. If the orchestrator relies on `load_checkpoint`",
+    "selected_fix": "In `insect_brain.py`, `run_immune_pipeline`:\n<<<<\n        # Store immune response in the round record\n        if self.state.round_records:\n            self.state.round_records[-1].immune_response = response\n\n        return response\n====\n        # Store immune response in the round record\n        if self.state.round_records:\n            self.state.round_records[-1].immune_response = response\n            self._save_round_json(self.state.round_records[-1])\n            self._save_checkpoint()\n\n     ",
+    "fix_source": "Gemini R10",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 73,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.75,
+    "description": "The Dendritic Cell triage joins multiple mathematical equations using the literal string `\" AND \"` (e.g., `x > 0 AND y < 5`). This produces syntactically invalid Python, causing `_verify_sympy` to imm",
+    "selected_fix": "",
+    "fix_source": "Gemini R10",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 74,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.67,
+    "description": "FIND: `bench/immune_agents.py`, `skin_barrier_check()` docstring/contract is false after WP6a activation. The function docstring still states: \"Returns: (all_findings, barrier_results) \u2014 findings unch",
+    "selected_fix": "FIX: update the docstring to the current semantics and remove the shadow-only claim.\n\n<<<<\ndef skin_barrier_check(\n    findings: List[Finding],\n    source_paths: List[str],\n) -> Tuple[List[Finding], List[SkinBarrierResult]]:\n    \"\"\"Deterministic pre-filter: verify that cited code exists.\n\n    Checks each finding for file:line citations. If the cited code doesn't\n    exist at the cited location, the finding fails the barrier.\n\n    In shadow mode (Run 11), all findings pass through regardless.\n   ",
+    "fix_source": "ChatGPT R10",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 75,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.65,
+    "description": "`VerificationChain.verify_chain()` loop iterates through `_epochs` blindly but fails to assert epoch metadata integrity. An attacker can reorder epochs or modify the `epoch_index` and `record_count` o",
+    "selected_fix": "",
+    "fix_source": "Gemini R10",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 76,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.61,
+    "description": "FIND: `bench/immune_agents.py`, `tool_usage` semantics are internally inconsistent. Evidence: in `run_immune_pipeline()`, `tool_usage[tool_used]` is incremented once per emitted `CellVerdict`, but for",
+    "selected_fix": "FIX: count executions consistently, and add a separate blocked counter if needed.\n\n<<<<\n    timings[\"skin_barrier\"] = round(time.monotonic() - t0, 4)\n    tool_usage[\"skin_barrier\"] = sum(1 for r in barrier_results if not r.passed)\n>>>>\n====\n    timings[\"skin_barrier\"] = round(time.monotonic() - t0, 4)\n    tool_usage[\"skin_barrier\"] = len(barrier_results)\n    tool_usage[\"skin_barrier_blocked\"] = sum(1 for r in barrier_results if not r.passed)\n>>>>",
+    "fix_source": "ChatGPT R10",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 77,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.5,
+    "description": "In `insect_brain.py`, `_format_responses_with_directed()` filters directed messages using `m.round_idx >= current_round - 1`. This includes messages from the current round (which haven't been sent yet",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R10",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 78,
+    "cluster_size": 1,
+    "models": [
+      "DeepSeek"
+    ],
+    "rounds": [
+      10
+    ],
+    "max_severity": 0.3,
+    "description": "In `insect_brain.py`, `_save_round_json()` truncates model responses at 10,000 characters via `text[:10000]` but uses string slicing on possibly multi-byte UTF-8 characters, risking cutting in the mid",
+    "selected_fix": "",
+    "fix_source": "DeepSeek R10",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 79,
+    "cluster_size": 1,
+    "models": [
+      "ChatGPT"
+    ],
+    "rounds": [
+      12
+    ],
+    "max_severity": 0.76,
+    "description": "Epoch sealing is not durable under crash between memory mutation and file persistence. `seal_epoch()` appends to `self._epochs` in memory, but the CLI persists it only afterward via `save_json()`. If ",
+    "selected_fix": "FIND: `bench/verification_chain.py`, methods `seal_epoch()` and `_cli_seal_epoch()`. The operation is split into in-memory mutation then external persistence, with no idempotent epoch identity. Evidence: `epoch = {..., \"sealed_at\": _utc_now()}` followed by `self._epochs.append(epoch)`; persistence happens only in the CLI wrapper.\n\nFIX:\n<<<<\n    def seal_epoch(self) -> dict:\n        \"\"\"Seal all current records into a Merkle epoch.\n\n        Returns an epoch dict containing the merkle_root and reco",
+    "fix_source": "ChatGPT R12",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 80,
+    "cluster_size": 2,
+    "models": [
+      "ChatGPT",
+      "Codex"
+    ],
+    "rounds": [
+      12
+    ],
+    "max_severity": 0.74,
+    "description": "Directed-message extraction classifies every `@tag` hit as a question, even when the textual form is clearly a response or challenge, and this semantic misclassification is persisted. Evidence: `_PATT",
+    "selected_fix": "FIND: `bench/insect_brain.py`, constants `_DIRECTED_PATTERNS` and `_PATTERN_TYPE_MAP`, plus `extract_directed_messages()`. Broad `@tag` parsing always maps to `question`. Evidence: explicit map entry `0: \"question\"` and no content-based refinement before persistence.\n\nFIX:\n<<<<\n                msg_type = self._PATTERN_TYPE_MAP.get(pat_idx, \"extension\")\n                messages.append(DirectedMessage(\n                    sender=model_label,\n                    recipient=recipient,\n               ",
+    "fix_source": "ChatGPT R12",
+    "has_code_fix": true
+  },
+  {
+    "bug_id": 81,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      14
+    ],
+    "max_severity": 0.8,
+    "description": "In `bench/immune_agents.py`, `_parse_ct_output()`'s Strategy 1b parses JSON from markdown code blocks using `re.search()`, which matches only the *first* block. If the LLM generates a preliminary reas",
+    "selected_fix": "Use `re.finditer` to try all code blocks until one successfully parses as JSON.",
+    "fix_source": "Gemini R14",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 82,
+    "cluster_size": 1,
+    "models": [
+      "Gemini"
+    ],
+    "rounds": [
+      14
+    ],
+    "max_severity": 0.75,
+    "description": "The Cytotoxic T Cell (CT) prompt instructs the agent to extract a `code_snippet` of \"1-5 lines, verbatim\" starting at the cited line. However, `_verify_ct_claim` artificially restricts the verificatio",
+    "selected_fix": "Expand the upper bound of the verification window to `line_num + 5` so it can cleanly encapsulate 5-line snippets originating from the cited line.",
+    "fix_source": "Gemini R14",
+    "has_code_fix": false
+  },
+  {
+    "bug_id": 83,
+    "cluster_size": 1,
+    "models": [
+      "CC2"
+    ],
+    "rounds": [
+      14
+    ],
+    "max_severity": 0.58,
+    "description": "DC v2 classification confidence is computed but silently discarded at the interface boundary. `_classify_claim_v2()` returns a 3-tuple `(ClaimType, str, float)` where the float is a classification con",
+    "selected_fix": "FIND: `bench/immune_agents.py`, `TriagedFinding` dataclass and `dendritic_cell_v2_shadow()`.\n\nFIX: Add classification confidence to `TriagedFinding` and store it:\n\n<<<<\n@dataclass\nclass TriagedFinding:\n    \"\"\"Finding annotated by Dendritic Cell with claim classification.\"\"\"\n    finding: Finding\n    claim_type: ClaimType\n    extracted_claim: str = \"\"       # the testable assertion pulled from description\n    is_duplicate: bool = False      # NK Cell flag\n    duplicate_of: Optional[str] = None\n   ",
+    "fix_source": "CC2 R14",
+    "has_code_fix": true
+  }
+]

@@ -30,7 +30,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -307,21 +309,56 @@ class InsectBrain:
         """Format findings as summary only (ID + severity + one line).
 
         Used when full text exceeds context budget. This is a context reset.
+        Findings with accepted fixes are marked CLOSED — models must not
+        relitigate these. First sufficient fix wins (Occam's razor).
         """
-        header = (
+        # CLOSED = fix exists AND programmatically verified (tools passed)
+        closed = [f for f in findings if f.proposed_fix.strip() and f.verified]
+        # PENDING = fix proposed but not yet verified by tools
+        pending = [f for f in findings if f.proposed_fix.strip() and not f.verified]
+        # OPEN = no fix proposed
+        open_findings = [f for f in findings if not f.proposed_fix.strip()]
+
+        lines = []
+        lines.append(
             f"(CONTEXT RESET: {len(findings)} prior findings exist. "
-            f"Showing ID + severity + one-line summary only. "
-            f"Do NOT repeat these — find NEW issues.)\n"
+            f"{len(closed)} CLOSED (verified fix), "
+            f"{len(pending)} PENDING (fix unverified), "
+            f"{len(open_findings)} OPEN (no fix). "
+            f"Do NOT propose alternative fixes for CLOSED bugs — "
+            f"first verified fix wins. Find NEW issues only.)\n"
         )
-        lines = [header]
-        for f in findings:
-            # First 80 chars of description
-            desc_short = f.description[:80].replace("\n", " ")
-            if len(f.description) > 80:
-                desc_short += "..."
-            lines.append(
-                f"  {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
-            )
+
+        if closed:
+            lines.append("── CLOSED (programmatically verified fix — do not relitigate) ──")
+            for f in closed:
+                # Bug#15: Replace newlines first, then truncate
+                desc_clean = f.description.replace("\n", " ")
+                desc_short = desc_clean[:57] + "..." if len(desc_clean) > 60 else desc_clean
+                lines.append(
+                    f"  [CLOSED] {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
+                )
+            lines.append("")
+
+        if pending:
+            lines.append("── PENDING (fix proposed, awaiting tool verification) ──")
+            for f in pending:
+                desc_clean = f.description.replace("\n", " ")
+                desc_short = desc_clean[:67] + "..." if len(desc_clean) > 70 else desc_clean
+                lines.append(
+                    f"  [PENDING] {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
+                )
+            lines.append("")
+
+        if open_findings:
+            lines.append("── OPEN (no fix yet — contributions welcome) ──")
+            for f in open_findings:
+                desc_clean = f.description.replace("\n", " ")
+                desc_short = desc_clean[:77] + "..." if len(desc_clean) > 80 else desc_clean
+                lines.append(
+                    f"  {f.finding_id} (sev={f.severity:.2f}): {desc_short}"
+                )
+
         return "\n".join(lines)
 
     # ───────────────────────────────────────────────────────────────────────
@@ -835,6 +872,23 @@ class InsectBrain:
 
         return record
 
+    def _atomic_write_json(self, filepath: Path, data: Any) -> None:
+        """Write JSON atomically via temp file + rename (Bug#62)."""
+        dir_name = str(filepath.parent)
+        fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, str(filepath))
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+
     def _save_round_json(self, record: RoundRecord) -> None:
         """Save a single round's data as JSON."""
         filepath = self.logs_dir / f"round_{record.round_idx:02d}.json"
@@ -859,7 +913,8 @@ class InsectBrain:
                 for f in record.findings
             ],
             "model_responses": {
-                label: text[:10000]  # cap raw text to prevent bloat
+                # Bug#48: Add truncation marker when text is capped
+                label: (text[:10000] + "\n[TRUNCATED at 10000 chars]" if len(text) > 10000 else text)
                 for label, text in record.model_responses.items()
             },
         }
@@ -887,7 +942,7 @@ class InsectBrain:
 
         serialised_round_records = []
         for rr in self.state.round_records:
-            serialised_round_records.append({
+            rr_data: Dict[str, Any] = {
                 "round_idx": rr.round_idx,
                 "timestamp": rr.timestamp,
                 "finding_count": rr.finding_count,
@@ -895,7 +950,19 @@ class InsectBrain:
                 "failures": rr.failures,
                 "metrics": rr.metrics,
                 # model_responses intentionally omitted — large, already in round_XX.json
-            })
+            }
+            # Bug#13: Serialise immune_response if present
+            if rr.immune_response is not None:
+                try:
+                    from dataclasses import asdict
+                    ir_dict = asdict(rr.immune_response)
+                    # Round-trip through JSON with default=str to handle enums etc.
+                    rr_data["immune_response"] = json.loads(
+                        json.dumps(ir_dict, default=str)
+                    )
+                except Exception:
+                    rr_data["immune_response"] = str(rr.immune_response)
+            serialised_round_records.append(rr_data)
 
         serialised_directed = [
             {
@@ -980,15 +1047,16 @@ class InsectBrain:
             metrics["kappa_rate"] = 0.0
 
         # Gamma estimate (Duane model)
+        # Bug#6: Need round_idx >= 2 for meaningful growth rate (3+ data points)
         try:
-            cum_classes = self.conv_detector.get_cumulative_classes(round_idx)
-            if round_idx > 0 and len(cum_classes) > 0:
-                import math
+            import math
+            if round_idx >= 2:
+                cum_classes = self.conv_detector.get_cumulative_classes(round_idx)
                 cum_1 = len(self.conv_detector.get_cumulative_classes(0))
-                if cum_1 > 0 and round_idx > 0:
+                if cum_1 > 0 and len(cum_classes) > 0:
                     gamma = 1.0 - (
                         (math.log(len(cum_classes)) - math.log(cum_1))
-                        / max(math.log(round_idx + 1), 0.001)
+                        / math.log(round_idx + 1)
                     )
                     metrics["gamma_hat"] = gamma
                 else:
@@ -999,10 +1067,11 @@ class InsectBrain:
             metrics["gamma_hat"] = 0.0
 
         # Novel count this round
+        # Bug#19: Use public interface; let AttributeError propagate (code bug)
         try:
             novel = self.conv_detector._novel_classes(round_idx)
             metrics["novel_count"] = float(len(novel))
-        except Exception:
+        except (ValueError, IndexError):
             metrics["novel_count"] = 0.0
 
         # Totals
@@ -1043,11 +1112,13 @@ class InsectBrain:
 
         Also checks for maximum rounds reached.
         """
-        # Maximum rounds hard stop
-        if round_idx >= self.config.max_rounds - 1:
-            self.state.converged = True
-            self.state.convergence_reason = f"max_rounds_reached({self.config.max_rounds})"
-            return True
+        # Maximum rounds hard stop — budget exhaustion, NOT convergence.
+        # The experiment did not converge; it ran out of rounds.
+        # Bug#36: Guard against max_rounds <= 0
+        if self.config.max_rounds > 0 and round_idx >= self.config.max_rounds - 1:
+            self.state.converged = False  # NOT converged — budget exhausted
+            self.state.convergence_reason = f"BUDGET_EXHAUSTED({self.config.max_rounds})"
+            return True  # Still terminates the experiment
 
         # Minimum rounds gate
         if round_idx < self.config.min_rounds_for_convergence:
@@ -1078,11 +1149,13 @@ class InsectBrain:
         """Hand findings to the 6-cell immune verification pipeline.
 
         The brain does not evaluate the results — it stores them and
-        passes through whatever the pipeline produces.
+        passes through whatever the pipeline produces. Prior findings
+        are supplied from all_findings for NK cell deduplication.
 
         Args:
             findings: Findings from current round.
             observation_only: If True, pipeline logs but doesn't filter.
+                Defaults to False.
 
         Returns:
             ImmuneResponse from the pipeline.
@@ -1131,14 +1204,22 @@ class InsectBrain:
         total_findings = sum(len(rnd) for rnd in self.state.all_findings)
         total_rounds = len(self.state.round_records)
 
+        # Determine status — distinguish budget exhaustion from incomplete
+        if self.state.converged:
+            status = "CONVERGED"
+        elif "BUDGET_EXHAUSTED" in self.state.convergence_reason:
+            status = "BUDGET_EXHAUSTED"
+        elif self.state.failed:
+            status = "FAILED"
+        else:
+            status = "INCOMPLETE"
+
         signal = {
-            "status": "CONVERGED" if self.state.converged else (
-                "FAILED" if self.state.failed else "INCOMPLETE"
-            ),
+            "status": status,
             "reason": self.state.convergence_reason or self.state.failure_reason,
             "total_rounds": total_rounds,
             "total_findings": total_findings,
-            "active_models": self.state.active_models,
+            "active_models": list(self.state.active_models),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -1159,9 +1240,9 @@ class InsectBrain:
         # Per-round finding counts
         signal["per_round_counts"] = [len(rnd) for rnd in self.state.all_findings]
 
-        # Save completion signal
+        # Save completion signal (Bug#62: atomic write)
         filepath = self.logs_dir / "completion_signal.json"
-        filepath.write_text(json.dumps(signal, indent=2), encoding="utf-8")
+        self._atomic_write_json(filepath, signal)
 
         logger.info(
             "Brain signal: %s — %d rounds, %d findings, reason: %s",
@@ -1238,10 +1319,21 @@ class InsectBrain:
         for round_idx, findings in enumerate(self.state.all_findings):
             rr = rr_by_idx.get(round_idx, {})
             duration = float(rr.get("duration_s", 0.0))
+
+            # Bug#2/#3: Restore model_responses from round_XX.json files
+            model_responses: Dict[str, str] = {}
+            round_file = self.logs_dir / f"round_{round_idx:02d}.json"
+            if round_file.exists():
+                try:
+                    round_data = json.loads(round_file.read_text(encoding="utf-8"))
+                    model_responses = round_data.get("model_responses", {})
+                except (json.JSONDecodeError, OSError) as e:
+                    logger.warning("Failed to load round %d responses: %s", round_idx, e)
+
             self.state.round_records.append(RoundRecord(
                 round_idx=round_idx,
                 timestamp=rr.get("timestamp", ""),
-                model_responses={},  # Not stored in checkpoint — available in round_XX.json
+                model_responses=model_responses,
                 findings=findings,
                 finding_count=len(findings),
                 metrics=rr.get("metrics", {}),
@@ -1267,6 +1359,7 @@ class InsectBrain:
         """Record a model failure. Mechanical — no evaluation of severity.
 
         If all models fail, signals brain failure.
+        Saves checkpoint after state change (Bug#22).
         """
         logger.warning("Model failure: %s — %s", model_label, reason)
 
@@ -1277,3 +1370,6 @@ class InsectBrain:
             self.state.failed = True
             self.state.failure_reason = "all_models_failed"
             logger.error("All models failed — brain signalling failure")
+
+        # Bug#22: Persist state change so checkpoint reflects model removal
+        self._save_checkpoint()

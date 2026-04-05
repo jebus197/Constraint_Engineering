@@ -296,12 +296,13 @@ class TestEpochs(unittest.TestCase):
         with self.assertRaises(ValueError):
             chain.seal_epoch()
 
-    def test_duplicate_epoch_rejected(self):
-        """Sealing when no new records exist should raise ValueError."""
+    def test_duplicate_epoch_idempotent(self):
+        """Sealing when no new records exist returns existing epoch."""
         chain = _make_chain(3)
-        chain.seal_epoch()
-        with self.assertRaises(ValueError):
-            chain.seal_epoch()
+        e1 = chain.seal_epoch()
+        e2 = chain.seal_epoch()
+        self.assertEqual(e1, e2)
+        self.assertEqual(len(chain.epochs), 1)
 
     def test_single_record_epoch(self):
         chain = _make_chain(1)

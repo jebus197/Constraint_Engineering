@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 02:50 BST
+Last updated: 5 April 2026 04:47 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -69,7 +69,38 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   directed messaging produced sustained novelty (R13=37 findings, 2nd highest).
   Logs: `bench/logs/exp30_endocrine_20260404T235135Z/`.
   Report: `bench/logs/exp30_endocrine_20260404T235135Z/exp30_report.json`.
-  **Next:** Analyse results, apply verified fixes, then Bench Run 2.
+  **Next:** Run Exp 31 with all fixes applied, then Bench Run 2.
+- **EXP 30 POST-ANALYSIS AND FIX APPLICATION (5 April 2026, 04:47 BST):**
+  Deep analysis of non-convergence in Exp 30 revealed three causes:
+  (1) κ_rate instability from directed messaging sustaining genuine novelty;
+  (2) finding ID collision (Gemini/DeepSeek reset IDs each round);
+  (3) 62 parser garbage findings from old JSON parser.
+  Root cause of excessive findings: **fix-level churn** — 232 proposed fixes
+  for ~83 distinct bugs. Models endlessly debating alternative solutions for
+  already-known bugs instead of finding new ones.
+  **Architectural fixes applied:**
+  (a) Bug-closed gate in NK cell v1+v2 — first programmatically verified fix
+  wins, bug closed, subsequent findings about same bug rejected on sight;
+  (b) Programmatic fix evaluation wired into immune pipeline Stage 4 —
+  evaluate_fix() runs pyright/ruff/bandit/pytest in sandbox, SAFE = verified;
+  (c) BUDGET_EXHAUSTED status — max_rounds no longer sets converged=True;
+  (d) Context formatting shows CLOSED/PENDING/OPEN bug status to models.
+  **Bug fixes from Exp 30 findings (39 total across 3 files):**
+  immune_agents.py (18): log-odds sign, Z3 verification, SMT-LIB negation,
+  CLI thread lock, reconciliation margin, skin barrier (3 fixes), NK v1
+  control flow, sympy regex, dendritic AND join, barrier rejection counting,
+  autoimmune override, dead code, lazy discovery sync, AST caching,
+  statistical claims, tool_usage counting.
+  insect_brain.py (10): checkpoint recovery context amnesia, immune_response
+  serialisation, gamma_hat div-by-zero, handle_model_failure checkpoint,
+  signal_complete atomic write + BUDGET_EXHAUSTED, exception specificity,
+  max_rounds=0 guard, truncation marker, docstring, newline handling.
+  verification_chain.py (8): epoch ordering/monotonicity, orphan epoch check,
+  CLI/API contract alignment, seal_epoch idempotency + fsync, deep copy
+  properties, load_json validation, sub-second timestamps, error truncation.
+  Plus 3 architectural changes (bug-closed gate, fix evaluation, BUDGET_EXHAUSTED).
+  **Tests:** 571 passed, 0 failed.
+  **Next:** Run Exp 31 (one clean run with all fixes), then outreach.
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),

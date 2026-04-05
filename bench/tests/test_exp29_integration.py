@@ -214,7 +214,12 @@ class TestInsectBrainConvergence:
         brain.persist(0, {m: "output" for m in MODELS}, findings)
         assert not brain.check_convergence(0)
 
-    def test_max_rounds_forces_convergence(self, tmp_path):
+    def test_max_rounds_terminates_with_budget_exhausted(self, tmp_path):
+        """Max rounds = budget exhaustion, NOT convergence.
+
+        The experiment terminates (returns True) but converged is False
+        because reaching the round limit is not epistemic convergence.
+        """
         config = DynamicManagementConfig(max_rounds=3)
         brain = InsectBrain(
             config=config,
@@ -225,9 +230,9 @@ class TestInsectBrainConvergence:
         for rnd in range(3):
             brain.persist(rnd, {m: "output" for m in MODELS}, _make_round_findings(rnd))
 
-        assert brain.check_convergence(2)
-        assert brain.state.converged
-        assert "max_rounds" in brain.state.convergence_reason
+        assert brain.check_convergence(2)  # terminates
+        assert not brain.state.converged  # but NOT converged
+        assert "BUDGET_EXHAUSTED" in brain.state.convergence_reason
 
     def test_metrics_computed(self, tmp_path):
         brain = _make_brain(tmp_path)

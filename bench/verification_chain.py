@@ -191,9 +191,11 @@ def _digest_bytes(digest_str: str) -> bytes:
     no whitespace or uppercase.
     """
     if not _DIGEST_RE.match(digest_str):
+        # Truncate user input in error message to prevent injection
+        safe_preview = digest_str[:80] if isinstance(digest_str, str) else type(digest_str).__name__
         raise ValueError(
             f"Expected digest matching 'sha256:<64 lowercase hex chars>', "
-            f"got: {digest_str!r}"
+            f"got: {safe_preview!r}"
         )
     return bytes.fromhex(digest_str[7:])
 
@@ -218,8 +220,11 @@ def _normalize_timestamp(ts: str) -> str:
         )
     # Convert to UTC
     dt = dt.astimezone(timezone.utc)
-    # Format as RFC 3339 UTC
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Format as RFC 3339 UTC, preserving sub-second precision when present
+    iso = dt.isoformat()
+    if iso.endswith("+00:00"):
+        iso = iso[:-6] + "Z"
+    return iso
 
 
 def _utc_now() -> str:
@@ -472,12 +477,17 @@ class VerificationChain:
         Returns an epoch dict containing the merkle_root and record count.
         Raises ValueError if the chain is empty or no new records exist
         since the last sealed epoch.
+
+        Idempotent: if the last epoch already covers the current record
+        count (e.g. after crash recovery), returns the existing epoch
+        rather than creating a duplicate.
         """
         if not self._records:
             raise ValueError("Cannot seal epoch on empty chain")
         if (self._epochs
                 and self._epochs[-1]["record_count"] == len(self._records)):
-            raise ValueError("No new records since last epoch seal")
+            # Idempotent: return existing epoch rather than raising
+            return self._epochs[-1]
         leaves = [
             _digest_bytes(r["chain_hash"]) for r in self._records
         ]
@@ -502,10 +512,14 @@ class VerificationChain:
         All records and epochs are checked even if early failures are found,
         so the returned message contains a complete diagnostic.
         """
+        errors: list[str] = []
+
+        # Reject orphan epochs with no records (tampered JSON)
+        if not self._records and self._epochs:
+            return False, "Chain has epochs but no records — possibly tampered."
+
         if not self._records:
             return True, "Chain is empty — nothing to verify."
-
-        errors: list[str] = []
 
         for i, record in enumerate(self._records):
             try:
@@ -516,9 +530,26 @@ class VerificationChain:
                 errors.append(f"Record {i}: {msg}")
 
         # Verify epochs if any exist
-        for epoch in self._epochs:
+        prev_record_count = 0
+        for i, epoch in enumerate(self._epochs):
             try:
-                ok, msg = self._verify_epoch(epoch)
+                # Verify epoch ordering and monotonicity
+                eidx = epoch.get("epoch_index")
+                if eidx != i:
+                    ok, msg = False, (
+                        f"epoch_index mismatch: stored {eidx}, expected {i}"
+                    )
+                else:
+                    rc = epoch.get("record_count", 0)
+                    if rc <= prev_record_count:
+                        ok, msg = False, (
+                            f"record_count {rc} not monotonically "
+                            f"increasing (prev {prev_record_count})"
+                        )
+                    else:
+                        ok, msg = self._verify_epoch(epoch)
+                        if ok:
+                            prev_record_count = rc
             except (KeyError, TypeError, ValueError) as exc:
                 ok, msg = False, f"malformed epoch: {exc}"
             if not ok:
@@ -548,7 +579,6 @@ class VerificationChain:
         proof_steps = rfc9162_inclusion_proof(leaves, index)
         root = rfc9162_merkle_root(leaves)
         return {
-            "index": index,
             "chain_hash": self._records[index]["chain_hash"],
             "proof": proof_steps,
             "merkle_root": "sha256:" + root.hex(),
@@ -586,6 +616,8 @@ class VerificationChain:
         try:
             with os.fdopen(fd, "w") as f:
                 json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
             os.replace(tmp_path, path)
         except BaseException:
             # Clean up temp file on any failure
@@ -601,13 +633,33 @@ class VerificationChain:
 
         Preserves the schema_version from the loaded file to prevent
         silent version downgrades on round-trip.
+
+        Validates basic structure: records and epochs must be lists,
+        and each record must contain the required keys.
         """
+        _REQUIRED_RECORD_KEYS = {
+            "sealed_body", "entry_hash", "prev_hash", "chain_hash",
+        }
         with open(path, "r") as f:
             data = json.load(f)
+        records = data.get("records", [])
+        epochs = data.get("epochs", [])
+        if not isinstance(records, list):
+            raise ValueError("'records' must be a list")
+        if not isinstance(epochs, list):
+            raise ValueError("'epochs' must be a list")
+        for i, rec in enumerate(records):
+            if not isinstance(rec, dict):
+                raise ValueError(f"Record {i} is not a dict")
+            missing = _REQUIRED_RECORD_KEYS - rec.keys()
+            if missing:
+                raise ValueError(
+                    f"Record {i} missing required keys: {missing}"
+                )
         chain = cls()
         chain._schema_version = data.get("schema_version", SCHEMA_VERSION)
-        chain._records = data.get("records", [])
-        chain._epochs = data.get("epochs", [])
+        chain._records = records
+        chain._epochs = epochs
         return chain
 
     def head(self) -> Optional[dict]:
@@ -619,13 +671,13 @@ class VerificationChain:
 
     @property
     def records(self) -> list[dict]:
-        """Read-only access to the record list."""
-        return list(self._records)
+        """Read-only access to the record list (deep copy)."""
+        return copy.deepcopy(self._records)
 
     @property
     def epochs(self) -> list[dict]:
-        """Read-only access to the epoch list."""
-        return list(self._epochs)
+        """Read-only access to the epoch list (deep copy)."""
+        return copy.deepcopy(self._epochs)
 
     # -- Internal ----------------------------------------------------------
 
@@ -805,27 +857,13 @@ def _cli_verify_proof(args: argparse.Namespace) -> int:
     try:
         with open(args.proof_file, "r") as f:
             proof = json.load(f)
-        # Accept both 'sha256:<hex>' and bare hex for the root
+        # Normalize root to 'sha256:<hex>' format
         root_str = args.root
-        if root_str.startswith("sha256:"):
-            root_bytes = bytes.fromhex(root_str[7:])
-        else:
-            root_bytes = bytes.fromhex(root_str)
-        # Warn if supplied root differs from proof's embedded root
-        if "merkle_root" in proof:
-            proof_root_hex = proof["merkle_root"].replace("sha256:", "")
-            supplied_hex = root_str.replace("sha256:", "")
-            if proof_root_hex != supplied_hex:
-                print(
-                    "WARNING: supplied root differs from proof's "
-                    "embedded merkle_root",
-                    file=sys.stderr,
-                )
-        valid = rfc9162_verify_inclusion(
-            _digest_bytes(proof["chain_hash"]),
-            proof["proof"],
-            root_bytes,
-        )
+        if not root_str.startswith("sha256:"):
+            root_str = "sha256:" + root_str
+        # Use the same verification contract as the API
+        chain = VerificationChain()
+        valid = chain.verify_inclusion_proof(proof, root_str)
     except (KeyError, ValueError, TypeError, json.JSONDecodeError) as e:
         print(f"Proof verification failed: {e}", file=sys.stderr)
         return 1

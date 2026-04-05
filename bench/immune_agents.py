@@ -99,23 +99,25 @@ _CLAUDE_CLI_CACHE: Optional[str] = None
 
 def _get_python_tools() -> str:
     """Lazy-discovered Python interpreter with tools. Retries on failure."""
-    global _PYTHON_TOOLS_CACHE
+    global _PYTHON_TOOLS_CACHE, PYTHON_TOOLS
     if _PYTHON_TOOLS_CACHE is not None:
         return _PYTHON_TOOLS_CACHE
     result = _find_python_with_tools()
     if result != sys.executable:
         _PYTHON_TOOLS_CACHE = result  # Cache only successful discovery
+        PYTHON_TOOLS = result  # Bug#14 fix: sync backward-compat variable
     return result
 
 
 def _get_claude_cli() -> Optional[str]:
     """Lazy-discovered claude CLI. Retries on failure."""
-    global _CLAUDE_CLI_CACHE
+    global _CLAUDE_CLI_CACHE, CLAUDE_CLI
     if _CLAUDE_CLI_CACHE is not None:
         return _CLAUDE_CLI_CACHE
     result = _find_claude_cli()
     if result is not None:
         _CLAUDE_CLI_CACHE = result
+        CLAUDE_CLI = result  # Bug#14 fix: sync backward-compat variable
     return result
 
 
@@ -260,9 +262,10 @@ def _classify_claim(finding: Finding) -> Tuple[ClaimType, str]:
     if _MATH_PATTERN.search(desc):
         # MF-03/MF-04 fix: extract ALL backtick expressions (not just first)
         # and preserve surrounding context for preconditions
+        # Bug#17 fix: use ", " separator instead of " AND " (invalid SymPy syntax)
         eq_matches = re.findall(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
         if eq_matches:
-            claim = " AND ".join(eq_matches) if len(eq_matches) > 1 else eq_matches[0]
+            claim = ", ".join(eq_matches) if len(eq_matches) > 1 else eq_matches[0]
         else:
             claim = desc
         return ClaimType.MATHEMATICAL, claim
@@ -589,7 +592,9 @@ def cytotoxic_t_cell(
         if _CT_SCHEMA_PATH.exists():
             cmd.extend(["--output-format", "json"])
 
-        result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
+        # Bug#4 fix: serialise claude CLI calls to prevent contention
+        with _CLAUDE_CLI_LOCK:
+            result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
         elapsed = time.monotonic() - t0
         output = result.stdout.strip()
 
@@ -606,7 +611,8 @@ def cytotoxic_t_cell(
             seen.add(fid)
 
             # C5-01: pass source_paths as allowed_dirs for path traversal protection
-            allowed_dirs = [os.path.dirname(p) for p in source_paths] if source_paths else None
+            # Bug#5 fix: filter empty strings from dirname (bare filenames)
+            allowed_dirs = [d for d in (os.path.dirname(os.path.abspath(p)) for p in source_paths) if d] if source_paths else None
             verdict = _ct_evidence_to_verdict(
                 finding_id=fid,
                 claim_type=rv.get("claim_type", ""),
@@ -767,7 +773,7 @@ else:
                 'sqrt': sympy.sqrt, 'cos': sympy.cos, 'sin': sympy.sin,
                 'Eq': sympy.Eq, 'Gt': sympy.Gt, 'Lt': sympy.Lt,
                 'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And,
-                **{{s: symbols(s) for s in set(re.findall(r'\\b([a-z])\\b', claim)) if s not in ('e',)}}
+                **{{s: symbols(s) for s in set(re.findall(r'\\b([a-z][a-z0-9_]*)\\b', claim)) if s not in ('e', 'pi', 'oo', 'sqrt', 'cos', 'sin', 'log', 'exp')}}
             }},
             global_dict={{'__builtins__': {{}}}})
         result = sympy.simplify(expr)
@@ -831,17 +837,9 @@ claim = {repr(claim)}
 # "if X then Y" -> check if NOT(X implies Y) is unsatisfiable
 if_then = re.search(r'if\\s+(.+?)\\s+then\\s+(.+)', claim, re.IGNORECASE)
 if if_then:
-    # Create symbolic booleans for the conditions
-    X = z3.Bool('X')
-    Y = z3.Bool('Y')
-    s = z3.Solver()
-    # Check if "X and not Y" is satisfiable (counterexample to X->Y)
-    s.add(X)
-    s.add(z3.Not(Y))
-    if s.check() == z3.sat:
-        print("SATISFIABLE_COUNTEREXAMPLE")
-    else:
-        print("UNSAT_VALID")
+    # Bug#9 fix: abstract booleans cannot meaningfully encode the actual
+    # predicates — return UNCERTAIN instead of false positive/negative
+    print("Z3_UNSTRUCTURED: if/then claim requires grounded predicates")
 else:
     # Try numeric constraint extraction
     # MF-26 fix: support scientific notation (e.g. 1.5e-3)
@@ -951,7 +949,22 @@ else:
         else:
             print(f"WEAK_CORRELATION: r={{r_val}}")
     else:
-        print("STAT_UNPARSEABLE: no testable statistical claim extracted")
+        # Bug#72 fix: handle confidence interval claims
+        ci_match = re.search(r'(?:CI|confidence\\s+interval)\\s*[=:]?\\s*\\[?([-+]?\\d+\\.?\\d*)\\s*[,;-]\\s*([-+]?\\d+\\.?\\d*)\\]?', claim, re.IGNORECASE)
+        if ci_match:
+            lo, hi = float(ci_match.group(1)), float(ci_match.group(2))
+            if lo < hi:
+                print(f"STAT_CI_VALID: CI=[{{lo}}, {{hi}}]")
+            else:
+                print(f"STAT_CI_INVALID: CI bounds inverted [{{lo}}, {{hi}}]")
+        else:
+            # Handle mean/median comparison claims
+            mean_match = re.search(r'(?:mean|median|average)\\s*[=:]?\\s*([-+]?\\d+\\.?\\d*)', claim, re.IGNORECASE)
+            if mean_match:
+                val = float(mean_match.group(1))
+                print(f"STAT_MEAN: value={{val}}")
+            else:
+                print("STAT_UNPARSEABLE: no testable statistical claim extracted")
 """
     t0 = time.monotonic()
     output = _run_tool_subprocess(code)
@@ -959,15 +972,20 @@ else:
 
     # MF-29 fix: also match STRONG_CORRELATION and MODERATE_CORRELATION
     stripped_stat = output.strip()
+    # Bug#72 fix: also match CI and mean claim types
     if (("SIGNIFICANT" in stripped_stat and "NOT_SIGNIFICANT" not in stripped_stat)
             or stripped_stat.startswith("STRONG_CORRELATION")
-            or stripped_stat.startswith("MODERATE_CORRELATION")):
+            or stripped_stat.startswith("MODERATE_CORRELATION")
+            or stripped_stat.startswith("STAT_CI_VALID")
+            or stripped_stat.startswith("STAT_MEAN")):
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
             confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
             elapsed_s=elapsed,
         )
-    elif "NOT_SIGNIFICANT" in stripped_stat or stripped_stat.startswith("WEAK_CORRELATION"):
+    elif ("NOT_SIGNIFICANT" in stripped_stat
+            or stripped_stat.startswith("WEAK_CORRELATION")
+            or stripped_stat.startswith("STAT_CI_INVALID")):
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
             confidence=0.80, evidence=f"stats: {output}", tool_used="statsmodels",
@@ -1078,6 +1096,17 @@ def nk_cell_verify(
 
         # MF-16 fix: assert best_match is not None (prevent phantom duplicates)
         if best_sim >= tau_sim and best_match is not None:
+            # Bug-closed gate (v1 parity with v2): if matched finding
+            # already has a programmatically verified fix, this bug is closed.
+            matched_pf = next(
+                (pf for pf in prior_findings if pf.finding_id == best_match),
+                None,
+            )
+            has_fix = (
+                matched_pf is not None
+                and bool(matched_pf.proposed_fix.strip())
+                and matched_pf.verified
+            )
             tf.is_duplicate = True
             tf.duplicate_of = best_match
             tf.similarity = best_sim
@@ -1086,12 +1115,18 @@ def nk_cell_verify(
                 finding_id=f.finding_id,
                 verdict="DUPLICATE",
                 confidence=best_sim,
-                evidence=f"Duplicate of {best_match} (sim={best_sim:.3f})",
-                tool_used="similarity_dedup",
+                evidence=(
+                    f"Bug CLOSED — dup of {best_match} (sim={best_sim:.3f}), fix exists"
+                    if has_fix
+                    else f"Duplicate of {best_match} (sim={best_sim:.3f})"
+                ),
+                tool_used="bug_closed" if has_fix else "similarity_dedup",
             ))
             continue
 
         # 2. Check against known false-positive patterns
+        # Bug#10 fix: track FP match to skip anomaly detection (v1 control flow leak)
+        is_fp = False
         for fp in fp_db:
             if fp["pattern"].search(f.description):
                 model_match = (
@@ -1107,7 +1142,11 @@ def nk_cell_verify(
                         evidence=f"Known FP: {fp['source']}",
                         tool_used="false_positive_db",
                     ))
+                    is_fp = True
                     break
+
+        if is_fp:
+            continue  # Bug#10 fix: skip anomaly detection for known FPs
 
         # 3. Anomaly detection: severity outliers
         # MF-17 fix: emit REJECTED (not UNCERTAIN) for anomalous findings
@@ -1296,6 +1335,10 @@ def regulatory_t_cell_check(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 import logging as _logging
+import threading as _threading
+
+# Bug#4 fix: serialise claude CLI calls to prevent contention
+_CLAUDE_CLI_LOCK = _threading.Lock()
 
 _shadow_log = _logging.getLogger("immune.shadow")
 
@@ -1305,10 +1348,7 @@ _shadow_log = _logging.getLogger("immune.shadow")
 if not _shadow_log.handlers:
     _shadow_log.setLevel(_logging.INFO)
     import os as _os
-    _shadow_log_dir = _os.path.join(
-        _os.path.dirname(_os.path.dirname(__file__)), "bench", "logs"
-    )
-    # Resolve correctly regardless of import path
+    # Bug#20 fix: removed dead first assignment
     _shadow_log_dir = _os.path.join(
         _os.path.dirname(_os.path.abspath(__file__)), "logs"
     )
@@ -1360,9 +1400,14 @@ def skin_barrier_check(
     source_set = set(str(p) for p in source_paths)
 
     # Also build a set of relative paths and basenames for fuzzy matching
+    # Bug#69 fix: track ambiguous basenames (multiple paths for same name)
     source_basenames: Dict[str, str] = {}
+    _ambiguous_basenames: Set[str] = set()
     for p in source_paths:
-        source_basenames[os.path.basename(str(p))] = str(p)
+        bn = os.path.basename(str(p))
+        if bn in source_basenames:
+            _ambiguous_basenames.add(bn)
+        source_basenames[bn] = str(p)
 
     for f in findings:
         desc = f.description
@@ -1370,14 +1415,14 @@ def skin_barrier_check(
         # Extract file:line citations from the description
         # Common patterns: "file.py:123", "line 123 of file.py",
         # "at line 123", "file.py line 123"
+        # Bug#5 fix: match any file extension, not just .py
         citations = re.findall(
-            r'(\S+\.py)(?::|\s+line\s+)(\d+)', desc
+            r'(\S+\.\w+)(?::|\s+line\s+)(\d+)', desc
         )
         if not citations:
-            # Also try "line N" without file
-            line_only = re.findall(r'\bline\s+(\d+)\b', desc)
-            if line_only:
-                citations = [("", int(ln)) for ln in line_only[:1]]
+            # Bug#41 fix: line-only citations cannot be verified without a file path.
+            # Pass by default rather than creating unresolvable citations.
+            pass
 
         if not citations:
             # No citations to check — passes by default
@@ -1397,8 +1442,9 @@ def skin_barrier_check(
             # Try exact match
             if cited_file_raw in source_set or os.path.isfile(cited_file_raw):
                 cited_file = cited_file_raw
-            # Try basename match
-            elif os.path.basename(cited_file_raw) in source_basenames:
+            # Try basename match (Bug#69: skip if ambiguous)
+            elif (os.path.basename(cited_file_raw) in source_basenames
+                  and os.path.basename(cited_file_raw) not in _ambiguous_basenames):
                 cited_file = source_basenames[os.path.basename(cited_file_raw)]
             # Try partial path match
             else:
@@ -1617,7 +1663,9 @@ def cytotoxic_t_cell_v2_shadow(
         if _CT_SCHEMA_PATH.exists():
             cmd.extend(["--output-format", "json"])
 
-        result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
+        # Bug#4 fix: serialise claude CLI calls to prevent contention
+        with _CLAUDE_CLI_LOCK:
+            result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
         elapsed = time.monotonic() - t0
         output = result.stdout.strip()
 
@@ -1701,6 +1749,9 @@ def cytotoxic_t_cell_v2_shadow(
 # source code AST and pass them to z3 via parse_smt2_string(). This grounds
 # z3 proofs in actual code values, not abstract symbols.
 
+_AST_CONSTANTS_CACHE: Dict[str, Dict[str, Any]] = {}  # Bug#67 fix: cache
+
+
 def _extract_constants_from_ast(source_path: str) -> Dict[str, Any]:
     """Extract constant assignments from a Python source file's AST.
 
@@ -1712,6 +1763,10 @@ def _extract_constants_from_ast(source_path: str) -> Dict[str, Any]:
     Only extracts top-level and class-level constant assignments where
     the value is a literal (number, string, bool, None).
     """
+    # Bug#67 fix: cache AST parse results per file
+    if source_path in _AST_CONSTANTS_CACHE:
+        return _AST_CONSTANTS_CACHE[source_path]
+
     constants: Dict[str, Any] = {}
     try:
         with open(source_path, "r", encoding="utf-8") as f:
@@ -1730,6 +1785,7 @@ def _extract_constants_from_ast(source_path: str) -> Dict[str, Any]:
                     and isinstance(node.value, ast.Constant)):
                 constants[node.target.id] = node.value.value
 
+    _AST_CONSTANTS_CACHE[source_path] = constants  # Bug#67 fix: cache result
     return constants
 
 
@@ -1865,7 +1921,11 @@ except Exception as e:
     output = _run_tool_subprocess(code)
     elapsed = time.monotonic() - t0
 
-    grounded_vars = [k for k in all_constants if k in claim]
+    # Bug#9 fix: use word-boundary matching instead of substring containment
+    grounded_vars = [
+        k for k in all_constants
+        if re.search(rf'\b{re.escape(str(k))}\b', claim, re.IGNORECASE)
+    ]
 
     if "UNSAT_GROUNDED" in output:
         return CellVerdict(
@@ -1996,9 +2056,13 @@ def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
         return ClaimType.CODE_BEHAVIORAL, desc, 0.75
 
     # 4. Mathematical (tightened v2 — requires equation context)
+    # Bug#17 fix: use ", " separator instead of " AND " (invalid SymPy syntax)
     if _MATH_PATTERN_V2.search(desc):
-        eq_match = re.search(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
-        claim = eq_match.group(1) if eq_match else desc
+        eq_matches = re.findall(r'`([^`]+[=<>+\-*/^][^`]+)`', desc)
+        if eq_matches:
+            claim = ", ".join(eq_matches) if len(eq_matches) > 1 else eq_matches[0]
+        else:
+            claim = desc
         return ClaimType.MATHEMATICAL, claim, 0.70
 
     # 5. Logical (if/then, invariant — only without code context)
@@ -2052,7 +2116,7 @@ def dendritic_cell_v2_shadow(
 def nk_cell_v2_shadow(
     triaged: List[TriagedFinding],
     prior_findings: List[Finding],
-    tau_sim: float = 0.33,
+    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
     """NK Cell v2: fixes control flow leak + adds intra-round dedup.
@@ -2061,6 +2125,9 @@ def nk_cell_v2_shadow(
     1. FP match now skips anomaly detection (continue after break)
     2. Intra-round dedup: checks against current batch, not just prior
     3. Returned triaged state marks duplicates for downstream synthesis
+    4. Bug-closed gate: if a prior finding already has a verified fix,
+       new findings about the same bug are closed immediately.
+       First verified fix wins (Occam's razor / good-enough principle).
     """
     fp_db = false_positive_db or _KNOWN_FALSE_POSITIVES
     verdicts: List[CellVerdict] = []
@@ -2074,13 +2141,38 @@ def nk_cell_v2_shadow(
         # 1. Dedup against prior findings
         best_sim = 0.0
         best_match: Optional[str] = None
+        best_match_finding: Optional[Finding] = None
         for pf in prior_findings:
             sim = _finding_similarity(f, pf)
             if sim > best_sim:
                 best_sim = sim
                 best_match = pf.finding_id
+                best_match_finding = pf
 
         if best_sim >= tau_sim and best_match is not None:
+            # Bug-closed gate: if the matched prior finding already has a
+            # VERIFIED fix, this bug is CLOSED. First verified fix wins.
+            # "Verified" means programmatically evaluated (pyright/ruff/bandit
+            # pass, no new issues introduced) — not model opinion.
+            # New findings about the same bug are dead on arrival.
+            has_verified_fix = (
+                best_match_finding is not None
+                and bool(best_match_finding.proposed_fix.strip())
+                and best_match_finding.verified
+            )
+            if has_verified_fix:
+                tool = "v2_bug_closed"
+                evidence = (
+                    f"[NK_v2] Bug CLOSED — duplicate of {best_match} "
+                    f"(sim={best_sim:.3f}) which has a programmatically verified fix. "
+                    f"First sufficient fix wins. Move on."
+                )
+            else:
+                tool = "v2_similarity_dedup"
+                evidence = (
+                    f"[NK_v2] Duplicate of {best_match} (sim={best_sim:.3f})"
+                )
+
             tf.is_duplicate = True
             tf.duplicate_of = best_match
             tf.similarity = best_sim
@@ -2089,8 +2181,8 @@ def nk_cell_v2_shadow(
                 finding_id=f.finding_id,
                 verdict="DUPLICATE",
                 confidence=best_sim,
-                evidence=f"[NK_v2] Duplicate of {best_match} (sim={best_sim:.3f})",
-                tool_used="v2_similarity_dedup",
+                evidence=evidence,
+                tool_used=tool,
             ))
             continue
 
@@ -2154,10 +2246,11 @@ def nk_cell_v2_shadow(
         # Track accepted finding for intra-round dedup
         accepted_this_round.append(f)
 
+    bugs_closed = sum(1 for v in verdicts if v.tool_used == "v2_bug_closed")
+    intra_dups = sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup")
     _shadow_log.info(
-        "NK v2 (shadow): %d verdicts (%d intra-round dups)",
-        len(verdicts),
-        sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup"),
+        "NK v2 (shadow): %d verdicts (%d intra-round dups, %d bugs closed — fix exists)",
+        len(verdicts), intra_dups, bugs_closed,
     )
 
     # Return updated triaged state — NK v2 now marks duplicates for downstream
@@ -2198,14 +2291,21 @@ def _verdict_domain(v: CellVerdict) -> str:
 
 
 def _confidence_to_log_odds(c: float) -> float:
-    """Convert confidence [0,1] to log-odds, clamped to avoid infinity."""
-    c = max(0.01, min(0.99, c))
+    """Convert confidence [0,1] to log-odds magnitude, clamped to avoid infinity.
+
+    Bug#33 fix: confidence is a magnitude (how certain the cell is about its
+    verdict), not a probability of correctness. A REJECTED verdict with
+    confidence 0.3 means "weakly certain it's rejected", not "30% chance".
+    We clamp the floor to 0.5 so that low-confidence verdicts contribute
+    near-zero log-odds rather than negative (which would invert the signal).
+    """
+    c = max(0.50, min(0.99, c))
     return _math.log(c / (1.0 - c))
 
 
 def _log_odds_to_confidence(lo: float) -> float:
     """Convert log-odds back to confidence [0,1]."""
-    return 1.0 / (1.0 + _math.exp(-lo))
+    return 1.0 / (1.0 + _math.exp(-abs(lo)))
 
 
 def helper_t_v2_shadow(
@@ -2719,8 +2819,13 @@ def _reconciliation_gate(
             reconciled[fid] = v1v
             reconciled_conf[fid] = max(v1c, v2c)
         else:
-            # Disagreement: higher confidence wins
-            if v1c >= v2c:
+            # Disagreement: higher confidence wins, with minimum margin
+            # Bug#16 fix: near-ties fall back to UNCERTAIN
+            margin = abs(v1c - v2c)
+            if margin < 0.10:
+                reconciled[fid] = "UNCERTAIN"
+                reconciled_conf[fid] = max(v1c, v2c)
+            elif v1c >= v2c:
                 reconciled[fid] = v1v
                 reconciled_conf[fid] = v1c
             else:
@@ -2779,7 +2884,9 @@ def run_immune_pipeline(
     t0 = time.monotonic()
     passed_findings, barrier_results = skin_barrier_check(new_findings, source_paths)
     timings["skin_barrier"] = round(time.monotonic() - t0, 4)
-    tool_usage["skin_barrier"] = sum(1 for r in barrier_results if not r.passed)
+    # Bug#82 fix: count total executions, not just failures
+    tool_usage["skin_barrier"] = len(barrier_results)
+    tool_usage["skin_barrier_blocked"] = sum(1 for r in barrier_results if not r.passed)
 
     # WP6a: filter out findings that failed skin barrier (unless observation_only)
     if not observation_only:
@@ -2953,14 +3060,58 @@ def run_immune_pipeline(
         else:
             rejected.append(tf.finding)
 
-    # If autoimmune flagged, override: pass everything through
+    # If autoimmune flagged, override immune-stage rejections only.
+    # Bug#56 fix: barrier rejections are deterministic and survive autoimmune override.
     if autoimmune_flag and not observation_only:
         filtered = [tf.finding for tf in triaged]
-        rejected = []
+        rejected = list(barrier_rejected)
 
-    total = len(triaged)
+    # ── Stage 4: Programmatic fix verification ───────────────────────
+    # For surviving findings with proposed fixes, evaluate the fix in a
+    # sandbox (pyright/ruff/bandit before/after). If the fix is SAFE or
+    # NEUTRAL, mark finding.verified = True. This enables the bug-closed
+    # gate in subsequent rounds: first verified fix wins, bug closed.
+    t0_fix_eval = time.monotonic()
+    fix_candidates = [f for f in filtered if f.proposed_fix.strip()]
+    fix_eval_results: List = []
+    if fix_candidates and source_paths:
+        try:
+            from bench.endocrine import evaluate_fixes
+            fix_eval_results = evaluate_fixes(
+                fix_candidates, source_paths,
+                test_cmd=["python3", "-m", "pytest", "bench/tests/", "-x", "-q",
+                          "--tb=no", "--no-header", "-q"],
+                max_evals=20,
+            )
+            for ev in fix_eval_results:
+                if ev.verdict in ("SAFE", "NEUTRAL"):
+                    # Mark the finding as verified — its fix passed programmatic checks
+                    for f in filtered:
+                        if f.finding_id == ev.finding_id:
+                            f.verified = True
+                            break
+                    _shadow_log.info(
+                        "Fix VERIFIED (programmatic): %s — verdict=%s",
+                        ev.finding_id, ev.verdict,
+                    )
+                else:
+                    _shadow_log.info(
+                        "Fix NOT verified: %s — verdict=%s (%s)",
+                        ev.finding_id, ev.verdict, ev.apply_error or "issues introduced",
+                    )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Fix evaluation stage failed (non-fatal): %s", e
+            )
+    timings["fix_evaluation"] = round(time.monotonic() - t0_fix_eval, 4)
+
+    # Bug#46 fix: include barrier rejections in rejection rate and rejected list
+    total = len(triaged) + len(barrier_rejected)
     rej_count = sum(1 for v in final_verdicts.values() if v in ("REJECTED", "DUPLICATE"))
-    rejection_rate = rej_count / max(total, 1)
+    total_removed = rej_count + len(barrier_rejected)
+    rejection_rate = total_removed / max(total, 1)
+    rejected.extend(barrier_rejected)
 
     # Group verdicts by finding for the response
     verdicts_by_finding: Dict[str, List[CellVerdict]] = {}

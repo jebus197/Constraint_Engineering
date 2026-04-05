@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 02:50 BST
+Last updated: 5 April 2026 04:47 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,32 +19,46 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 02:50 BST)
+## Current Pending Work (5 April 2026, 04:47 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
-EXP 30 COMPLETE.
+EXP 30 COMPLETE. EXP 30 POST-ANALYSIS AND FIXES COMPLETE.
 
-EXP 30 COMPLETE (5 April 2026, 02:43 BST):
-  15 rounds, 378 findings, 87 min. γ=0.320, C(H,E)=0.853.
-  Directed messaging: 126 messages. ChatGPT 44 sent (was 0 in Exp 29).
-  Endocrine: 14 health cycles, stable 18 diagnostics each.
-  Terminated at max_rounds (not epistemic convergence).
-  Logs: bench/logs/exp30_endocrine_20260404T235135Z/
-  Report: bench/logs/exp30_endocrine_20260404T235135Z/exp30_report.json
+EXP 30 POST-ANALYSIS (5 April 2026, 04:47 BST):
+  Deep analysis of non-convergence: fix-level churn was the root cause.
+  232 proposed fixes for ~83 distinct bugs. Models debating alternative
+  solutions instead of finding new bugs. κ_rate oscillated due to sustained
+  novelty from directed messaging.
 
-HOT FIXES APPLIED DURING EXP 30:
-  1. DONE: Endocrine pacing crash — context_budget dict→int (endocrine.py + runner)
-  2. DONE: Directed message accumulation — round windowing + truncation (insect_brain.py)
-  3. DONE: JSON parser multi-array iteration — skips non-findings arrays (runner_core.py)
-  4. DONE: Double-prefix finding IDs — models pre-prefixing no longer doubled (runner_core.py)
-  5. DONE: Classifier model ID — anthropic/claude-3.5-haiku floating alias (immune_agents.py)
+  ARCHITECTURAL FIXES APPLIED:
+  1. Bug-closed gate in NK cell v1+v2 — first programmatically verified fix
+     wins. finding.verified = True after pyright/ruff/bandit/pytest pass in
+     sandbox. Subsequent findings about same bug rejected by NK cell.
+  2. Programmatic fix evaluation (Stage 4 in immune pipeline) — evaluate_fix()
+     from endocrine.py wired into run_immune_pipeline(). No model opinion.
+  3. BUDGET_EXHAUSTED status — max_rounds sets converged=False, reason=
+     "BUDGET_EXHAUSTED". Honest termination, not false convergence.
+  4. Context formatting — CLOSED/PENDING/OPEN bug status shown to models.
+     Models told "do not relitigate CLOSED bugs."
 
-PENDING AFTER EXP 30:
-  - Full results analysis and TTS writeup
-  - Reparse round JSON files with fixed parser for accurate counts
-  - Apply verified model-proposed fixes (378 findings to triage)
-  - Convergence/budget-exhaustion conflation fix (multiple models proposed)
-  - Bench Run 2 (27 frontier STEM problems)
+  BUG FIXES FROM EXP 30 FINDINGS (39 total):
+  immune_agents.py (18): log-odds sign, Z3 verification, SMT-LIB negation,
+     CLI thread lock, reconciliation margin, skin barrier (3), NK v1 flow,
+     sympy regex, dendritic AND join, barrier rejection, autoimmune override,
+     dead code, lazy discovery, AST cache, statistical claims, tool_usage.
+  insect_brain.py (10): checkpoint recovery amnesia, immune serialisation,
+     gamma_hat div-by-zero, failure checkpoint, atomic write, exception
+     specificity, max_rounds=0, truncation marker, docstring, newline fix.
+  verification_chain.py (8): epoch ordering, orphan epochs, CLI/API contract,
+     seal_epoch idempotency+fsync, deep copy, load_json validation,
+     sub-second timestamps, error truncation.
+
+  Tests: 571 passed, 0 failed.
+
+PENDING:
+  - Run Exp 31 (one clean run with all fixes applied)
+  - Then outreach (the system works, results exist, stop iterating)
+  - Bench Run 2 (27 frontier STEM problems) — longer term
   Tests: python3 -m pytest bench/tests/ -v (571 pass)
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
