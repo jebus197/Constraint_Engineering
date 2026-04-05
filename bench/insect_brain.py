@@ -632,16 +632,25 @@ class InsectBrain:
             model_label, self.config.context_budget_chars,
         )
 
-        # ── Priority 1: Directed messages to this model ──
+        # ── Priority 1: Directed messages to this model (last round only) ──
+        # Only inject messages from the immediately preceding round to prevent
+        # unbounded accumulation. Historical messages remain in state for
+        # diagnostics via get_directed_messages_for_model().
+        current_round = self.state.current_round
         directed_to_me = [
             m for m in self.state.directed_messages
-            if m.recipient == model_label
+            if m.recipient == model_label and m.round_idx >= current_round - 1
         ]
         directed_text = ""
         if directed_to_me:
             directed_text = self._render_directed_messages(directed_to_me)
+            # Truncate directed text if it alone exceeds budget
+            if len(directed_text) > budget:
+                directed_text = directed_text[:max(0, budget - 80)] + (
+                    "\n\n[TRUNCATED: directed messages exceed context budget]"
+                )
 
-        # Reserve budget for directed messages (they always survive)
+        # Reserve budget for directed messages (they get first claim)
         directed_cost = len(directed_text)
         broadcast_budget = max(0, budget - directed_cost)
 

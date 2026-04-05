@@ -984,7 +984,7 @@ def run_experiment(
             findings=findings,
             round_timings=round_timings,
             cumulative_context_chars=cumulative_context_chars,
-            context_budget=CONTEXT_CHAR_BUDGET,
+            context_budget=max(CONTEXT_CHAR_BUDGET.values()),
             novelty_counts=novelty_counts,
         )
 

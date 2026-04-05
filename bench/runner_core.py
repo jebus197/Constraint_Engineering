@@ -270,8 +270,11 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     #   [{"FINDING_ID": "IM_F001", "SEVERITY": 0.9, ...}, ...]
     # Must run FIRST — JSON quotes around keys break all regex patterns.
     # Run 5 lost 29 ChatGPT findings to this bug.
-    json_match = re.search(r'\[[\s\n]*\{', response)
-    if json_match:
+    # Exp 30 fix: iterate ALL JSON arrays in the response, not just the
+    # first. Models (esp. Codex) emit non-findings arrays before the
+    # findings array (e.g. responses_to_addressed_messages, directed_messages).
+    _FINDINGS_KEYS = {"FINDING_ID", "SEVERITY"}
+    for json_match in re.finditer(r'\[[\s\n]*\{', response):
         start = json_match.start()
         bracket_depth = 0
         end = start
@@ -291,13 +294,12 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 # (e.g. remediation actions in PROPOSED_FIX). Require at least
                 # one object to have FINDING_ID or SEVERITY — the two fields
                 # that distinguish findings from arbitrary JSON.
-                _FINDINGS_KEYS = {"FINDING_ID", "SEVERITY"}
                 has_findings_key = any(
                     _FINDINGS_KEYS & {k.upper().replace(" ", "_") for k in obj}
                     for obj in arr if isinstance(obj, dict)
                 )
                 if not has_findings_key:
-                    raise ValueError("JSON array lacks findings keys — not a findings array")
+                    continue  # Not a findings array — try next JSON array
                 for obj in arr:
                     if not isinstance(obj, dict):
                         continue
@@ -325,8 +327,13 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         verified = verified_raw.upper() == "TRUE"
                     else:
                         verified = bool(verified_raw)
+                    # Avoid double-prefixing if model already prefixed its IDs
+                    if fid.startswith(f"{model_id}_"):
+                        full_id = fid
+                    else:
+                        full_id = f"{model_id}_{fid}"
                     findings.append(Finding(
-                        finding_id=f"{model_id}_{fid}",
+                        finding_id=full_id,
                         model_id=model_id,
                         round_idx=round_idx,
                         flaw_class=flaw_class,
@@ -339,7 +346,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 if findings:
                     return findings
         except (json.JSONDecodeError, ValueError, TypeError):
-            pass  # Not valid JSON — fall through to tuple parser
+            continue  # Not valid JSON — try next JSON array
 
     # ── 2. Tuple-format parser ───────────────────────────────────────
     # (F001, 0.9, 5, 0.8, "description", "fix", TRUE)
@@ -375,8 +382,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             description = m.group(5).replace('\\"', '"')
             proposed_fix = m.group(6).replace('\\"', '"')
             verified = m.group(7).upper() == "TRUE"
+            full_id = fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
             findings.append(Finding(
-                finding_id=f"{model_id}_{fid}",
+                finding_id=full_id,
                 model_id=model_id,
                 round_idx=round_idx,
                 flaw_class=flaw_class,
@@ -484,8 +492,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         abstraction = max(0.0, min(1.0, abstraction))
         flaw_class = max(1, min(8, flaw_class))
 
+        full_id = finding_id if finding_id.startswith(f"{model_id}_") else f"{model_id}_{finding_id}"
         findings.append(Finding(
-            finding_id=f"{model_id}_{finding_id}",
+            finding_id=full_id,
             model_id=model_id,
             round_idx=round_idx,
             flaw_class=flaw_class,

@@ -763,6 +763,10 @@ def compute_pacing_signals(
     Returns:
         List of PacingSignal (may be empty if everything is healthy).
     """
+    # Defensive: if context_budget is a dict, extract the max value.
+    if isinstance(context_budget, dict):
+        context_budget = max(context_budget.values()) if context_budget else 80_000
+
     signals: List[PacingSignal] = []
 
     # 1. Slow model detection

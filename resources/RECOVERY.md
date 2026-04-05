@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 00:35 BST
+Last updated: 5 April 2026 02:50 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,31 +19,33 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 00:35 BST)
+## Current Pending Work (5 April 2026, 02:50 BST)
 
 Experiments 12–18 ALL COMPLETE. Runs 5–11 ALL COMPLETE. EXP 29 COMPLETE.
-EXP 30 READY TO RUN.
+EXP 30 COMPLETE.
 
-ALL EXP 29 ACTIONS COMPLETED (5 April 2026, 00:35 BST):
-  1. DONE: Fixed claude-haiku → claude-3-5-haiku-20241022
-  2. DONE: Shadow INFO logging writes to bench/logs/immune_shadow.log
-  3. DONE: Autoimmune threshold raised from 50% to 65%
-  4. DONE: Directed messaging built (extract + route + priority inject)
-  5. DONE: NK v2 sets triaged fields, pipeline adopts NK v2 state
-  6. DONE: Checkpoint save/restore includes round_records + failed state
-  7. DONE: verify_inclusion_proof checks embedded merkle_root
-  8. DONE: _verify_epoch rejects record_count < 1
-  9. DONE: verify_chain catches RuntimeError
-  10. DONE: persist() copies by value not reference
-  11. DONE: All stale shadow docstrings updated
+EXP 30 COMPLETE (5 April 2026, 02:43 BST):
+  15 rounds, 378 findings, 87 min. γ=0.320, C(H,E)=0.853.
+  Directed messaging: 126 messages. ChatGPT 44 sent (was 0 in Exp 29).
+  Endocrine: 14 health cycles, stable 18 diagnostics each.
+  Terminated at max_rounds (not epistemic convergence).
+  Logs: bench/logs/exp30_endocrine_20260404T235135Z/
+  Report: bench/logs/exp30_endocrine_20260404T235135Z/exp30_report.json
 
-EXP 30 READY (5 April 2026, 00:35 BST):
-Endocrine layer + directed messaging. 571 tests pass.
-Runner: python3 bench/run_exp30_endocrine.py run --relay-mode directed --pattern fff
-Endocrine: health scan (pyright/ruff/bandit/mypy), fix eval (sandbox), pacing signals.
-Directed: @tag extraction, priority injection, budget-aware routing.
-Subject: same 3 files as Exp 29 (post-fix re-review).
-Tests: python3 -m pytest bench/tests/ -v
+HOT FIXES APPLIED DURING EXP 30:
+  1. DONE: Endocrine pacing crash — context_budget dict→int (endocrine.py + runner)
+  2. DONE: Directed message accumulation — round windowing + truncation (insect_brain.py)
+  3. DONE: JSON parser multi-array iteration — skips non-findings arrays (runner_core.py)
+  4. DONE: Double-prefix finding IDs — models pre-prefixing no longer doubled (runner_core.py)
+  5. DONE: Classifier model ID — anthropic/claude-3.5-haiku floating alias (immune_agents.py)
+
+PENDING AFTER EXP 30:
+  - Full results analysis and TTS writeup
+  - Reparse round JSON files with fixed parser for accurate counts
+  - Apply verified model-proposed fixes (378 findings to triage)
+  - Convergence/budget-exhaustion conflation fix (multiple models proposed)
+  - Bench Run 2 (27 frontier STEM problems)
+  Tests: python3 -m pytest bench/tests/ -v (571 pass)
 
 HIL COMPARISON EXPERIMENTS COMPLETE (4 April 2026, 04:45 BST):
 C1 (Realistic HIL): 25 findings, 9/9 verified, 0 FP. 5 rounds, ~3 min.

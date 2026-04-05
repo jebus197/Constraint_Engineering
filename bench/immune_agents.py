@@ -2412,7 +2412,7 @@ confidence intervals, or statistical significance.
 return values, incorrect state transitions, or logic errors.
 - UNCATEGORISED: the finding does not clearly fit any of the above."""
 
-_CLASSIFIER_MODEL = "anthropic/claude-3-5-haiku-20241022"  # Cheapest, fastest — classification only
+_CLASSIFIER_MODEL = "anthropic/claude-3.5-haiku"  # Floating alias — always latest 3.5 Haiku
 
 
 def typed_llm_classifier_shadow(

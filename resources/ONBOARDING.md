@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 00:35 BST
+Last updated: 5 April 2026 02:50 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -45,21 +45,31 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   `run_immune_pipeline` discards NK v2 returned state, stale shadow docstrings.
   Logs: `bench/logs/exp29_persistence_20260404T193154Z/`.
   TTS: `~/Desktop/CDSFL_tts/Exp29_Results_2026-04-04.txt`.
-- **EXP 30 READY TO RUN (5 April 2026, 00:35 BST):**
-  Endocrine layer + directed inter-model messaging. All Exp 29 critical
-  findings applied (shadow fixes, NK v2 state, checkpoint recovery,
-  verification chain bugs, autoimmune threshold raised to 65%).
-  **Endocrine layer** (`bench/endocrine.py`): health scan (pyright/ruff/bandit/
-  mypy via subprocess), fix evaluation (sandbox apply + tool verification),
-  pacing signals (slow models, budget exhaustion, novelty plateau). Closes
-  the `proposed_fix` blind spot — immune pipeline now has fix verification.
-  **Directed messaging** (added to `bench/insect_brain.py`): @tag extraction,
-  priority injection ("ADDRESSED TO YOU"), budget-aware routing. Models
-  cannot ignore addressed messages. Designed to fix ChatGPT engagement gap.
-  **Runner:** `bench/run_exp30_endocrine.py`. Default relay mode = directed.
-  571 tests pass (506 original + 44 endocrine + 21 directed messaging).
-  **Run:** `python3 bench/run_exp30_endocrine.py run --relay-mode directed --pattern fff`
-  **Next:** Run Exp 30, then Bench Run 2 (27 frontier STEM problems).
+- **EXP 30 COMPLETE (5 April 2026, 02:43 BST):**
+  Endocrine layer + directed inter-model messaging integration test.
+  15 rounds, 378 findings, 87 min wall clock. Terminated at max_rounds
+  (not epistemic convergence). γ=0.320, C(H,E)=0.853.
+  **Per model:** CC2=114, DeepSeek=103, Gemini=68, ChatGPT=51, Codex=42.
+  **Directed messaging:** 126 messages total. ChatGPT sent 44 (vs ZERO
+  cross-model references in Exp 29). CC2 sent 56. Engagement gap eliminated.
+  **Endocrine layer:** 14 health cycles, 18 diagnostics each (5 security,
+  4 dead_code, 4 type_safety, 3 null_deref, 2 style). Stable throughout.
+  Fix evaluation sandbox operational. Pacing signals functional.
+  **Hot fixes during run:** (1) endocrine pacing crash — context_budget
+  passed as dict instead of int, fixed in both runner and endocrine.py;
+  (2) directed message accumulation — added round windowing + truncation;
+  (3) JSON parser — now iterates all JSON arrays in response, skipping
+  non-findings arrays (Codex wraps in multi-array JSON); (4) double-prefix
+  fix — models pre-prefixing finding IDs no longer get doubled;
+  (5) classifier model ID — updated to `anthropic/claude-3.5-haiku` (floating).
+  **Key finding from models:** convergence/budget-exhaustion conflation —
+  max_rounds termination should not set converged=True. Multiple models
+  independently proposed BUDGET_EXHAUSTED status enum.
+  **vs Exp 29:** +11% findings (378 vs 340), +67% rounds (15 vs 9),
+  directed messaging produced sustained novelty (R13=37 findings, 2nd highest).
+  Logs: `bench/logs/exp30_endocrine_20260404T235135Z/`.
+  Report: `bench/logs/exp30_endocrine_20260404T235135Z/exp30_report.json`.
+  **Next:** Analyse results, apply verified fixes, then Bench Run 2.
 - **Run 11 COMPLETE (4 April 2026, 01:59 BST) = Exp 28b:**
   2 rounds, 59 findings, 42 min. **Fastest convergence in bench history.**
   γ_novel=0.737 (threshold 0.5), C(H,E)=0.873. R0: 44 findings (5 models),
