@@ -286,16 +286,24 @@ _GOOD_ENOUGH_INSTRUCTION = (
 DATA_ARTIFACT = """\
 === DATA ARTIFACT: Convergence Data from Experiments 30 and 31 ===
 
+IMPORTANT CONTEXT: The human-in-the-loop (HIL) who designed and ran these
+experiments believes convergence HAS occurred in the codebase, but the
+instrumentation failed to detect it. The evidence for this claim is
+presented below alongside the raw data. Your task is to evaluate whether
+the HIL is correct, and if so, what changes to the mathematical model
+and/or codebase would make convergence detectable and triggerable.
+
+
 EXPERIMENT 30 — Distributed Code Review (Persistence Layer)
   Target: 3 files (verification_chain.py, insect_brain.py, immune_agents.py)
   Models: 5 (CC2, Codex, Gemini, DeepSeek, ChatGPT)
   Rounds: 15
-  Termination: BUDGET_EXHAUSTED (did not converge)
+  Termination: BUDGET_EXHAUSTED (gamma did not cross 0.5)
 
   Gamma trajectory (Duane reliability growth):
     Round:  1     2     3     4     5     6     7     8     9    10    11    12    13    14
     Gamma:  0.567 0.416 0.431 0.418 0.429 0.419 0.380 0.373 0.368 0.352 0.343 0.340 0.318 0.320
-    (Falling -- 0.567 to 0.320 over 14 rounds; diverging, not converging)
+    (Falling -- 0.567 to 0.320 over 14 rounds)
 
   Per-round finding counts:
     R0: 60 (blind round), R1-R14: [21, 33, 18, 21, 14, 19, 32, 20, 19, 27, 23, 19, 37, 15]
@@ -308,12 +316,12 @@ EXPERIMENT 31 — Post-Fix Convergence Validation (same 3 files, after 39 fixes)
   Target: same 3 files, post-fix
   Models: 5 (CC2, Codex, Gemini, DeepSeek, ChatGPT)
   Rounds: 15
-  Termination: BUDGET_EXHAUSTED (did not converge)
+  Termination: BUDGET_EXHAUSTED (gamma did not cross 0.5)
 
   Gamma trajectory:
     Round:  0     1      2      3     4     5     6     7     8     9    10    11    12    13    14
     Gamma:  0.000 -0.170 -0.037 0.035 0.053 0.058 0.063 0.079 0.087 0.102 0.109 0.109 0.115 0.110 0.106
-    (Rising from negative to positive -- converging, but slowly; never approaches 0.5)
+    (Rising from negative to positive -- gamma direction reversed vs Exp 30)
 
   Per-round finding counts:
     [32, 40, 28, 22, 25, 26, 25, 19, 21, 15, 18, 22, 17, 25, 25]
@@ -333,26 +341,66 @@ EXPERIMENT 31 — Post-Fix Convergence Validation (same 3 files, after 39 fixes)
 
   Inter-model agreement: kappa = 0.619 (substantial)
 
-  Known structural blockers preventing convergence in Exp 31:
-    1. Deep-copy propagation: bug-closed gate dead code -- findings for closed
-       bugs were flagged but never actually suppressed, so models kept
-       rediscovering fixed issues.
-    2. Autoimmune override threshold too low (65%): the immune system's
-       autoimmune detector fired when rejection rates exceeded 65%, but
-       genuine churn rates were legitimately above 65% in later rounds.
-       This caused the immune system to OVERRIDE its own rejections,
-       letting duplicate findings through.
-    3. Finding ID reuse across rounds: CC2_F001 meant different bugs in
-       different rounds, breaking cross-round tracking and deduplication.
-
   Mid-experiment interventions (all applied around Round 7):
-    - Good Enough instruction: told models to converge on simplest sufficient
-      answer rather than proposing alternatives to solved problems
-    - Merge instruction: told models to merge overlapping findings
-    - B-Cell UNCERTAIN -> HIL: uncertain immune verdicts escalated to
-      human-in-the-loop rather than defaulting to accept
-    Effect: visibly reduced churn in rounds 7-14 (novel counts dropped
-    from ~16/round to ~4/round) but gamma still did not cross 0.5.
+    - Good Enough instruction: converge on simplest sufficient fix
+    - Merge instruction: mandatory deduplication before filing
+    - B-Cell UNCERTAIN -> HIL: uncertain verdicts escalated to human
+    Effect: novel counts dropped from ~16/round to ~4/round (R7-R14)
+
+
+EVIDENCE THAT CONVERGENCE OCCURRED (HIL assessment):
+  The HIL argues convergence happened but was not detected, based on:
+
+  1. QUALITATIVE SEVERITY DECLINE:
+     Exp 30 found 83 distinct bugs, 39 serious enough to fix (including
+     architectural issues, dead code paths, and security vulnerabilities).
+     Exp 31, reviewing the SAME code after those fixes, found 18 things.
+     Independent audit verified 13, refuted 3, partially confirmed 2.
+     Of the 13 verified findings:
+       - 5 were infrastructure issues in the harness itself (not the code)
+       - 6 were LOW/MEDIUM edge cases in verification subsystems
+       - 2 were already fixed during the experiment session
+     The codebase went from 83 bugs to a handful of edge cases. That is
+     convergence by any qualitative measure.
+
+  2. BROKEN INSTRUMENTATION (5 independent failures):
+     a. Bug-closed gate was dead code (E31-01): deep-copy in immune
+        pipeline severed verified flag propagation. A finding could be
+        verified, its fix could pass programmatic evaluation, and the
+        next round would rediscover the same bug. The gate existed and
+        the logic was correct -- it just could not fire.
+     b. Autoimmune override resurrected locked rejections (E31-02): both
+        pipelines would agree a finding was rejected, reconciliation gate
+        would "lock" it, then autoimmune recovery would override the lock
+        because the enforcement code was missing. So rejection rate climbed,
+        autoimmune triggered, and everything came back.
+     c. Finding ID reuse (E31-06-related): CC2_F001 meant different bugs
+        in different rounds. The immune system could not track what was
+        the same bug across rounds.
+     d. Zero CHALLENGE verdicts: all 150 cross-model references were
+        confirmations or extensions. No model ever formally disagreed.
+        Without disagreement, the finding space never contracts.
+     e. 58.3% churn: more than half of all findings were rediscoveries
+        of known issues that the immune system should have caught.
+
+  3. ALL 5 INSTRUMENTATION FAILURES NOW FIXED:
+     a. E31-01: verified/escalated flags propagated back to canonical
+        findings after immune pipeline. Bug-closed gate is functional.
+     b. E31-02: reconciliation gate returns locked_ids. Autoimmune
+        override excludes locked findings from resurrection.
+     c. Finding ID stability directive in all prompts.
+     d. AGREE/CHALLENGE/EXTEND protocol with Good Enough instruction
+        active from Round 0.
+     e. Mandatory merge instruction active from Round 0.
+     Plus 6 additional code-level fixes for edge cases in verification
+     cells (NK v2 anomaly, AST negative literals, skin barrier path
+     containment, search manifest validation, epoch schema).
+     Total: 11 fixes applied. 572 tests pass.
+
+  4. KAPPA PROVES AGREEMENT EXISTS:
+     kappa = 0.619 (substantial inter-rater agreement). The models
+     AGREED. They just could not ACT on that agreement because every
+     mechanism for closing findings was broken.
 
 
 COMMUNICATION OVERHEAD (Exp 31):
@@ -372,21 +420,9 @@ COMMUNICATION OVERHEAD (Exp 31):
     DeepSeek:  0.22 findings/Kchar
 
   Cross-model reference overhead: 2.9% of total tokens
-    (models spent only 2.9% of output referencing each other's work)
-
-  FFF ordering compliance:
-    100% of findings had FIX before FOLLOW (wrong order).
-    Correct order is FIND -> FOLLOW -> FIX. This has now been corrected
-    in the finding schema for future experiments.
-
-  Cross-model verdicts:
-    Zero CHALLENGE verdicts in entire experiment. All cross-references
-    were confirmations or extensions. No model ever formally disagreed
-    with another model's finding.
-
-  Finding ID reuse:
-    CC2_F001 referred to different bugs in different rounds. Finding IDs
-    were not stable across rounds, breaking deduplication and tracking.
+  Cross-model verdicts: zero CHALLENGE in entire experiment
+  FFF ordering: 100% wrong (FIX before FOLLOW). Now corrected.
+  Finding ID stability: IDs reused across rounds. Now corrected.
 
 
 DUANE RELIABILITY GROWTH MODEL (background):
@@ -428,33 +464,34 @@ _FINDING_SCHEMA_INSTRUCTION = (
 )
 
 _PHASE_1_PROMPT = (
-    "PHASE 1 -- CONVERGENCE MODEL VALIDATION (Round 0)\n\n"
-    "You have the full convergence data from Experiments 30 and 31 above.\n\n"
-    "The Duane reliability growth model was used to measure convergence in\n"
-    "both experiments. In Exp 30, gamma fell from 0.567 to 0.320 (finding\n"
-    "rate NOT declining -- no convergence). In Exp 31, gamma rose from\n"
-    "0.000 to 0.106 (marginal improvement but nowhere near the 0.5 threshold).\n\n"
-    "Neither experiment achieved convergence. Both hit BUDGET_EXHAUSTED after\n"
-    "15 rounds. However, Exp 31 had known structural blockers (dead code in\n"
-    "bug-closed gate, autoimmune threshold too low, finding ID reuse) that\n"
-    "artificially inflated churn. Mid-experiment interventions (Good Enough\n"
-    "instruction, merge instruction) visibly reduced churn but were applied\n"
-    "too late to affect gamma.\n\n"
+    "PHASE 1 -- CONVERGENCE ASSESSMENT (Round 0)\n\n"
+    "You have the full convergence data from Experiments 30 and 31 above,\n"
+    "including the HIL's claim that convergence HAS occurred but the\n"
+    "instrumentation failed to detect it.\n\n"
+    "The Duane reliability growth model was used to measure convergence.\n"
+    "In Exp 30, gamma fell from 0.567 to 0.320. In Exp 31, gamma rose\n"
+    "from 0.000 to 0.106. Neither crossed the 0.5 threshold. But 5\n"
+    "independent instrumentation failures have been identified and fixed.\n\n"
     "YOUR TASK:\n"
-    "  1. Does the Duane reliability growth model correctly capture convergence\n"
-    "     in multi-model collaborative review? Consider whether the model's\n"
-    "     assumptions (independent defect arrivals, homogeneous defect population)\n"
-    "     hold in this context.\n"
-    "  2. Given this data, predict the round at which gamma should cross 0.5\n"
-    "     in the next code review experiment, ASSUMING:\n"
-    "       - All three structural blockers are fixed\n"
-    "       - Good Enough + merge instructions active from Round 0\n"
-    "       - Finding IDs are stable across rounds\n"
-    "       - Same 5-model configuration\n"
-    "       - Same or similar codebase complexity\n"
-    "  3. State your assumptions explicitly.\n"
-    "  4. Quantify uncertainty: give a point estimate and a 90% confidence\n"
-    "     interval for the round number.\n\n"
+    "  1. EVALUATE THE HIL'S CLAIM: Do you agree that convergence occurred\n"
+    "     in the codebase but was not detected? Assess the evidence:\n"
+    "     83 bugs -> 39 fixed -> 13 verified residual (mostly edge cases).\n"
+    "     kappa = 0.619 (models agreed). 5 broken detection mechanisms.\n"
+    "     Challenge this claim if the evidence does not support it.\n\n"
+    "  2. DUANE MODEL FITNESS: Does the Duane reliability growth model\n"
+    "     correctly capture convergence in multi-model collaborative review?\n"
+    "     Consider whether its assumptions (independent defect arrivals,\n"
+    "     homogeneous defect population) hold when 58.3% of findings are\n"
+    "     churn from broken instrumentation. Is gamma the right metric,\n"
+    "     or is something better available?\n\n"
+    "  3. DETECTION IMPROVEMENTS: Given that all 5 instrumentation failures\n"
+    "     are now fixed, what else (if anything) in the mathematical model\n"
+    "     or the codebase would enhance the ability to DETECT convergence\n"
+    "     when it occurs? Consider: alternative metrics, additional\n"
+    "     convergence criteria, changes to the immune pipeline, changes\n"
+    "     to the convergence detector.\n\n"
+    "  4. PREDICTION: Given the fixes, predict when gamma should cross 0.5\n"
+    "     in the next code review. Point estimate + 90% confidence interval.\n\n"
     "Produce your analysis as structured findings using the schema below.\n\n"
 )
 
@@ -509,11 +546,13 @@ _PHASE_3_PROMPT = (
     "     clusters.\n\n"
     "  3. MODEL COUNT: Is 5 the right number? More models produce more\n"
     "     findings but also more churn. What is the optimal count?\n\n"
-    "  4. MULTI-AGENT ARCHITECTURE: CC2 (Claude) can spawn multiple\n"
-    "     specialist sub-agents at negligible additional cost (same API\n"
-    "     call, internal tool use). Should the experiment use this?\n"
-    "     If so, what specialist roles? (e.g., one agent for logic bugs,\n"
-    "     one for interface contracts, one for edge cases)\n\n"
+    "  4. MULTI-AGENT ARCHITECTURE: CC2 (Claude) can use runner-side\n"
+    "     parallelism -- the runner dispatches 3-4 parallel prompts to CC2\n"
+    "     with specialist roles, then merges their outputs before passing\n"
+    "     to the immune pipeline. This is fully auditable (every prompt\n"
+    "     and response logged). Should the experiment use this? If so,\n"
+    "     what specialist roles? (e.g., structural, semantic, integration)\n"
+    "     How many sub-agents? What deduplication strategy across them?\n\n"
     "  5. FINDING SCHEMA: What fields should each finding have? The\n"
     "     current schema is: FINDING_ID, SEVERITY, FLAW_CLASS,\n"
     "     ABSTRACTION_INDEX, DESCRIPTION, FOLLOW, PROPOSED_FIX, VERIFIED.\n"
