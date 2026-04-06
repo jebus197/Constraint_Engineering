@@ -373,6 +373,7 @@ class FindingRegistry:
 
         closed = [e for e in self.entries.values() if e["status"] == "CLOSED"]
         merged = [e for e in self.entries.values() if e["status"] == "MERGED"]
+        refuted = [e for e in self.entries.values() if e["status"] == "REFUTED"]
         active_statuses = ("OPEN", "CONTESTED", "CONFIRMED", "REOPENED", "UNCONFIRMED")
         active_count = sum(
             1 for e in self.entries.values() if e["status"] in active_statuses
@@ -381,7 +382,7 @@ class FindingRegistry:
         lines = [
             f"=== FINDING REGISTRY (Round {round_idx}) ===",
             f"Total: {len(self.entries)} canonical findings",
-            f"Active: {active_count} | Closed: {len(closed)} | Merged: {len(merged)}",
+            f"Active: {active_count} | Closed: {len(closed)} | Merged: {len(merged)} | Refuted: {len(refuted)}",
             f"Open CRIT/HIGH: {self.open_crit_high_count()}",
             "",
         ]
@@ -409,16 +410,16 @@ class FindingRegistry:
             lines.append("")
 
         # ── Resolved findings: compact, no detail ──
-        if closed or merged:
+        if closed or merged or refuted:
             lines.append("--- RESOLVED (do not revisit) ---")
             lines.append(
-                "These findings have verified fixes or have been merged. "
-                "Do not CHALLENGE or re-describe them. To reopen a CLOSED "
-                "finding, issue REOPEN <ID> with specific new evidence "
-                "(this will be escalated to human review)."
+                "These findings have verified fixes, have been merged, or "
+                "have been refuted. Do not CHALLENGE or re-describe them. "
+                "To reopen a CLOSED finding, issue REOPEN <ID> with specific "
+                "new evidence (this will be escalated to human review)."
             )
-            for e in sorted(closed + merged, key=lambda x: x["canonical_id"]):
-                tag = "CLOSED" if e["status"] == "CLOSED" else "MERGED"
+            for e in sorted(closed + merged + refuted, key=lambda x: x["canonical_id"]):
+                tag = e["status"]  # CLOSED, MERGED, or REFUTED
                 merged_note = ""
                 if e.get("merged_into"):
                     merged_note = f" -> {e['merged_into']}"
@@ -963,19 +964,20 @@ def _verification_step(
 ) -> Dict[str, Any]:
     """Between-rounds CC2v verification: FFF open findings via CC2 CLI.
 
-    Selects a batch of OPEN CRIT/HIGH findings, dispatches to CC2 with
-    verification prompt, parses structured verdicts, and feeds results
-    back through the registry.
+    Selects a batch of OPEN/CONTESTED findings (highest severity first),
+    dispatches to CC2 with verification prompt, parses structured verdicts,
+    and feeds results back through the registry.
 
     Returns dict with verification stats.
     """
     if round_idx < VERIFICATION_MIN_ROUND:
         return {"skipped": True, "reason": f"round {round_idx} < {VERIFICATION_MIN_ROUND}"}
 
-    # Select batch: OPEN findings, highest severity first
+    # Select batch: OPEN findings, highest severity first.
+    # Exclude findings already escalated by CC2v (prevents re-selection loop).
     open_findings = []
     for cid, entry in registry.entries.items():
-        if entry["status"] in ("OPEN", "CONTESTED"):
+        if entry["status"] in ("OPEN", "CONTESTED") and not entry.get("cc2v_escalated"):
             open_findings.append((cid, entry))
     if not open_findings:
         return {"skipped": True, "reason": "no open findings"}
@@ -1060,17 +1062,28 @@ def _verification_step(
             "evidence": evidence[:200],
         }
 
+        # ESCALATE is exempt from confidence gating — it signals
+        # genuine uncertainty, not low-confidence determination.
+        if action == "ESCALATE":
+            entry = registry.entries.get(finding_id)
+            if entry:
+                entry["cc2v_escalated"] = True  # Exclude from future batches
+            escalated += 1
+            _log(f"  CC2v: {finding_id} ESCALATED — needs HIL review")
+            continue
+
         # Apply verdicts to registry (confidence-gated)
         if confidence < VERIFICATION_CONFIDENCE_THRESHOLD:
             _log(f"  CC2v: {finding_id} {action} — low confidence ({confidence:.2f}), skipped")
             continue
 
         if action == "CONFIRM":
-            # Treat as independent confirmation from CC2v
+            # Treat as independent confirmation from CC2v.
+            # resolve() only — do NOT call mark_verified(), which means
+            # "fix programmatically verified by immune Stage 4."
             entry = registry.entries.get(finding_id)
             if entry and entry["status"] in ("OPEN", "CONTESTED"):
                 registry.resolve(finding_id, "CONFIRMED", round_idx)
-                registry.mark_verified(finding_id)
                 confirmed += 1
                 _log(f"  CC2v: {finding_id} CONFIRMED (conf={confidence:.2f})")
 
@@ -1090,10 +1103,6 @@ def _verification_step(
                     entry["merged_into"] = merge_target
                     duplicates += 1
                     _log(f"  CC2v: {finding_id} MERGED into {merge_target} (conf={confidence:.2f})")
-
-        elif action == "ESCALATE":
-            escalated += 1
-            _log(f"  CC2v: {finding_id} ESCALATED — needs HIL review")
 
     stats["confirmed"] = confirmed
     stats["rejected"] = rejected
@@ -2580,19 +2589,9 @@ def run_experiment(
             model_count = len([f for f in findings if f.model_id == label])
             _log(f"    {label}: {model_count} findings")
 
-        # Persist runner state for resume
-        _runner_ckpt = brain.logs_dir / "runner_state.json"
-        _runner_ckpt.write_text(json.dumps({
-            "registry": registry.to_dict(),
-            "novelty_counts": novelty_counts,
-            "gamma_history": [round(g, 6) for g in gamma_history],
-            "gate_history": gate_history,
-            "open_ch_history": open_ch_history,
-            "stall_history": stall_history,
-            "cumulative_context_chars": cumulative_context_chars,
-        }, indent=2, default=str), encoding="utf-8")
-
         # Check state-based convergence (primary gate)
+        # NOTE: these calls mutate gate_history, open_ch_history, stall_history.
+        # Checkpoint is written AFTER so resume gets the complete state.
         converged, conv_reason = _check_state_convergence(
             round_idx, registry, novel_this_round, gamma, gate_history,
             open_ch_history=open_ch_history,
@@ -2603,6 +2602,19 @@ def run_experiment(
         stall_result = _check_stall_convergence(
             round_idx, registry, gamma, stall_history,
         )
+
+        # Persist runner state for resume (after convergence checks so
+        # gate_history, open_ch_history, stall_history include this round)
+        _runner_ckpt = brain.logs_dir / "runner_state.json"
+        _runner_ckpt.write_text(json.dumps({
+            "registry": registry.to_dict(),
+            "novelty_counts": novelty_counts,
+            "gamma_history": [round(g, 6) for g in gamma_history],
+            "gate_history": gate_history,
+            "open_ch_history": open_ch_history,
+            "stall_history": stall_history,
+            "cumulative_context_chars": cumulative_context_chars,
+        }, indent=2, default=str), encoding="utf-8")
         round_data["stall_detector"] = stall_result
         if stall_result["stalled"]:
             if stall_result["tier"] == "terminate":
