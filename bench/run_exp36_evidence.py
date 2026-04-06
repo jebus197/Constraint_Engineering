@@ -191,6 +191,12 @@ MAX_NOVEL_FINDINGS = 2           # Novel findings <= 2 per round to qualify
 OPEN_CH_STABILITY_WINDOW = 3    # open_ch must not increase for this many rounds
 MAX_OPEN_CRIT_HIGH = 0           # Zero open CRITICAL/HIGH to qualify
 
+# Stall-convergence detector — complementary secondary signal
+STALL_WINDOW = 3                 # open_ch + contested must be static for this many rounds
+STALL_EARLIEST_ROUND = 15        # Don't fire before R15 (allow models to settle)
+STALL_GAMMA_ADVISORY = 0.30      # Tier 1: log advisory ("system may be plateauing")
+STALL_GAMMA_TERMINATE = 0.45     # Tier 2: terminate with STALL_CONVERGED
+
 # CC2v between-rounds verification constants
 VERIFICATION_BATCH_SIZE = 6      # Max OPEN findings per verification step
 VERIFICATION_MIN_ROUND = 6       # Don't verify before round 6 (let findings accumulate)
@@ -794,6 +800,93 @@ def _check_state_convergence(
         )
 
     return False, f"Gate passed this round but not {CONSECUTIVE_ROUNDS_REQUIRED} consecutive"
+
+
+def _check_stall_convergence(
+    round_idx: int,
+    registry: "FindingRegistry",
+    gamma: float,
+    stall_history: List[Dict[str, int]],
+) -> Dict[str, Any]:
+    """Stall-convergence detector — complementary secondary convergence signal.
+
+    Independent from the gate. Checks whether open_ch and contested counts
+    have been static for STALL_WINDOW rounds while gamma indicates depletion.
+
+    Two tiers:
+      - Advisory (γ ≥ STALL_GAMMA_ADVISORY): log warning, no termination.
+      - Terminate (γ ≥ STALL_GAMMA_TERMINATE): recommend STALL_CONVERGED.
+
+    Returns dict with: stalled (bool), tier (str), reason (str), terminate (bool).
+    Caller is responsible for logging and acting on the result.
+    """
+    open_ch = registry.open_crit_high_count()
+    contested = registry.contested_count(round_idx)
+
+    # Record this round's snapshot
+    stall_history.append({"open_ch": open_ch, "contested": contested})
+
+    result: Dict[str, Any] = {
+        "round": round_idx,
+        "open_ch": open_ch,
+        "contested": contested,
+        "gamma": round(gamma, 4),
+        "stalled": False,
+        "tier": "none",
+        "terminate": False,
+        "reason": "",
+    }
+
+    # Too early
+    if round_idx < STALL_EARLIEST_ROUND:
+        result["reason"] = f"round {round_idx} < {STALL_EARLIEST_ROUND}"
+        return result
+
+    # Not enough history
+    if len(stall_history) < STALL_WINDOW:
+        result["reason"] = f"insufficient history ({len(stall_history)} < {STALL_WINDOW})"
+        return result
+
+    # Check stasis: open_ch and contested both unchanged over window
+    window = stall_history[-STALL_WINDOW:]
+    open_values = [s["open_ch"] for s in window]
+    contested_values = [s["contested"] for s in window]
+
+    open_static = all(v == open_values[0] for v in open_values)
+    contested_static = all(v == contested_values[0] for v in contested_values)
+
+    if not (open_static and contested_static):
+        result["reason"] = (
+            f"not static — open_ch {open_values}, contested {contested_values}"
+        )
+        return result
+
+    # System is stalled. Check gamma for tier.
+    result["stalled"] = True
+
+    if gamma >= STALL_GAMMA_TERMINATE:
+        result["tier"] = "terminate"
+        result["terminate"] = True
+        result["reason"] = (
+            f"STALL_CONVERGED: open_ch={open_ch} static {STALL_WINDOW}r, "
+            f"contested={contested} static {STALL_WINDOW}r, "
+            f"γ={gamma:.3f} ≥ {STALL_GAMMA_TERMINATE} (strong depletion)"
+        )
+    elif gamma >= STALL_GAMMA_ADVISORY:
+        result["tier"] = "advisory"
+        result["reason"] = (
+            f"Stall advisory: open_ch={open_ch} static {STALL_WINDOW}r, "
+            f"contested={contested} static {STALL_WINDOW}r, "
+            f"γ={gamma:.3f} ≥ {STALL_GAMMA_ADVISORY} (moderate depletion)"
+        )
+    else:
+        result["tier"] = "stalled_low_gamma"
+        result["reason"] = (
+            f"Stalled but γ={gamma:.3f} < {STALL_GAMMA_ADVISORY} "
+            f"(discovery space may not be depleted — do not terminate)"
+        )
+
+    return result
 
 
 def _check_budget_extension(
@@ -2022,6 +2115,7 @@ def run_experiment(
     gamma_history: List[float] = []
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
+    stall_history: List[Dict[str, int]] = []
     if resume and (brain.logs_dir / "runner_state.json").exists():
         import json as _json
         ckpt_data = _json.loads(
@@ -2031,6 +2125,7 @@ def run_experiment(
         gamma_history = ckpt_data.get("gamma_history", [])
         gate_history = ckpt_data.get("gate_history", [])
         open_ch_history = ckpt_data.get("open_ch_history", [])
+        stall_history = ckpt_data.get("stall_history", [])
         cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
 
     # Build multi-model awareness preamble (star topology)
@@ -2476,20 +2571,42 @@ def run_experiment(
             "gamma_history": [round(g, 6) for g in gamma_history],
             "gate_history": gate_history,
             "open_ch_history": open_ch_history,
+            "stall_history": stall_history,
             "cumulative_context_chars": cumulative_context_chars,
         }, indent=2, default=str), encoding="utf-8")
 
-        # Check state-based convergence
+        # Check state-based convergence (primary gate)
         converged, conv_reason = _check_state_convergence(
             round_idx, registry, novel_this_round, gamma, gate_history,
             open_ch_history=open_ch_history,
         )
         _log(f"  Convergence: {conv_reason}")
 
+        # Stall-convergence detector (complementary secondary signal)
+        stall_result = _check_stall_convergence(
+            round_idx, registry, gamma, stall_history,
+        )
+        round_data["stall_detector"] = stall_result
+        if stall_result["stalled"]:
+            if stall_result["tier"] == "terminate":
+                _log(f"  Stall detector: {stall_result['reason']}")
+            elif stall_result["tier"] == "advisory":
+                _log(f"  Stall detector: {stall_result['reason']}")
+            elif stall_result["tier"] == "stalled_low_gamma":
+                _log(f"  Stall detector: {stall_result['reason']}")
+
         if converged:
             _log(f"\n  CONVERGED at round {round_idx}: {conv_reason}")
             result["converged_at"] = round_idx
             result["convergence_reason"] = conv_reason
+            break
+
+        # Stall-convergence termination (fires only if gate did NOT converge)
+        if stall_result.get("terminate"):
+            _log(f"\n  STALL_CONVERGED at round {round_idx}: {stall_result['reason']}")
+            result["converged_at"] = round_idx
+            result["convergence_reason"] = "STALL_CONVERGED"
+            result["stall_detail"] = stall_result["reason"]
             break
 
         # Budget extension check at MAX_ROUNDS boundary

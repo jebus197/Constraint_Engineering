@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 April 2026 22:29 BST
+Last updated: 6 April 2026 23:52 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,7 +19,7 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (6 April 2026, 22:29 BST)
+## Current Pending Work (6 April 2026, 23:52 BST)
 
 Experiments 12–35 ALL COMPLETE. 690 tests pass.
 
@@ -58,6 +58,13 @@ IMPLEMENTED THIS SESSION (all committed and tested, 690 pass):
      - Confidence-gated (0.7): CONFIRM/REJECT/DUPLICATE/ESCALATE
      - Wired into main loop after immune bridge, stats logged in round_data
      - Activates from round 6, batch size 6
+  5. Stall-convergence detector (both runners):
+     - _check_stall_convergence(): complementary secondary convergence signal
+     - Checks open_ch + contested static for STALL_WINDOW (3) rounds + gamma
+     - Two tiers: advisory (γ ≥ 0.30, log only) and terminate (γ ≥ 0.45, STALL_CONVERGED)
+     - Independent from primary gate — both run every round, both logged in round_data
+     - Four termination states: STATE_CONVERGED, STALL_CONVERGED, EXTENSION_STALLED, BUDGET_EXHAUSTED
+     - stall_history tracked with checkpoint save/restore
 
 EXP 34 ANALYSIS COMPLETE (6 April 2026):
   81 canonical → 33 verified unique. 17 fixes applied to endocrine.py.

@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 6 April 2026 22:30 BST
+Last updated: 6 April 2026 23:52 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -259,6 +259,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   not increasing for OPEN_CH_STABILITY_WINDOW (3) consecutive rounds").
   Tracks `open_ch_history` with checkpoint save/restore. Both runners updated.
   Would have triggered R20-R22 in Exp 35.
+  **Stall-convergence detector (IMPLEMENTED):**
+  Complementary secondary convergence signal, independent from the primary gate.
+  `_check_stall_convergence()` checks open_ch + contested static for 3 rounds,
+  cross-referenced with gamma. Two tiers: advisory (γ ≥ 0.30, log only) and
+  terminate (γ ≥ 0.45, STALL_CONVERGED). Both gate and stall results stored
+  per round in `round_data` for HIL tracing. Four distinct termination states:
+  STATE_CONVERGED (gate), STALL_CONVERGED (stall+depletion), EXTENSION_STALLED
+  (budget extension no progress), BUDGET_EXHAUSTED (max rounds). Stall history
+  persisted through checkpoints. Both runners updated identically.
   **PolicyEngine fixes (7 changes, IMPLEMENTED):**
   (1) `load_schema()`: default type validation + allowed_values validation.
   (2) `_compute_provenance()` Layer 4: missing `model_config` merge added.
