@@ -1,0 +1,240 @@
+{
+  "experiment": "exp35_pe",
+  "total_canonical": 79,
+  "total_confirmed_unique_issues": 17,
+  "refuted": [
+    "C0029",
+    "C0039"
+  ],
+  "verdict_only": [
+    "C0066",
+    "C0075"
+  ],
+  "empty_entries": [
+    "C0028",
+    "C0031",
+    "C0032",
+    "C0033",
+    "C0034",
+    "C0035",
+    "C0043",
+    "C0047",
+    "C0048",
+    "C0049",
+    "C0050",
+    "C0051",
+    "C0053",
+    "C0054",
+    "C0069",
+    "C0070",
+    "C0071"
+  ],
+  "clusters": {
+    "LAYER4_MERGE": {
+      "description": "_compute_provenance() Layer 4 does not merge model config into current",
+      "findings": [
+        "C0001",
+        "C0006",
+        "C0013",
+        "C0076"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "Line 239-246: Layer 4 iterates model_config but never calls _deep_merge(current, model_config). Layers 2+3 both merge. Asymmetric.",
+      "severity": "MEDIUM \u2014 current is not used after Layer 4, so no wrong results TODAY. But maintenance hazard if code extends.",
+      "fix_class": "correctness (latent)"
+    },
+    "PROVENANCE_OVERWRITE": {
+      "description": "_compute_provenance() overwrites provenance for all keys in a layer, not just changed values",
+      "findings": [
+        "C0012",
+        "C0022",
+        "C0036"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "No value comparison anywhere in _compute_provenance. Provenance says 'domain' even when domain re-states universal's value identically.",
+      "severity": "MEDIUM \u2014 provenance is misleading but effective policy values are correct.",
+      "fix_class": "correctness (misleading output)"
+    },
+    "VALIDATE_UNIDIRECTIONAL": {
+      "description": "validate() checks registry\u2192schema but not schema\u2192registry direction",
+      "findings": [
+        "C0002",
+        "C0007",
+        "C0011",
+        "C0023",
+        "C0038",
+        "C0056",
+        "C0057",
+        "C0073"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "Only computes registry_hard_X - schema_hard_X. Never computes schema_hard_X - registry_hard_X.",
+      "severity": "HIGH \u2014 HARD constraints in schema but not in registry will be silently unenforced.",
+      "fix_class": "correctness"
+    },
+    "NO_TYPE_VALIDATION": {
+      "description": "No runtime type/enum/min_layer validation of TOML values against schema",
+      "findings": [
+        "C0019",
+        "C0044",
+        "C0045",
+        "C0074"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "validate() delegates to validate_all_policies() (monotonicity only) + coverage checks. Never inspects actual values. get_parameter() returns raw values without type checking.",
+      "severity": "HIGH \u2014 invalid TOML values silently accepted. Type = 'int' with value 'abc' passes.",
+      "fix_class": "correctness"
+    },
+    "LOAD_SCHEMA_NO_DEFAULT_CHECK": {
+      "description": "load_schema() never validates that default matches declared type or allowed_values",
+      "findings": [
+        "C0004",
+        "C0009",
+        "C0025",
+        "C0046",
+        "C0060"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "load_schema() checks type/constraint_class/min_layer strings only. Never inspects default field.",
+      "severity": "MEDIUM \u2014 schema.toml currently consistent (all defaults match types). Would catch future errors.",
+      "fix_class": "defensive correctness"
+    },
+    "DIFF_MISSING_TASK": {
+      "description": "diff_policies() missing task_id_a/task_id_b parameters",
+      "findings": [
+        "C0015",
+        "C0030",
+        "C0037",
+        "C0068",
+        "C0078"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "Signature: diff_policies(self, domain_a, domain_b, model_a, model_b). No task_id.",
+      "severity": "MEDIUM \u2014 cannot diff task-level policies. Interface incomplete.",
+      "fix_class": "completeness"
+    },
+    "DIFF_NO_DEFAULTS": {
+      "description": "diff_policies() compares raw TOML without schema defaults",
+      "findings": [
+        "C0024",
+        "C0055",
+        "C0061",
+        "C0077"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "Uses load_effective_policy() which doesn't inject defaults. Missing params show as <absent> not as default.",
+      "severity": "LOW-MEDIUM \u2014 diff is misleading for params relying on defaults.",
+      "fix_class": "correctness (misleading)"
+    },
+    "MIN_LAYER_NOT_ENFORCED": {
+      "description": "min_layer stored in schema but never enforced at runtime",
+      "findings": [
+        "C0018",
+        "C0026",
+        "C0062"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "min_layer loaded into ParameterDef but never compared against actual layer source.",
+      "severity": "HIGH \u2014 parameter defined in wrong layer silently accepted.",
+      "fix_class": "correctness"
+    },
+    "VIOLATIONS_DEAD": {
+      "description": "PolicyResult.violations field never populated",
+      "findings": [
+        "C0020",
+        "C0052"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "violations only appears in dataclass definition. Never assigned in query() or anywhere else.",
+      "severity": "LOW \u2014 dead field. Misleading API contract but no wrong behavior.",
+      "fix_class": "dead code"
+    },
+    "UNUSED_IMPORTS": {
+      "description": "Unused imports: Path, Sequence, tomllib, PolicyViolationError, _check_monotonicity",
+      "findings": [
+        "C0005"
+      ],
+      "verdict": "CONFIRMED (5 unused: Path, Sequence, tomllib + 2 imported-but-unused-in-body)",
+      "evidence": "AST + text search confirms none used after import block.",
+      "severity": "LOW \u2014 cleanliness only. PolicyViolationError/_check_monotonicity may be intentional re-exports.",
+      "fix_class": "hygiene"
+    },
+    "QUERY_DOUBLE_LOAD": {
+      "description": "query() and get_parameter() load TOML files twice (effective + provenance)",
+      "findings": [
+        "C0014",
+        "C0041",
+        "C0059"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "Both call load_effective_policy AND _compute_provenance, each of which loads all TOML layers independently.",
+      "severity": "LOW \u2014 performance only at PoC scale. No correctness issue.",
+      "fix_class": "performance"
+    },
+    "FLATTEN_SCHEMA_HEURISTIC": {
+      "description": "_flatten_schema uses fragile 'type' key heuristic to identify parameter definitions",
+      "findings": [
+        "C0017",
+        "C0040",
+        "C0072",
+        "C0079"
+      ],
+      "verdict": "CONFIRMED but LOW RISK",
+      "evidence": "Heuristic: isinstance(value, dict) and 'type' in value. Would misclassify a section named 'type'. Current schema.toml has no such collision.",
+      "severity": "LOW \u2014 theoretical fragility. Current schema is safe.",
+      "fix_class": "defensive"
+    },
+    "SCHEMA_INCOMPLETE": {
+      "description": "schema.toml missing some active policy parameters (anti_deference sub-params)",
+      "findings": [
+        "C0008"
+      ],
+      "verdict": "PARTIALLY CONFIRMED",
+      "evidence": "anti_deference sub-params (agreement_requires_evidence, etc) ARE in schema.toml. But schema has 55 params vs potentially broader policy surface. Coverage adequate for current use.",
+      "severity": "LOW \u2014 schema covers all registry HARD keys.",
+      "fix_class": "completeness"
+    },
+    "ENUM_TYPE_UNUSED": {
+      "description": "VALID_TYPES includes 'enum' but no schema param uses type='enum'",
+      "findings": [
+        "C0004",
+        "C0058"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "3 params have allowed_values but type='string'. enum type exists in VALID_TYPES but is unused.",
+      "severity": "LOW \u2014 dead type category. Misleading but harmless.",
+      "fix_class": "hygiene"
+    },
+    "ERROR_HANDLING_ASYMMETRY": {
+      "description": "load_effective_policy raises FileNotFoundError for missing model; _compute_provenance silently skips",
+      "findings": [
+        "C0010"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "registry.py L271 raises. engine.py L242 silently skips with if exists() check.",
+      "severity": "MEDIUM \u2014 query() would raise, but provenance would return partial result if model file missing.",
+      "fix_class": "correctness (inconsistency)"
+    },
+    "SCHEMA_SEMANTIC_CONTRADICTION": {
+      "description": "sympy_auto_verify (bool) vs sympy_verification (string enum) semantic overlap",
+      "findings": [
+        "C0064"
+      ],
+      "verdict": "CONFIRMED \u2014 design choice, not bug",
+      "evidence": "Both exist in schema. One is a bool toggle, other is mode selector. Overlapping semantics but not incorrect.",
+      "severity": "LOW \u2014 design ambiguity, not a bug.",
+      "fix_class": "design"
+    },
+    "UNKNOWN_PARAMS_NOT_CAUGHT": {
+      "description": "Misspelled/unknown parameters in TOML files silently accepted",
+      "findings": [
+        "C0027"
+      ],
+      "verdict": "CONFIRMED",
+      "evidence": "No validation that TOML keys exist in schema. Typo 'anti_deferrence' accepted silently.",
+      "severity": "MEDIUM \u2014 silent misconfiguration.",
+      "fix_class": "correctness"
+    }
+  },
+  "dedup_ratio": "79 canonical -> 17 unique issues (4.6:1)"
+}
