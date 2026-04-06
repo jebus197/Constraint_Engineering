@@ -1,0 +1,417 @@
+[23:52:18] ============================================================
+[23:52:18] PREFLIGHT: Testing 5-model connectivity
+[23:52:18] ============================================================
+[23:52:18]   Testing CC2...
+[23:52:18] Dispatching to CC2 (opus) via claude_cli...
+[23:52:23]   [claude-cli:opus] done (4.8s, 36 chars)
+[23:52:23]   CC2: OK (5.0s, 36 chars)
+[23:52:23]   Testing Codex...
+[23:52:23] Dispatching to Codex (openai/gpt-5.4) via openrouter...
+[23:52:26]   [openrouter:openai/gpt-5.4] done (2.6s, 30 chars)
+[23:52:26]   Codex: OK (3.2s, 30 chars)
+[23:52:26]   Testing ChatGPT...
+[23:52:26] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[23:52:29]   [openrouter:openai/gpt-5.4] done (2.5s, 23 chars)
+[23:52:29]   ChatGPT: OK (3.0s, 23 chars)
+[23:52:29]   Testing Gemini...
+[23:52:29] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[23:52:34]   [gemini:gemini-3.1-pro-preview] done (4.5s, 32 chars)
+[23:52:34]   Gemini: OK (5.2s, 32 chars)
+[23:52:34]   Testing DeepSeek...
+[23:52:34] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[23:52:40]   [deepseek:deepseek-reasoner] done (5.3s, 23 chars content, 808 chars reasoning)
+[23:52:40]   DeepSeek: OK (5.8s, 23 chars)
+[23:52:40] 
+Preflight passed. Starting Exp 34 in 5s... (pattern=fff)
+[23:52:45] ============================================================
+[23:52:45] EXPERIMENT 34: Endocrine Layer Code Review
+[23:52:45]   Topology: star/blackboard (runner owns all state)
+[23:52:45]   Pattern: fff
+[23:52:45]   Max rounds: 21 (extension to 24)
+[23:52:45]   Convergence: state-based, earliest R12
+[23:52:45]   Gamma: telemetry→R14, soft→R19, hard→R20+
+[23:52:45]   Target: endocrine.py
+[23:52:45]   Context: insect_brain.py, immune_agents.py
+[23:52:45]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[23:52:45]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z
+[23:52:45] ============================================================
+[23:52:45]   Target: 38,732 chars
+[23:52:45]   Context: 2 files
+[23:52:45]   Total: 225,094 raw chars → 225,455 with headers
+[23:52:45]   Endocrine layer initialised (runs for pacing, also under review)
+[23:52:45]   Base prompt: 231,813 chars
+[23:52:45] 
+────────────────────────────────────────────────────────────
+[23:52:45] Round 0/20 (blind)
+[23:52:45] ────────────────────────────────────────────────────────────
+[23:52:45]   Parallel dispatch: 5 models
+[23:52:45]   CC2: composed directives (12035 chars, pattern=fff)
+[23:52:45]   ChatGPT: composed directives (5709 chars, pattern=fff)
+[23:52:45]   Gemini: composed directives (5709 chars, pattern=fff)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py:875: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0287, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+[23:52:45]   Codex: composed directives (2653 chars, pattern=fff)
+[23:52:45]   Codex: decomposed — multi-turn sequential delivery
+[23:52:45]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~225,427 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py:875: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0287, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+[23:52:45]   DeepSeek: composed directives (2653 chars, pattern=fff)
+[23:52:45]   DeepSeek: decomposed — multi-turn sequential delivery
+[23:52:45]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~225,427 chars
+[23:52:45] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[23:52:45] Dispatching to CC2 (opus) via claude_cli...
+[23:52:45] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+[23:52:45]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (38,801 chars, target_0)
+[23:52:45]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (38,801 chars, target_0)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[23:52:48]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (57,037 chars, target_1)
+[23:52:49]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (57,037 chars, target_1)
+[23:52:50]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (129,589 chars, target_2)
+[23:52:53]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[23:52:57]   [deepseek:deepseek-reasoner] WARNING: chunk 2 got non-WAITING response (0 chars): ...
+[23:52:57]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (129,589 chars, target_2)
+[23:53:07]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[23:53:09]   DeepSee[23:53:13]   [claude-cli:opus] done (134.8s, 20472 chars)
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[23:54:39]   [gemini:gemini-3.1-pro-preview] done (219.8s, 4582 chars)
+[23:55:37]   [deepseek:deepseek-reasoner] done (278.1s, 0 chars content, 64410 chars reasoning)
+[23:55:37]   [deepseek:deepseek-reasoner] empty response (attempt 1, 278.1s, reasoning=64410 chars)
+[23:55:37]   [deepseek:deepseek-reasoner] has 64410 chars of reasoning_content (CoT consumed output budget)
+[23:55:37]   [deepseek:deepseek-reasoner] reducing max_tokens to 8192 for next attempt
+[23:55:40]   [deepseek:deepseek-reasoner] retry 2/3 (max_tokens=8192)
+[23:58:00]   [deepseek:deepseek-reasoner] done (140.4s, 0 chars content, 32084 chars reasoning)
+[23:58:00]   [deepseek:deepseek-reasoner] empty response (attempt 2, 140.4s, reasoning=32084 chars)
+[23:58:00]   [deepseek:deepseek-reasoner] has 32084 chars of reasoning_content (CoT consumed output budget)
+[23:58:00]   [deepseek:deepseek-reasoner] reducing max_tokens to 4096 for next attempt
+[23:58:03]   [deepseek:deepseek-reasoner] retry 3/3 (max_tokens=4096)
+[23:59:15]   [deepseek:deepseek-reasoner] done (72.3s, 89 chars content, 17285 chars reasoning)
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 9 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+Check the full candidates.content.parts accessor to get the full model response.
+[23:56:02]   [gemini:gemini-3.1-pro-preview] done (196.6s, 7134 chars)
+[23:56:03]   Gemini: 7134 chars, 197.5s
+[23:56:03]   Gemini: 3 findings parsed
+[23:56:03]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r0_gemini_20260405T225603Z.json
+[23:57:43]   [deepseek:deepseek-reasoner] done (273.3s, 0 chars content, 64348 chars reasoning)
+[23:57:43]   [deepseek:deepseek-reasoner] empty response (attempt 1, 273.3s, reasoning=64348 chars)
+[23:57:43]   [deepseek:deepseek-reasoner] has 64348 chars of reasoning_content (CoT consumed output budget)
+[23:57:43]   [deepseek:deepseek-reasoner] reducing max_tokens to 8192 for next attempt
+[23:57:46]   [deepseek:deepseek-reasoner] retry 2/3 (max_tokens=8192)
+[00:00:09]   [deepseek:deepseek-reasoner] done (143.9s, 1070 chars content, 33158 chars reasoning)
+[00:00:10]   DeepSeek: 1070 chars, 420.9s
+[00:00:10]   DeepSeek: 1 findings parsed
+[00:00:10]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r0_deepseek_20260405T230010Z.json
+[00:00:10]   Registry: 29 novel, 29 total canonical
+[00:00:32] 
+  Endocrine cycle (round 0):
+[00:00:32]     Health scan: 19 diagnostics
+[00:00:32]     Pacing: slow_model → increase_timeout
+INFO:immune.shadow:Skin barrier (shadow): 29 passed, 0 failed out of 29 findings
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F003 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_F006 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.shadow:DC v2 reclassification: CC2_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F002 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.shadow:DC v2 reclassification: CC2_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F007 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F009 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F012 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F014 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 (shadow): 20/29 findings reclassified
+INFO:immune.shadow:Typed LLM classifier shadow: DISABLED (OpenRouter removed). 29 findings skipped.
+INFO:immune.shadow:CT v2 (shadow): no code findings to investigate
+INFO:immune.shadow:NK v2 (shadow): 5 verdicts (5 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.shadow:B Cell v2 (shadow): 12 claims checked, 1 grounded proofs
+INFO:immune.shadow:  ChatGPT_F003: CONFIRMED (0.85) — [B_v2_shadow] z3 SMT-LIB grounded proof. Grounded vars: ['net_type_errors', 'net_ruff_errors', 'net_
+INFO:immune.shadow:  Codex_F006: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F008: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F010: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F011: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F013: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Gemini_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Gemini_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  DeepSeek_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:Formalisation agent: Codex_F006 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+INFO:immune.shadow:Formalisation agent: CC2_F008 — 3 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+INFO:immune.shadow:Formalisation agent shadow: 9 math/logic findings, 2 with preconditions, 0 potential false rejections
+INFO:immune.shadow:Helper T v2 (shadow): 29 findings — 2 CONFIRMED, 0 REJECTED, 22 UNCERTAIN, 5 DUPLICATE
+INFO:immune.shadow:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+INFO:immune.shadow:Reconciliation LOCKED: CC2_F005 — both pipelines REJECTED (v1=0.39, v2=0.39)
+INFO:immune.shadow:Reconciliation LOCKED: CC2_F004 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+INFO:immune.shadow:Reconciliation LOCKED: CC2_F013 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation locked 5 finding(s): CC2_F004, CC2_F005, CC2_F013, Codex_F001, Gemini_F001
+INFO:immune.shadow:RT v2 (shadow): healthy — 17.2% removal rate
+INFO:immune.shadow:RT v1 vs v2: flag differs — v1=True v2=False ([RT_v2] Pipeline healthy: 17.2% removal rate)
+INFO:immune.shadow:Fix NOT verified: ChatGPT_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: ChatGPT_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: ChatGPT_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: ChatGPT_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: ChatGPT_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F007 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F008 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F009 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F010 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F011 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F012 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F014 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Gemini_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:UNCERTAIN-ESCALATED to HIL: CC2_F010 (B-Cell cannot ground claim in source)
+INFO:immune.shadow:UNCERTAIN-ESCALATED to HIL: CC2_F011 (B-Cell cannot ground claim in source)
+INFO:immune.shadow:UNCERTAIN-ESCALATED to HIL: DeepSeek_F001 (B-Cell cannot ground claim in source)
+INFO:immune.shadow:Escalated 3 UNCERTAIN findings to HIL (B-Cell cannot verify)
+[00:00:54]   γ: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[00:00:54] 
+  Round 0: 29 valid findings from 5 models (444.6s)
+[00:00:54]     CC2: 14 findings
+[00:00:54]     ChatGPT: 5 findings
+[00:00:54]     Codex: 6 findings
+[00:00:54]     DeepSeek: 1 findings
+[00:00:54]     Gemini: 3 findings
+[00:00:54]   Convergence: Too early (round 0 < 12)
+[00:00:54] 
+────────────────────────────────────────────────────────────
+[00:00:54] Round 1/20 (adaptive)
+[00:00:54] ────────────────────────────────────────────────────────────
+[00:00:54]   Parallel dispatch: 5 models
+[00:00:54]   ChatGPT: composed directives (5709 chars, pattern=fff)
+[00:00:54]   CC2: composed directives (12035 chars, pattern=fff)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py:875: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0287, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/run_exp34_endocrine.py:875: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0287, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(
+[00:00:54]   Codex: composed directives (2653 chars, pattern=fff)
+[00:00:54]   DeepSeek: composed directives (2653 chars, pattern=fff)
+[00:00:54]   Codex: decomposed — multi-turn sequential delivery
+[00:00:54]   DeepSeek: decomposed — multi-turn sequential delivery
+[00:00:54]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~225,427 chars
+[00:00:54]   Gemini: composed directives (5709 chars, pattern=fff)
+[00:00:54]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~225,427 chars
+[00:00:54]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (38,801 chars, target_0)
+[00:00:54]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (38,801 chars, target_0)
+[00:00:54] Dispatching to CC2 (opus) via claude_cli...
+[00:00:54] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[00:00:54] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[00:00:56]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (57,037 chars, target_1)
+[00:00:57]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (129,589 chars, target_2)
+[00:00:58]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (57,037 chars, target_1)
+[00:00:59]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[00:01:02]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (129,589 chars, target_2)
+[00:01:14]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[00:01:14]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[00:01:15]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 134768 tokens (118384 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[00:01:15] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[00:01:46]   [openrouter:openai/gpt-5.4] done (51.6s, 15993 chars)
+[00:01:46]   ChatGPT: 15993 chars, 52.4s
+[00:01:46]   ChatGPT: 15 findings parsed
+[00:01:46]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r1_chatgpt_20260405T230146Z.json
+[00:02:09]   [openrouter:openai/gpt-5.4] synthesis complete (75.2s, 22,259 chars)
+[00:02:09]   Codex: multi-turn OK (75.2s, 22,259 chars)
+[00:02:09]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/round1_codex_20260405T230209Z.json
+[00:02:09]   Codex: 6 findings parsed
+[00:02:09]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r1_codex_20260405T230209Z.json
+[00:03:49]   [deepseek:deepseek-reasoner] done (153.4s, 3060 chars content, 28641 chars reasoning)
+[00:03:49]   DeepSeek: 3060 chars, 154.0s
+[00:03:49]   DeepSeek: 2 findings parsed
+[00:03:49]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r1_deepseek_20260405T230349Z.json
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[00:04:25]   [gemini:gemini-3.1-pro-preview] done (209.9s, 10449 chars)
+[00:04:25]   Gemini: 10449 chars, 210.9s
+[00:04:25]   Gemini: 6 findings parsed
+[00:04:25]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r1_gemini_20260405T230425Z.json
+[00:05:15]   [claude-cli:opus] done (260.6s, 9579 chars)
+[00:05:15]   CC2: 9579 chars, 260.8s
+[00:05:15]   CC2: 3 findings parsed
+[00:05:15]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r1_cc2_20260405T230515Z.json
+[00:05:15]   Registry: 11 novel, 40 total canonical
+[00:05:15]   Verdicts: 12 CONFIRM, 2 CHALLENGE, 4 EXTEND, 0 MERGE
+[00:05:15]   Status: 8 CONFIRMED, 0 MERGED, 32 OPEN
+[00:05:32] 
+  Endocrine cycle (round 1):
+[00:05:32]     Health scan: 19 diagnostics
+INFO:immune.shadow:Skin barrier (shadow): 32 passed, 0 failed out of 32 findings
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F004 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F005 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F006 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F006 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F007 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F007 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F009 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F009 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: ChatGPT_F010 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_str — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Codex_str — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: DeepSeek_DS001 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: DeepSeek_DS002 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Gemini_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Gemini_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: Gemini_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+INFO:immune.shadow:DC v2 reclassification: CC2_F003 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.shadow:DC v2 (shadow): 25/32 findings reclassified
+INFO:immune.shadow:Typed LLM classifier shadow: DISABLED (OpenRouter removed). 32 findings skipped.
+INFO:immune.shadow:NK v2 (shadow): 22 verdicts (12 intra-round dups, 6 bugs closed, 2 escalated to HIL)
+INFO:immune.shadow:B Cell v2 (shadow): 6 claims checked, 1 grounded proofs
+INFO:immune.shadow:  Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  Gemini_F006: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+INFO:immune.shadow:  CC2_F003: REJECTED (0.85) — [B_v2_shadow] z3 SMT-LIB grounded counterexample. Grounded vars: ['net_type_errors', 'net_ruff_error
+INFO:immune.shadow:CT v2 (shadow): 0 verdicts in 94.3s — none
+INFO:immune.shadow:Formalisation agent: CC2_F003 — REJECTED with 1 preconditions (potential false rejection). Preconditions: ['total_net < 0: return "SAFE"`']
+INFO:immune.shadow:Formalisation agent shadow: 5 math/logic findings, 1 with preconditions, 1 potential false rejections
+INFO:immune.shadow:Helper T v2 (shadow): 26 findings — 0 CONFIRMED, 1 REJECTED, 7 UNCERTAIN, 18 DUPLICATE
+INFO:immune.shadow:Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: Codex_str — both pipelines REJECTED (v1=1.00, v2=1.00)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F010 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F008 — both pipelines REJECTED (v1=0.35, v2=0.35)
+INFO:immune.shadow:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+INFO:immune.shadow:Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.85, v2=0.59)
+INFO:immune.shadow:Reconciliation LOCKED: DeepSeek_DS002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F009 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: Gemini_F005 — both pipelines REJECTED (v1=0.39, v2=0.39)
+INFO:immune.shadow:Reconciliation LOCKED: Gemini_F004 — both pipelines REJECTED (v1=0.33, v2=0.33)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: Gemini_F003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.80, v2=0.80)
+INFO:immune.shadow:Reconciliation locked 19 finding(s): CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, ChatGPT_F006, ChatGPT_F007, ChatGPT_F008, ChatGPT_F009, ChatGPT_F010, Codex_F001, Codex_str, DeepSeek_DS002, Gemini_F001, Gemini_F003, Gemini_F004, Gemini_F005
+INFO:immune.shadow:RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 19/26 (73.1%) exceeds threshold (65%) [rejected=1, duplicated=18]; [RT_v2] 15/15 (100%) findings from ChatGPT removed — possible systematic bias
+INFO:immune.shadow:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 19/26 (73.1%) exceeds threshold (65%) [rejected=1, duplicated=18]; [RT_v2] 15/15 (100%) findings from ChatGPT removed — possible systematic bias)
+INFO:immune.shadow:Autoimmune override: resurrected 7 findings, kept 19 locked rejections
+INFO:immune.shadow:Fix NOT verified: Codex_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Codex_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: DeepSeek_DS001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Gemini_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: Gemini_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+INFO:immune.shadow:Fix NOT verified: CC2_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+[00:07:57]   γ: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[00:07:57] 
+  Round 1: 32 valid findings from 5 models (260.9s)
+[00:07:57]     CC2: 3 findings
+[00:07:57]     ChatGPT: 15 findings
+[00:07:57]     Codex: 6 findings
+[00:07:57]     DeepSeek: 2 findings
+[00:07:57]     Gemini: 6 findings
+[00:07:57]   Convergence: Too early (round 1 < 12)
+[00:07:57] 
+────────────────────────────────────────────────────────────
+[00:07:57] Round 2/20 (adaptive)
+[00:07:57] ────────────────────────────────────────────────────────────
+[00:07:57]   Parallel dispatch: 5 models
+[00:07:57]   DeepSeek: composed directives (2653 chars, pattern=fff)
+[00:07:57]   DeepSeek: decomposed — multi-turn sequential delivery
+[00:07:57]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~225,427 chars
+[00:07:57]   CC2: composed directives (12035 chars, pattern=fff)
+[00:07:57]   ChatGPT: composed directives (5709 chars, pattern=fff)
+[00:07:57]   Gemini: composed directives (5709 chars, pattern=fff)
+[00:07:57]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (38,801 chars, target_0)
+[00:07:57]   Codex: composed directives (2653 chars, pattern=fff)
+[00:07:57]   Codex: decomposed — multi-turn sequential delivery
+[00:07:57]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~225,427 chars
+[00:07:57]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (38,801 chars, target_0)
+[00:07:57] Dispatching to CC2 (opus) via claude_cli...
+[00:07:57] Dispatching to Gemini (gemini-3.1-pro-preview) via google...
+[00:07:57] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/georgejackson/Library/Python/3.9/lib/python/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+[00:07:58]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (57,037 chars, target_1)
+[00:08:00]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (129,589 chars, target_2)
+[00:08:03]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[00:08:04]   [deepseek:deepseek-reasoner] WARNING: chunk 1 got non-WAITING response (0 chars): ...
+[00:08:04]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (57,037 chars, target_1)
+[00:08:11]   [deepseek:deepseek-reasoner] WARNING: chunk 2 got non-WAITING response (0 chars): ...
+[00:08:11]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (129,589 chars, target_2)
+[00:08:22]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[00:08:22]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[00:08:24]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 135863 tokens (119479 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[00:08:24] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[00:08:32]   [openrouter:openai/gpt-5.4] done (34.6s, 9735 chars)
+[00:08:32]   ChatGPT: 9735 chars, 35.3s
+[00:08:32]   ChatGPT: 6 findings parsed
+[00:08:32]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r2_chatgpt_20260405T230832Z.json
+[00:08:44]   [openrouter:openai/gpt-5.4] synthesis complete (46.9s, 10,729 chars)
+[00:08:44]   Codex: multi-turn OK (46.9s, 10,729 chars)
+[00:08:44]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/round2_codex_20260405T230844Z.json
+[00:08:44]   Codex: 1 findings parsed
+[00:08:44]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r2_codex_20260405T230844Z.json
+[00:10:33]   [deepseek:deepseek-reasoner] done (128.3s, 3110 chars content, 26521 chars reasoning)
+[00:10:33]   DeepSeek: 3110 chars, 129.0s
+[00:10:33]   DeepSeek: 0 findings parsed
+[00:10:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r2_deepseek_20260405T231033Z.json
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[00:11:14]   [gemini:gemini-3.1-pro-preview] done (196.3s, 7397 chars)
+[00:11:14]   Gemini: 7397 chars, 197.3s
+[00:11:14]   Gemini: 2 findings parsed
+[00:11:14]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r2_gemini_20260405T231114Z.json
+[00:12:30]   [claude-cli:opus] done (272.9s, 8891 chars)
+[00:12:30]   CC2: 8891 chars, 273.1s
+[00:12:30]   CC2: 5 findings parsed
+[00:12:30]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp34_endocrine_20260405T225218Z/r2_cc2_20260405T231230Z.json
+[00:12:30]   Registry: 2 novel, 42 total canonical
+[00:12:30]   Verdicts: 16 CONFIRM, 3 CHALLENGE, 4 EXTEND, 0 MERGE
+[00:12:30]   Status: 20 CONFIRMED, 0 MERGED, 22 OPEN

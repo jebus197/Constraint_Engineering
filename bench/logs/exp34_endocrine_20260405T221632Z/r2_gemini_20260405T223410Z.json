@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260405T223410Z",
+  "phase": "r2",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2606,
+  "response": "CONFIRM C0038\nCONFIRM C0039\nCONFIRM C0040\nCONFIRM C0041\nMERGE C0011 <- C0005\nCONFIRM C0030\nCHALLENGE C0031 | `tools_available` is instantiated as a fresh, empty local dictionary at the start of `scan_health()`. It has no prior state to read from. Skipping tools based on it is logically impossible; tools must be tested each run.\nCHALLENGE C0033 | Mapping Bandit's LOW to `info` and MEDIUM to `warning` is standard, correct severity translation. Changing this adds complexity for subjective preference, violating the PoC constraints.\n\nFINDING_ID: F001\nSEVERITY: 1.00\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.50\nDESCRIPTION: FIND — `evaluate_fix()` has no `except` block surrounding the sandbox creation and tool execution logic. If `_create_sandbox()` encounters an `OSError` (e.g., file copy failure, permission denied, or target write failure), the exception escapes the function entirely.\nFOLLOW: The unhandled exception propagates to `evaluate_fixes()`, and subsequently out to `EndocrineLayer.run()`. This completely crashes the orchestration loop, halting the current round and preventing the insect brain from receiving pacing signals or transitioning to the next phase.\nPROPOSED_FIX: FIX — Wrap the sandbox creation and post-fix analysis logic inside a `try...except Exception as e:` block. On catch, set `eval_result.verdict = \"UNEVALUABLE\"` and `eval_result.apply_error = f\"Sandbox error: {e}\"`, ensuring safe isolation.\nVERIFIED: TRUE\n\nFINDING_ID: F002\nSEVERITY: 0.85\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.20\nDESCRIPTION: FIND — In `run_pyright`, `run_ruff`, and `run_bandit`, JSON objects are parsed using chained dictionary `.get(key, {})` lookups. If the tool's JSON output explicitly contains `null` for these keys (e.g., `{\"range\": null}` or `{\"location\": null}`), `.get()` returns `None`. Subsequent chained lookups (like `None.get(\"start\")`) raise an `AttributeError`, and iteration raises `TypeError`. These exceptions are NOT caught by the adjacent `except (json.JSONDecodeError, KeyError):` blocks.\nFOLLOW: The `AttributeError` or `TypeError` propagates up to `scan_health()`, where the generic `except Exception:` block catches it, logs a tool failure, and permanently sets the tool's availability to `False`. This silently disables critical verification tools for the remainder of the scan, generating false \"zero defects\" signals that deceive the system.\nPROPOSED_FIX: FIX — Expand the exception handlers in the tool runners to catch `(json.JSONDecodeError, KeyError, AttributeError, TypeError)`, or explicitly use the logical OR fallback: `loc = issue.get(\"location\") or {}`.\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 2,
+    "elapsed": 178.6,
+    "chars": 2606,
+    "findings_count": 2,
+    "decomposed": false
+  }
+}

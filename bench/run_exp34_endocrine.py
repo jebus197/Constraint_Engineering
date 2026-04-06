@@ -24,8 +24,8 @@ Architecture:
   - Status model: OPEN -> CONFIRMED (2+ independent) / MERGED / UNCONFIRMED
 
 Models:
-  - CC2 (Claude Opus 4.6 via OpenRouter)
-  - Codex (GPT-5.4 Codex via codex exec CLI)
+  - CC2 (Claude Opus 4.6 via Claude CLI, Max plan)
+  - Codex (GPT-5.4 via OpenRouter)
   - Gemini (Gemini 3.1 Pro via Google SDK)
   - DeepSeek (DeepSeek Reasoner via DeepSeek API)
   - ChatGPT (GPT-5.4 via OpenRouter)
@@ -871,8 +871,12 @@ def _summarise_pacing_signals(signals: List[PacingSignal]) -> List[Dict[str, Any
 def compose_for_model(model_label: str, pattern_name: str) -> ComposedDirectiveSet:
     """Compose CDSFL directives for a specific model."""
     composer_model = COMPOSER_MODEL_MAP.get(model_label, model_label)
-    pattern = build_interaction_pattern(pattern_name)
-    return compose(composer_model, pattern)
+    situation = build_interaction_pattern(pattern_name)
+    return compose(
+        task_domain="software",
+        model=composer_model,
+        situation=situation,
+    )
 
 
 def _multiturn_fallback(
@@ -887,9 +891,8 @@ def _multiturn_fallback(
     try:
         chunks = [
             DecomposedChunk(
+                content=part,
                 label=f"target_{i}",
-                text=part,
-                is_context=(i > 0),
             )
             for i, part in enumerate(re.split(r'\n\n===\s+(?:TARGET|CONTEXT)\s+', full_code))
             if part.strip()
@@ -898,7 +901,9 @@ def _multiturn_fallback(
             return None
         final_instruction = f"{pattern_text}\n\n{prompt}"
         result = decomposed_dispatch(
-            mc=mc,
+            api=mc.api,
+            model_id=mc.model_id,
+            system_prompt=cdsfl_text,
             chunks=chunks,
             final_instruction=final_instruction,
             max_tokens=mc.max_tokens,
@@ -1784,7 +1789,7 @@ def main():
             if not ok:
                 _log("\nPREFLIGHT FAILED. Aborting.")
                 sys.exit(1)
-            _log(f"\nPreflight passed. Starting Exp 33 in 5s... "
+            _log(f"\nPreflight passed. Starting Exp 34 in 5s... "
                  f"(pattern={pattern})")
             time.sleep(5)
         else:

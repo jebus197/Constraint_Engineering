@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260405T230010Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1070,
+  "response": "**FINDING_ID:** F001  \n**SEVERITY:** 0.8  \n**FLAW_CLASS:** 2  \n**ABSTRACTION_INDEX:** 0.5  \n**DESCRIPTION:** FIND — Tool‑timeout incorrectly reported as “available” in health scan. In `_run_tool`, a timeout returns `CompletedProcess` with `stderr=\"TIMEOUT\"`. Runner functions (e.g., `run_pyright`) do not treat this as a failure, so `scan_health` sets `tools_available[tool_name]=True` even though the tool produced no diagnostics. Evidence: `_run_tool` returns `stderr=\"TIMEOUT\"` on timeout; `run_pyright` only raises `ToolNotFoundError` for `\"NOT_FOUND\"`; `scan_health` catches `ToolNotFoundError` but not timeout, so the tool is marked available.  \n**FOLLOW:** Downstream, the insect brain may receive a health scan that incorrectly indicates a tool is functional, hiding potential performance or installation issues. If a tool consistently times out, the endocrine layer will report zero diagnostics from that tool, giving a false sense of code health.  \n**PROPOSED_FIX:**  \n```python\n<<<<\nclass ToolTimeoutError(Exception):\n    \"\"\"Raised when a static analysis tool",
+  "metadata": {
+    "round": 0,
+    "elapsed": 420.9,
+    "chars": 1070,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

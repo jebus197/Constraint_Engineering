@@ -1,0 +1,1840 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.97,
+        "description": "FIND \u2014 `evaluate_fix()` claims sandboxed fix verification, but the optional test command is executed without rewriting file arguments into sandbox paths. In `evaluate_fix()`, the patched file is created under `tmpdir` via `_create_sandbox(...)`, then tests run as `_run_tool(test_cmd, cwd=tmpdir)`. If `test_cmd` contains explicit repo-relative or absolute paths\u2014as the live caller in `immune_agents.py` does (`[\"python3\", \"-m\", \"pytest\", \"bench/tests/\", ...]`)\u2014pytest resolves against the original t",
+        "proposed_fix": "FIX \u2014 before running tests, rewrite any file/directory arguments in `test_cmd` that point into the source tree so they point to the corresponding paths under `tmpdir`, then execute the rewritten command.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`evaluate_fix()` runs `test_cmd` unchanged in `cwd=tmpdir`, so absolute paths or repo-relative test targets in the command still point at real files outside the sandbox. That violates the module\u2019s sta"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`evaluate_fix()` runs `test_cmd` unchanged inside `cwd=tmpdir`. Evidence: `test_cmd` is passed verbatim to `_run_tool(...)`; only `cwd` changes. Any explicit source/test path arguments still point at "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The test\u2011command sandboxing is broken; fix correctly rewrites paths."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.91,
+        "description": "FIND \u2014 fix evaluation compares pre-fix diagnostics on the original file against post-fix diagnostics on the sandboxed file, but both are single-file tool runs. `_count_tool_issues(run_pyright, target_path)` and later `_count_tool_issues(run_pyright, patched_path)` invoke pyright/ruff/bandit on only one file. For pyright/mypy especially, diagnostics depend on package context and import graph; the module docstring for `_create_sandbox()` explicitly acknowledges that flat single-file analysis cause",
+        "proposed_fix": "FIX \u2014 compute both pre- and post-fix baselines by running each tool over the full mirrored source file set, using the original source set for baseline and the sandbox source set for post-fix, then compare counts attributable to the whole project run.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "pre/post comparison is not like-for-like. Baselines are collected on `target_path` in the live tree, while post-fix counts are collected on `patched_path` inside the temp tree. For pyright/mypy/ruff/b"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "pre/post comparison scopes differ. Evidence: pre-fix counts are computed on `target_path` in the real repo (`_count_tool_issues(..., target_path)`), while post-fix counts are computed on `patched_path"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Pre\u2011fix and post\u2011fix baselines must be run in same sandbox layout."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.78,
+        "description": "FIND \u2014 `run_pyright()` records line/column directly from pyright JSON start positions without converting from pyright\u2019s 0-based coordinates. Code: `line=rng.get(\"line\", 0)`, `column=rng.get(\"character\", 0)`. Pyright\u2019s `range.start.line` and `character` are 0-based in `--outputjson` output. The rest of the module and surrounding system use human line numbers conventionally as 1-based (`bandit` and parsed `mypy` diagnostics already are).\nFOLLOW: Health scan locations are silently off by one for py",
+        "proposed_fix": "FIX \u2014 add 1 to pyright `line` and `character` when constructing `ToolDiagnostic`, while preserving 0 only for missing/unknown coordinates.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Pyright line/column are 1\u2011based; no conversion needed (pyright\u2019s `range.start.line` is already 1\u2011based)."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.73,
+        "description": "FIND \u2014 the advertised \u201cdefect detection\u201d feature is not actually implemented as a distinct capability. The module header and focus state function 2 is \u201cDefect detection \u2014 classify findings by defect category,\u201d but there is no public function that takes findings or tool diagnostics and performs the promised defect-detection stage; only per-tool inline categorisers exist during scan parsing. No coordinator method exposes \u201cdefect detection\u201d output separate from raw scan aggregation.\nFOLLOW: This is",
+        "proposed_fix": "FIX \u2014 add a small public function that accepts collected `ToolDiagnostic` items and returns grouped diagnostics/counts by `DefectCategory`, and call it from `scan_health()` or `EndocrineLayer.run()` so function 2 exists as an actual emitted result.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Defect\u2011detection feature missing."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.69,
+        "description": "FIND \u2014 `compute_pacing_signals()` uses `sorted(durations)[len(durations) // 2]` and the same pattern for response sizes, which is not the statistical median for even-length lists; it selects the upper middle element. With 4 models this inflates the baseline and suppresses slow-model / large-response detection. In this system there are 5 models today, but the code is generic and the topology/history includes model failure handling, so active model count can become even.\nFOLLOW: After one model fa",
+        "proposed_fix": "FIX \u2014 use `statistics.median()` for durations and response sizes instead of upper-middle indexing.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0011"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0011"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0011"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "merged_into": "C0011"
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.97,
+        "description": "FIND \u2014 `evaluate_fix()` claims to sandbox-test proposed fixes, but the optional test command is executed unchanged inside the tempdir (`_run_tool(test_cmd, cwd=tmpdir)`) without rewriting any file arguments to the sandbox tree. In the actual caller shown in `immune_agents.py`, the command is `[\"python3\", \"-m\", \"pytest\", \"bench/tests/\", ...]`. That path is relative to the real repo, not the sandbox copy. The sandbox only contains copied source files, not `bench/tests/`, and any absolute paths in ",
+        "proposed_fix": "FIX \u2014 when creating the sandbox, also copy the test targets needed by `test_cmd` and rewrite any source/test path arguments in `test_cmd` from real paths to their sandbox equivalents before invoking the subprocess. If path rewriting cannot be done reliably, skip tests and mark them not run rather than pretending they were sandboxed.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Test command must have its source\u2011path arguments rewritten to sandbox."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0001"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "merged_into": "C0001"
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.94,
+        "description": "FIND \u2014 pre-fix and post-fix tool counts are measured on different analysis scopes. `evaluate_fix()` computes baselines with `_count_tool_issues(run_pyright, target_path)` / `run_ruff(target_path)` / `run_bandit(target_path)` on the real single file, then computes post-fix counts on `patched_path` inside a sandbox that preserves the package structure and may change import resolution. The module comment explicitly says preserving structure matters because flat single-file analysis causes spurious ",
+        "proposed_fix": "FIX \u2014 compute pre-fix baselines in the same sandboxed project layout as post-fix, using an unmodified copy of the target and identical tool invocation scope.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same root cause as C0002/C0026/C0018. The issue is not just \u201coriginal vs sandbox\u201d; it is \u201csingle live file vs mirrored project fragment\u201d, which changes tool behavior materially."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same root cause as C0002/C0026/C0018. Evidence: pyright/mypy/ruff/bandit can all resolve config/imports differently between original-file invocation and mirrored sandbox path; the current net issue co"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Baselines must be computed in sandbox."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0002"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0018"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0026"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "merged_into": "C0002"
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.92,
+        "description": "FIND \u2014 `_count_tool_issues()` collapses all tool failures to zero issues by `except Exception: return 0`. That includes missing binaries, timeouts, parse failures, invocation errors, and invalid output. `evaluate_fix()` then treats those zero counts as real measurements. Evidence: `_count_tool_issues()` catches all exceptions; `_run_tool()` encodes timeout/not-found as synthetic CompletedProcess values; tool parsers often return empty lists on parse failure instead of surfacing an error.\nFOLLOW:",
+        "proposed_fix": "FIX \u2014 make `_count_tool_issues()` return an explicit failure state (e.g. `None`) on tool execution/parsing failure, and have `evaluate_fix()` mark the result `UNEVALUABLE` if any required tool could not be measured.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_count_tool_issues()` converts tool execution failure into `0`, which makes downstream verdict logic treat \u201ctool unavailable/crashed/timed out\u201d as \u201cno issues found\u201d. That can mark unevaluable fixes a"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "This also corrupts `scan_health()` indirectly where tool runners degrade timeout/parse failure to empty diagnostics. The system then emits \u201chealthy\u201d reports when tools were non-functional, misleading "
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_count_tool_issues()` swallows all exceptions and returns 0. Evidence: this includes tool not found, timeout-induced parse failures, invalid JSON, and runner crashes. Downstream consequence: failed p"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_count_tool_issues` must not swallow all exceptions."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0027"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "merged_into": "C0027"
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.88,
+        "description": "FIND \u2014 `run_pyright()` only treats `stderr == \"NOT_FOUND\"` as fatal. Timeouts from `_run_tool()` are returned as `CompletedProcess(..., stderr=\"TIMEOUT\")`, but `run_pyright()` then attempts to parse empty `stdout`, logs a warning, and returns `[]`. `run_ruff()` and `run_bandit()` have the same fail-open pattern for timeout/other malformed output. Evidence: `_run_tool()` returns sentinel stderr strings; the runners only special-case NOT_FOUND.\nFOLLOW: Health scans and fix evaluations silently und",
+        "proposed_fix": "FIX \u2014 treat `stderr == \"TIMEOUT\"` and non-parseable output from a tool invocation as tool failure, not as zero diagnostics; surface that in `tools_available`/evaluation state so the caller can mark the scan or fix evaluation incomplete.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_run_tool()` returns `stderr=\"TIMEOUT\"` on timeout, but `run_pyright()` only special-cases `\"NOT_FOUND\"` and otherwise attempts JSON parse, logs warning, then returns `[]`. Timeout therefore degrades"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`run_pyright()` treats `_run_tool()` timeout as non-fatal parse failure. Evidence: on timeout `_run_tool()` returns `CompletedProcess(..., stderr=\"TIMEOUT\", stdout=\"\")`; `run_pyright()` only special-c"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Timeout and parse failures should be treated as tool failures."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.84,
+        "description": "FIND \u2014 the coordinator interface does not implement the documented \u201cdefect detect\u201d capability as a callable feature. The file header lists four core functions including \u201cDefect detect \u2014 classify findings by defect category\u201d, but the public API only exposes `scan_health`, `evaluate_fix(es)`, `compute_pacing_signals`, and `EndocrineLayer.run()`. Category classification exists only as an internal side effect inside tool-specific runners; there is no standalone defect-detection function for arbitrar",
+        "proposed_fix": "FIX \u2014 add a simple public `detect_defects(diagnostics: List[ToolDiagnostic]) -> Dict[str, int] | List[ToolDiagnostic]` wrapper that exposes the already-derived categories, and include its result explicitly in the endocrine report if the brain depends on it.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "the module docstring and public API claim four capabilities, including \u201cDefect detect \u2014 classify findings by defect category\u201d, but there is no public entry point for this capability beyond per-tool ca"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "documented \u201cDefect detect\u201d feature is not exposed as an actual callable capability. Evidence: module docstring and header claim four core functions including defect detection, but public surface has s"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The module header explicitly advertises tool finding classification, which IS fully implemented internally via `_categorise_pyright` and `_categorise_ruff` populating the `category` field of `ToolDiag"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0004"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "merged_into": "C0004"
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.73,
+        "description": "FIND \u2014 slow-model and large-response pacing thresholds use `sorted(values)[len(values) // 2]`, which is the upper middle element for even-sized sets rather than the statistical median. With 5 models this is usually fine, but the code accepts arbitrary lists and can mis-threshold when model count changes or failures reduce the list to an even cardinality. Evidence: `compute_pacing_signals()` uses this pattern for both durations and response chars.\nFOLLOW: Pacing signals can trigger too aggressive",
+        "proposed_fix": "FIX \u2014 use `statistics.median()` for duration and response-size baselines.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`sorted(durations)[len(durations) // 2]` correctly computes the median without requiring `import statistics`. Refactoring this adds complexity for zero operational gain, violating the PoC constraints."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.71,
+        "description": "FIND \u2014 `scan_health()` reports empty `tools_available` when `source_paths` contains no existing files. It returns early with `HealthScan(elapsed_s=...)` before initializing tool availability for the known tool set. Evidence: early return occurs before the tool loop populates availability keys.\nFOLLOW: The report cannot distinguish \u201cno files to scan\u201d from \u201ctool availability unknown\u201d, and downstream consumers expecting fixed keys for pyright/ruff/bandit/mypy get an incomplete interface. This weake",
+        "proposed_fix": "FIX \u2014 on the no-files early return, populate `tools_available` with all known tools set to `False` or a consistent sentinel state.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "early return on `not existing` yields `HealthScan(elapsed_s=...)` with empty `tools_available`, so consumers cannot distinguish \u201cno files\u201d from \u201cfield omitted/unknown\u201d. That is an interface defect in "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`tools_available` must be populated even when no files."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F008"
+        ],
+        "severity": 0.69,
+        "description": "FIND \u2014 `_find_target_file()` falls back to `source_paths[0]` whenever it cannot resolve a path from the finding description/fix. In a multi-file review batch, an unresolved finding is therefore evaluated against an arbitrary first file. Evidence: final line of `_find_target_file()` returns the first source path if any exist.\nFOLLOW: Fix evaluation can patch and lint the wrong file while still returning a concrete verdict. That produces silently wrong SAFE/HARMFUL results and wrong `original_file",
+        "proposed_fix": "FIX \u2014 if no target file can be resolved uniquely, return `None` and mark the evaluation `UNEVALUABLE` instead of defaulting to the first source file.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_find_target_file()` falling back to `source_paths[0]` when no path is resolved can evaluate and report on the wrong file. In fix evaluation this is silently wrong, not merely approximate."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_find_target_file()`\u2019s fallback to `source_paths[0]` can evaluate and score a fix against the wrong file. Evidence: if description/fix text lacks a resolvable path, `evaluate_fix()` proceeds on the f"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Unresolvable target file should make evaluation `UNEVALUABLE`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.85,
+        "description": "FIND \u2014 `_count_tool_issues` passes a single string path to tool runners that expect `List[str]`. Lines ~370-372: `run_pyright([file_path])` is correct inside the helper, but the caller at lines ~340-342 calls `_count_tool_issues(run_pyright, target_path)` where `target_path` is a string. Inside `_count_tool_issues`, `tool_runner([file_path])` wraps it in a list \u2014 this is correct. However, the pre-fix baseline at lines ~340-342 runs tools on the original file on disk, not in the sandbox. The post",
+        "proposed_fix": "In `_create_sandbox`, after copying source_paths, walk up from the common ancestor looking for `__init__.py` files and copy them too. Alternatively (simpler for PoC): run post-fix tools with `--pythonpath` or equivalent flags pointing to the project root. Simplest fix: add the original project root to the sandbox's tool invocations by passing `cwd` to `_run_tool` or adding `--pythonpath` to pyright/mypy. For pyright specifically, create a minimal `pyrightconfig.json` in the tmpdir with `\"extraPa",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Tool runners expect list of paths; single\u2011string call is wrong."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "`_count_tool_issues` correctly passes `[file_path]`, which evaluates to a standard `List[str]`. The tool runner successfully receives a list. The bug described is factually incorrect."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.75,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy 2 (whole-file replacement) has a dangerous heuristic: if a proposed fix compiles as valid Python and has \u22655 lines, it replaces the entire source file. Model-generated `proposed_fix` fields routinely contain valid Python (e.g., a corrected function definition with imports and docstrings). A 6-line function fix that happens to compile will replace a 1000-line source file with just those 6 lines. The `compile()` check at line ~295 succeeds for any syntacticall",
+        "proposed_fix": "Add a size-ratio guard: only apply whole-file replacement if the fix is at least 50% the size of the original source. This prevents a 6-line fix from replacing a 1000-line file while still allowing genuine whole-file replacements.\ntry:\n        compile(fix, \"<fix>\", \"exec\")\n        if fix.count(\"\\n\") >= 5 and len(fix) >= len(source_text) * 0.5:\n            return fix\n    except SyntaxError:\n        pass",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Whole\u2011file replacement needs size\u2011ratio guard."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 `_compute_fix_verdict` checks each tool dimension independently (good), but the SAFE path has a logic gap. If `net_type_errors == 0` AND `net_ruff_errors == 0` AND `net_bandit_issues == 0` AND `tests_passed is None` (not run), the function falls through to return NEUTRAL. But `total_net` is 0 and `tests_passed` is None, so neither the `total_net < 0` branch (SAFE) nor the `tests_passed is True` branch (SAFE) fires. A fix that introduces zero new issues and removes zero issues, with no tes",
+        "proposed_fix": "No code change needed for PoC \u2014 NEUTRAL triggers verification in the consumer. Document the semantic: NEUTRAL means \"no measurable change in static analysis, no tests run\" which correctly implies \"not proven harmful.\"",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The verdict logic is correct for PoC: `total_net < 0` means issues reduced \u2192 SAFE; if tests pass \u2192 SAFE; else NEUTRAL. No gap."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.65,
+        "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection uses `all(n <= 1 for n in recent)` with `window = 3`. The threshold `<= 1` means a round with exactly 1 novel finding is treated as \"plateau.\" In early rounds of a multi-model review with 5 models, 1 novel finding per round is not a plateau \u2014 it's active discovery. The signal fires too early, potentially triggering premature convergence checks via `suggested_action=\"check_convergence\"`.\nFOLLOW: The insect brain receives this pacing signal",
+        "proposed_fix": "Add a round-index guard: only emit novelty plateau signal after a minimum number of rounds (e.g., round_idx >= 4). This prevents false plateau signals in early rounds while preserving the signal for genuine late-round plateaus.\nif len(novelty_counts) >= window and round_idx >= window - 1 and round_idx >= 4:",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Novelty plateau should have minimum\u2011round guard."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The condition `round_idx >= window - 1` correctly guards the window length. Since `round_idx` is 0-indexed, `round_idx >= 2` perfectly aligns with a 3-round window. There is no off-by-one or missing g"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 `evaluate_fix` runs pre-fix baselines on the original file path on disk via `_count_tool_issues(run_pyright, target_path)` (line ~340), then runs post-fix analysis on `patched_path` inside the sandbox (line ~365). These are different environments: the original file has full project context (sibling modules, `__init__.py`, config files), while the sandbox has only the files in `source_paths`. The baseline and post-fix counts are not comparable \u2014 they're measured in different contexts. A fi",
+        "proposed_fix": "Run pre-fix baselines inside the sandbox too. Create the sandbox with the unpatched file first, run baselines, then overwrite with the patched version and run post-fix analysis. This ensures both measurements use the same environment.\n# Create sandbox with ORIGINAL file first for baseline\n    tmpdir, original_sandbox_path = _create_sandbox(target_path, source_paths, source_text)\n    try:\n        eval_result.pre_type_errors = _count_tool_issues(run_pyright, original_sandbox_path)\n        eval_res",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Pre\u2011fix baselines must be sandboxed."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.55,
+        "description": "FIND \u2014 `EndocrineLayer._scan_history` grows unboundedly. Every call to `run()` appends a `HealthScan` (which contains the full list of `ToolDiagnostic` objects) to `_scan_history`. In a long experiment with many rounds, each HealthScan could contain hundreds of diagnostics with string fields. There is no eviction or windowing.\nFOLLOW: `health_trend()` iterates all scans to build trends. For a PoC with \u226415 rounds and \u22644 source files, this is not a problem. The memory growth is O(rounds \u00d7 diagnost",
+        "proposed_fix": "No fix needed for PoC. If the system scales beyond ~50 rounds, add a sliding window to `_scan_history` (keep last N scans, aggregate older ones into counts only).",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_scan_history` growth is acceptable for PoC scale."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Unbounded growth of a 10-item summary object per round in a PoC with `max_rounds=20` will consume less than 1MB memory total. This is a non-issue."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.6,
+        "description": "FIND \u2014 `_find_target_file` constructs `desc = finding.description + \" \" + finding.proposed_fix` and extracts file paths via regex `r\"[\\w/\\\\]+\\.py\\b\"`. The regex is too permissive \u2014 it matches any word characters followed by `.py`, including fragments like `mypy`, `copy`, `scipy`. If a finding description mentions \"run mypy\" or \"use scipy\", the regex extracts `mypy` or `scipy` as candidate file paths, then attempts suffix-matching against source_paths. This is unlikely to produce a false positive",
+        "proposed_fix": "Tighten the regex to require a path separator or start-of-word before the filename: `r\"(?:^|[\\s/\\\\])(\\S+\\.py)\\b\"`. Or simpler: require at least one `/` or `\\` in the match to confirm it's a path, not a bare word.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Regex should require path separator."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F008"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `compute_pacing_signals` has a defensive coercion for `context_budget` at lines ~455-460 that handles `dict`, `str`, `float` types. If `context_budget` is a dict, it takes `max(context_budget.values())`. This is a workaround for TOML config parsing quirks. However, if `context_budget` is a dict with string values (e.g., `{\"CC2\": \"80000\"}`), `max()` compares strings lexicographically, not numerically. `\"9000\" > \"80000\"` is True in string comparison.\nFOLLOW: The TOML config parser should pr",
+        "proposed_fix": "Add int conversion inside the dict branch:\nif isinstance(context_budget, dict):\n        context_budget = max(int(v) for v in context_budget.values()) if context_budget else 80_000",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Context\u2011budget dict branch needs int conversion."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F009"
+        ],
+        "severity": 0.45,
+        "description": "FIND \u2014 `evaluate_fix` runs pre-fix baselines sequentially: pyright, ruff, bandit \u2014 three separate subprocess invocations on the original file. Then it creates the sandbox and runs all three again on the patched file. That's 6 sequential subprocess calls per fix evaluation, each with a 60-second timeout. With `max_evals=20`, that's up to 120 subprocess calls, potentially ~120 minutes wall time in the worst case (all timeouts).\nFOLLOW: In practice, tool invocations on a single file take 1-5 second",
+        "proposed_fix": "No fix needed for PoC. Future optimization: run pre/post tools in parallel using ThreadPoolExecutor.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Parallelizing tool runs is an optimization, not required for PoC."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F010"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: F010\nSEVERITY: 0.70\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.5\nDESCRIPTION: FIND \u2014 The variable name `sp` is shadowed. Line 7: `import subprocess as sp`. Line ~330 in `_find_target_file`: `for s",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 0,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`sp` variable shadowing is minor; fix is trivial rename."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 `run_mypy()` fails to parse mypy output when diagnostic spans multiple lines (contains newline). The regex pattern expects a single line (`^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$`). If mypy emits a diagnostic with an embedded newline (e.g., long messages), the regex matches only the first line, dropping the remainder of the message and causing subsequent lines to be misparsed. This silently discards evidence and undercounts mypy diagnostics.  \nFOLLOW: Health ",
+        "proposed_fix": "FIX \u2014 Change `run_mypy()` to split the output on `\\n` but treat each diagnostic line independently only if it matches the pattern; ignore non\u2011matching lines (they are continuation lines). Replace `for line in result.stdout.splitlines():` with a state machine that accumulates continuation lines.  \ndef run_mypy(paths: List[str]) -> List[ToolDiagnostic]:\n    ...\n    diagnostics = []\n    current = None\n    for line in result.stdout.splitlines():\n        m = pattern.match(line)\n        if m:\n        ",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "The multi\u2011line mypy diagnostic issue is compounded by Windows\u2011path regex breakage (F001). Both must be fixed for mypy to work on Windows."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 `_find_target_file()` uses `os.sep` in suffix match (`sp_path.endswith(os.sep + match)`). On Windows, `os.sep` is `\\`. The pattern extracted from description uses forward slash (`/`) because models write paths with `/`. The suffix match fails, causing fallback to basename match, which may pick the wrong file if multiple source files share the same basename. This leads to fix evaluation on the wrong file, producing incorrect `HARMFUL`/`SAFE` verdicts.  \nFOLLOW: Wrong file evaluation \u2192 wron",
+        "proposed_fix": "FIX \u2014 Normalize both paths to forward slashes before suffix match. Replace the suffix\u2011match block with:  \n# Pass 1: suffix match with normalized separators\nfor match in matches:\n    match_norm = match.replace('\\\\', '/')\n    for sp_path in source_paths:\n        sp_norm = sp_path.replace('\\\\', '/')\n        if sp_norm == match_norm or sp_norm.endswith('/' + match_norm):\n            return sp_path",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "suffix match uses `sp_path.endswith(os.sep + match)`. If `match` contains `/` while running on Windows, or `sp_path` and match differ in separator style, a valid described path is missed and the funct"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "path matching is cross-platform brittle. Evidence: `_find_target_file()` compares `sp_path.endswith(os.sep + match)`. If `match` is extracted with `/` separators but runtime `os.sep` is `\\` (or vice v"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0020"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "merged_into": "C0020"
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 `evaluate_fix()` calls `_count_tool_issues(run_pyright, target_path)` on the original `target_path` (real source file) for baseline, but calls `_count_tool_issues(run_pyright, patched_path)` on the sandboxed `patched_path`. If the sandbox environment lacks dependencies (e.g., third\u2011party imports), pyright will report import errors that are not present in the original file. This inflates `new_type_errors`, causing a `HARMFUL` verdict even when the fix introduces no actual type errors.  \nFO",
+        "proposed_fix": "FIX \u2014 Run baseline counts also in the sandbox (copy original file to sandbox, run tools there). In `evaluate_fix()`, create sandbox before baseline counts, copy original file to sandbox, compute baseline counts there, then patch and compute post\u2011fix counts in the same sandbox. This ensures identical environment.  \n# In evaluate_fix, after determining target_path and reading source_text:\ntmpdir = None\ntry:\n    # Create sandbox with original file\n    tmpdir, orig_sandbox_path = _create_sandbox(tar",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "baseline tool counts are run against the live `target_path`, not the sandbox copy. That breaks the \u201cnever modifies actual source\u201d / sandbox comparison semantics even when no tests are run."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same bug family as C0002/C0007. Evidence: baseline counts run against real source path before sandbox creation; post-fix counts run against sandbox path. This violates like-for-like comparison."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Pre\u2011fix baselines must run in sandbox."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 `_count_tool_issues()` catches `Exception` and returns 0. If a tool crashes (e.g., pyright segfault), the function returns 0, making it appear that the file has zero issues. This masks tool failures and leads to incorrect net\u2011issue calculation (e.g., `net_type_errors = 0 - 0 = 0`), potentially marking a harmful fix as `SAFE`.  \nFOLLOW: Tool crashes are silent; the endocrine layer reports false cleanliness; harmful fixes may be accepted because the crash hides introduced errors.",
+        "proposed_fix": "FIX \u2014 Re\u2011raise `ToolNotFoundError`; for other exceptions, log error and return a large sentinel value (e.g., 999) that will cause `net_*_errors` to be large positive, pushing verdict to `HARMFUL`. This fails safe.  \ndef _count_tool_issues(tool_runner, file_path: str) -> int:\n    try:\n        diags = tool_runner([file_path])\n        return len(diags)\n    except ToolNotFoundError:\n        raise\n    except Exception as e:\n        logger.error(\"Tool %s failed on %s: %s\", tool_runner.__name__, file_p",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same evidence as C0008. Returning `0` on exception is specifically dangerous because `_compute_fix_verdict()` interprets non-positive net change as acceptable."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same core issue as C0008, with additional consequence. Evidence: `_count_tool_issues()` returning 0 on exception can make a completely unevaluable fix appear to reduce issue counts if pre-fix > 0 and "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Tool\u2011crash sentinel needed."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F005"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 `compute_pacing_signals()` does not guard against division\u2011by\u2011zero when `context_budget` is 0. The line `context_fraction = cumulative_context_chars / context_budget` will raise `ZeroDivisionError`. This crashes the endocrine layer, stopping all pacing signals. The insect brain receives no pacing signals for the round.  \nFOLLOW: Endocrine crash \u2192 no pacing signals \u2192 insect brain misses context\u2011growth warnings; may exceed budget without degradation.",
+        "proposed_fix": "FIX \u2014 Add a guard: if `context_budget <= 0`, set `context_fraction = float('inf')` and skip the threshold check.  \nif context_budget > 0:\n    context_fraction = cumulative_context_chars / context_budget\n    if context_fraction > 0.8:\n        signals.append(...)\nelse:\n    # No budget defined \u2014 cannot compute fraction\n    pass",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Evidence: `compute_pacing_signals()` explicitly guards the division. It does:"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Division\u2011by\u2011zero guard needed."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F006"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 `_apply_fix_to_source()` line\u2011range replacement logic is broken for multi\u2011line ranges. When `start_line != end_line`, it joins the block as a single string, replaces `old_frag` with `new_frag`, then assigns the entire new block to `lines[start_line:end_line + 1]`. This replaces N lines with 1 line, changing line numbers for all subsequent code. This corrupts the file and will cause tool errors (line mismatches).  \nFOLLOW: Corrupted sandbox file \u2192 pyright/ruff report errors on wrong lines ",
+        "proposed_fix": "FIX \u2014 For multi\u2011line ranges, split the new block back into lines using `splitlines(keepends=True)`.  \nif start_line == end_line:\n    ...\nelse:\n    if 0 <= start_line and end_line < len(lines):\n        block = \"\".join(lines[start_line:end_line + 1])\n        if old_frag in block:\n            new_block = block.replace(old_frag, new_frag, 1)\n            # Split back into lines, preserving line endings\n            new_lines = new_block.splitlines(keepends=True)\n            lines[start_line:end_line +",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "multi-line range replacement corrupts line structure. Evidence: for range replacements, code sets `lines[start_line:end_line + 1] = [new_block]` where `new_block` may contain multiple newline characte"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Multi\u2011line range replacement must split new block into lines."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F007"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 `_apply_fix_to_source()`\u2019s search\u2011replace pattern (`replace ... with ...`) uses `re.DOTALL` but matches greedily across the entire fix text; if the fix contains multiple such patterns, only the first is applied. The pattern should apply all replacements described in the fix.  \nFOLLOW: Partial fix application \u2192 sandbox file only partially patched \u2192 evaluation tests wrong code, may reject a correct fix because it wasn\u2019t fully applied.",
+        "proposed_fix": "FIX \u2014 Use `finditer` and apply all replacements sequentially on the source text.  \n# Strategy 1: search\u2011replace pattern\nreplace_pattern = re.compile(\n    r\"(?:replace|change)\\s+[`'\\\"](.+?)[`'\\\"]\\s+(?:with|to)\\s+[`'\\\"](.+?)[`'\\\"]\",\n    re.IGNORECASE,\n)\nmodified_text = source_text\nfor m in replace_pattern.finditer(fix):\n    old, new = m.group(1), m.group(2)\n    if old in modified_text:\n        modified_text = modified_text.replace(old, new, 1)\nif modified_text != source_text:\n    return modified_t",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Search\u2011replace should apply all matches sequentially."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F008"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 `scan_health()` runs all four tools sequentially even if a tool is already known unavailable (from `tools_available` dict). The loop `for tool_name, runner in [(\"pyright\", run_pyright), ...]` calls `runner(existing)`, which will raise `ToolNotFoundError` again (already caught earlier). This wastes time re\u2011raising and catching the same exception.  \nFOLLOW: Unnecessary repeated exception handling; slight performance penalty each round.",
+        "proposed_fix": "FIX \u2014 Skip tools already marked unavailable in `tools_available`.  \nfor tool_name, runner in [\n    (\"pyright\", run_pyright),\n    (\"ruff\", run_ruff),\n    (\"bandit\", run_bandit),\n    (\"mypy\", run_mypy),\n]:\n    if not tools_available.get(tool_name, True):\n        continue  # already known unavailable\n    try:\n        diags = runner(existing)\n        all_diags.extend(diags)\n        tools_available[tool_name] = True\n    except ToolNotFoundError as e:\n        logger.warning(\"Tool not installed: %s\", e",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Evidence: `tools_available` in `scan_health()` is a local aggregation result, not persistent state across calls. There is no preexisting availability cache to consult before invocation, so \u201cskip tools"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Skip tools already known unavailable."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "`tools_available` is a fresh local dictionary initialized to `{}` inside `scan_health()`. The function cannot \"already know\" a tool is unavailable from a previous run, so sequential execution is fully"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "`tools_available` is instantiated as a fresh, empty local dictionary at the start of `scan_health()`. It has no prior state to read from. Skipping tools based on it is logically impossible; tools must"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`tools_available` is a local dict initialized fresh inside each `scan_health()` call, so there is no persisted \u201calready known unavailable\u201d state to skip against. The code does not currently retain cro"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "`tools_available` is a local dictionary initialized to `{}` inside `scan_health()`. It retains no state across rounds, so the proposed skip check would never trigger anyway."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F009"
+        ],
+        "severity": 0.6,
+        "description": "FIND \u2014 `_categorise_pyright()` returns `DefectCategory.TYPE_SAFETY` as default for any pyright diagnostic. However, pyright also reports `\"reportUnusedImport\"` (dead code) and `\"reportUnusedVariable\"` (dead code). These are not type\u2011safety issues; they should be categorized as `DEAD_CODE`. The current heuristic misses these.  \nFOLLOW: Mis\u2011categorization skews `counts_by_category`; dead\u2011code issues appear as type\u2011safety, misleading the insect brain about defect distribution.",
+        "proposed_fix": "FIX \u2014 Add check for `rule` containing `\"Unused\"`.  \ndef _categorise_pyright(message: str, rule: str) -> str:\n    msg_lower = message.lower()\n    rule_lower = rule.lower()\n    if \"unused\" in rule_lower or \"unused\" in msg_lower:\n        return DefectCategory.DEAD_CODE\n    if any(kw in msg_lower for kw in (\"none\", \"optional\", \"could be none\", \"is not callable\")):\n        return DefectCategory.NULL_DEREF\n    if any(kw in msg_lower for kw in (\"index\", \"range\", \"subscript\", \"out of\")):\n        return ",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Pyright categorisation should detect unused\u2011code rules."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F010"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `run_bandit()` maps severity `\"LOW\"` \u2192 `\"info\"`, `\"MEDIUM\"` \u2192 `\"warning\"`, `\"HIGH\"` \u2192 `\"error\"`. However, the endocrine layer\u2019s `counts_by_severity` uses these strings; the insect brain may treat `\"info\"` as ignorable. Bandit\u2019s `\"LOW\"` severity still indicates a security issue (e.g., `B101: assert_used`). Downgrading to `\"info\"` hides security findings from severity\u2011based filters.  \nFOLLOW: Security issues may be overlooked because they are classified as `\"info\"`.",
+        "proposed_fix": "FIX \u2014 Map `\"LOW\"` \u2192 `\"warning\"`, `\"MEDIUM\"` \u2192 `\"error\"`, `\"HIGH\"` \u2192 `\"error\"` (or keep `\"HIGH\"` as `\"error\"`). This ensures security issues are not silently dropped.  \nsev_map = {\"LOW\": \"warning\", \"MEDIUM\": \"error\", \"HIGH\": \"error\"}",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Bandit severity mapping should align with endocrine severity scale (LOW\u2192warning, MEDIUM/HIGH\u2192error)."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Bandit \"LOW\" severity maps correctly to standard static analysis \"info\" level, not \"warning\"."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Mapping Bandit's LOW to `info` and MEDIUM to `warning` is standard, correct severity translation. Changing this adds complexity for subjective preference, violating the PoC constraints."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The mapping `LOW -> info`, `MEDIUM -> warning`, `HIGH -> error` is internally consistent with the module\u2019s own severity vocabulary and aggregation logic. There is no evidence in `endocrine.py` that th"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 3
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E001"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 The fix evaluation sandbox breaks completely because `_create_sandbox` only copies the specific files listed in `source_paths` into `tmpdir`. It omits project dependencies (causing `pyright` and `mypy` to emit artificial missing-import errors) and omits the test directory. When `evaluate_fix` runs `test_cmd` (e.g., `pytest bench/tests/`) with `cwd=tmpdir`, it fails to find the tests and exits with a non-zero code. Because `tests_passed` evaluates to `False` (or `net_type_errors > 0` due t",
+        "proposed_fix": "FIX \u2014 Modify `_create_sandbox` to copy the entire project directory into the sandbox, ensuring all tests and configurations are present. Replace the loop over `source_paths` with `shutil.copytree(os.getcwd(), tmpdir, dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git', '__pycache__', 'venv', '.venv'))`. Calculate `patched_path` relative to `os.getcwd()` and overwrite the target file with `patched_text`.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_create_sandbox()` copies only `source_paths` plus the patched target. If the file under test imports other project modules not included in `source_paths`, pyright/mypy/test execution in the sandbox "
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "Consequence reaches health of the advertised \u201csandbox-test proposed fixes\u201d feature: because imports outside `source_paths` are omitted, `evaluate_fix()` can systematically classify valid fixes as HARM"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "sandbox lacks non-listed project files needed for realistic analysis. Evidence: `_create_sandbox()` copies only `source_paths` plus patched target. If the target imports sibling modules not present in"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Sandbox must copy entire project, not just listed source files."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E002"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 Strategy 2 in `_apply_fix_to_source` is dangerously overbroad. It compiles the proposed fix, and if it's >5 lines of valid Python, treats it as a whole-file replacement. Because models routinely output standalone functions or classes as fixes (which compile perfectly), Strategy 2 silently replaces the entire source file (e.g., 800 lines) with a single 10-line snippet. This mutilates the file, triggering massive static analysis errors and guaranteeing the fix is rejected as `HARMFUL`.\nFOLL",
+        "proposed_fix": "FIX \u2014 Remove Strategy 2 entirely, as models rarely output 800-line whole-file replacements. Alternatively, restrict it by adding a length check: `if fix.count('\\n') > len(source_text.splitlines()) * 0.5: return fix`.",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_apply_fix_to_source()` Strategy 2 accepts any 5+ line syntactically valid Python block as a whole-file replacement. A proposed fix containing only a helper function or code sample can replace the en"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Strategy 2 is dangerous overreach."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0015"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "merged_into": "C0015"
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E003"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 Strategy 3 (line-level replacement) fails when models enclose code fragments in markdown backticks (e.g., `Line 10: \\`old_code\\` -> \\`new_code\\``). The regex `r\"[Ll]ines?\\s+(\\d+).*?:\\s*(.+?)\\s*->\\s*(.+)\"` captures the backticks into `old_frag` and `new_frag`. Since the actual source code does not contain these backticks, `old_frag in lines[start_line]` evaluates to `False`, and the replacement fails silently.\nFOLLOW: Regex captures backticks -> `old_frag = \"\\`old_code\\`\"` -> `\"\\`old_code\\",
+        "proposed_fix": "FIX \u2014 Strip backticks and quotes from the extracted fragments when assigning them. Change `old_frag = lm.group(3).strip()` to `old_frag = lm.group(3).strip().strip(\"\\`'\")` and `new_frag = lm.group(4).strip().strip(\"\\`'\")`.",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Strip backticks from line\u2011replacement fragments."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 3
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E004"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 Strategy 3 applies multi-line replacements sequentially. When replacing a multi-line range (`start_line != end_line`), it replaces a list slice with a single string element (`lines[start_line:end_line + 1] = [new_block]`). This shrinks the length of the `lines` list, shifting all subsequent line indices. If a fix contains multiple replacements (e.g., lines 10-15, then lines 20-25), the second replacement will use the original indices but hit the shifted code, missing its target and corrup",
+        "proposed_fix": "FIX \u2014 Collect all `line_pattern.finditer(fix)` matches into a list, sort them in reverse order of line numbers, and apply them from bottom to top: `matches = list(line_pattern.finditer(fix)); matches.sort(key=lambda m: int(m.group(1)), reverse=True); for lm in matches: ...`",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "sequential application of multi-line range replacements mutates line indices for later matches. A second `Lines N-M` edit can target the wrong region after an earlier range changed line structure."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Multi\u2011line replacements must be applied in reverse order."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0029"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "merged_into": "C0029"
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.95,
+        "description": "FIND \u2014 `_categorise_ruff()` classifies all `F` codes as `DefectCategory.DEAD_CODE` (`if code.startswith(\"F\"): return DefectCategory.DEAD_CODE`). Pyflakes `F821` is \"undefined name\", which is a critical runtime crash, not dead code. Masking it as dead code leads to incorrect downstream prioritization.\nFOLLOW: An undefined name bug will be tagged as DEAD_CODE. The insect brain and immune pipeline will treat it as a low-severity style/cleanup issue rather than a critical code behavioral bug, potent",
+        "proposed_fix": "FIX \u2014 Check for critical F-codes explicitly before the prefix match. `if code == \"F821\": return DefectCategory.TYPE_SAFETY`",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 `_create_sandbox` uses `os.path.commonpath(all_paths)` as the base directory for copying files. If all source files are inside a package (e.g., `bench/`), `commonpath` evaluates to that package directory. The files are flattened into `tmpdir` without the package prefix (e.g., `tmpdir/endocrine.py` instead of `tmpdir/bench/endocrine.py`).\nFOLLOW: Static analysis tools (pyright/mypy) running in the sandbox will fail to resolve absolute imports like `from bench.dm import...` because the `ben",
+        "proposed_fix": "FIX \u2014 Use the project root (current working directory) instead of `commonpath`. Replace `common = os.path.commonpath(all_paths)` with `common = os.getcwd()`.",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`_create_sandbox()` derives `common = os.path.commonpath(all_paths)`. When `source_paths` is a single file, `common` becomes that file\u2019s path, then is normalized to its parent directory, so sibling im"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy 3 regex (`line_pattern`) uses `.+?` and `.+` without `re.DOTALL`. Because the dot metacharacter does not match newlines by default, the regex will fail to capture any replacement blocks where the `old_frag` or `new_frag` spans multiple lines.\nFOLLOW: Models frequently output multi-line code blocks in replacements. The regex will silently fail to match them, returning `None`, and `evaluate_fix` will mark the fix `UNEVALUABLE`, leaving the bug unfixed.",
+        "proposed_fix": "FIX \u2014 Add `re.DOTALL` to `line_pattern` and make the final match non-greedy, bounded by a lookahead: `re.compile(r\"[Ll]ines?\\s+(\\d+)(?:\\s*[-\u2013]\\s*(\\d+))?:\\s*(.*?)\\s*->\\s*(.*?)(?=\\n[Ll]ines?|\\Z)\", re.DOTALL)`.",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`line_pattern = re.compile(r\"[Ll]ines?\\s+(\\d+)(?:\\s*[-\u2013]\\s*(\\d+))?:\\s*(.+?)\\s*->\\s*(.+)\")` does not use `re.DOTALL`, so Strategy 3 cannot match multi-line old/new fragments after `:` or `->`. That mak"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.85,
+        "description": "FIND \u2014 In `compute_pacing_signals()`, the response size anomaly check (Check 4) incorrectly hardcodes `signal_type=\"context_growth\"`. \nFOLLOW: This overwrites or conflates the true context growth signal (Check 2). The insect brain relies on distinct `signal_type` values to trigger different mechanical mitigations. Sending a response size anomaly as a context growth signal will trigger the wrong downstream reaction (e.g., degrading relay instead of isolating a broken model).",
+        "proposed_fix": "FIX \u2014 Change `signal_type=\"context_growth\"` to `signal_type=\"response_size_anomaly\"` in Check 4.",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "response-size anomaly emits `signal_type=\"context_growth\"` in check 4 even though the detail and threshold concern per-model oversized outputs, not cumulative context fraction. This mislabels the sign"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F011"
+        ],
+        "severity": 0.65,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy 3 uses `->` as the separator between old and new code fragments in the line-level replacement regex:\nline_pattern = re.compile(\n    r\"[Ll]ines?\\s+(\\d+)(?:\\s*[-\u2013]\\s*(\\d+))?:\\s*(.+?)\\s*->\\s*(.+)\"\n)\nThe non-greedy `(.+?)` for `old_frag` matches as little as possible before the first `->`. Python type annotations use `->` for return types. A fix referencing `def foo() -> int:` would split at the annotation arrow, not the intended separator. Example: `\"Line 5: d",
+        "proposed_fix": "Use a more distinctive separator that doesn't collide with Python syntax. Replace `->` with `\u2192` (Unicode arrow) or `==>` in the regex, and document the expected format. Alternatively, use a two-pass parse: first match the line number prefix, then split the remainder on the *last* occurrence of ` -> `:\nline_pattern = re.compile(\n    r\"[Ll]ines?\\s+(\\d+)(?:\\s*[-\u2013]\\s*(\\d+))?:\\s*(.+)\"\n)\nfor lm in line_pattern.finditer(fix):\n    rest = lm.group(3)\n    # Split on last ' -> ' to avoid collision with typ",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0043": {
+        "canonical_id": "C0043",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F012"
+        ],
+        "severity": 0.55,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy 1 uses `re.search()`, which returns only the first match. If a proposed fix contains multiple \"Replace X with Y\" instructions, only the first replacement is applied:\nm = replace_pattern.search(fix)\nif m:\n    old, new = m.group(1), m.group(2)\n    if old in source_text:\n        return source_text.replace(old, new, 1)\nThe function returns immediately after the first replacement, ignoring subsequent instructions.\nFOLLOW: A multi-replacement fix is partially app",
+        "proposed_fix": "Use `re.finditer()` and apply all replacements sequentially:\napplied = False\nfor m in replace_pattern.finditer(fix):\n    old, new = m.group(1), m.group(2)\n    if old in source_text:\n        source_text = source_text.replace(old, new, 1)\n        applied = True\nif applied:\n    return source_text",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      }
+    },
+    "next_id": 44,
+    "alias_map": {
+      "ChatGPT_F001": "C0001",
+      "ChatGPT_F002": "C0002",
+      "ChatGPT_F003": "C0003",
+      "ChatGPT_F004": "C0004",
+      "ChatGPT_F005": "C0005",
+      "Codex_F001": "C0006",
+      "Codex_F002": "C0007",
+      "Codex_F003": "C0008",
+      "Codex_F004": "C0009",
+      "Codex_F005": "C0010",
+      "Codex_F006": "C0011",
+      "Codex_F007": "C0012",
+      "Codex_F008": "C0013",
+      "CC2_F001": "C0014",
+      "CC2_F002": "C0015",
+      "CC2_F003": "C0016",
+      "CC2_F004": "C0017",
+      "CC2_F005": "C0018",
+      "CC2_F006": "C0019",
+      "CC2_F007": "C0020",
+      "CC2_F008": "C0021",
+      "CC2_F009": "C0022",
+      "CC2_F010": "C0023",
+      "DeepSeek_F001": "C0024",
+      "DeepSeek_F002": "C0025",
+      "DeepSeek_F003": "C0026",
+      "DeepSeek_F004": "C0027",
+      "DeepSeek_F005": "C0028",
+      "DeepSeek_F006": "C0029",
+      "DeepSeek_F007": "C0030",
+      "DeepSeek_F008": "C0031",
+      "DeepSeek_F009": "C0032",
+      "DeepSeek_F010": "C0033",
+      "Gemini_E001": "C0034",
+      "Gemini_E002": "C0035",
+      "Gemini_E003": "C0036",
+      "Gemini_E004": "C0037",
+      "Gemini_F001": "C0038",
+      "Gemini_F002": "C0039",
+      "Gemini_F003": "C0040",
+      "Gemini_F004": "C0041",
+      "CC2_F011": "C0042",
+      "CC2_F012": "C0043"
+    }
+  },
+  "novelty_counts": [
+    37,
+    4,
+    0,
+    2
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.900674,
+    0.898778
+  ],
+  "gate_history": [
+    false,
+    false,
+    false
+  ],
+  "cumulative_context_chars": 149632
+}
