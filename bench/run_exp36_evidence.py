@@ -232,14 +232,14 @@ class FindingRegistry:
     def __init__(self):
         self.entries: Dict[str, Dict[str, Any]] = {}  # canonical_id -> entry
         self._next_id = 1
-        self._alias_map: Dict[str, str] = {}  # model_local_id -> canonical_id
+        self._alias_map: Dict[str, str] = {}  # "model_id:local_id" -> canonical_id
 
     def register(self, finding: Finding, model_id: str) -> str:
         """Register a new finding. Returns canonical ID."""
         canonical_id = f"C{self._next_id:04d}"
         self._next_id += 1
 
-        self._alias_map[finding.finding_id] = canonical_id
+        self._alias_map[f"{model_id}:{finding.finding_id}"] = canonical_id
 
         self.entries[canonical_id] = {
             "canonical_id": canonical_id,
@@ -277,16 +277,29 @@ class FindingRegistry:
         self, canonical_id: str, status: str, round_idx: int,
         merged_into: Optional[str] = None,
     ):
-        """Update finding status (OPEN, CONFIRMED, CONTESTED, UNCONFIRMED, MERGED)."""
+        """Update finding status.
+
+        Valid statuses: OPEN, CONFIRMED, CONTESTED, CLOSED, MERGED,
+        UNCONFIRMED, REFUTED, REOPENED.
+        """
         if canonical_id in self.entries:
             self.entries[canonical_id]["status"] = status
             self.entries[canonical_id]["last_status_change_round"] = round_idx
             if merged_into:
                 self.entries[canonical_id]["merged_into"] = merged_into
 
-    def lookup_alias(self, model_local_id: str) -> Optional[str]:
-        """Resolve a model-local ID to canonical ID."""
-        return self._alias_map.get(model_local_id)
+    def mark_verified(self, canonical_id: str):
+        """Mark a finding's fix as programmatically verified.
+
+        Called when the immune pipeline's Stage 4 (fix evaluation)
+        confirms the proposed fix passes sandbox checks.
+        """
+        if canonical_id in self.entries:
+            self.entries[canonical_id]["verified"] = True
+
+    def lookup_alias(self, model_id: str, local_id: str) -> Optional[str]:
+        """Resolve a model-scoped local ID to canonical ID."""
+        return self._alias_map.get(f"{model_id}:{local_id}")
 
     def open_crit_high_count(self) -> int:
         """Count open/contested findings with severity >= 0.7 (CRITICAL/HIGH)."""
@@ -332,20 +345,32 @@ class FindingRegistry:
         """Build the structured registry summary for model consumption.
 
         This is the blackboard — what models read each round.
+
+        Active findings (OPEN, CONTESTED, CONFIRMED) get full detail.
+        Resolved findings (CLOSED, MERGED) get a compact one-line entry
+        with no verdict history or fix detail — visible but not
+        relitigable. Models must issue REOPEN with evidence to revisit.
         """
         if not self.entries:
             return "(No findings registered yet.)"
 
+        closed = [e for e in self.entries.values() if e["status"] == "CLOSED"]
+        merged = [e for e in self.entries.values() if e["status"] == "MERGED"]
+        active_statuses = ("OPEN", "CONTESTED", "CONFIRMED", "REOPENED", "UNCONFIRMED")
+        active_count = sum(
+            1 for e in self.entries.values() if e["status"] in active_statuses
+        )
+
         lines = [
             f"=== FINDING REGISTRY (Round {round_idx}) ===",
             f"Total: {len(self.entries)} canonical findings",
-            f"Open: {sum(1 for e in self.entries.values() if e['status'] == 'OPEN')}",
+            f"Active: {active_count} | Closed: {len(closed)} | Merged: {len(merged)}",
             f"Open CRIT/HIGH: {self.open_crit_high_count()}",
             "",
         ]
 
-        # Group by status
-        for status in ("OPEN", "CONTESTED", "CONFIRMED", "UNCONFIRMED", "MERGED"):
+        # ── Active findings: full detail ──
+        for status in ("OPEN", "CONTESTED", "CONFIRMED", "REOPENED", "UNCONFIRMED"):
             group = [
                 e for e in self.entries.values() if e["status"] == status
             ]
@@ -364,6 +389,26 @@ class FindingRegistry:
                     lines.append(f"    Verdicts: {verdict_summary}")
                 if e.get("proposed_fix"):
                     lines.append(f"    Fix: {e['proposed_fix'][:100]}")
+            lines.append("")
+
+        # ── Resolved findings: compact, no detail ──
+        if closed or merged:
+            lines.append("--- RESOLVED (do not revisit) ---")
+            lines.append(
+                "These findings have verified fixes or have been merged. "
+                "Do not CHALLENGE or re-describe them. To reopen a CLOSED "
+                "finding, issue REOPEN <ID> with specific new evidence "
+                "(this will be escalated to human review)."
+            )
+            for e in sorted(closed + merged, key=lambda x: x["canonical_id"]):
+                tag = "CLOSED" if e["status"] == "CLOSED" else "MERGED"
+                merged_note = ""
+                if e.get("merged_into"):
+                    merged_note = f" -> {e['merged_into']}"
+                lines.append(
+                    f"  [{tag}] {e['canonical_id']}{merged_note}: "
+                    f"{e['description'][:80]}"
+                )
             lines.append("")
 
         lines.append("=== END REGISTRY ===")
@@ -419,7 +464,7 @@ class FindingRegistry:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _VERDICT_RE = re.compile(
-    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE)\s+(C\d{4})'
+    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+(C\d{4})'
     r'(?:\s*[*]{0,2}\s*[\|<\-\u2014\u2013\u2190]+\s*(.*))?',
     re.MULTILINE,
 )
@@ -456,9 +501,8 @@ def _resolve_merge_source(
     if not m:
         return None
     local_id = m.group(1)
-    # Try prefixed lookup (runner_core prefixes model_id_)
-    prefixed = f"{model_id}_{local_id}"
-    canonical = registry.lookup_alias(prefixed)
+    # Scoped lookup: model_id:local_id
+    canonical = registry.lookup_alias(model_id, local_id)
     if canonical:
         return canonical
     # Try as canonical ID directly
@@ -550,15 +594,39 @@ def _check_gamma_gate(gamma: float, round_idx: int) -> Tuple[str, bool]:
 def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
     """Transition findings based on accumulated verdicts.
 
-    Status model (see cdsfl_topology_formal.md §T2):
+    Status model (Bugzilla-inspired, see cdsfl_topology_formal.md §T2):
       OPEN → CONFIRMED (2+ independent models)
       OPEN → MERGED (merge verdict accepted)
-      CONFIRMED → CONTESTED (challenge arrives after most recent confirm)
+      CONFIRMED + verified fix → CLOSED (challenge-resistant)
+      CONFIRMED → CONTESTED (challenge arrives, only if NOT verified)
       CONTESTED → CONFIRMED (new confirm after the challenge)
+      CLOSED → REOPENED (only via REOPEN verdict → auto-HIL escalation)
       Remaining OPEN/CONTESTED → UNCONFIRMED at experiment end (caller's job).
+
+    CLOSED findings are challenge-resistant: once a finding has a
+    programmatically verified fix, it's settled. Models can see it
+    (compact summary, no detail) but cannot CHALLENGE it. They must
+    issue REOPEN with specific evidence, which auto-escalates to HIL.
+    This prevents the CONFIRMED ↔ CONTESTED churn loop that blocks
+    the convergence gate.
     """
     for canonical_id, entry in list(registry.entries.items()):
-        if entry["status"] == "MERGED":
+        if entry["status"] in ("MERGED", "CLOSED"):
+            # CLOSED/MERGED are terminal unless explicitly reopened.
+            # Check for REOPEN verdicts on CLOSED findings.
+            if entry["status"] == "CLOSED":
+                reopen_verdicts = [
+                    v for v in entry["verdicts"]
+                    if v["verdict"] == "REOPEN" and v["round"] == round_idx
+                ]
+                if reopen_verdicts:
+                    # REOPEN requires evidence — auto-escalate to HIL
+                    registry.resolve(canonical_id, "REOPENED", round_idx)
+                    entry["escalated"] = True
+                    _log(
+                        f"  REOPEN {canonical_id}: escalated to HIL "
+                        f"(evidence: {reopen_verdicts[0].get('evidence', 'none')[:100]})"
+                    )
             continue
 
         # MERGE takes priority — finding subsumed into another
@@ -587,8 +655,15 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
             v for v in challenges if v["round"] > latest_confirm_round
         ]
 
+        # CONFIRMED + verified fix → CLOSED (challenge-resistant)
+        if entry["status"] == "CONFIRMED" and entry.get("verified"):
+            registry.resolve(canonical_id, "CLOSED", round_idx)
+            _log(f"  CLOSED {canonical_id}: verified fix, challenge-resistant")
+            continue
+
         if entry["status"] == "CONFIRMED" and unresolved_challenges:
-            # CONFIRMED → CONTESTED: new challenge after last confirm
+            # CONFIRMED → CONTESTED: challenge after last confirm
+            # (only if not verified — verified findings go CLOSED above)
             registry.resolve(canonical_id, "CONTESTED", round_idx)
             continue
 
@@ -596,6 +671,10 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
             # CONTESTED → CONFIRMED: new confirm resolved the challenge
             registry.resolve(canonical_id, "CONFIRMED", round_idx)
             continue
+
+        # REOPENED findings re-enter the normal OPEN flow
+        if entry["status"] == "REOPENED":
+            entry["status"] = "OPEN"
 
         if entry["status"] in ("OPEN", "CONTESTED"):
             # Programmatic confirmation: source model is 1, each distinct
@@ -725,8 +804,11 @@ ITC_CAPABILITY_MISMATCH = "CAPABILITY_MISMATCH"  # structural: context overflow,
 ITC_TRANSIENT_FAILURE = "TRANSIENT_FAILURE"       # retry: API timeout, rate limit, single empty
 ITC_DEGRADATION = "DEGRADATION"                   # narrow: repetition, declining finding count
 
-# Adaptation state per model (reset each round, persisted across rounds)
-_itc_model_state: Dict[str, Dict[str, Any]] = {}  # model_label -> {history, adaptation}
+# There is no such thing as a useless computer. Models that fail get
+# recovered, restarted, and given fingerprint-appropriate work — never
+# benched, rested, or skipped. (ITC = IT Crowd: turn it off and on again.)
+_itc_model_state: Dict[str, Dict[str, Any]] = {}  # model_label -> {history, adaptation, ...}
+_itc_hil_flags: List[Dict[str, Any]] = []  # accumulated HIL review flags
 
 
 def _itc_detect(
@@ -771,11 +853,12 @@ def _itc_detect(
 def _itc_adapt(model_label: str, classification: str, round_idx: int):
     """Record failure and compute adaptation for next round.
 
-    Adaptations are stored in _itc_model_state and applied by the
-    dispatch function on the next round.
+    Escalation: retry → strip_context → section_assign → restart_fresh.
+    Models always participate. Never benched.
     """
     state = _itc_model_state.setdefault(model_label, {
         "history": [], "adaptation": None, "retry_count": 0,
+        "escalation_level": 0,
     })
     state["history"].append({
         "round": round_idx,
@@ -783,30 +866,116 @@ def _itc_adapt(model_label: str, classification: str, round_idx: int):
         "findings": 0,
     })
 
-    if classification == ITC_CAPABILITY_MISMATCH:
-        # Narrow scope: strip context, then section-assign
-        current = state.get("adaptation")
-        if current == "strip_context":
-            state["adaptation"] = "section_assign"
-        else:
-            state["adaptation"] = "strip_context"
-        _log(f"  ITC [{model_label}]: {classification} \u2192 adapt={state['adaptation']}")
+    # Escalation chain based on consecutive failures
+    consecutive = _itc_consecutive_failures(model_label)
 
-    elif classification == ITC_TRANSIENT_FAILURE:
-        # Retry same prompt (max 1 retry per round)
+    if classification == ITC_TRANSIENT_FAILURE:
         if state["retry_count"] < 1:
             state["adaptation"] = "retry"
             state["retry_count"] += 1
             _log(f"  ITC [{model_label}]: {classification} \u2192 retry")
-        else:
+        elif consecutive < 3:
             state["adaptation"] = "strip_context"
             state["retry_count"] = 0
-            _log(f"  ITC [{model_label}]: {classification} \u2192 strip_context (retries exhausted)")
+            _log(f"  ITC [{model_label}]: {classification} \u2192 strip_context")
+        else:
+            state["adaptation"] = "restart_fresh"
+            state["retry_count"] = 0
+            _log(f"  ITC [{model_label}]: {classification} \u2192 restart_fresh (consecutive={consecutive})")
+
+    elif classification == ITC_CAPABILITY_MISMATCH:
+        current = state.get("adaptation")
+        if current != "strip_context" and current != "section_assign":
+            state["adaptation"] = "strip_context"
+        elif current == "strip_context":
+            state["adaptation"] = "section_assign"
+        else:
+            state["adaptation"] = "restart_fresh"
+        _log(f"  ITC [{model_label}]: {classification} \u2192 {state['adaptation']}")
 
     elif classification == ITC_DEGRADATION:
-        # Change focus area
-        state["adaptation"] = "change_focus"
-        _log(f"  ITC [{model_label}]: {classification} \u2192 change_focus")
+        if consecutive < 2:
+            state["adaptation"] = "change_focus"
+            _log(f"  ITC [{model_label}]: {classification} \u2192 change_focus")
+        else:
+            state["adaptation"] = "restart_fresh"
+            _log(f"  ITC [{model_label}]: {classification} \u2192 restart_fresh (degraded)")
+
+    # Flag for HIL review if consistently underperforming
+    if consecutive >= 3:
+        _itc_flag_underperformer(model_label, round_idx, classification, consecutive)
+
+
+def _itc_consecutive_failures(model_label: str) -> int:
+    """Count consecutive recent failures for a model."""
+    history = _itc_model_state.get(model_label, {}).get("history", [])
+    count = 0
+    for entry in reversed(history):
+        if entry.get("classification"):
+            count += 1
+        else:
+            break
+    return count
+
+
+def _itc_flag_underperformer(
+    model_label: str, round_idx: int, classification: str, consecutive: int,
+):
+    """Flag a model for human-in-the-loop review.
+
+    The model keeps working — this flag is informational for the human.
+    """
+    flag = {
+        "model": model_label,
+        "round": round_idx,
+        "classification": classification,
+        "consecutive_failures": consecutive,
+        "message": (
+            f"{model_label} has {consecutive} consecutive ITC interventions "
+            f"(latest: {classification}). Flagged for HIL review."
+        ),
+    }
+    _itc_hil_flags.append(flag)
+    _log(f"  *** HIL FLAG: {flag['message']} ***")
+
+
+def _itc_build_recovery_prompt(
+    model_label: str,
+    base_prompt: str,
+    observed_fingerprints: Dict[str, Dict[str, Any]],
+    round_idx: int,
+) -> str:
+    """Build a fingerprint-informed recovery prompt for a restarted model.
+
+    Uses the model's observed capability profile to right-size the task.
+    Not trivial work — real work matched to demonstrated capacity.
+    """
+    fp = observed_fingerprints.get(model_label, {})
+    max_ok_chars = fp.get("max_successful_context_chars", 0)
+
+    # If we know the model's successful context size, trim to that
+    if max_ok_chars > 0 and len(base_prompt) > max_ok_chars:
+        artifact_start = base_prompt.find("=== ARTIFACT:")
+        if artifact_start > 0:
+            preamble = base_prompt[:min(2000, artifact_start)]
+            artifact = base_prompt[artifact_start:]
+            recovery = (
+                f"{preamble}\n\n"
+                f"(Recovery dispatch \u2014 context reduced to match your "
+                f"demonstrated capacity of ~{max_ok_chars:,} chars.)\n\n"
+                f"Focus on the most impactful findings you can identify. "
+                f"Quality over quantity.\n\n"
+                f"{artifact}"
+            )
+            _log(f"  ITC [{model_label}]: recovery prompt "
+                 f"{len(base_prompt):,} \u2192 {len(recovery):,} chars")
+            return recovery
+
+    return (
+        f"{base_prompt}\n\n"
+        f"(Fresh instance \u2014 focus on your strongest area of analysis. "
+        f"Quality over quantity.)\n"
+    )
 
 
 def _itc_get_adaptation(model_label: str) -> Optional[str]:
@@ -821,6 +990,11 @@ def _itc_clear_adaptation(model_label: str):
     if state:
         state["adaptation"] = None
         state["retry_count"] = 0
+
+
+def _itc_get_hil_flags() -> List[Dict[str, Any]]:
+    """Return accumulated HIL flags for experiment reporting."""
+    return list(_itc_hil_flags)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1301,7 +1475,11 @@ def _dispatch_round(
 
     for label, detail in deferred_failures:
         _report_dispatch_failure(mgr, label, round_idx, detail)
-        brain.handle_model_failure(label, detail)
+        # ITC: classify and adapt — never bench
+        classification = _itc_detect(
+            label, round_idx, 0, "", set(), set(), dispatch_error=detail)
+        if classification:
+            _itc_adapt(label, classification, round_idx)
 
     return findings, responses, per_model_durations
 
@@ -1426,7 +1604,11 @@ def _dispatch_round_relay(
 
     for label, detail in deferred_failures:
         _report_dispatch_failure(mgr, label, round_idx, detail)
-        brain.handle_model_failure(label, detail)
+        # ITC: classify and adapt — never bench
+        classification = _itc_detect(
+            label, round_idx, 0, "", set(), set(), dispatch_error=detail)
+        if classification:
+            _itc_adapt(label, classification, round_idx)
 
     return findings, responses, per_model_durations
 
@@ -1440,23 +1622,24 @@ def _safety_check(
     round_idx: int,
     brain: InsectBrain,
 ) -> Optional[str]:
-    """Check for problems that warrant stopping."""
+    """Check for problems that warrant stopping.
+
+    Empty/refused responses are removed from this round's results
+    for ITC recovery in the main loop. Models are NEVER benched.
+    Only returns a problem string if ALL models produced zero usable
+    output — an infrastructure failure, not a model failure.
+    """
     if not responses:
         return "all_models_failed"
 
-    failed_labels = []
-    for label, text in responses.items():
+    for label, text in list(responses.items()):
         if len(text.strip()) < 50:
-            _log(f"  SAFETY: {label} near-empty response ({len(text)} chars) — benching")
-            brain.handle_model_failure(label, f"empty_response_round_{round_idx}")
-            failed_labels.append(label)
+            _log(f"  SAFETY: {label} near-empty response "
+                 f"({len(text)} chars) — queued for ITC recovery")
+            responses.pop(label, None)
         elif "[MODEL_REFUSED" in text:
-            _log(f"  SAFETY: {label} refused — benching")
-            brain.handle_model_failure(label, f"refused_round_{round_idx}")
-            failed_labels.append(label)
-
-    for label in failed_labels:
-        responses.pop(label, None)
+            _log(f"  SAFETY: {label} refused — queued for ITC recovery")
+            responses.pop(label, None)
 
     if not responses:
         return "all_models_failed"
@@ -1764,17 +1947,82 @@ def run_experiment(
                 round_idx, pattern_name,
             )
 
-        # Safety check
+        # Safety check — removes empty/refused responses, never benches
         problem = _safety_check(responses, round_idx, brain)
         if problem:
-            _log(f"\n*** PULL THE PLUG: {problem} ***")
-            result["terminated"] = problem
-            break
+            # ALL models failed — try ITC restart-fresh for each before giving up
+            _log(f"  All models failed initial dispatch — ITC recovery...")
+            recovered_any = False
+            for mc in exp_config.models:
+                if mc.label not in BASELINE_MODELS or mc.role == "collator":
+                    continue
+                classification = _itc_detect(
+                    mc.label, round_idx, 0, "", set(), set())
+                if classification:
+                    _itc_adapt(mc.label, classification, round_idx)
+                recovery_prompt = _itc_build_recovery_prompt(
+                    mc.label, base_prompt, observed_fingerprints, round_idx)
+                try:
+                    recovered_findings, recovered_text = _dispatch_single_model(
+                        mc, mgr, recovery_prompt, cdsfl_text, full_code,
+                        round_idx, pattern_name)
+                    if recovered_text and not recovered_text.startswith("__DISPATCH_FAILED__"):
+                        if len(recovered_text.strip()) >= 50:
+                            responses[mc.label] = recovered_text
+                            findings.extend(recovered_findings)
+                            _itc_clear_adaptation(mc.label)
+                            recovered_any = True
+                            _log(f"  ITC [{mc.label}]: RECOVERED "
+                                 f"({len(recovered_text)} chars, "
+                                 f"{len(recovered_findings)} findings)")
+                except Exception as e:
+                    _log(f"  ITC [{mc.label}]: recovery dispatch failed — {e}")
+            if not recovered_any:
+                _log(f"\n*** PULL THE PLUG: {problem} (ITC recovery exhausted) ***")
+                result["terminated"] = problem
+                break
+        else:
+            # ITC recovery for models that were in dispatch but produced
+            # empty/failed output (removed by safety check)
+            responded = set(responses.keys())
+            for mc in exp_config.models:
+                if mc.label not in BASELINE_MODELS or mc.role == "collator":
+                    continue
+                if mc.label in responded:
+                    _itc_clear_adaptation(mc.label)
+                    continue
+                # This model didn't produce usable output — ITC recover now
+                classification = _itc_detect(
+                    mc.label, round_idx, 0, "", set(), set())
+                if classification:
+                    _itc_adapt(mc.label, classification, round_idx)
+                recovery_prompt = _itc_build_recovery_prompt(
+                    mc.label, base_prompt, observed_fingerprints, round_idx)
+                try:
+                    recovered_findings, recovered_text = _dispatch_single_model(
+                        mc, mgr, recovery_prompt, cdsfl_text, full_code,
+                        round_idx, pattern_name)
+                    if (recovered_text
+                            and not recovered_text.startswith("__DISPATCH_FAILED__")
+                            and len(recovered_text.strip()) >= 50):
+                        responses[mc.label] = recovered_text
+                        findings.extend(recovered_findings)
+                        _itc_clear_adaptation(mc.label)
+                        _log(f"  ITC [{mc.label}]: RECOVERED "
+                             f"({len(recovered_text)} chars, "
+                             f"{len(recovered_findings)} findings)")
+                    else:
+                        _itc_flag_underperformer(
+                            mc.label, round_idx,
+                            classification or "UNRESPONSIVE",
+                            _itc_consecutive_failures(mc.label))
+                except Exception as e:
+                    _log(f"  ITC [{mc.label}]: recovery dispatch failed — {e}")
 
         # Register findings in canonical registry
         novel_this_round = 0
         for f in findings:
-            existing = registry.lookup_alias(f.finding_id)
+            existing = registry.lookup_alias(f.model_id, f.finding_id)
             if existing is None:
                 registry.register(f, f.model_id)
                 novel_this_round += 1
@@ -1832,12 +2080,17 @@ def run_experiment(
         confirmed = sum(
             1 for e in registry.entries.values() if e["status"] == "CONFIRMED"
         )
+        closed = sum(
+            1 for e in registry.entries.values() if e["status"] == "CLOSED"
+        )
         merged = sum(
             1 for e in registry.entries.values() if e["status"] == "MERGED"
         )
-        if confirmed + merged > 0:
-            _log(f"  Status: {confirmed} CONFIRMED, {merged} MERGED, "
-                 f"{len(registry.entries) - confirmed - merged} OPEN")
+        resolved = closed + merged
+        active = len(registry.entries) - resolved
+        if confirmed + resolved > 0:
+            _log(f"  Status: {confirmed} CONFIRMED, {closed} CLOSED, "
+                 f"{merged} MERGED, {active} OPEN")
 
         # Persist round via brain (still using brain for persistence)
         round_elapsed = time.monotonic() - round_start
@@ -1872,6 +2125,16 @@ def run_experiment(
 
         # Run immune pipeline
         immune_result = brain.run_immune_pipeline(findings)
+
+        # Bridge: immune pipeline verified-fix results → registry
+        # When Stage 4 (fix evaluation) marks a finding as verified,
+        # propagate that to the registry so _update_finding_statuses
+        # can transition CONFIRMED → CLOSED.
+        for f in findings:
+            if f.verified:
+                canonical = registry.lookup_alias(f.model_id, f.finding_id)
+                if canonical:
+                    registry.mark_verified(canonical)
 
         # ITC check — per-model adaptive recovery
         for model_label_itc in list(BASELINE_MODELS):
@@ -2065,6 +2328,14 @@ def run_experiment(
     result["gamma"] = round(gamma_final, 4)
     result["gamma_history"] = [round(g, 4) for g in gamma_history]
     result["per_round_counts"] = [len(rnd) for rnd in brain.state.all_findings]
+
+    # ITC: include HIL flags in report for human review
+    hil_flags = _itc_get_hil_flags()
+    result["hil_flags"] = hil_flags
+    if hil_flags:
+        _log(f"\n  *** {len(hil_flags)} HIL FLAG(S) for human review ***")
+        for flag in hil_flags:
+            _log(f"    {flag['message']}")
 
     # Registry summary
     result["registry"] = registry.to_dict()

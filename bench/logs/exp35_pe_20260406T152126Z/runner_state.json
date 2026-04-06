@@ -1,0 +1,4740 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.92,
+        "description": "FIND: bench/cdsfl_registry/engine.py, function _compute_provenance(), Layer 4 block near the end of the function. The model layer is loaded and its dotpaths are recorded into provenance, but the merged state `current` is never updated with `_deep_merge(current, model_config)`. Evidence from the code: Layer 2 and Layer 3 both record provenance and then merge into `current`; Layer 4 records provenance only. This breaks the function's stated contract ('records when each dotpath first appears or cha",
+        "proposed_fix": "FIX: merge the model layer into `current` exactly as earlier layers do.\n<<<<\n    # Layer 4: Model\n    if model:\n        model_path = REGISTRY_DIR / \"models\" / f\"{model}.toml\"\n        if model_path.exists():\n            model_config = _load_toml(model_path)\n            for dp, val in _flatten_dict(model_config).items():\n                provenance[dp] = f\"model/{model}\"\n\n    return provenance\n====\n    # Layer 4: Model\n    if model:\n        model_path = REGISTRY_DIR / \"models\" / f\"{model}.toml\"\n   ",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Missing `_deep_merge()` in `_compute_provenance()` model branch is structurally incomplete, but with the current function it has no observable effect because there is no later layer or post-merge comp"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "Returning a `PolicyResult` with embedded violations instead of raising is not clearly superior here. The current public contract of `load_effective_policy()` is exception-based, and preserving that is"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "The inconsistency between `query` and `get_parameter` is a critical correctness flaw."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": "The same inconsistency also affects `diff_policies`, which will not compare default\u2011resolved values, leading to missing diffs."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "F001 \u2013 Same root cause: default\u2011resolution inconsistency across the engine\u2019s public API."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": "The missing type/enum/min_layer validation in `validate()` is a critical gap."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 10,
+            "evidence": "** The same gap also affects `get_parameter()` and `query()`, which return unvalidated values."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": "Schema coverage validation correctly identifies missing HARD constraints."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "The provenance bug is critical and the proposed fix aligns with the intended behavior."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "I agree the `_compute_provenance` bug (missing model\u2011layer merge) is real and the fix is correct."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": "Agree that `_compute_provenance` unconditional overwrite is a critical bug. My D004 provides the precise fix with value comparison."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 21,
+            "evidence": "D004 adds the consequence that identical-value restatements corrupt provenance attribution, requiring value-difference check."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.97,
+        "description": "FIND: bench/cdsfl_registry/engine.py, PolicyEngine.validate(). The method claims to add 'schema coverage check' but only checks that schema contains every registry HARD key. It does not check the inverse direction: schema entries missing from runtime policy files, schema/runtime type mismatches, enum allowed_values integrity, min_layer enforcement, or default/value consistency. Given the module docstring promises 'Schema-driven validation: every parameter has a defined type, default, constraint ",
+        "proposed_fix": "FIX: extend validate() to validate actual config content against schema using the already-available layer files and effective policies. Minimal sufficient replacement below keeps existing monotonicity checks and adds: unknown parameter detection, min_layer enforcement per file, type/default/enum validation for present values.\n<<<<\n    def validate(self) -> Dict[str, str]:\n        \"\"\"Validate all config files against monotonicity rules.\n\n        Delegates to validate_all_policies() and adds schem",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 2,
+            "evidence": "`get_parameter()` uses the broken provenance map to derive `source_layer`, so the bug is not just cosmetic on `query()`: the single-parameter facade lies about origin on every unchanged restatement to"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "`_compute_provenance()` also diverges from `load_effective_policy()` on model-layer existence handling: provenance silently skips a missing model file while `load_effective_policy()` raises `FileNotFo"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 4,
+            "evidence": "`_compute_provenance()` also fails to deep-merge the model layer into `current`, so its documented algorithm \u201crecords when each dotpath first appears or changes value\u201d is not actually implemented for "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": "The current implementation also violates its own docstring for task/domain layers, not just model: it claims to record when a parameter \u201cfirst appears or changes value,\u201d but it unconditionally stamps "
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": "`diff_policies` missing `task_id` parameters is an interface incompleteness."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": "Provenance tracking overwrites higher-layer values correctly."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 16,
+            "evidence": "The missing schema validations also include lack of type checking for `enum` parameters (treated as strings) and missing enforcement of `min_layer` for task\u2011level configs."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "The proposed fix for `allowed_values` in other models does not address type conversion; storing strings for integer parameters is fundamentally broken."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 20,
+            "evidence": "also missing task_id_b and task_id_a asymmetry."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.89,
+        "description": "FIND: bench/cdsfl_registry/engine.py, get_parameter(). The method advertises schema-driven parameter resolution but bypasses schema completeness by reading only from the merged runtime policy and then falling back to the schema default only when `_dotpath_get(effective, dotpath)` returns `_MISSING`. In the current design, many schema-defined parameters may be absent from live TOML files unless every default is redundantly materialized in universal/domain/model files. As implemented, query() neve",
+        "proposed_fix": "FIX: hydrate schema defaults into the effective policy before returning query() results and before computing diffs/get_parameter values. Add a helper and use it in query(), get_parameter(), and diff_policies().\n<<<<\nclass PolicyEngine:\n    \"\"\"Unified facade for the CDSFL policy system.\n\n    Instantiate once, query many times. The schema is loaded on construction.\n    \"\"\"\n\n    def __init__(self) -> None:\n        self._schema = load_schema()\n====\nclass PolicyEngine:\n    \"\"\"Unified facade for the C",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 10,
+            "evidence": "** The claim that `_compute_provenance`\u2019s missing model\u2011layer merge is harmless is false: provenance entries for model\u2011layer parameters are correct, but the function\u2019s internal `current` state is inco"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "The registry HARD constraints list is complete for the current schema. No missing coverage identified in validation."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "The claim that `validate()` is \u201cstructurally complete\u201d is false; it lacks validation of actual values against schema constraints as shown in F002."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 17,
+            "evidence": "The missing `min_layer` enforcement is a direct consequence of the engine\u2019s promise of \u201cschema\u2011driven validation\u201d and is a HIGH severity omission."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.83,
+        "description": "FIND: bench/cdsfl_registry/engine.py, load_schema(). Schema field `type` allows the value \"enum\" (`VALID_TYPES = {\"bool\", \"int\", \"float\", \"string\", \"enum\"}`), but schema.toml uses `type = \"string\"` for all constrained string parameters and no code path gives special treatment to enum. This creates a dead and misleading type category. More importantly, load_schema() never validates that `allowed_values` is present for enum, absent/optional for other types, or that defaults are members of allowed_",
+        "proposed_fix": "FIX: make schema internally consistent by treating closed-vocabulary parameters as enum and enforcing enum invariants during schema load.\n<<<<\nVALID_TYPES = {\"bool\", \"int\", \"float\", \"string\", \"enum\"}\n====\nVALID_TYPES = {\"bool\", \"int\", \"float\", \"string\", \"enum\"}\n>>>>\n\n<<<<\n        schema[dotpath] = ParameterDef(\n            dotpath=dotpath,\n            type=ptype,\n            default=defn.get(\"default\"),\n            constraint_class=pclass,\n            min_layer=min_layer,\n            description",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 2,
+            "evidence": "`load_schema()` also accepts schema defaults whose runtime type contradicts `type`, so even `get_parameter()` can synthesize invalid values from schema alone when a parameter is absent from all TOMLs."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "The same missing validation means `allowed_values` on `type=\"string\"` entries in `schema.toml` are dead metadata today. The file uses `string` plus `allowed_values` for `verification.sympy_verificatio"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 4,
+            "evidence": "`load_schema()` also never validates schema default types against declared `type`. A malformed schema like `type = \"int\", default = \"5\"` loads cleanly and then `get_parameter()` will return a string d"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": "The same missing schema validation also permits `default` to be omitted entirely for any parameter. `load_schema()` then stores `None`, and `get_parameter()` can return `None` as the effective default"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 11,
+            "evidence": "The `min_layer` enforcement missing in validation affects all query methods, not just diff_policies."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "F001 \u2014 The provenance bug identified by multiple models (Gemini_F001, ChatGPT_F001, Codex_F001) is the same root cause; F001 provides a consolidated fix."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "DS003 \u2014 same root cause: schema constraints ignored by engine."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 20,
+            "evidence": "also need to validate default in allowed_values in load_schema."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.78,
+        "description": "FIND: bench/cdsfl_registry/engine.py imports several symbols that are unused in the target file: `Path`, `Sequence`, `tomllib`, `PolicyViolationError`, `_check_monotonicity`. This is not just style noise in a PoC review because the top-level docstring claims the engine wraps composer.py as well, yet no composer integration exists, and the extra imports obscure what the module actually depends on. Evidence: none of those names are referenced after import.",
+        "proposed_fix": "FIX: remove unused imports and correct the module docstring to match the implementation.\n<<<<\n\"\"\"CDSFL PolicyEngine \u2014 Unified facade for the hierarchical policy system.\n\nWraps the existing 4-layer registry (registry.py) and directive composer\n(composer.py) with a single query interface, parameter introspection, and\nschema validation.\n\nThe engine does not replace the registry or composer. It consolidates access\nto their functionality and adds:\n====\n\"\"\"CDSFL PolicyEngine \u2014 Unified facade for the h",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": "DeepSeek_F001 \u2014 Same root cause: missing layer validation."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.94,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, function `_compute_provenance()`, Layer 4 model merge path. The function records model-owned dotpaths into `provenance` but never merges `model_config` into `current`, unlike the domain and task branches. Evidence: domain/task branches do `current = _deep_merge(current, ...)`; model branch only loads and flattens `model_config` then exits. This breaks the stated algorithm in the docstring ('records when each dotpath first appears or changes value') because",
+        "proposed_fix": "FIX: merge the model layer exactly as done for domain/task.\n<<<<\n    # Layer 4: Model\n    if model:\n        model_path = REGISTRY_DIR / \"models\" / f\"{model}.toml\"\n        if model_path.exists():\n            model_config = _load_toml(model_path)\n            for dp, val in _flatten_dict(model_config).items():\n                provenance[dp] = f\"model/{model}\"\n>>>>\n====\n    # Layer 4: Model\n    if model:\n        model_path = REGISTRY_DIR / \"models\" / f\"{model}.toml\"\n        if model_path.exists():\n ",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "DeepSeek F004\u2019s proposed fix to remove `\"enum\"` from `VALID_TYPES` is backwards. The engine already advertises enum support in both code and schema comments; the smaller correct fix is to validate `al"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 11,
+            "evidence": "The `min_layer` violation also affects the registry's `_check_monotonicity` which should reject parameters defined below their minimum layer, not just HARD constraint violations."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.98,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `validate()`. Validation is advertised as schema-driven ('Validation \u2014 policy violations against schema constraints', 'schema enforcement') but implementation only delegates to `validate_all_policies()` for registry monotonicity and then performs three one-way coverage checks for registry HARD sets. It does not validate parameter types, enum membership, min-layer restrictions, unknown parameters in config files, or default/type consistency against `",
+        "proposed_fix": "FIX: extend `PolicyEngine.validate()` to walk all TOML files in universal/domain/task/model layers, flatten them, and validate each configured dotpath against `self._schema`: unknown parameter => error; layer index must be >= `min_layer`; value type must match declared type; if `allowed_values` is present, value must be a member; schema default must also satisfy its own declared type and allowed_values. Return these errors in the existing `results` dict keyed by file/layer name. This is the simp",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "`query()` also advertises schema-aware behavior via `PolicyResult.violations` but never runs schema checks, so the facade exposes an always-empty validation channel in addition to `validate()` being i"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Removing `PolicyResult.violations` is the wrong fix for this PoC. The field matches the advertised feature set (\u201cValidation \u2014 policy violations against schema constraints\u201d); the simplest sufficient co"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "DeepSeek\u2019s proposed `min_layer` enforcement is backwards. The schema comment says `min_layer` is the \u201clowest layer that may define this parameter\u201d; with ordering universal < domain < task < model, a p"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 11,
+            "evidence": "The provenance bug also affects `query()`'s return value `PolicyResult.provenance`, making all provenance data untrustworthy for any policy with overrides."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.91,
+        "description": "FIND: `bench/cdsfl_registry/schema.toml` is incomplete relative to the actual policy surface described in the provided CDSFL policy and registry hard-constraint context. Missing schema entries include at least `constraints.anti_deference.agreement_requires_evidence`, `constraints.anti_deference.min_independent_observations`, and `constraints.anti_deference.null_find_requires_scoped_justification`, which appear in the active policy surface but have no corresponding schema parameters. The schema i",
+        "proposed_fix": "FIX: make `schema.toml` match the actual registry namespace exactly. If the policy surface is the top-level `[anti_deference]` section used by `registry.py`, then remove any expectation of nested `constraints.anti_deference.*` parameters from the engine contract and ensure every real anti-deference key is declared once under `[anti_deference]`. Concretely, retain `[constraints.anti_deference]` only as the top-level hard boolean gate and ensure the three subordinate anti-deference parameters rema",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "Gemini F001\u2019s claim that sparse `query().effective` is definitively wrong is still under-evidenced from the current code contract. `get_parameter()` explicitly falls back to schema defaults when a dot"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "I do not have evidence from the code that `query().effective` is contractually required to be schema-complete. The stronger supported defect is inconsistency: `get_parameter()` resolves defaults, whil"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.89,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, function `load_schema()`. It validates only that `type`, `constraint_class`, and `min_layer` strings belong to allowed sets. It never validates that `default` matches the declared type or that `allowed_values` is present and consistent for enum-like parameters. Evidence: `ParameterDef` is built directly from raw TOML after those three string checks. A schema entry can declare `type = \"int\"` with `default = \"abc\"` and `load_schema()` will accept it. The sam",
+        "proposed_fix": "FIX: in `load_schema()`, validate each definition's `default` against `ptype` before constructing `ParameterDef`, and if `allowed_values` is present require it to be a list of strings and require `default` to be a member. Reject invalid entries by appending to `errors` and raising the existing `ValueError` path.\n<<<<\n        schema[dotpath] = ParameterDef(\n            dotpath=dotpath,\n            type=ptype,\n            default=defn.get(\"default\"),\n            constraint_class=pclass,\n          ",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Treating sparse-vs-defaulted `diff_policies()` output as definitively wrong is under-evidenced from the stated contract. The method says it compares \u201ceffective policies,\u201d and `load_effective_policy()`"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 4,
+            "evidence": "Sparse `diff_policies` output produces literal false positive conflicts. This requires schema default injection before diffing, detailed in my F002."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": "Even after adding `task_id_a/task_id_b`, `diff_policies()` still reports behaviorally identical policies as different when one side explicitly sets a schema default and the other inherits it. Default "
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.87,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, methods `query()` and `get_parameter()`, plus helper `_compute_provenance()`, are interface-inconsistent with `registry.py` for missing model configs. `load_effective_policy(..., model=...)` raises `FileNotFoundError` when a named model TOML does not exist. `_compute_provenance()` silently ignores a missing model path and returns partial provenance. Evidence: helper checks `if model_path.exists():` and otherwise does nothing; no else branch. This means the",
+        "proposed_fix": "FIX: mirror `load_effective_policy()` semantics in `_compute_provenance()` by raising `FileNotFoundError` with the same available-model listing when `model` is provided but the model file is absent.\n<<<<\n    if model:\n        model_path = REGISTRY_DIR / \"models\" / f\"{model}.toml\"\n        if model_path.exists():\n            model_config = _load_toml(model_path)\n            for dp, val in _flatten_dict(model_config).items():\n                provenance[dp] = f\"model/{model}\"\n            current = _",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Diffing against schema defaults is not clearly required by the current contract. `diff_policies()` says it compares two effective policy dicts from `load_effective_policy()`, and those dicts intention"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Agreed with Codex: diff-vs-default is not evidenced as a defect in the stated contract. `diff_policies()` compares effective merged dicts, not schema-completed policies."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.92,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `validate()`, performs schema coverage checks only in one direction: registry hard sets must exist in schema. It never checks the inverse \u2014 schema entries marked `constraint_class == \"HARD\"` must be present in the registry monotonicity sets when applicable. Evidence: there are checks for `registry_hard_bools - schema_hard_bools`, `registry_hard_thresholds - schema_hard_thresholds`, and `registry_hard_strings - schema_hard_strings`, but no checks for",
+        "proposed_fix": "FIX: add inverse coverage checks in `validate()` for HARD bool/int-float/string schema entries against `HARD_CONSTRAINTS`, `HARD_THRESHOLDS`, and `HARD_STRINGS`, and report any schema HARD parameters missing from registry enforcement.\n<<<<\n        return results\n>>>>\n====\n        extra_hard_bools = schema_hard_bools - registry_hard_bools\n        if extra_hard_bools:\n            results[\"schema_coverage/unenforced_hard_bools\"] = (\n                f\"Schema marks bool params HARD but registry does ",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The claimed schema namespace mismatch is not evidenced by the reviewed artifacts. `registry.py` and `schema.toml` both use top-level `anti_deference.*` plus the separate boolean `constraints.anti_defe"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.7,
+        "description": "`_compute_provenance` unconditionally overwrites provenance for every dotpath present in a layer's flattened dict, regardless of whether the value changed. The docstring says \"records when each dotpath first appears or changes value\" but the code does not compare values \u2014 it just overwrites. This means provenance reports `domain/X` for a parameter even when the domain layer re-states the identical value as universal. That's misleading \u2014 provenance should mean \"the layer that determined the effec",
+        "proposed_fix": "Compare values before overwriting provenance:\n# In _compute_provenance, for each layer after universal:\nfor dp, val in _flatten_dict(domain_config).items():\n    current_val = _flatten_dict(current).get(dp, _MISSING)\n    if current_val is _MISSING or current_val != val:\n        provenance[dp] = f\"domain/{domain_key}\"\nApply the same pattern for task and model layers.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.3,
+        "description": "In `_compute_provenance`, layers 2 and 3 merge into `current` via `_deep_merge`, but layer 4 (model) only records provenance without merging. Since there's no layer 5, this doesn't cause a wrong result *today*, but it means `current` at function exit doesn't represent the effective policy \u2014 asymmetric with the other layers.\n\nFOLLOW: If anyone later adds logic after the model block that inspects `current`, it will be missing model-layer values. Low consequence at PoC stage.",
+        "proposed_fix": "Add `current = _deep_merge(current, model_config)` after the model provenance loop for structural consistency. Not blocking.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.2,
+        "description": "`load_effective_policy` loads and merges all four TOML layers. `_compute_provenance` loads and merges the same four layers independently. Both `query()` and `get_parameter()` call both functions \u2014 so every query reads each TOML file twice and merges twice.\n\nFOLLOW: For a PoC with a handful of TOML files this is a performance issue, not a correctness issue. No wrong results.",
+        "proposed_fix": "Defer \u2014 not blocking for PoC. If it matters, refactor to build provenance during the merge pass in `load_effective_policy`.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.7,
+        "description": "`diff_policies` signature accepts `domain_a, domain_b, model_a, model_b` but has no `task_id_a` / `task_id_b` parameters. It calls `load_effective_policy(domain_a, model=model_a)` \u2014 note `task_id` defaults to `None`. Any task-layer overrides are silently excluded from the diff. The method cannot compare two task-level policies.\n\nFOLLOW: A reviewer using `diff_policies` to compare two task configurations gets a diff that ignores task-specific overrides entirely. This produces silently wrong resul",
+        "proposed_fix": "Add `task_id_a` and `task_id_b` parameters:\ndef diff_policies(\n    self,\n    domain_a: str,\n    domain_b: str,\n    task_id_a: Optional[str] = None,\n    task_id_b: Optional[str] = None,\n    model_a: Optional[str] = None,\n    model_b: Optional[str] = None,\n) -> Dict[str, tuple]:\n    policy_a = load_effective_policy(domain_a, task_id=task_id_a, model=model_a)\n    policy_b = load_effective_policy(domain_b, task_id=task_id_b, model=model_b)\n    # ... rest unchanged",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.6,
+        "description": "FINDING_ID: F005\nSEVERITY: 0.6\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.5\nDESCRIPTION: `validate()` computes `schema_hard_thresholds` as all schema entries with `constraint_class == \"HARD\"` and `type in (\"i",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 12,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 0,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.5,
+        "description": "`_flatten_schema` uses the heuristic `isinstance(value, dict) and \"type\" in value` to distinguish parameter definitions from section containers. If a future parameter definition includes a nested dict key (e.g., `allowed_values` were a dict instead of a list, or metadata were added as a sub-table), the function would still correctly identify it because `\"type\"` is present. However, if a *section* happened to contain a key called `\"type\"` (e.g., a section named `type_checking` with a `type` sub-p",
+        "proposed_fix": "For PoC, add a comment warning about the heuristic. A robust fix would check for multiple schema-required keys (`type` AND `constraint_class`) before classifying as a parameter def.\nif isinstance(value, dict) and \"type\" in value and \"constraint_class\" in value:",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 12,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.7,
+        "description": "Every schema parameter defines `min_layer` \u2014 the lowest layer allowed to set it. For example, `model.name` has `min_layer = \"model\"`, meaning it should only appear in model-layer TOML files. `constraints.anti_deference` has `min_layer = \"universal\"`, meaning it can appear anywhere. Neither `validate()` in engine.py nor `validate_all_policies()` in registry.py checks this constraint. A domain-layer TOML file could define `model.timeout = 5` and it would be silently accepted despite `min_layer = \"",
+        "proposed_fix": "Add a check in `validate()` that loads each layer file, flattens it, and verifies no parameter appears below its `min_layer`:\ndef _layer_index(layer: str) -> int:\n    return LAYER_ORDER.index(layer)\n\n# In validate():\n# For each config file at layer L, for each dotpath it defines:\n#   if dotpath in schema and _layer_index(L) < _layer_index(schema[dotpath].min_layer):\n#       violation\nThis is the largest gap in schema enforcement. Feature doesn't fire.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F008"
+        ],
+        "severity": 0.6,
+        "description": "The schema defines `type` for every parameter (bool, int, float, string, enum) and `allowed_values` for enum parameters. `validate()` delegates to `validate_all_policies()` (which only checks monotonicity) and then checks schema coverage. It never validates that actual parameter values in TOML files match their declared types, or that enum values are within `allowed_values`.\n\nFOLLOW: A TOML file could set `convergence.method = 42` (int instead of string) or `model.reasoning_effort = \"ultra\"` (no",
+        "proposed_fix": "Add type and enum validation in `validate()`:\nfor dotpath, val in _flatten_dict(merged).items():\n    if dotpath in self._schema:\n        defn = self._schema[dotpath]\n        if defn.type == \"bool\" and not isinstance(val, bool):\n            violations.append(f\"{dotpath}: expected bool, got {type(val).__name__}\")\n        elif defn.type == \"int\" and not isinstance(val, int):\n            ...\n        elif defn.type == \"enum\" and defn.allowed_values and val not in defn.allowed_values:\n            viol",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F009"
+        ],
+        "severity": 0.5,
+        "description": "`PolicyResult` has a `violations` field defaulting to empty list. `query()` constructs a `PolicyResult` but never populates `violations`. It calls `load_effective_policy` which raises on violations rather than collecting them, and it doesn't call `validate()`. The violations field is dead.\n\nFOLLOW: A caller inspecting `result.violations` to decide whether the policy is clean will always see an empty list, even if the policy has issues. This is silently wrong \u2014 the field's existence implies it wi",
+        "proposed_fix": "Either: (a) wrap `load_effective_policy` in try/except and capture violations, or (b) remove the `violations` field from `PolicyResult` and let callers use `validate()` separately. Option (b) is simpler for PoC:\n# Remove violations from PolicyResult, or document it as unused",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 `PolicyEngine.query()` claims to provide schema-driven validation and returns a `PolicyResult` object with a `violations` field, but it completely bypasses schema validation on the effective policy. It only merges the TOML files via `load_effective_policy` (which only checks monotonicity) and leaves the `violations` array permanently empty. It never verifies parameters against their allowed values, types, or their `min_layer` schema definitions.\nFOLLOW: Without runtime validation of the e",
+        "proposed_fix": "FIX \u2014 Implement inline schema verification in `query()` to populate the `violations` field.\n<<<<\n    def query(\n        self,\n        domain: str,\n        task_id: Optional[str] = None,\n        model: Optional[str] = None,\n    ) -> PolicyResult:\n        \"\"\"Build the effective policy with full provenance tracking.\n\n        Args:\n            domain: Task domain (e.g. \"mathematics\", \"code\").\n            task_id: Optional task identifier.\n            model: Optional model config name.\n\n        Retur",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 `_compute_provenance` violates its own documented behaviour (\"records when each dotpath first appears or changes value\"). It blindly iterates through layer keys and updates the `provenance` dictionary for every key found in a layer, without checking if the value actually differs from the accumulated `current` layer state.\nFOLLOW: If a domain or model config redeclares a parameter (e.g., `convergence.method = \"non_compensatory\"`) identically to the inherited `universal` value, `_compute_pr",
+        "proposed_fix": "FIX \u2014 Check the current effective value before updating the provenance map.\n<<<<\n    # Layer 2: Domain\n    domain_key = DOMAIN_MAP.get(domain)\n    if domain_key:\n        domain_path = REGISTRY_DIR / \"domains\" / f\"{domain_key}.toml\"\n        if domain_path.exists():\n            domain_config = _load_toml(domain_path)\n            for dp, val in _flatten_dict(domain_config).items():\n                provenance[dp] = f\"domain/{domain_key}\"\n            current = _deep_merge(current, domain_config)\n\n   ",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 `PolicyEngine.validate()` implements a unidirectional schema coverage check. It verifies that `schema.toml` does not lack any `HARD` constraints defined in `registry.py`, but it FAILS to verify the reverse. `registry.py` drives the actual runtime enforcement, meaning any `HARD` constraints added exclusively to `schema.toml` are never verified by `_check_monotonicity`.\nFOLLOW: If a developer adds a new `HARD` constraint directly to `schema.toml`, `validate()` will pass with \"ok\". However, ",
+        "proposed_fix": "FIX \u2014 Enforce bidirectional (symmetric) schema checking in `validate()`.\n<<<<\n        missing = registry_hard_bools - schema_hard_bools\n        if missing:\n            results[\"schema_coverage/hard_bools\"] = (\n                f\"Schema missing HARD bool constraints: {sorted(missing)}\"\n            )\n\n        schema_hard_thresholds = {\n            dp for dp, defn in self._schema.items()\n            if defn.constraint_class == \"HARD\" and defn.type in (\"int\", \"float\")\n        }\n        registry_hard_",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 `diff_policies` correctly retrieves keys that exist in the TOML hierarchy, but fails to account for schema defaults when a parameter is missing. Since `load_effective_policy` does not bake in schema defaults, an explicitly set parameter in `policy_a` will be evaluated against `_MISSING` in `policy_b`, triggering a diff entry even if `policy_a` explicitly defined the value as the default.\nFOLLOW: Comparing a policy that explicitly matches a default against a policy that implicitly inherits",
+        "proposed_fix": "FIX \u2014 Inject schema default resolution for missing values before equality comparison.\n<<<<\n        flat_a = _flatten_dict(policy_a)\n        flat_b = _flatten_dict(policy_b)\n\n        all_keys = set(flat_a.keys()) | set(flat_b.keys())\n        diffs: Dict[str, tuple] = {}\n        for key in sorted(all_keys):\n            va = flat_a.get(key, _MISSING)\n            vb = flat_b.get(key, _MISSING)\n            if va != vb:\n                diffs[key] = (\n                    va if va is not _MISSING else \"",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.9,
+        "description": "FIND: In `engine.py`, function `load_schema()` (lines 109-153) does not validate that the `default` value for each parameter matches the declared `type`. For example, a parameter of type `\"int\"` with a default of `\"string\"` would cause runtime type errors when the default is used. The evidence: the function checks only that `type` is in `VALID_TYPES`, `constraint_class` in `VALID_CLASSES`, and `min_layer` in `VALID_LAYERS`, but never inspects the `default` field. This is a correctness flaw in sc",
+        "proposed_fix": "In `load_schema()`, add type\u2011checking for the `default` value after constructing each `ParameterDef`. For `enum` types, also verify the default is in `allowed_values`.  \n\n<<<<\n        schema[dotpath] = ParameterDef(\n            dotpath=dotpath,\n            type=ptype,\n            default=defn.get(\"default\"),\n            constraint_class=pclass,\n            min_layer=min_layer,\n            description=defn.get(\"description\", \"\"),\n            allowed_values=defn.get(\"allowed_values\"),\n        )\n==",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.7,
+        "description": "FIND: The engine does not enforce the `min_layer` property of parameters. The schema defines `min_layer` as the lowest layer that may define a parameter (e.g., `min_layer=\"domain\"` means the parameter cannot appear in `universal.toml`). However, `engine.validate()` (lines 258-306) performs no check that each parameter in a TOML file is defined at a layer permitted by its `min_layer`. Evidence: the validation only checks schema coverage of HARD constraints and delegates to `validate_all_policies`",
+        "proposed_fix": "Add a validation step in `engine.validate()` that iterates through each config file (universal, domains/*, tasks/*, models/*), flattens it, and for each dotpath present, retrieves its `min_layer` from the schema and ensures the current layer\u2019s order is \u2265 the `min_layer` order. Use `LAYER_ORDER` for ordering.  \n\n<<<<\n    # Additional check: min_layer enforcement\n    layer_order = {\"universal\": 0, \"domain\": 1, \"task\": 2, \"model\": 3}\n    for layer_name, layer_path in [\n        (\"universal\", REGISTR",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.6,
+        "description": "FIND: The engine does not validate that TOML config files contain only parameters defined in the schema. If a parameter name is misspelled in a TOML file (e.g., `constraints.anti_deferrence`), it will be silently merged into the effective policy but will be inaccessible via `get_parameter` (which raises `KeyError`). Evidence: `engine.validate()` checks only HARD\u2011constraint coverage, not the presence of unknown parameters in config files.  \nFOLLOW: Unknown parameters in config files are ignored b",
+        "proposed_fix": "In `engine.validate()`, add a step that iterates over each config file, flattens it, and checks every dotpath against the schema keys. Report any dotpath not found in the schema as an error.  \n\n<<<<\n    # Additional check: unknown parameters in configs\n    for layer_name, layer_path in [\n        (\"universal\", REGISTRY_DIR / \"universal.toml\"),\n        *[(f\"domain/{stem}\", p) for p in (REGISTRY_DIR / \"domains\").glob(\"*.toml\")],\n        *[(f\"task/{stem}\", p) for p in (REGISTRY_DIR / \"tasks\").glob(\"",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F007"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.6,
+        "description": "FIND: `engine.py` lines 278-279 \u2014 `PolicyEngine.validate()`'s schema coverage check incorrectly classifies HARD threshold parameters. Evidence: The check `if defn.constraint_class == \"HARD\" and defn.type in (\"int\", \"float\")` includes `convergence.hard_coverage_threshold` (float, HARD) but excludes `anti_deference.min_independent_observations` (int, HARD) because the latter's type is `\"int\"`, which is in the tuple. However, the registry's `HARD_THRESHOLDS` includes both. The bug is that the check",
+        "proposed_fix": "N/A",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F005"
+        ],
+        "severity": 0.5,
+        "description": "FIND: `engine.py` lines 303-311 \u2014 `diff_policies` uses `load_effective_policy(domain_a, model=model_a)` and `load_effective_policy(domain_b, model=model_b)`, omitting the `task_id` parameter. This means task-specific configurations are ignored in diffs, leading to incomplete comparisons. Evidence: The function signature does not include `task_id_a` or `task_id_b`, and the call passes `None` implicitly for task_id.  \nFOLLOW:  \n1. Diffs between policies that differ only in task layer will show no ",
+        "proposed_fix": "Add `task_id` parameters to `diff_policies` and pass them to `load_effective_policy`.  \n<<<<\n    def diff_policies(\n        self,\n        domain_a: str,\n        domain_b: str,\n        model_a: Optional[str] = None,\n        model_b: Optional[str] = None,\n    ) -> Dict[str, tuple]:\n        \"\"\"Compare two effective policies and return differences.\n\n        Returns:\n            Dict of {dotpath: (value_a, value_b)} for parameters that differ.\n        \"\"\"\n        policy_a = load_effective_policy(doma",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F008"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 12,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F009"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F010"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D001"
+        ],
+        "severity": 0.85,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, function `_compute_provenance` (lines ~175-210). The provenance tracking logic is fundamentally broken: it overwrites provenance entries for parameters that appear in multiple layers, but it does not respect the merge semantics of `load_effective_policy`. Specifically, the function records provenance for every dotpath in each layer's flattened config, even if that layer's value is identical to the accumulated value from higher layers (i.e., no actual overr",
+        "proposed_fix": "Replace the unconditional overwrite with a check that compares the candidate value against the currently accumulated value for that dotpath. Only update provenance if the value differs (or if the dotpath is new).  \n<<<<\n            for dp, val in _flatten_dict(domain_config).items():\n                provenance[dp] = f\"domain/{domain_key}\"\n            current = _deep_merge(current, domain_config)\n====\n            # Merge first, then update provenance only for values that changed\n            merge",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D002"
+        ],
+        "severity": 0.9,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `diff_policies` (lines ~310-330). The signature omits `task_id_a` and `task_id_b` parameters, making the method incapable of comparing policies that differ by task\u2014a core dimension of the 4\u2011layer hierarchy. The method only accepts `domain_a, domain_b, model_a, model_b`. This is a direct interface mismatch with `load_effective_policy` (which accepts `domain, task_id, model`) and `query` (which accepts `domain, task_id, model`). Evidence: the method c",
+        "proposed_fix": "Extend the signature to include optional `task_id_a` and `task_id_b` parameters, and pass them through to `load_effective_policy`.  \n<<<<\n    def diff_policies(\n        self,\n        domain_a: str,\n        domain_b: str,\n        model_a: Optional[str] = None,\n        model_b: Optional[str] = None,\n    ) -> Dict[str, tuple]:\n        \"\"\"Compare two effective policies and return differences.\n\n        Returns:\n            Dict of {dotpath: (value_a, value_b)} for parameters that differ.\n        \"\"\"\n",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D003"
+        ],
+        "severity": 0.75,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `validate` (lines ~280-310). The schema\u2011coverage check is unidirectional: it verifies that the schema contains all HARD constraints defined in `registry.py` (bools, thresholds, strings), but it does not check that the registry\u2019s HARD constraints match the schema\u2019s HARD constraints in the opposite direction. If the schema defines a parameter as `HARD` but the registry does not list it in `HARD_CONSTRAINTS`/`HARD_THRESHOLDS`/`HARD_STRINGS`, that param",
+        "proposed_fix": "Extend the coverage check to verify both directions. Add error entries for schema HARD parameters not present in the registry\u2019s HARD lists.  \n<<<<\n        schema_hard_bools = {\n            dp for dp, defn in self._schema.items()\n            if defn.constraint_class == \"HARD\" and defn.type == \"bool\"\n        }\n        registry_hard_bools = set(HARD_CONSTRAINTS.keys())\n        missing = registry_hard_bools - schema_hard_bools\n        if missing:\n            results[\"schema_coverage/hard_bools\"] = (",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D004"
+        ],
+        "severity": 0.8,
+        "description": "FIND: `bench/cdsfl_registry/schema.toml`, parameter `verification.sympy_verification` (line ~? ). The `default` value `\"auto\"` is not included in the `allowed_values` list `[\"auto\", \"mandatory\", \"disabled\"]`. This violates the schema\u2019s own consistency rule: an enum parameter\u2019s default must be one of its allowed values. Evidence: `default = \"auto\"` and `allowed_values = [\"auto\", \"mandatory\", \"disabled\"]` \u2014 wait, `\"auto\"` is in the list. Re\u2011reading: the provided schema snippet shows `allowed_value",
+        "proposed_fix": "N/A.",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D005"
+        ],
+        "severity": 0.7,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, function `_flatten_schema` (lines ~85-100). The heuristic `isinstance(value, dict) and \"type\" in value` to identify a parameter definition is fragile and could incorrectly classify a nested dict that contains a key `\"type\"` but is not a parameter definition (e.g., a section with a `type` field for documentation). While the current `schema.toml` does not have such a structure, the code is not defensive against future evolution. Evidence: the function does n",
+        "proposed_fix": "Strengthen the condition to check for the presence of required fields.  \n<<<<\n        if isinstance(value, dict) and \"type\" in value:\n            # This is a parameter definition\n            result[full_key] = value\n====\n        if isinstance(value, dict) and \"type\" in value and \"default\" in value and \"constraint_class\" in value:\n            # This is a parameter definition\n            result[full_key] = value\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 13,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D006"
+        ],
+        "severity": 0.95,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `query` and `get_parameter` use two independent code paths to compute the effective policy and provenance, creating a risk of inconsistency. `query` calls `load_effective_policy` (from registry) and `_compute_provenance` (local). `get_parameter` also calls both. However, `_compute_provenance` re\u2011implementes the layer\u2011merge logic (by loading and merging TOMLs itself) instead of reusing `load_effective_policy`. This duplication is a maintenance hazard",
+        "proposed_fix": "Refactor `_compute_provenance` to build provenance by inspecting the intermediate merges performed by `load_effective_policy`. However, `load_effective_policy` does not expose intermediate states. Simpler fix: modify `load_effective_policy` in `registry.py` to return provenance as well. But that changes the registry interface (read\u2011only context). Alternative: compute provenance by comparing the flattened dicts of each layer against the accumulated merged dict, using the same merge order as `load",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_D007"
+        ],
+        "severity": 0.6,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, method `list_parameters` (lines ~265-280). The `section` filter uses `dp.startswith(section + \".\")`. This will incorrectly exclude parameters whose dotpath is exactly equal to the section (i.e., a top\u2011level parameter like `constraints` if such existed). The schema is nested, so dotpaths are always `section.param`. However, the filter also fails if the section ends with a dot (user error) or if the parameter is in a subsection (e.g., `constraints.anti_defer",
+        "proposed_fix": "Use a more precise filter: split the dotpath and compare the first component.  \n<<<<\n            if section and not dp.startswith(section + \".\"):\n                continue\n====\n            if section:\n                parts = dp.split(\".\")\n                if parts[0] != section:\n                    continue\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0043": {
+        "canonical_id": "C0043",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F008"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 15,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0044": {
+        "canonical_id": "C0044",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DSK001"
+        ],
+        "severity": 0.9,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `PolicyEngine.validate()` method does not perform schema validation of configuration files. It only checks monotonicity (via `validate_all_policies`) and schema coverage, but does not validate that the values in TOML files match the schema's type, allowed_values, or min_layer constraints. Evidence: `validate()` delegates to `validate_all_policies` (line ~275) and adds coverage checks, but nowhere does it validate actual config values against the schema def",
+        "proposed_fix": "Extend `validate()` to validate all configuration files against the schema. Add a new helper `_validate_config_against_schema()` that loads each config, flattens it, and for each dotpath checks: (1) if the dotpath is in the schema, (2) if the value matches the schema's type, (3) if `allowed_values` is defined, the value is in that list, and (4) the layer where the parameter appears is not below its `min_layer`. Report any violations in the results dict.\n<<<<\n    def validate(self) -> Dict[str, s",
+        "status": "OPEN",
+        "open_since_round": 6,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0045": {
+        "canonical_id": "C0045",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DSK002"
+        ],
+        "severity": 0.8,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `get_parameter()` and `query()` return values without validating them against the schema. Evidence: `get_parameter()` retrieves the value via `_dotpath_get` and returns it directly (or uses the default) without checking that the value matches the schema's type or allowed_values. This means a misconfigured TOML file (e.g., setting a bool to a string) will cause the engine to return an invalid value silently, breaking downstream assumptions.\n\nFOLLOW: Callers",
+        "proposed_fix": "In `get_parameter()`, after retrieving the value, add a validation step that checks the value against the schema definition. If validation fails, log a warning or raise an error. Since this is a PoC, we choose to raise a `ValueError` to fail fast.\n<<<<\n    def get_parameter(\n        self,\n        dotpath: str,\n        domain: str,\n        task_id: Optional[str] = None,\n        model: Optional[str] = None,\n    ) -> ParameterValue:\n        \"\"\"Get a single parameter's effective value with provenanc",
+        "status": "OPEN",
+        "open_since_round": 6,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0046": {
+        "canonical_id": "C0046",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DSK003"
+        ],
+        "severity": 0.7,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `load_schema()` does not validate that default values in the schema match the declared type and allowed_values. Evidence: The function checks that `type` is in `VALID_TYPES`, `constraint_class` in `VALID_CLASSES`, and `min_layer` in `VALID_LAYERS`, but does not validate that `default` is of the correct type or within `allowed_values`. This means a malformed schema.toml (e.g., default=\"true\" for a bool) will be accepted and cause runtime errors when the def",
+        "proposed_fix": "Extend `load_schema()` to validate each parameter's default value against its type and allowed_values. Add validation steps after constructing the `ParameterDef` but before adding it to the schema dict.\n<<<<\n        schema[dotpath] = ParameterDef(\n            dotpath=dotpath,\n            type=ptype,\n            default=defn.get(\"default\"),\n            constraint_class=pclass,\n            min_layer=min_layer,\n            description=defn.get(\"description\", \"\"),\n            allowed_values=defn.get",
+        "status": "OPEN",
+        "open_since_round": 6,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0047": {
+        "canonical_id": "C0047",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F009"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 15,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0048": {
+        "canonical_id": "C0048",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F010"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0049": {
+        "canonical_id": "C0049",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F011"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0050": {
+        "canonical_id": "C0050",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F012"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0051": {
+        "canonical_id": "C0051",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F013"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0052": {
+        "canonical_id": "C0052",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F006"
+        ],
+        "severity": 0.4,
+        "description": "FIND: `engine.py`, `PolicyResult.violations` field is dead\u2014never populated. Evidence: `PolicyResult` definition includes `violations: List[str] = field(default_factory=list)`, but `query()` never sets it, and no other method returns a `PolicyResult` with violations.  \nFOLLOW:  \n1. Callers expecting violation data will receive empty lists.  \n2. Misleading API contract suggests violations are reported.  \n3. Could be removed or repurposed; as a PoC, removal is simplest.",
+        "proposed_fix": "Remove `violations` field from `PolicyResult` and its usage (none).  \n\n<<<<\n@dataclass\nclass PolicyResult:\n    \"\"\"Result of a full policy query.\"\"\"\n    domain: str\n    task_id: Optional[str]\n    model: Optional[str]\n    effective: Dict[str, Any]           # merged policy dict\n    provenance: Dict[str, str]          # dotpath -> source layer\n    violations: List[str] = field(default_factory=list)\n====\n@dataclass\nclass PolicyResult:\n    \"\"\"Result of a full policy query.\"\"\"\n    domain: str\n    task",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 8
+      },
+      "C0053": {
+        "canonical_id": "C0053",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F011"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 8,
+        "last_status_change_round": 8,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0054": {
+        "canonical_id": "C0054",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F012"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 8,
+        "last_status_change_round": 8,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0055": {
+        "canonical_id": "C0055",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F007"
+        ],
+        "severity": 0.85,
+        "description": "FIND: `engine.query()` and `engine.diff_policies()` fail to project schema defaults onto missing parameters. Evidence: `load_effective_policy()` returns only the literal merged TOML content. While `get_parameter()` manually applies `defn.default` when `_dotpath_get()` returns `_MISSING`, `query()` and `diff_policies()` return the raw dictionary. \n\nFOLLOW: `query().effective` is an incomplete dictionary missing any parameter that relies on a schema default, causing downstream `KeyError` crashes f",
+        "proposed_fix": "FIX: Inject schema defaults into the returned structures for both APIs. Add a `_dotpath_set` helper at the top of the file, then patch `query` and `diff_policies`.\n\n<<<<\ndef _flatten_dict(d: Dict[str, Any], prefix: str = \"\") -> Dict[str, Any]:\n====\ndef _dotpath_set(d: Dict[str, Any], dotpath: str, value: Any) -> None:\n    \"\"\"Set a nested dictionary value using dot notation.\"\"\"\n    keys = dotpath.split(\".\")\n    current = d\n    for key in keys[:-1]:\n        if key not in current or not isinstance(",
+        "status": "OPEN",
+        "open_since_round": 13,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0056": {
+        "canonical_id": "C0056",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F008"
+        ],
+        "severity": 0.65,
+        "description": "FIND: `validate()` verifies that all registry HARD constants are defined as HARD in the schema, but completely fails to check the reverse. Evidence: `missing = registry_hard_bools - schema_hard_bools` flags registry variables missing from the schema, but the engine never checks `schema_hard_bools - registry_hard_bools` (and identically for thresholds and strings).\n\nFOLLOW: If a developer updates `schema.toml` to change a SOFT constraint to HARD, or adds a new HARD parameter, `engine.validate()` ",
+        "proposed_fix": "FIX: Update `validate()` to enforce strict bidirectional coverage for all three HARD constraint sets.\n\n<<<<\n        schema_hard_bools = {\n            dp for dp, defn in self._schema.items()\n            if defn.constraint_class == \"HARD\" and defn.type == \"bool\"\n        }\n        registry_hard_bools = set(HARD_CONSTRAINTS.keys())\n        missing = registry_hard_bools - schema_hard_bools\n        if missing:\n            results[\"schema_coverage/hard_bools\"] = (\n                f\"Schema missing HARD ",
+        "status": "OPEN",
+        "open_since_round": 13,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0057": {
+        "canonical_id": "C0057",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R15_F001"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: CC2_R15_F001\nSEVERITY: 0.72\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.7\n\nDESCRIPTION (FIND): `validate()` performs schema coverage checks in one direction only \u2014 it checks `registr",
+        "proposed_fix": "Add reverse coverage check in `validate()` after the existing checks:\n# Reverse check: schema HARD params must have registry enforcement\nschema_hard_all = {dp for dp, defn in self._schema.items() if defn.constraint_class == \"HARD\"}\nregistry_enforced = set(HARD_CONSTRAINTS.keys()) | set(HARD_THRESHOLDS.keys()) | set(HARD_STRINGS.keys())\nunenforced = schema_hard_all - registry_enforced\nif unenforced:\n    results[\"schema_coverage/unenforced_hard\"] = (\n        f\"Schema HARD params with no registry e",
+        "status": "OPEN",
+        "open_since_round": 16,
+        "last_status_change_round": 16,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0058": {
+        "canonical_id": "C0058",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R15_F002"
+        ],
+        "severity": 0.55,
+        "description": "FINDING_ID: CC2_R15_F002\nSEVERITY: 0.55\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.4\n\nDESCRIPTION (FIND): `VALID_TYPES` includes `\"enum\"` but no parameter in `schema.toml` uses `type = \"enum\"`.",
+        "proposed_fix": "For PoC, either: (a) change the three parameters to `type = \"enum\"` in schema.toml so the type system is internally consistent, OR (b) keep `type = \"string\"` and remove `\"enum\"` from `VALID_TYPES` since it's unused. Option (a) is semantically cleaner:\n[verification.sympy_verification]\ntype = \"enum\"\n# ... rest unchanged\n\n[verification.test_execution]\ntype = \"enum\"\n# ... rest unchanged\n\n[model.reasoning_effort]\ntype = \"enum\"\n# ... rest unchanged\nValue enforcement itself is a known PENDING issue (m",
+        "status": "OPEN",
+        "open_since_round": 16,
+        "last_status_change_round": 16,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0059": {
+        "canonical_id": "C0059",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R15_F003"
+        ],
+        "severity": 0.48,
+        "description": "FINDING_ID: CC2_R15_F003\nSEVERITY: 0.48\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.5\n\nDESCRIPTION (FIND): `get_parameter()` and `query()` each independently call both `load_effective_policy()` and",
+        "proposed_fix": "Refactor `_compute_provenance` to accept pre-loaded layer dicts rather than re-reading files. For PoC, acceptable to defer \u2014 but document the TOCTOU risk. Simplest immediate fix: have `query()` call `_compute_provenance` first, then build effective from the same data, or vice versa. Given PoC context, filing as MEDIUM awareness, not blocking.",
+        "status": "OPEN",
+        "open_since_round": 16,
+        "last_status_change_round": 16,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0060": {
+        "canonical_id": "C0060",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS001"
+        ],
+        "severity": 0.85,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `load_schema()` stores `allowed_values` as strings regardless of parameter type, making validation impossible for non\u2011string types. Evidence: in `load_schema()` (lines 99\u2013130), `allowed_values` is taken directly from the TOML (`defn.get(\"allowed_values\")`) without type conversion. The TOML defines `allowed_values` as an array of strings even for integer/float parameters (e.g., `verification.test_execution` is a string parameter, but if an integer parameter",
+        "proposed_fix": "Convert `allowed_values` to the appropriate Python type during schema loading based on the parameter\u2019s `type`.  \n<<<<\n        schema[dotpath] = ParameterDef(\n            dotpath=dotpath,\n            type=ptype,\n            default=defn.get(\"default\"),\n            constraint_class=pclass,\n            min_layer=min_layer,\n            description=defn.get(\"description\", \"\"),\n            allowed_values=defn.get(\"allowed_values\"),\n        )\n====\n        # Convert allowed_values to proper types\n      ",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0061": {
+        "canonical_id": "C0061",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS002"
+        ],
+        "severity": 0.7,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `diff_policies()` compares raw flattened TOML dicts, ignoring schema defaults, causing misleading diffs. Evidence: lines 418\u2013446 call `load_effective_policy()` (which merges TOML layers but does not apply schema defaults) and then `_flatten_dict()`. If a parameter is absent in a policy, `_dotpath_get` returns `_MISSING` and the diff shows `\"<absent>\"`. However, the effective value for that parameter should be the schema default. The diff should compare the",
+        "proposed_fix": "Replace raw flattened dicts with the effective values (including defaults) by using `get_parameter()` for each schema parameter, or by constructing a dict of effective values.  \n<<<<\n    def diff_policies(\n        self,\n        domain_a: str,\n        domain_b: str,\n        model_a: Optional[str] = None,\n        model_b: Optional[str] = None,\n    ) -> Dict[str, tuple]:\n        \"\"\"Compare two effective policies and return differences.\n\n        Returns:\n            Dict of {dotpath: (value_a, value",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0062": {
+        "canonical_id": "C0062",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS003"
+        ],
+        "severity": 0.65,
+        "description": "FIND: `bench/cdsfl_registry/engine.py` completely ignores the `min_layer` schema constraint, allowing parameters to be defined in lower layers than permitted. Evidence: `ParameterDef.min_layer` is loaded from schema (line 99\u2013130) but never validated against actual layer definitions. The `_compute_provenance()` records which layer sets a parameter, but there is no check that a parameter defined in e.g., a task config (`task/...`) is allowed by `min_layer=\"domain\"`. The registry\u2019s `_check_monotoni",
+        "proposed_fix": "Add a validation step in `_compute_provenance()` (or a separate method) that, when a parameter is set, checks that the layer is at or above `min_layer`. The simplest fix is to add a check in `validate()` that iterates over provenance entries and compares against the schema\u2019s `min_layer`.  \n<<<<\n    def validate(self) -> Dict[str, str]:\n        \"\"\"Validate all config files against monotonicity rules.\n\n        Delegates to validate_all_policies() and adds schema coverage check.\n        \"\"\"\n       ",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0063": {
+        "canonical_id": "C0063",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R16_F001"
+        ],
+        "severity": 0.75,
+        "description": "FINDING_ID: CC2_R16_F001\nSEVERITY: 0.75\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.6\n\nDESCRIPTION (FIND): `schema.toml` defines three parameters with `allowed_values` lists \u2014 `verification.sympy",
+        "proposed_fix": "In `schema.toml`, change the three parameters from `type = \"string\"` to `type = \"enum\"`:\n[verification.sympy_verification]\ntype = \"enum\"\n# ... rest unchanged\n\n[verification.test_execution]\ntype = \"enum\"\n# ... rest unchanged\n\n[model.reasoning_effort]\ntype = \"enum\"\n# ... rest unchanged",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 17,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0064": {
+        "canonical_id": "C0064",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R16_F002"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: CC2_R16_F002\nSEVERITY: 0.70\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.7\n\nDESCRIPTION (FIND): Semantic contradiction between two schema parameters: `constraints.sympy_auto_verify` (",
+        "proposed_fix": "Add a cross-parameter consistency check in `validate()` after the coverage checks:\n# Cross-parameter semantic check\neff_universal = _load_toml(REGISTRY_DIR / \"universal.toml\")\nsympy_hard = _dotpath_get(eff_universal, \"constraints.sympy_auto_verify\")\n# Check each domain/model effective policy\nfor name, status in list(results.items()):\n    if status != \"ok\":\n        continue\n    # For any effective policy where sympy_auto_verify is True,\n    # sympy_verification must not be \"disabled\"\n    # (full ",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 17,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0065": {
+        "canonical_id": "C0065",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_R16_F003"
+        ],
+        "severity": 0.55,
+        "description": "FINDING_ID: CC2_R16_F003\nSEVERITY: 0.55\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.3\n\nDESCRIPTION (FIND): `_flatten_dict` (used by both `_compute_provenance` and `diff_policies`) recurses into eve",
+        "proposed_fix": "For PoC, document that parameter values must be scalar (not tables). No code change needed unless a config actually uses table values. If defensive fix desired:\ndef _flatten_dict(d: Dict[str, Any], prefix: str = \"\", schema: Optional[Dict[str, ParameterDef]] = None) -> Dict[str, Any]:\n    result: Dict[str, Any] = {}\n    for key, value in d.items():\n        full_key = f\"{prefix}.{key}\" if prefix else key\n        if isinstance(value, dict) and (schema is None or full_key not in schema):\n           ",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 17,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0066": {
+        "canonical_id": "C0066",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "VERDICT: CONFIRM C0001\nVERDICT: CONFIRM C0007\nVERDICT: CONFIRM C0008\nVERDICT: CONFIRM C0009\nVERDICT: CONFIRM C0010\nVERDICT: CONFIRM ChatGPT_F001\nVERDICT: CONFIRM ChatGPT_F002\nVERDICT: CHALLENGE CC2_R16_F002 | This is a policy-design contradiction, not an engine or schema implementation defect proven by the artifact. The engine never claims to enforce cross-parameter semantic implications beyond monotonicity/schema metadata, and no runtime path shown here consumes `verification.sympy_verification",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0067": {
+        "canonical_id": "C0067",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DSK_F001"
+        ],
+        "severity": 0.95,
+        "description": "FIND: `PolicyEngine.query()` and `get_parameter()` return effective policies that violate schema completeness guarantees because they do NOT inject schema defaults for parameters missing from all four TOML layers. The module docstring explicitly promises \"Schema-driven validation: every parameter has a defined type, default, ...\" and \"Unified query: one call for 'give me the effective value of X ... with its source layer.'\" However, `load_effective_policy()` returns only the raw TOML merge witho",
+        "proposed_fix": "Modify `query()` to augment the raw effective policy with schema defaults for any missing parameters, and update provenance accordingly. Also adjust `_compute_provenance` to assign \"default\" source for missing parameters.  \n<<<<\n    def query(\n        self,\n        domain: str,\n        task_id: Optional[str] = None,\n        model: Optional[str] = None,\n    ) -> PolicyResult:\n        \"\"\"Build the effective policy with full provenance tracking.\"\"\"\n        effective = load_effective_policy(domain, ",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0068": {
+        "canonical_id": "C0068",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DSK_F002"
+        ],
+        "severity": 0.85,
+        "description": "FIND: `PolicyEngine.diff_policies()` signature is missing `task_id_a` and `task_id_b` parameters, making it impossible to compare policies with task\u2011specific overrides. The method accepts only `domain_a, domain_b, model_a, model_b`. This violates the principle that the engine should support full 4\u2011layer comparison. Evidence:  \n1. `engine.py` lines 310\u2011313: `def diff_policies(self, domain_a: str, domain_b: str, model_a: Optional[str] = None, model_b: Optional[str] = None)`.  \n2. `load_effective_p",
+        "proposed_fix": "Add optional `task_id_a` and `task_id_b` parameters to `diff_policies`, passing them to `load_effective_policy`.  \n<<<<\n    def diff_policies(\n        self,\n        domain_a: str,\n        domain_b: str,\n        model_a: Optional[str] = None,\n        model_b: Optional[str] = None,\n    ) -> Dict[str, tuple]:\n====\n    def diff_policies(\n        self,\n        domain_a: str,\n        domain_b: str,\n        task_id_a: Optional[str] = None,\n        task_id_b: Optional[str] = None,\n        model_a: Optio",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0069": {
+        "canonical_id": "C0069",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0070": {
+        "canonical_id": "C0070",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F006"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0071": {
+        "canonical_id": "C0071",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F009"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0072": {
+        "canonical_id": "C0072",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_NEW_F001"
+        ],
+        "severity": 0.82,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `_flatten_schema()` wrongly identifies any section containing a parameter named `type` as a single parameter definition, and conversely treats any parameter missing the `type` field as a section. Evidence: the condition `if isinstance(value, dict) and \"type\" in value:` assumes the presence of the `\"type\"` key perfectly distinguishes a parameter definition from a section. If a user defines `[model.type]`, the `model` section dictionary contains the key `\"ty",
+        "proposed_fix": "FIX: Update the condition to verify that the dict contains no nested dictionaries, which accurately distinguishes leaf parameter definitions from nested sections.\n\n<<<<\n        if isinstance(value, dict) and \"type\" in value:\n            # This is a parameter definition\n            result[full_key] = value\n        elif isinstance(value, dict):\n            # This is a section, recurse\n            result.update(_flatten_schema(value, full_key))\n====\n        if isinstance(value, dict):\n            #",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0073": {
+        "canonical_id": "C0073",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_NEW_F002"
+        ],
+        "severity": 0.76,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, `validate()` checks for schema coverage but only in one direction: it ensures all registry HARD constraints exist in the schema, but fails to check if all schema HARD constraints exist in the registry. Evidence: `missing = registry_hard_bools - schema_hard_bools`. If a developer adds a new parameter to `schema.toml` and marks it `constraint_class = \"HARD\"`, it is not added to `HARD_CONSTRAINTS` in `registry.py` automatically. The validation will pass becau",
+        "proposed_fix": "FIX: Make the coverage check bidirectional by reporting `schema_hard_* - registry_hard_*` as unenforced schema constraints.\n\n<<<<\n        registry_hard_bools = set(HARD_CONSTRAINTS.keys())\n        missing = registry_hard_bools - schema_hard_bools\n        if missing:\n            results[\"schema_coverage/hard_bools\"] = (\n                f\"Schema missing HARD bool constraints: {sorted(missing)}\"\n            )\n\n        schema_hard_thresholds = {\n            dp for dp, defn in self._schema.items()\n  ",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0074": {
+        "canonical_id": "C0074",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_NEW_F003"
+        ],
+        "severity": 0.88,
+        "description": "FIND: `bench/cdsfl_registry/engine.py`, the engine claims 'Schema-driven validation: every parameter has a defined type' but fails to type-check any SOFT constraints or non-HARD values at runtime. Evidence: `get_parameter()` and `query()` pull the raw value from the TOML merge via `load_effective_policy()`. The underlying `_check_monotonicity()` only type-checks the specific HARD constraints registered in its internal dictionaries. If a domain or model config overrides a SOFT parameter (e.g., `v",
+        "proposed_fix": "FIX: Add a type-checking helper `_validate_types()` and invoke it inside `query()` and `get_parameter()` to validate the final effective values against `self._schema`.\n\n<<<<\n    def query(\n        self,\n        domain: str,\n        task_id: Optional[str] = None,\n        model: Optional[str] = None,\n    ) -> PolicyResult:\n        \"\"\"Build the effective policy with full provenance tracking.\n\n        Args:\n            domain: Task domain (e.g. \"mathematics\", \"code\").\n            task_id: Optional t",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0075": {
+        "canonical_id": "C0075",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "VERDICT: CONFIRM C0001\nVERDICT: CONFIRM C0003\nVERDICT: CONFIRM C0007\nVERDICT: CONFIRM C0008\nVERDICT: CONFIRM C0009\nVERDICT: CONFIRM C0010\nVERDICT: CHALLENGE CC2_F002 | The artifact-backed defect is not the schema labels being `\"string\"` instead of `\"enum\"`; the operational defect is that `engine.py` never validates `allowed_values` at all. Re-labeling the three schema entries alone changes metadata but does not make any runtime path reject invalid values.\nVERDICT: CHALLENGE CC2_F003 | Same issue",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0076": {
+        "canonical_id": "C0076",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F007"
+        ],
+        "severity": 0.65,
+        "description": "FIND: `engine.py`, `_compute_provenance()` does not update the `current` dict after merging the model layer, breaking the layer\u2011by\u2011layer construction for the model step. Evidence: lines 231\u2013236 update `current` for domain and task layers, but lines 239\u2013244 for model layer only iterate over `model_config` without merging into `current`. While provenance is still correct because model is last, the function\u2019s internal state is inconsistent and would fail if another layer were added.\nFOLLOW: This is",
+        "proposed_fix": "Add `current = _deep_merge(current, model_config)` after line 243.",
+        "status": "OPEN",
+        "open_since_round": 20,
+        "last_status_change_round": 20,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0077": {
+        "canonical_id": "C0077",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F008"
+        ],
+        "severity": 0.6,
+        "description": "FIND: `engine.py`, `diff_policies()` compares raw flattened TOML dicts without applying schema defaults, causing missing\u2011vs\u2011default differences to be reported incorrectly. Evidence: uses `load_effective_policy` (which does not inject defaults) then `_flatten_dict`. If a parameter is absent in one policy but has a schema default, diff will show `<absent>` vs default? No\u2014it shows `<absent>` vs `<absent>` because default is not injected. This misrepresents the effective difference.\nFOLLOW: Users of",
+        "proposed_fix": "Before flattening, inject schema defaults for any missing parameter in the effective dict (using the same logic as `get_parameter`). Or document that diff compares raw TOML merges, not effective values with defaults. Given the engine\u2019s schema\u2011aware purpose, injecting defaults is more consistent.",
+        "status": "OPEN",
+        "open_since_round": 20,
+        "last_status_change_round": 20,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0078": {
+        "canonical_id": "C0078",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS004"
+        ],
+        "severity": 0.6,
+        "description": "FIND \u2014 `bench/cdsfl_registry/engine.py`, `diff_policies()` method (lines 418\u2013446) signature is incomplete: it accepts `domain_a, domain_b, model_a, model_b` but omits `task_id` parameters. Evidence: The method calls `load_effective_policy(domain_a, model=model_a)` without passing a task_id, meaning it cannot diff policies that include task-specific overrides. This contradicts the engine\u2019s promise of \u201cUnified query\u201d across all four layers.  \nFOLLOW:  \n1. Comparing two policies with different task",
+        "proposed_fix": "<<<<  \n    def diff_policies(  \n        self,  \n        domain_a: str,  \n        domain_b: str,  \n        task_id_a: Optional[str] = None,  \n        task_id_b: Optional[str] = None,  \n        model_a: Optional[str] = None,  \n        model_b: Optional[str] = None,  \n    ) -> Dict[str, tuple]:  \n        \"\"\"Compare two effective policies and return differences.\"\"\"  \n        policy_a = load_effective_policy(domain_a, task_id=task_id_a, model=model_a)  \n        policy_b = load_effective_policy(domain",
+        "status": "OPEN",
+        "open_since_round": 22,
+        "last_status_change_round": 22,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0079": {
+        "canonical_id": "C0079",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS005"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `bench/cdsfl_registry/engine.py`, `_flatten_schema()` (lines 85\u2013101) uses a fragile heuristic: `isinstance(value, dict) and \"type\" in value` to identify parameter definitions. Evidence: If a TOML section (non\u2011parameter) contains a key named `\"type\"` (e.g., a future extension), it will be misclassified as a parameter, causing schema loading to fail or produce garbage. Example: a section `[some_group]` with `type = \"generic\"` would be flattened as a parameter.  \nFOLLOW:  \n1. Schema loading ",
+        "proposed_fix": "<<<<  \n    if isinstance(value, dict) and \"type\" in value:  \n        # This is a parameter definition  \n        result[full_key] = value  \n====  \n    if isinstance(value, dict) and \"type\" in value:  \n        # Additional guard: ensure it has the required fields of a parameter  \n        required = {\"type\", \"default\", \"constraint_class\", \"min_layer\", \"description\"}  \n        if required.issubset(value.keys()):  \n            result[full_key] = value  \n        else:  \n            # This is a section",
+        "status": "OPEN",
+        "open_since_round": 22,
+        "last_status_change_round": 22,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      }
+    },
+    "next_id": 80,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "Codex:Codex_F002": "C0002",
+      "Codex:Codex_F003": "C0003",
+      "Codex:Codex_F004": "C0004",
+      "Codex:Codex_F005": "C0005",
+      "ChatGPT:ChatGPT_F001": "C0006",
+      "ChatGPT:ChatGPT_F002": "C0007",
+      "ChatGPT:ChatGPT_F003": "C0008",
+      "ChatGPT:ChatGPT_F004": "C0009",
+      "ChatGPT:ChatGPT_F005": "C0010",
+      "ChatGPT:ChatGPT_F006": "C0011",
+      "CC2:CC2_F001": "C0012",
+      "CC2:CC2_F002": "C0013",
+      "CC2:CC2_F003": "C0014",
+      "CC2:CC2_F004": "C0015",
+      "CC2:CC2_F005": "C0016",
+      "CC2:CC2_F006": "C0017",
+      "CC2:CC2_F007": "C0018",
+      "CC2:CC2_F008": "C0019",
+      "CC2:CC2_F009": "C0020",
+      "Gemini:Gemini_F001": "C0021",
+      "Gemini:Gemini_F002": "C0022",
+      "Gemini:Gemini_F003": "C0023",
+      "Gemini:Gemini_F004": "C0024",
+      "DeepSeek:DeepSeek_F001": "C0025",
+      "DeepSeek:DeepSeek_F002": "C0026",
+      "DeepSeek:DeepSeek_F003": "C0027",
+      "ChatGPT:ChatGPT_F007": "C0028",
+      "DeepSeek:DeepSeek_F004": "C0029",
+      "DeepSeek:DeepSeek_F005": "C0030",
+      "Codex:Codex_F006": "C0031",
+      "Codex:Codex_F007": "C0032",
+      "Codex:Codex_F008": "C0033",
+      "Codex:Codex_F009": "C0034",
+      "Codex:Codex_F010": "C0035",
+      "DeepSeek:DeepSeek_D001": "C0036",
+      "DeepSeek:DeepSeek_D002": "C0037",
+      "DeepSeek:DeepSeek_D003": "C0038",
+      "DeepSeek:DeepSeek_D004": "C0039",
+      "DeepSeek:DeepSeek_D005": "C0040",
+      "DeepSeek:DeepSeek_D006": "C0041",
+      "DeepSeek:DeepSeek_D007": "C0042",
+      "ChatGPT:ChatGPT_F008": "C0043",
+      "DeepSeek:DeepSeek_DSK001": "C0044",
+      "DeepSeek:DeepSeek_DSK002": "C0045",
+      "DeepSeek:DeepSeek_DSK003": "C0046",
+      "ChatGPT:ChatGPT_F009": "C0047",
+      "ChatGPT:ChatGPT_F010": "C0048",
+      "ChatGPT:ChatGPT_F011": "C0049",
+      "ChatGPT:ChatGPT_F012": "C0050",
+      "ChatGPT:ChatGPT_F013": "C0051",
+      "DeepSeek:DeepSeek_F006": "C0052",
+      "Codex:Codex_F011": "C0053",
+      "Codex:Codex_F012": "C0054",
+      "Gemini:Gemini_F007": "C0055",
+      "Gemini:Gemini_F008": "C0056",
+      "CC2:CC2_R15_F001": "C0057",
+      "CC2:CC2_R15_F002": "C0058",
+      "CC2:CC2_R15_F003": "C0059",
+      "DeepSeek:DeepSeek_DS001": "C0060",
+      "DeepSeek:DeepSeek_DS002": "C0061",
+      "DeepSeek:DeepSeek_DS003": "C0062",
+      "CC2:CC2_R16_F001": "C0063",
+      "CC2:CC2_R16_F002": "C0064",
+      "CC2:CC2_R16_F003": "C0065",
+      "ChatGPT:ChatGPT_UNSTRUCTURED": "C0066",
+      "DeepSeek:DeepSeek_DSK_F001": "C0067",
+      "DeepSeek:DeepSeek_DSK_F002": "C0068",
+      "Gemini:Gemini_F005": "C0069",
+      "Gemini:Gemini_F006": "C0070",
+      "Gemini:Gemini_F009": "C0071",
+      "Gemini:Gemini_NEW_F001": "C0072",
+      "Gemini:Gemini_NEW_F002": "C0073",
+      "Gemini:Gemini_NEW_F003": "C0074",
+      "Codex:Codex_UNSTRUCTURED": "C0075",
+      "DeepSeek:DeepSeek_F007": "C0076",
+      "DeepSeek:DeepSeek_F008": "C0077",
+      "DeepSeek:DeepSeek_DS004": "C0078",
+      "DeepSeek:DeepSeek_DS005": "C0079"
+    }
+  },
+  "novelty_counts": [
+    27,
+    3,
+    5,
+    0,
+    7,
+    1,
+    3,
+    6,
+    2,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    3,
+    6,
+    9,
+    1,
+    2,
+    0,
+    2
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.772851,
+    0.795417,
+    0.747387,
+    0.734285,
+    0.720869,
+    0.694748,
+    0.678442,
+    0.673379,
+    0.674443,
+    0.678892,
+    0.68519,
+    0.688528,
+    0.693228,
+    0.698732,
+    0.700239,
+    0.695127,
+    0.682503,
+    0.672228,
+    0.662931,
+    0.656046,
+    0.649559
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "cumulative_context_chars": 1295663
+}

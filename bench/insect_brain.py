@@ -1203,13 +1203,16 @@ class InsectBrain:
         prior = [f for rnd in self.state.all_findings[:-1] for f in rnd] if self.state.all_findings else []
 
         t0 = time.monotonic()
+        # NK dedup threshold is decoupled from convergence tau_sim.
+        # Convergence uses 0.33 (loose: "similar enough to cluster").
+        # NK immune uses 0.50 (strict: "similar enough to REJECT").
+        # Different questions, different thresholds.
         response = run_immune_pipeline(
             new_findings=findings,
             prior_findings=prior,
             source_paths=self.source_paths,
             observation_only=observation_only,
             ct_enabled=True,
-            tau_sim=self.config.tau_sim,
         )
         elapsed = time.monotonic() - t0
 

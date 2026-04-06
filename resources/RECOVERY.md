@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 April 2026 04:32 BST
+Last updated: 6 April 2026 20:17 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,46 +19,52 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (6 April 2026, 04:32 BST)
+## Current Pending Work (6 April 2026, 20:17 BST)
 
-Experiments 12–34 ALL COMPLETE. EXP 35 RUNNER BUILT (dual topology).
-688 tests pass.
+Experiments 12–35 ALL COMPLETE. 688 tests pass (pending recount after changes).
 
-EXP 34 COMPLETE (6 April 2026, 04:17 BST):
-  Endocrine.py review, star/blackboard, 5 models, 24 rounds (extended).
-  390 findings, 81 canonical, 58 CONFIRMED. γ=0.713, C(H,E)=0.7808.
-  Brain signal: INCOMPLETE — gate never passed despite γ strong depletion.
-  TWO INSTRUMENTATION FAILURES:
-  1. Verdict regex: CC2 **bold** formatting invisible to parser. Zero CC2
-     merges/confirms parsed. Fixed in Exp 35 runner.
-  2. CONTESTED resolution: no path for repeatedly-challenged false positives
-     to be dropped. Design gap — needs CONTESTED→DROPPED after N challenges
-     with zero defence.
-  POST-CONVERGENCE DIVERGENCE: Gate closest at R14 (open_ch=1). After R14,
-  unmerged duplicates + unresolvable CONTESTED drove open_ch 1→8, contested
-  2→7. Positive feedback loop — extension mechanism made things worse.
-  FIX PRODUCTION: 70/81 (86%) have proposed fixes. 61 with executable code.
-  FIX VERIFICATION: 0/348 verified. Sandbox broken (missing project config,
-  dead test paths). Endocrine health trend flat. Fix pipeline dead code.
-  Same pattern as Exp 31: convergence occurred, instrumentation failed.
+EXP 35 COMPLETE (6 April 2026, ~18:00 BST):
+  PolicyEngine review, relay mode, 5 models, 23 rounds.
+  533 raw findings, 79 canonical, 9 CONFIRMED (11.4%), 0 MERGED.
+  γ=0.650 (strong depletion). Gate never triggered: open_ch=31 permanent blocker.
+  Extension stall detector terminated experiment.
+  Post-run: 6 immune pipeline fixes applied (see ONBOARDING for detail).
+  Console: bench/logs/exp35_console.log
+  Logs: bench/logs/exp35_pe_20260406T152126Z/
 
-EXP 35 RUNNER — DUAL TOPOLOGY (bench/run_exp35_policy_engine.py):
-  --topology relay|star CLI switch (default: relay). User configurable.
-  Relay: models chat through brain, see each other's reasoning.
-  Star: structured blackboard, models see only registry summary.
-  New: ITC adaptive recovery, persistent fingerprints, fixed verdict regex.
-  PENDING: CX + Gemini review under full CDSFL before running.
+EXP 34 ANALYSIS COMPLETE (6 April 2026):
+  81 canonical → 33 verified unique. 17 fixes applied to endocrine.py.
+  Analysis: experimental_notes/Exp34_Analysis_and_Exp36_Plan_2026-04-06.md
+
+CX + GEMINI RUNNER REVIEW COMPLETE (6 April 2026, 16:15 BST):
+  11 findings claimed, 1 confirmed (alias map scoping). Fixed in both runners.
+  Review: experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md
+
+POST-EXP 35 IMMUNE PIPELINE FIXES (uncommitted, in working tree):
+  1. Reconciliation gate: three-path confidence threshold (LOCKED/UNSCORED/standard)
+  2. CT timeout: 180→300s
+  3. DC→cell routing fix
+  4. LLM classifier: OpenRouter → CLI Haiku (Max plan)
+  5. NK tau_sim: 0.33→0.50 (immune rejection, decoupled from convergence 0.33)
+  6. CLOSED status FSM: CONFIRMED+verified→CLOSED, REOPEN→HIL, compact resolved markers
+  Files changed: immune_agents.py, insect_brain.py, run_exp35_policy_engine.py,
+  run_exp36_evidence.py, tests/test_exp29_integration.py
 
 NEXT STEPS:
-  1. CX + Gemini review of Exp 35 runner (full CDSFL)
-  2. Apply verified Exp 34 endocrine fixes (programmatic verification)
-  3. Run Exp 36 (evidence layer) with fixed runner + fixed endocrine
-  4. First experiment with correct instrumentation — formal convergence test
+  1. Commit immune pipeline fixes + CLOSED status + test updates
+  2. Implement CC2 Option A 4-agent split (structural/semantic/integration + verification)
+     - CC2v (verification agent): between-rounds FFF/P-pass on OPEN findings
+     - Verdicts feed existing immune bridge: CONFIRM/DUPLICATE/RESOLVED/ESCALATE
+     - Directly reduces open_ch count → enables convergence gate
+  3. Soften convergence gate open_ch condition (== 0 → stability-based: not increasing for 3 rounds)
+  4. Run Exp 36 (evidence layer) with all corrected code + CC2 4-agent + gate fix
+  5. Generate TTS/experimental notes for Exp 35
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
-  - Typed LLM Classifier disabled (stale comment — rewire to CLI Haiku)
-  - CONTESTED resolution path needed (challenged N rounds, zero defence → DROP)
+  - CC2 Option A 4-agent split not yet implemented (spec in Exp31 audit, extended with CC2v)
+  - Convergence gate open_ch condition too strict (stability-based fix designed, not coded)
+  - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
   Meta-experiment: 5 models analysed convergence data from Exp 30/31.
@@ -152,9 +158,8 @@ CDSFL TOPOLOGY SPEC CREATED (5 April 2026, ~21:45 BST):
   Provenance: derived from runner fitness confer findings.
 
   PENDING:
-  - CX + Gemini review Exp 35 runner, then run Exp 36 (evidence layer)
-  - Apply Exp 34 confirmed endocrine fixes before Exp 36
-  - Implement CC2 Option A multi-agent (3-way split: structural/semantic/integration)
+  - Implement CC2 Option A multi-agent (4-way split: structural/semantic/integration + verification)
+  - Soften convergence gate open_ch condition (stability-based, not == 0)
   - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 
 EXP 31 COMPLETE (5 April 2026, 07:38 BST):

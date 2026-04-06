@@ -1062,7 +1062,9 @@ _KNOWN_FALSE_POSITIVES: List[Dict[str, Any]] = [
 def nk_cell_verify(
     triaged: List[TriagedFinding],
     prior_findings: List[Finding],
-    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
+    tau_sim: float = 0.50,  # Raised from 0.33: class_match base (0.30) + shared
+                            # vocabulary caused 90-100% false DUPLICATE by mid-run.
+                            # At 0.50, same-class needs Jaccard >= 0.286 (real overlap).
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
     """Stage 2c: Pattern recognition and deduplication.
@@ -2174,7 +2176,9 @@ def dendritic_cell_v2_shadow(
 def nk_cell_v2_shadow(
     triaged: List[TriagedFinding],
     prior_findings: List[Finding],
-    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
+    tau_sim: float = 0.50,  # Raised from 0.33: class_match base (0.30) + shared
+                            # vocabulary caused 90-100% false DUPLICATE by mid-run.
+                            # At 0.50, same-class needs Jaccard >= 0.286 (real overlap).
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[List[TriagedFinding], List[CellVerdict]]:
     """NK Cell v2: fixes control flow leak + adds intra-round dedup.
@@ -2588,7 +2592,7 @@ confidence intervals, or statistical significance.
 return values, incorrect state transitions, or logic errors.
 - UNCATEGORISED: the finding does not clearly fit any of the above."""
 
-_CLASSIFIER_MODEL = "anthropic/claude-3.5-haiku"  # Floating alias — always latest 3.5 Haiku
+_CLASSIFIER_MODEL = "haiku"  # Claude CLI model alias — Max plan
 
 
 def typed_llm_classifier_shadow(
@@ -2603,31 +2607,16 @@ def typed_llm_classifier_shadow(
 
     Does NOT modify triaged findings — shadow only.
 
-    DISABLED: OpenRouter calls removed — CC2/Haiku available on CLI
-    under Max plan, no need for redundant OpenRouter billing.
-    Re-enable when wired to CLI-local Haiku or when activation
-    decision is made based on accumulated regex agreement data.
+    Rewired from OpenRouter to Claude CLI Haiku (Max plan, local billing).
+    Serialised via _CLAUDE_CLI_LOCK to prevent contention with CT cells.
     """
     comparisons: List[Dict[str, Any]] = []
-    _shadow_log.info(
-        "Typed LLM classifier shadow: DISABLED (OpenRouter removed). "
-        "%d findings skipped.", len(findings),
-    )
-    return comparisons
 
-    # --- Original OpenRouter implementation (disabled) ---
-    # To re-enable, remove the early return above and uncomment below.
-    # When re-enabling, wire to CLI-local Haiku instead of OpenRouter.
-
-    try:
-        from bench.experiment_11_orchestrator import call_openrouter
-    except ImportError:
-        _shadow_log.warning("Typed LLM classifier shadow: call_openrouter not available")
-        return comparisons
-
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        _shadow_log.warning("Typed LLM classifier shadow: OPENROUTER_API_KEY not set")
+    if not _get_claude_cli():
+        _shadow_log.info(
+            "Typed LLM classifier shadow: DISABLED (claude CLI not available). "
+            "%d findings skipped.", len(findings),
+        )
         return comparisons
 
     _CATEGORY_MAP = {
@@ -2639,18 +2628,32 @@ def typed_llm_classifier_shadow(
         "uncategorised": ClaimType.UNCATEGORISED,
     }
 
+    _shadow_log.info(
+        "Typed LLM classifier shadow: ENABLED (CLI Haiku). "
+        "%d findings to classify.", len(findings),
+    )
+
     for i, (f, regex_tf) in enumerate(zip(findings, regex_triaged)):
         t0 = time.monotonic()
         try:
-            response = call_openrouter(
-                model_id=_CLASSIFIER_MODEL,
-                system_prompt=_CLASSIFIER_SYSTEM_PROMPT,
-                user_prompt=f.description[:500],  # cap to prevent cost bloat
-                max_tokens=20,
-                timeout=10,
-                max_retries=1,
+            # Build classification prompt — system + user in single -p call
+            prompt = (
+                f"{_CLASSIFIER_SYSTEM_PROMPT}\n\n"
+                f"Finding description:\n{f.description[:500]}"
             )
+            cmd = [
+                _get_claude_cli(), "-p", prompt,
+                "--model", _CLASSIFIER_MODEL,
+                "--output-format", "text",
+                "--max-turns", "1",
+            ]
+
+            with _CLAUDE_CLI_LOCK:
+                result = sp.run(
+                    cmd, capture_output=True, text=True, timeout=15,
+                )
             elapsed = time.monotonic() - t0
+            response = result.stdout.strip()
 
             llm_category = response.strip().lower().replace(" ", "_")
             llm_type = _CATEGORY_MAP.get(llm_category, ClaimType.UNCATEGORISED)
@@ -2908,16 +2911,47 @@ def _reconciliation_gate(
             reconciled[fid] = v1v
             reconciled_conf[fid] = v1c
         elif v1v == v2v:
-            # Agreement: use shared verdict, max confidence
-            reconciled[fid] = v1v
-            reconciled_conf[fid] = max(v1c, v2c)
-            # E31-02 fix: mutual REJECTED = LOCKED
+            # Agreement path — three outcomes based on confidence:
+            #
+            # 1. HIGH-CONFIDENCE REJECTION (max conf >= 0.5): LOCKED.
+            #    Both pipelines independently verified rejection with
+            #    meaningful tool evidence. Autoimmune recovery cannot
+            #    override. (E31-02 / MF-34 / MF-35 / C5-25)
+            #
+            # 2. LOW-CONFIDENCE MUTUAL REJECTION (max conf < 0.5): UNSCORED.
+            #    Both pipelines returned REJECTED/DUPLICATE but neither had
+            #    real evidence — typically UNCERTAIN (0.15) from B-Cell
+            #    "can't ground in AST" or NK DUPLICATE (cross-round) at
+            #    low similarity. This is absence of evidence, NOT evidence
+            #    of absence. Finding passes through unscored for downstream
+            #    handling (convergence gate, HIL).
+            #
+            # 3. AGREEMENT ON NON-REJECTION: use shared verdict, max conf.
+            max_conf = max(v1c, v2c)
             if v1v in ("REJECTED", "DUPLICATE"):
-                locked_ids.add(fid)
-                _shadow_log.info(
-                    "Reconciliation LOCKED: %s — both pipelines REJECTED (v1=%.2f, v2=%.2f)",
-                    fid, v1c, v2c,
-                )
+                if max_conf >= 0.5:
+                    # Tool-verified rejection — LOCK
+                    reconciled[fid] = v1v
+                    reconciled_conf[fid] = max_conf
+                    locked_ids.add(fid)
+                    _shadow_log.info(
+                        "Reconciliation LOCKED: %s — both pipelines REJECTED "
+                        "(v1=%.2f, v2=%.2f, max=%.2f >= 0.5)",
+                        fid, v1c, v2c, max_conf,
+                    )
+                else:
+                    # Low-confidence mutual rejection — UNSCORED pass-through
+                    reconciled[fid] = "UNSCORED"
+                    reconciled_conf[fid] = max_conf
+                    _shadow_log.info(
+                        "Reconciliation UNSCORED: %s — both pipelines REJECTED "
+                        "but low confidence (v1=%.2f, v2=%.2f, max=%.2f < 0.5) "
+                        "— absence of evidence, not evidence of absence",
+                        fid, v1c, v2c, max_conf,
+                    )
+            else:
+                reconciled[fid] = v1v
+                reconciled_conf[fid] = max_conf
         else:
             # Disagreement: higher confidence wins, with minimum margin
             # Bug#16 fix: near-ties fall back to UNCERTAIN
@@ -2949,8 +2983,10 @@ def run_immune_pipeline(
     source_paths: List[str],
     observation_only: bool = True,
     ct_enabled: bool = True,
-    ct_timeout: int = 180,
-    tau_sim: float = 0.33,  # Calibrated from Run 8: max sim 0.553 at old 0.8
+    ct_timeout: int = 300,
+    tau_sim: float = 0.50,  # Raised from 0.33: class_match base (0.30) + shared
+                            # vocabulary caused 90-100% false DUPLICATE by mid-run.
+                            # At 0.50, same-class needs Jaccard >= 0.286 (real overlap).
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
     max_rejection_rate: float = 0.65,
 ) -> ImmuneResponse:

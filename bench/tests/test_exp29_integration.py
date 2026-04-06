@@ -374,6 +374,35 @@ class TestReconciliationGate:
         assert "f2" not in locked  # Only v1 confirmed → not locked
         assert "f3" not in locked  # Only v2 rejected → not locked (single pipeline)
 
+    def test_low_confidence_mutual_rejection_unscored(self):
+        """Low-confidence mutual REJECTED → UNSCORED, not LOCKED.
+
+        When both pipelines reject but neither has meaningful evidence
+        (confidence < 0.5), the finding passes through as UNSCORED.
+        This is absence of evidence, not evidence of absence.
+        """
+        v1 = {"f1": "REJECTED", "f2": "REJECTED"}
+        c1 = {"f1": 0.35, "f2": 0.80}
+        v2 = {"f1": "REJECTED", "f2": "REJECTED"}
+        c2 = {"f1": 0.40, "f2": 0.70}
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
+        # f1: max conf 0.40 < 0.5 → UNSCORED, not locked
+        assert final_v["f1"] == "UNSCORED"
+        assert "f1" not in locked
+        # f2: max conf 0.80 >= 0.5 → LOCKED as REJECTED
+        assert final_v["f2"] == "REJECTED"
+        assert "f2" in locked
+
+    def test_duplicate_low_confidence_unscored(self):
+        """Low-confidence mutual DUPLICATE → UNSCORED."""
+        v1 = {"f1": "DUPLICATE"}
+        c1 = {"f1": 0.36}
+        v2 = {"f1": "DUPLICATE"}
+        c2 = {"f1": 0.33}
+        final_v, final_c, locked = _reconciliation_gate(v1, c1, v2, c2)
+        assert final_v["f1"] == "UNSCORED"
+        assert "f1" not in locked
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Lazy Tool Discovery
@@ -604,19 +633,15 @@ class TestTypedLLMClassifierShadow:
         assert "LOGICAL" in _CLASSIFIER_SYSTEM_PROMPT
         assert _CLASSIFIER_MODEL is not None
 
-    def test_no_api_key_returns_empty(self):
-        """Without API key, shadow should return empty gracefully."""
+    def test_no_cli_returns_empty(self):
+        """Without claude CLI, shadow should return empty gracefully."""
+        from unittest.mock import patch
         from bench.immune_agents import typed_llm_classifier_shadow
-        import os
-        saved = os.environ.pop("OPENROUTER_API_KEY", None)
-        try:
-            findings = [_make_finding(fid="f1", desc="Bug in parser")]
-            triaged = dendritic_cell_triage(findings)
+        findings = [_make_finding(fid="f1", desc="Bug in parser")]
+        triaged = dendritic_cell_triage(findings)
+        with patch("bench.immune_agents._get_claude_cli", return_value=None):
             results = typed_llm_classifier_shadow(findings, triaged)
-            assert results == []
-        finally:
-            if saved is not None:
-                os.environ["OPENROUTER_API_KEY"] = saved
+        assert results == []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

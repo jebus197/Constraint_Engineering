@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 6 April 2026 04:32 BST
+Last updated: 6 April 2026 20:17 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -212,16 +212,55 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   never bench models), persistent signed fingerprints (load/save per-model
   capability profiles across experiments), fixed verdict regex for CC2
   bold formatting.
-  **Pending:** CX + Gemini review under full CDSFL before running.
+  **CX + Gemini review COMPLETE (6 April 2026, 16:15 BST):**
+  11 findings claimed, 1 confirmed (alias map not scoped by model_id — fixed).
+  9 refuted, 1 hallucinated. Both runners now fit for execution.
+  Review: `experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md`.
+  TTS: `~/Desktop/CDSFL_tts/CX_Gemini_Runner_Review_2026-04-06.txt`.
   Logs: `bench/logs/exp34_endocrine_20260405T225218Z/`.
+- **EXP 35 COMPLETE (6 April 2026, ~18:00 BST):**
+  PolicyEngine review, relay mode, 5 models, 23 rounds (extended from 21).
+  533 raw findings, 79 canonical entries, 9 CONFIRMED (11.4%), 0 MERGED.
+  γ=0.650 (strong depletion, hard gate passed). Brain signal: INCOMPLETE —
+  convergence gate never triggered. Extension stall detector terminated.
+  Per model: see console log `bench/logs/exp35_console.log`.
+  **Convergence gate analysis:** 4/5 conditions pass consistently from R17+.
+  Blocker: `open_ch=31` (zero open CRIT/HIGH required). Root cause: 11.4%
+  confirmation rate + zero merges + no CLOSED status = findings accumulate
+  faster than resolved. Gate ran every round (continuous), logged failure
+  every round — detection was happening, condition was impossible to satisfy.
+  **Churn diagnosis:** 6.7:1 raw-to-canonical ratio (533→79). Models
+  re-describing known bugs rather than confirming or challenging them.
+  **Post-run immune pipeline fixes (6 code changes):**
+  (1) Reconciliation gate three-path: LOCKED (conf≥0.5, tool-verified),
+  UNSCORED (conf<0.5, absence of evidence), standard agreement.
+  (2) CT timeout 180→300s (was timing out on complex code traces).
+  (3) DC→cell routing (findings reaching correct verification cells).
+  (4) LLM shadow classifier rewired: disabled OpenRouter → CLI Haiku via
+  Max plan. `_CLASSIFIER_MODEL = "haiku"`, uses `claude` CLI binary.
+  (5) NK tau_sim 0.33→0.50 (immune rejection). Analysis showed 90-100%
+  false DUPLICATE rates because `0.3 + 0.7*jaccard` base of 0.30 pushed
+  everything over 0.33. Decoupled from convergence tau_sim (0.33, clustering).
+  (6) Bugzilla-style CLOSED status in FindingRegistry FSM: CONFIRMED +
+  verified → CLOSED (challenge-resistant). REOPEN requires evidence →
+  auto-HIL escalation. CLOSED/MERGED findings shown as compact resolved
+  markers ("do not revisit") instead of full detail.
+  **Architecture decision — CC2 4-agent split (pending implementation):**
+  Original 3-way split (structural/semantic/integration) extended with
+  4th verification agent (CC2v). CC2v runs between rounds, FFF/P-passes
+  OPEN findings that CT cannot mechanically verify. Produces structured
+  verdicts (CONFIRM/DUPLICATE/RESOLVED/ESCALATE) feeding through existing
+  immune bridge → registry → convergence gate. Directly reduces open_ch.
+  **Convergence gate fix (pending implementation):**
+  Soften open_ch condition from `== 0` to stability-based check ("open_ch
+  not increasing for 3 consecutive rounds"). Would have triggered R20-R22.
+  Logs: `bench/logs/exp35_pe_20260406T152126Z/`.
+  Console: `bench/logs/exp35_console.log`.
 - **EXP 35 PLAN (6 April 2026):**
   `bench/EXP35_PLAN.md` — capability-aware dispatch for PolicyEngine review.
   Budget-aware prompt builder, section map, ITC adaptive recovery,
   persistent signed fingerprints (Merkle-sealed), immune pipeline activation.
   ~225 lines estimated. Depends on Exp 34 lessons learned.
-- **EXP 35/36 RUNNERS (5 April 2026):**
-  PolicyEngine and evidence layer runners. Same bug fixes applied.
-  Star/blackboard topology. Ready to run after Exp 34.
 - **EXP 33 RUNNER BUILT (5 April 2026, 11:26 BST):**
   First star/blackboard topology experiment. Target: endocrine.py (4th file,
   never reviewed). 21 rounds (extension to 24). All 5 models retained.
