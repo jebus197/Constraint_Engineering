@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 5 April 2026 22:37 BST
+Last updated: 6 April 2026 02:06 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,12 +19,36 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (5 April 2026, 22:37 BST)
+## Current Pending Work (6 April 2026, 02:06 BST)
 
-Experiments 12–32 ALL COMPLETE. EXP 33 RUNNER BUILT. EXP 34/35/36 RUNNERS BUILT.
-All prior session work committed and pushed (PolicyEngine, evidence layer,
-Exp 29-33 logs, C5 logs, analysis notes — commit 568cb51).
-688 tests pass.
+Experiments 12–32 ALL COMPLETE. EXP 34 IN PROGRESS. EXP 35 PLAN WRITTEN.
+688 tests pass. Commit 6155fad: 3 dispatch bug fixes + Exp 35 plan + Exp 34 logs.
+
+THREE DISPATCH BUGS FIXED (all 4 runners: Exp 33/34/35/36):
+  Template drift from Exp 30/31 patterns caused 3 functional bugs:
+  1. compose_for_model(): wrong call signature (DirectivePacket as model param)
+  2. DecomposedChunk(): text= should be content=, is_context doesn't exist
+  3. decomposed_dispatch(): mc= should be api/model_id/system_prompt individually
+  All fixed. Composer now producing per-model phenotype transforms and verdicts.
+
+EXP 34 IN PROGRESS (endocrine.py review, star/blackboard, 5 models):
+  42 findings by R2, 20 CONFIRMED, verdicts flowing. DeepSeek context overflow
+  on 225K artifact (capability-blind dispatch — architectural gap, not a bug).
+  Logs: bench/logs/exp34_endocrine_20260405T225218Z/
+
+EXP 35 PLAN (bench/EXP35_PLAN.md):
+  Budget-aware prompt builder, section map, ITC adaptive recovery,
+  persistent signed fingerprints (Merkle-sealed), immune pipeline activation.
+  Depends on Exp 34 completion for lessons learned. ~225 lines estimated.
+
+ARCHITECTURAL GAPS IDENTIFIED:
+  - Star runner ignores CONTEXT_CHAR_BUDGET (exists in runner_core.py but not wired)
+  - ITC only in c5_three_layer_schema.py, never ported to multi-model runners
+  - handle_model_failure() benches model instead of adapting scope
+  - Persistent fingerprints needed: observed capability profiles that survive sessions
+  - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
+  - Typed LLM Classifier disabled (stale comment says "OpenRouter removed" but
+    OpenRouter IS active for Codex/ChatGPT — rewire to CLI Haiku instead)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
   Meta-experiment: 5 models analysed convergence data from Exp 30/31.

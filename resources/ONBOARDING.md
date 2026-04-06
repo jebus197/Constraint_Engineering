@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 5 April 2026 22:37 BST
+Last updated: 6 April 2026 02:06 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -164,11 +164,28 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   merge contract, convergence gate, gamma estimation, round taxonomy, durability
   contract, P-pass boundary tracing. Core directives amended with boundary
   tracing. Derived from runner fitness confer (CX + Gemini, 11 bugs, 1 FP).
-- **EXP 34/35/36 RUNNERS (5 April 2026):**
-  Three runners, one per test article (endocrine, PolicyEngine, evidence).
-  All confer-identified bugs fixed. CONTESTED state implemented.
-  Status model: OPEN → CONFIRMED/CONTESTED/MERGED/UNCONFIRMED.
-  Star/blackboard topology. Ready to run.
+- **EXP 34 IN PROGRESS (6 April 2026):**
+  Endocrine.py code review under star/blackboard topology. 5 models.
+  **Three bugs found and fixed during launch (all 4 runners: 33/34/35/36):**
+  (1) compose_for_model() wrong call signature — passed DirectivePacket as
+  model param instead of task_domain + model + situation kwargs;
+  (2) DecomposedChunk() used text= not content=, had nonexistent is_context;
+  (3) decomposed_dispatch() called with mc= instead of api/model_id/system_prompt.
+  All traced to template drift from Exp 30/31.
+  **After fixes:** Composer working (CC2 12K, Gemini/ChatGPT 5.7K,
+  DeepSeek/Codex 2.6K). Verdicts flowing. 42 findings by R2, 20 CONFIRMED.
+  **Architectural gap:** Star runner builds one prompt for all models
+  regardless of CONTEXT_CHAR_BUDGET. DeepSeek context overflow on 225K
+  artifact. ITC never ported to multi-model runners.
+  Logs: `bench/logs/exp34_endocrine_20260405T225218Z/`.
+- **EXP 35 PLAN (6 April 2026):**
+  `bench/EXP35_PLAN.md` — capability-aware dispatch for PolicyEngine review.
+  Budget-aware prompt builder, section map, ITC adaptive recovery,
+  persistent signed fingerprints (Merkle-sealed), immune pipeline activation.
+  ~225 lines estimated. Depends on Exp 34 lessons learned.
+- **EXP 35/36 RUNNERS (5 April 2026):**
+  PolicyEngine and evidence layer runners. Same bug fixes applied.
+  Star/blackboard topology. Ready to run after Exp 34.
 - **EXP 33 RUNNER BUILT (5 April 2026, 11:26 BST):**
   First star/blackboard topology experiment. Target: endocrine.py (4th file,
   never reviewed). 21 rounds (extension to 24). All 5 models retained.
