@@ -173,6 +173,29 @@ def load_schema() -> Dict[str, ParameterDef]:
             allowed_values=defn.get("allowed_values"),
         )
 
+    # Validate defaults against declared types and allowed_values
+    _TYPE_VALIDATORS = {
+        "bool": lambda v: isinstance(v, bool),
+        "int": lambda v: isinstance(v, int) and not isinstance(v, bool),
+        "float": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+        "string": lambda v: isinstance(v, str),
+        "enum": lambda v: isinstance(v, str),
+    }
+    for dotpath, defn_obj in schema.items():
+        default = defn_obj.default
+        if default is not None:
+            validator = _TYPE_VALIDATORS.get(defn_obj.type)
+            if validator and not validator(default):
+                errors.append(
+                    f"{dotpath}: default {default!r} does not match "
+                    f"declared type '{defn_obj.type}'"
+                )
+            if defn_obj.allowed_values and default not in defn_obj.allowed_values:
+                errors.append(
+                    f"{dotpath}: default {default!r} not in "
+                    f"allowed_values {defn_obj.allowed_values}"
+                )
+
     if errors:
         raise ValueError(
             f"Schema validation errors:\n" + "\n".join(f"  {e}" for e in errors)
@@ -243,6 +266,7 @@ def _compute_provenance(
             model_config = _load_toml(model_path)
             for dp, val in _flatten_dict(model_config).items():
                 provenance[dp] = f"model/{model}"
+            current = _deep_merge(current, model_config)
 
     return provenance
 
@@ -363,25 +387,38 @@ class PolicyEngine:
         return result
 
     def validate(self) -> Dict[str, str]:
-        """Validate all config files against monotonicity rules.
+        """Validate all config files against monotonicity and schema rules.
 
-        Delegates to validate_all_policies() and adds schema coverage check.
+        Checks:
+        1. Monotonicity (via validate_all_policies).
+        2. Bidirectional schema coverage: registry↔schema HARD constraints.
+        3. Type validation: TOML values match schema-declared types.
+        4. Enum validation: values are within allowed_values.
+        5. min_layer enforcement: parameters not defined below their min_layer.
+        6. Unknown parameter detection: TOML keys must exist in schema.
 
         Returns:
-            Dict mapping config names to "ok" or error message.
+            Dict mapping check names to "ok" or error message.
         """
         results = validate_all_policies()
 
-        # Additional check: verify schema covers all HARD constraints
+        # --- Bidirectional HARD constraint coverage ---
         schema_hard_bools = {
             dp for dp, defn in self._schema.items()
             if defn.constraint_class == "HARD" and defn.type == "bool"
         }
         registry_hard_bools = set(HARD_CONSTRAINTS.keys())
+        # Forward: registry HARD missing from schema
         missing = registry_hard_bools - schema_hard_bools
         if missing:
             results["schema_coverage/hard_bools"] = (
                 f"Schema missing HARD bool constraints: {sorted(missing)}"
+            )
+        # Reverse: schema HARD missing from registry
+        extra = schema_hard_bools - registry_hard_bools
+        if extra:
+            results["schema_coverage/hard_bools_reverse"] = (
+                f"Schema HARD bools not in registry (unenforced): {sorted(extra)}"
             )
 
         schema_hard_thresholds = {
@@ -394,6 +431,11 @@ class PolicyEngine:
             results["schema_coverage/hard_thresholds"] = (
                 f"Schema missing HARD threshold constraints: {sorted(missing_thresh)}"
             )
+        extra_thresh = schema_hard_thresholds - registry_hard_thresholds
+        if extra_thresh:
+            results["schema_coverage/hard_thresholds_reverse"] = (
+                f"Schema HARD thresholds not in registry (unenforced): {sorted(extra_thresh)}"
+            )
 
         schema_hard_strings = {
             dp for dp, defn in self._schema.items()
@@ -404,6 +446,100 @@ class PolicyEngine:
         if missing_str:
             results["schema_coverage/hard_strings"] = (
                 f"Schema missing HARD string constraints: {sorted(missing_str)}"
+            )
+        extra_str = schema_hard_strings - registry_hard_strings
+        if extra_str:
+            results["schema_coverage/hard_strings_reverse"] = (
+                f"Schema HARD strings not in registry (unenforced): {sorted(extra_str)}"
+            )
+
+        # --- Type, enum, min_layer, and unknown parameter validation ---
+        _TYPE_VALIDATORS = {
+            "bool": lambda v: isinstance(v, bool),
+            "int": lambda v: isinstance(v, int) and not isinstance(v, bool),
+            "float": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+            "string": lambda v: isinstance(v, str),
+            "enum": lambda v: isinstance(v, str),
+        }
+        schema_dotpaths = set(self._schema.keys())
+
+        # Scan each config layer for type/enum/min_layer/unknown violations
+        layer_files = []
+        # Universal
+        universal_path = REGISTRY_DIR / "universal.toml"
+        if universal_path.exists():
+            layer_files.append(("universal", universal_path))
+        # Domains
+        domains_dir = REGISTRY_DIR / "domains"
+        if domains_dir.exists():
+            for p in sorted(domains_dir.glob("*.toml")):
+                layer_files.append((f"domain/{p.stem}", p))
+        # Tasks
+        tasks_dir = REGISTRY_DIR / "tasks"
+        if tasks_dir.exists():
+            for p in sorted(tasks_dir.glob("*.toml")):
+                layer_files.append((f"task/{p.stem}", p))
+        # Models
+        models_dir = REGISTRY_DIR / "models"
+        if models_dir.exists():
+            for p in sorted(models_dir.glob("*.toml")):
+                layer_files.append((f"model/{p.stem}", p))
+
+        type_errors: List[str] = []
+        min_layer_errors: List[str] = []
+        unknown_errors: List[str] = []
+
+        for layer_label, path in layer_files:
+            config = _load_toml(path)
+            flat = _flatten_dict(config)
+            layer_name = layer_label.split("/")[0]  # "universal", "domain", "task", "model"
+
+            for dp, val in flat.items():
+                # Unknown parameter check
+                if dp not in schema_dotpaths:
+                    unknown_errors.append(f"{layer_label}: unknown parameter '{dp}'")
+                    continue
+
+                defn = self._schema[dp]
+
+                # Type check
+                validator = _TYPE_VALIDATORS.get(defn.type)
+                if validator and not validator(val):
+                    type_errors.append(
+                        f"{layer_label}: {dp} = {val!r} "
+                        f"(expected {defn.type})"
+                    )
+
+                # Enum/allowed_values check
+                if defn.allowed_values and val not in defn.allowed_values:
+                    type_errors.append(
+                        f"{layer_label}: {dp} = {val!r} "
+                        f"not in allowed_values {defn.allowed_values}"
+                    )
+
+                # min_layer enforcement
+                layer_idx = LAYER_ORDER.index(layer_name) if layer_name in LAYER_ORDER else -1
+                min_idx = LAYER_ORDER.index(defn.min_layer) if defn.min_layer in LAYER_ORDER else 0
+                if layer_idx >= 0 and layer_idx < min_idx:
+                    min_layer_errors.append(
+                        f"{layer_label}: {dp} defined at '{layer_name}' "
+                        f"but min_layer='{defn.min_layer}'"
+                    )
+
+        if type_errors:
+            results["type_validation"] = (
+                f"{len(type_errors)} type/enum violations:\n"
+                + "\n".join(f"  {e}" for e in type_errors)
+            )
+        if min_layer_errors:
+            results["min_layer_enforcement"] = (
+                f"{len(min_layer_errors)} min_layer violations:\n"
+                + "\n".join(f"  {e}" for e in min_layer_errors)
+            )
+        if unknown_errors:
+            results["unknown_parameters"] = (
+                f"{len(unknown_errors)} unknown parameters:\n"
+                + "\n".join(f"  {e}" for e in unknown_errors)
             )
 
         return results
@@ -421,14 +557,16 @@ class PolicyEngine:
         domain_b: str,
         model_a: Optional[str] = None,
         model_b: Optional[str] = None,
+        task_id_a: Optional[str] = None,
+        task_id_b: Optional[str] = None,
     ) -> Dict[str, tuple]:
         """Compare two effective policies and return differences.
 
         Returns:
             Dict of {dotpath: (value_a, value_b)} for parameters that differ.
         """
-        policy_a = load_effective_policy(domain_a, model=model_a)
-        policy_b = load_effective_policy(domain_b, model=model_b)
+        policy_a = load_effective_policy(domain_a, task_id_a, model=model_a)
+        policy_b = load_effective_policy(domain_b, task_id_b, model=model_b)
 
         flat_a = _flatten_dict(policy_a)
         flat_b = _flatten_dict(policy_b)

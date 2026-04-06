@@ -82,7 +82,7 @@ constraint_class = "SOFT"
 min_layer = "domain"
 description = "Default to real-valued solutions unless complex stated."
 
-[constraints.physical_bounds_check]
+[verification.physical_bounds_check]
 type = "bool"
 default = false
 constraint_class = "SOFT"
@@ -153,7 +153,7 @@ description = "Fraction of HARD constraints that must be assessed. 1.0 = all."
 type = "int"
 default = 3
 constraint_class = "SOFT"
-min_layer = "domain"
+min_layer = "universal"
 description = "Round after which advisory convergence signals are emitted."
 
 [convergence.hard_veto]
@@ -337,6 +337,20 @@ default = false
 constraint_class = "SOFT"
 min_layer = "model"
 description = "Whether the model supports structured output natively."
+
+[protocol.pipe_mode]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Whether the model receives input via pipe/stdin mode."
+
+[protocol.json_schema_in_prompt]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "model"
+description = "Whether JSON schema is embedded in prompt text for the model."
 
 # =============================================================================
 # [refinements] — refinement engine settings
