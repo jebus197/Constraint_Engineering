@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 April 2026 02:06 BST
+Last updated: 6 April 2026 04:32 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,36 +19,46 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (6 April 2026, 02:06 BST)
+## Current Pending Work (6 April 2026, 04:32 BST)
 
-Experiments 12–32 ALL COMPLETE. EXP 34 IN PROGRESS. EXP 35 PLAN WRITTEN.
-688 tests pass. Commit 6155fad: 3 dispatch bug fixes + Exp 35 plan + Exp 34 logs.
+Experiments 12–34 ALL COMPLETE. EXP 35 RUNNER BUILT (dual topology).
+688 tests pass.
 
-THREE DISPATCH BUGS FIXED (all 4 runners: Exp 33/34/35/36):
-  Template drift from Exp 30/31 patterns caused 3 functional bugs:
-  1. compose_for_model(): wrong call signature (DirectivePacket as model param)
-  2. DecomposedChunk(): text= should be content=, is_context doesn't exist
-  3. decomposed_dispatch(): mc= should be api/model_id/system_prompt individually
-  All fixed. Composer now producing per-model phenotype transforms and verdicts.
+EXP 34 COMPLETE (6 April 2026, 04:17 BST):
+  Endocrine.py review, star/blackboard, 5 models, 24 rounds (extended).
+  390 findings, 81 canonical, 58 CONFIRMED. γ=0.713, C(H,E)=0.7808.
+  Brain signal: INCOMPLETE — gate never passed despite γ strong depletion.
+  TWO INSTRUMENTATION FAILURES:
+  1. Verdict regex: CC2 **bold** formatting invisible to parser. Zero CC2
+     merges/confirms parsed. Fixed in Exp 35 runner.
+  2. CONTESTED resolution: no path for repeatedly-challenged false positives
+     to be dropped. Design gap — needs CONTESTED→DROPPED after N challenges
+     with zero defence.
+  POST-CONVERGENCE DIVERGENCE: Gate closest at R14 (open_ch=1). After R14,
+  unmerged duplicates + unresolvable CONTESTED drove open_ch 1→8, contested
+  2→7. Positive feedback loop — extension mechanism made things worse.
+  FIX PRODUCTION: 70/81 (86%) have proposed fixes. 61 with executable code.
+  FIX VERIFICATION: 0/348 verified. Sandbox broken (missing project config,
+  dead test paths). Endocrine health trend flat. Fix pipeline dead code.
+  Same pattern as Exp 31: convergence occurred, instrumentation failed.
 
-EXP 34 IN PROGRESS (endocrine.py review, star/blackboard, 5 models):
-  42 findings by R2, 20 CONFIRMED, verdicts flowing. DeepSeek context overflow
-  on 225K artifact (capability-blind dispatch — architectural gap, not a bug).
-  Logs: bench/logs/exp34_endocrine_20260405T225218Z/
+EXP 35 RUNNER — DUAL TOPOLOGY (bench/run_exp35_policy_engine.py):
+  --topology relay|star CLI switch (default: relay). User configurable.
+  Relay: models chat through brain, see each other's reasoning.
+  Star: structured blackboard, models see only registry summary.
+  New: ITC adaptive recovery, persistent fingerprints, fixed verdict regex.
+  PENDING: CX + Gemini review under full CDSFL before running.
 
-EXP 35 PLAN (bench/EXP35_PLAN.md):
-  Budget-aware prompt builder, section map, ITC adaptive recovery,
-  persistent signed fingerprints (Merkle-sealed), immune pipeline activation.
-  Depends on Exp 34 completion for lessons learned. ~225 lines estimated.
+NEXT STEPS:
+  1. CX + Gemini review of Exp 35 runner (full CDSFL)
+  2. Apply verified Exp 34 endocrine fixes (programmatic verification)
+  3. Run Exp 36 (evidence layer) with fixed runner + fixed endocrine
+  4. First experiment with correct instrumentation — formal convergence test
 
-ARCHITECTURAL GAPS IDENTIFIED:
-  - Star runner ignores CONTEXT_CHAR_BUDGET (exists in runner_core.py but not wired)
-  - ITC only in c5_three_layer_schema.py, never ported to multi-model runners
-  - handle_model_failure() benches model instead of adapting scope
-  - Persistent fingerprints needed: observed capability profiles that survive sessions
+ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
-  - Typed LLM Classifier disabled (stale comment says "OpenRouter removed" but
-    OpenRouter IS active for Codex/ChatGPT — rewire to CLI Haiku instead)
+  - Typed LLM Classifier disabled (stale comment — rewire to CLI Haiku)
+  - CONTESTED resolution path needed (challenged N rounds, zero defence → DROP)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
   Meta-experiment: 5 models analysed convergence data from Exp 30/31.
@@ -142,7 +152,8 @@ CDSFL TOPOLOGY SPEC CREATED (5 April 2026, ~21:45 BST):
   Provenance: derived from runner fitness confer findings.
 
   PENDING:
-  - Run Exp 34, 35, 36
+  - CX + Gemini review Exp 35 runner, then run Exp 36 (evidence layer)
+  - Apply Exp 34 confirmed endocrine fixes before Exp 36
   - Implement CC2 Option A multi-agent (3-way split: structural/semantic/integration)
   - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 

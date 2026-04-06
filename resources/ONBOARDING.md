@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 6 April 2026 02:06 BST
+Last updated: 6 April 2026 04:32 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -164,19 +164,55 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   merge contract, convergence gate, gamma estimation, round taxonomy, durability
   contract, P-pass boundary tracing. Core directives amended with boundary
   tracing. Derived from runner fitness confer (CX + Gemini, 11 bugs, 1 FP).
-- **EXP 34 IN PROGRESS (6 April 2026):**
+- **EXP 34 COMPLETE (6 April 2026, 04:17 BST):**
   Endocrine.py code review under star/blackboard topology. 5 models.
-  **Three bugs found and fixed during launch (all 4 runners: 33/34/35/36):**
-  (1) compose_for_model() wrong call signature — passed DirectivePacket as
-  model param instead of task_domain + model + situation kwargs;
-  (2) DecomposedChunk() used text= not content=, had nonexistent is_context;
-  (3) decomposed_dispatch() called with mc= instead of api/model_id/system_prompt.
-  All traced to template drift from Exp 30/31.
-  **After fixes:** Composer working (CC2 12K, Gemini/ChatGPT 5.7K,
-  DeepSeek/Codex 2.6K). Verdicts flowing. 42 findings by R2, 20 CONFIRMED.
-  **Architectural gap:** Star runner builds one prompt for all models
-  regardless of CONTEXT_CHAR_BUDGET. DeepSeek context overflow on 225K
-  artifact. ITC never ported to multi-model runners.
+  24 rounds (extended from 21), 390 total findings, 81 canonical entries,
+  58 CONFIRMED, 8 OPEN, 2→7 CONTESTED. Elapsed: 6277s (~105 min).
+  γ final: 0.713 (strong depletion, hard gate passed). C(H,E): 0.7808.
+  Brain signal: **INCOMPLETE** — convergence gate never passed.
+  Per model: ChatGPT=144, Codex=109, CC2=60, DeepSeek=40, Gemini=37.
+  **Convergence analysis:** γ plateaued at 0.754-0.758 from R12-R15
+  (substantive convergence), then eroded to 0.713 as late-round model
+  inflation added unmerged duplicates. Gate closest to passing at R14
+  (open_ch=1, contested=2). Post-R14 divergence: open_ch rose 1→8,
+  contested 2→7. Positive feedback loop — more rounds produced more
+  bookkeeping debris, pushing gate further from passing.
+  **Two instrumentation failures prevented gate detection:**
+  (1) Verdict regex: CC2 wraps verdicts in `**bold**` markdown. Parser
+  regex `(?:[-*]\s*)?` doesn't match `**MERGE C0064 <- C0008**`. Zero
+  CC2 merges/confirms parsed in 24 rounds. Fixed in Exp 35 runner.
+  (2) CONTESTED resolution: no path from CONTESTED→DROPPED for findings
+  challenged repeatedly with zero defence. False positives (C0023, C0039
+  — mypy regex) permanently block gate. Design gap identified.
+  **Fix production:** 70/81 (86%) findings have proposed fixes. 61 contain
+  executable Python code. Per model: ChatGPT 93%, Codex 92%, CC2/DeepSeek
+  82%, Gemini 83%. Avg fix length 300-470 chars with concrete patches.
+  **Fix verification: BROKEN.** 0/348 verified through immune shadow.
+  342 UNEVALUABLE — sandbox missing project config, dead test paths,
+  environment asymmetry. Endocrine health trend flat across all 21 rounds.
+  Models diagnosed exactly the bugs that prevent their own fixes from
+  being verified. Endocrine fix pipeline is dead code in practice.
+  **Three dispatch bugs fixed during launch** (all 4 runners: 33/34/35/36):
+  (1) compose_for_model() wrong call signature; (2) DecomposedChunk()
+  text= vs content=; (3) decomposed_dispatch() mc= vs individual params.
+  DeepSeek context overflow on 225K (capability-blind dispatch).
+  Logs: `bench/logs/exp34_endocrine_20260405T225218Z/`.
+  Report: `bench/logs/exp34_endocrine_20260405T225218Z/exp34_report.json`.
+- **EXP 35 RUNNER: DUAL TOPOLOGY (6 April 2026):**
+  `bench/run_exp35_policy_engine.py` rewritten with dual-topology support:
+  `--topology relay|star` CLI switch. User-configurable, defaults to relay.
+  **Relay mode:** Models chat through insect brain, see each other's reasoning.
+  Three sub-modes: findings, conversational, directed. Budget-aware content
+  sizing via brain's relay() method. Human-readable conversation logs.
+  **Star mode:** Structured blackboard registry, models see only registry
+  summary. Existing Exp 34 pattern.
+  **Shared infrastructure (both topologies):** FindingRegistry, convergence
+  gate, immune pipeline, endocrine, verification chain.
+  **New modules:** ITC adaptive recovery (classify failure → adapt scope,
+  never bench models), persistent signed fingerprints (load/save per-model
+  capability profiles across experiments), fixed verdict regex for CC2
+  bold formatting.
+  **Pending:** CX + Gemini review under full CDSFL before running.
   Logs: `bench/logs/exp34_endocrine_20260405T225218Z/`.
 - **EXP 35 PLAN (6 April 2026):**
   `bench/EXP35_PLAN.md` — capability-aware dispatch for PolicyEngine review.

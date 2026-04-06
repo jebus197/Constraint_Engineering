@@ -8691,3 +8691,1252 @@
 2026-04-06T00:07:56 INFO Fix NOT verified: Gemini_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
 2026-04-06T00:07:56 INFO Fix NOT verified: Gemini_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
 2026-04-06T00:07:56 INFO Fix NOT verified: CC2_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:38:28 INFO Skin barrier (shadow): 15 passed, 0 failed out of 15 findings
+2026-04-06T02:38:28 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:38:28 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:38:28 INFO DC v2 reclassification: ChatGPT_F004 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:38:28 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:38:28 INFO DC v2 reclassification: DeepSeek_F004 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T02:38:28 INFO DC v2 reclassification: CC2_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:38:28 INFO DC v2 (shadow): 6/15 findings reclassified
+2026-04-06T02:38:28 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 15 findings skipped.
+2026-04-06T02:38:28 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 6 bugs closed, 0 escalated to HIL)
+2026-04-06T02:38:28 INFO B Cell v2 (shadow): 9 claims checked, 0 grounded proofs
+2026-04-06T02:38:28 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   ChatGPT_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   ChatGPT_F006: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:38:28 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:39:39 INFO CT v2 (shadow): 0 verdicts in 71.2s — none
+2026-04-06T02:39:39 INFO Formalisation agent: ChatGPT_F005 — 2 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-04-06T02:39:39 INFO Formalisation agent: Codex_F004 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=False
+2026-04-06T02:39:39 INFO Formalisation agent shadow: 3 math/logic findings, 2 with preconditions, 0 potential false rejections
+2026-04-06T02:39:39 INFO Helper T v2 (shadow): 15 findings — 0 CONFIRMED, 0 REJECTED, 5 UNCERTAIN, 10 DUPLICATE
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: DeepSeek_F004 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:39:39 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:39:39 INFO Reconciliation locked 10 finding(s): CC2_F001, CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F002, ChatGPT_F004, Codex_F001, Codex_F002, Codex_F003, DeepSeek_F004
+2026-04-06T02:39:39 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/15 (66.7%) exceeds threshold (65%) [rejected=0, duplicated=10]; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias
+2026-04-06T02:39:39 INFO Autoimmune override: resurrected 5 findings, kept 10 locked rejections
+2026-04-06T02:39:44 INFO Fix NOT verified: ChatGPT_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:39:44 INFO Fix NOT verified: ChatGPT_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:39:44 INFO Fix NOT verified: ChatGPT_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:39:44 INFO Fix NOT verified: Codex_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:39:44 INFO Fix NOT verified: Codex_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:45:05 INFO Skin barrier (shadow): 17 passed, 0 failed out of 17 findings
+2026-04-06T02:45:05 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: Codex_F007 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:45:05 INFO DC v2 reclassification: DeepSeek_F1000 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: Gemini_E0001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: Gemini_E0002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:45:05 INFO DC v2 (shadow): 8/17 findings reclassified
+2026-04-06T02:45:05 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 17 findings skipped.
+2026-04-06T02:45:05 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T02:45:05 INFO B Cell v2 (shadow): 8 claims checked, 0 grounded proofs
+2026-04-06T02:45:05 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   ChatGPT_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   Codex_F007: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   DeepSeek_F1001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO   CC2_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:45:05 INFO NK v2 (shadow): 12 verdicts (0 intra-round dups, 11 bugs closed, 0 escalated to HIL)
+2026-04-06T02:45:07 INFO Formalisation agent shadow: 1 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T02:45:07 INFO Helper T v2 (shadow): 17 findings — 0 CONFIRMED, 0 REJECTED, 5 UNCERTAIN, 12 DUPLICATE
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: DeepSeek_F1001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Gemini_E0002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Codex_F007 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: Codex_F006 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:45:07 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T02:45:07 INFO Reconciliation locked 12 finding(s): CC2_F002, CC2_F003, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, Codex_F001, Codex_F003, Codex_F005, Codex_F006, Codex_F007, DeepSeek_F1001, Gemini_E0002
+2026-04-06T02:45:07 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 12/17 (70.6%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T02:45:07 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 12/17 (70.6%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T02:45:07 INFO Autoimmune override: resurrected 5 findings, kept 12 locked rejections
+2026-04-06T02:45:12 INFO Fix NOT verified: ChatGPT_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:45:12 INFO Fix NOT verified: ChatGPT_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:45:12 INFO Fix NOT verified: DeepSeek_F1000 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:45:12 INFO Fix NOT verified: Gemini_E0001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:45:12 INFO Fix NOT verified: CC2_F001 — verdict=HARMFUL (issues introduced)
+2026-04-06T02:49:48 INFO Skin barrier (shadow): 21 passed, 0 failed out of 21 findings
+2026-04-06T02:49:48 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T02:49:48 INFO DC v2 reclassification: Codex_F004 — v1=logical → v2=code_structural (conf=0.80)
+2026-04-06T02:49:48 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: ChatGPT_V001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: ChatGPT_V004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: ChatGPT_V005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:49:48 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T02:49:48 INFO DC v2 (shadow): 9/21 findings reclassified
+2026-04-06T02:49:48 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 21 findings skipped.
+2026-04-06T02:49:48 INFO B Cell v2 (shadow): 11 claims checked, 0 grounded proofs
+2026-04-06T02:49:48 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   ChatGPT_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO NK v2 (shadow): 17 verdicts (0 intra-round dups, 14 bugs closed, 0 escalated to HIL)
+2026-04-06T02:49:48 INFO   ChatGPT_F006: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   ChatGPT_F007: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   ChatGPT_V003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:49:48 INFO   CC2_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:50:49 INFO CT v2 (shadow): 0 verdicts in 61.3s — none
+2026-04-06T02:50:49 INFO Formalisation agent shadow: 2 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T02:50:49 INFO Helper T v2 (shadow): 21 findings — 0 CONFIRMED, 0 REJECTED, 4 UNCERTAIN, 17 DUPLICATE
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_V005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_V001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_V003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_V004 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:50:49 INFO Reconciliation LOCKED: ChatGPT_V002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:50:49 INFO Reconciliation locked 17 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F006, ChatGPT_F007, ChatGPT_V001, ChatGPT_V002, ChatGPT_V003, ChatGPT_V004, ChatGPT_V005, Codex_F001, Codex_F002, Codex_F003, Gemini_F001
+2026-04-06T02:50:49 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 17/21 (81.0%) exceeds threshold (65%) [rejected=0, duplicated=17]; [RT_v2] 11/12 (92%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T02:50:49 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 17/21 (81.0%) exceeds threshold (65%) [rejected=0, duplicated=17]; [RT_v2] 11/12 (92%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T02:50:49 INFO Autoimmune override: resurrected 4 findings, kept 17 locked rejections
+2026-04-06T02:50:53 INFO Fix NOT verified: Codex_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:50:53 INFO Fix NOT verified: Codex_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:50:53 INFO Fix NOT verified: ChatGPT_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:50:53 INFO Fix NOT verified: CC2_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:55:19 INFO Skin barrier (shadow): 18 passed, 0 failed out of 18 findings
+2026-04-06T02:55:19 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F005 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Codex_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: Gemini_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: CC2_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 reclassification: DeepSeek_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:55:19 INFO DC v2 (shadow): 14/18 findings reclassified
+2026-04-06T02:55:19 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 18 findings skipped.
+2026-04-06T02:55:19 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T02:55:19 INFO B Cell v2 (shadow): 5 claims checked, 0 grounded proofs
+2026-04-06T02:55:19 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:55:19 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:55:19 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:55:19 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:55:19 INFO   CC2_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:55:19 INFO NK v2 (shadow): 18 verdicts (0 intra-round dups, 13 bugs closed, 0 escalated to HIL)
+2026-04-06T02:55:20 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T02:55:20 INFO Helper T v2 (shadow): 16 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 16 DUPLICATE
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: CC2_F004 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.48, v2=0.48)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: DeepSeek_F006 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Codex_F006 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T02:55:20 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:55:20 INFO Reconciliation locked 16 finding(s): CC2_F001, CC2_F002, CC2_F003, CC2_F004, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, Codex_F006, DeepSeek_F006, Gemini_F001, Gemini_F002
+2026-04-06T02:55:20 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 16/16 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from CC2 removed — possible systematic bias
+2026-04-06T02:55:20 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 16/16 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from CC2 removed — possible systematic bias)
+2026-04-06T02:55:20 INFO Autoimmune override: resurrected 0 findings, kept 16 locked rejections
+2026-04-06T02:59:07 INFO Skin barrier (shadow): 15 passed, 0 failed out of 15 findings
+2026-04-06T02:59:07 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T02:59:07 INFO DC v2 reclassification: ChatGPT_F001 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:59:07 INFO DC v2 reclassification: ChatGPT_F003 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:59:07 INFO DC v2 reclassification: Codex_F001 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T02:59:07 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:59:07 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:59:07 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:59:07 INFO DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T02:59:07 INFO DC v2 reclassification: DeepSeek_F001 — v1=logical → v2=code_behavioral (conf=0.75)
+2026-04-06T02:59:07 INFO DC v2 (shadow): 9/15 findings reclassified
+2026-04-06T02:59:07 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 15 findings skipped.
+2026-04-06T02:59:07 INFO NK v2 (shadow): 13 verdicts (0 intra-round dups, 9 bugs closed, 0 escalated to HIL)
+2026-04-06T02:59:07 INFO B Cell v2 (shadow): 9 claims checked, 1 grounded proofs
+2026-04-06T02:59:07 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   CC2_F002: REJECTED (0.85) — [B_v2_shadow] z3 SMT-LIB grounded counterexample. Grounded vars: ['net_type_errors']. SAT_COUNTEREXA
+2026-04-06T02:59:07 INFO   CC2_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:07 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T02:59:39 INFO CT v2 (shadow): 0 verdicts in 32.1s — none
+2026-04-06T02:59:39 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T02:59:39 INFO Helper T v2 (shadow): 14 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 12 DUPLICATE
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T02:59:39 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T02:59:39 INFO Reconciliation locked 12 finding(s): CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, DeepSeek_F001, Gemini_F002
+2026-04-06T02:59:39 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 12/14 (85.7%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 4/4 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T02:59:39 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 12/14 (85.7%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 4/4 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T02:59:39 INFO Autoimmune override: resurrected 2 findings, kept 12 locked rejections
+2026-04-06T02:59:42 INFO Fix NOT verified: CC2_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T02:59:42 INFO Fix NOT verified: Gemini_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:02:57 INFO Skin barrier (shadow): 16 passed, 0 failed out of 16 findings
+2026-04-06T03:02:57 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: ChatGPT_F005 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: ChatGPT_F007 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: ChatGPT_F008 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: Codex_F003 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T03:02:57 INFO DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:02:57 INFO DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:02:57 INFO DC v2 (shadow): 8/16 findings reclassified
+2026-04-06T03:02:57 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 16 findings skipped.
+2026-04-06T03:02:57 INFO B Cell v2 (shadow): 6 claims checked, 0 grounded proofs
+2026-04-06T03:02:57 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:02:57 INFO NK v2 (shadow): 13 verdicts (0 intra-round dups, 8 bugs closed, 0 escalated to HIL)
+2026-04-06T03:04:22 INFO CT v2 (shadow): 0 verdicts in 85.8s — none
+2026-04-06T03:07:22 INFO Formalisation agent shadow: 2 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:07:22 INFO Helper T v2 (shadow): 14 findings — 1 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 11 DUPLICATE
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: ChatGPT_F008 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:07:22 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:07:22 INFO Reconciliation locked 11 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F005, ChatGPT_F007, ChatGPT_F008, Codex_F002, DeepSeek_F002, Gemini_F001
+2026-04-06T03:07:22 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 11/14 (78.6%) exceeds threshold (65%) [rejected=0, duplicated=11]; [RT_v2] 8/8 (100%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T03:07:22 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 11/14 (78.6%) exceeds threshold (65%) [rejected=0, duplicated=11]; [RT_v2] 8/8 (100%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T03:07:22 INFO Autoimmune override: resurrected 3 findings, kept 11 locked rejections
+2026-04-06T03:07:25 INFO Fix NOT verified: Codex_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:07:25 INFO Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:07:25 INFO Fix NOT verified: CC2_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:52 INFO Skin barrier (shadow): 19 passed, 0 failed out of 19 findings
+2026-04-06T03:10:52 INFO DC v2 reclassification: ChatGPT_F005 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: ChatGPT_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: ChatGPT_F007 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: DeepSeek_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: Gemini_str — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 reclassification: Gemini_str — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:10:52 INFO DC v2 (shadow): 8/19 findings reclassified
+2026-04-06T03:10:52 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 19 findings skipped.
+2026-04-06T03:10:52 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:10:52 INFO B Cell v2 (shadow): 10 claims checked, 1 grounded proofs
+2026-04-06T03:10:52 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO NK v2 (shadow): 14 verdicts (1 intra-round dups, 11 bugs closed, 0 escalated to HIL)
+2026-04-06T03:10:52 INFO   ChatGPT_F003: CONFIRMED (0.85) — [B_v2_shadow] z3 SMT-LIB grounded proof. Grounded vars: ['context_budget']. UNSAT_GROUNDED
+2026-04-06T03:10:52 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   ChatGPT_F008: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   DeepSeek_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:52 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:10:54 INFO Formalisation agent shadow: 1 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:10:54 INFO Helper T v2 (shadow): 18 findings — 0 CONFIRMED, 0 REJECTED, 5 UNCERTAIN, 13 DUPLICATE
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: DeepSeek_F003 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Gemini_str — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:10:54 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:10:54 INFO Reconciliation locked 13 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F007, Codex_F001, Codex_F002, Codex_F004, DeepSeek_F001, DeepSeek_F003, Gemini_F001, Gemini_F002, Gemini_str
+2026-04-06T03:10:54 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 13/18 (72.2%) exceeds threshold (65%) [rejected=0, duplicated=13]; [RT_v2] 4/4 (100%) findings from Gemini removed — possible systematic bias
+2026-04-06T03:10:54 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 13/18 (72.2%) exceeds threshold (65%) [rejected=0, duplicated=13]; [RT_v2] 4/4 (100%) findings from Gemini removed — possible systematic bias)
+2026-04-06T03:10:54 INFO Autoimmune override: resurrected 5 findings, kept 13 locked rejections
+2026-04-06T03:10:58 INFO Fix NOT verified: ChatGPT_F005 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:58 INFO Fix NOT verified: ChatGPT_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:58 INFO Fix NOT verified: ChatGPT_F008 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:58 INFO Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:58 INFO Fix NOT verified: DeepSeek_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:10:58 INFO UNCERTAIN-ESCALATED to HIL: DeepSeek_F002 (B-Cell cannot ground claim in source)
+2026-04-06T03:10:58 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-04-06T03:14:31 INFO Skin barrier (shadow): 16 passed, 0 failed out of 16 findings
+2026-04-06T03:14:31 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F003 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F006 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F007 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: ChatGPT_F008 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:14:31 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:14:31 INFO DC v2 reclassification: CC2_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 reclassification: CC2_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:14:31 INFO DC v2 (shadow): 11/16 findings reclassified
+2026-04-06T03:14:31 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 16 findings skipped.
+2026-04-06T03:14:31 INFO B Cell v2 (shadow): 5 claims checked, 0 grounded proofs
+2026-04-06T03:14:31 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:14:31 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:14:31 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:14:31 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:14:31 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:14:31 INFO NK v2 (shadow): 14 verdicts (0 intra-round dups, 9 bugs closed, 0 escalated to HIL)
+2026-04-06T03:16:01 INFO CT v2 (shadow): 0 verdicts in 90.1s — none
+2026-04-06T03:16:01 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:16:01 INFO Helper T v2 (shadow): 16 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 14 DUPLICATE
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: ChatGPT_F008 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:16:01 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:16:01 INFO Reconciliation locked 14 finding(s): CC2_F001, CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, ChatGPT_F006, ChatGPT_F007, ChatGPT_F008, Codex_F001, Codex_F003, DeepSeek_F001, DeepSeek_F002
+2026-04-06T03:16:01 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 14/16 (87.5%) exceeds threshold (65%) [rejected=0, duplicated=14]; [RT_v2] 7/8 (88%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias
+2026-04-06T03:16:01 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 14/16 (87.5%) exceeds threshold (65%) [rejected=0, duplicated=14]; [RT_v2] 7/8 (88%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias)
+2026-04-06T03:16:01 INFO Autoimmune override: resurrected 2 findings, kept 14 locked rejections
+2026-04-06T03:16:03 INFO Fix NOT verified: Codex_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:16:03 INFO Fix NOT verified: ChatGPT_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:20:27 INFO Skin barrier (shadow): 14 passed, 0 failed out of 14 findings
+2026-04-06T03:20:27 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 reclassification: Codex_F002 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T03:20:27 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 reclassification: CC2_F003 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T03:20:27 INFO DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:20:27 INFO DC v2 (shadow): 8/14 findings reclassified
+2026-04-06T03:20:27 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 14 findings skipped.
+2026-04-06T03:20:27 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:20:27 INFO B Cell v2 (shadow): 8 claims checked, 0 grounded proofs
+2026-04-06T03:20:27 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:27 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   CC2_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:20:28 INFO NK v2 (shadow): 13 verdicts (1 intra-round dups, 8 bugs closed, 0 escalated to HIL)
+2026-04-06T03:20:30 INFO Formalisation agent shadow: 1 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:20:30 INFO Helper T v2 (shadow): 12 findings — 0 CONFIRMED, 1 REJECTED, 0 UNCERTAIN, 11 DUPLICATE
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.73, v2=0.56)
+2026-04-06T03:20:30 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:20:30 INFO Reconciliation locked 12 finding(s): CC2_F001, CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003, Codex_F004, DeepSeek_F001, Gemini_F001
+2026-04-06T03:20:30 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 12/12 (100.0%) exceeds threshold (65%) [rejected=1, duplicated=11]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias
+2026-04-06T03:20:30 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 12/12 (100.0%) exceeds threshold (65%) [rejected=1, duplicated=11]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias)
+2026-04-06T03:20:30 INFO Autoimmune override: resurrected 0 findings, kept 12 locked rejections
+2026-04-06T03:23:36 INFO Skin barrier (shadow): 13 passed, 0 failed out of 13 findings
+2026-04-06T03:23:36 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:23:36 INFO DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:23:36 INFO DC v2 reclassification: DeepSeek_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:23:36 INFO DC v2 reclassification: DeepSeek_F008 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:23:36 INFO DC v2 reclassification: DeepSeek_F010 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:23:36 INFO DC v2 (shadow): 5/13 findings reclassified
+2026-04-06T03:23:36 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 13 findings skipped.
+2026-04-06T03:23:36 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:23:36 INFO B Cell v2 (shadow): 8 claims checked, 0 grounded proofs
+2026-04-06T03:23:36 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   ChatGPT_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:23:36 INFO NK v2 (shadow): 11 verdicts (0 intra-round dups, 10 bugs closed, 1 escalated to HIL)
+2026-04-06T03:23:39 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:23:39 INFO Helper T v2 (shadow): 13 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 11 DUPLICATE
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.55, v2=0.55)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: DeepSeek_F010 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.45, v2=0.45)
+2026-04-06T03:23:39 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:23:39 INFO Reconciliation locked 11 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, Codex_F001, Codex_F002, DeepSeek_F001, DeepSeek_F010, Gemini_F001, Gemini_F002
+2026-04-06T03:23:39 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 11/13 (84.6%) exceeds threshold (65%) [rejected=0, duplicated=11]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T03:23:39 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 11/13 (84.6%) exceeds threshold (65%) [rejected=0, duplicated=11]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T03:23:39 INFO Autoimmune override: resurrected 2 findings, kept 11 locked rejections
+2026-04-06T03:23:41 INFO Fix NOT verified: DeepSeek_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:23:41 INFO Fix NOT verified: DeepSeek_F008 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:27:48 INFO Skin barrier (shadow): 9 passed, 0 failed out of 9 findings
+2026-04-06T03:27:48 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:27:48 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:27:48 INFO DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:27:48 INFO DC v2 reclassification: Gemini_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:27:48 INFO DC v2 (shadow): 4/9 findings reclassified
+2026-04-06T03:27:48 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 9 findings skipped.
+2026-04-06T03:27:48 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:27:48 INFO B Cell v2 (shadow): 5 claims checked, 0 grounded proofs
+2026-04-06T03:27:48 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:27:48 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:27:48 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:27:48 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:27:48 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:27:49 INFO NK v2 (shadow): 7 verdicts (0 intra-round dups, 6 bugs closed, 0 escalated to HIL)
+2026-04-06T03:27:50 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:27:50 INFO Helper T v2 (shadow): 9 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 7 DUPLICATE
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.52, v2=0.52)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.46, v2=0.46)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:27:50 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:27:50 INFO Reconciliation locked 7 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F005, Codex_F001, Codex_F002, Codex_F003, Gemini_F001
+2026-04-06T03:27:50 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 7/9 (77.8%) exceeds threshold (65%) [rejected=0, duplicated=7]; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T03:27:50 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 7/9 (77.8%) exceeds threshold (65%) [rejected=0, duplicated=7]; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T03:27:50 INFO Autoimmune override: resurrected 2 findings, kept 7 locked rejections
+2026-04-06T03:27:52 INFO Fix NOT verified: ChatGPT_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:27:52 INFO Fix NOT verified: ChatGPT_F004 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 2 passed, 0 failed out of 2 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 2/2 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 2 findings skipped.
+2026-04-06T03:30:22 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Helper T v2 (shadow): 2 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:30:22 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO NK v2 (shadow): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation locked 1 finding(s): f1
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: f1 (matches p1, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-escalated 1 findings to HIL (no programmatic fix)
+2026-04-06T03:30:22 INFO Reconciliation: f1 — v1=CONFIRMED(0.60) vs v2=REJECTED(0.90) → REJECTED(0.90)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.80, v2=0.70)
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r0_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:30:22 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO NK v2 (shadow): 9 verdicts (9 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 9 DUPLICATE
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m4_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m4_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m1_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m2_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m2_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m0_f1 — both pipelines REJECTED (v1=0.70, v2=0.70)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m1_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m3_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r0_m3_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:30:22 INFO Reconciliation locked 9 finding(s): r0_m0_f1, r0_m1_f0, r0_m1_f1, r0_m2_f0, r0_m2_f1, r0_m3_f0, r0_m3_f1, r0_m4_f0, r0_m4_f1
+2026-04-06T03:30:22 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 9/10 (90.0%) exceeds threshold (65%) [rejected=0, duplicated=9]
+2026-04-06T03:30:22 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 9/10 (90.0%) exceeds threshold (65%) [rejected=0, duplicated=9])
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r1_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:30:22 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m1_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m0_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m3_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m3_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m2_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m1_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m4_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m4_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m2_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r1_m0_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation locked 10 finding(s): r1_m0_f0, r1_m0_f1, r1_m1_f0, r1_m1_f1, r1_m2_f0, r1_m2_f1, r1_m3_f0, r1_m3_f1, r1_m4_f0, r1_m4_f1
+2026-04-06T03:30:22 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10]
+2026-04-06T03:30:22 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10])
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m0_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m0_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m1_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m1_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m2_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m2_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m3_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m3_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m4_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r1_m4_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-escalated 10 findings to HIL (no programmatic fix)
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 reclassification: r2_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:30:22 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m4_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m1_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m2_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m4_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m3_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m2_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m1_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m0_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m0_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation LOCKED: r2_m3_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:22 INFO Reconciliation locked 10 finding(s): r2_m0_f0, r2_m0_f1, r2_m1_f0, r2_m1_f1, r2_m2_f0, r2_m2_f1, r2_m3_f0, r2_m3_f1, r2_m4_f0, r2_m4_f1
+2026-04-06T03:30:22 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10]
+2026-04-06T03:30:22 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10])
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m0_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m0_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m1_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m1_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m2_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m2_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m3_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m3_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m4_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-ESCALATED to HIL: r2_m4_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:30:22 INFO Auto-escalated 10 findings to HIL (no programmatic fix)
+2026-04-06T03:30:22 INFO Formalisation agent: f1 — REJECTED with 2 preconditions (potential false rejection). Preconditions: ['x > 0', 'x > 0']
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 1 math/logic findings, 1 with preconditions, 1 potential false rejections
+2026-04-06T03:30:22 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:30:22 INFO Skin barrier (shadow): 2 passed, 0 failed out of 2 findings
+2026-04-06T03:30:22 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:22 INFO DC v2 (shadow): 1/2 findings reclassified
+2026-04-06T03:30:22 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 2 findings skipped.
+2026-04-06T03:30:22 INFO B Cell v2 (shadow): 1 claims checked, 0 grounded proofs
+2026-04-06T03:30:22 INFO   f1: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:30:22 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:23 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-04-06T03:30:23 INFO Formalisation agent shadow: 1 math/logic findings, 1 with preconditions, 0 potential false rejections
+2026-04-06T03:30:23 INFO Helper T v2 (shadow): 2 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:30:23 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-04-06T03:30:23 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-04-06T03:30:23 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:30:23 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:23 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:30:23 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:30:23 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:23 INFO NK v2 (shadow): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:23 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:23 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:30:23 INFO Reconciliation locked 1 finding(s): f1
+2026-04-06T03:30:23 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:30:23 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:30:23 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:30:23 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:30:23 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:23 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:23 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:23 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:30:23 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:30:23 INFO DC v2 (shadow): 0/10 findings reclassified
+2026-04-06T03:30:23 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:30:23 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:30:23 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:30:23 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:30:23 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:30:23 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-04-06T03:30:23 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T03:30:23 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-04-06T03:35:53 INFO Skin barrier (shadow): 11 passed, 1 failed out of 12 findings
+2026-04-06T03:35:53 INFO   BLOCKED: Codex_F001 — Cited file not found: `a.py
+2026-04-06T03:35:53 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:35:53 INFO DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:35:53 INFO DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:35:53 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:35:53 INFO DC v2 (shadow): 4/11 findings reclassified
+2026-04-06T03:35:53 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 11 findings skipped.
+2026-04-06T03:35:53 INFO B Cell v2 (shadow): 6 claims checked, 0 grounded proofs
+2026-04-06T03:35:53 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO   Gemini_E002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO   Gemini_E003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:35:53 INFO NK v2 (shadow): 11 verdicts (0 intra-round dups, 8 bugs closed, 0 escalated to HIL)
+2026-04-06T03:37:13 INFO CT v2 (shadow): 0 verdicts in 79.5s — none
+2026-04-06T03:37:13 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:37:13 INFO Helper T v2 (shadow): 9 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 9 DUPLICATE
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Gemini_E003 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T03:37:13 INFO Reconciliation LOCKED: Gemini_E002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:37:13 INFO Reconciliation locked 9 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F002, Codex_F003, Codex_F004, Codex_F005, Gemini_E002, Gemini_E003
+2026-04-06T03:37:13 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 9/9 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=9]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T03:37:13 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 9/9 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=9]; [RT_v2] 5/5 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T03:37:13 INFO Autoimmune override: resurrected 0 findings, kept 9 locked rejections
+2026-04-06T03:40:40 INFO Skin barrier (shadow): 12 passed, 0 failed out of 12 findings
+2026-04-06T03:40:40 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:40:40 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:40:40 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:40:40 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:40:40 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:40:40 INFO DC v2 reclassification: DeepSeek_F060 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:40:40 INFO DC v2 reclassification: DeepSeek_F061 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:40:40 INFO DC v2 (shadow): 7/12 findings reclassified
+2026-04-06T03:40:40 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 12 findings skipped.
+2026-04-06T03:40:40 INFO B Cell v2 (shadow): 3 claims checked, 0 grounded proofs
+2026-04-06T03:40:40 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:40:40 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:40:40 INFO   CC2_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:40:40 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 8 bugs closed, 0 escalated to HIL)
+2026-04-06T03:41:42 INFO CT v2 (shadow): 0 verdicts in 61.3s — none
+2026-04-06T03:41:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:41:42 INFO Helper T v2 (shadow): 12 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: DeepSeek_F061 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: DeepSeek_F060 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:41:42 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:41:42 INFO Reconciliation locked 10 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F004, Codex_F001, Codex_F002, Codex_F003, DeepSeek_F060, DeepSeek_F061, Gemini_F001
+2026-04-06T03:41:42 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/12 (83.3%) exceeds threshold (65%) [rejected=0, duplicated=10]; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T03:41:42 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/12 (83.3%) exceeds threshold (65%) [rejected=0, duplicated=10]; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T03:41:42 INFO Autoimmune override: resurrected 2 findings, kept 10 locked rejections
+2026-04-06T03:41:44 INFO Fix NOT verified: ChatGPT_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:41:44 INFO Fix NOT verified: ChatGPT_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:44:23 INFO Skin barrier (shadow): 12 passed, 0 failed out of 12 findings
+2026-04-06T03:44:23 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:44:23 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:44:23 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:44:23 INFO DC v2 reclassification: DeepSeek_finding.finding_id, — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:44:23 INFO DC v2 (shadow): 4/12 findings reclassified
+2026-04-06T03:44:23 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 12 findings skipped.
+2026-04-06T03:44:23 INFO B Cell v2 (shadow): 7 claims checked, 0 grounded proofs
+2026-04-06T03:44:23 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   Gemini_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO   DeepSeek_F102: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:44:23 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 7 bugs closed, 0 escalated to HIL)
+2026-04-06T03:45:28 INFO CT v2 (shadow): 0 verdicts in 65.8s — none
+2026-04-06T03:45:48 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:45:48 INFO Helper T v2 (shadow): 11 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 9 DUPLICATE
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: DeepSeek_F101 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: DeepSeek_finding.finding_id, — both pipelines REJECTED (v1=0.59, v2=0.59)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: Gemini_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.45, v2=0.45)
+2026-04-06T03:45:48 INFO Reconciliation LOCKED: DeepSeek_F102 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:45:48 INFO Reconciliation locked 9 finding(s): ChatGPT_F001, ChatGPT_F002, Codex_F002, Codex_F004, Codex_F005, DeepSeek_F101, DeepSeek_F102, DeepSeek_finding.finding_id,, Gemini_F002
+2026-04-06T03:45:48 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 9/11 (81.8%) exceeds threshold (65%) [rejected=0, duplicated=9]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias
+2026-04-06T03:45:48 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 9/11 (81.8%) exceeds threshold (65%) [rejected=0, duplicated=9]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias)
+2026-04-06T03:45:48 INFO Autoimmune override: resurrected 2 findings, kept 9 locked rejections
+2026-04-06T03:45:50 INFO Fix NOT verified: Codex_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:45:50 INFO Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:49:32 INFO Skin barrier (shadow): 12 passed, 4 failed out of 16 findings
+2026-04-06T03:49:32 INFO   BLOCKED: DeepSeek_F001 — Cited file not found: `endocrine.py
+2026-04-06T03:49:32 INFO   BLOCKED: DeepSeek_F002 — Cited file not found: `endocrine.py
+2026-04-06T03:49:32 INFO   BLOCKED: DeepSeek_F003 — Cited file not found: `endocrine.py
+2026-04-06T03:49:32 INFO   BLOCKED: DeepSeek_F004 — Cited file not found: `endocrine.py
+2026-04-06T03:49:32 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:49:32 INFO DC v2 reclassification: ChatGPT_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:49:32 INFO DC v2 reclassification: ChatGPT_F007 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:49:32 INFO DC v2 reclassification: DeepSeek_F005 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T03:49:32 INFO DC v2 (shadow): 4/12 findings reclassified
+2026-04-06T03:49:32 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 12 findings skipped.
+2026-04-06T03:49:32 INFO B Cell v2 (shadow): 8 claims checked, 0 grounded proofs
+2026-04-06T03:49:32 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   ChatGPT_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   ChatGPT_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO   CC2_F001-R17: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:49:32 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 7 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:21 INFO CT v2 (shadow): 0 verdicts in 49.7s — none
+2026-04-06T03:50:41 INFO Formalisation agent shadow: 1 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:41 INFO Helper T v2 (shadow): 12 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: DeepSeek_F005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: CC2_F001-R17 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T03:50:41 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:50:41 INFO Reconciliation locked 10 finding(s): CC2_F001-R17, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, ChatGPT_F007, Codex_F002, Codex_F003, DeepSeek_F005
+2026-04-06T03:50:41 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/12 (83.3%) exceeds threshold (65%) [rejected=0, duplicated=10]; [RT_v2] 6/7 (86%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T03:50:41 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/12 (83.3%) exceeds threshold (65%) [rejected=0, duplicated=10]; [RT_v2] 6/7 (86%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T03:50:41 INFO Autoimmune override: resurrected 2 findings, kept 10 locked rejections
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 2 passed, 0 failed out of 2 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 2/2 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 2 findings skipped.
+2026-04-06T03:50:42 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 2 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:50:42 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation locked 1 finding(s): f1
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: f1 (matches p1, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-escalated 1 findings to HIL (no programmatic fix)
+2026-04-06T03:50:42 INFO Reconciliation: f1 — v1=CONFIRMED(0.60) vs v2=REJECTED(0.90) → REJECTED(0.90)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.80, v2=0.70)
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r0_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:50:42 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 9 verdicts (9 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 9 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m2_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m3_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m2_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m1_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m4_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m3_f0 — both pipelines REJECTED (v1=0.58, v2=0.58)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m4_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m1_f1 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r0_m0_f1 — both pipelines REJECTED (v1=0.70, v2=0.70)
+2026-04-06T03:50:42 INFO Reconciliation locked 9 finding(s): r0_m0_f1, r0_m1_f0, r0_m1_f1, r0_m2_f0, r0_m2_f1, r0_m3_f0, r0_m3_f1, r0_m4_f0, r0_m4_f1
+2026-04-06T03:50:42 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 9/10 (90.0%) exceeds threshold (65%) [rejected=0, duplicated=9]
+2026-04-06T03:50:42 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 9/10 (90.0%) exceeds threshold (65%) [rejected=0, duplicated=9])
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r1_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:50:42 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m4_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m0_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m1_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m3_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m0_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m3_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m4_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m2_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m2_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r1_m1_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation locked 10 finding(s): r1_m0_f0, r1_m0_f1, r1_m1_f0, r1_m1_f1, r1_m2_f0, r1_m2_f1, r1_m3_f0, r1_m3_f1, r1_m4_f0, r1_m4_f1
+2026-04-06T03:50:42 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10]
+2026-04-06T03:50:42 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10])
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m0_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m0_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m1_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m1_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m2_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m2_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m3_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m3_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m4_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r1_m4_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-escalated 10 findings to HIL (no programmatic fix)
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 reclassification: r2_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 10/10 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:50:42 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 10 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m2_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m0_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m4_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m2_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m3_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m1_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m1_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m0_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m3_f0 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: r2_m4_f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation locked 10 finding(s): r2_m0_f0, r2_m0_f1, r2_m1_f0, r2_m1_f1, r2_m2_f0, r2_m2_f1, r2_m3_f0, r2_m3_f1, r2_m4_f0, r2_m4_f1
+2026-04-06T03:50:42 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10]
+2026-04-06T03:50:42 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=10])
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m0_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m0_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m1_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m1_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m2_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m2_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m3_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m3_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m4_f0 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-ESCALATED to HIL: r2_m4_f1 (matches r0_m0_f0, no fix after 2+ rounds)
+2026-04-06T03:50:42 INFO Auto-escalated 10 findings to HIL (no programmatic fix)
+2026-04-06T03:50:42 INFO Formalisation agent: f1 — REJECTED with 2 preconditions (potential false rejection). Preconditions: ['x > 0', 'x > 0']
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 1 math/logic findings, 1 with preconditions, 1 potential false rejections
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 2 passed, 0 failed out of 2 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 1/2 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 2 findings skipped.
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 1 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO   f1: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:50:42 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 1 math/logic findings, 1 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 2 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:50:42 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-04-06T03:50:42 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=1.00, v2=1.00)
+2026-04-06T03:50:42 INFO Reconciliation locked 1 finding(s): f1
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 1 passed, 0 failed out of 1 findings
+2026-04-06T03:50:42 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:50:42 INFO DC v2 (shadow): 1/1 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 1 findings skipped.
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:50:42 INFO Skin barrier (shadow): 10 passed, 0 failed out of 10 findings
+2026-04-06T03:50:42 INFO DC v2 (shadow): 0/10 findings reclassified
+2026-04-06T03:50:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 10 findings skipped.
+2026-04-06T03:50:42 INFO B Cell v2 (shadow): 0 claims checked, 0 grounded proofs
+2026-04-06T03:50:42 INFO NK v2 (shadow): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-06T03:50:42 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:50:42 INFO Helper T v2 (shadow): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63)
+2026-04-06T03:50:42 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-04-06T03:50:42 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T03:50:42 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-04-06T03:50:43 INFO Fix NOT verified: Codex_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:50:43 INFO Fix NOT verified: ChatGPT_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:54:15 INFO Skin barrier (shadow): 11 passed, 0 failed out of 11 findings
+2026-04-06T03:54:15 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 reclassification: DeepSeek_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:54:15 INFO DC v2 (shadow): 6/11 findings reclassified
+2026-04-06T03:54:15 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 11 findings skipped.
+2026-04-06T03:54:15 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:54:15 INFO B Cell v2 (shadow): 5 claims checked, 0 grounded proofs
+2026-04-06T03:54:15 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:54:15 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:54:15 INFO   CC2_F067: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:54:15 INFO   CC2_F068: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:54:15 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:54:16 INFO NK v2 (shadow): 9 verdicts (0 intra-round dups, 7 bugs closed, 0 escalated to HIL)
+2026-04-06T03:54:17 INFO Formalisation agent: CC2_F068 — 2 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=False
+2026-04-06T03:54:17 INFO Formalisation agent shadow: 1 math/logic findings, 1 with preconditions, 0 potential false rejections
+2026-04-06T03:54:17 INFO Helper T v2 (shadow): 10 findings — 1 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 8 DUPLICATE
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: CC2_F067 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.46, v2=0.46)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T03:54:17 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T03:54:17 INFO Reconciliation locked 8 finding(s): CC2_F067, ChatGPT_F001, ChatGPT_F002, Codex_F001, Codex_F002, Codex_F004, DeepSeek_F001, Gemini_F001
+2026-04-06T03:54:17 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 8/10 (80.0%) exceeds threshold (65%) [rejected=0, duplicated=8]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T03:54:17 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 8/10 (80.0%) exceeds threshold (65%) [rejected=0, duplicated=8]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T03:54:17 INFO Autoimmune override: resurrected 2 findings, kept 8 locked rejections
+2026-04-06T03:54:19 INFO Fix NOT verified: Codex_F003 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:54:19 INFO Fix NOT verified: CC2_F068 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T03:59:02 INFO Skin barrier (shadow): 21 passed, 0 failed out of 21 findings
+2026-04-06T03:59:02 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: Codex_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: Codex_F009 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: Codex_F012 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: ChatGPT_F002 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T03:59:02 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T03:59:02 INFO DC v2 (shadow): 9/21 findings reclassified
+2026-04-06T03:59:02 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 21 findings skipped.
+2026-04-06T03:59:02 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T03:59:02 INFO B Cell v2 (shadow): 13 claims checked, 0 grounded proofs
+2026-04-06T03:59:02 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F007: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F008: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F010: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F011: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Codex_F013: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   DeepSeek_UNSTRUCTURED: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO   ChatGPT_F006: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T03:59:02 INFO NK v2 (shadow): 20 verdicts (0 intra-round dups, 18 bugs closed, 0 escalated to HIL)
+2026-04-06T03:59:06 INFO Formalisation agent shadow: 1 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T03:59:06 INFO Helper T v2 (shadow): 21 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 20 DUPLICATE
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F009 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F011 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F010 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F006 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: DeepSeek_UNSTRUCTURED — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F013 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F012 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: Codex_F008 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T03:59:06 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T03:59:06 INFO Reconciliation locked 20 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, ChatGPT_F006, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, Codex_F006, Codex_F008, Codex_F009, Codex_F010, Codex_F011, Codex_F012, Codex_F013, DeepSeek_UNSTRUCTURED, Gemini_F001
+2026-04-06T03:59:06 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 20/21 (95.2%) exceeds threshold (65%) [rejected=0, duplicated=20]; [RT_v2] 12/13 (92%) findings from Codex removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from ChatGPT removed — possible systematic bias
+2026-04-06T03:59:06 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 20/21 (95.2%) exceeds threshold (65%) [rejected=0, duplicated=20]; [RT_v2] 12/13 (92%) findings from Codex removed — possible systematic bias; [RT_v2] 6/6 (100%) findings from ChatGPT removed — possible systematic bias)
+2026-04-06T03:59:06 INFO Autoimmune override: resurrected 1 findings, kept 20 locked rejections
+2026-04-06T03:59:07 INFO Fix NOT verified: Codex_F007 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T04:02:42 INFO Skin barrier (shadow): 15 passed, 0 failed out of 15 findings
+2026-04-06T04:02:42 INFO DC v2 reclassification: ChatGPT_F001 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: ChatGPT_F002 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: ChatGPT_F003 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: ChatGPT_F005 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: Gemini_UNSTRUCTURED — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: CC2_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 reclassification: CC2_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:02:42 INFO DC v2 (shadow): 9/15 findings reclassified
+2026-04-06T04:02:42 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 15 findings skipped.
+2026-04-06T04:02:42 INFO B Cell v2 (shadow): 4 claims checked, 0 grounded proofs
+2026-04-06T04:02:42 INFO   ChatGPT_F007: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:02:43 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:02:43 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:02:43 INFO   DeepSeek_F200: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:02:43 INFO NK v2 (shadow): 15 verdicts (0 intra-round dups, 7 bugs closed, 0 escalated to HIL)
+2026-04-06T04:03:35 INFO CT v2 (shadow): 0 verdicts in 52.3s — none
+2026-04-06T04:03:35 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T04:03:35 INFO Helper T v2 (shadow): 15 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 15 DUPLICATE
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: DeepSeek_F200 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F007 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: Gemini_UNSTRUCTURED — both pipelines REJECTED (v1=0.39, v2=0.39)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F006 — both pipelines REJECTED (v1=0.45, v2=0.45)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.43, v2=0.43)
+2026-04-06T04:03:35 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.80, v2=0.80)
+2026-04-06T04:03:35 INFO Reconciliation locked 15 finding(s): CC2_F001, CC2_F002, CC2_F003, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, ChatGPT_F006, ChatGPT_F007, Codex_F001, Codex_F002, Codex_F003, DeepSeek_F200, Gemini_UNSTRUCTURED
+2026-04-06T04:03:35 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 15/15 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=15]; [RT_v2] 7/7 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias
+2026-04-06T04:03:35 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 15/15 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=15]; [RT_v2] 7/7 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from CC2 removed — possible systematic bias)
+2026-04-06T04:03:35 INFO Autoimmune override: resurrected 0 findings, kept 15 locked rejections
+2026-04-06T04:08:00 INFO Skin barrier (shadow): 12 passed, 0 failed out of 12 findings
+2026-04-06T04:08:00 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:08:00 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:08:00 INFO DC v2 reclassification: Codex_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:08:00 INFO DC v2 reclassification: Codex_F005 — v1=logical → v2=mathematical (conf=0.70)
+2026-04-06T04:08:00 INFO DC v2 reclassification: DeepSeek_UNSTRUCTURED — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-06T04:08:00 INFO DC v2 reclassification: CC2_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:08:00 INFO DC v2 (shadow): 6/12 findings reclassified
+2026-04-06T04:08:00 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 12 findings skipped.
+2026-04-06T04:08:00 INFO CT v2 (shadow): no code findings to investigate
+2026-04-06T04:08:00 INFO B Cell v2 (shadow): 7 claims checked, 0 grounded proofs
+2026-04-06T04:08:00 INFO   ChatGPT_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:00 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:00 INFO   Codex_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:00 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:00 INFO   Codex_F005: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:00 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:01 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:08:01 INFO NK v2 (shadow): 12 verdicts (0 intra-round dups, 10 bugs closed, 0 escalated to HIL)
+2026-04-06T04:08:02 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T04:08:02 INFO Helper T v2 (shadow): 12 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 12 DUPLICATE
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: DeepSeek_UNSTRUCTURED — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T04:08:02 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:08:02 INFO Reconciliation locked 12 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, DeepSeek_UNSTRUCTURED, Gemini_F001
+2026-04-06T04:08:02 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 12/12 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias
+2026-04-06T04:08:02 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 12/12 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=12]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias)
+2026-04-06T04:08:02 INFO Autoimmune override: resurrected 0 findings, kept 12 locked rejections
+2026-04-06T04:11:26 INFO Skin barrier (shadow): 17 passed, 0 failed out of 17 findings
+2026-04-06T04:11:26 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 reclassification: ChatGPT_F006 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:11:26 INFO DC v2 (shadow): 7/17 findings reclassified
+2026-04-06T04:11:26 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 17 findings skipped.
+2026-04-06T04:11:26 INFO B Cell v2 (shadow): 7 claims checked, 0 grounded proofs
+2026-04-06T04:11:26 INFO   Codex_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:26 INFO   Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:26 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:26 INFO   Gemini_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:26 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:26 INFO   DeepSeek_F002: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:27 INFO   DeepSeek_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:11:27 INFO NK v2 (shadow): 16 verdicts (0 intra-round dups, 13 bugs closed, 0 escalated to HIL)
+2026-04-06T04:12:34 INFO CT v2 (shadow): 0 verdicts in 67.8s — none
+2026-04-06T04:12:34 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T04:12:34 INFO Helper T v2 (shadow): 17 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 16 DUPLICATE
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.33, v2=0.33)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.44, v2=0.44)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: DeepSeek_F003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.49, v2=0.49)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.37, v2=0.37)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: Gemini_F001 — both pipelines REJECTED (v1=0.45, v2=0.45)
+2026-04-06T04:12:34 INFO Reconciliation LOCKED: DeepSeek_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:12:34 INFO Reconciliation locked 16 finding(s): CC2_F001, CC2_F002, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, DeepSeek_F001, DeepSeek_F002, DeepSeek_F003, Gemini_F001
+2026-04-06T04:12:34 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 16/17 (94.1%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias
+2026-04-06T04:12:34 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 16/17 (94.1%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 3/3 (100%) findings from DeepSeek removed — possible systematic bias)
+2026-04-06T04:12:34 INFO Autoimmune override: resurrected 1 findings, kept 16 locked rejections
+2026-04-06T04:12:36 INFO Fix NOT verified: ChatGPT_F006 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-04-06T04:16:08 INFO Skin barrier (shadow): 14 passed, 0 failed out of 14 findings
+2026-04-06T04:16:08 INFO DC v2 reclassification: ChatGPT_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:16:08 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:16:08 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:16:08 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:16:08 INFO DC v2 reclassification: Codex_F005 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-04-06T04:16:08 INFO DC v2 reclassification: DeepSeek_G001 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T04:16:08 INFO DC v2 reclassification: DeepSeek_G002 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T04:16:08 INFO DC v2 reclassification: DeepSeek_G003 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T04:16:08 INFO DC v2 reclassification: DeepSeek_G004 — v1=mathematical → v2=code_behavioral (conf=0.75)
+2026-04-06T04:16:08 INFO DC v2 (shadow): 9/14 findings reclassified
+2026-04-06T04:16:08 INFO Typed LLM classifier shadow: DISABLED (OpenRouter removed). 14 findings skipped.
+2026-04-06T04:16:08 INFO B Cell v2 (shadow): 5 claims checked, 0 grounded proofs
+2026-04-06T04:16:08 INFO   ChatGPT_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:16:08 INFO   ChatGPT_F003: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:16:08 INFO   Codex_F004: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:16:08 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:16:08 INFO   Gemini_UNSTRUCTURED: UNCERTAIN (0.15) — [B_v2_shadow] Cannot ground claim in source AST
+2026-04-06T04:16:08 INFO NK v2 (shadow): 14 verdicts (0 intra-round dups, 9 bugs closed, 0 escalated to HIL)
+2026-04-06T04:17:43 INFO CT v2 (shadow): 0 verdicts in 94.5s — none
+2026-04-06T04:17:43 INFO Formalisation agent shadow: 0 math/logic findings, 0 with preconditions, 0 potential false rejections
+2026-04-06T04:17:43 INFO Helper T v2 (shadow): 14 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 14 DUPLICATE
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.41, v2=0.41)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: DeepSeek_G004 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: DeepSeek_G003 — both pipelines REJECTED (v1=0.36, v2=0.36)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.51, v2=0.51)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Gemini_UNSTRUCTURED — both pipelines REJECTED (v1=0.40, v2=0.40)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: DeepSeek_G001 — both pipelines REJECTED (v1=0.35, v2=0.35)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.38, v2=0.38)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.42, v2=0.42)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: DeepSeek_G002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:17:43 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.34, v2=0.34)
+2026-04-06T04:17:43 INFO Reconciliation locked 14 finding(s): CC2_F001, ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, DeepSeek_G001, DeepSeek_G002, DeepSeek_G003, DeepSeek_G004, Gemini_UNSTRUCTURED
+2026-04-06T04:17:43 INFO RT v2 (shadow): AUTOIMMUNE flagged — [RT_v2] Removal rate 14/14 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=14]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias
+2026-04-06T04:17:43 INFO RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 14/14 (100.0%) exceeds threshold (65%) [rejected=0, duplicated=14]; [RT_v2] 3/3 (100%) findings from ChatGPT removed — possible systematic bias; [RT_v2] 5/5 (100%) findings from Codex removed — possible systematic bias; [RT_v2] 4/4 (100%) findings from DeepSeek removed — possible systematic bias)
+2026-04-06T04:17:43 INFO Autoimmune override: resurrected 0 findings, kept 14 locked rejections

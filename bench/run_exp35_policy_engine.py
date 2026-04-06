@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Experiment 35: PolicyEngine Code Review — Star/Blackboard Topology.
+"""Experiment 35: PolicyEngine Code Review — Dual-Topology Runner.
 
 Reviews the PolicyEngine (engine.py + schema.toml) — 55-parameter facade
 over 4-layer TOML hierarchy with monotonicity enforcement. Newly built,
@@ -9,21 +9,31 @@ Subject under review: bench/cdsfl_registry/engine.py (~310 lines).
 Schema definition: bench/cdsfl_registry/schema.toml (~250 lines, bundled).
 Context files: registry.py, composer.py (read-only, for TOML merge context).
 
-Architecture:
-  - Star/blackboard topology, same as Exp 34
+Architecture (user-configurable topology):
+  - RELAY mode: insect brain relays full model responses between models.
+    Models see each other's reasoning. Human-readable conversation.
+    Budget-aware content sizing via brain's relay() method.
+    Directed inter-model messaging (@tags). Natural pacing.
+  - STAR mode: runner-owned blackboard. Models see a structured registry
+    summary, never each other's raw prose. Clean attribution, auditable.
+  - Both modes share: FindingRegistry (canonical state), convergence gate
+    (5-condition temporal conjunction), immune pipeline, endocrine layer,
+    ITC adaptive recovery, persistent signed fingerprints.
   - Status model: OPEN -> CONFIRMED (2+ independent) / MERGED / UNCONFIRMED
   - FFF is prompt-only (no enforcement)
   - Programmatic status transitions wired
 
 Models:
-  - CC2 (Claude Opus 4.6 via OpenRouter)
-  - Codex (GPT-5.4 Codex via codex exec CLI)
+  - CC2 (Claude Opus 4.6 via Claude CLI, Max plan)
+  - Codex (GPT-5.4 Codex via OpenRouter)
   - Gemini (Gemini 3.1 Pro via Google SDK)
   - DeepSeek (DeepSeek Reasoner via DeepSeek API)
   - ChatGPT (GPT-5.4 via OpenRouter)
 
 Usage:
     python3 bench/run_exp35_policy_engine.py [preflight|run|--resume]
+    python3 bench/run_exp35_policy_engine.py run --topology relay --relay-mode directed
+    python3 bench/run_exp35_policy_engine.py run --topology star
     python3 bench/run_exp35_policy_engine.py run --pattern fff
 """
 
@@ -162,6 +172,8 @@ CONTEXT_FILES = [
 BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}
 
 DEFAULT_PATTERN = "fff"
+DEFAULT_TOPOLOGY = "relay"          # "relay" or "star" — user configurable
+DEFAULT_RELAY_MODE = "directed"     # "findings", "conversational", "directed"
 
 MODEL_ROSTER = {
     "CC2": "Claude Opus 4.6 (Anthropic)",
@@ -394,8 +406,8 @@ class FindingRegistry:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _VERDICT_RE = re.compile(
-    r'^\s*(?:[-*]\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE)\s+(C\d{4})'
-    r'(?:\s*[\|<\-\u2014\u2013]+\s*(.*))?$',
+    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE)\s+(C\d{4})'
+    r'(?:\s*[*]{0,2}\s*[\|<\-\u2014\u2013\u2190]+\s*(.*))?',
     re.MULTILINE,
 )
 
@@ -691,9 +703,196 @@ def _check_budget_extension(
     return False, "No extension triggers"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────��──────────────���─────────────────────────────────────────────────────
+# ITC — Adaptive Recovery After Failure
+# ──────────────────────���──────────────────────────��───────────────────────────
+
+# Classification of per-model, per-round failures
+ITC_CAPABILITY_MISMATCH = "CAPABILITY_MISMATCH"  # structural: context overflow, consistent empty
+ITC_TRANSIENT_FAILURE = "TRANSIENT_FAILURE"       # retry: API timeout, rate limit, single empty
+ITC_DEGRADATION = "DEGRADATION"                   # narrow: repetition, declining finding count
+
+# Adaptation state per model (reset each round, persisted across rounds)
+_itc_model_state: Dict[str, Dict[str, Any]] = {}  # model_label -> {history, adaptation}
+
+
+def _itc_detect(
+    model_label: str, round_idx: int,
+    findings_count: int, response_text: str,
+    prior_finding_ids: Set[str], current_finding_ids: Set[str],
+    dispatch_error: Optional[str] = None,
+) -> Optional[str]:
+    """Detect failure mode for a model in this round.
+
+    Returns classification string or None if no failure detected.
+    """
+    # Context overflow: 400-level API error mentioning token limit
+    if dispatch_error and ("context length" in dispatch_error.lower()
+                           or "token" in dispatch_error.lower()):
+        return ITC_CAPABILITY_MISMATCH
+
+    # Zero output: empty or refused response
+    if not response_text or len(response_text.strip()) < 50:
+        return ITC_TRANSIENT_FAILURE
+
+    # Empty output: response received but 0 findings extracted
+    if findings_count == 0 and len(response_text) > 200:
+        # Check history — consistent empty = capability mismatch
+        history = _itc_model_state.get(model_label, {}).get("history", [])
+        recent_empty = sum(1 for h in history[-2:] if h.get("findings") == 0)
+        if recent_empty >= 1:
+            return ITC_CAPABILITY_MISMATCH
+        return ITC_TRANSIENT_FAILURE
+
+    # Repetition: >40% finding ID overlap with own prior round
+    if prior_finding_ids and current_finding_ids:
+        overlap = len(current_finding_ids & prior_finding_ids)
+        if len(current_finding_ids) > 0:
+            overlap_rate = overlap / len(current_finding_ids)
+            if overlap_rate > 0.4:
+                return ITC_DEGRADATION
+
+    return None
+
+
+def _itc_adapt(model_label: str, classification: str, round_idx: int):
+    """Record failure and compute adaptation for next round.
+
+    Adaptations are stored in _itc_model_state and applied by the
+    dispatch function on the next round.
+    """
+    state = _itc_model_state.setdefault(model_label, {
+        "history": [], "adaptation": None, "retry_count": 0,
+    })
+    state["history"].append({
+        "round": round_idx,
+        "classification": classification,
+        "findings": 0,
+    })
+
+    if classification == ITC_CAPABILITY_MISMATCH:
+        # Narrow scope: strip context, then section-assign
+        current = state.get("adaptation")
+        if current == "strip_context":
+            state["adaptation"] = "section_assign"
+        else:
+            state["adaptation"] = "strip_context"
+        _log(f"  ITC [{model_label}]: {classification} → adapt={state['adaptation']}")
+
+    elif classification == ITC_TRANSIENT_FAILURE:
+        # Retry same prompt (max 1 retry per round)
+        if state["retry_count"] < 1:
+            state["adaptation"] = "retry"
+            state["retry_count"] += 1
+            _log(f"  ITC [{model_label}]: {classification} → retry")
+        else:
+            state["adaptation"] = "strip_context"
+            state["retry_count"] = 0
+            _log(f"  ITC [{model_label}]: {classification} → strip_context (retries exhausted)")
+
+    elif classification == ITC_DEGRADATION:
+        # Change focus area
+        state["adaptation"] = "change_focus"
+        _log(f"  ITC [{model_label}]: {classification} → change_focus")
+
+
+def _itc_get_adaptation(model_label: str) -> Optional[str]:
+    """Get the current adaptation directive for a model (applied this round)."""
+    state = _itc_model_state.get(model_label, {})
+    return state.get("adaptation")
+
+
+def _itc_clear_adaptation(model_label: str):
+    """Clear adaptation after successful round (model recovered)."""
+    state = _itc_model_state.get(model_label)
+    if state:
+        state["adaptation"] = None
+        state["retry_count"] = 0
+
+
+# ────────────────────────��─────────────────────────────────────���──────────────
+# Persistent Signed Fingerprints
+# ─────���──────────────────────────��────────────────────────────────────────────
+
+FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
+
+
+def _load_fingerprints() -> Dict[str, Dict[str, Any]]:
+    """Load observed capability profiles from persistent storage.
+
+    Merges with INITIAL_FINGERPRINTS — observed data takes precedence.
+    """
+    fingerprints: Dict[str, Dict[str, Any]] = {}
+    FINGERPRINT_DIR.mkdir(parents=True, exist_ok=True)
+    for fp_file in FINGERPRINT_DIR.glob("*.json"):
+        try:
+            data = json.loads(fp_file.read_text(encoding="utf-8"))
+            model_id = data.get("model_id", fp_file.stem)
+            fingerprints[model_id] = data.get("observed", {})
+        except (json.JSONDecodeError, OSError):
+            pass
+    return fingerprints
+
+
+def _save_fingerprints(
+    observed: Dict[str, Dict[str, Any]], experiment_name: str,
+):
+    """Write updated fingerprint files and optionally seal via Merkle."""
+    FINGERPRINT_DIR.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).isoformat()
+    for model_id, obs in observed.items():
+        fp_data = {
+            "model_id": model_id,
+            "experiment": experiment_name,
+            "timestamp": ts,
+            "observed": obs,
+        }
+        fp_path = FINGERPRINT_DIR / f"{model_id}.json"
+        fp_path.write_text(
+            json.dumps(fp_data, indent=2), encoding="utf-8",
+        )
+    _log(f"  Fingerprints saved: {len(observed)} models → {FINGERPRINT_DIR}")
+
+
+def _update_observed_fingerprint(
+    observed: Dict[str, Dict[str, Any]],
+    model_label: str,
+    round_idx: int,
+    findings_count: int,
+    response_chars: int,
+    dispatch_error: Optional[str] = None,
+):
+    """Update in-memory observed fingerprint for a model after a round."""
+    fp = observed.setdefault(model_label, {
+        "max_successful_context_chars": 0,
+        "max_failed_context_chars": 0,
+        "failure_modes": [],
+        "total_findings": 0,
+        "rounds_participated": 0,
+        "avg_findings_per_round": 0.0,
+    })
+    fp["rounds_participated"] = fp.get("rounds_participated", 0) + 1
+    fp["total_findings"] = fp.get("total_findings", 0) + findings_count
+    fp["avg_findings_per_round"] = (
+        fp["total_findings"] / fp["rounds_participated"]
+        if fp["rounds_participated"] > 0 else 0.0
+    )
+    if dispatch_error:
+        if "context length" in str(dispatch_error).lower():
+            fp["max_failed_context_chars"] = max(
+                fp.get("max_failed_context_chars", 0), response_chars,
+            )
+            if "context_overflow" not in fp.get("failure_modes", []):
+                fp.setdefault("failure_modes", []).append("context_overflow")
+    elif response_chars > 0:
+        fp["max_successful_context_chars"] = max(
+            fp.get("max_successful_context_chars", 0), response_chars,
+        )
+
+
+# ───────────────���───────────────────���─────────────────────────────────────────
 # PoC context and instructions
-# ─────────────────────────────────────────────────────────────────────────────
+# ───────────��────────────────────────────���──────────────────────────────��─────
 
 _POC_CONTEXT_INSTRUCTION = (
     "SYSTEM CONTEXT — PROOF OF CONCEPT (MANDATORY):\n"
@@ -755,6 +954,25 @@ _STAR_TOPOLOGY_INSTRUCTION = (
     "  4. Do NOT address other models directly — address the registry\n\n"
     "The runner owns all canonical state. You emit proposals. "
     "The runner decides what enters the registry.\n\n"
+)
+
+_RELAY_TOPOLOGY_INSTRUCTION = (
+    "COMMUNICATION TOPOLOGY — RELAY/DIRECT CONVERSATION:\n"
+    "You are in a live multi-model conversation. After the first round, "
+    "you will see the FULL analysis from other models — their reasoning, "
+    "findings, and proposed fixes.\n\n"
+    "Your role each round:\n"
+    "  1. Read other models' analysis carefully\n"
+    "  2. CHALLENGE weak claims with evidence\n"
+    "  3. CONFIRM strong findings you independently agree with\n"
+    "  4. EXTEND insights — trace consequences others missed\n"
+    "  5. File new DISCOVERY findings for bugs nobody found yet\n"
+    "  6. Use @ModelName to address specific models directly\n\n"
+    "Engage with their reasoning. Do not just list your own findings in "
+    "isolation — build on, challenge, and extend the conversation.\n\n"
+    "IMPORTANT: Also issue structured VERDICT payloads (CONFIRM/CHALLENGE/"
+    "EXTEND/MERGE CxxID) on findings you reference, so the canonical "
+    "registry can track status programmatically.\n\n"
 )
 
 
@@ -1075,6 +1293,132 @@ def _dispatch_round(
     return findings, responses, per_model_durations
 
 
+def _dispatch_round_relay(
+    exp_config: ExperimentConfig,
+    mgr: DynamicManager,
+    brain: InsectBrain,
+    base_prompt: str,
+    cdsfl_text: str,
+    full_code: str,
+    round_idx: int,
+    pattern_name: str,
+    relay_mode: str = DEFAULT_RELAY_MODE,
+) -> tuple[List[Finding], Dict[str, str], Dict[str, float]]:
+    """Dispatch to all models in parallel (RELAY topology).
+
+    Models get brain's relay payload — other models' full analysis,
+    budget-aware per-model content sizing, directed message delivery.
+    Findings are parsed into the same format as star mode for registry.
+
+    Returns (findings, responses, per_model_durations).
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    findings: List[Finding] = []
+    responses: Dict[str, str] = {}
+    per_model_durations: Dict[str, float] = {}
+
+    eligible = [
+        mc for mc in exp_config.models
+        if mc.label in BASELINE_MODELS and mc.role != "collator"
+    ]
+
+    # Get relay payloads from insect brain (round > 0 only)
+    relay_payloads = {}
+    if round_idx > 0:
+        if relay_mode == "directed":
+            relay_payloads = brain.relay_directed(round_idx)
+        elif relay_mode == "conversational":
+            relay_payloads = brain.relay_conversational(round_idx)
+        else:
+            relay_payloads = brain.relay(round_idx)
+
+    def _make_relay_prompt(mc_label: str) -> str:
+        if round_idx == 0 or mc_label not in relay_payloads:
+            return base_prompt  # Blind round — base prompt only
+
+        payload = relay_payloads[mc_label]
+        if not payload.findings_text:
+            return base_prompt
+
+        # Check ITC adaptation — may strip context for this model
+        adaptation = _itc_get_adaptation(mc_label)
+        if adaptation == "strip_context":
+            # Budget-constrained: only target + schema, no context files
+            relay_section = (
+                f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
+                f"(Context stripped due to capability constraints. "
+                f"Summary of {payload.finding_count} prior findings below.)\n\n"
+                f"{payload.convergence_summary}\n\n"
+                f"=== END OTHER MODELS' ANALYSIS ===\n\n"
+            )
+        elif relay_mode in ("directed", "conversational"):
+            relay_section = (
+                f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
+                f"You are reviewing the same artifact as "
+                f"{len(payload.active_models) - 1} other models. Below is "
+                f"their full analysis. Engage with their reasoning: challenge "
+                f"weak claims, confirm strong ones, extend insights, and "
+                f"find what everyone missed.\n\n"
+                f"{payload.findings_text}\n\n"
+                f"{'(NOTE: context budget exceeded — some responses truncated)' if payload.context_reset else ''}\n"
+                f"{payload.convergence_summary}\n\n"
+                f"=== END OTHER MODELS' ANALYSIS ===\n\n"
+                f"Now produce YOUR findings. Apply full CDSFL + FFF. "
+                f"Do not repeat what has already been found — build on it, "
+                f"challenge it, or go deeper.\n\n"
+            )
+        else:
+            relay_section = (
+                f"Prior findings from other models "
+                f"({payload.finding_count} total, "
+                f"{'CONTEXT RESET — summary only' if payload.context_reset else 'full text'}):\n\n"
+                f"{payload.findings_text}\n\n"
+                f"{payload.convergence_summary}\n\n"
+                f"Find what was MISSED. Do not repeat known findings.\n\n"
+            )
+        if "=== ARTIFACT:" in base_prompt:
+            return base_prompt.replace(
+                "=== ARTIFACT:",
+                f"{relay_section}=== ARTIFACT:",
+            )
+        return f"{relay_section}{base_prompt}"
+
+    _log(f"  Parallel dispatch: {len(eligible)} models (relay/{relay_mode})")
+    deferred_failures: list[tuple[str, str]] = []
+
+    with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
+        future_to_label = {}
+        dispatch_start_times: Dict[str, float] = {}
+        for mc in eligible:
+            dispatch_start_times[mc.label] = time.monotonic()
+            future_to_label[pool.submit(
+                _dispatch_single_model,
+                mc, mgr, _make_relay_prompt(mc.label), cdsfl_text, full_code,
+                round_idx, pattern_name,
+            )] = mc.label
+
+        for future in as_completed(future_to_label):
+            label = future_to_label[future]
+            elapsed = time.monotonic() - dispatch_start_times[label]
+            per_model_durations[label] = elapsed
+            try:
+                model_findings, text = future.result()
+                findings.extend(model_findings)
+                if text is not None and not text.startswith("__DISPATCH_FAILED__:"):
+                    responses[label] = text
+                elif text is not None and text.startswith("__DISPATCH_FAILED__:"):
+                    deferred_failures.append((label, text[20:]))
+            except Exception as e:
+                _log(f"  {label}: thread error — {type(e).__name__}: {e}")
+
+    for label, detail in deferred_failures:
+        _report_dispatch_failure(mgr, label, round_idx, detail)
+        brain.handle_model_failure(label, detail)
+
+    return findings, responses, per_model_durations
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Safety checks
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1153,11 +1497,22 @@ def run_experiment(
     cdsfl_text: str,
     pattern_name: str = DEFAULT_PATTERN,
     resume: bool = False,
+    topology: str = DEFAULT_TOPOLOGY,
+    relay_mode: str = DEFAULT_RELAY_MODE,
 ) -> Dict[str, Any]:
-    """Run Experiment 35: PolicyEngine Code Review (Star/Blackboard)."""
+    """Run Experiment 35: PolicyEngine Code Review (Dual-Topology).
+
+    topology: "relay" or "star" — user-configurable switch.
+    relay_mode: "findings", "conversational", or "directed" (relay only).
+    """
+    topo_desc = (
+        f"relay/{relay_mode} (models see each other's analysis)"
+        if topology == "relay"
+        else "star/blackboard (runner owns all state)"
+    )
     _log("=" * 60)
     _log("EXPERIMENT 35: PolicyEngine Code Review")
-    _log(f"  Topology: star/blackboard (runner owns all state)")
+    _log(f"  Topology: {topo_desc}")
     _log(f"  Pattern: {pattern_name}")
     _log(f"  Max rounds: {MAX_ROUNDS} (extension to {EXTENSION_CAP})")
     _log(f"  Convergence: state-based, earliest R{EARLIEST_STOP_ROUND}")
@@ -1230,8 +1585,15 @@ def run_experiment(
     )
     _log(f"  Endocrine layer initialised (runs for pacing, NOT under review)")
 
-    # Finding registry (star/blackboard canonical state)
+    # Finding registry (canonical state — shared by BOTH topologies)
     registry = FindingRegistry()
+
+    # Load persistent fingerprints
+    observed_fingerprints = _load_fingerprints()
+    if observed_fingerprints:
+        _log(f"  Fingerprints loaded: {list(observed_fingerprints.keys())}")
+    else:
+        _log(f"  No persistent fingerprints found — starting fresh")
 
     # Resume from checkpoint if available
     start_round = 0
@@ -1270,11 +1632,15 @@ def run_experiment(
         f"  - {label}: {desc}" for label, desc in sorted(MODEL_ROSTER.items())
     )
 
+    topo_instruction = (
+        _RELAY_TOPOLOGY_INSTRUCTION if topology == "relay"
+        else _STAR_TOPOLOGY_INSTRUCTION
+    )
     awareness_preamble = (
         "You are one of 5 AI models participating in a distributed code review "
         "under full CDSFL constraints with FFF methodology. The models are:\n"
         f"{roster_lines}\n\n"
-        f"{_STAR_TOPOLOGY_INSTRUCTION}"
+        f"{topo_instruction}"
         f"{_POC_CONTEXT_INSTRUCTION}"
         f"{_MACHINE_COMMS_INSTRUCTION}"
         f"{_GOOD_ENOUGH_INSTRUCTION}"
@@ -1334,7 +1700,8 @@ def run_experiment(
 
     result: Dict[str, Any] = {
         "experiment": "exp35_pe",
-        "topology": "star_blackboard",
+        "topology": topology,
+        "relay_mode": relay_mode if topology == "relay" else None,
         "start_time": datetime.now(timezone.utc).isoformat(),
         "pattern": pattern_name,
         "models": sorted(BASELINE_MODELS),
@@ -1373,15 +1740,22 @@ def run_experiment(
         _log(f"Round {round_idx}/{effective_max - 1} ({round_type})")
         _log(f"{'─' * 60}")
 
-        # Build registry summary for this round (star topology)
-        registry_summary = registry.build_summary(round_idx) if round_idx > 0 else ""
-
-        # Dispatch to all models
-        findings, responses, per_model_durations = _dispatch_round(
-            exp_config, mgr, brain,
-            base_prompt, registry_summary, cdsfl_text, full_code,
-            round_idx, pattern_name,
-        )
+        # Dispatch to all models — topology-dependent
+        if topology == "relay":
+            findings, responses, per_model_durations = _dispatch_round_relay(
+                exp_config, mgr, brain,
+                base_prompt, cdsfl_text, full_code,
+                round_idx, pattern_name,
+                relay_mode=relay_mode,
+            )
+        else:
+            # Star topology: inject registry summary as blackboard
+            registry_summary = registry.build_summary(round_idx) if round_idx > 0 else ""
+            findings, responses, per_model_durations = _dispatch_round(
+                exp_config, mgr, brain,
+                base_prompt, registry_summary, cdsfl_text, full_code,
+                round_idx, pattern_name,
+            )
 
         # Safety check
         problem = _safety_check(responses, round_idx, brain)
@@ -1483,8 +1857,56 @@ def run_experiment(
             for sig in endo_report.pacing_signals:
                 _log(f"    Pacing: {sig.signal_type} → {sig.suggested_action}")
 
+        # Extract directed messages (relay mode only)
+        if topology == "relay" and relay_mode == "directed":
+            for model_label, response_text in responses.items():
+                if response_text:
+                    directed = brain.extract_directed_messages(
+                        model_label, response_text, round_idx,
+                    )
+                    if directed:
+                        _log(f"  {model_label}: {len(directed)} directed message(s)")
+
         # Run immune pipeline
         immune_result = brain.run_immune_pipeline(findings)
+
+        # ITC check — per-model adaptive recovery
+        for model_label in list(BASELINE_MODELS):
+            model_findings = [f for f in findings if f.model_id == model_label]
+            model_text = responses.get(model_label, "")
+            prior_ids: Set[str] = set()
+            current_ids = {f.finding_id for f in model_findings}
+
+            # Get prior round's finding IDs for this model
+            if brain.state.all_findings and len(brain.state.all_findings) >= 2:
+                prior_round = brain.state.all_findings[-2]
+                prior_ids = {
+                    f.finding_id for f in prior_round
+                    if f.model_id == model_label
+                }
+
+            # Check for dispatch errors in this round
+            dispatch_err = None
+            if model_label not in responses:
+                dispatch_err = "no_response"
+
+            classification = _itc_detect(
+                model_label, round_idx,
+                len(model_findings), model_text,
+                prior_ids, current_ids,
+                dispatch_error=dispatch_err,
+            )
+            if classification:
+                _itc_adapt(model_label, classification, round_idx)
+            elif model_label in _itc_model_state:
+                _itc_clear_adaptation(model_label)
+
+            # Update observed fingerprint
+            _update_observed_fingerprint(
+                observed_fingerprints, model_label, round_idx,
+                len(model_findings), len(model_text),
+                dispatch_error=dispatch_err,
+            )
 
         # Compute metrics
         metrics = brain.compute_metrics(round_idx)
@@ -1584,6 +2006,9 @@ def run_experiment(
     for canonical_id, entry in list(registry.entries.items()):
         if entry["status"] in ("OPEN", "CONTESTED"):
             registry.resolve(canonical_id, "UNCONFIRMED", final_round)
+
+    # Save persistent fingerprints
+    _save_fingerprints(observed_fingerprints, "exp35_pe")
 
     # Signal complete
     signal = brain.signal_complete()
@@ -1718,7 +2143,7 @@ def run_experiment(
 
     _log(f"\n{'=' * 60}")
     _log(f"EXPERIMENT 35 — {len(brain.state.all_findings)} ROUNDS COMPLETE")
-    _log(f"  Topology: star/blackboard")
+    _log(f"  Topology: {topo_desc}")
     _log(f"  Rounds: {len(brain.state.all_findings)} "
          f"{'(extended)' if extended else ''}")
     _log(f"  Total findings: {total_findings}")
@@ -1755,6 +2180,8 @@ def main():
     mode = "run"
     resume = False
     pattern = DEFAULT_PATTERN
+    topology = DEFAULT_TOPOLOGY
+    relay_mode = DEFAULT_RELAY_MODE
 
     i = 0
     while i < len(args):
@@ -1764,6 +2191,12 @@ def main():
         elif args[i] == "--pattern" and i + 1 < len(args):
             pattern = args[i + 1]
             i += 1
+        elif args[i] == "--topology" and i + 1 < len(args):
+            topology = args[i + 1]
+            i += 1
+        elif args[i] == "--relay-mode" and i + 1 < len(args):
+            relay_mode = args[i + 1]
+            i += 1
         elif args[i] in ("preflight", "run"):
             mode = args[i]
         i += 1
@@ -1771,6 +2204,17 @@ def main():
     if pattern not in INTERACTION_PATTERN_PRESETS:
         available = ", ".join(sorted(INTERACTION_PATTERN_PRESETS))
         print(f"Unknown pattern: {pattern!r}. Available: {available}",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if topology not in ("relay", "star"):
+        print(f"Unknown topology: {topology!r}. Use 'relay' or 'star'.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if relay_mode not in ("findings", "conversational", "directed"):
+        print(f"Unknown relay-mode: {relay_mode!r}. "
+              f"Use 'findings', 'conversational', or 'directed'.",
               file=sys.stderr)
         sys.exit(1)
 
@@ -1788,14 +2232,16 @@ def main():
                 _log("\nPREFLIGHT FAILED. Aborting.")
                 sys.exit(1)
             _log(f"\nPreflight passed. Starting Exp 35 in 5s... "
-                 f"(pattern={pattern})")
+                 f"(topology={topology}, pattern={pattern})")
             time.sleep(5)
         else:
-            _log(f"\nRESUME mode — skipping preflight (pattern={pattern})")
+            _log(f"\nRESUME mode — skipping preflight "
+                 f"(topology={topology}, pattern={pattern})")
 
         result = run_experiment(
             exp_config, cdsfl_text,
-            pattern_name=pattern, resume=resume)
+            pattern_name=pattern, resume=resume,
+            topology=topology, relay_mode=relay_mode)
 
         if result.get("terminated"):
             _log(f"\nExperiment terminated: {result['terminated']}")

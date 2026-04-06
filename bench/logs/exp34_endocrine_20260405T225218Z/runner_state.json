@@ -10,9 +10,9 @@
         "severity": 0.95,
         "description": "FIND \u2014 bench/endocrine.py, evaluate_fix(): baseline counts are measured on the real source file, while post-fix counts are measured on only the patched file inside the sandbox. Evidence: pre-fix uses _count_tool_issues(run_pyright, target_path), _count_tool_issues(run_ruff, target_path), _count_tool_issues(run_bandit, target_path); post-fix uses the same runners on patched_path only. But _create_sandbox() explicitly preserves the full package tree because import resolution depends on surrounding",
         "proposed_fix": "FIX \u2014 compute both pre-fix and post-fix baselines inside equivalent sandboxes, then run tools on the sandbox target path in both cases.\n\n<<<<\n    # Pre-fix baselines\n    eval_result.pre_type_errors = _count_tool_issues(run_pyright, target_path)\n    eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, target_path)\n    eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, target_path)\n\n    # Apply fix in sandbox\n    patched = _apply_fix_to_source(source_text, finding.proposed_fix)\n>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -24,6 +24,198 @@
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -40,9 +232,9 @@
         "severity": 0.92,
         "description": "FIND \u2014 bench/endocrine.py, evaluate_fix(): test_cmd runs in cwd=tmpdir but is not rewritten to point at sandboxed paths. The docstring promises sandbox-test proposed fixes and 'no source modification', but if test_cmd contains repo-relative paths, those paths are now resolved relative to the temporary subtree. Evidence: immune_agents.run_immune_pipeline() calls evaluate_fixes(..., test_cmd=['python3', '-m', 'pytest', 'bench/tests/', ...]). In evaluate_fix(), _run_tool(test_cmd, cwd=tmpdir) is us",
         "proposed_fix": "FIX \u2014 do not run tests unless the referenced test paths exist inside the sandbox; otherwise leave tests_passed as None so tool-based evaluation still works mechanically.\n\n<<<<\n        # Run tests if command provided\n        if test_cmd:\n            try:\n                test_result = _run_tool(\n                    test_cmd, timeout=_TOOL_TIMEOUT, cwd=tmpdir,\n                )\n                eval_result.tests_passed = test_result.returncode == 0\n                eval_result.test_output = (\n       ",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -54,6 +246,174 @@
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -70,9 +430,9 @@
         "severity": 0.84,
         "description": "FIND \u2014 bench/endocrine.py, _compute_fix_verdict(): the function can return SAFE for a fix that makes no static-analysis improvement at all solely because tests_passed is True. Evidence: after checking for harmful positive deltas and total_net < 0, the code does `if result.tests_passed is True: return 'SAFE'`. So a patch with net_type_errors == 0, net_ruff_errors == 0, net_bandit_issues == 0 is marked SAFE if tests happen to pass. That contradicts the documented semantics directly above: SAFE = n",
         "proposed_fix": "FIX \u2014 reserve SAFE for net improvement; classify no-change outcomes as NEUTRAL regardless of test success.\n\n<<<<\n    total_net = result.net_type_errors + result.net_ruff_errors + result.net_bandit_issues\n    # Issues reduced and tests passed (or not run) = safe\n    if total_net < 0:\n        return \"SAFE\"\n\n    # No change\n    if result.tests_passed is True:\n        return \"SAFE\"\n\n    return \"NEUTRAL\"\n>>>>\n====\n    total_net = result.net_type_errors + result.net_ruff_errors + result.net_bandit_iss",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -85,6 +445,168 @@
             "verdict": "CHALLENGE",
             "round": 1,
             "evidence": "A fix that introduces no static analysis issues but passes tests is functionally SAFE. The test suite is the ultimate arbiter of behavioural correctness. Reserving SAFE only for net static-analysis im"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The PoC design explicitly accepts `NEUTRAL` as a verified fix in the downstream `run_immune_pipeline()` (`if ev.verdict in (\"SAFE\", \"NEUTRAL\"): object.__setattr__(f, 'verified', True)`). Returning `SA"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "Evidence: Returning `SAFE` for `total_net == 0` when `tests_passed is True` is mathematically and logically correct. If a fix resolves a behavioral logic bug (which does not affect static analysis err"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "If `total_net == 0` and `tests_passed is True`, returning `SAFE` is correct. A fix that repairs a logic bug (verified by passing tests) without introducing new linting issues is a safe, successful fix"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -102,7 +624,7 @@
         "proposed_fix": "FIX \u2014 use the true median for numeric samples.\n\n<<<<\nimport tempfile\nimport time\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\nfrom typing import Any, Dict, List, Optional, Sequence\n>>>>\n====\nimport tempfile\nimport time\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\nfrom statistics import median\nfrom typing import Any, Dict, List, Optional, Sequence\n>>>>\n\n<<<<\n        durations = [rt.duration_s for rt in round_timings]\n        median_duration = sorted(durat",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -115,6 +637,78 @@
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": "`compute_pacing_signals` uses `sorted(durations)[len(durations) // 2]` and the same pattern for `response_chars`, which is not the statistical median for even-length samples. For two values `[10, 100]"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -132,7 +726,7 @@
         "proposed_fix": "FIX \u2014 treat TIMEOUT as tool unavailable by raising ToolNotFoundError's sibling path through a dedicated exception and handling it in scan_health with available=False.\n\n<<<<\nclass ToolNotFoundError(Exception):\n    \"\"\"Raised when a static analysis tool binary is not installed.\"\"\"\n\n    def __init__(self, tool_name: str, path: str):\n        self.tool_name = tool_name\n        self.path = path\n        super().__init__(f\"{tool_name} not found at {path}\")\n>>>>\n====\nclass ToolNotFoundError(Exception):\n  ",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -144,6 +738,96 @@
             "model": "Gemini",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
             "evidence": ""
           }
         ],
@@ -160,14 +844,152 @@
         "severity": 0.96,
         "description": "FIND: bench/endocrine.py, evaluate_fix() post-fix analysis and test execution. The sandbox preserves package structure in a temp dir, but the tool runners are invoked on patched_path only, with no cwd set for pyright/ruff/bandit, and tests are run with the original test_cmd unchanged. Evidence: _create_sandbox() returns (tmpdir, patched_path), but evaluate_fix() calls _count_tool_issues(run_pyright, patched_path), _count_tool_issues(run_ruff, patched_path), and _count_tool_issues(run_bandit, pat",
         "proposed_fix": "<<<<\ndef _count_tool_issues(tool_runner, file_path: str) -> int:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = tool_runner([file_path])\n        return len(diags)\n    except Exception:\n        return 0\n====\ndef _count_tool_issues(tool_runner, file_path: str, cwd: Optional[str] = None) -> int:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = tool_runner([file_path], cwd=cwd)\n        return ",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -184,14 +1006,152 @@
         "severity": 0.93,
         "description": "FIND: bench/endocrine.py, evaluate_fix() baseline/post-fix comparison is asymmetric across tools: pre_type_errors counts only pyright, but the health scan and design contract treat both pyright and mypy as type checkers. Evidence: scan_health() runs pyright, ruff, bandit, mypy and aggregates all diagnostics. ToolDiagnostic.tool explicitly includes mypy. But FixEvaluation has only pre_type_errors/new_type_errors, and evaluate_fix() populates them exclusively with _count_tool_issues(run_pyright, .",
         "proposed_fix": "<<<<\n    # Pre-fix baselines\n    eval_result.pre_type_errors = _count_tool_issues(run_pyright, target_path)\n    eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, target_path)\n    eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, target_path)\n====\n    # Pre-fix baselines\n    eval_result.pre_type_errors = (\n        _count_tool_issues(run_pyright, target_path, cwd=source_root)\n        + _count_tool_issues(run_mypy, target_path, cwd=source_root)\n    )\n    eval_result.pre_ruff_e",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 8,
+            "evidence": "The asymmetry in tool counts is exacerbated because `_count_tool_issues` calls tool runners with a single file path, which may cause the tool to analyze a different set of files than intended (especia"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -210,7 +1170,7 @@
         "proposed_fix": "<<<<\ndef _count_tool_issues(tool_runner, file_path: str, cwd: Optional[str] = None) -> int:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = tool_runner([file_path], cwd=cwd)\n        return len(diags)\n    except Exception:\n        return 0\n====\ndef _count_tool_issues(tool_runner, file_path: str, cwd: Optional[str] = None) -> Optional[int]:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = too",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "Codex",
@@ -235,6 +1195,156 @@
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -250,14 +1360,98 @@
         "severity": 0.82,
         "description": "FIND: bench/endocrine.py, compute_pacing_signals() declares context_budget: int but contains defensive handling for dict inputs; EndocrineLayer.run() also types context_budget as int. This is an interface mismatch with the stated behaviour and with the insect-brain style config plumbing. Evidence: compute_pacing_signals() explicitly says \u201ccoerce context_budget from TOML types (dict, str, float)\u201d and branches on isinstance(context_budget, dict), but the public signatures of both compute_pacing_si",
         "proposed_fix": "<<<<\ndef compute_pacing_signals(\n    round_timings: List[RoundTiming],\n    cumulative_context_chars: int,\n    context_budget: int,\n    novelty_counts: List[int],\n    round_idx: int,\n) -> List[PacingSignal]:\n====\ndef compute_pacing_signals(\n    round_timings: List[RoundTiming],\n    cumulative_context_chars: int,\n    context_budget: Any,\n    novelty_counts: List[int],\n    round_idx: int,\n) -> List[PacingSignal]:\n>>>>\n\n<<<<\n    def run(\n        self,\n        round_idx: int,\n        findings: Sequen",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -274,10 +1468,89 @@
         "severity": 0.79,
         "description": "FIND: bench/endocrine.py, compute_pacing_signals() uses an upper median instead of a true median for even-sized model sets. Evidence: median_duration = sorted(durations)[len(durations) // 2] and median_chars = sorted(char_counts)[len(char_counts) // 2]. With 4 models and durations [1, 2, 100, 101], this yields 100 instead of 51.0. The slow-model threshold becomes 250 instead of 127.5, suppressing the pacing signal. Same for response_chars. Since the system commonly runs 5 models but can run fewe",
         "proposed_fix": "<<<<\nimport json\nimport logging\nimport os\nimport re\nimport shutil\nimport subprocess as sp\nimport tempfile\nimport time\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\nfrom typing import Any, Dict, List, Optional, Sequence\n====\nimport json\nimport logging\nimport os\nimport re\nimport shutil\nimport statistics\nimport subprocess as sp\nimport tempfile\nimport time\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\nfrom typing import Any, Dict, List, Optional, Sequence\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 23,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
@@ -291,10 +1564,41 @@
         "severity": 0.77,
         "description": "FIND: bench/endocrine.py, _apply_fix_to_source() documentation and implementation disagree about diff handling, and the current implementation can misclassify diff-like text as whole-file replacement. Evidence: docstring says strategy 1 is \u201cIf proposed_fix looks like a diff (contains --- or +++), skip (not supported yet)\u201d, but the function never checks for diff markers. It jumps directly to search-replace regex, then compile(fix, \"<fix>\", \"exec\") and returns the whole text if it parses and has >",
         "proposed_fix": "<<<<\n    fix = proposed_fix.strip()\n\n    # Strategy 1: search-replace pattern\n    # Look for patterns like \"Replace X with Y\" or \"Change X to Y\"\n====\n    fix = proposed_fix.strip()\n\n    # Strategy 0: unified/context diff is not supported\n    if \"\\n---\" in f\"\\n{fix}\" or \"\\n+++\" in f\"\\n{fix}\" or fix.startswith(\"@@\"):\n        return None\n\n    # Strategy 1: search-replace pattern\n    # Look for patterns like \"Replace X with Y\" or \"Change X to Y\"\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 4
@@ -308,14 +1612,104 @@
         "severity": 0.8,
         "description": "FINDING_ID: F001\nSEVERITY: 0.8\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.4\nDESCRIPTION: FIND \u2014 `_count_tool_issues` passes a string path to tool runners that expect `List[str]`. The function signature is `_c",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 23,
         "verdicts": [
           {
             "model": "CC2",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "`_count_tool_issues` correctly wraps `file_path` in a list (`[file_path]`) before passing it to `tool_runner`, satisfying the signature."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 23,
             "evidence": ""
           }
         ],
@@ -332,14 +1726,92 @@
         "severity": 0.85,
         "description": "FIND \u2014 `_apply_fix_to_source` Strategy 2 (whole-file replacement) has no guard against the proposed fix being a description paragraph that happens to parse as valid Python and has \u22655 lines. Any English text block that accidentally passes `compile(..., \"exec\")` and has 6+ newlines will replace the entire source file in the sandbox. Example: a multi-line docstring-only proposed_fix compiles as valid Python, passes the 5-line check, and silently replaces the entire file \u2014 producing a NEUTRAL or SAF",
         "proposed_fix": "Add a structural heuristic: require that the compiled fix contains at least one `def`, `class`, or `import` statement at the top level before treating it as a whole-file replacement. Alternatively, require that it shares at least one function/class name with the original source.\n# In _apply_fix_to_source, Strategy 2 block:\ntry:\n    tree = compile(fix, \"<fix>\", \"exec\", ast.PyCF_ONLY_AST)\n    has_structure = any(\n        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Im",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "CC2",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 22,
             "evidence": ""
           }
         ],
@@ -356,14 +1828,80 @@
         "severity": 0.7,
         "description": "FINDING_ID: F003\nSEVERITY: 0.7\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.3\nDESCRIPTION: FIND \u2014 `_compute_fix_verdict` logic allows a fix that introduces new issues in one tool to be masked by reductions in t",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 20,
         "verdicts": [
           {
             "model": "CC2",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "Returning `NEUTRAL` when tests are not run (`tests_passed is None`) and no static analysis changes occur is the correct and documented PoC behavior."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 20,
             "evidence": ""
           }
         ],
@@ -380,10 +1918,29 @@
         "severity": 0.9,
         "description": "FIND \u2014 `evaluate_fix` runs pre-fix baseline tools against the *original file on disk* (`_count_tool_issues(run_pyright, target_path)`), but runs post-fix tools against the *patched file inside the sandbox* (`_count_tool_issues(run_pyright, patched_path)`). The sandbox path is a different directory tree. Pyright and mypy resolve imports relative to package roots and project configuration (pyrightconfig.json, pyproject.toml). The original file's tool run finds and uses the real project config; the",
         "proposed_fix": "Copy project configuration files (pyrightconfig.json, pyproject.toml, setup.cfg, mypy.ini) into the sandbox tmpdir root, or run the pre-fix baseline also inside a sandbox with the unpatched file (same environment for both measurements).\n# In _create_sandbox, after copying source files, also copy config files:\nconfig_files = [\"pyrightconfig.json\", \"pyproject.toml\", \"setup.cfg\", \"mypy.ini\", \".pyrightconfig.json\"]\nproject_root = common  # already computed\nfor cfg in config_files:\n    cfg_path = os.",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 1
@@ -397,10 +1954,17 @@
         "severity": 0.75,
         "description": "FINDING_ID: F005\nSEVERITY: 0.75\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.4\nDESCRIPTION: FIND \u2014 `evaluate_fix` runs pre-fix baselines against the original file path using `_count_tool_issues(run_pyright, tar",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5
@@ -414,10 +1978,23 @@
         "severity": 0.6,
         "description": "FIND \u2014 `compute_pacing_signals` has a `context_budget` type coercion block that silently converts `dict` to `max(dict.values())`. The docstring says `context_budget: int` but the defensive code handles dict, str, and float. If the orchestrator passes `context_budget` as a dict (which happens when TOML config loads model-specific overrides as `{\"CC2\": 80000, \"Gemini\": 120000}`), the function takes the max of all model budgets. This means the context growth signal uses the largest model's budget a",
         "proposed_fix": "Log a warning when dict coercion occurs. The simplest PoC fix: if dict, use the minimum value (most conservative), not max.\nif isinstance(context_budget, dict):\n    context_budget = min(context_budget.values()) if context_budget else 80_000\n    logger.warning(\"context_budget was dict, using min=%d\", context_budget)",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The dict coercion block is ugly, but \"log a warning\" or switching to minimum budget is not a correctness fix for the target file. This is policy/telemetry, not a PoC-blocking defect, and changing max\u2192"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 4
@@ -431,10 +2008,17 @@
         "severity": 0.5,
         "description": "FIND \u2014 `_apply_fix_to_source` Strategy 1 (search-replace pattern) uses `source_text.replace(old, new, 1)`, replacing only the first occurrence. If the `old` fragment appears multiple times in the file and the finding refers to a later occurrence, the wrong instance is patched. The regex-extracted old/new strings from the proposed fix carry no line number context.\nFOLLOW: Incorrect patch applied in sandbox. Fix evaluation runs tools against the wrong modification. Verdict may be SAFE for a patch ",
         "proposed_fix": "Accept as known limitation for PoC. No fix needed at this stage \u2014 the failure mode is low-probability and the sandbox protects against real damage.",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 6
@@ -448,15 +2032,27 @@
         "severity": 0.65,
         "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection checks `all(n <= 1 for n in recent)` where `recent = novelty_counts[-window:]` with `window = 3`. The threshold is `n <= 1`, meaning a round with exactly 1 novel finding is treated as \"plateau\". For a PoC code review with 5 models, 1 novel finding per round may indicate continued productive work, not a plateau. The threshold is arguably too aggressive \u2014 it conflates \"diminishing returns\" with \"still finding new things.\"\nFOLLOW: Premature ",
         "proposed_fix": "Change threshold to `all(n == 0 for n in recent)` \u2014 signal plateau only when no novel findings at all for 3 consecutive rounds.\nif all(n == 0 for n in recent):",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 5,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CHALLENGE",
             "round": 1,
             "evidence": "The claim that `all(n <= 1 for n in recent)` is necessarily wrong is not established from the target or interfaces. The code comment says \u201czero or near-zero for 3 consecutive rounds,\u201d and the implemen"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "`compute_pacing_signals()` explicitly defines plateau as \"zero or near-zero for 3 consecutive rounds\" and implements `all(n <= 1 for n in recent)`. Tightening to `all(n == 0 ...)` is not a correctness"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
           }
         ],
         "verified": false,
@@ -472,10 +2068,29 @@
         "severity": 0.55,
         "description": "FIND \u2014 `EndocrineLayer._scan_history` accumulates `HealthScan` objects indefinitely across rounds. Each `HealthScan` contains a full list of `ToolDiagnostic` objects. For a long experiment (10+ rounds, 4 tools, hundreds of diagnostics per tool), this list grows without bound. `health_trend()` iterates all scans to build trend data. No cleanup or windowing.\nFOLLOW: Memory growth proportional to rounds \u00d7 diagnostics. For a PoC-scale experiment (5-8 rounds), this is negligible. For extended runs, u",
         "proposed_fix": "Not needed for PoC. Document as known limitation. If needed later, window `_scan_history` to last N scans.",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 20,
+            "evidence": "`_scan_history` is unbounded AND its only consumer (`health_trend()`) is dead code. The memory leak has zero utility \u2014 neither trend detection nor any other feature reads the accumulated scans. The fi"
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 22,
+            "evidence": "`health_trend()` has no callers \u2014 `_scan_history` accumulates data for a function that never fires. The unbounded growth identified in C0020 has zero operational benefit at PoC stage."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 4
@@ -489,10 +2104,17 @@
         "severity": 0.7,
         "description": "FIND \u2014 The endocrine layer's `evaluate_fix` is called from two paths: (1) `EndocrineLayer.run()` via `evaluate_fixes()`, and (2) the immune pipeline's Stage 4 in `immune_agents.py` via `from bench.endocrine import evaluate_fixes`. In path (2), the immune pipeline passes a hardcoded test command: `[\"python3\", \"-m\", \"pytest\", \"bench/tests/\", \"-x\", \"-q\", \"--tb=no\", \"--no-header\", \"-q\"]`. This test command runs inside the sandbox tmpdir as `cwd`. But `bench/tests/` is a relative path that doesn't ex",
         "proposed_fix": "Either make the test path absolute before passing it to `evaluate_fix`, or don't pass a test_cmd from the immune pipeline (rely on static analysis only, which is what actually works).\n# In immune_agents.py Stage 4 (interface fix \u2014 endocrine must handle):\n# Simplest: don't pass test_cmd from immune pipeline\nfix_eval_results = evaluate_fixes(\n    fix_candidates, source_paths,\n    test_cmd=None,  # static analysis only \u2014 sandbox can't resolve test paths\n    max_evals=20,\n)",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 2
@@ -506,10 +2128,17 @@
         "severity": 0.5,
         "description": "FIND \u2014 `evaluate_fix` runs pre-fix baselines sequentially for each tool (pyright, ruff, bandit) on the original file, then runs post-fix baselines sequentially for each tool on the sandbox file. For each finding, that's 6 subprocess invocations (3 pre + 3 post), each with a 60-second timeout. `evaluate_fixes` caps at `max_evals=20`. Worst case: 120 subprocess calls, 120 minutes wall time if tools are slow. In practice, tools are fast (seconds each), but the sequential execution of all fix evalua",
         "proposed_fix": "Not needed for PoC. Could parallelise fix evaluations in future.",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 7
@@ -523,15 +2152,63 @@
         "severity": 0.45,
         "description": "FIND \u2014 `run_mypy` uses the regex pattern `r\"^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$\"` to parse mypy output. The `(.+?)` for the message group (group 5) is non-greedy and followed by an optional `(?:\\s+\\[(.+?)\\])?$`. If the message itself contains text like `[some-code]`, the regex may split incorrectly, capturing part of the message as the error code. This is a known fragility of regex-based parsing of mypy output.\nFOLLOW: Miscategorised mypy diagnostics \u2014 error cod",
         "proposed_fix": "Make the error code group greedy from the end: use `(.+)\\s+\\[(.+?)\\]$` as an alternative match when the non-greedy version fails, or use `--output=json` flag for mypy (if available in this version).",
-        "status": "CONFIRMED",
+        "status": "CONTESTED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 19,
         "verdicts": [
           {
             "model": "Gemini",
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The finding is factually incorrect. In the mypy regex `r\"^(.+?)...(?:\\s+\\[(.+?)\\])?$\"`, the message group is non-greedy `(.+?)` and the pattern is anchored to the end of the line (`$`). The regex engi"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": "**NEW DISCOVERY FINDINGS**"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "The regex evaluates correctly. Because `.+?` is non-greedy, it relinquishes the error code to the optional group at the end of the string."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 14,
+            "evidence": "Same reason as C0039: the existing regex is correct and properly delegates the error code to the optional group due to the standard mechanics of non-greedy matching."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 15,
+            "evidence": "The lazy quantifier `(.+?)` expands to reach `\\s+\\[...\\]` and correctly populates group 6 because of the `$` anchor at the end of the regex. The regex engine finds the match where the optional group i"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "The original regex `r\"^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$\"` is mathematically correct. Because it ends with the `$` anchor, Python's regex engine is forced to match t"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "The existing regex `(?:\\s+\\[(.+?)\\])?$` works correctly. Python's `re` engine prioritizes matching the optional group because the `?` quantifier is greedy (prefers 1 occurrence over 0). Since the prec"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 19,
+            "evidence": "The lazy quantifier `(.+?)` followed by a greedy optional group `(?:\\s+\\[(.+?)\\])?$` correctly matches and extracts the optional error code. The regex engine evaluates left-to-right, allowing the opti"
           }
         ],
         "verified": false,
@@ -549,12 +2226,48 @@
         "proposed_fix": "Process line-range replacements in reverse order (highest line numbers first) so that earlier lines' indices are not affected by later replacements.\n# Collect all matches first, then apply in reverse line order\nline_matches = list(line_pattern.finditer(fix))\nline_matches.sort(key=lambda m: int(m.group(1)), reverse=True)\nfor lm in line_matches:\n    # ... existing replacement logic ...",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 16,
         "verdicts": [
           {
             "model": "Gemini",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 14,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
             "evidence": ""
           }
         ],
@@ -571,10 +2284,29 @@
         "severity": 0.4,
         "description": "FIND \u2014 `scan_health` filters `source_paths` to existing files via `os.path.isfile(p)`, but `evaluate_fix` does not filter `source_paths` before passing them to `_create_sandbox`. If a path in `source_paths` doesn't exist, `shutil.copy2` in `_create_sandbox` will raise `FileNotFoundError`, caught by the outer `except Exception` which cleans up tmpdir and re-raises \u2014 causing the entire fix evaluation to fail with an unhandled exception.\nFOLLOW: `evaluate_fix` returns an unhandled exception instead",
         "proposed_fix": "Filter `source_paths` in `_create_sandbox` or catch the copy error and skip missing files.\n# In _create_sandbox, skip missing files:\nfor src in source_paths:\n    abs_src = os.path.abspath(src)\n    if not os.path.isfile(abs_src):\n        continue\n    # ... rest of copy logic ...",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 0,
-        "verdicts": [],
+        "last_status_change_round": 14,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 14,
+            "evidence": "Provide the concrete code fix for missing files in `_create_sandbox` to prevent the `FileNotFoundError` crash."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 4
@@ -590,7 +2322,7 @@
         "proposed_fix": "FIX \u2014\n<<<<\n    # Pre-fix baselines\n    eval_result.pre_type_errors = _count_tool_issues(run_pyright, target_path)\n    eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, target_path)\n    eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, target_path)\n\n    # Apply fix in sandbox\n    patched = _apply_fix_to_source(source_text, finding.proposed_fix)\n    if patched is None:\n        eval_result.fix_applied = False\n        eval_result.apply_error = \"Could not apply proposed fix to s",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "Gemini",
@@ -609,6 +2341,102 @@
             "verdict": "EXTEND",
             "round": 1,
             "evidence": "Consequence reaches `_compute_fix_verdict` and the immune pipeline\u2019s Stage 4 verification in `bench/immune_agents.py`. A fix can be marked `SAFE`/`HARMFUL` on environmental drift rather than code chan"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 15,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -626,7 +2454,7 @@
         "proposed_fix": "FIX \u2014\n<<<<\ndef _run_tool(\n    cmd: List[str],\n    timeout: int = _TOOL_TIMEOUT,\n    cwd: Optional[str] = None,\n) -> sp.CompletedProcess:\n    \"\"\"Run a tool binary via subprocess. Returns CompletedProcess.\n    Never raises on non-zero exit code (static analysis tools exit non-zero\n    when they find issues \u2014 that's normal, not an error).\n    \"\"\"\n    try:\n        return sp.run(\n            cmd,\n            capture_output=True,\n            text=True,\n            timeout=timeout,\n            cwd=cwd,",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 16,
         "verdicts": [
           {
             "model": "Gemini",
@@ -651,6 +2479,54 @@
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -666,9 +2542,9 @@
         "severity": 0.8,
         "description": "FIND \u2014 In `compute_pacing_signals`, the response size anomaly detector explicitly detects an unusually large response from a model but incorrectly labels its `PacingSignal` with `signal_type=\"context_growth\"` instead of a distinct signal type like `\"response_size_anomaly\"`.\nFOLLOW: The insect brain or orchestrator will process this as a generic context exhaustion warning, potentially triggering global context degradation (like summarizing past rounds) instead of addressing the single anomalous m",
         "proposed_fix": "FIX \u2014\n<<<<\n                if rt.response_chars > median_chars * 3 and rt.response_chars > 10000:\n                    signals.append(PacingSignal(\n                        signal_type=\"context_growth\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n                        model_id=rt.model_id,\n====\n                if rt.response_chars > median_chars * 3 and rt.response_chars > 10000:\n                    signals.append(PacingSignal(\n    ",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 5,
         "verdicts": [
           {
             "model": "Gemini",
@@ -680,6 +2556,12 @@
             "model": "Gemini",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
             "evidence": ""
           }
         ],
@@ -698,7 +2580,7 @@
         "proposed_fix": "",
         "status": "CONFIRMED",
         "open_since_round": 0,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "Codex",
@@ -717,6 +2599,54 @@
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
           }
         ],
         "verified": false,
@@ -732,14 +2662,68 @@
         "severity": 0.5,
         "description": "",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 22,
         "verdicts": [
           {
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 22,
             "evidence": ""
           }
         ],
@@ -756,14 +2740,80 @@
         "severity": 0.94,
         "description": "FIND \u2014 bench/endocrine.py, _create_sandbox() does not copy tool configuration files into the sandbox. The docstring says preserving structure matters because pyright/mypy resolve imports relative to package roots, but the function only copies source_paths and the patched target. Evidence: pyright/ruff/mypy behavior depends on pyproject.toml, pyrightconfig.json, mypy.ini, setup.cfg, etc.; when evaluate_fix() runs tools on patched_path inside tmpdir, those configs are absent, so post-fix analysis ",
         "proposed_fix": "FIX \u2014 copy the common static-analysis config files from the project root into tmpdir before running tools.\n\n<<<<\ndef _create_sandbox(\n    target_path: str,\n    source_paths: List[str],\n    patched_text: str,\n) -> tuple:\n    \"\"\"Create a sandbox directory preserving package structure for tool analysis.\n\n    Copies all source files into a temp tree mirroring their directory layout,\n    then writes the patched version of target_path. Returns (tmpdir, patched_path)\n    as a tuple. The caller must cle",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 20,
         "verdicts": [
           {
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 7,
+            "evidence": "`__init__.py` files for package structure resolution are a distinct missing artifact class from tool config files. See F002 above. The fix for C0031 (copy config files) should be paired with F002 (ens"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 20,
             "evidence": ""
           }
         ],
@@ -780,10 +2830,59 @@
         "severity": 0.88,
         "description": "FIND \u2014 bench/endocrine.py, evaluate_fix() advertises 'run type checkers and linters' but never runs mypy in either baseline or post-fix analysis. Evidence: FixEvaluation has fields only for type/ruff/bandit counts; evaluate_fix() sets pre_type_errors/new_type_errors using run_pyright only, with no run_mypy call. Yet scan_health() includes mypy as a first-class health tool and the module header lists mypy among supported binaries.",
         "proposed_fix": "FIX \u2014 include mypy in the type-error count by summing pyright and mypy results in baseline and post-fix measurements.\n\n<<<<\n    # Pre-fix baselines\n    eval_result.pre_type_errors = _count_tool_issues(run_pyright, target_path)\n    eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, target_path)\n    eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, target_path)\n====\n    # Pre-fix baselines\n    eval_result.pre_type_errors = (\n        _count_tool_issues(run_pyright, target_path)",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 11,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
@@ -797,14 +2896,38 @@
         "severity": 0.83,
         "description": "FIND \u2014 bench/endocrine.py, _apply_fix_to_source() whole-file replacement strategy is triggered by any syntactically valid Python text of 5+ lines, even if it is not a replacement for the target file. Evidence: after compile(fix, '<fix>', 'exec'), the only gate is fix.count('\\n') >= 5; there is no requirement that the text resemble a module replacement for the current file. A multi-line explanatory snippet, test case, or unrelated helper module will overwrite the whole file in sandbox evaluation.",
         "proposed_fix": "FIX \u2014 require the whole-file replacement candidate to contain at least one top-level module-structure token before accepting it.\n\n<<<<\n    # Strategy 2: if the fix is valid Python and looks like a complete replacement\n    # (starts with import or def or class), treat it as a whole-file replacement\n    try:\n        compile(fix, \"<fix>\", \"exec\")\n        # Only apply if it's substantial (>5 lines) \u2014 single expressions are\n        # likely descriptions, not replacements\n        if fix.count(\"\\n\") >=",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 6,
         "verdicts": [
           {
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
             "evidence": ""
           }
         ],
@@ -821,10 +2944,29 @@
         "severity": 0.79,
         "description": "FIND \u2014 bench/endocrine.py, scan_health() marks a tool as available whenever its runner returns without raising, even when output parsing failed and no usable result was produced. Evidence: each run_* function catches JSON/parse errors, logs a warning, and returns [] rather than signalling failure; scan_health() then sets tools_available[tool_name] = True. This reports the health-scan feature as operational while silently dropping that tool's diagnostics.",
         "proposed_fix": "FIX \u2014 treat empty unparseable output as unavailable by raising from the runners when the tool returns non-empty stdout/stderr that cannot be parsed.\n\n<<<<\n    except (json.JSONDecodeError, KeyError) as e:\n        logger.warning(\"Failed to parse pyright output: %s\", e)\n\n    return diagnostics\n====\n    except (json.JSONDecodeError, KeyError) as e:\n        logger.warning(\"Failed to parse pyright output: %s\", e)\n        raise RuntimeError(f\"pyright parse failure: {e}\")\n\n    return diagnostics\n>>>>\n\n",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 10,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 2
@@ -838,15 +2980,27 @@
         "severity": 0.5,
         "description": "finding_id: str\n    original_file: str\n    fix_applied: bool = False   # whether the fix could be applied\n    apply_error: str = \"\"       # error message if fix could not be applied\n    # Post-fix ana",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 11,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 1,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "Malformed and truncated finding payload."
           }
         ],
         "verified": false,
@@ -862,10 +3016,29 @@
         "severity": 0.7,
         "description": "FIND \u2014 In `_create_sandbox`, `os.path.commonpath(all_paths)` can raise `ValueError` if source paths have no common prefix (e.g., different drives on Windows, or a mix of absolute and relative paths). This unhandled exception will crash `evaluate_fix`, preventing any fix evaluation for the finding.\nFOLLOW: The crash propagates as an uncaught exception in `evaluate_fix`, causing it to return early with an UNEVALUABLE verdict? Actually, the exception is caught in the outer try-except in `evaluate_f",
         "proposed_fix": "Wrap the `commonpath` call in a try-except and fall back to the parent directory of the target file.\n<<<<\n    try:\n        common = os.path.commonpath(all_paths)\n    except ValueError:\n        # No common prefix (e.g., different drives). Fall back to target's directory.\n        common = os.path.dirname(os.path.abspath(target_path))\n====\n    try:\n        common = os.path.commonpath(all_paths)\n    except ValueError:\n        # No common prefix (e.g., different drives). Fall back to target's directo",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 2
@@ -879,10 +3052,29 @@
         "severity": 0.5,
         "description": "FIND \u2014 In `_find_target_file`, the regex pattern `r\"[\\w/\\\\]+\\.py\\b\"` does not match filenames containing hyphens, dots (other than `.py`), or other common path characters. This can cause the function to fail to extract the correct target file from the description, leading to patching the wrong file (default fallback to first source path).\nFOLLOW: If the wrong file is patched, fix evaluation applies changes to an unrelated file, producing incorrect net issue counts and verdicts (SAFE/HARMFUL). Th",
         "proposed_fix": "Expand the character set in the regex to include hyphens and dots before the `.py` extension.\n<<<<\n    path_pattern = re.compile(r\"[\\w/\\\\]+\\.py\\b\")\n====\n    path_pattern = re.compile(r\"[-\\w./\\\\]+\\.py\\b\")\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 16,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
@@ -896,10 +3088,47 @@
         "severity": 0.9,
         "description": "FIND \u2014 Tool runners (`run_pyright`, etc.) ignore `TIMEOUT` from `_run_tool` and only check for `NOT_FOUND`.\nFOLLOW: Timeouts return empty diagnostic lists without raising. `scan_health` receives 0 errors and assumes the code is clean, masking tail-latency tool failures from the reviewer.",
         "proposed_fix": "FIX \u2014\n<<<<\n    if result.stderr == \"NOT_FOUND\":\n        raise ToolNotFoundError(\"pyright\", PYRIGHT_BIN)\n====\n    if result.stderr in (\"NOT_FOUND\", \"TIMEOUT\"):\n        raise ToolNotFoundError(\"pyright\", PYRIGHT_BIN)\n>>>>\n\n<<<<\n    if result.stderr == \"NOT_FOUND\":\n        raise ToolNotFoundError(\"ruff\", RUFF_BIN)\n====\n    if result.stderr in (\"NOT_FOUND\", \"TIMEOUT\"):\n        raise ToolNotFoundError(\"ruff\", RUFF_BIN)\n>>>>\n\n<<<<\n    if result.stderr == \"NOT_FOUND\":\n        raise ToolNotFoundError(\"b",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 10,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
@@ -913,10 +3142,101 @@
         "severity": 0.45,
         "description": "FIND \u2014 `run_mypy` regex fails to extract error codes because the non-greedy message group is followed by an optional group at the end of the line, causing the optional group to be perpetually skipped.\nFOLLOW: Mypy diagnostics lack their specific rule code, degrading metric granularity.",
         "proposed_fix": "FIX \u2014\n<<<<\n    pattern = re.compile(\n        r\"^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$\"\n    )\n\n    diagnostics = []\n    for line in result.stdout.splitlines():\n        m = pattern.match(line)\n        if m:\n            msg = m.group(5)\n            code = m.group(6) or \"\"\n====\n    pattern = re.compile(\n        r\"^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+)$\"\n    )\n\n    diagnostics = []\n    for line in result.stdout.splitlines():\n        m = pattern.match(line)\n ",
-        "status": "OPEN",
+        "status": "CONTESTED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
-        "verdicts": [],
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The finding is factually incorrect for the same reason as C0023. The non-greedy message group combined with the end-of-line anchor guarantees that the regex engine will correctly populate the optional"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "Evidence: The finding is factually incorrect. In Python's regex engine, the non-greedy `(.+?)` matched before an optional group `(?:\\s+\\[(.+?)\\])?` at the end of the string (`$`) will evaluate shorter"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The claimed mypy regex failure is not evidenced. With pattern `^(.+?):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.+?)(?:\\s+\\[(.+?)\\])?$`, lines with codes like `msg  [arg-type]` are matched with group 5="
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The proposed regex fix `(?:\\s+\\[([^\\]]+)\\])?$` still fails because the preceding `(.*?)` is lazy and will expand to consume the `[code]` to satisfy the `$` anchor. Additionally, the entire fix is moot"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "The regex correctly extracts error codes. The non-greedy `.+?` expands until the rest of the pattern matches. The greedy optional group `(?:\\s+\\[(.+?)\\])?$` successfully matches the error code at the "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 12,
+            "evidence": "The `run_mypy` regex works perfectly as written. Python's `re` engine evaluates the lazy `(.+?)` by expanding it minimally. When it reaches the space before the bracket, the optional group `(?:\\s+\\[(."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 13,
+            "evidence": "In Python's `re` module, a non-greedy quantifier `(.+?)` followed by an optional group `(?:\\s+\\[(.+?)\\])?$` works correctly because the regex engine evaluates left-to-right and must satisfy the end-of"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 14,
+            "evidence": "The regex works perfectly. Because `(.+?)` is non-greedy, it stops consuming as soon as the remainder of the string satisfies the optional group and the end-of-string anchor `$`. The regex engine mini"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 15,
+            "evidence": "Same as C0023. The regex engine's non-greedy match expands to satisfy the optional group due to the `$` anchor, successfully extracting mypy error codes."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "Duplicate of C0023. The regex correctly extracts the optional error code because the `$` anchor forces the engine to test the optional group before completing the match."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "Duplicate of C0023. The regex works perfectly because the `?` quantifier on the optional group is greedy, causing the regex engine to test and successfully match the optional `\\[error-code\\]` section "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 19,
+            "evidence": "Same reason as C0023. The regex engine correctly matches the greedy optional group despite the preceding non-greedy match."
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 3
@@ -930,16 +3250,1367 @@
         "severity": 0.8,
         "description": "FIND \u2014 Response size anomaly detector incorrectly sets `signal_type=\"context_growth\"`.\nFOLLOW: The insect brain receives an incorrect signal identifier, misinterpreting output bloat as global context exhaustion.",
         "proposed_fix": "FIX \u2014\n<<<<\n                    signals.append(PacingSignal(\n                        signal_type=\"context_growth\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n====\n                    signals.append(PacingSignal(\n                        signal_type=\"response_size_anomaly\",\n                        detail=f\"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})\",\n>>>>",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 20,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 20,
+            "evidence": "merged_into=C0069"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "merged_into": "C0069"
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.85,
+        "description": "FIND: `compute_pacing_signals` incorrectly computes context\u2011growth fraction when `context_budget` is per\u2011model. The function divides `cumulative_context_chars` (total chars across all rounds) by `context_budget` (per\u2011model budget), ignoring the number of models. This causes the signal to fire at the wrong threshold, potentially misleading the insect brain\u2019s relay\u2011degradation decision.  \n\nEvidence:  \n- Line 1116: `context_fraction = cumulative_context_chars / context_budget`  \n- Docstring: `conte",
+        "proposed_fix": "Compute the effective total budget as `context_budget * number_of_active_models`. Use `len(round_timings)` or extract unique model count from `round_timings`. If `round_timings` is empty, fall back to a default (e.g., 5 models).  \n\n<<<<\n    # 2. Context growth rate\n    if context_budget > 0:\n        # Estimate number of active models from round_timings, default to 5\n        active_models = len(set(rt.model_id for rt in round_timings)) if round_timings else 5\n        total_budget = context_budget",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 17,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.83,
+        "description": "DISCOVERY \u2014 bench/endocrine.py, compute_pacing_signals() is annotated and documented as accepting `context_budget: int`, but its implementation explicitly accepts non-int TOML-shaped values (`dict`, `str`, `float`). Evidence: signature is `context_budget: int`, docstring says `Per-model context budget from config`, yet the first block does `if isinstance(context_budget, dict): ...` then `context_budget = int(context_budget)`. This is not just style: EndocrineLayer.run() forwards `context_budget`",
+        "proposed_fix": "<<<<\ndef compute_pacing_signals(\n    round_timings: List[RoundTiming],\n    cumulative_context_chars: int,\n    context_budget: int,\n    novelty_counts: List[int],\n    round_idx: int,\n) -> List[PacingSignal]:\n====\ndef compute_pacing_signals(\n    round_timings: List[RoundTiming],\n    cumulative_context_chars: int,\n    context_budget: Any,\n    novelty_counts: List[int],\n    round_idx: int,\n) -> List[PacingSignal]:\n>>>>\n\n<<<<\n        context_budget: Per-model context budget from config.\n====\n        ",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0043": {
+        "canonical_id": "C0043",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F1000"
+        ],
+        "severity": 0.7,
+        "description": "FIND: In `evaluate_fix`, the exception\u2011handling block for `_create_sandbox` uses `tmpdir` before assignment. If `_create_sandbox` raises an exception before assigning `tmpdir` (e.g., permission error creating the temp directory), the `except` block attempts `shutil.rmtree(tmpdir, \u2026)` with `tmpdir` undefined, raising `NameError`.  \nLocation: `bench/endocrine.py`, lines 560\u2011580 (around the `try` block for `_create_sandbox`).  \nFOLLOW: This unhandled `NameError` crashes the fix evaluation for that ",
+        "proposed_fix": "Initialize `tmpdir = None` before the try block and guard the cleanup:  \n\n<<<<\n    tmpdir = None\n    try:\n        tmpdir, patched_path = _create_sandbox(\n            target_path, source_paths, patched,\n        )\n    except Exception:\n        if tmpdir:\n            shutil.rmtree(tmpdir, ignore_errors=True)\n        raise\n====\n    tmpdir = None\n    try:\n        tmpdir, patched_path = _create_sandbox(\n            target_path, source_paths, patched,\n        )\n    except Exception:\n        if tmpdir:\n",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "`tmpdir` is explicitly initialized to `None` immediately before the `try` block in `evaluate_fix` (line 399). In `_create_sandbox`, `tmpdir = tempfile.mkdtemp()` occurs on line 239, before the `try` b"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Evidence: DeepSeek's claim that `tmpdir` is used before assignment is demonstrably false. The variable is explicitly initialized to `None` directly before the `try` block (`tmpdir = None`), and the `f"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 8,
+            "evidence": "`tmpdir` is correctly initialized to `None` prior to the `try` block. If `_create_sandbox()` fails internally, its own exception handler cleans up the partial directory before re-raising. Because the "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 9,
+            "evidence": "`tmpdir` is explicitly initialized to `None` immediately before the `try` block (`tmpdir = None`), so it can never be unbound in the `finally` block. The exception handling is completely safe as writt"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 10,
+            "evidence": "`tmpdir` is explicitly initialized to `None` on line 515 immediately preceding the try block in `evaluate_fix`, and safely bound via `mkdtemp` before the try block in `_create_sandbox`. The variable i"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "`tmpdir` is explicitly initialized to `None` before the `try` block (`tmpdir = None`), so the `finally` block's `if tmpdir:` guard perfectly prevents `UnboundLocalError`."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 12,
+            "evidence": "The `tmpdir = None` assignment is already present on line 462 in `evaluate_fix`, immediately preceding the `try` block, so it is correctly initialized for the `finally` cleanup. Similarly, inside `_cr"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 13,
+            "evidence": "`evaluate_fix` explicitly initializes `tmpdir = None` before entering the `try` block. If `_create_sandbox` raises an exception, the `finally` block safely evaluates `if tmpdir:` (which is false) with"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 14,
+            "evidence": "`tmpdir` IS initialized before the try block on line 431 (`tmpdir = None`). If `_create_sandbox` fails, the exception block executes `finally: if tmpdir:`, which safely evaluates to False. There is no"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 15,
+            "evidence": "The variable `tmpdir` is already initialized to `None` immediately before the `try` block in the codebase (see line 462). The proposed fix attempts to add redundant code."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "`tmpdir` is explicitly assigned via `tempfile.mkdtemp()` BEFORE the `try` block. If `mkdtemp` fails, it raises an exception and the function never enters the `try` block or its associated `except Exce"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "Initializing `tmpdir = None` before the try block is necessary to avoid `UnboundLocalError` in the finally block if `_create_sandbox` raises an exception."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "`tmpdir = None` is already explicitly initialized immediately before the `try` block at line 496 (`tmpdir = None\\n    try:\\n        tmpdir, patched_path = ...`). The proposed fix is already present in"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "Already confirmed; same root cause as C0062."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 18,
+            "evidence": "The variable `tmpdir` is initialized to `None` and only used in the finally block guarded by `if tmpdir`. If `_create_sandbox` raises, `tmpdir` remains `None` and the finally block does nothing, which"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 18,
+            "evidence": "The finding states that `tmpdir` is used before assignment if an exception occurs. This is factually incorrect. `tmpdir = None` is explicitly initialized right before the `try` block in `evaluate_fix`"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 19,
+            "evidence": "The variable `tmpdir` is explicitly initialized to `None` right before the `try` block (`tmpdir = None`), so the cleanup block in `finally` handles it safely."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0044": {
+        "canonical_id": "C0044",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F1001"
+        ],
+        "severity": 0.9,
+        "description": "FIND: `evaluate_fix` runs post\u2011fix tool analysis via `_count_tool_issues` on the sandboxed file without setting the working directory to the sandbox root. Tools (pyright, mypy) resolve imports relative to the current working directory; without `cwd=tmpdir`, they look in the original project root, not the sandbox, causing import errors and incorrect issue counts.  \nLocation: `bench/endocrine.py`, lines 590\u2011610 (the post\u2011fix `_count_tool_issues` calls).  \nFOLLOW: Incorrect import resolution leads ",
+        "proposed_fix": "1. Extend `_count_tool_issues` and the tool runners (`run_pyright`, `run_ruff`, `run_bandit`, `run_mypy`) to accept an optional `cwd` parameter, passing it to `_run_tool`.  \n2. In `evaluate_fix`, pass `cwd=tmpdir` to the post\u2011fix `_count_tool_issues` calls.  \n\nExample changes:  \n\n<<<<\ndef _count_tool_issues(tool_runner, file_path: str, cwd: Optional[str] = None) -> int:\n    try:\n        diags = tool_runner([file_path], cwd=cwd)\n        return len(diags)\n    except Exception:\n        return 0\n===",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 12,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0045": {
+        "canonical_id": "C0045",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E0001"
+        ],
+        "severity": 0.6,
+        "description": "FIND \u2014 `_categorise_ruff` categorises all Ruff `F` codes (Pyflakes) as `DefectCategory.DEAD_CODE`. However, `F` codes include critical runtime errors like `F821` (undefined name).\nFOLLOW: Classifying undefined variables as `DEAD_CODE` causes the defect detection system to report critical runtime crashes as low-priority dead code. This misleads the insect brain's pacing and convergence logic, potentially ignoring fatal bugs.",
+        "proposed_fix": "FIX \u2014\n<<<<\n    # F-codes: pyflakes (dead code, unused imports)\n    if code.startswith(\"F\"):\n        return DefectCategory.DEAD_CODE\n====\n    # F-codes: pyflakes (F401=unused import, F841=unused variable, others are mostly logic/name errors)\n    if code.startswith(\"F\"):\n        if code in (\"F401\", \"F841\"):\n            return DefectCategory.DEAD_CODE\n        return DefectCategory.TYPE_SAFETY\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 16,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0046": {
+        "canonical_id": "C0046",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E0002"
+        ],
+        "severity": 0.95,
+        "description": "FIND \u2014 `_create_sandbox` uses `os.path.commonpath(all_paths)` to determine the base directory for mirroring the source tree. This strips the top-level package directories (e.g., `bench/`) from the sandbox structure.\nFOLLOW: Because the package root (`bench/`) is stripped, absolute imports (e.g., `from bench.dm._types import Finding`) inside the sandboxed files fail. Pyright and Mypy emit massive numbers of \"import not found\" errors on the patched file, guaranteeing that `new_type_errors` spikes ",
+        "proposed_fix": "FIX \u2014\n<<<<\n        all_paths = [os.path.abspath(p) for p in source_paths]\n        all_paths.append(os.path.abspath(target_path))\n        common = os.path.commonpath(all_paths)\n        if os.path.isfile(common):\n            common = os.path.dirname(common)\n====\n        all_paths = [os.path.abspath(p) for p in source_paths]\n        all_paths.append(os.path.abspath(target_path))\n        # Include CWD in commonpath to preserve project package structure\n        common = os.path.commonpath(all_paths +",
+        "status": "CONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "`os.path.commonpath` only raises `ValueError` on Windows when paths are on different drives. The system context explicitly defines the hardware target as \"M1 8GB Mac\". On macOS, all absolute paths sha"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0047": {
+        "canonical_id": "C0047",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V001"
+        ],
+        "severity": 0.95,
+        "description": "CONFIRM C0002 \u2014 evaluate_fix() executes test_cmd inside the sandbox without remapping referenced paths. Immune pipeline passes `bench/tests/`, but `_create_sandbox()` only copies source files, so pytest commonly fails for missing-path reasons unrelated to the candidate fix. This is a real end-to-end false-HARMFUL path.",
+        "proposed_fix": "CONFIRM C0002",
+        "status": "CONFIRMED",
+        "open_since_round": 5,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0048": {
+        "canonical_id": "C0048",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V002"
+        ],
+        "severity": 1.0,
+        "description": "CONFIRM C0032 \u2014 evaluate_fix() claims to run type checkers but omits mypy entirely from both baseline and post-fix counts. The target file imports `MYPY_BIN` and defines `run_mypy()` but evaluate_fix() only counts pyright for type errors. This makes type-regression detection silently incomplete.",
+        "proposed_fix": "CONFIRM C0032",
+        "status": "CONFIRMED",
+        "open_since_round": 5,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0049": {
+        "canonical_id": "C0049",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V003"
+        ],
+        "severity": 0.9,
+        "description": "CONFIRM C0038 \u2014 tool runners treat `_run_tool(...)->stderr == \"TIMEOUT\"` as parse failure instead of explicit unavailability. That causes scan_health() to mark timed-out tools available=True with zero diagnostics, which is fail-open and misleading.",
+        "proposed_fix": "CONFIRM C0038",
+        "status": "CONFIRMED",
+        "open_since_round": 5,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0050": {
+        "canonical_id": "C0050",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V004"
+        ],
+        "severity": 0.83,
+        "description": "EXTEND C0031 | Missing sandbox config files is broader than static analyzer config alone. Because `_run_tool()` inherits ambient environment and the sandbox lacks project config, tool behavior can diverge based on host defaults or env-provided paths/plugins. The root issue is that fix evaluation is not a self-contained sandbox; copied source plus copied config should define behavior, not the parent workspace.",
+        "proposed_fix": "EXTEND C0031 | Copy config files into tmpdir and pair that with sandbox-rooted execution so tool behavior is determined by sandbox contents rather than the parent workspace.",
+        "status": "CONFIRMED",
+        "open_since_round": 5,
+        "last_status_change_round": 8,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 8,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0051": {
+        "canonical_id": "C0051",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V005"
+        ],
+        "severity": 0.76,
+        "description": "CHALLENGE C0003 | The finding says `_compute_fix_verdict()` should never return SAFE on no-change when tests pass. Under the stated PoC goal, that is too strong. A fix can be behaviorally validated by tests yet leave static counts unchanged, especially for runtime bugs not visible to pyright/ruff/bandit. The current SAFE-on-tests-pass branch is not automatically wrong in this context.",
+        "proposed_fix": "CHALLENGE C0003 | Reserve changes here until sandbox pathing/baseline symmetry/mypy coverage are fixed. SAFE on passing tests with no new static issues is acceptable for PoC runtime-bug fixes.",
+        "status": "CONFIRMED",
+        "open_since_round": 5,
+        "last_status_change_round": 7,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0052": {
+        "canonical_id": "C0052",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F006"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 In `_apply_fix_to_source`, Strategy 3 (line\u2011level replacement), multi\u2011line range replacements incorrectly assign the replaced block as a single string, collapsing multiple lines and breaking source structure. Evidence: lines 597\u2011609 in endocrine.py join the target lines into `block`, replace `old_frag` with `new_frag`, then assign the resulting `new_block` as a single\u2011element list to the slice `lines[start_line:end_line + 1]`. This destroys the original line\u2011boundary structure because `ne",
+        "proposed_fix": "<<<<\n                else:\n                    # For ranges, join the target lines, replace, and re\u2011split\n                    if 0 <= start_line and end_line < len(lines):\n                        block = \"\".join(lines[start_line:end_line + 1])\n                        if old_frag in block:\n                            new_block = block.replace(old_frag, new_frag, 1)\n                            lines[start_line:end_line + 1] = [new_block]\n                            modified = True\n====\n           ",
+        "status": "CONFIRMED",
+        "open_since_round": 6,
+        "last_status_change_round": 12,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": "**NEW FINDINGS:**"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0053": {
+        "canonical_id": "C0053",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 In `evaluate_fix`, the function `_find_target_file` uses a simple regex to extract file paths from the finding description. If no match is found, it falls back to the first file in `source_paths`. This fallback is arbitrary and may lead to applying the fix to the wrong file, causing incorrect pre\u2011fix and post\u2011fix analysis and thus an incorrect verdict.\n\nEVIDENCE: \n- Lines 480\u2011500: `_find_target_file` function.\n- The regex pattern `r\"[\\w/\\\\]+\\.py\\b\"` matches sequences of word characters, s",
+        "proposed_fix": "Remove the fallback to the first source path. If no file path can be identified from the description, return `None`. In `evaluate_fix`, treat a `None` target path as UNEVALUABLE with a clear error.\n\n<<<<\ndef _find_target_file(finding: Finding, source_paths: List[str]) -> Optional[str]:\n    \"\"\"Find the source file a finding refers to.\n\n    Looks for file paths mentioned in the finding description, then falls\n    back to the first source path.\n    \"\"\"\n    # Extract file paths from description\n    ",
+        "status": "CONFIRMED",
+        "open_since_round": 8,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 10,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 12,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0054": {
+        "canonical_id": "C0054",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.85,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy\u202f2 (whole\u2011file replacement) compiles the proposed fix with `compile(fix, \"<fix>\", \"exec\")` to check syntax, but this accepts any valid Python module, including standalone expressions or arbitrary code that is not a file replacement. The guard `fix.count(\"\\n\") >= 5` is arbitrary and does not guarantee the fix is a full\u2011file replacement. Evidence: A 5\u2011line Python expression (e.g., a multi\u2011line list literal) passes the guard and replaces the entire source file,",
+        "proposed_fix": "Require whole\u2011file replacement candidates to contain at least one top\u2011level module construct (`def`, `class`, `import`, `from`) before accepting them as full replacements.  \n\n<<<<\n    # Strategy 2: if the fix is valid Python and looks like a complete replacement\n    # (starts with import or def or class), treat it as a whole-file replacement\n    try:\n        compile(fix, \"<fix>\", \"exec\")\n        # Only apply if it's substantial (>5 lines) \u2014 single expressions are\n        # likely descriptions, n",
+        "status": "CONFIRMED",
+        "open_since_round": 9,
+        "last_status_change_round": 22,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 22,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0055": {
+        "canonical_id": "C0055",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_str"
+        ],
+        "severity": 0.5,
+        "description": "finding_id: str\n    original_file: str\n    fix_applied: bool = False   # whether the fix could be applied\n    apply_error: str = \"\"       # error message if fix could not be applied\n    # Post-fix ana",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 9,
+        "last_status_change_round": 11,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 9,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 11,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 11,
+            "evidence": "Malformed and truncated finding payload."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0056": {
+        "canonical_id": "C0056",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F008"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `_apply_fix_to_source` Strategy\u202f1 (search\u2011replace) uses `re.DOTALL` flag, allowing the pattern to match across newlines in the fix text. This can cause over\u2011matching and incorrect replacement when the proposed fix contains newlines between the old and new fragments.\nEvidence: Pattern `replace_pattern` compiled with `re.IGNORECASE | re.DOTALL`. The DOTALL flag makes `.` match newlines, so a fix like \u201creplace \u2018foo\u2019\\nwith \u2018bar\u2019\u201d would match the entire multi\u2011line string as a single match, lik",
+        "proposed_fix": "Remove `re.DOTALL`; the pattern should match within a single line.\n<<<<\n    replace_pattern = re.compile(\n        r\"(?:replace|change)\\s+[`'\\\"](.+?)[`'\\\"]\\s+(?:with|to)\\s+[`'\\\"](.+?)[`'\\\"]\",\n        re.IGNORECASE,\n    )\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 12,
+        "last_status_change_round": 13,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 3
+      },
+      "C0057": {
+        "canonical_id": "C0057",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F010"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `_find_target_file` uses a regex that matches both forward\u2011 and back\u2011slashes, but later uses `os.sep` for suffix matching. On Windows, a path matched with forward slashes will not match `os.sep` (backslash), causing file\u2011resolution failure.\nEvidence: Regex `r\"[\\w/\\\\]+\\.py\\b\"` captures `/` or `\\`. The code then checks `sp_path.endswith(os.sep + match)`. If `match` contains forward slashes on Windows, the check fails.\nFOLLOW: The target file may not be found, leading to `UNEVALUABLE` verdic",
+        "proposed_fix": "Normalize the matched path with `os.path.normpath` before comparison.\n<<<<\n        # Pass 1: path-separator-aware suffix match (most specific).\n        for match in matches:\n            norm_match = os.path.normpath(match)\n            for sp_path in source_paths:\n                if sp_path == norm_match or sp_path.endswith(os.sep + norm_match):\n                    return sp_path\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 12,
+        "last_status_change_round": 13,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 13,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0058": {
+        "canonical_id": "C0058",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E002"
+        ],
+        "severity": 0.85,
+        "description": "FIND: In `evaluate_fix`, the code `source_text = Path(target_path).read_text(encoding=\"utf-8\")` only catches `OSError`. If the target file contains non-UTF-8 bytes, `read_text` raises `UnicodeDecodeError` (which inherits from `ValueError`, not `OSError`). This unhandled exception will crash `evaluate_fix`, aborting the endocrine cycle and crashing the orchestrator between rounds.\nFOLLOW: The unhandled exception propagates up the call stack, causing the experiment to crash entirely without evalua",
+        "proposed_fix": "FIX \u2014\n<<<<\n    try:\n        source_text = Path(target_path).read_text(encoding=\"utf-8\")\n    except OSError as e:\n        eval_result.verdict = \"UNEVALUABLE\"\n====\n    try:\n        source_text = Path(target_path).read_text(encoding=\"utf-8\")\n    except (OSError, UnicodeDecodeError) as e:\n        eval_result.verdict = \"UNEVALUABLE\"\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 14,
+        "last_status_change_round": 16,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 15,
+            "evidence": "The finding correctly identifies that `read_text()` can fail with non-`OSError` exceptions like `UnicodeDecodeError` (which inherits from `ValueError`, not `OSError`). The fix in the registry is trunc"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "The fix correctly broadens the exception handling from `OSError` to `Exception` when reading the source file. This prevents crashes from unexpected I/O errors."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0059": {
+        "canonical_id": "C0059",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_E003"
+        ],
+        "severity": 0.7,
+        "description": "FIND: In `_apply_fix_to_source` Strategy 2, the code calls `compile(fix, \"<fix>\", \"exec\")` and only catches `SyntaxError`. If the AI proposes a fix containing a null byte (`\\x00`), `compile()` raises `ValueError: source code string cannot contain null bytes`. This unhandled exception will crash the endocrine cycle.\nFOLLOW: A malicious or hallucinated AI fix containing null bytes will completely abort the inter-round endocrine cycle, crashing the experiment.",
+        "proposed_fix": "FIX \u2014\n<<<<\n    try:\n        compile(fix, \"<fix>\", \"exec\")\n        # Only apply if it's substantial (>5 lines) \u2014 single expressions are\n        # likely descriptions, not replacements\n        if fix.count(\"\\n\") >= 5:\n            return fix\n    except SyntaxError:\n        pass\n====\n    try:\n        compile(fix, \"<fix>\", \"exec\")\n        # Only apply if it's substantial (>5 lines) \u2014 single expressions are\n        # likely descriptions, not replacements\n        if fix.count(\"\\n\") >= 5:\n            re",
+        "status": "CONFIRMED",
+        "open_since_round": 14,
+        "last_status_change_round": 16,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 15,
+            "evidence": "The finding correctly notes that `compile()` can raise non-`SyntaxError` exceptions like `ValueError` (if null bytes are present in the proposed fix text). The fix in the registry is truncated and can"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "`compile()` can raise `ValueError`, `TypeError`, or `OverflowError` in addition to `SyntaxError`. Catching `Exception` is the simplest sufficient fix for PoC."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0060": {
+        "canonical_id": "C0060",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F060"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 In `_apply_fix_to_source`, Strategy\u202f3 (line\u2011level replacement) uses a regex pattern that greedily consumes subsequent replacements because the new\u2011text group `(.+)` has no delimiter. Example: \u201cLine\u202f1: old1\u202f\u2192\u202fnew1\u202fLine\u202f2: old2\u202f\u2192\u202fnew2\u201d will treat \u201cnew1\u202fLine\u202f2: old2\u202f\u2192\u202fnew2\u201d as the new text for the first replacement, merging two distinct edits. Location: `bench/endocrine.py`, lines 518\u2013548.  \nFOLLOW: This bug can cause a single proposed fix that contains multiple line\u2011level replacements to be",
+        "proposed_fix": "Change the regex pattern to use a lookahead that stops at the next line\u2011replacement pattern or end\u2011of\u2011string:  \nline_pattern = re.compile(\n    r\"[Ll]ines?\\s+(\\d+)(?:\\s*[-\u2013]\\s*(\\d+))?:\\s*(.+?)\\s*->\\s*(.+?)(?=\\s+[Ll]ines?\\s+\\d|$)\"\n)",
+        "status": "OPEN",
+        "open_since_round": 15,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "`re.DOTALL` is NOT used in `line_pattern`, meaning the `.+` tokens naturally stop matching at the first newline character. The regex does not greedily consume subsequent lines; it correctly matches a "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "The regex `(.+)` does not greedily consume subsequent replacements across multiple lines because the `.` metacharacter does not match newlines by default (no `re.DOTALL` flag is used here). Thus, `(.+"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "The regex pattern `line_pattern` in `_apply_fix_to_source` Strategy 3 greedily consumes the rest of the fix string after the first match, preventing multiple line replacements within a single proposed"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 18,
+            "evidence": "The finding states that Strategy 3 uses a regex pattern that greedily consumes subsequent lines. This is incorrect. The regex pattern `(.+)` does not use the `re.DOTALL` flag, so the `.` character exp"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 19,
+            "evidence": "The regex `(.+?)` matched without `re.DOTALL` correctly consumes only up to the newline. It does NOT greedily consume subsequent lines."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0061": {
+        "canonical_id": "C0061",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F061"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 Tool unavailability (e.g., pyright not installed) is masked in fix evaluation because `_count_tool_issues` catches all exceptions and returns 0. This leads to pre\u2011fix and post\u2011fix counts of 0, net change 0, and a verdict of NEUTRAL or SAFE, giving a false sense that the fix is harmless when the tool could not run. Location: `bench/endocrine.py`, lines 753\u2013759 (`_count_tool_issues`).  \nFOLLOW: The health scan already reports `tools_available`, but the fix\u2011evaluation stage ignores this. A m",
+        "proposed_fix": "Make `_count_tool_issues` re\u2011raise `ToolNotFoundError` and catch it in `evaluate_fix` to set the verdict to UNEVALUABLE:  \ndef _count_tool_issues(tool_runner, file_path: str) -> int:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = tool_runner([file_path])\n        return len(diags)\n    except ToolNotFoundError:\n        raise\n    except Exception:\n        return 0\nThen in `evaluate_fix`, wrap each baseline call:  \ntry:\n    eval_result.pre_type_",
+        "status": "CONFIRMED",
+        "open_since_round": 15,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 16,
+            "evidence": "The current behavior (returning 0 issues on tool failure) is an intentional fail-open for unavailable tools. Raising `ToolNotFoundError` here would propagate up and crash `evaluate_fix` entirely since"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 16,
+            "evidence": "Masking `ToolNotFoundError` in `_count_tool_issues` leads to incorrect baseline counts. Re-raising and catching it in `evaluate_fix` to set `UNEVALUABLE` is correct."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "Re-raising `ToolNotFoundError` in `_count_tool_issues` would cause `evaluate_fix` (which lacks an exception handler for this) to crash, thereby crashing the entire `evaluate_fixes` batch. Returning a "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "Already confirmed; same root cause as C0064."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 19,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0062": {
+        "canonical_id": "C0062",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F101"
+        ],
+        "severity": 1.0,
+        "description": "FIND \u2014 `evaluate_fix` lacks a try\u2011except block around sandbox creation and post\u2011fix analysis. If `_create_sandbox` raises an exception (e.g., `ValueError` from `commonpath`, permission errors, disk full) or if the tool\u2011runner calls fail unexpectedly, the function crashes. Evidence: lines 457\u2011510 in `endocrine.py` show the sandbox creation and subsequent tool calls are inside a try block with a finally clause but no except clause. The finally block uses `tmpdir` which may be uninitialized if `_cr",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 16,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 17,
+            "evidence": "Missing fix: wrap the sandbox creation and post-fix analysis in an inner try-except block returning UNEVALUABLE."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "The `evaluate_fix` function lacks try-except around `_create_sandbox` and post-fix analysis. If `_create_sandbox` raises an exception (e.g., `ValueError` from `os.path.commonpath`), `tmpdir` is undefi"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0063": {
+        "canonical_id": "C0063",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_finding.finding_id,"
+        ],
+        "severity": 0.5,
+        "description": "finding_id=finding.finding_id,\n                original_file=\"\",\n                fix_applied=False,\n                apply_error=f\"Unexpected error: {e}\",\n                verdict=\"UNEVALUABLE\",\n       ",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 16,
+        "last_status_change_round": 17,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 17,
+            "evidence": "The finding appears truncated/incomplete in the registry. No actionable bug description or fix provided. Cannot evaluate."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0064": {
+        "canonical_id": "C0064",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F102"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 `_count_tool_issues` catches all exceptions and returns 0, masking tool failures that are not `ToolNotFoundError`. This includes timeouts, crashes, or malformed output from the tool. Evidence: lines 430\u2011436 show `except Exception:` returning 0. Consequently, a fix that causes a tool to crash (e.g., pyright segmentation fault) will be reported as introducing 0 new issues, potentially leading to a SAFE verdict.\nFOLLOW: This bug affects the accuracy of fix evaluation. If a tool fails during ",
+        "proposed_fix": "Re\u2011raise `ToolNotFoundError` (as per C0061) and catch other exceptions, but set a sentinel value (e.g., `-1`) to indicate tool failure, and handle it in `_compute_fix_verdict` to return `UNEVALUABLE`. The simplest fix for PoC is to treat any tool failure as making the fix evaluation unevaluable. Modify `_count_tool_issues`:\n\n<<<<\ndef _count_tool_issues(tool_runner, file_path: str) -> int:\n    \"\"\"Run a tool on a single file and return the number of issues found.\"\"\"\n    try:\n        diags = tool_r",
+        "status": "CONFIRMED",
+        "open_since_round": 16,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "EXTEND",
+            "round": 17,
+            "evidence": "Returning 0 on tool crash causes a false SAFE verdict because `new(0) - pre(>0) < 0`. Returning a negative sentinel also triggers SAFE. The function must return a large positive integer (e.g., 9999) o"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 17,
+            "evidence": "`_count_tool_issues` catches all exceptions (including `ToolNotFoundError`) and returns 0, masking tool unavailability. This leads to incorrect net-change calculations in fix evaluation (e.g., pyright"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 18,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0065": {
+        "canonical_id": "C0065",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001-R17"
+        ],
+        "severity": 0.65,
+        "description": "FIND \u2014 `_create_sandbox` copies only the files listed in `source_paths` but does not copy intermediate `__init__.py` files or other package structure markers. When `source_paths = [\"bench/endocrine.py\"]`, the sandbox tree at `tmpdir/bench/endocrine.py` has no `tmpdir/bench/__init__.py`. Pyright and mypy resolve imports relative to package roots \u2014 a missing `__init__.py` causes them to treat the file as a standalone script, producing spurious \"module not found\" errors for every `from bench.xxx im",
+        "proposed_fix": "In `_create_sandbox`, after copying source files, walk from `common` to `tmpdir` and copy any `__init__.py` files found in intermediate directories:\n# After the copy loop, copy __init__.py files for package structure\nfor dirpath, dirnames, filenames in os.walk(common):\n    if \"__init__.py\" in filenames:\n        rel = os.path.relpath(dirpath, common)\n        init_dst = os.path.join(tmpdir, rel, \"__init__.py\")\n        if not os.path.exists(init_dst):\n            init_src = os.path.join(dirpath, \"_",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 17,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0066": {
+        "canonical_id": "C0066",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F005"
+        ],
+        "severity": 0.6,
+        "description": "FIND: `scan_health` runs all four tools sequentially, but `run_pyright` and `run_mypy` are redundant for type checking. Both pyright and mypy perform similar type checking; running both duplicates work and doubles time for no benefit in PoC. Evidence: lines 306-310 invoke both `run_pyright` and `run_mypy` in every health scan.  \nFOLLOW: Wastes ~10-30 seconds per round (pyright and mypy each run full type checking). Slows down endocrine cycle unnecessarily.",
+        "proposed_fix": "Remove `run_mypy` from the tool list; keep pyright as primary type checker (more detailed output).  \n<<<<\n    for tool_name, runner in [\n        (\"pyright\", run_pyright),\n        (\"ruff\", run_ruff),\n        (\"bandit\", run_bandit),\n        (\"mypy\", run_mypy),\n    ]:\n====\n    for tool_name, runner in [\n        (\"pyright\", run_pyright),\n        (\"ruff\", run_ruff),\n        (\"bandit\", run_bandit),\n        # mypy removed \u2014 redundant with pyright for PoC\n    ]:\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 17,
+        "last_status_change_round": 18,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 18,
+            "evidence": "For PoC, running both pyright and mypy is acceptable. The performance impact is minimal and the redundancy does not affect correctness."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7
+      },
+      "C0067": {
+        "canonical_id": "C0067",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F067"
+        ],
+        "severity": 0.7,
+        "description": "FIND \u2014 `EndocrineLayer.run()` evaluates fixes via `evaluate_fixes(findings, ...)` on ALL round findings. The immune pipeline in `immune_agents.py` Stage 4 independently calls `evaluate_fixes(fix_candidates, source_paths, ...)` on immune-filtered findings. When the orchestrator calls both `endo.run()` and `brain.run_immune_pipeline()`, every finding with a proposed fix is evaluated twice \u2014 once by the endocrine layer (on raw findings) and once by the immune pipeline (on filtered findings). The en",
+        "proposed_fix": "Remove fix evaluation from `EndocrineLayer.run()` \u2014 the immune pipeline Stage 4 is the authoritative evaluation path. Change `EndocrineLayer.run()` to skip `evaluate_fixes()` and return an empty `fix_evaluations` list. The immune pipeline already handles fix evaluation with the correct test_cmd.",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 18,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0068": {
+        "canonical_id": "C0068",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F068"
+        ],
+        "severity": 0.55,
+        "description": "FIND \u2014 `compute_pacing_signals` novelty plateau detection uses `novelty_counts[-window:]` where `window=3`, but does not validate that `novelty_counts` entries correspond to actual rounds. If the caller passes `novelty_counts=[0, 0, 0]` for round_idx=0 (three zeros representing pre-experiment initialization, not actual round data), the function emits a false plateau signal on the very first round. The guard `round_idx >= window - 1` (i.e., `round_idx >= 2`) prevents this for round 0 and 1, but n",
+        "proposed_fix": "Add a minimum round guard: `if round_idx < window + 1: skip plateau check`. Three rounds of data is insufficient for plateau detection \u2014 require at least 4 rounds before checking. Alternatively, require `len(novelty_counts) >= window + 1` to ensure at least one non-plateau round exists for comparison.",
+        "status": "OPEN",
+        "open_since_round": 18,
+        "last_status_change_round": 19,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 19,
+            "evidence": "The code explicitly checks `if len(novelty_counts) >= window and round_idx >= window - 1:`, which correctly guards the list slice and plateau logic from `IndexError`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6
+      },
+      "C0069": {
+        "canonical_id": "C0069",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F008"
+        ],
+        "severity": 0.81,
+        "description": "CONFIRM C0040 \u2014 FIND: the response-size anomaly branch in `compute_pacing_signals()` emits `signal_type='context_growth'` even though it is detecting a single model producing anomalously large output. Evidence: the branch comment says `# 4. Response size anomaly`, but the appended signal uses the same type as aggregate context exhaustion.",
+        "proposed_fix": "CONFIRM C0040 \u2014 change the emitted `signal_type` in the response-size anomaly block from `context_growth` to `response_size_anomaly`.",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0070": {
+        "canonical_id": "C0070",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F009"
+        ],
+        "severity": 0.78,
+        "description": "CONFIRM C0045 \u2014 FIND: `_categorise_ruff()` classifies every Ruff `F` code as `DefectCategory.DEAD_CODE`. Evidence: the first branch is `if code.startswith('F'): return DefectCategory.DEAD_CODE`. Ruff/Pyflakes `F` codes include many correctness errors (e.g. undefined names, invalid imports), not just unused code.",
+        "proposed_fix": "CONFIRM C0045 \u2014 special-case only known dead-code-style `F` codes/messages (unused imports/locals) as `DEAD_CODE`; classify other `F` codes as `UNKNOWN` or a correctness-oriented category instead of blanket `DEAD_CODE`.",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
         "verdicts": [],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
+      },
+      "C0071": {
+        "canonical_id": "C0071",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F010"
+        ],
+        "severity": 0.76,
+        "description": "EXTEND C0061 | bench/endocrine.py `_count_tool_issues()` catches `Exception` and returns 0 for every failure mode. Evidence: the whole body is `try: diags = tool_runner([file_path]); return len(diags) except Exception: return 0`. This is broader than tool unavailability: parser failures, execution failures, misconfigured cwd, timeout wrappers, and sandbox-copy defects all collapse to 'no issues'.",
+        "proposed_fix": "EXTEND C0061 | make `_count_tool_issues` re-raise `ToolNotFoundError` and other execution/parsing failures instead of returning 0; let `evaluate_fix` catch them and set `verdict='UNEVALUABLE'` with `apply_error` describing the failed tool.",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0072": {
+        "canonical_id": "C0072",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F011"
+        ],
+        "severity": 0.74,
+        "description": "DISCOVERY \u2014 bench/endocrine.py, `evaluate_fix()` can never apply ordinary unified diff / patch-style fixes even though the module's main integration point is immune_agents.py Stage 4, which feeds model-proposed textual fixes. In `_apply_fix_to_source()`, the docstring explicitly says diff-like fixes are unsupported, and the implementation has no parser for hunks or fenced patch blocks. Evidence: there is no branch handling `<<<< ==== >>>>` markers, unified diff hunks (`@@`), or code-fence-wrappe",
+        "proposed_fix": "FIX \u2014 add one supported structured patch format and implement it directly. The simplest sufficient fix is to parse the repository\u2019s existing replacement format used elsewhere in findings: <<<< old ==== new >>>> and apply `source_text.replace(old, new, 1)` before the current heuristics.\n\n<<<<\n    fix = proposed_fix.strip()\n\n    # Strategy 1: search-replace pattern\n    # Look for patterns like \"Replace X with Y\" or \"Change X to Y\"\n    replace_pattern = re.compile(\n        r\"(?:replace|change)\\s+[`",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
+      },
+      "C0073": {
+        "canonical_id": "C0073",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F012"
+        ],
+        "severity": 0.69,
+        "description": "CHALLENGE C0066 | `scan_health()` running both pyright and mypy is not a bug at PoC stage. Evidence from endocrine.py: the module documentation explicitly lists all four binaries, including mypy, and `HealthScan.counts_by_tool/tools_available` are designed to surface per-tool signals, not deduplicated issue sets. Also, `evaluate_fix()` currently omits mypy entirely, so removing mypy from health scan would worsen rather than simplify observability.",
+        "proposed_fix": "CHALLENGE C0066 | keep mypy in `scan_health()`. The actual bug is that fix evaluation should include mypy too (C0032), not that health scan runs both type checkers.",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0074": {
+        "canonical_id": "C0074",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F013"
+        ],
+        "severity": 0.63,
+        "description": "CHALLENGE C0068 | the current novelty plateau guard in `compute_pacing_signals()` is sufficient for the stated rule. Evidence: the code requires both `len(novelty_counts) >= 3` and `round_idx >= 2`, then checks the last three rounds for `n <= 1`. The comment says 'If novelty has been zero or near-zero for 3 consecutive rounds'; requiring four or more rounds would contradict that rule and delay the first valid plateau signal by an extra round without evidence in the target file or context interfa",
+        "proposed_fix": "CHALLENGE C0068 | no code change. Keep the existing 3-round guard; address only the threshold semantics if needed.",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 19,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0075": {
+        "canonical_id": "C0075",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "VERDICT CONFIRM C0019\n\nVERDICT CHALLENGE C0068 | The code already contains the guard: `if len(novelty_counts) >= window and round_idx >= window - 1:`.\n\nVERDICT CONFIRM C0067\n\nVERDICT CONFIRM C0066\n\nVERDICT CONFIRM C0065\n\nVERDICT CONFIRM C0061\n\nVERDICT CONFIRM C0060\n\nVERDICT CONFIRM C0043\n\nNo new findings filed.",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 19,
+        "last_status_change_round": 21,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 21,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0076": {
+        "canonical_id": "C0076",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "VERDICT CONFIRM C0001\nVERDICT CONFIRM C0002\nVERDICT CONFIRM C0004\nVERDICT CONFIRM C0005\nVERDICT CONFIRM C0024\nVERDICT CONFIRM C0025\nVERDICT CONFIRM C0032\nVERDICT CONFIRM C0033\nVERDICT CONFIRM C0039\nVERDICT CONFIRM C0040\nVERDICT CONFIRM C0041\nVERDICT CONFIRM C0044\nVERDICT CONFIRM C0045\nVERDICT CONFIRM C0053\nVERDICT CONFIRM C0056\nVERDICT CONFIRM C0057\nVERDICT CONFIRM C0061\nVERDICT CONFIRM C0062\nVERDICT CONFIRM C0065\nVERDICT CONFIRM C0067\n\nVERDICT CHALLENGE C0023 | C0039 provides the correct explan",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 20,
+        "last_status_change_round": 23,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 23,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0077": {
+        "canonical_id": "C0077",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F200"
+        ],
+        "severity": 0.9,
+        "description": "FIND \u2014 In `EndocrineLayer.run()`, the three sequential steps (health scan, fix evaluation, pacing signals) are called without any top\u2011level exception handling. If any step raises an uncaught exception (e.g., a subprocess timeout, permission error, or unexpected tool failure), the entire `run()` method raises, causing the endocrine layer to fail for that round. Evidence: lines 622\u2011644 of endocrine.py show `health = scan_health(...)`, `fix_evals = evaluate_fixes(...)`, and `pacing = compute_pacing",
+        "proposed_fix": "Wrap each step in a try\u2011except block, log the error, and continue with a safe default. This ensures the endocrine layer is resilient to transient tool failures and does not break the entire round.  \n\n<<<<\n        # 1. Health scan\n        try:\n            health = scan_health(self.source_paths)\n        except Exception as e:\n            logger.error(\"Health scan failed: %s\", e)\n            health = HealthScan(elapsed_s=0.0)\n        self._scan_history.append(health)\n\n        # 2. Fix evaluation\n  ",
+        "status": "OPEN",
+        "open_since_round": 20,
+        "last_status_change_round": 20,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0078": {
+        "canonical_id": "C0078",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_G001"
+        ],
+        "severity": 1.0,
+        "description": "FIND: In `evaluate_fix`, the pre\u2011fix baseline tool counts are measured on the original file in the project workspace, but the post\u2011fix counts are measured on the sandboxed file. If the workspace has existing type errors that are not present in the sandbox (e.g., missing `pyproject.toml`), the net\u2011change calculation is invalid.  \nEvidence: lines 590\u2013598 compute `pre_type_errors = _count_tool_issues(run_pyright, target_path)` (original file), while lines 624\u2013626 compute `new_type_errors = _count_t",
+        "proposed_fix": "<<<<\n    # Pre-fix baselines: create a sandbox of the original source, measure there.\n    tmpdir_original = None\n    try:\n        tmpdir_original, original_sandboxed_path = _create_sandbox(\n            target_path, source_paths, source_text,\n        )\n        eval_result.pre_type_errors = _count_tool_issues(run_pyright, original_sandboxed_path)\n        eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, original_sandboxed_path)\n        eval_result.pre_bandit_issues = _count_tool_issues(ru",
+        "status": "OPEN",
+        "open_since_round": 23,
+        "last_status_change_round": 23,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0079": {
+        "canonical_id": "C0079",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_G002"
+        ],
+        "severity": 0.9,
+        "description": "FIND: `EndocrineLayer.__init__` accepts `test_cmd` but does not validate it. If `test_cmd` is a string instead of a list, `evaluate_fix` will crash because `_run_tool` expects `List[str]`.  \nEvidence: line 801 `__init__(..., test_cmd: Optional[List[str]] = None, ...)`. No validation occurs. The immune pipeline calls `evaluate_fixes` with `test_cmd=[\"python\", \"-m\", \"pytest\", ...]` (list), but a user could pass a string.  \nFOLLOW: A crash in `evaluate_fix` causes the entire endocrine cycle to fail",
+        "proposed_fix": "<<<<\n    def __init__(...):\n        ...\n        self.test_cmd = test_cmd\n        if self.test_cmd is not None and isinstance(self.test_cmd, str):\n            self.test_cmd = [self.test_cmd]  # Convert single string to list\n        self.max_fix_evals = max_fix_evals\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 23,
+        "last_status_change_round": 23,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2
+      },
+      "C0080": {
+        "canonical_id": "C0080",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_G003"
+        ],
+        "severity": 0.8,
+        "description": "FIND: `_compute_fix_verdict` returns `SAFE` when `total_net < 0` (issues reduced) and `tests_passed is True`. However, if `tests_passed` is `None` (tests not run), it returns `NEUTRAL` even when issues are reduced. This incorrectly penalizes fixes that improve code but have no test suite.  \nEvidence: lines 734\u2013752. The condition `if total_net < 0:` returns `SAFE` only if `tests_passed is True` (line 741). If `tests_passed is None`, it falls through to `NEUTRAL`.  \nFOLLOW: This discourages fixes ",
+        "proposed_fix": "<<<<\n    # Issues reduced and tests passed (or not run) = safe\n    if total_net < 0:\n        if result.tests_passed is not False:\n            return \"SAFE\"\n        else:\n            return \"HARMFUL\"\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 23,
+        "last_status_change_round": 23,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5
+      },
+      "C0081": {
+        "canonical_id": "C0081",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_G004"
+        ],
+        "severity": 0.7,
+        "description": "FIND: `compute_pacing_signals` uses `cumulative_context_chars` (total across all models) but compares it directly to `context_budget` (per\u2011model). This over\u2011triggers the context\u2011growth signal because total context can exceed per\u2011model budget even when each model is within budget.  \nEvidence: lines 843\u2013851. The function computes `context_fraction = cumulative_context_chars / context_budget` without scaling by number of models.  \nFOLLOW: The insect brain receives false `context_growth` signals, po",
+        "proposed_fix": "<<<<\n    # 2. Context growth rate\n    if context_budget > 0 and round_timings:\n        # Effective total budget = per\u2011model budget \u00d7 number of active models\n        effective_budget = context_budget * len(round_timings)\n        context_fraction = cumulative_context_chars / effective_budget\n        if context_fraction > 0.8:\n            signals.append(PacingSignal(...))\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 23,
+        "last_status_change_round": 23,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4
       }
     },
-    "next_id": 41,
+    "next_id": 82,
     "alias_map": {
       "ChatGPT_F001": "C0001",
       "ChatGPT_F002": "C0002",
@@ -980,19 +4651,122 @@
       "DeepSeek_DS002": "C0037",
       "Gemini_F004": "C0038",
       "Gemini_F005": "C0039",
-      "Gemini_F006": "C0040"
+      "Gemini_F006": "C0040",
+      "DeepSeek_F004": "C0041",
+      "Codex_F007": "C0042",
+      "DeepSeek_F1000": "C0043",
+      "DeepSeek_F1001": "C0044",
+      "Gemini_E0001": "C0045",
+      "Gemini_E0002": "C0046",
+      "ChatGPT_V001": "C0047",
+      "ChatGPT_V002": "C0048",
+      "ChatGPT_V003": "C0049",
+      "ChatGPT_V004": "C0050",
+      "ChatGPT_V005": "C0051",
+      "DeepSeek_F006": "C0052",
+      "DeepSeek_F002": "C0053",
+      "DeepSeek_F003": "C0054",
+      "Gemini_str": "C0055",
+      "DeepSeek_F008": "C0056",
+      "DeepSeek_F010": "C0057",
+      "Gemini_E002": "C0058",
+      "Gemini_E003": "C0059",
+      "DeepSeek_F060": "C0060",
+      "DeepSeek_F061": "C0061",
+      "DeepSeek_F101": "C0062",
+      "DeepSeek_finding.finding_id,": "C0063",
+      "DeepSeek_F102": "C0064",
+      "CC2_F001-R17": "C0065",
+      "DeepSeek_F005": "C0066",
+      "CC2_F067": "C0067",
+      "CC2_F068": "C0068",
+      "Codex_F008": "C0069",
+      "Codex_F009": "C0070",
+      "Codex_F010": "C0071",
+      "Codex_F011": "C0072",
+      "Codex_F012": "C0073",
+      "Codex_F013": "C0074",
+      "DeepSeek_UNSTRUCTURED": "C0075",
+      "Gemini_UNSTRUCTURED": "C0076",
+      "DeepSeek_F200": "C0077",
+      "DeepSeek_G001": "C0078",
+      "DeepSeek_G002": "C0079",
+      "DeepSeek_G003": "C0080",
+      "DeepSeek_G004": "C0081"
     }
   },
   "novelty_counts": [
     29,
-    11
+    11,
+    1,
+    5,
+    5,
+    1,
+    0,
+    1,
+    2,
+    0,
+    0,
+    2,
+    0,
+    2,
+    2,
+    3,
+    2,
+    2,
+    7,
+    2,
+    0,
+    0,
+    4
   ],
   "gamma_history": [
     0.0,
-    0.0
+    0.0,
+    0.668788,
+    0.681131,
+    0.672102,
+    0.68108,
+    0.698297,
+    0.712608,
+    0.72076,
+    0.730885,
+    0.741531,
+    0.74737,
+    0.754039,
+    0.757311,
+    0.758186,
+    0.755906,
+    0.752726,
+    0.748902,
+    0.739478,
+    0.730751,
+    0.724303,
+    0.71965,
+    0.713414
   ],
   "gate_history": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
     false
   ],
-  "cumulative_context_chars": 124819
+  "cumulative_context_chars": 844384
 }

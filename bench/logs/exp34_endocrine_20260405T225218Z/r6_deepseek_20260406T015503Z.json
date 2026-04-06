@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260406T015503Z",
+  "phase": "r6",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2326,
+  "response": "**VERDICT PAYLOADS**\n\nCONFIRM C0048  \nCONFIRM C0047  \nCONFIRM C0049  \nCONFIRM C0050  \nCHALLENGE C0003  \nCONFIRM C0036  \nCONFIRM C0043  \nCONFIRM C0020  \nCONFIRM C0018  \nCONFIRM C0022  \nCONFIRM C0023  \n\n---\n\n**NEW DISCOVERY FINDINGS**\n\nFINDING_ID: F006  \nSEVERITY: 0.7  \nFLAW_CLASS: 1  \nABSTRACTION_INDEX: 0.3  \nDESCRIPTION: **FIND** — In `_apply_fix_to_source`, Strategy 3 (line‑level replacement), multi‑line range replacements incorrectly assign the replaced block as a single string, collapsing multiple lines and breaking source structure. Evidence: lines 597‑609 in endocrine.py join the target lines into `block`, replace `old_frag` with `new_frag`, then assign the resulting `new_block` as a single‑element list to the slice `lines[start_line:end_line + 1]`. This destroys the original line‑boundary structure because `new_block` may contain newlines but is stored as one list element.  \nFOLLOW: This bug only affects fixes that use line‑range replacement patterns (e.g., “Lines 10‑20: old → new”). The resulting patched source will have the wrong number of lines, causing syntax errors when the patched file is read by tools (pyright, mypy, etc.), leading to spurious tool‑issue counts and incorrect fix verdicts (SAFE/HARMFUL/NEUTRAL).  \nPROPOSED_FIX:  \n<<<<\n                else:\n                    # For ranges, join the target lines, replace, and re‑split\n                    if 0 <= start_line and end_line < len(lines):\n                        block = \"\".join(lines[start_line:end_line + 1])\n                        if old_frag in block:\n                            new_block = block.replace(old_frag, new_frag, 1)\n                            lines[start_line:end_line + 1] = [new_block]\n                            modified = True\n====\n                else:\n                    # For ranges, join the target lines, replace, and re‑split\n                    if 0 <= start_line and end_line < len(lines):\n                        block = \"\".join(lines[start_line:end_line + 1])\n                        if old_frag in block:\n                            new_block = block.replace(old_frag, new_frag, 1)\n                            new_lines = new_block.splitlines(keepends=True)\n                            lines[start_line:end_line + 1] = new_lines\n                            modified = True\n>>>>  \nVERIFIED: FALSE",
+  "metadata": {
+    "round": 6,
+    "elapsed": 223.9,
+    "chars": 2326,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}
