@@ -188,7 +188,13 @@ MULTITURN_CHUNK_TARGET = 30_000
 EARLIEST_STOP_ROUND = 12        # No convergence before R12 (was R6 in Exp 32 proposal)
 CONSECUTIVE_ROUNDS_REQUIRED = 2  # Conditions must hold for 2 consecutive rounds
 MAX_NOVEL_FINDINGS = 2           # Novel findings <= 2 per round to qualify
+OPEN_CH_STABILITY_WINDOW = 3    # open_ch must not increase for this many rounds
 MAX_OPEN_CRIT_HIGH = 0           # Zero open CRITICAL/HIGH to qualify
+
+# CC2v between-rounds verification constants
+VERIFICATION_BATCH_SIZE = 6      # Max OPEN findings per verification step
+VERIFICATION_MIN_ROUND = 6       # Don't verify before round 6 (let findings accumulate)
+VERIFICATION_CONFIDENCE_THRESHOLD = 0.7  # Min confidence for verification verdicts
 
 # Scale-dependent gamma thresholds
 GAMMA_TELEMETRY_ONLY_UNTIL = 14  # Rounds 0-14: gamma is telemetry only
@@ -690,6 +696,7 @@ def _evaluate_gate_conditions(
     registry: FindingRegistry,
     novel_this_round: int,
     gamma: float,
+    open_ch_history: Optional[List[int]] = None,
 ) -> Tuple[bool, str]:
     """Evaluate all 5 convergence gate conditions for the current round.
 
@@ -698,7 +705,7 @@ def _evaluate_gate_conditions(
 
     Conditions (ALL must hold):
       1. round >= EARLIEST_STOP_ROUND
-      2. Zero open CRITICAL/HIGH findings
+      2. open_ch stable or declining for OPEN_CH_STABILITY_WINDOW rounds
       3. Novel findings <= MAX_NOVEL_FINDINGS
       4. No finding contested (unresolved CHALLENGE) for >1 round
       5. Gamma gate passes (scale-dependent)
@@ -709,8 +716,27 @@ def _evaluate_gate_conditions(
     failures = []
 
     open_ch = registry.open_crit_high_count()
-    if open_ch > 0:
-        failures.append(f"open_ch={open_ch}")
+
+    # Stability-based open_ch gate: instead of requiring open_ch == 0
+    # (impossible when confirmation rate is low), check that open_ch
+    # has not increased over the last OPEN_CH_STABILITY_WINDOW rounds.
+    # This detects that the pipeline has stopped discovering new CRIT/HIGH
+    # issues — the remaining open count is residual, not growing.
+    if open_ch_history is not None:
+        open_ch_history.append(open_ch)
+    if open_ch_history is None or len(open_ch_history) < OPEN_CH_STABILITY_WINDOW:
+        # Not enough history yet — require zero as fallback
+        if open_ch > 0:
+            failures.append(f"open_ch={open_ch} (insufficient history)")
+    else:
+        window = open_ch_history[-OPEN_CH_STABILITY_WINDOW:]
+        if window[-1] > window[0]:
+            # open_ch is increasing — not stable
+            failures.append(
+                f"open_ch={open_ch} (increasing: "
+                f"{window[0]}\u2192{window[-1]} over {OPEN_CH_STABILITY_WINDOW}r)"
+            )
+        # else: open_ch is stable or declining — condition passes
 
     if novel_this_round > MAX_NOVEL_FINDINGS:
         failures.append(f"novel={novel_this_round}")
@@ -727,7 +753,7 @@ def _evaluate_gate_conditions(
         return False, f"Gate failed: {', '.join(failures)}"
 
     return True, (
-        f"All conditions met: open_ch={open_ch}, novel={novel_this_round}, "
+        f"All conditions met: open_ch={open_ch} (stable), novel={novel_this_round}, "
         f"contested={contested}, gamma={gamma:.3f} ({gate_level})"
     )
 
@@ -738,6 +764,7 @@ def _check_state_convergence(
     novel_this_round: int,
     gamma: float,
     gate_history: List[bool],
+    open_ch_history: Optional[List[int]] = None,
 ) -> Tuple[bool, str]:
     """Compound state-based convergence gate.
 
@@ -748,6 +775,7 @@ def _check_state_convergence(
     """
     passed, reason = _evaluate_gate_conditions(
         round_idx, registry, novel_this_round, gamma,
+        open_ch_history=open_ch_history,
     )
     gate_history.append(passed)
 
@@ -793,6 +821,192 @@ def _check_budget_extension(
     if reasons:
         return True, f"Budget extended: {'; '.join(reasons)}"
     return False, "No extension triggers"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# CC2v — Between-Rounds Verification Agent
+# ──────────────────────────────────────────────────────────────────────────
+
+_VERIFICATION_PROMPT_TEMPLATE = """You are a verification agent (CC2v). Your task is to FFF (Find-Follow-Fix) each
+finding below and produce a structured verdict. You are NOT discovering new bugs.
+You are verifying whether EXISTING findings are real.
+
+For each finding:
+1. FIND: Locate the claimed issue in the provided source code.
+2. FOLLOW: Trace consequences through the code. Does the issue exist as described?
+3. Produce a verdict:
+   - CONFIRM <ID> | <confidence 0.0-1.0> | <one-line evidence trace>
+   - REJECT <ID> | <confidence 0.0-1.0> | <one-line counterexample>
+   - DUPLICATE <ID> OF <canonical_id> | <confidence 0.0-1.0> | <evidence>
+   - ESCALATE <ID> | <reason it cannot be determined>
+
+Rules:
+- Be honest. If you cannot determine, say ESCALATE.
+- Confidence must reflect your actual certainty, not optimism.
+- Evidence must cite specific code lines or logic, not general impressions.
+- One verdict per finding. No preamble.
+
+SOURCE CODE:
+{source_code}
+
+FINDINGS TO VERIFY:
+{findings_block}
+
+Respond with one verdict per line, nothing else.
+"""
+
+
+def _verification_step(
+    registry: "FindingRegistry",
+    round_idx: int,
+    source_code: str,
+    model_configs: List[ModelConfig],
+) -> Dict[str, Any]:
+    """Between-rounds CC2v verification: FFF open findings via CC2 CLI.
+
+    Selects a batch of OPEN CRIT/HIGH findings, dispatches to CC2 with
+    verification prompt, parses structured verdicts, and feeds results
+    back through the registry.
+
+    Returns dict with verification stats.
+    """
+    if round_idx < VERIFICATION_MIN_ROUND:
+        return {"skipped": True, "reason": f"round {round_idx} < {VERIFICATION_MIN_ROUND}"}
+
+    # Select batch: OPEN findings, highest severity first
+    open_findings = []
+    for cid, entry in registry.entries.items():
+        if entry["status"] in ("OPEN", "CONTESTED"):
+            open_findings.append((cid, entry))
+    if not open_findings:
+        return {"skipped": True, "reason": "no open findings"}
+
+    open_findings.sort(key=lambda x: x[1].get("severity", 0), reverse=True)
+    batch = open_findings[:VERIFICATION_BATCH_SIZE]
+
+    # Build findings block
+    findings_lines = []
+    for cid, entry in batch:
+        desc = entry.get("description", "")[:500]
+        findings_lines.append(f"[{cid}] severity={entry.get('severity', 0):.2f}: {desc}")
+
+    findings_block = "\n\n".join(findings_lines)
+
+    # Build prompt
+    prompt = _VERIFICATION_PROMPT_TEMPLATE.format(
+        source_code=source_code[:80_000],  # Cap to avoid context overflow
+        findings_block=findings_block,
+    )
+
+    # Find CC2 model config
+    cc2_config = None
+    for mc in model_configs:
+        if mc.label == "CC2":
+            cc2_config = mc
+            break
+    if cc2_config is None:
+        return {"skipped": True, "reason": "CC2 config not found"}
+
+    # Dispatch to CC2
+    stats: Dict[str, Any] = {
+        "round": round_idx,
+        "batch_size": len(batch),
+        "batch_ids": [cid for cid, _ in batch],
+        "verdicts": {},
+    }
+
+    try:
+        text, elapsed = dispatch_to_model(
+            cc2_config, prompt, "",  # No CDSFL text for verification
+            wall_clock_limit=cc2_config.timeout * 3,
+        )
+        stats["elapsed_s"] = round(elapsed, 1)
+        stats["response_chars"] = len(text)
+    except Exception as e:
+        _log(f"  CC2v: dispatch failed — {type(e).__name__}: {e}")
+        stats["error"] = str(e)
+        return stats
+
+    # Parse verdicts
+    verdict_re = re.compile(
+        r"(CONFIRM|REJECT|DUPLICATE|ESCALATE)\s+(C\d+)"
+        r"(?:\s+OF\s+(C\d+))?"
+        r"(?:\s*\|\s*([\d.]+))?"
+        r"(?:\s*\|\s*(.+))?",
+        re.IGNORECASE,
+    )
+
+    confirmed = 0
+    rejected = 0
+    duplicates = 0
+    escalated = 0
+    batch_ids = {cid for cid, _ in batch}
+
+    for line in text.split("\n"):
+        m = verdict_re.search(line)
+        if not m:
+            continue
+        action = m.group(1).upper()
+        finding_id = m.group(2).upper()
+        merge_target = m.group(3)
+        confidence = float(m.group(4)) if m.group(4) else 0.5
+        evidence = m.group(5) or ""
+
+        if finding_id not in batch_ids:
+            continue  # Ignore verdicts for findings not in this batch
+
+        stats["verdicts"][finding_id] = {
+            "action": action,
+            "confidence": confidence,
+            "evidence": evidence[:200],
+        }
+
+        # Apply verdicts to registry (confidence-gated)
+        if confidence < VERIFICATION_CONFIDENCE_THRESHOLD:
+            _log(f"  CC2v: {finding_id} {action} — low confidence ({confidence:.2f}), skipped")
+            continue
+
+        if action == "CONFIRM":
+            # Treat as independent confirmation from CC2v
+            entry = registry.entries.get(finding_id)
+            if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                registry.resolve(finding_id, "CONFIRMED", round_idx)
+                registry.mark_verified(finding_id)
+                confirmed += 1
+                _log(f"  CC2v: {finding_id} CONFIRMED (conf={confidence:.2f})")
+
+        elif action == "REJECT":
+            entry = registry.entries.get(finding_id)
+            if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                registry.resolve(finding_id, "UNCONFIRMED", round_idx)
+                rejected += 1
+                _log(f"  CC2v: {finding_id} REJECTED → UNCONFIRMED (conf={confidence:.2f})")
+
+        elif action == "DUPLICATE" and merge_target:
+            merge_target = merge_target.upper()
+            if merge_target in registry.entries:
+                entry = registry.entries.get(finding_id)
+                if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                    registry.resolve(finding_id, "MERGED", round_idx)
+                    entry["merged_into"] = merge_target
+                    duplicates += 1
+                    _log(f"  CC2v: {finding_id} MERGED into {merge_target} (conf={confidence:.2f})")
+
+        elif action == "ESCALATE":
+            escalated += 1
+            _log(f"  CC2v: {finding_id} ESCALATED — needs HIL review")
+
+    stats["confirmed"] = confirmed
+    stats["rejected"] = rejected
+    stats["duplicates"] = duplicates
+    stats["escalated"] = escalated
+    stats["total_resolved"] = confirmed + rejected + duplicates
+
+    _log(f"  CC2v: {len(batch)} findings verified — "
+         f"{confirmed} confirmed, {rejected} rejected, "
+         f"{duplicates} merged, {escalated} escalated")
+
+    return stats
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1807,6 +2021,7 @@ def run_experiment(
     per_model_context: Dict[str, int] = {}
     gamma_history: List[float] = []
     gate_history: List[bool] = []
+    open_ch_history: List[int] = []
     if resume and (brain.logs_dir / "runner_state.json").exists():
         import json as _json
         ckpt_data = _json.loads(
@@ -1815,6 +2030,7 @@ def run_experiment(
         novelty_counts = ckpt_data.get("novelty_counts", [])
         gamma_history = ckpt_data.get("gamma_history", [])
         gate_history = ckpt_data.get("gate_history", [])
+        open_ch_history = ckpt_data.get("open_ch_history", [])
         cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
 
     # Build multi-model awareness preamble (star topology)
@@ -2136,6 +2352,17 @@ def run_experiment(
                 if canonical:
                     registry.mark_verified(canonical)
 
+        # CC2v between-rounds verification: FFF open findings
+        verification_stats = _verification_step(
+            registry, round_idx, full_code, exp_config.models,
+        )
+        if not verification_stats.get("skipped"):
+            _log(f"  CC2v verification: {verification_stats.get('total_resolved', 0)} resolved "
+                 f"({verification_stats.get('confirmed', 0)}C / "
+                 f"{verification_stats.get('rejected', 0)}R / "
+                 f"{verification_stats.get('duplicates', 0)}M / "
+                 f"{verification_stats.get('escalated', 0)}E)")
+
         # ITC check — per-model adaptive recovery
         for model_label_itc in list(BASELINE_MODELS):
             model_findings_itc = [f for f in findings if f.model_id == model_label_itc]
@@ -2232,6 +2459,7 @@ def run_experiment(
                     if len(novelty_counts) >= CONSECUTIVE_ROUNDS_REQUIRED else novelty_counts,
             },
         }
+        round_data["verification"] = verification_stats
         result["rounds"].append(round_data)
 
         _log(f"\n  Round {round_idx}: {len(findings)} valid findings from "
@@ -2247,12 +2475,14 @@ def run_experiment(
             "novelty_counts": novelty_counts,
             "gamma_history": [round(g, 6) for g in gamma_history],
             "gate_history": gate_history,
+            "open_ch_history": open_ch_history,
             "cumulative_context_chars": cumulative_context_chars,
         }, indent=2, default=str), encoding="utf-8")
 
         # Check state-based convergence
         converged, conv_reason = _check_state_convergence(
             round_idx, registry, novel_this_round, gamma, gate_history,
+            open_ch_history=open_ch_history,
         )
         _log(f"  Convergence: {conv_reason}")
 

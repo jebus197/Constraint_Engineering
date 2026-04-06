@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 6 April 2026 20:17 BST
+Last updated: 6 April 2026 22:30 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -245,15 +245,30 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   verified → CLOSED (challenge-resistant). REOPEN requires evidence →
   auto-HIL escalation. CLOSED/MERGED findings shown as compact resolved
   markers ("do not revisit") instead of full detail.
-  **Architecture decision — CC2 4-agent split (pending implementation):**
+  **Architecture decision — CC2 4-agent split (CC2v IMPLEMENTED):**
   Original 3-way split (structural/semantic/integration) extended with
   4th verification agent (CC2v). CC2v runs between rounds, FFF/P-passes
   OPEN findings that CT cannot mechanically verify. Produces structured
   verdicts (CONFIRM/DUPLICATE/RESOLVED/ESCALATE) feeding through existing
   immune bridge → registry → convergence gate. Directly reduces open_ch.
-  **Convergence gate fix (pending implementation):**
-  Soften open_ch condition from `== 0` to stability-based check ("open_ch
-  not increasing for 3 consecutive rounds"). Would have triggered R20-R22.
+  CC2v implemented in both runners (exp35 + exp36): `_VERIFICATION_PROMPT_TEMPLATE`,
+  `_verification_step()` function (~180 lines), wired into main loop after
+  immune bridge. Confidence-gated at 0.7. Activates from round 6, batch size 6.
+  **Convergence gate fix (IMPLEMENTED):**
+  Softened open_ch condition from `== 0` to stability-based check ("open_ch
+  not increasing for OPEN_CH_STABILITY_WINDOW (3) consecutive rounds").
+  Tracks `open_ch_history` with checkpoint save/restore. Both runners updated.
+  Would have triggered R20-R22 in Exp 35.
+  **PolicyEngine fixes (7 changes, IMPLEMENTED):**
+  (1) `load_schema()`: default type validation + allowed_values validation.
+  (2) `_compute_provenance()` Layer 4: missing `model_config` merge added.
+  (3) `validate()`: complete rewrite — bidirectional HARD coverage, type
+  validation scanning all TOML files, enum/allowed_values checking, min_layer
+  enforcement, unknown parameter detection. (4) `diff_policies()`: added
+  `task_id_a`/`task_id_b` parameters. (5-7) Schema fixes: `advisory_d_after_round`
+  min_layer domain→universal, `physical_bounds_check` moved constraints→verification
+  namespace (matching TOML), added `pipe_mode` + `json_schema_in_prompt` parameters.
+  New validation immediately caught 4 real schema/TOML inconsistencies.
   Logs: `bench/logs/exp35_pe_20260406T152126Z/`.
   Console: `bench/logs/exp35_console.log`.
 - **EXP 35 PLAN (6 April 2026):**

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 April 2026 20:17 BST
+Last updated: 6 April 2026 22:29 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,18 +19,45 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (6 April 2026, 20:17 BST)
+## Current Pending Work (6 April 2026, 22:29 BST)
 
-Experiments 12–35 ALL COMPLETE. 688 tests pass (pending recount after changes).
+Experiments 12–35 ALL COMPLETE. 690 tests pass.
 
 EXP 35 COMPLETE (6 April 2026, ~18:00 BST):
   PolicyEngine review, relay mode, 5 models, 23 rounds.
   533 raw findings, 79 canonical, 9 CONFIRMED (11.4%), 0 MERGED.
   γ=0.650 (strong depletion). Gate never triggered: open_ch=31 permanent blocker.
   Extension stall detector terminated experiment.
-  Post-run: 6 immune pipeline fixes applied (see ONBOARDING for detail).
+  Post-run: 6 immune pipeline fixes applied. 7 PolicyEngine fixes applied.
   Console: bench/logs/exp35_console.log
   Logs: bench/logs/exp35_pe_20260406T152126Z/
+
+EXP 35 POST-RUN VERIFICATION (6 April 2026, 20:30-22:00 BST):
+  79 canonical findings → 18 verified unique issues (4.4:1 dedup ratio).
+  2 claims REFUTED (C0029 int exclusion, C0039 default-not-in-allowed).
+  17 empty/malformed parser artifacts, 2 verdict-only entries excluded.
+  Programmatic: AST analysis, text search, schema cross-reference.
+  TTS: ~/Desktop/CDSFL_tts/Exp35_Verification_Analysis_2026-04-06.txt
+  Analysis: experimental_notes/Exp35_Verification_Analysis_2026-04-06.md
+
+IMPLEMENTED THIS SESSION (all committed and tested, 690 pass):
+  1. Immune pipeline fixes (6 fixes to immune_agents.py, insect_brain.py)
+  2. PolicyEngine fixes (7 fixes to engine.py, schema.toml, physics.toml)
+     - load_schema(): default type + allowed_values validation
+     - _compute_provenance() Layer 4: missing model_config merge
+     - validate(): bidirectional HARD coverage, type scanning, min_layer, unknowns
+     - diff_policies(): task_id_a/task_id_b params
+     - Schema fixes: advisory_d_after_round min_layer, physical_bounds_check namespace,
+       pipe_mode + json_schema_in_prompt added
+  3. Convergence gate softening (both runners):
+     - open_ch == 0 → stability-based: not increasing for OPEN_CH_STABILITY_WINDOW (3) rounds
+     - open_ch_history tracking with checkpoint save/restore
+  4. CC2v verification agent (both runners):
+     - _VERIFICATION_PROMPT_TEMPLATE: structured FFF prompt for CC2
+     - _verification_step(): batch OPEN findings, dispatch to CC2, parse verdicts
+     - Confidence-gated (0.7): CONFIRM/REJECT/DUPLICATE/ESCALATE
+     - Wired into main loop after immune bridge, stats logged in round_data
+     - Activates from round 6, batch size 6
 
 EXP 34 ANALYSIS COMPLETE (6 April 2026):
   81 canonical → 33 verified unique. 17 fixes applied to endocrine.py.
@@ -40,30 +67,14 @@ CX + GEMINI RUNNER REVIEW COMPLETE (6 April 2026, 16:15 BST):
   11 findings claimed, 1 confirmed (alias map scoping). Fixed in both runners.
   Review: experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md
 
-POST-EXP 35 IMMUNE PIPELINE FIXES (uncommitted, in working tree):
-  1. Reconciliation gate: three-path confidence threshold (LOCKED/UNSCORED/standard)
-  2. CT timeout: 180→300s
-  3. DC→cell routing fix
-  4. LLM classifier: OpenRouter → CLI Haiku (Max plan)
-  5. NK tau_sim: 0.33→0.50 (immune rejection, decoupled from convergence 0.33)
-  6. CLOSED status FSM: CONFIRMED+verified→CLOSED, REOPEN→HIL, compact resolved markers
-  Files changed: immune_agents.py, insect_brain.py, run_exp35_policy_engine.py,
-  run_exp36_evidence.py, tests/test_exp29_integration.py
-
 NEXT STEPS:
-  1. Commit immune pipeline fixes + CLOSED status + test updates
-  2. Implement CC2 Option A 4-agent split (structural/semantic/integration + verification)
-     - CC2v (verification agent): between-rounds FFF/P-pass on OPEN findings
-     - Verdicts feed existing immune bridge: CONFIRM/DUPLICATE/RESOLVED/ESCALATE
-     - Directly reduces open_ch count → enables convergence gate
-  3. Soften convergence gate open_ch condition (== 0 → stability-based: not increasing for 3 rounds)
-  4. Run Exp 36 (evidence layer) with all corrected code + CC2 4-agent + gate fix
-  5. Generate TTS/experimental notes for Exp 35
+  1. Run Exp 36 (evidence layer) with all corrected code + CC2v + gate fix
+  2. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only,
+     not blocking Exp 36 (CC2v is the 4th agent, already implemented)
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
-  - CC2 Option A 4-agent split not yet implemented (spec in Exp31 audit, extended with CC2v)
-  - Convergence gate open_ch condition too strict (stability-based fix designed, not coded)
+  - CC2 Option A structural/semantic/integration agents (3 of 4) — design not coded
   - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
