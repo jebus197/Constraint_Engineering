@@ -33,12 +33,13 @@ import logging
 import os
 import re
 import shutil
+import statistics
 import subprocess as sp
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from bench.dm._types import Finding
 
@@ -215,7 +216,7 @@ def run_pyright(paths: List[str]) -> List[ToolDiagnostic]:
     cmd = [PYRIGHT_BIN, "--outputjson"] + paths
     result = _run_tool(cmd)
 
-    if result.stderr == "NOT_FOUND":
+    if result.stderr in ("NOT_FOUND", "TIMEOUT"):
         raise ToolNotFoundError("pyright", PYRIGHT_BIN)
 
     diagnostics = []
@@ -264,7 +265,7 @@ def run_ruff(paths: List[str]) -> List[ToolDiagnostic]:
     cmd = [RUFF_BIN, "check", "--output-format=json"] + paths
     result = _run_tool(cmd)
 
-    if result.stderr == "NOT_FOUND":
+    if result.stderr in ("NOT_FOUND", "TIMEOUT"):
         raise ToolNotFoundError("ruff", RUFF_BIN)
 
     diagnostics = []
@@ -295,9 +296,12 @@ def run_ruff(paths: List[str]) -> List[ToolDiagnostic]:
 
 def _categorise_ruff(code: str, message: str) -> str:
     """Categorise a ruff diagnostic into a DefectCategory."""
-    # F-codes: pyflakes (dead code, unused imports)
-    if code.startswith("F"):
+    # F-codes: pyflakes — only F401 (unused import), F811 (redefined), F841 (unused var)
+    # are dead code. Others (F821 undefined name, etc.) are not.
+    if code in ("F401", "F811", "F841"):
         return DefectCategory.DEAD_CODE
+    if code.startswith("F"):
+        return DefectCategory.UNKNOWN
     # E-codes: pycodestyle (style)
     if code.startswith("E") or code.startswith("W"):
         return DefectCategory.STYLE
@@ -322,7 +326,7 @@ def run_bandit(paths: List[str]) -> List[ToolDiagnostic]:
     cmd = [BANDIT_BIN, "-f", "json", "-q"] + paths
     result = _run_tool(cmd)
 
-    if result.stderr == "NOT_FOUND":
+    if result.stderr in ("NOT_FOUND", "TIMEOUT"):
         raise ToolNotFoundError("bandit", BANDIT_BIN)
 
     diagnostics = []
@@ -355,7 +359,7 @@ def run_mypy(paths: List[str]) -> List[ToolDiagnostic]:
            "--no-error-summary"] + paths
     result = _run_tool(cmd)
 
-    if result.stderr == "NOT_FOUND":
+    if result.stderr in ("NOT_FOUND", "TIMEOUT"):
         raise ToolNotFoundError("mypy", MYPY_BIN)
 
     # mypy output format: file.py:line:col: severity: message  [error-code]
@@ -482,28 +486,39 @@ def _create_sandbox(
 
     Preserving structure matters because pyright/mypy resolve imports relative to
     package roots. A flat tmpdir with one file causes spurious import errors.
+    Uses the git repo root (not commonpath) to preserve full package structure.
+    Copies __init__.py files and project config files for tool resolution.
     """
     tmpdir = tempfile.mkdtemp(prefix="endocrine_fix_")
     try:
-        # Find the common ancestor directory of all source paths.
-        # commonpath may return a file if all paths are the same file,
-        # so ensure we always have a directory.
         all_paths = [os.path.abspath(p) for p in source_paths]
         all_paths.append(os.path.abspath(target_path))
-        common = os.path.commonpath(all_paths)
-        if os.path.isfile(common):
-            common = os.path.dirname(common)
+
+        # Find repo root: walk up from target_path looking for .git.
+        # This preserves full package structure (bench/foo.py stays as bench/foo.py).
+        repo_root = os.path.abspath(target_path)
+        while repo_root != os.path.dirname(repo_root):
+            if os.path.isdir(os.path.join(repo_root, ".git")):
+                break
+            repo_root = os.path.dirname(repo_root)
+        else:
+            # Fallback: use commonpath if no .git found
+            try:
+                repo_root = os.path.commonpath(all_paths)
+            except ValueError:
+                repo_root = os.path.dirname(all_paths[0])
+            if os.path.isfile(repo_root):
+                repo_root = os.path.dirname(repo_root)
 
         patched_path = None
 
-        # Copy each source file, preserving relative paths
+        # Copy each source file, preserving paths relative to repo root
         for src in source_paths:
             abs_src = os.path.abspath(src)
-            rel = os.path.relpath(abs_src, common)
+            rel = os.path.relpath(abs_src, repo_root)
             dst = os.path.join(tmpdir, rel)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             if abs_src == os.path.abspath(target_path):
-                # Write patched version instead of copying
                 Path(dst).write_text(patched_text, encoding="utf-8")
                 patched_path = dst
             else:
@@ -512,11 +527,34 @@ def _create_sandbox(
         # If target_path wasn't in source_paths, write it separately
         if patched_path is None:
             abs_target = os.path.abspath(target_path)
-            rel = os.path.relpath(abs_target, common)
+            rel = os.path.relpath(abs_target, repo_root)
             dst = os.path.join(tmpdir, rel)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             Path(dst).write_text(patched_text, encoding="utf-8")
             patched_path = dst
+
+        # Copy __init__.py files for intermediate packages
+        for src in all_paths:
+            rel = os.path.relpath(src, repo_root)
+            parts = rel.split(os.sep)
+            for i in range(len(parts) - 1):
+                pkg_dir = os.path.join(repo_root, *parts[:i + 1])
+                init_py = os.path.join(pkg_dir, "__init__.py")
+                if os.path.isfile(init_py):
+                    dst_init = os.path.join(tmpdir, *parts[:i + 1], "__init__.py")
+                    if not os.path.exists(dst_init):
+                        os.makedirs(os.path.dirname(dst_init), exist_ok=True)
+                        shutil.copy2(init_py, dst_init)
+
+        # Copy project config files for tool resolution
+        config_files = [
+            "pyrightconfig.json", ".pyrightconfig.json",
+            "pyproject.toml", "setup.cfg", "mypy.ini",
+        ]
+        for cf in config_files:
+            src_cf = os.path.join(repo_root, cf)
+            if os.path.isfile(src_cf):
+                shutil.copy2(src_cf, os.path.join(tmpdir, cf))
 
         return tmpdir, patched_path
     except Exception:
@@ -528,9 +566,9 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
     """Attempt to apply a proposed fix to source text.
 
     Tries multiple strategies:
-    1. If proposed_fix looks like a diff (contains --- or +++), skip (not supported yet)
-    2. If proposed_fix is valid Python, replace the entire file (whole-file fix)
-    3. If proposed_fix contains a recognisable search-replace pattern, apply it
+    1. Search-replace pattern (Replace X with Y)
+    2. Whole-file replacement (valid Python with structural content)
+    3. Line-level replacement hints (Line N: old -> new)
 
     Returns patched source text, or None if the fix cannot be applied.
     """
@@ -551,15 +589,19 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
         if old in source_text:
             return source_text.replace(old, new, 1)
 
-    # Strategy 2: if the fix is valid Python and looks like a complete replacement
-    # (starts with import or def or class), treat it as a whole-file replacement
+    # Strategy 2: if the fix is valid Python with structural content
+    # (functions, classes, imports), treat it as a whole-file replacement
     try:
-        compile(fix, "<fix>", "exec")
-        # Only apply if it's substantial (>5 lines) — single expressions are
-        # likely descriptions, not replacements
-        if fix.count("\n") >= 5:
+        import ast
+        tree = compile(fix, "<fix>", "exec", ast.PyCF_ONLY_AST)
+        has_structure = any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef,
+                              ast.ClassDef, ast.Import, ast.ImportFrom))
+            for node in ast.iter_child_nodes(tree)
+        )
+        if fix.count("\n") >= 5 and has_structure:
             return fix
-    except SyntaxError:
+    except (SyntaxError, ValueError):
         pass
 
     # Strategy 3: line-level replacement hints
@@ -594,12 +636,20 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
 
 
 def _count_tool_issues(tool_runner, file_path: str) -> int:
-    """Run a tool on a single file and return the number of issues found."""
+    """Run a tool on a single file and return the number of issues found.
+
+    Raises ToolNotFoundError if the tool is not available (including timeout).
+    Returns -1 for other failures (parse errors etc.) to distinguish from
+    genuine zero-issue results.
+    """
     try:
         diags = tool_runner([file_path])
         return len(diags)
-    except Exception:
-        return 0
+    except ToolNotFoundError:
+        raise
+    except Exception as e:
+        logger.warning("Tool %s failed on %s: %s", tool_runner.__name__, file_path, e)
+        return -1
 
 
 def evaluate_fix(
@@ -610,12 +660,12 @@ def evaluate_fix(
     """Evaluate a single proposed fix in a sandbox.
 
     The process:
-    1. Find the source file the finding refers to (or use first source_path)
-    2. Copy it to a temp directory
-    3. Apply the proposed fix
-    4. Run type checkers and linters on the patched version
+    1. Find the source file the finding refers to
+    2. Apply the proposed fix to source text
+    3. Create TWO sandboxes: one with original code, one with patched code
+    4. Run tools on both (symmetric comparison eliminates environment skew)
     5. Compare before/after diagnostic counts
-    6. Optionally run tests
+    6. Optionally run tests in the post-fix sandbox
 
     Args:
         finding: The finding with a proposed_fix to evaluate.
@@ -651,18 +701,13 @@ def evaluate_fix(
 
     try:
         source_text = Path(target_path).read_text(encoding="utf-8")
-    except OSError as e:
+    except (OSError, UnicodeDecodeError) as e:
         eval_result.verdict = "UNEVALUABLE"
         eval_result.apply_error = f"Cannot read source: {e}"
         eval_result.elapsed_s = time.monotonic() - t0
         return eval_result
 
-    # Pre-fix baselines
-    eval_result.pre_type_errors = _count_tool_issues(run_pyright, target_path)
-    eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, target_path)
-    eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, target_path)
-
-    # Apply fix in sandbox
+    # Apply fix
     patched = _apply_fix_to_source(source_text, finding.proposed_fix)
     if patched is None:
         eval_result.fix_applied = False
@@ -673,28 +718,53 @@ def evaluate_fix(
 
     eval_result.fix_applied = True
 
-    # Create sandbox preserving directory structure so tools resolve imports
-    tmpdir = None
+    # Create TWO sandboxes for symmetric comparison
+    tmpdir_pre = None
+    tmpdir_post = None
     try:
-        tmpdir, patched_path = _create_sandbox(
-            target_path, source_paths, patched,
-        )
+        tmpdir_pre, pre_path = _create_sandbox(target_path, source_paths, source_text)
+        tmpdir_post, post_path = _create_sandbox(target_path, source_paths, patched)
 
-        # Post-fix analysis
-        eval_result.new_type_errors = _count_tool_issues(run_pyright, patched_path)
-        eval_result.new_ruff_errors = _count_tool_issues(run_ruff, patched_path)
-        eval_result.new_bandit_issues = _count_tool_issues(run_bandit, patched_path)
+        # Pre-fix baselines (in sandbox, not real project)
+        eval_result.pre_type_errors = _count_tool_issues(run_pyright, pre_path)
+        eval_result.pre_ruff_errors = _count_tool_issues(run_ruff, pre_path)
+        eval_result.pre_bandit_issues = _count_tool_issues(run_bandit, pre_path)
+        pre_mypy = _count_tool_issues(run_mypy, pre_path)
+
+        # Post-fix analysis (in identical sandbox)
+        eval_result.new_type_errors = _count_tool_issues(run_pyright, post_path)
+        eval_result.new_ruff_errors = _count_tool_issues(run_ruff, post_path)
+        eval_result.new_bandit_issues = _count_tool_issues(run_bandit, post_path)
+        post_mypy = _count_tool_issues(run_mypy, post_path)
+
+        # Include mypy in type error counts
+        if eval_result.pre_type_errors >= 0 and pre_mypy >= 0:
+            eval_result.pre_type_errors += pre_mypy
+        if eval_result.new_type_errors >= 0 and post_mypy >= 0:
+            eval_result.new_type_errors += post_mypy
+
+        # If any tool returned -1 (failure), mark as unevaluable
+        all_counts = [
+            eval_result.pre_type_errors, eval_result.pre_ruff_errors,
+            eval_result.pre_bandit_issues, eval_result.new_type_errors,
+            eval_result.new_ruff_errors, eval_result.new_bandit_issues,
+        ]
+        if any(c < 0 for c in all_counts):
+            eval_result.verdict = "UNEVALUABLE"
+            eval_result.apply_error = "One or more tools failed during analysis"
+            eval_result.elapsed_s = time.monotonic() - t0
+            return eval_result
 
         # Net changes
         eval_result.net_type_errors = eval_result.new_type_errors - eval_result.pre_type_errors
         eval_result.net_ruff_errors = eval_result.new_ruff_errors - eval_result.pre_ruff_errors
         eval_result.net_bandit_issues = eval_result.new_bandit_issues - eval_result.pre_bandit_issues
 
-        # Run tests if command provided
+        # Run tests if command provided (in post-fix sandbox)
         if test_cmd:
             try:
                 test_result = _run_tool(
-                    test_cmd, timeout=_TOOL_TIMEOUT, cwd=tmpdir,
+                    test_cmd, timeout=_TOOL_TIMEOUT, cwd=tmpdir_post,
                 )
                 eval_result.tests_passed = test_result.returncode == 0
                 eval_result.test_output = (
@@ -703,9 +773,21 @@ def evaluate_fix(
             except Exception as e:
                 eval_result.tests_passed = None
                 eval_result.test_output = f"Test execution failed: {e}"
+    except ToolNotFoundError as e:
+        eval_result.verdict = "UNEVALUABLE"
+        eval_result.apply_error = f"Tool unavailable: {e}"
+        eval_result.elapsed_s = time.monotonic() - t0
+        return eval_result
+    except Exception as e:
+        eval_result.verdict = "UNEVALUABLE"
+        eval_result.apply_error = f"Sandbox error: {e}"
+        eval_result.elapsed_s = time.monotonic() - t0
+        return eval_result
     finally:
-        if tmpdir:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+        if tmpdir_pre:
+            shutil.rmtree(tmpdir_pre, ignore_errors=True)
+        if tmpdir_post:
+            shutil.rmtree(tmpdir_post, ignore_errors=True)
 
     # Verdict
     eval_result.verdict = _compute_fix_verdict(eval_result)
@@ -731,7 +813,7 @@ def _find_target_file(finding: Finding, source_paths: List[str]) -> Optional[str
     back to the first source path.
     """
     # Extract file paths from description
-    path_pattern = re.compile(r"[\w/\\]+\.py\b")
+    path_pattern = re.compile(r"[-\w./\\]+\.py\b")
     desc = finding.description + " " + finding.proposed_fix
     matches = path_pattern.findall(desc)
 
@@ -749,8 +831,8 @@ def _find_target_file(finding: Finding, source_paths: List[str]) -> Optional[str
             if os.path.basename(sp_path) == match_basename:
                 return sp_path
 
-    # Fall back to first source path
-    return source_paths[0] if source_paths else None
+    # No match — return None. The caller already handles None.
+    return None
 
 
 def _compute_fix_verdict(result: FixEvaluation) -> str:
@@ -876,7 +958,7 @@ def compute_pacing_signals(
     # 1. Slow model detection
     if round_timings:
         durations = [rt.duration_s for rt in round_timings]
-        median_duration = sorted(durations)[len(durations) // 2]
+        median_duration = statistics.median(durations)
         for rt in round_timings:
             if rt.duration_s > median_duration * 2.5 and rt.duration_s > 30.0:
                 signals.append(PacingSignal(
@@ -920,11 +1002,11 @@ def compute_pacing_signals(
     if round_timings:
         char_counts = [rt.response_chars for rt in round_timings if rt.response_chars > 0]
         if char_counts:
-            median_chars = sorted(char_counts)[len(char_counts) // 2]
+            median_chars = statistics.median(char_counts)
             for rt in round_timings:
                 if rt.response_chars > median_chars * 3 and rt.response_chars > 10000:
                     signals.append(PacingSignal(
-                        signal_type="context_growth",
+                        signal_type="response_size_anomaly",
                         detail=f"{rt.model_id} produced {rt.response_chars} chars (median {median_chars})",
                         model_id=rt.model_id,
                         metric_value=float(rt.response_chars),
@@ -1007,25 +1089,37 @@ class EndocrineLayer:
         t0 = time.monotonic()
 
         # 1. Health scan
-        health = scan_health(self.source_paths)
-        self._scan_history.append(health)
+        try:
+            health = scan_health(self.source_paths)
+            self._scan_history.append(health)
+        except Exception as e:
+            logger.error("Health scan failed: %s", e)
+            health = HealthScan(elapsed_s=time.monotonic() - t0)
 
         # 2. Fix evaluation
-        fix_evals = evaluate_fixes(
-            findings,
-            self.source_paths,
-            self.test_cmd,
-            self.max_fix_evals,
-        )
+        try:
+            fix_evals = evaluate_fixes(
+                findings,
+                self.source_paths,
+                self.test_cmd,
+                self.max_fix_evals,
+            )
+        except Exception as e:
+            logger.error("Fix evaluation failed: %s", e)
+            fix_evals = []
 
         # 3. Pacing signals
-        pacing = compute_pacing_signals(
-            round_timings=round_timings or [],
-            cumulative_context_chars=cumulative_context_chars,
-            context_budget=context_budget,
-            novelty_counts=novelty_counts or [],
-            round_idx=round_idx,
-        )
+        try:
+            pacing = compute_pacing_signals(
+                round_timings=round_timings or [],
+                cumulative_context_chars=cumulative_context_chars,
+                context_budget=context_budget,
+                novelty_counts=novelty_counts or [],
+                round_idx=round_idx,
+            )
+        except Exception as e:
+            logger.error("Pacing signals failed: %s", e)
+            pacing = []
 
         elapsed = time.monotonic() - t0
 

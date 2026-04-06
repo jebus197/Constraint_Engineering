@@ -233,10 +233,11 @@ class TestFindTargetFile:
         paths = ["/src/bench/immune_agents.py", "/src/bench/other.py"]
         assert _find_target_file(finding, paths) == "/src/bench/immune_agents.py"
 
-    def test_falls_back_to_first(self):
+    def test_no_match_returns_none(self):
+        """When no file path matches the description, return None (not a wrong guess)."""
         finding = _make_finding(desc="Some abstract description")
         paths = ["/src/bench/main.py"]
-        assert _find_target_file(finding, paths) == "/src/bench/main.py"
+        assert _find_target_file(finding, paths) is None
 
     def test_empty_paths_returns_none(self):
         finding = _make_finding()
@@ -286,7 +287,7 @@ class TestPacingSignals:
             RoundTiming("Verbose", 0, 20.0, 50000, 3),
         ]
         signals = compute_pacing_signals(timings, 0, 80000, [], 0)
-        ctx = [s for s in signals if s.signal_type == "context_growth" and s.model_id == "Verbose"]
+        ctx = [s for s in signals if s.signal_type == "response_size_anomaly" and s.model_id == "Verbose"]
         assert len(ctx) == 1
 
 

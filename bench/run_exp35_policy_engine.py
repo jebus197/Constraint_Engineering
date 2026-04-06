@@ -293,23 +293,6 @@ class FindingRegistry:
         """Resolve a model-local ID to canonical ID."""
         return self._alias_map.get(model_local_id)
 
-    def to_dict(self) -> dict:
-        """Serialise registry state for checkpoint persistence."""
-        return {
-            "entries": self.entries,
-            "next_id": self._next_id,
-            "alias_map": self._alias_map,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "FindingRegistry":
-        """Restore registry from checkpoint data."""
-        reg = cls()
-        reg.entries = data.get("entries", {})
-        reg._next_id = data.get("next_id", 1)
-        reg._alias_map = data.get("alias_map", {})
-        return reg
-
     def open_crit_high_count(self) -> int:
         """Count open/contested findings with severity >= 0.7 (CRITICAL/HIGH)."""
         return sum(
@@ -391,6 +374,33 @@ class FindingRegistry:
         lines.append("=== END REGISTRY ===")
         return "\n".join(lines)
 
+    def auto_resolve_contested(self, current_round: int):
+        """Auto-resolve CONTESTED findings with overwhelming challenge evidence.
+
+        If a finding has >= 3 CHALLENGE verdicts and 0 CONFIRM verdicts in the
+        last 3 rounds, auto-resolve it to REFUTED.
+        """
+        for fid, entry in self.entries.items():
+            if entry.get("status") != "CONTESTED":
+                continue
+            # Look at verdict history for last 3 rounds
+            recent_verdicts = [
+                v for v in entry.get("verdicts", [])
+                if v.get("round", 0) >= current_round - 2
+            ]
+            challenges = sum(
+                1 for v in recent_verdicts if v.get("verdict") == "CHALLENGE"
+            )
+            confirms = sum(
+                1 for v in recent_verdicts if v.get("verdict") == "CONFIRM"
+            )
+            if challenges >= 3 and confirms == 0:
+                entry["status"] = "REFUTED"
+                _log(
+                    f"  Auto-refuted {fid}: {challenges} challenges, "
+                    f"0 defences in last 3 rounds"
+                )
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialise for JSON persistence."""
         return {
@@ -398,6 +408,15 @@ class FindingRegistry:
             "next_id": self._next_id,
             "alias_map": dict(self._alias_map),
         }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "FindingRegistry":
+        """Restore registry from checkpoint data."""
+        reg = cls()
+        reg.entries = data.get("entries", {})
+        reg._next_id = data.get("next_id", 1)
+        reg._alias_map = data.get("alias_map", {})
+        return reg
 
 
 
@@ -1615,6 +1634,7 @@ def run_experiment(
     experiment_start = time.monotonic()
     novelty_counts: List[int] = []
     cumulative_context_chars = 0
+    per_model_context: Dict[str, int] = {}
     gamma_history: List[float] = []
     gate_history: List[bool] = []
     if resume and (brain.logs_dir / "runner_state.json").exists():
@@ -1821,6 +1841,7 @@ def run_experiment(
 
         # Status transitions: programmatic confirmation / merge
         _update_finding_statuses(registry, round_idx)
+        registry.auto_resolve_contested(round_idx)
         confirmed = sum(
             1 for e in registry.entries.values() if e["status"] == "CONFIRMED"
         )
@@ -1839,8 +1860,13 @@ def run_experiment(
         round_timings = _build_round_timings(
             responses, per_model_durations, findings, round_idx,
         )
-        for text in responses.values():
+        for model_label_ctx, text in responses.items():
+            per_model_context[model_label_ctx] = (
+                per_model_context.get(model_label_ctx, 0) + len(text)
+            )
             cumulative_context_chars += len(text)
+        _log(f"  Per-model context: "
+             f"{{{', '.join(f'{k}: {v/1000:.0f}K' for k, v in sorted(per_model_context.items()))}}}")
 
         endo_report = endo.run(
             round_idx=round_idx,
@@ -2000,6 +2026,24 @@ def run_experiment(
                 result["extension_reason"] = ext_reason
             else:
                 _log(f"\n  No budget extension needed: {ext_reason}")
+
+        # Extension stall detection: if extended but no improvement, terminate
+        if extended and round_idx > MAX_ROUNDS and len(result["rounds"]) >= 2:
+            prev_rd = result["rounds"][-2].get("convergence_gate", {})
+            curr_rd = round_data.get("convergence_gate", {})
+            prev_open = prev_rd.get("open_crit_high", 99)
+            curr_open = curr_rd.get("open_crit_high", 99)
+            prev_contested = prev_rd.get("contested", 99)
+            curr_contested = curr_rd.get("contested", 99)
+            if curr_open >= prev_open and curr_contested >= prev_contested:
+                _log(
+                    f"  Extension not improving: open_ch {prev_open}"
+                    f"\u2192{curr_open}, contested {prev_contested}"
+                    f"\u2192{curr_contested}. Terminating."
+                )
+                result["converged_at"] = round_idx
+                result["convergence_reason"] = "EXTENSION_STALLED"
+                break
 
     # Finalise status model: remaining OPEN/CONTESTED -> UNCONFIRMED
     final_round = len(brain.state.all_findings) - 1
