@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 05:48 BST
+Last updated: 7 April 2026 07:10 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -114,9 +114,32 @@ EXP 36 COMPLETE (7 April 2026, 05:34 BST):
         ~/Desktop/CDSFL_tts/Exp36_Burst_Reasoning_Analysis_2026-04-07.txt
         ~/Desktop/CDSFL_tts/Exp36_Live_Analysis_CDSFL_as_Bench_2026-04-07.txt
 
+EXP 36 POST-RUN VERIFICATION (7 April 2026, 07:06 BST):
+  Three-workstream independent verification (FFAF protocol):
+  Mathematical (NumPy/SciPy): 4 CONFIRMED, 3 UNCERTAIN, 0 REJECTED.
+    - Phase 1 exponential decay R²=0.985, R8 burst z=3.63, gamma correct ±0.0005
+    - ρ decline p=0.17 (directionally correct, underpowered)
+  AST: 7 code bugs CONFIRMED, 1 REJECTED (nonlocal _intersect = valid Python).
+    - 5 major families: payload guard, export_bundle, _classify_event, verify_bundle, regex
+    - 2 additional: trace_finding ordering, EvidenceBundle asymmetric API
+  Deep analysis: 8 CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
+    - DeepSeek late-stage churn dominance (55.6% of extension output)
+    - Gemini output spikes anticorrelate with novelty
+    - ITC conflates degradation with depletion (100% DEGRADATION across all models)
+    - 3/5 convergence gate conditions non-contributing post-R6
+    - Parser artifacts consuming 18% of CC2v slots
+    - CC2v confirmations dominated by one bug family (12+ re-confirmations)
+    - Context growth unbounded: 406% of budget by R22
+  KEY RESULT: 153 canonical = ~9 unique bugs, 17:1 dedup ratio (worst in project).
+  Bugs are real. Volume is churn. Three churn drivers: ITC feedback loop, dedup
+  failure, context inflation.
+  Verification: experimental_notes/Exp36_Verification_Analysis_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/Exp36_Verification_Analysis_2026-04-07.txt
+
 NEXT STEPS:
-  1. Post-experiment manual dedup of 153 canonical findings (Exp 35 had 4.4:1 ratio)
-  2. Implement 7 design improvements for Exp 37 (see Session Findings doc):
+  1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
+  2. Implement 13 design improvements for Exp 37:
+     Original 7 (from Session Findings):
      - Contested → HIL escalation (5-round threshold)
      - Discovery efficiency metric (ρ = novel/raw)
      - Consolidation phase (ITC change_focus only in final 3 rounds)
@@ -124,6 +147,13 @@ NEXT STEPS:
      - Meta-cognitive decay feedback in star topology prompt
      - v2 shadow activation (Helper T v2, B Cell v2)
      - Classifier/timeout fixes
+     Deep analysis additions (6):
+     - Per-model ρ tracking with targeted ITC intervention (HIGH)
+     - Gamma-aware ITC DEGRADATION threshold (HIGH)
+     - Dynamic stall detector terminate threshold
+     - Pre-filter findings before CC2v queue (HIGH)
+     - Dedup-aware CC2v (check prior confirmations) (HIGH)
+     - Context windowing for long runs (HIGH)
   3. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only
 
 ARCHITECTURAL GAPS (remaining):

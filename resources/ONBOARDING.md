@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 05:48 BST
+Last updated: 7 April 2026 07:10 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,10 +39,22 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   verification working). DC v1 regex 21–44% agreement with LLM classifier.
   Helper T v2 flagged ~4 duplicates/round. v2 activation indicated for Exp 37.
   7 design improvements identified for Exp 37 (see Session Findings doc).
+  **POST-RUN VERIFICATION (07:06 BST):** Three-workstream independent verification.
+  Mathematical (NumPy/SciPy): 4 CONFIRMED, 3 UNCERTAIN, 0 REJECTED.
+  AST: 7 code bugs CONFIRMED, 1 REJECTED (valid Python). ~9 total unique issues.
+  Deep analysis: 8 structural patterns CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
+  **Key verification result:** 153 canonical = ~9 unique bugs, 17:1 dedup ratio
+  (worst in project history). Bugs are real; volume is churn. Three interacting
+  churn drivers: ITC-convergence feedback loop, dedup failure, context inflation
+  (406% of budget by R22). 13 total design improvements identified for Exp 37
+  (original 7 + 6 from deep analysis). Highest leverage: gamma-aware ITC threshold,
+  per-model ρ tracking, context windowing.
   Logs: `bench/logs/exp36_evidence_20260407T004931Z/`
   Results: `experimental_notes/Exp36_Results_2026-04-07.md`
   Session findings: `experimental_notes/Exp36_Session_Findings_2026-04-07.md`
+  Verification: `experimental_notes/Exp36_Verification_Analysis_2026-04-07.md`
   TTS: `~/Desktop/CDSFL_tts/Exp36_Results_2026-04-07.txt`
+        `~/Desktop/CDSFL_tts/Exp36_Verification_Analysis_2026-04-07.txt`
 - **EXP 29 COMPLETE (4 April 2026, 21:43 BST):**
   First full integration test of CDSFL persistence layer with insect brain
   as central relay. 9 rounds, 340 findings, 35 min wall clock. **CONVERGED**
