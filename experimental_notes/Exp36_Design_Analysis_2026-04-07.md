@@ -179,7 +179,33 @@ The runner supports `--resume` from checkpoint. Full state restoration from R22 
 
 **Recommendation:** Both have value. Resume Exp 36 as a quick validation (expect 3–5 rounds), then run a fresh Exp 37 on a new test article with all 13 design improvements + v2 immune activation. The resumed Exp 36 becomes a controlled comparison: same test article, same data, different design — isolates the impact of the fixes.
 
-## VI. What the "Semantic Layer" Is
+## VI. CC2 Option A — The Four-Agent Model
+
+### Agent Numbering
+
+| Agent | Role | Status |
+|-------|------|--------|
+| Agent 1 | Structural — code structure, dependencies, architectural patterns | Designed, NOT coded |
+| Agent 2 | Semantic — semantic correctness, type safety, semantic dependencies | Designed, NOT coded |
+| Agent 3 | Integration — cross-component interactions, API contracts | Designed, NOT coded |
+| Agent 4 | CC2v — between-round verification (CONFIRM/REJECT/DUPLICATE/ESCALATE) | IMPLEMENTED, operational |
+
+### Impact of Missing Agents 1–3
+
+Only Agent 4 was implemented for Exp 36. CC2 operated as both a general-purpose discovery model AND the Agent 4 verifier. The deep analysis showed CC2 producing only 42 raw findings (9.3% of total) — lowest of all 5 models — because of this dual role.
+
+If Agents 1–3 existed:
+- **CC2's contribution would be specialised** rather than general-purpose. A structural agent targeting structural bugs, a semantic agent targeting type safety, an integration agent targeting API contracts. Specialisation produces more targeted, less redundant findings.
+- **Agent 2 (Semantic) IS the "semantic layer"** the founder asked about. It would provide dedicated semantic-level analysis as a discovery agent, complementing the semantic dedup in NK v2 and the semantic verification in B-Cell v2. Currently semantic capability exists only in the immune pipeline's filtering stage. A dedicated semantic discovery agent operates upstream.
+- **Dedup ratio would likely improve** because specialised agents produce findings in narrower categories, making the dedup engine's job easier (same-category findings are easier to cluster than cross-category reformulations).
+
+### Implementation Note
+
+Adding Agents 1–3 mid-experiment (during resumed Exp 36) would change experimental conditions and weaken controlled comparison. Recommended: implement for fresh Exp 37 only.
+
+---
+
+## VII. What the "Semantic Layer" Is
 
 There is no single component explicitly named "semantic layer." The semantic capabilities are distributed across:
 

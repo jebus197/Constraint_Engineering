@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 09:11 BST
+Last updated: 7 April 2026 09:22 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -175,6 +175,12 @@ NEXT STEPS:
   0b. ACTIVATE v2 immune as primary (remove v1, enable LLM classifier, skin barrier)
   0c. CONNECT fix-application pipeline (extract fix → sandbox → Stage 4 → CLOSED)
   0d. RESUME Exp 36 from R22 checkpoint as validation run (expect 3–5 rounds)
+  0e. IMPLEMENT CC2 Option A Agents 1–3 (structural/semantic/integration) for Exp 37
+      - Agent 1 (Structural): code structure, dependencies, architectural patterns
+      - Agent 2 (Semantic): semantic correctness, type safety — THIS IS the semantic layer
+      - Agent 3 (Integration): cross-component interactions, API contracts
+      - Agent 4 (CC2v): already implemented, operational since Exp 35
+      - Do NOT add to resumed Exp 36 (changes experimental conditions)
   1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
   2. Implement full 13 design improvements for fresh Exp 37:
      Original 7 (from Session Findings):
@@ -192,7 +198,7 @@ NEXT STEPS:
      - Pre-filter findings before CC2v queue (HIGH)
      - Dedup-aware CC2v (check prior confirmations) (HIGH)
      - Context windowing for long runs (HIGH)
-  3. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only
+  3. CC2 Option A Agents 1–3 (structural/semantic/integration) — see 0e above
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
