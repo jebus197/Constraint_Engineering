@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T034710Z",
+  "phase": "r18",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2106,
+  "response": "## Round 18 — CC2 Verdicts\n\nNo new DISCOVERY findings. The registry at 139 entries with 0 open CRIT/HIGH is comprehensive for this module at PoC stage. Issuing verdicts on remaining OPEN and UNCONFIRMED items.\n\n---\n\n**CHALLENGE C0137** | The current regex `r\"\\bC\\d{4}\\b\"` correctly matches all finding IDs in the actual CDSFL system (C0001–C9999). Broadening to `r\"\\b[A-Za-z]\\d{3,5}\\b\"` introduces false positives — it would match version numbers (e.g., `V1234`), model identifiers, and arbitrary alphanumeric codes. No evidence exists that any finding ID in the system deviates from the `C\\d{4}` pattern. At PoC stage, the current pattern is correct for the actual data. Severity should be reduced or this should be closed as NOT_A_BUG.\n\n**CHALLENGE C0087** | `trace_finding` iterates `for i in sorted(indices)` where indices are chain record integers. Integer sort is deterministic and stable — there is no instability regardless of timestamp values. The docstring says \"chronological\" which is correct because chain insertion order is chronological by construction (append-only chain with monotonically increasing seq numbers). Equal timestamps do not produce unstable output because the sort key is the integer index, not the timestamp. The proposed fix `(rec.timestamp_utc, i)` is unnecessary — the code already produces the correct stable ordering.\n\n**CONFIRM C0123** — `_extract_finding_ids` iterates only `obj.values()`, missing finding IDs in dict keys. The proposed fix adding key iteration is minimal and correct.\n\n**CONFIRM C0068** — `export_bundle` signature lacks `experiment` parameter; entity-filtered bundles cannot be experiment-scoped. Fix: add `experiment` parameter and forward to `self._index.search()`.\n\n**CONFIRM C0069** — Docstring omits `experiment` from the parameter list, consistent with the missing parameter in C0068.\n\n**CONFIRM C0073** — Finding-ID-dependent operations miss records where finding IDs appear only in metadata or non-dict payloads. Same root cause family as C0114/C0133/C0139.\n\n**CONFIRM C0117** — Same as C0068: `export_bundle` drops experiment partitioning.",
+  "metadata": {
+    "round": 18,
+    "elapsed": 69.9,
+    "chars": 2106,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

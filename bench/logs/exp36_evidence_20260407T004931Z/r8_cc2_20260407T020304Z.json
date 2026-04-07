@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T020304Z",
+  "phase": "r8",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2627,
+  "response": "## Round 8 — CC2 Review\n\nRegistry has 0 open CRIT/HIGH. I've re-examined the codebase against all active findings and searched for unregistered bugs. No new CRITICAL or HIGH issues found. The major defect classes are covered.\n\n### Verdicts on Active Findings\n\n**CONFIRM C0025** — The root mismatch between `build_inclusion_proof` (which always computes against ALL chain records) and the epoch-derived `merkle_root` in `export_bundle` is real. The proof embeds its own `merkle_root` field, and `verify_inclusion_proof` rejects when `proof[\"merkle_root\"] != bundle.merkle_root`. This breaks whenever records exist beyond the last sealed epoch. Simplest fix: compute the bundle's root the same way `build_inclusion_proof` does (from all current leaves), not from the epoch.\n\n**CONFIRM C0065** — `export_bundle` delegates to `_index.search(finding_id=..., model=..., round_idx=...)` without forwarding `experiment`. Bundles exported by entity filter cannot partition by experiment. The fix is to add an `experiment` parameter to `export_bundle` and pass it through to `search()`.\n\n**CONFIRM C0052** — Direct consequence of C0065: `EvidenceBundle.experiment` is set from `self._experiment` (the store-level experiment name), which is correct for single-experiment stores but misleading when the bundle was filtered by model/round across a multi-experiment chain.\n\n**CONFIRM C0053** — Same root cause as C0065. The `_index.search` call in `export_bundle` omits `experiment`.\n\n**CONFIRM C0043** — Finding-based operations (`query(finding_id=...)`, `trace_finding()`, `export_bundle(finding_id=...)`, `finding_ids` property) depend entirely on `_extract_finding_ids` running on `er.payload` when it's a dict. Records where finding IDs appear only in metadata, in string payloads, or in `hash_only` records are invisible to the index.\n\n**CONFIRM C0044** — Extension of C0043. `hash_only` records have `payload=None`, so `_extract_finding_ids` never runs. Any finding reference in such records is lost.\n\n### Convergence Assessment\n\nAfter 8 rounds with 5 models, the registry shows:\n- 0 open CRIT/HIGH\n- All CRITICAL findings (C0025, C0065) have confirmed fixes\n- Remaining active findings are MEDIUM (sev 0.50), clustered around two root causes: (1) epoch-vs-all-records Merkle root mismatch in bundles, (2) incomplete finding ID extraction from non-payload sources\n\nNo new findings to file. The evidence layer's defect surface has been mapped. The two architectural issues (Merkle root binding and finding ID extraction scope) account for the vast majority of active findings. Both have straightforward fixes that don't add complexity.",
+  "metadata": {
+    "round": 8,
+    "elapsed": 114.1,
+    "chars": 2627,
+    "findings_count": 3,
+    "decomposed": false
+  }
+}

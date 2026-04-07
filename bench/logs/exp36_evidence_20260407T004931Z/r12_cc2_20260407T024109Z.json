@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T024109Z",
+  "phase": "r12",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2749,
+  "response": "## Round 12 — CC2 Review\n\nRegistry is at 105 findings, 0 open CRIT/HIGH. The evidence layer has been thoroughly covered. I'll issue verdicts on open/unconfirmed items and note convergence.\n\n---\n\n### VERDICTS\n\n**CHALLENGE C0087** | The current `trace_finding` implementation sorts by record index (`for i in sorted(indices)`), not by timestamp. Record indices are unique integers — sorting by unique integers is inherently stable and deterministic. Even if the implementation were changed to sort by `timestamp_utc`, Python's `sorted()` is a stable sort (Timsort), so equal timestamps would preserve insertion order. This is a non-issue at PoC stage; the finding proposes adding complexity for a scenario that cannot produce incorrect results with the current code.\n\n**CONFIRM C0096** | Same root cause as C0043/C0044 family. Finding-ID-dependent operations (`query(finding_id=...)`, `trace_finding()`, `export_bundle(finding_id=...)`, `finding_ids` property) miss records where finding IDs appear only in dict keys or non-dict payloads. The fix from C0089/C0097 (search dict keys in `_extract_finding_ids`) addresses the key-scanning gap; C0044's fix (extract from metadata and non-dict payloads) addresses the rest. Both are confirmed and sufficient.\n\n**MERGE C0099 <- C0044** | Same root cause: finding IDs in metadata/non-payload fields missed by `_extract_finding_ids`.\n\n**MERGE C0100 <- C0089** | Same root cause: dict keys not scanned. C0089/C0097 fix covers this.\n\n**MERGE C0101 <- C0076** | Same root cause: `export_bundle` not forwarding `experiment` parameter to `_index.search()`. C0076/C0088 fix covers this.\n\n**MERGE C0102 <- C0076** | Code snippet shows `export_bundle` signature without `experiment` — same as C0076.\n\n**MERGE C0103 <- C0044** | Docstring references for finding_id filtering — same underlying extraction gap as C0044 family.\n\n**MERGE C0104 <- C0076** | `export_bundle` calling `search(finding_id=..., model=..., round_idx=...)` without `experiment` — identical to C0076.\n\n**MERGE C0105 <- C0089** | Finding IDs in dict keys missed — identical to C0089/C0097. Fix already confirmed.\n\n---\n\n### CONVERGENCE ASSESSMENT\n\nNo new findings. All open items are duplicates of or extensions to already-confirmed findings in the C0006/C0044/C0076/C0089 families. The three confirmed fix families cover the remaining gaps:\n\n1. **C0089/C0097 fix**: Scan dict keys in `_extract_finding_ids`\n2. **C0044 fix**: Extract finding IDs from metadata and non-dict payloads\n3. **C0076/C0088 fix**: Forward `experiment` parameter in `export_bundle`\n\nNo CRITICAL or HIGH severity issues remain. The evidence layer is fit for PoC operation with those three fixes applied. Further passes will produce diminishing returns — Δ(12) = 0 new findings.",
+  "metadata": {
+    "round": 12,
+    "elapsed": 76.7,
+    "chars": 2749,
+    "findings_count": 4,
+    "decomposed": false
+  }
+}

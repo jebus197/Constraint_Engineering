@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T040356Z",
+  "phase": "r20",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2451,
+  "response": "## Round 20 — CC2 Verdicts\n\nNo new findings to file. All significant bugs in evidence.py are captured in the registry. The review has converged — 0 open CRIT/HIGH, and remaining open items are MEDIUM-severity completeness issues with confirmed fixes.\n\n---\n\n**CONFIRM C0123** — `_extract_finding_ids` iterating only `obj.values()` and missing keys is a real completeness gap. The proposed fix adding key iteration is minimal and correct.\n\n**CONFIRM C0087** — Unstable sort on equal timestamps is real. Using `(rec.timestamp_utc, i)` as the sort key is the simplest sufficient fix. Severity is MEDIUM for PoC — it affects trace presentation order but not correctness of the trace contents.\n\n**CHALLENGE C0137** — The broadened regex `r\"\\b[A-Za-z]\\d{3,5}\\b\"` is overbroad as previously noted by multiple models. The current `r\"\\bC\\d{4}\\b\"` matches the actual CDSFL finding ID format (C0001–C9999). No evidence exists in the codebase of any other finding ID pattern. For PoC, the current regex is correct. If future ID formats are needed, that's a future requirement, not a current bug. Recommend closing as not-a-bug for PoC scope.\n\n**CHALLENGE C0141** — The description is truncated and appears to duplicate C0003 (closed) and/or C0087 (unconfirmed). C0003 addressed sorting by index vs timestamp. C0087 addresses tie-breaking within equal timestamps. If C0141 is the same root cause, it should be MERGE C0141 → C0087. If it's distinct, the truncated description doesn't provide enough evidence to evaluate.\n\n**CONFIRM C0068** — `export_bundle` missing `experiment` parameter. Confirmed, fix is straightforward — add `experiment` to the method signature and forward to `_index.search()`.\n\n**CONFIRM C0069** — Same family as C0068, confirmed.\n\n**CONFIRM C0073** — Finding-ID operations missing records with non-dict payloads. Confirmed, same root cause family as C0123.\n\n**CONFIRM C0117** — Same family, confirmed.\n\n---\n\n**Convergence assessment:** The registry captures all material bugs in evidence.py. The three distinct root causes are:\n\n1. **Finding ID extraction incomplete** (dict keys ignored, non-dict payloads ignored, metadata not searched) — C0123, C0073, C0110, C0114 family\n2. **`export_bundle` drops `experiment` parameter** — C0068, C0069, C0088, C0101 family  \n3. **`_classify_event` string search on serialised payload** — C0083\n\nAll have confirmed fixes. No further passes will produce new above-threshold findings. Review is complete.",
+  "metadata": {
+    "round": 20,
+    "elapsed": 51.9,
+    "chars": 2451,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

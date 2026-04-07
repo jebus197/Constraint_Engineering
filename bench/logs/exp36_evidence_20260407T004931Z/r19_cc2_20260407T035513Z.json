@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T035513Z",
+  "phase": "r19",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2785,
+  "response": "## Round 19 — CC2 Verdicts\n\nNo new findings to file. All significant bugs in evidence.py are captured in the registry. Issuing verdicts on open and unconfirmed items.\n\n---\n\n### CONFIRM C0123\n\n`_extract_finding_ids` ignoring dict keys is a real bug. The fix adding iteration over `obj.keys()` alongside `obj.values()` is minimal and correct. This should move to CONFIRMED.\n\n---\n\n### CHALLENGE C0137\n\nThe existing regex `r\"\\bC\\d{4}\\b\"` is correct for the CDSFL canonical finding ID format (C0001–C9999). Broadening to `r\"\\b[A-Za-z]\\d{3,5}\\b\"` would match unrelated tokens (e.g., `A100` GPU references, `B2` cell references, `T5` model names). At PoC stage, the current regex matches what the system actually produces. If a different ID namespace is introduced later, the regex can be updated then. This finding should be closed as not-a-bug for the current system.\n\n---\n\n### CHALLENGE C0141\n\nThis appears to duplicate C0003 (CLOSED — trace_finding sort order). The current code sorts by `sorted(indices)` which is insertion order — equivalent to chain order. C0003's fix to sort by `timestamp_utc` was already accepted. If C0003's fix has been applied, C0141 is redundant. If it hasn't been applied, C0141 should be merged into C0003 rather than kept as a separate finding.\n\n---\n\n### CONFIRM C0087 — partial\n\nEqual-timestamp tie-breaking is real but LOW severity for PoC. Index order (`sorted(indices)`) as the tiebreaker is deterministic and stable — it reflects chain insertion order, which is the ground truth for \"what happened first\" in an append-only chain. Adding `(rec.timestamp_utc, i)` as the sort key is harmless but unnecessary when the primary sort is already by index. The finding is technically correct but below the PoC consequence threshold.\n\n---\n\n### CONFIRM C0068, C0069, C0073, C0117\n\nAll four capture the same real bug: `export_bundle` drops the `experiment` parameter when delegating to `_index.search()`. The fix is adding `experiment` to `export_bundle`'s signature and forwarding it. These should all be confirmed and merged into a single canonical finding if not already.\n\n---\n\n### Registry status assessment\n\nAll CRITICAL and HIGH bugs have been identified and resolved. The remaining OPEN and UNCONFIRMED findings are MEDIUM severity (0.50) and concern:\n1. Finding ID extraction completeness (dict keys, metadata, non-dict payloads) — well-covered by the C0123/C0133/C0114 family\n2. `export_bundle` missing `experiment` parameter — well-covered by C0068/C0069/C0101/C0118 family\n3. `_classify_event` using `json.dumps` instead of targeted field checks — covered by C0083\n\nNo further passes are productive. The evidence layer's significant bugs are captured. Residual findings are edge-case completeness improvements that do not block end-to-end PoC operation.",
+  "metadata": {
+    "round": 19,
+    "elapsed": 74.0,
+    "chars": 2785,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

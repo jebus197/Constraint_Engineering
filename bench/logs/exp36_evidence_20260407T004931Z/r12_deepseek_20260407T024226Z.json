@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260407T024226Z",
+  "phase": "r12",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1308,
+  "response": "**VERDICT PAYLOADS**\n\nCONFIRM C0096 — The finding is correct: finding-ID-dependent operations miss records when payload is non-dict. This is the same root cause as the closed C0006 family.\n\nCONFIRM C0099 — The finding is correct: `export_bundle` drops the `experiment` parameter when filtering by entity, preventing cross-experiment bundle export.\n\nCONFIRM C0100 — The finding is correct: `_extract_finding_ids` does not search dictionary keys, causing finding IDs in keys to be missed.\n\nCONFIRM C0101 — The finding is correct: `export_bundle` calls `self._index.search(finding_id=..., model=..., round_idx=...)` without the `experiment` parameter, breaking experiment-scoped bundles.\n\nCONFIRM C0102 — The finding is correct: `export_bundle` signature omits `experiment` parameter, making experiment-filtered bundles impossible.\n\nCONFIRM C0103 — The finding is correct: `export_bundle` docstring incorrectly states it can filter by experiment; the parameter is missing.\n\nCONFIRM C0104 — The finding is correct: `export_bundle` implementation does not pass `experiment` to `self._index.search`, so experiment filtering is ignored.\n\nCONFIRM C0105 — The finding is correct: `_extract_finding_ids` misses finding IDs in dictionary keys, breaking `query(finding_id=...)`, `trace_finding()`, and `export_bundle()`.",
+  "metadata": {
+    "round": 12,
+    "elapsed": 154.1,
+    "chars": 1308,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

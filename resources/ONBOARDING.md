@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 01:09 BST
+Last updated: 7 April 2026 05:48 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -22,6 +22,27 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 
 ## Current State (update after each major milestone)
 
+- **EXP 36 COMPLETE (7 April 2026, 05:34 BST):**
+  Evidence layer review (`evidence.py`, ~420 lines), star topology, 5 models.
+  23 rounds (20 base + 3 extension), 224 min. **EXTENSION_STALLED** — convergence
+  gate never fully satisfied (2 contested findings blocked gate from R12–R23).
+  452 raw findings → 153 canonical entries (33.8% novelty rate). γ=0.411.
+  CC2v: 50 verdicts (25C/6R/11M/8E), 9 HIL escalations.
+  **Burst reasoning at R8:** All 5 models restart_fresh → 21 novel (72% rate).
+  **Key design findings:** (1) ITC-convergence feedback loop — restart_fresh
+  sustains novelty, preventing convergence gate from firing; (2) contested
+  findings should escalate to HIL after N rounds, not block gate indefinitely;
+  (3) discovery efficiency (novel/raw) is a complementary convergence signal
+  gamma doesn't capture; (4) meta-cognitive decay feedback — injecting models'
+  own novelty trajectory into prompts as neuromodulatory signal.
+  **Shadow pipeline:** B Cell v2 produced Z3 SMT counterexample (formal
+  verification working). DC v1 regex 21–44% agreement with LLM classifier.
+  Helper T v2 flagged ~4 duplicates/round. v2 activation indicated for Exp 37.
+  7 design improvements identified for Exp 37 (see Session Findings doc).
+  Logs: `bench/logs/exp36_evidence_20260407T004931Z/`
+  Results: `experimental_notes/Exp36_Results_2026-04-07.md`
+  Session findings: `experimental_notes/Exp36_Session_Findings_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/Exp36_Results_2026-04-07.txt`
 - **EXP 29 COMPLETE (4 April 2026, 21:43 BST):**
   First full integration test of CDSFL persistence layer with insect brain
   as central relay. 9 rounds, 340 findings, 35 min wall clock. **CONVERGED**

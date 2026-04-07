@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260407T042611Z",
+  "phase": "r22",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1420,
+  "response": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.30,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.20,\n    \"DESCRIPTION\": \"CHALLENGE C0137 | FIND: `bench/evidence.py`, `_FINDING_ID_RE = re.compile(r\\\"\\\\bC\\\\d{4}\\\\b\\\")`. The registry entry claims the pattern should be broadened beyond the module's documented contract. Evidence in this file does not support that. The extractor docstring explicitly says `\\\"Recursively extract finding IDs (C0001-C9999)\\\"`, and all public examples use `\\\"C0042\\\"`. The current regex exactly matches that documented ID format. No evidence in `evidence.py` shows any valid finding IDs outside `C` + 4 digits.\",\n    \"FOLLOW\": \"The same regex feeds `_extract_finding_ids`, which in turn feeds `EvidenceRecord.finding_ids`, `_EvidenceIndex.by_finding`, `query(finding_id=...)`, `trace_finding()`, `export_bundle(finding_id=...)`, and the `finding_ids` property. Broadening the regex to accept arbitrary letter prefixes or 3-5 digits would change the module's indexing contract and could introduce unrelated tokens into all finding-based queries. No downstream defect is demonstrated from the current narrower pattern because the module itself defines the accepted format as C0001-C9999.\",\n    \"PROPOSED_FIX\": \"ANALYSE: REJECTED. No code change. Keep `_FINDING_ID_RE = re.compile(r\\\"\\\\bC\\\\d{4}\\\\b\\\")` unless a concrete upstream finding-ID schema change is shown.\",\n    \"VERIFIED\": true\n  }\n]",
+  "metadata": {
+    "round": 22,
+    "elapsed": 8.2,
+    "chars": 1420,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

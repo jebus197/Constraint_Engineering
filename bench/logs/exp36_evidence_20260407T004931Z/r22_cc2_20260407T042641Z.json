@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T042641Z",
+  "phase": "r22",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2240,
+  "response": "## Round 22 — CC2 Verdicts\n\nNo new findings. The registry has captured all significant bugs in evidence.py. 0 open CRIT/HIGH; the review has converged.\n\n### Verdicts on UNCONFIRMED findings:\n\n**CONFIRM C0123** — `_extract_finding_ids` iterates `obj.values()` but skips `obj.keys()`. Finding IDs used as dict keys (e.g., `{\"C0042\": {...}}`) are invisible to the index. The proposed fix adding `ids.update(_extract_finding_ids(k))` for keys is correct and minimal.\n\n**CONFIRM C0087** — `trace_finding` sorts events by record index (`sorted(indices)`), not by `timestamp_utc`. When multiple records share a timestamp, insertion order determines output, which is unstable across chain rebuilds. The fix using `(rec.timestamp_utc, i)` as a composite sort key provides stable chronological ordering with index as tiebreaker. Correct.\n\n**CONFIRM C0068** — `export_bundle` signature lacks `experiment` parameter; the internal `self._index.search()` call omits it. Confirmed, same root cause as the C0065→C0076→C0101 merge chain.\n\n**CONFIRM C0069** — `export_bundle` docstring documents `finding_id`, `model`, `round_idx` filters but not `experiment`. Matches code: experiment is genuinely missing from the method, not just undocumented.\n\n**CONFIRM C0073** — Finding-ID-dependent operations miss records where IDs appear in non-dict payloads or metadata. Same family as C0114/C0119. The `isinstance(er.payload, dict)` gate in `from_chain_record` is the root cause.\n\n**CONFIRM C0117** — Same family as C0068/C0101. `export_bundle` drops experiment scoping.\n\n**CONFIRM C0143** — Broadening `_FINDING_ID_RE` risks indexing unrelated alphanumeric tokens. This is a valid concern about C0137's proposed fix. The regex should remain scoped to the module's own ID contract (`C\\d{4}`), not broadened to arbitrary patterns.\n\n### Verdict on OPEN finding:\n\n**CHALLENGE C0137** — The proposed fix `r\"\\b[A-Za-z]\\d{3,5}\\b\"` is overbroad. It matches tokens like `T1234`, `X999`, `B12345` that are not finding IDs. The current regex `r\"\\bC\\d{4}\\b\"` correctly matches the CDSFL finding ID format (`C0001`–`C9999`). If future ID schemes are needed, the regex should be extended to a union of known formats, not a wildcard. The existing regex is correct for PoC scope.",
+  "metadata": {
+    "round": 22,
+    "elapsed": 38.5,
+    "chars": 2240,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T035753Z",
+  "phase": "r19",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 1915,
+  "response": "CONFIRM C0118\nCONFIRM C0123\nCHALLENGE C0141 | Sorting by `i` (record index) natively provides chronological insertion order, which is the only reliable causal sequence in an append-only hash chain. Sorting by claimed `timestamp_utc` allows unsynchronized clocks or malicious actors to arbitrarily reorder the provenance trace, breaking the causal integrity of the evidence layer.\n\nFINDING_ID: F001\nSEVERITY: 0.6\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.2\nDESCRIPTION: FIND — In `_EvidenceIndex.__init__`, records are conditionally excluded from the in-memory index maps based on truthiness or positivity checks (`if rec.experiment:`, `if rec.model:`, `if rec.round_idx >= 0:`). Consequently, valid chain records that legitimately lack these metadata fields (e.g., experiment-wide health scans or global policy snapshots) are never indexed for those dimensions.\nFOLLOW: Any downstream `EvidenceStore.query()` or `export_bundle()` call that explicitly attempts to filter for unassociated records (e.g., `query(model=\"\")` or `query(round_idx=-1)`) will silently fail, intersecting with an empty set and returning zero results despite the records existing in the chain. This degraded completeness prevents auditing of non-model-specific artifacts.\nPROPOSED_FIX: FIX\n<<<<\n        for rec in records:\n            i = rec.index\n            if rec.experiment:\n                self.by_experiment[rec.experiment].append(i)\n            if rec.model:\n                self.by_model[rec.model].append(i)\n            if rec.round_idx >= 0:\n                self.by_round[rec.round_idx].append(i)\n            self.by_type[rec.artifact_type].append(i)\n====\n        for rec in records:\n            i = rec.index\n            self.by_experiment[rec.experiment].append(i)\n            self.by_model[rec.model].append(i)\n            self.by_round[rec.round_idx].append(i)\n            self.by_type[rec.artifact_type].append(i)\n>>>>\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 19,
+    "elapsed": 233.8,
+    "chars": 1915,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260407T025808Z",
+  "phase": "r14",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2757,
+  "response": "## Round 14 — CC2 Verdicts\n\nThe registry is mature at 119 entries with 0 open CRIT/HIGH. The two remaining bug families (finding-ID extraction incompleteness, `export_bundle` missing `experiment`) are thoroughly registered. I have no new DISCOVERY findings — all code paths I can identify are covered by existing canonical entries.\n\n---\n\n### MERGE C0114 <- C0099\n\nSame root cause: finding-ID-dependent operations miss records where IDs appear only in dict keys or non-dict payloads. C0099 is the canonical entry for this family.\n\n---\n\n### MERGE C0117 <- C0099\n\nSame root cause as C0099. Finding-ID extraction incompleteness.\n\n---\n\n### MERGE C0118 <- C0099\n\nSame root cause as C0099.\n\n---\n\n### MERGE C0119 <- C0109\n\nC0119 explicitly names C0096 (which merged into C0109). Same finding-ID extraction bug. C0109 is the canonical entry.\n\n---\n\n### CHALLENGE C0087\n\n**Evidence:** `trace_finding` sorts by record index (`for i in sorted(indices)`), not by timestamp. Record indices are monotonically increasing and assigned at append time. The chain is append-only — index order IS insertion order IS chronological order. Two records cannot have the same index. The \"equal timestamp unstable ordering\" scenario is irrelevant because the sort key is the integer index, not the timestamp. The timestamp is only copied into the `ProvenanceEvent` output; it is never used as a sort key. This finding has been challenged three times (CC2 ×2, Gemini ×1) with the same evidence. It should be refuted.\n\n---\n\n### CONFIRM C0083\n\nThe `_classify_event` fix (checking `model_chat_log` records for verdict patterns) is correct and addresses the case-/format-sensitivity issue. The proposed fix in the registry is minimal and sufficient.\n\n---\n\n### CONFIRM C0109\n\nFinding-ID-dependent operations (`query(finding_id=...)`, `trace_finding()`, `export_bundle()`, `finding_ids` property) miss records where finding IDs appear only in dict keys or non-dict payloads. Root cause is in `from_chain_record` line: `if er.payload and isinstance(er.payload, dict)`. Fix: extend `_extract_finding_ids` call to handle non-dict payloads (it already handles strings and lists internally), and optionally scan dict keys. Minimal fix: remove the `isinstance(er.payload, dict)` guard — `_extract_finding_ids` already handles all types safely.\n\n---\n\n### CONFIRM C0100\n\nSame family as C0109/C0099. The fix (removing the dict-only guard on `_extract_finding_ids` invocation) is correct.\n\n---\n\nNo new findings to file. The evidence layer's substantive bugs are fully registered. The remaining open entries should be consolidated via the merges above, leaving two canonical open findings: C0099 (finding-ID extraction) and C0109 (same family, slightly different scope). These could themselves be merged.",
+  "metadata": {
+    "round": 14,
+    "elapsed": 89.0,
+    "chars": 2757,
+    "findings_count": 3,
+    "decomposed": false
+  }
+}

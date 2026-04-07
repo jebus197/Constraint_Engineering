@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 01:09 BST
+Last updated: 7 April 2026 05:48 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,9 +19,9 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (6 April 2026, 23:52 BST)
+## Current Pending Work (7 April 2026, 05:48 BST)
 
-Experiments 12–35 ALL COMPLETE. 690 tests pass.
+Experiments 12–36 ALL COMPLETE. 690 tests pass.
 
 EXP 35 COMPLETE (6 April 2026, ~18:00 BST):
   PolicyEngine review, relay mode, 5 models, 23 rounds.
@@ -93,10 +93,38 @@ CX + GEMINI RUNNER REVIEW COMPLETE (6 April 2026, 16:15 BST):
   11 findings claimed, 1 confirmed (alias map scoping). Fixed in both runners.
   Review: experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md
 
+EXP 36 COMPLETE (7 April 2026, 05:34 BST):
+  Evidence layer review (evidence.py, ~420 lines), star topology, 5 models.
+  23 rounds (20 base + 3 extension), 224 min. EXTENSION_STALLED.
+  452 raw → 153 canonical (33.8% novelty rate). γ=0.411.
+  CC2v: 50 verdicts (25C/6R/11M/8E), 9 HIL escalations.
+  Burst reasoning at R8: 21 novel (72% rate) from all-model restart_fresh.
+  Key design findings:
+    (a) ITC-convergence feedback loop — restart_fresh sustains novelty, blocks gate
+    (b) Contested → HIL escalation needed (1-2 contested blocked gate R12–R23)
+    (c) Discovery efficiency (novel/raw) as complementary convergence signal
+    (d) Meta-cognitive decay feedback — inject novelty trajectory into model prompts
+    (e) B Cell v2 Z3 counterexample working, v2 activation indicated for Exp 37
+  Console: bench/logs/exp36_console.log
+  Logs: bench/logs/exp36_evidence_20260407T004931Z/
+  Results: experimental_notes/Exp36_Results_2026-04-07.md
+  Session findings: experimental_notes/Exp36_Session_Findings_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/Exp36_Results_2026-04-07.txt
+        ~/Desktop/CDSFL_tts/Exp36_Session_Findings_2026-04-07.txt
+        ~/Desktop/CDSFL_tts/Exp36_Burst_Reasoning_Analysis_2026-04-07.txt
+        ~/Desktop/CDSFL_tts/Exp36_Live_Analysis_CDSFL_as_Bench_2026-04-07.txt
+
 NEXT STEPS:
-  1. Run Exp 36 (evidence layer) — all code ready, 690 tests pass
-  2. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only,
-     not blocking Exp 36 (CC2v is the 4th agent, already implemented)
+  1. Post-experiment manual dedup of 153 canonical findings (Exp 35 had 4.4:1 ratio)
+  2. Implement 7 design improvements for Exp 37 (see Session Findings doc):
+     - Contested → HIL escalation (5-round threshold)
+     - Discovery efficiency metric (ρ = novel/raw)
+     - Consolidation phase (ITC change_focus only in final 3 rounds)
+     - Decay-rate convergence criterion
+     - Meta-cognitive decay feedback in star topology prompt
+     - v2 shadow activation (Helper T v2, B Cell v2)
+     - Classifier/timeout fixes
+  3. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
