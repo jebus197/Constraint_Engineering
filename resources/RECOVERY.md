@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 08:40 BST
+Last updated: 7 April 2026 09:11 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -150,10 +150,33 @@ MATHEMATICAL MODEL AUDIT SCOPED (7 April 2026, 08:40 BST):
   Audit: experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt
 
+DESIGN ANALYSIS (7 April 2026, 09:11 BST):
+  Critical Bugzilla model gap: CONFIRMED ≠ CLOSED. Runner doesn't extract/apply/
+  verify fixes, so findings never reach CLOSED (challenge-resistant). Models keep
+  engaging with CONFIRMED findings → 17:1 dedup ratio.
+  Fix pipeline scaffolded (Stage 4 exists) but not connected to finding lifecycle.
+  v2 immune activation recommended: NK v2 (tau_sim 0.50, intra-round dedup,
+  bug-closed gate), LLM classifier (replacing regex), skin barrier, CT v2 falsifier.
+  Schema integration assessed: schema maintained, runner-to-schema boundary has
+  10 unpromotable operational lessons. Two candidates for schema promotion:
+  contested_escalation_rounds and churn_threshold.
+  Exp 36 resumption feasible (--resume from R22 checkpoint). With 3 fixes
+  (contested→HIL, gamma-aware ITC, dedup-aware CC2v), estimated 3–5 rounds
+  to convergence. Recommended: resume Exp 36 as validation, then fresh Exp 37.
+  Design: experimental_notes/Exp36_Design_Analysis_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt
+
 NEXT STEPS:
-  0. EXECUTE mathematical model audit (5 gap tests, see audit doc) — HIGHEST PRIORITY
+  0. EXECUTE mathematical model audit (5 gap tests, see audit doc)
+  0a. IMPLEMENT 3 minimum runner fixes for Exp 36 resumption:
+      - Contested → HIL escalation (5-round threshold)
+      - Gamma-aware ITC DEGRADATION threshold
+      - Dedup-aware CC2v (check prior confirmations before re-verifying)
+  0b. ACTIVATE v2 immune as primary (remove v1, enable LLM classifier, skin barrier)
+  0c. CONNECT fix-application pipeline (extract fix → sandbox → Stage 4 → CLOSED)
+  0d. RESUME Exp 36 from R22 checkpoint as validation run (expect 3–5 rounds)
   1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
-  2. Implement 13 design improvements for Exp 37:
+  2. Implement full 13 design improvements for fresh Exp 37:
      Original 7 (from Session Findings):
      - Contested → HIL escalation (5-round threshold)
      - Discovery efficiency metric (ρ = novel/raw)

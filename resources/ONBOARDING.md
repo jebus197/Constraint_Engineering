@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 08:40 BST
+Last updated: 7 April 2026 09:11 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -62,6 +62,15 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   abstraction not implemented). Execution plan scoped, pending next session.
   Audit: `experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md`
   TTS: `~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt`
+  **DESIGN ANALYSIS (09:11 BST):** Critical gap found in Bugzilla model —
+  CONFIRMED ≠ CLOSED. Findings never reach CLOSED (challenge-resistant) because
+  runner doesn't extract/apply/verify fixes. Models keep engaging with CONFIRMED
+  findings, driving 17:1 dedup. Fix pipeline scaffolded but not connected.
+  v2 immune activation recommended (NK v2 dedup, LLM classifier, skin barrier).
+  Resumption from R22 feasible with 3 fixes (contested→HIL, gamma-aware ITC,
+  dedup-aware CC2v), estimated 3–5 rounds to convergence.
+  Design: `experimental_notes/Exp36_Design_Analysis_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt`
   per-model ρ tracking, context windowing.
   Logs: `bench/logs/exp36_evidence_20260407T004931Z/`
   Results: `experimental_notes/Exp36_Results_2026-04-07.md`
