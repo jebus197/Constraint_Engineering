@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 07:10 BST
+Last updated: 7 April 2026 08:40 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -136,7 +136,22 @@ EXP 36 POST-RUN VERIFICATION (7 April 2026, 07:06 BST):
   Verification: experimental_notes/Exp36_Verification_Analysis_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Verification_Analysis_2026-04-07.txt
 
+MATHEMATICAL MODEL AUDIT SCOPED (7 April 2026, 08:40 BST):
+  Full read of MATHEMATICAL_APPENDIX.md (1081 lines) against Exp 29–36 data.
+  Internal algebra sound. Five structural gaps identified:
+  (1) γ classifies wrong at system level (reports convergence during churn)
+  (2) ρ = novel/raw not formalised (fills genuine gap)
+  (3) ITC feedback loop not modelled (restart_fresh ≠ error re-injection ν)
+  (4) f_del, φ_fmt modelled as constants but degrade with context inflation
+  (5) Runner gate ≠ appendix termination (V̂ + ascending abstraction not implemented)
+  Execution plan: 5 gap tests using NumPy/SciPy/SymPy/Wolfram across Exp 29–36 data.
+  Status: SCOPED, discussed with founder, execution pending next session.
+  Founder directive: discuss findings before any appendix changes.
+  Audit: experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt
+
 NEXT STEPS:
+  0. EXECUTE mathematical model audit (5 gap tests, see audit doc) — HIGHEST PRIORITY
   1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
   2. Implement 13 design improvements for Exp 37:
      Original 7 (from Session Findings):

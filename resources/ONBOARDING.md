@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 07:10 BST
+Last updated: 7 April 2026 08:40 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -48,6 +48,20 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   churn drivers: ITC-convergence feedback loop, dedup failure, context inflation
   (406% of budget by R22). 13 total design improvements identified for Exp 37
   (original 7 + 6 from deep analysis). Highest leverage: gamma-aware ITC threshold,
+  per-model ρ tracking, context windowing.
+  **MATHEMATICAL MODEL AUDIT (08:40 BST):** Full read of MATHEMATICAL_APPENDIX.md
+  (1081 lines) against Exp 29–36 experimental evidence. Internal algebra sound
+  (39 SymPy checks valid). Five structural gaps identified where the appendix
+  models components but experiments revealed system-level emergent behaviours:
+  (1) γ classifies wrong at system level — reports "convergence" during churn
+  because it only sees novel rate, not raw-to-novel divergence; (2) ρ = novel/raw
+  fills a real hole but isn't formalised; (3) ITC feedback loop not modelled —
+  restart_fresh re-injection is structurally different from error re-injection ν;
+  (4) f_del and φ_fmt degrade with context inflation but are modelled as constants;
+  (5) runner convergence gate ≠ appendix termination criteria (V̂ + ascending
+  abstraction not implemented). Execution plan scoped, pending next session.
+  Audit: `experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt`
   per-model ρ tracking, context windowing.
   Logs: `bench/logs/exp36_evidence_20260407T004931Z/`
   Results: `experimental_notes/Exp36_Results_2026-04-07.md`
