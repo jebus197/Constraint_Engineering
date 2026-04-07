@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 09:22 BST
+Last updated: 7 April 2026 09:33 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -69,6 +69,10 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   v2 immune activation recommended (NK v2 dedup, LLM classifier, skin barrier).
   Resumption from R22 feasible with 3 fixes (contested→HIL, gamma-aware ITC,
   dedup-aware CC2v), estimated 3–5 rounds to convergence.
+  CC2 Option A: Agents 1–3 designed (not coded), Agent 4 (CC2v) operational.
+  CRITICAL: Agent 2 (semantic code analysis) ≠ "semantic layer" (immune pipeline
+  processing of findings via NK v2 dedup, B-Cell v2 AST verification, LLM
+  classifier, formalisation agent). Orthogonal systems.
   Design: `experimental_notes/Exp36_Design_Analysis_2026-04-07.md`
   TTS: `~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt`
   per-model ρ tracking, context windowing.

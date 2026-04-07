@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 09:22 BST
+Last updated: 7 April 2026 09:33 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -163,6 +163,13 @@ DESIGN ANALYSIS (7 April 2026, 09:11 BST):
   Exp 36 resumption feasible (--resume from R22 checkpoint). With 3 fixes
   (contested→HIL, gamma-aware ITC, dedup-aware CC2v), estimated 3–5 rounds
   to convergence. Recommended: resume Exp 36 as validation, then fresh Exp 37.
+  CC2 Option A four-agent model: Agents 1–3 (structural/semantic/integration)
+  designed but NOT coded. Agent 4 (CC2v) implemented and operational.
+  CRITICAL DISTINCTION: Agent 2 (Semantic) finds semantic bugs in CODE.
+  The "semantic layer" is the immune pipeline's distributed semantic processing
+  of FINDINGS (NK v2 dedup, B-Cell v2 AST verification, LLM classifier,
+  formalisation agent). These are orthogonal — one operates on code, the other
+  on findings.
   Design: experimental_notes/Exp36_Design_Analysis_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt
 
@@ -177,7 +184,7 @@ NEXT STEPS:
   0d. RESUME Exp 36 from R22 checkpoint as validation run (expect 3–5 rounds)
   0e. IMPLEMENT CC2 Option A Agents 1–3 (structural/semantic/integration) for Exp 37
       - Agent 1 (Structural): code structure, dependencies, architectural patterns
-      - Agent 2 (Semantic): semantic correctness, type safety — THIS IS the semantic layer
+      - Agent 2 (Semantic): semantic correctness, type safety — code discovery agent (NOT the semantic layer)
       - Agent 3 (Integration): cross-component interactions, API contracts
       - Agent 4 (CC2v): already implemented, operational since Exp 35
       - Do NOT add to resumed Exp 36 (changes experimental conditions)
