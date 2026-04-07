@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 6 April 2026 23:52 BST
+Last updated: 7 April 2026 01:09 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -268,6 +268,23 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   STATE_CONVERGED (gate), STALL_CONVERGED (stall+depletion), EXTENSION_STALLED
   (budget extension no progress), BUDGET_EXHAUSTED (max rounds). Stall history
   persisted through checkpoints. Both runners updated identically.
+  **CX + Gemini Runner 36 pre-flight review (7 April 2026, APPLIED):**
+  12 findings, 9 TRUE, 3 PARTIAL, 0 FALSE — 100% genuine rate (vs 9% pre-Exp 35).
+  5 must-fix items applied to both runners: checkpoint ordering (write after
+  convergence/stall checks), ESCALATE bypass (exempted from confidence gating),
+  ESCALATE re-selection (cc2v_escalated flag), mark_verified removal (CC2v CONFIRM
+  → resolve() only), REFUTED in build_summary (added to resolved section).
+  **ANALYSE step in FFF (IMPLEMENTED):**
+  FFF prompt pattern updated to FIND-FOLLOW-ANALYSE-FIX. ANALYSE is a dispassionate
+  assessment gate between FOLLOW and FIX: CONFIRMED/UNCERTAIN/REJECTED. Only
+  CONFIRMED findings get a FIX. Applied to _PRESET_FFF and _PRESET_META_STRUCTURED
+  in composer.py.
+  **change_focus ITC adaptation (IMPLEMENTED):**
+  `_build_change_focus_instruction()` builds a registry-aware focus redirect when
+  ITC detects DEGRADATION (model repeating itself). Tells the model to issue
+  verdicts and merges on existing findings instead of re-describing known bugs.
+  Wired into both star and relay prompt builders in both runners. Registry passed
+  as Optional parameter to dispatch functions.
   **PolicyEngine fixes (7 changes, IMPLEMENTED):**
   (1) `load_schema()`: default type validation + allowed_values validation.
   (2) `_compute_provenance()` Layer 4: missing `model_config` merge added.

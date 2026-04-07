@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 6 April 2026 23:52 BST
+Last updated: 7 April 2026 01:09 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -65,6 +65,25 @@ IMPLEMENTED THIS SESSION (all committed and tested, 690 pass):
      - Independent from primary gate — both run every round, both logged in round_data
      - Four termination states: STATE_CONVERGED, STALL_CONVERGED, EXTENSION_STALLED, BUDGET_EXHAUSTED
      - stall_history tracked with checkpoint save/restore
+  6. CX + Gemini Runner 36 pre-flight review (7 April 2026, 00:05 BST):
+     - 12 findings, 9 TRUE, 3 PARTIAL, 0 FALSE — 100% genuine rate
+     - 5 must-fix items applied to BOTH runners:
+       (a) Checkpoint ordering: moved write after convergence/stall checks
+       (b) ESCALATE bypass: exempted from confidence gating (was dead code)
+       (c) ESCALATE re-selection: cc2v_escalated flag, excluded from batch
+       (d) mark_verified removal: CC2v CONFIRM → resolve() only
+       (e) REFUTED in build_summary: added to resolved section
+     - Review: experimental_notes/CX_Gemini_Runner36_Review_2026-04-07.md
+     - TTS: ~/Desktop/CDSFL_tts/CX_Gemini_Runner36_Review_2026-04-07.txt
+  7. ANALYSE step added to FFF (7 April 2026, 01:09 BST):
+     - FFF → FIND-FOLLOW-ANALYSE-FIX in _PRESET_FFF and _PRESET_META_STRUCTURED
+     - ANALYSE: dispassionate assessment gate (CONFIRMED/UNCERTAIN/REJECTED)
+     - Prevents premature fixes on uncertain findings
+  8. change_focus ITC adaptation (7 April 2026, 01:09 BST):
+     - _build_change_focus_instruction(): registry-aware focus redirect
+     - Wired into star and relay prompt builders in both runners
+     - Fires on DEGRADATION: tells model to issue verdicts/merges, not re-describe
+     - Registry passed as Optional param to dispatch functions
 
 EXP 34 ANALYSIS COMPLETE (6 April 2026):
   81 canonical → 33 verified unique. 17 fixes applied to endocrine.py.
@@ -75,7 +94,7 @@ CX + GEMINI RUNNER REVIEW COMPLETE (6 April 2026, 16:15 BST):
   Review: experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md
 
 NEXT STEPS:
-  1. Run Exp 36 (evidence layer) with all corrected code + CC2v + gate fix
+  1. Run Exp 36 (evidence layer) — all code ready, 690 tests pass
   2. CC2 Option A remaining 3 agents (structural/semantic/integration) — design only,
      not blocking Exp 36 (CC2v is the 4th agent, already implemented)
 
