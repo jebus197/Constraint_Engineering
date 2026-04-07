@@ -1255,6 +1255,63 @@ def _itc_flag_underperformer(
     _log(f"  *** HIL FLAG: {flag['message']} ***")
 
 
+def _build_change_focus_instruction(
+    registry: "FindingRegistry",
+    round_idx: int,
+) -> str:
+    """Build a focus-redirect instruction from registry state.
+
+    Tells the model what areas are well-covered and where to look instead.
+    Used when ITC detects DEGRADATION (model repeating itself).
+    """
+    # Count findings by status
+    status_counts: Dict[str, int] = {}
+    for entry in registry.entries.values():
+        s = entry["status"]
+        status_counts[s] = status_counts.get(s, 0) + 1
+
+    open_count = status_counts.get("OPEN", 0) + status_counts.get("CONTESTED", 0)
+    confirmed = status_counts.get("CONFIRMED", 0)
+    total = len(registry.entries)
+
+    # Identify findings needing verdicts (OPEN, no confirmations yet)
+    needs_verdict = []
+    for cid, entry in registry.entries.items():
+        if entry["status"] == "OPEN":
+            confirm_count = sum(
+                1 for v in entry.get("verdicts", []) if v.get("verdict") == "CONFIRM"
+            )
+            if confirm_count == 0:
+                needs_verdict.append(f"{cid} ({entry['description'][:60]})")
+
+    # Build instruction
+    parts = [
+        "=== FOCUS REDIRECT (you are repeating yourself) ===\n",
+        f"The registry has {total} canonical findings: {confirmed} CONFIRMED, "
+        f"{open_count} OPEN/CONTESTED. You are generating findings that "
+        f"duplicate existing entries.\n\n"
+        f"STOP describing known bugs. Instead:\n",
+    ]
+
+    if needs_verdict:
+        verdict_list = "\n".join(f"  - {nv}" for nv in needs_verdict[:8])
+        parts.append(
+            f"1. These {len(needs_verdict)} OPEN findings need CONFIRM or "
+            f"CHALLENGE verdicts, not re-description:\n{verdict_list}\n\n"
+            f"   Issue: CONFIRM <ID> | <evidence> or CHALLENGE <ID> | <evidence>\n\n"
+        )
+
+    parts.append(
+        "2. Issue MERGE <ID> <- <ID> for any findings that describe the same "
+        "underlying bug in different words. Merges directly reduce churn.\n\n"
+        "3. If you have genuinely new findings in areas NOT yet covered by "
+        "the registry, report those. Otherwise, focus on verdicts.\n\n"
+        "=== END FOCUS REDIRECT ===\n"
+    )
+
+    return "".join(parts)
+
+
 def _itc_build_recovery_prompt(
     model_label: str,
     base_prompt: str,
@@ -1726,6 +1783,7 @@ def _dispatch_round(
     full_code: str,
     round_idx: int,
     pattern_name: str,
+    registry: Optional["FindingRegistry"] = None,
 ) -> tuple[List[Finding], Dict[str, str], Dict[str, float]]:
     """Dispatch to all models in parallel (star topology).
 
@@ -1750,9 +1808,15 @@ def _dispatch_round(
         if round_idx == 0:
             return base_prompt  # Blind round
 
+        # Check ITC adaptation — may inject focus redirect for this model
+        adaptation = _itc_get_adaptation(mc_label)
+        focus_prefix = ""
+        if adaptation == "change_focus" and registry is not None:
+            focus_prefix = _build_change_focus_instruction(registry, round_idx)
+            _log(f"  ITC [{mc_label}]: injecting change_focus instruction (star)")
+
         # Star topology: inject registry summary, not other models' prose
-        return (
-            f"{base_prompt}\n\n"
+        star_section = (
             f"{registry_summary}\n\n"
             f"This is Round {round_idx}. Review the registry above. "
             f"File new DISCOVERY findings for bugs not yet registered. "
@@ -1760,6 +1824,13 @@ def _dispatch_round(
             f"on existing entries where you have evidence. "
             f"Do not repeat registered findings.\n"
         )
+        combined = f"{focus_prefix}{star_section}"
+        if "=== ARTIFACT:" in base_prompt:
+            return base_prompt.replace(
+                "=== ARTIFACT:",
+                f"{combined}=== ARTIFACT:",
+            )
+        return f"{base_prompt}\n\n{combined}"
 
     _log(f"  Parallel dispatch: {len(eligible)} models")
     deferred_failures: list[tuple[str, str]] = []
@@ -1810,6 +1881,7 @@ def _dispatch_round_relay(
     round_idx: int,
     pattern_name: str,
     relay_mode: str = DEFAULT_RELAY_MODE,
+    registry: Optional["FindingRegistry"] = None,
 ) -> tuple[List[Finding], Dict[str, str], Dict[str, float]]:
     """Dispatch to all models in parallel (RELAY topology).
 
@@ -1848,8 +1920,13 @@ def _dispatch_round_relay(
         if not payload.findings_text:
             return base_prompt
 
-        # Check ITC adaptation — may strip context for this model
+        # Check ITC adaptation — may modify prompt for this model
         adaptation = _itc_get_adaptation(mc_label)
+        focus_prefix = ""
+        if adaptation == "change_focus" and registry is not None:
+            focus_prefix = _build_change_focus_instruction(registry, round_idx)
+            _log(f"  ITC [{mc_label}]: injecting change_focus instruction")
+
         if adaptation == "strip_context":
             relay_section = (
                 f"=== OTHER MODELS' ANALYSIS (Round {round_idx - 1}) ===\n\n"
@@ -1883,12 +1960,13 @@ def _dispatch_round_relay(
                 f"{payload.convergence_summary}\n\n"
                 f"Find what was MISSED. Do not repeat known findings.\n\n"
             )
+        combined = f"{focus_prefix}{relay_section}"
         if "=== ARTIFACT:" in base_prompt:
             return base_prompt.replace(
                 "=== ARTIFACT:",
-                f"{relay_section}=== ARTIFACT:",
+                f"{combined}=== ARTIFACT:",
             )
-        return f"{relay_section}{base_prompt}"
+        return f"{combined}{base_prompt}"
 
     _log(f"  Parallel dispatch: {len(eligible)} models (relay/{relay_mode})")
     deferred_failures: list[tuple[str, str]] = []
@@ -2257,6 +2335,7 @@ def run_experiment(
                 base_prompt, cdsfl_text, full_code,
                 round_idx, pattern_name,
                 relay_mode=relay_mode,
+                registry=registry,
             )
         else:
             # Star topology: inject registry summary as blackboard
@@ -2265,6 +2344,7 @@ def run_experiment(
                 exp_config, mgr, brain,
                 base_prompt, registry_summary, cdsfl_text, full_code,
                 round_idx, pattern_name,
+                registry=registry,
             )
 
         # Safety check — removes empty/refused responses, never benches
