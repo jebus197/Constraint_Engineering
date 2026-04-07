@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 10:05 BST
+Last updated: 7 April 2026 21:04 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -172,6 +172,40 @@ DESIGN ANALYSIS (7 April 2026, 09:11 BST):
   on findings.
   Design: experimental_notes/Exp36_Design_Analysis_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt
+
+METACOGNITION MICROSCOPE (7 April 2026, evening session):
+  CDSFL as microscope for metacognition. System-level metacognition emerges from
+  architecture (ITC, convergence gate, immune pipeline, registry), not individual
+  models. Instruments (γ, ρ, ITC feedback, convergence gate) discovered through
+  iterative experimentation Exp 11–36. Analogy: γ as EEG, ρ as fMRI, ITC as
+  adaptive stimulation. No established precedent for multi-vendor frontier model
+  collaboration under structured falsification. MIDCA reference: meets core
+  functional requirements at system level, extends into 8 domains MIDCA never
+  addressed. P-pass: survives.
+  Analysis: experimental_notes/CDSFL_Metacognition_Microscope_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/CDSFL_Metacognition_Microscope_2026-04-07.txt
+
+MATHEMATICAL MODEL REVISIONS PLAIN ENGLISH (7 April 2026, evening session):
+  Plain English explanation of the five structural gaps. Key insight: gaps form
+  one coupled failure cascade. Gap 4 (context inflation) → Gap 3 (ITC amplifies)
+  → Gap 1 (γ hides problem) → Gap 2 (no ρ to see churn) → Gap 5 (can't terminate).
+  Technical detail in Exp36_Mathematical_Model_Audit. Analogies for each gap.
+  Analysis: experimental_notes/Mathematical_Model_Revisions_Plain_English_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/Mathematical_Model_Revisions_Plain_English_2026-04-07.txt
+
+MIDCA REASSESSMENT (7 April 2026, 21:00 BST):
+  Founder reassessment of MIDCA comparison. Two previously "partial" requirements
+  reframed. Requirement 3 (reasoning trace): model opacity irrelevant under
+  substrate agnosticism — §8.4 formulas reference no substrate-specific terms.
+  Requirement 8 (cross-experiment memory): sequencing decision — blockchain/Merkle
+  infrastructure deployed across Genesis (8 Sepolia anchors), OpenBrain (RFC 6962),
+  CDSFL (RFC 9162), Metis. Schema must stabilise before persistence (5-gap audit
+  pending). Meta-cognitive decay feedback (§8.1): structurally significant as
+  first-order to second-order cognition transition. 8 extension domains beyond
+  MIDCA evidenced. Key distinction: protocol architecture (how agents interact)
+  vs cognitive architecture (how an agent is structured). P-pass: survives.
+  Analysis: experimental_notes/CDSFL_MIDCA_Reassessment_2026-04-07.md
+  TTS: ~/Desktop/CDSFL_tts/CDSFL_MIDCA_Reassessment_2026-04-07.txt
 
 NEXT STEPS:
   0. EXECUTE mathematical model audit (5 gap tests, see audit doc)

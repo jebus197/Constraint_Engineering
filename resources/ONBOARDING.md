@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 10:05 BST
+Last updated: 7 April 2026 21:04 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -76,6 +76,35 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Design: `experimental_notes/Exp36_Design_Analysis_2026-04-07.md`
   TTS: `~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt`
   per-model ρ tracking, context windowing.
+  **METACOGNITION MICROSCOPE (evening session):** CDSFL as microscope for
+  metacognition. System-level metacognition emerges from architecture (ITC,
+  convergence gate, immune pipeline, registry), not from individual models.
+  Instruments (γ, ρ, ITC feedback loop, convergence gate) discovered through
+  iterative experimentation Exp 11–36, not designed day one. P-pass: survives.
+  MIDCA reference updated: CDSFL meets core functional requirements at system
+  level and extends into domains MIDCA never addressed.
+  Analysis: `experimental_notes/CDSFL_Metacognition_Microscope_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/CDSFL_Metacognition_Microscope_2026-04-07.txt`
+  **MATHEMATICAL MODEL REVISIONS PLAIN ENGLISH (evening session):** Plain
+  English explanation of the five structural gaps from the mathematical model
+  audit. Key insight: the five gaps form one coupled failure cascade
+  (Gap 4 context inflation → Gap 3 ITC amplification → Gap 1 γ hides problem
+  → Gap 2 no ρ metric → Gap 5 cannot terminate). Analogies provided for each.
+  Analysis: `experimental_notes/Mathematical_Model_Revisions_Plain_English_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/Mathematical_Model_Revisions_Plain_English_2026-04-07.txt`
+  **MIDCA REASSESSMENT (21:00 BST):** Founder reassessment of MIDCA comparison.
+  Two previously "partial" requirements reframed: model opacity irrelevant under
+  substrate agnosticism (§8.4 — formulas reference no substrate-specific terms);
+  cross-experiment memory is sequencing decision with existing blockchain/Merkle
+  infrastructure across Genesis, OpenBrain, CDSFL, Metis. Meta-cognitive decay
+  feedback (§8.1 — injecting γ, ρ into prompts) identified as structurally
+  significant: first-order to second-order cognition transition. 8 extension
+  domains beyond MIDCA's scope evidenced. Protocol architecture (how agents
+  interact) vs cognitive architecture (how an agent is structured). P-pass:
+  survives. Empirical validation of decay feedback effect and cross-substrate
+  prediction pending.
+  Analysis: `experimental_notes/CDSFL_MIDCA_Reassessment_2026-04-07.md`
+  TTS: `~/Desktop/CDSFL_tts/CDSFL_MIDCA_Reassessment_2026-04-07.txt`
   Logs: `bench/logs/exp36_evidence_20260407T004931Z/`
   Results: `experimental_notes/Exp36_Results_2026-04-07.md`
   Session findings: `experimental_notes/Exp36_Session_Findings_2026-04-07.md`
