@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 7 April 2026 09:33 BST
+Last updated: 7 April 2026 10:05 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -23,7 +23,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 - **EXP 36 COMPLETE (7 April 2026, 05:34 BST):**
-  Evidence layer review (`evidence.py`, ~420 lines), star topology, 5 models.
+  Evidence layer review (`evidence.py`, 591 lines), star topology, 5 models.
   23 rounds (20 base + 3 extension), 224 min. **EXTENSION_STALLED** — convergence
   gate never fully satisfied (2 contested findings blocked gate from R12–R23).
   452 raw findings → 153 canonical entries (33.8% novelty rate). γ=0.411.

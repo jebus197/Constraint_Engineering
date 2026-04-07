@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 7 April 2026 09:33 BST
+Last updated: 7 April 2026 10:05 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -94,7 +94,7 @@ CX + GEMINI RUNNER REVIEW COMPLETE (6 April 2026, 16:15 BST):
   Review: experimental_notes/CX_Gemini_Runner_Review_2026-04-06.md
 
 EXP 36 COMPLETE (7 April 2026, 05:34 BST):
-  Evidence layer review (evidence.py, ~420 lines), star topology, 5 models.
+  Evidence layer review (evidence.py, 591 lines), star topology, 5 models.
   23 rounds (20 base + 3 extension), 224 min. EXTENSION_STALLED.
   452 raw → 153 canonical (33.8% novelty rate). γ=0.411.
   CC2v: 50 verdicts (25C/6R/11M/8E), 9 HIL escalations.

@@ -196,7 +196,7 @@ Only Agent 4 was implemented for Exp 36. CC2 operated as both a general-purpose 
 
 If Agents 1–3 existed:
 - **CC2's contribution would be specialised** rather than general-purpose. A structural agent targeting structural bugs, a semantic agent targeting type safety, an integration agent targeting API contracts. Specialisation produces more targeted, less redundant findings.
-- **Agent 2 (Semantic) IS the "semantic layer"** the founder asked about. It would provide dedicated semantic-level analysis as a discovery agent, complementing the semantic dedup in NK v2 and the semantic verification in B-Cell v2. Currently semantic capability exists only in the immune pipeline's filtering stage. A dedicated semantic discovery agent operates upstream.
+- **Agent 2 (Semantic) is a code discovery agent, NOT the "semantic layer."** It would find semantic bugs in code (type safety, semantic correctness). The "semantic layer" is the immune pipeline's distributed processing of findings (NK v2 dedup, B-Cell v2 AST verification, LLM classifier, formalisation agent). These are orthogonal: Agent 2 operates on code, the semantic pipeline operates on findings. [Corrected 7 April 2026 09:33 BST — original text incorrectly conflated these.]
 - **Dedup ratio would likely improve** because specialised agents produce findings in narrower categories, making the dedup engine's job easier (same-category findings are easier to cluster than cross-category reformulations).
 
 ### Implementation Note
