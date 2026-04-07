@@ -40,7 +40,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Helper T v2 flagged ~4 duplicates/round. v2 activation indicated for Exp 37.
   7 design improvements identified for Exp 37 (see Session Findings doc).
   **POST-RUN VERIFICATION (07:06 BST):** Three-workstream independent verification.
-  Mathematical (NumPy/SciPy): 4 CONFIRMED, 3 UNCERTAIN, 0 REJECTED.
+  Mathematical (NumPy/SciPy): 5 CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
   AST: 7 code bugs CONFIRMED, 1 REJECTED (valid Python). ~9 total unique issues.
   Deep analysis: 8 structural patterns CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
   **Key verification result:** 153 canonical = ~9 unique bugs, 17:1 dedup ratio

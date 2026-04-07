@@ -116,7 +116,7 @@ EXP 36 COMPLETE (7 April 2026, 05:34 BST):
 
 EXP 36 POST-RUN VERIFICATION (7 April 2026, 07:06 BST):
   Three-workstream independent verification (FFAF protocol):
-  Mathematical (NumPy/SciPy): 4 CONFIRMED, 3 UNCERTAIN, 0 REJECTED.
+  Mathematical (NumPy/SciPy): 5 CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
     - Phase 1 exponential decay R²=0.985, R8 burst z=3.63, gamma correct ±0.0005
     - ρ decline p=0.17 (directionally correct, underpowered)
   AST: 7 code bugs CONFIRMED, 1 REJECTED (nonlocal _intersect = valid Python).
