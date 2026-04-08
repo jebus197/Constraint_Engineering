@@ -338,9 +338,10 @@ def citation_verify(
         )
 
     # Parse: VERIFIED|UNVERIFIED|UNCLEAR | confidence | evidence
+    clean = re.sub(r"[*`#_]", "", text)
     m = re.search(
         r"(VERIFIED|UNVERIFIED|UNCLEAR)\s*\|\s*([\d.]+)\s*\|\s*(.+)",
-        text, re.IGNORECASE,
+        clean, re.IGNORECASE,
     )
     if m:
         return AgentResult(
@@ -597,6 +598,9 @@ def cc2v_verdict(
         )
 
     # Parse verdict line: CONFIRM|REJECT|DUPLICATE|ESCALATE <id> ...
+    # Strip markdown formatting that Claude CLI may add (bold, backticks, etc.)
+    clean = re.sub(r"[*`#_]", "", text)
+
     verdict_re = re.compile(
         r"(CONFIRM|REJECT|DUPLICATE|ESCALATE)\s+(C\d+)"
         r"(?:\s+OF\s+(C\d+))?"
@@ -604,26 +608,48 @@ def cc2v_verdict(
         r"(?:\s*\|\s*(.+))?",
         re.IGNORECASE,
     )
-    m = verdict_re.search(text)
-    if m:
-        action = m.group(1).upper()
-        confidence = float(m.group(4)) if m.group(4) else 0.5
-        evidence = m.group(5) or ""
-        dup_target = m.group(3).upper() if m.group(3) else ""
+    m = verdict_re.search(clean)
+    if not m:
+        # Fallback: look for verdict keyword alone (no finding ID required)
+        fb = re.search(
+            r"\b(CONFIRM|REJECT|DUPLICATE|ESCALATE)\b",
+            clean, re.IGNORECASE,
+        )
+        if fb:
+            action = fb.group(1).upper()
+            # Extract confidence if present anywhere: "confidence: 0.85" or "0.85"
+            conf_m = re.search(r"(?:confidence[:\s]*|conf[:\s]*)?(0\.\d+)", clean)
+            confidence = float(conf_m.group(1)) if conf_m else 0.5
+            _log(f"    cc2v parse: fallback matched {action} for {finding_id} "
+                 f"(conf={confidence:.2f}, {len(text)} chars)")
+            return AgentResult(
+                agent="cc2v", finding_id=finding_id,
+                verdict=action,
+                confidence=min(1.0, max(0.0, confidence)),
+                evidence=clean.strip()[:300],
+                elapsed_s=round(elapsed, 1),
+            )
 
+        _log(f"    cc2v parse: FAILED for {finding_id} ({len(text)} chars) "
+             f"— first 200: {text[:200]!r}")
         return AgentResult(
             agent="cc2v", finding_id=finding_id,
-            verdict=action,
-            confidence=min(1.0, max(0.0, confidence)),
-            evidence=evidence.strip()[:300],
-            duplicate_of=dup_target,
+            verdict="ESCALATE", confidence=0.3,
+            evidence=f"unparseable response ({len(text)} chars)",
             elapsed_s=round(elapsed, 1),
         )
 
+    action = m.group(1).upper()
+    confidence = float(m.group(4)) if m.group(4) else 0.5
+    evidence = m.group(5) or ""
+    dup_target = m.group(3).upper() if m.group(3) else ""
+
     return AgentResult(
         agent="cc2v", finding_id=finding_id,
-        verdict="ESCALATE", confidence=0.3,
-        evidence=f"unparseable response ({len(text)} chars)",
+        verdict=action,
+        confidence=min(1.0, max(0.0, confidence)),
+        evidence=evidence.strip()[:300],
+        duplicate_of=dup_target,
         elapsed_s=round(elapsed, 1),
     )
 
@@ -706,7 +732,18 @@ def _route_finding(
         agents.append("dedup")
 
     # Agent 4: Programmatic Verifier — if finding has verifiable claim
-    if _MATH_STAT_PATTERN.search(desc):
+    # Trigger on math/stat claims OR code-behavioral claims with testable assertions
+    _code_verify_pattern = re.compile(
+        r"(returns?\s+(empty|None|wrong|incorrect|unexpected)|"
+        r"(miss(es|ing)?|skip(s|ping)?|omit(s|ting)?|fail(s|ing)?|break(s|ing)?)\s+"
+        r"\w+\s+(when|if|for)|"
+        r"silently\s+(drop|ignore|miss|omit)|"
+        r"sort(s|ed|ing)?\s+by\s+\w+\s+(instead|rather)|"
+        r"never\s+(call|invoke|pass|set)|"
+        r"dead\s+code|unreachable)",
+        re.IGNORECASE,
+    )
+    if _MATH_STAT_PATTERN.search(desc) or _code_verify_pattern.search(desc):
         agents.append("programmatic")
 
     # Agent 5: CC2v — always runs as fallback, receives prior results

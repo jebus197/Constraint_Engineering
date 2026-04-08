@@ -1213,6 +1213,7 @@ class InsectBrain:
             source_paths=self.source_paths,
             observation_only=observation_only,
             ct_enabled=True,
+            ct_timeout=600,  # Allow CT v2 full investigation time (was 300, timed out)
         )
         elapsed = time.monotonic() - t0
 
