@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 8 April 2026 02:16 BST
+Last updated: 8 April 2026 03:52 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -20,7 +20,7 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (7 April 2026, 05:48 BST)
+## Current Pending Work (8 April 2026, 03:52 BST)
 
 Experiments 12–36 ALL COMPLETE. 690 tests pass.
 
@@ -156,21 +156,23 @@ DESIGN ANALYSIS (7 April 2026, 09:11 BST):
   verify fixes, so findings never reach CLOSED (challenge-resistant). Models keep
   engaging with CONFIRMED findings → 17:1 dedup ratio.
   Fix pipeline scaffolded (Stage 4 exists) but not connected to finding lifecycle.
-  v2 immune activation recommended: NK v2 (tau_sim 0.50, intra-round dedup,
-  bug-closed gate), LLM classifier (replacing regex), skin barrier, CT v2 falsifier.
+  CORRECTION (8 April): v2 immune IS ALREADY PRIMARY for DC, NK, Helper T,
+  Reg T. Skin barrier IS ACTIVE FILTERING (observation_only=False). Only LLM
+  classifier and formalisation agent remain shadow (logging only). Promoting
+  these two is outstanding; activating v2 immune is NOT.
   Schema integration assessed: schema maintained, runner-to-schema boundary has
   10 unpromotable operational lessons. Two candidates for schema promotion:
   contested_escalation_rounds and churn_threshold.
   Exp 36 resumption feasible (--resume from R22 checkpoint). With 3 fixes
   (contested→HIL, gamma-aware ITC, dedup-aware CC2v), estimated 3–5 rounds
   to convergence. Recommended: resume Exp 36 as validation, then fresh Exp 37.
-  CC2 Option A four-agent model: Agents 1–3 (structural/semantic/integration)
-  designed but NOT coded. Agent 4 (CC2v) implemented and operational.
-  CRITICAL DISTINCTION: Agent 2 (Semantic) finds semantic bugs in CODE.
-  The "semantic layer" is the immune pipeline's distributed semantic processing
-  of FINDINGS (NK v2 dedup, B-Cell v2 AST verification, LLM classifier,
-  formalisation agent). These are orthogonal — one operates on code, the other
-  on findings.
+  CC2 sub-agent design SETTLED (8 April): closed constraint space model.
+  Each agent tightly bound within specific expert encodings — mechanical only,
+  not generative. Constraint space prevents conflation and hallucination.
+  Agent 1 (Citation Verifier): "does finding accurately describe cited code?"
+  Agent 2 (Fix Extractor): "can NL fix be expressed as applicable code change?"
+  Agent 3 (Dedup Assessor): "does new finding describe same bug as existing?"
+  Agent 4 (CC2v): "confirm/reject/duplicate/escalate?" — already operational.
   Design: experimental_notes/Exp36_Design_Analysis_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Design_Analysis_2026-04-07.txt
 
@@ -208,20 +210,31 @@ MIDCA REASSESSMENT (7 April 2026, 21:00 BST):
   Analysis: experimental_notes/CDSFL_MIDCA_Reassessment_2026-04-07.md
   TTS: ~/Desktop/CDSFL_tts/CDSFL_MIDCA_Reassessment_2026-04-07.txt
 
+EXP 36 GROUND TRUTH REFERENCE (8 April 2026, 02:42 BST):
+  Consolidated all Exp 36 findings into single canonical reference.
+  CRITICAL CORRECTIONS: v2 immune is PRIMARY (not shadow), skin barrier is
+  ACTIVE (not observation-only), evidence.py is 590 lines (not ~420).
+  CC2 sub-agent design settled: closed constraint space, mechanical agents.
+  Forward path confirmed: 3 minimum fixes → resume Exp 36 → reference runner → Exp 37.
+  Reference: experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md
+  TTS: ~/Desktop/CDSFL_tts/Exp36_Ground_Truth_Reference_2026-04-08.txt
+
 NEXT STEPS:
   0. EXECUTE mathematical model audit (5 gap tests, see audit doc)
   0a. IMPLEMENT 3 minimum runner fixes for Exp 36 resumption:
       - Contested → HIL escalation (5-round threshold)
       - Gamma-aware ITC DEGRADATION threshold
       - Dedup-aware CC2v (check prior confirmations before re-verifying)
-  0b. ACTIVATE v2 immune as primary (remove v1, enable LLM classifier, skin barrier)
+  0b. PROMOTE LLM classifier + formalisation agent from shadow to primary
+      (v2 immune IS already primary — DC, NK, Helper T, Reg T. Corrected 8 April.)
   0c. CONNECT fix-application pipeline (extract fix → sandbox → Stage 4 → CLOSED)
   0d. RESUME Exp 36 from R22 checkpoint as validation run (expect 3–5 rounds)
-  0e. IMPLEMENT CC2 Option A Agents 1–3 (structural/semantic/integration) for Exp 37
-      - Agent 1 (Structural): code structure, dependencies, architectural patterns
-      - Agent 2 (Semantic): semantic correctness, type safety — code discovery agent (NOT the semantic layer)
-      - Agent 3 (Integration): cross-component interactions, API contracts
-      - Agent 4 (CC2v): already implemented, operational since Exp 35
+  0e. IMPLEMENT CC2 closed-constraint sub-agents 1–3 for Exp 37
+      - Agent 1 (Citation Verifier): does finding accurately describe cited code?
+      - Agent 2 (Fix Extractor): can NL fix be expressed as applicable code change?
+      - Agent 3 (Dedup Assessor): does new finding describe same bug as existing?
+      - Agent 4 (CC2v): confirm/reject/duplicate/escalate — already operational
+      - All agents: closed constraint space, mechanical only, no generative function
       - Do NOT add to resumed Exp 36 (changes experimental conditions)
   1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
   2. Implement full 13 design improvements for fresh Exp 37:
@@ -231,7 +244,7 @@ NEXT STEPS:
      - Consolidation phase (ITC change_focus only in final 3 rounds)
      - Decay-rate convergence criterion
      - Meta-cognitive decay feedback in star topology prompt
-     - v2 shadow activation (Helper T v2, B Cell v2)
+     - v2 already primary (DC, NK, Helper T, Reg T) — promote LLM classifier + formalisation agent
      - Classifier/timeout fixes
      Deep analysis additions (6):
      - Per-model ρ tracking with targeted ITC intervention (HIGH)
@@ -240,11 +253,14 @@ NEXT STEPS:
      - Pre-filter findings before CC2v queue (HIGH)
      - Dedup-aware CC2v (check prior confirmations) (HIGH)
      - Context windowing for long runs (HIGH)
-  3. CC2 Option A Agents 1–3 (structural/semantic/integration) — see 0e above
+  3. CC2 closed-constraint sub-agents 1–3 (Citation/Fix/Dedup) — see 0e above
+  4. BUILD reference runner for Exp 37+ (parameterised, UX-callable entry point)
+  5. WRITE Mathematical Model Companion (plain English walkthrough of appendix)
+  6. Meta-cognitive feedback implementation (Exp 37 only, data-only, constrained response)
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
-  - CC2 Option A structural/semantic/integration agents (3 of 4) — design not coded
+  - CC2 closed-constraint sub-agents (3 of 4) — design settled, not coded
   - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):

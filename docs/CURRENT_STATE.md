@@ -1,14 +1,14 @@
 # CDSFL Current State
 
-Generated: 8 April 2026 02:16 BST (2026-04-08T02:16:10+01:00)
+Generated: 8 April 2026 03:52 BST (2026-04-08T03:52:21+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `acdaddd` Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script
-- **Committed:** 2026-04-08 02:13:50 +0100
+- **Last commit:** `ebb50d4` Add Exp 36 ground truth reference — consolidated findings, immune corrections, forward path
+- **Committed:** 2026-04-08 02:56:28 +0100
 - **Remote:** up to date
 - **Working tree:** clean
 
@@ -80,6 +80,8 @@ NEXT STEPS:
 
 ## Recent Commits
 
+- `ebb50d4 Add Exp 36 ground truth reference — consolidated findings, immune corrections, forward path`
+- `9b16013 sv: update state snapshot, timestamps — working tree clean, MC commands in place`
 - `acdaddd Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script`
 - `613ef9b Fix QC reference checker (85→3), add interactive onboarding installer, fix stale TTS paths`
 - `f72fca8 Add automation scripts, layered documentation, and project CLAUDE.md`
@@ -88,5 +90,3 @@ NEXT STEPS:
 - `61f4bb6 Fix Agent 2 ≠ semantic layer conflation in recovery docs`
 - `510d902 Add CC2 Option A four-agent model to design analysis and next steps`
 - `c5fae42 Design analysis: Bugzilla gap, fix pipeline, v2 immune, resumption plan`
-- `71d9a98 Scope mathematical model audit: 5 gaps in appendix vs Exp 29–36 data`
-- `e2177df Fix churn signal verification: CONFIRMED, not UNCERTAIN`
