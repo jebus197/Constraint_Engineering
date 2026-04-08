@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 8 April 2026 06:05 BST
+Last updated: 8 April 2026 07:00 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -242,49 +242,68 @@ EXP 36 GROUND TRUTH REFERENCE (8 April 2026, 02:42 BST):
   Reference: experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md
   TTS: ~/Desktop/CDSFL_tts/Exp36_Ground_Truth_Reference_2026-04-08.txt
 
-NEXT STEPS:
-  0. MATHEMATICAL MODEL AUDIT — COMPLETE (8 April 2026, 04:46 BST). See audit entry above.
-  0a. IMPLEMENT 3 minimum runner fixes for Exp 36 resumption:
-      - Contested → HIL escalation (5-round threshold)
-      - Gamma-aware ITC DEGRADATION threshold
-      - Dedup-aware CC2v (check prior confirmations before re-verifying)
-  0b. PROMOTE LLM classifier + formalisation agent from shadow to primary
-      (v2 immune IS already primary — DC, NK, Helper T, Reg T. Corrected 8 April.)
-  0c. CONNECT fix-application pipeline (extract fix → sandbox → Stage 4 → CLOSED)
-  0d. RESUME Exp 36 from R22 checkpoint as validation run (expect 3–5 rounds)
-  0e. IMPLEMENT CC2 closed-constraint sub-agents 1–3 for Exp 37
+NEXT STEPS (revised 8 April 2026, 07:00 BST — 4-phase plan):
+
+  PHASE A — EXP 36 RESUME (validate fixes):
+  A1. Registry windowing — OPEN/CONTESTED active view, CLOSED/MERGED compact,
+      REFUTED/DUPLICATE hidden from model-facing summary. Breaks churn loop at root.
+  A2. ρ as C6 in convergence gate (θ_ρ=0.25, 3-round rolling, from t_earliest).
+      Formalised in appendix §7.1a. Calibrated against Exp 33-36 data.
+  A3. Contested → HIL escalation (5-round threshold). Removes sole R19 blocker.
+  A4. Gamma-aware ITC (check ρ before DEGRADATION dispatch). Prevents blind restarts.
+  A5. Dedup-aware CC2v (check prior confirmations before queueing). Prevents re-verification.
+  A6. RESUME Exp 36 from R22 checkpoint with A1-A5 in place (expect 3-5 rounds).
+  NOTE: Registry windowing (A1) and ρ (A2) are essential — without them the coupled
+  cascade recurs even with A3-A5 fixed.
+
+  PHASE B — REFERENCE RUNNER + CC2 ARCHITECTURE (Exp 37 infrastructure):
+  B1. Parameterise runner as reference runner (UX-callable entry point).
+  B2. CC2 role redesign — manager/router only, no finding generation.
+  B3. 5 CC2 sub-agents (all closed constraint space, mechanical):
       - Agent 1 (Citation Verifier): does finding accurately describe cited code?
-      - Agent 2 (Fix Extractor): can NL fix be expressed as applicable code change?
+      - Agent 2 (Fix Extractor): can NL fix become applicable code change?
       - Agent 3 (Dedup Assessor): does new finding describe same bug as existing?
-      - Agent 4 (CC2v): confirm/reject/duplicate/escalate — already operational
-      - All agents: closed constraint space, mechanical only, no generative function
-      - Do NOT add to resumed Exp 36 (changes experimental conditions)
-  1. Manual dedup COMPLETE (programmatic: 153 → ~9 unique, see verification analysis)
-  2. Implement full 13 design improvements for fresh Exp 37:
-     Original 7 (from Session Findings):
-     - Contested → HIL escalation (5-round threshold)
-     - Discovery efficiency metric (ρ = novel/raw)
-     - Consolidation phase (ITC change_focus only in final 3 rounds)
-     - Decay-rate convergence criterion
-     - Meta-cognitive decay feedback in star topology prompt
-     - v2 already primary (DC, NK, Helper T, Reg T) — promote LLM classifier + formalisation agent
-     - Classifier/timeout fixes
-     Deep analysis additions (6):
-     - Per-model ρ tracking with targeted ITC intervention (HIGH)
-     - Gamma-aware ITC DEGRADATION threshold (HIGH)
-     - Dynamic stall detector terminate threshold
-     - Pre-filter findings before CC2v queue (HIGH)
-     - Dedup-aware CC2v (check prior confirmations) (HIGH)
-     - Context windowing for long runs (HIGH)
-  3. CC2 closed-constraint sub-agents 1–3 (Citation/Fix/Dedup) — see 0e above
-  4. BUILD reference runner for Exp 37+ (parameterised, UX-callable entry point)
-  5. WRITE Mathematical Model Companion (plain English walkthrough of appendix)
-  6. Meta-cognitive feedback implementation (Exp 37 only, data-only, constrained response)
+      - Agent 4 (Programmatic Verifier): can NL claim be verified by tools (SymPy/AST/z3)?
+      - Agent 5 (CC2v): confirm/reject/duplicate/escalate — LLM verdict fallback
+  B4. Dynamic sub-agent dispatch (CC2 routes by finding attributes).
+  B5. Meta-cognitive feedback (Exp 37 only, data-only, constrained response).
+  B6. Ascending abstraction guard in convergence gate (§7.4 reconciliation).
+  B7. Promote LLM classifier + formalisation agent from shadow to primary.
+
+  PHASE C — BENCH RUN 2 PREPARATION:
+  C1. Write 27 task-specific expert encodings (FT-001 through FT-027).
+      Plan: bench/BENCH_EXPANSION_PLAN.md. Tasks: bench/tasks_frontier/.
+  C2. Adapt finding schema for claim + evidence format (non-SE tasks).
+  C3. Domain verification routing (SymPy for math, dimensional for physics, etc.).
+  C4. Runner load_task_directives() three-layer composition (universal → domain → task).
+  C5. Open-problem scoring metrics.
+  C6. Dry-run all 27 tasks.
+  C7. Execute Bench Run 2 (27 frontier STEM tasks across 8 domains).
+
+  PHASE D — DOCUMENTATION AND OUTREACH:
+  D1. README rewrite (from blog post summary — founder working on blog post).
+  D2. Mathematical Model Companion (plain English walkthrough of appendix).
+  D3. Outreach dissemination.
+
+  SEQUENCE: A → B → C → D. A and B can partially overlap. C blocked on reference runner.
+
+MATHEMATICAL APPENDIX GAP-FILL (8 April 2026, 06:05 BST):
+  All 5 gaps filled with computed values (1081→1155 lines):
+  - §7.1: Context-loss re-injection λ_itc (per-model, restart-triggered)
+  - §7.1a: Discovery efficiency ρ (θ_ρ=0.25, ΔAIC=6.5)
+  - §7.4: Runner 5-condition gate with 3 reconciliation actions
+  - §2: f_del(i,t) as per-model function of context size
+  - §2: φ_fmt fix pipeline failure (285/285 UNEVALUABLE)
+  Disputed numbers corrected: R²=0.985→0.961 (R1-R4), z=3.63→5.24 (R1-R7 baseline).
+  Rho threshold calibrated: 0.25, 3-round rolling, from earliest_stop.
+  Committed: 317b8f1.
 
 ARCHITECTURAL GAPS (remaining):
   - Immune shadow functions still named *_shadow() despite being PRIMARY/ACTIVE
-  - CC2 closed-constraint sub-agents (3 of 4) — design settled, not coded
+  - CC2 sub-agents (4 of 5) — design settled, not coded
   - Python 3.9 → 3.12+ upgrade (Gemini SDK warnings)
+  - Registry windowing not yet implemented (Phase A1)
+  - Bench Run 2 expert encodings not yet written (Phase C1)
 
 EXP 32 COMPLETE (5 April 2026, 10:26 BST):
   Meta-experiment: 5 models analysed convergence data from Exp 30/31.

@@ -1,15 +1,15 @@
 # CDSFL Current State
 
-Generated: 8 April 2026 06:05 BST (2026-04-08T06:05:12+01:00)
+Generated: 8 April 2026 07:00 BST (2026-04-08T07:00:38+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `317b8f1` Fill 5 appendix gaps with computed values, correct disputed numbers across docs
-- **Committed:** 2026-04-08 06:05:06 +0100
-- **Remote:** ahead by 4
+- **Last commit:** `b3a9cf4` sv: state snapshot after appendix gap-fill commit
+- **Committed:** 2026-04-08 06:05:17 +0100
+- **Remote:** ahead by 5
 - **Working tree:** clean
 
 ---
@@ -85,6 +85,7 @@ NEXT STEPS:
 
 ## Recent Commits
 
+- `b3a9cf4 sv: state snapshot after appendix gap-fill commit`
 - `317b8f1 Fill 5 appendix gaps with computed values, correct disputed numbers across docs`
 - `3664c08 sv: update RECOVERY.md with audit execution results, mark Task 1 complete`
 - `6451e5d sv: state snapshot after mathematical model audit commit`
@@ -94,4 +95,3 @@ NEXT STEPS:
 - `ebb50d4 Add Exp 36 ground truth reference — consolidated findings, immune corrections, forward path`
 - `9b16013 sv: update state snapshot, timestamps — working tree clean, MC commands in place`
 - `acdaddd Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script`
-- `613ef9b Fix QC reference checker (85→3), add interactive onboarding installer, fix stale TTS paths`
