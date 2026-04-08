@@ -79,24 +79,29 @@ def check_test_consistency(root: Path) -> list[dict]:
         })
         return findings
 
-    # Check RECOVERY.md for test count mentions
+    # Check RECOVERY.md for test count — only in current state section
+    # (first ~100 lines), not in historical entries
     recovery = root / "resources" / "RECOVERY.md"
     if recovery.exists():
-        text = recovery.read_text(encoding="utf-8")
-        for m in re.finditer(r"(\d+)\s+tests?\s+pass", text):
-            doc_count = int(m.group(1))
-            if doc_count != actual:
-                findings.append({
-                    "category": "STALE",
-                    "file": "resources/RECOVERY.md",
-                    "detail": f"Says {doc_count} tests, actual is {actual}",
-                })
-            else:
-                findings.append({
-                    "category": "OK",
-                    "file": "resources/RECOVERY.md",
-                    "detail": f"Test count {actual} is current",
-                })
+        lines = recovery.read_text(encoding="utf-8").splitlines()
+        # Scan only the current pending work section (before historical entries)
+        current_section = "\n".join(lines[:100])
+        matches = list(re.finditer(r"(\d+)\s+tests?\s+pass", current_section))
+        if matches:
+            for m in matches:
+                doc_count = int(m.group(1))
+                if doc_count != actual:
+                    findings.append({
+                        "category": "STALE",
+                        "file": "resources/RECOVERY.md",
+                        "detail": f"Current section says {doc_count} tests, actual is {actual}",
+                    })
+                else:
+                    findings.append({
+                        "category": "OK",
+                        "file": "resources/RECOVERY.md",
+                        "detail": f"Test count {actual} is current",
+                    })
 
     return findings
 

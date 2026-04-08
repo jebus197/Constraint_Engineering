@@ -40,7 +40,7 @@ Opus 4.6 (Claude) and Codex 5.3 conducted 8 rounds of adversarial review. Gemini
 **Key finding:** Heterogeneous architectures find defects that homogeneous review misses — validates the biodiversity hypothesis. Convergence curves were different. Failure modes were different. Epistemic diversity is not redundancy; it is additional compute.
 
 **Commits:** `afcc323` (main review), see MEMORY.md for full commit trail
-**Raw data:** `~/Desktop/Accessibility/CE_Gemini_EPP_Module{1-5}_2026-03-18.txt`
+**Raw data:** `~/Desktop/CDSFL_tts/CE_Gemini_EPP_Module{1-5}_2026-03-18.txt`
 
 ---
 
@@ -939,7 +939,7 @@ The experiment's most valuable output was not the 809 findings. It was the diagn
 **Raw data:** `bench/logs/experiment_12/experiment_12_report.json`, `bench/logs/experiment_12/round_*.json`
 **Orchestrator:** `bench/run_exp12_live_wire.py`
 **Implementation (post-fixes):** `bench/dynamic_management.py` (~3,400 lines), `bench/tests/test_dynamic_management.py` (~1,600 lines, 173 tests)
-**Analysis:** `~/Desktop/Accessibility/Exp12_Final_Analysis_2026-03-29.txt`
+**Analysis:** `~/Desktop/CDSFL_tts/Exp12_Final_Analysis_2026-03-29.txt`
 
 ---
 
@@ -1071,7 +1071,7 @@ This is correct mechanism behaviour with incorrect threshold calibration. Recomm
 **Orchestrator:** `bench/run_exp12_live_wire.py`
 **Implementation:** `bench/dynamic_management.py` (~3,772 lines), `bench/tests/test_dynamic_management.py` (~1,707 lines, 177 tests)
 **Analysis tools:** SymPy (convergence formulae), Wolfram (curve fitting, information theory), SciPy (Kruskal-Wallis, Mann-Whitney, Spearman)
-**Analysis:** `~/Desktop/Accessibility/Exp13b_Full_Analysis_2026-03-29.txt`
+**Analysis:** `~/Desktop/CDSFL_tts/Exp13b_Full_Analysis_2026-03-29.txt`
 
 ---
 

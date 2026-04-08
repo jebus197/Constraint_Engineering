@@ -230,7 +230,7 @@ Run this on startup if available.
 | `e` | Extrapolate beyond immediate domain |
 | `qwerty` | Checkpoint protocol (CC runs every turn) |
 
-George is dyslexic and uses TTS (Firefox Read Aloud). Long-form output should be saved to `~/Desktop/Accessibility/` as plain text (zero markdown formatting). George catches typos — he expects you to catch his too.
+George is dyslexic and uses TTS (Firefox Read Aloud). Long-form output should be saved to `~/Desktop/CDSFL_tts/` as plain text (zero markdown formatting). George catches typos — he expects you to catch his too.
 
 ---
 

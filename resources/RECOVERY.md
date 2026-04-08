@@ -14,8 +14,8 @@ session loss, compaction event, or fresh start with a new model instance.
 4. Check if bench test is running: `ps aux | grep run_round_robin`
 5. If resuming Experiment 12 fixes: read `bench/logs/experiment_12/experiment_12_report.json`
 6. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
-7. For Exp12 analysis: read `~/Desktop/Accessibility/Exp12_Final_Analysis_2026-03-29.txt`
-8. For UX vision context: read `~/Desktop/Accessibility/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
+7. For Exp12 analysis: read `~/Desktop/CDSFL_tts/Exp12_Final_Analysis_2026-03-29.txt`
+8. For UX vision context: read `~/Desktop/CDSFL_tts/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
 
 This is enough to resume most tasks.
 

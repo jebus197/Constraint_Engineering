@@ -189,6 +189,70 @@ def read_section(filepath: Path, start_marker: str, end_marker: str = "") -> str
     return content.strip()
 
 
+def _is_likely_not_a_path(ref: str) -> bool:
+    """Heuristic: return True if the backtick content is not a file path."""
+    # Shell commands (start with known command names or contain operators)
+    cmd_prefixes = (
+        "python", "pip", "tail", "head", "cat", "ls", "cd", "ps", "git",
+        "brew", "npm", "curl", "wget", "mkdir", "rm ", "cp ", "mv ",
+        "grep", "find", "chmod", "chown", "sudo", "export", "source",
+    )
+    if any(ref.lstrip().startswith(p) for p in cmd_prefixes):
+        return True
+    if any(op in ref for op in ("$(", "&&", "||", " | ")):
+        return True
+
+    # Glob / brace-expansion patterns
+    if any(c in ref for c in ("*", "{", "}")):
+        return True
+
+    # Model ID strings (vendor/model format) — strip leading quotes
+    stripped = ref.strip("\"'")
+    model_prefixes = ("anthropic/", "openai/", "google/", "deepseek/", "meta/")
+    if any(stripped.startswith(p) for p in model_prefixes):
+        return True
+
+    # URLs without protocol
+    domain_prefixes = ("github.com", "gitlab.com", "bitbucket.org", "pypi.org")
+    if any(ref.startswith(d) for d in domain_prefixes):
+        return True
+
+    # Unicode mathematical symbols (ceiling, floor, summation, etc.)
+    if re.search(r"[⌈⌉⌊⌋∑∏∫≈≤≥×÷±∞∂∇√λγρφσμ]", ref):
+        return True
+
+    # Mathematical expressions (arithmetic operators adjacent to /)
+    if re.search(r"[+\-*=()]\s*/|/\s*[+\-*=()]", ref):
+        return True
+    # Spaced division: ` / `
+    if " / " in ref:
+        return True
+    # Numeric fractions: 36/45, 3772/200
+    if re.search(r"\b\d+/\d+\b", ref):
+        return True
+    # Word ratios without file extensions: novel/total, rejected/total
+    if re.match(r"^[\w\s\-]*\w+/\w+[\w\s\-]*$", ref) and "." not in ref:
+        return True
+
+    # Sentence fragments (start with punctuation + space)
+    if ref.lstrip().startswith((". ", ", ", "; ", "! ", "? ")):
+        return True
+
+    # Placeholder patterns in paths (round_XX.json, file_{N}.txt)
+    if re.search(r"(?:^|/)[\w]*(?:XX|_N_|\{[A-Z]\}|<\w+>)[\w]*(?:\.\w+)?(?:/|$)", ref):
+        return True
+
+    # Git status markers
+    if ref.startswith(("?? ", "M ", "A ", "D ")):
+        return True
+
+    # Table cell fragments (contain pipe)
+    if "|" in ref:
+        return True
+
+    return False
+
+
 def check_file_references(md_path: Path) -> list[dict[str, Any]]:
     """Check a markdown file for broken file path references."""
     broken = []
@@ -207,11 +271,28 @@ def check_file_references(md_path: Path) -> list[dict[str, Any]]:
                 # Skip URLs
                 if ref.startswith(("http://", "https://", "mailto:")):
                     continue
+                # Skip non-path content (math, shell, globs, model IDs)
+                if _is_likely_not_a_path(ref):
+                    continue
+                # Strip line-number suffixes (e.g. file.py:123)
+                clean_ref = re.sub(r":\d+$", "", ref)
                 # Expand ~ paths
-                check_path = Path(ref.replace("~", str(Path.home())))
+                check_path = Path(clean_ref.replace("~", str(Path.home())))
                 if not check_path.is_absolute():
-                    check_path = root / check_path
-                if not check_path.exists():
+                    # Try relative to the file's own directory first
+                    from_file = md_path.parent / check_path
+                    # Then from repo root
+                    from_root = root / check_path
+                    # Then with bench/ prefix for bare module paths
+                    from_bench = root / "bench" / check_path
+                    if not (from_file.exists() or from_root.exists()
+                            or from_bench.exists()):
+                        broken.append({
+                            "file": str(md_path),
+                            "line": i,
+                            "reference": ref,
+                        })
+                elif not check_path.exists():
                     broken.append({
                         "file": str(md_path),
                         "line": i,
