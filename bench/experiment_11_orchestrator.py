@@ -246,6 +246,12 @@ def call_openrouter(
                 timeout=timeout,
             )
             elapsed = time.monotonic() - t0
+            if not response.choices:
+                raise CircuitBreakerTripped(
+                    "empty_response", model_id, "dispatch",
+                    f"API returned no choices after {elapsed:.1f}s "
+                    f"(possible upstream 500 error)"
+                )
             text = response.choices[0].message.content or ""
             text = text.strip()
             _log(f"  [openrouter:{model_id}] done ({elapsed:.1f}s, {len(text)} chars)")
@@ -609,6 +615,12 @@ def call_deepseek(
             elapsed = time.monotonic() - t0
 
             # Extract visible content
+            if not response.choices:
+                raise CircuitBreakerTripped(
+                    "empty_response", model_id, "dispatch",
+                    f"API returned no choices after {elapsed:.1f}s "
+                    f"(possible upstream 500 error)"
+                )
             choice = response.choices[0]
             text = (choice.message.content or "").strip()
 
