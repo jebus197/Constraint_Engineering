@@ -1283,7 +1283,7 @@ def _cc2_agent_verification(
         # Sandbox test the extracted diff
         applied, test_msg = _sandbox_apply_fix(fid, fix_result.diff)
         if applied:
-            registry.mark_verified(fid, round_idx)
+            registry.mark_verified(fid)
             stats["fixes_applied"] += 1
             _log(f"  Fix applied: {fid} — diff tested, CLOSED")
         else:
