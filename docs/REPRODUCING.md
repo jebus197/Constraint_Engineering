@@ -161,6 +161,66 @@ Total cost per experiment is typically modest. The main cost driver is DeepSeek'
 
 ---
 
+## Metacognitive Commands (MC)
+
+The project uses short commands to direct model behaviour during interactive
+sessions with Claude Code or other AI models. These are typed as plain text
+in the conversation and can be combined (e.g. `p a e d`).
+
+### Core Commands
+
+| Cmd | Action |
+|-----|--------|
+| `y` | Yes / approved |
+| `cy` | Continue |
+| `d` | Discuss before proceeding |
+| `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat until diminishing returns) |
+| `a` | Analyse dispassionately |
+| `e` | Extrapolate beyond immediate domain (what generalises, boundary conditions, new falsifiable questions) |
+| `f` | Find-Follow-Fix — trace consequences through the system before fixing (Find, Follow, Fix) |
+| `sy` | Use all available mathematical and STEM tools (SymPy, Wolfram, SciPy, NumPy, z3, uncertainties, mpmath) in analysis |
+| `t` | Send output to TTS plain-text file |
+| `c` | Confer with another model, run mutual P-passes until convergence |
+| `sv` | Save state — update docs, generate CURRENT_STATE.md, commit |
+| `qc` | Quality control — run staleness, consistency, and reference checks |
+| `rc`/`rs` | Recover state — rebuild full working context from recovery resources |
+| `re` | External research (web search, arXiv, Semantic Scholar) |
+| `rt` | Read all recovery resources + continue |
+| `r` | Re-read key context files |
+| `x` | Override sleep/rest-period warnings |
+
+### Model Confer Dispatch
+
+These commands direct the model to confer on the current task with a specific
+frontier model from the panel. Combinable: `cx ge cc2` confers with all three.
+
+| Cmd | Model | Route |
+|-----|-------|-------|
+| `cc2` | Claude Opus 4.6 | CLI piped mode (`claude -p`), Max subscription |
+| `cx` | Codex GPT-5.4 | OpenRouter API |
+| `ge` | Gemini 3.1 Pro | Google GenAI API |
+| `cgpt` | ChatGPT GPT-5.4 | OpenRouter API |
+| `ds` | DeepSeek Reasoner | DeepSeek API |
+
+All models run under CDSFL directives as system prompt. See
+`bench/directives/universal/cdsfl_core_formal.md` for the directive text and
+`bench/cdsfl_registry/composer.py` for how directives are composed per model.
+
+### When to Use
+
+- `p` after any substantive claim or code change — falsify before presenting
+- `sy` when mathematical claims need computational verification
+- `f` before any fix — trace blast radius first, then fix with full knowledge
+- `sv` at session milestones — preserves state for recovery
+- `qc` before commits — catches stale documentation
+
+Combined examples:
+- `p a e d` — P-pass, analyse, extrapolate, then discuss results
+- `sy p` — verify with STEM tools, then falsify
+- `cx ge cc2` — get three independent model perspectives on current work
+
+---
+
 ## Troubleshooting
 
 **Models timing out**: Check API key validity and network connectivity. DeepSeek has 900s timeout for chain-of-thought. Gemini has 300s with httpx timeout.

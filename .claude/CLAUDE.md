@@ -31,6 +31,44 @@ All models run under latest CDSFL directives as system prompt. Combinable: `cx g
 CDSFL directives: `bench/directives/universal/cdsfl_core_formal.md`
 Composer: `bench/cdsfl_registry/composer.py`
 
+## Metacognitive Commands (MC)
+
+Single-letter and short commands that direct model behaviour. Combinable
+(e.g. `p a e d` = P-pass, analyse, extrapolate, discuss). Full reference:
+`docs/REPRODUCING.md` § Metacognitive Commands.
+
+| Cmd | Action |
+|-----|--------|
+| `y` | Yes / approved |
+| `cy` | Continue |
+| `d` | Discuss before proceeding |
+| `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat) |
+| `a` | Analyse dispassionately |
+| `e` | Extrapolate beyond immediate domain |
+| `f` | Find-Follow-Fix (FFF intra-model cycle) |
+| `sy` | Use all available mathematical and STEM tools (SymPy, Wolfram, SciPy, NumPy, z3, uncertainties, mpmath) in analysis |
+| `t` | Send output to TTS file |
+| `c` | Confer with another model, mutual P-passes until convergence |
+| `sv` | Save state — run `python3 scripts/cdsfl_sv.py`, update recovery docs, commit |
+| `qc` | Quality control — run `python3 scripts/cdsfl_qc.py`, fix reported issues |
+| `rc`/`rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, rebuild context |
+| `re` | External research (web search, arXiv, Semantic Scholar) |
+| `rt` | Read all recovery resources + continue |
+| `r` | Re-read key context files |
+| `x` | Override sleep/rest warnings |
+
+### Model Confer Dispatch (combinable)
+
+| Cmd | Model | Route |
+|-----|-------|-------|
+| `cc2` | Claude Opus 4.6 | CLI piped mode (`claude -p`), Max subscription |
+| `cx` | Codex GPT-5.4 | OpenRouter API |
+| `ge` | Gemini 3.1 Pro | Google GenAI API |
+| `cgpt` | ChatGPT GPT-5.4 | OpenRouter API |
+| `ds` | DeepSeek Reasoner | DeepSeek API |
+
+Example: `cx ge cc2` = confer with all three on current task.
+
 ## Identity
 
 CC1 = this instance (UX mode, interactive). CC2 = CLI headless instance.
