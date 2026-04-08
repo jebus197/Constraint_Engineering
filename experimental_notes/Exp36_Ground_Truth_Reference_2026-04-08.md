@@ -1,6 +1,6 @@
 # Experiment 36 — Ground Truth Reference
 
-**Date:** 8 April 2026, 02:42 BST (updated 04:10 BST)
+**Date:** 8 April 2026, 02:42 BST (updated 07:00 BST)
 **Purpose:** Single canonical reference consolidating all findings, observations, fixes, mathematical insights, and forward path from Experiment 36. This document supersedes the seven individual Exp 36 notes as the authoritative source for project planning.
 
 **Source documents consolidated:**
@@ -487,34 +487,113 @@ Rationale: if introduced simultaneously with the 3 minimum fixes (contested-to-H
 
 ---
 
-## XI. Forward Path
+## XI. Canonical Execution Plan (revised 8 April 2026, 07:00 BST)
 
-### Confirmed Task Sequence (8 April 2026)
+### Completed
+
+| Task | Date | Outcome |
+|------|------|---------|
+| Mathematical model audit | 8 April 2026, 04:46 BST | 25/25 internal checks pass (SymPy/Wolfram/z3). All 5 gaps confirmed. Report: `Mathematical_Model_Audit_2026-04-08.md` |
+| Appendix gap-fill | 8 April 2026, 06:05 BST | 1081→1155 lines. λ_itc, ρ formalisation, f_del(i,t), runner gate reconciliation. Committed: `317b8f1` |
+| Disputed numbers corrected | 8 April 2026, 06:05 BST | R²=0.985→0.961 (R1-R4), z=3.63→5.24 (R1-R7 baseline). Qualitative findings unchanged |
+| Rho threshold calibrated | 8 April 2026, 06:05 BST | θ_ρ=0.25, 3-round rolling average, from t_earliest. Triggers R16 in Exp 36 (matches ~R15 saturation) |
+
+### Phase A — Exp 36 Resume (validate fixes)
+
+**Goal:** Validate that 5 targeted fixes break the coupled cascade and allow convergence. Resume from R22 checkpoint, expect 3-5 rounds.
+
+| # | Fix | What It Does | Why It's Minimum |
+|---|-----|-------------|-----------------|
+| A1 | Registry windowing | OPEN/CONTESTED in active view; CLOSED/MERGED compact; REFUTED/DUPLICATE hidden | Breaks churn loop at root — models stop re-engaging with resolved findings |
+| A2 | ρ as C6 in convergence gate | θ_ρ=0.25, 3-round rolling, from t_earliest=12 | Detects churn that γ can't see. Formalised in appendix §7.1a |
+| A3 | Contested → HIL escalation | 5-round threshold for contested findings | Removes sole convergence blocker at R19 (4/5 conditions met, C2 failed) |
+| A4 | Gamma-aware ITC | Check ρ before DEGRADATION dispatch | Prevents blind restarts that feed the burst cycle (R8: F=13.49, p=0.0017) |
+| A5 | Dedup-aware CC2v | Check prior confirmations before queueing | Prevents re-verification of already-confirmed findings |
+| A6 | Resume Exp 36 | From R22 checkpoint with A1-A5 in place | Controlled comparison: same test article (evidence.py), same data, different design |
+
+**Critical note:** A1 (registry windowing) and A2 (ρ) are essential. Without them, the coupled cascade recurs even with A3-A5 fixed. The audit traced the chain: context grows → ITC bursts → γ hides churn → no ρ to flag it → runner gate can't terminate. A1 breaks the first link, A2 enables detection.
+
+**Semantic layer:** evidence.py (the Exp 36 test article) is already in the runner. The 5 fixes modify the existing runner. No semantic layer "addition" needed — it's the ouroboros cycle: schema fixes feed back into the codebase the schema reviews.
+
+### Phase B — Reference Runner + CC2 Architecture (Exp 37 infrastructure)
 
 | # | Task | Description |
 |---|------|-------------|
-| 1 | **Mathematical model audit** | 5 gap tests against Exp 29-36 data using NumPy/SciPy/SymPy/Wolfram. Validates the coupled cascade hypothesis. Findings first, formalisation second. No appendix changes without founder approval. |
-| 2 | **CC2 sub-agent implementation** | 4 closed-constraint agents (Citation Verifier, Fix Extractor, Dedup Assessor, CC2v). Parallel execution. Mechanical only. See Section IX. |
-| 3 | **3 minimum runner fixes** | Contested-to-HIL escalation (5-round threshold), gamma-aware ITC DEGRADATION threshold, dedup-aware CC2v (check prior confirmations). These unblock convergence. |
-| 4 | **Resume Experiment 36** | From R22 checkpoint with all fixes in place. 2 contested findings escalate to HIL immediately. ITC stops restart_fresh cycling. Expected 3-5 rounds to convergence. Same test article (evidence.py), controlled comparison. |
-| 5 | **Reference runner for Exp 37+** | Parameterised (test article, topology, round limits, convergence thresholds). Incorporates all 13 design improvements. Serves as the executable a future UX layer calls. Replaces per-experiment runner scripts. |
-| 6 | **Mathematical model companion** | Plain English walkthrough of the appendix. Explains significance, not just notation. Uses concrete examples from experiments. Addresses the "so what" question. |
+| B1 | Reference runner | Parameterised entry point (test article, topology, round limits, convergence thresholds). Replaces per-experiment runner scripts. Incorporates all Phase A fixes + 13 design improvements. |
+| B2 | CC2 role redesign | CC2 becomes manager/router only — no finding generation. Bounded authority (route, assess, escalate). Does not inject findings, override tool-backed verdicts, or make convergence decisions. |
+| B3 | 5 CC2 sub-agents | All closed-constraint-space, mechanical. See Section IX (updated). |
+| B4 | Domain-parameterised immune cells | Extend `ClaimType` enum per domain. Add domain-specific verification functions. Domain TOML routing for tool selection. Architecture (6-stage pipeline) invariant; content (stages 1-3) domain-specific. |
+| B5 | Meta-cognitive feedback | Exp 37 only. Data-only, constrained response. See Section X. |
+| B6 | Ascending abstraction guard | Convergence gate override: if ascending abstraction active (§7.3), gate cannot trigger regardless of other conditions. Appendix §7.4 reconciliation. |
+| B7 | Promote LLM classifier + formalisation agent | From shadow to primary. v2 immune already primary for DC, NK, Helper T, Reg T. |
+
+**CC2 Sub-Agent Design (revised — 5 agents, not 4):**
+
+| # | Agent | Constraint Question | Output Schema | Capability |
+|---|-------|-------------------|---------------|------------|
+| 1 | Citation Verifier | Does finding accurately describe cited code/material? | {verified, cited_material, match_assessment, confidence} | Haiku |
+| 2 | Fix Extractor | Can this NL fix become an applicable change? | {extractable, diff_or_correction, applies_cleanly, test_result} | Opus |
+| 3 | Dedup Assessor | Does new finding describe same issue as existing one? | {duplicate, shared_root_cause, evidence_from_both} | Haiku |
+| 4 | Programmatic Verifier | Can this NL claim be verified by tools (SymPy/AST/z3/SciPy)? | {verifiable, tool_used, result, verdict} | Opus + tools |
+| 5 | CC2v | Confirm/reject/duplicate/escalate? (LLM verdict fallback) | {verdict, confidence, evidence_trace} | Opus |
+
+Agent 4 (Programmatic Verifier) bridges the gap between what the immune pipeline's B Cell can mechanically parse and what requires LLM judgment. It decomposes NL claims into programmatic tests. Agent 5 (CC2v) handles genuinely ambiguous cases that Agent 4 cannot verify. CC2 routes findings to the appropriate agent based on finding attributes — the routing can be mechanically defined.
+
+**Domain-Parameterised Immune Cells (B4 detail):**
+
+The immune pipeline's 6-stage architecture is domain-agnostic. What changes per domain is the content of stages 1-3:
+
+| Stage | Cell | Domain-Agnostic | Domain-Specific |
+|---|---|---|---|
+| 1 | DC | Dispatch mechanism | `ClaimType` enum + classification patterns |
+| 2a | CT | LLM dispatch + verdict schema | Prompt template + source material format |
+| 2b | B Cell | Tool dispatch + class-switching | Tool selection (SymPy/z3/statsmodels/dimensional) |
+| 3 | NK | Similarity matching at τ_sim | Known false-positive patterns |
+| 4 | HT | Cross-round dedup | Fully agnostic |
+| 5 | RT | Reconciliation gate | Fully agnostic |
+
+Domain examples:
+- **Mathematics:** PROOF_STEP → z3, COMPUTATION → SymPy, BOUND → SymPy inequality
+- **Physics:** CONSERVATION_LAW → SymPy, DIMENSIONAL → unit analysis, NUMERICAL → SciPy
+- **Chemistry:** REACTION_BALANCE → stoichiometric, THERMODYNAMIC → SymPy energy, SAFETY → standards lookup
+- **Engineering:** CODE_COMPLIANCE → standards table, LOAD_CALCULATION → numerical, MATERIAL → database cross-reference
+
+Parameterisation via domain TOML files (already exist: `physics.toml`, `chemistry.toml`, `mathematics.toml`).
+
+### Phase C — Bench Run 2 (27 frontier STEM tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| C1 | 27 task-specific expert encodings | FT-001 through FT-027. 50-100 lines each. HARD/SOFT constraints, verification procedures, failure modes. Must NOT leak solutions. Plan: `bench/BENCH_EXPANSION_PLAN.md`. Tasks: `bench/tasks_frontier/`. |
+| C2 | Finding schema adaptation | Claim + evidence format for non-SE tasks (not just code citations). |
+| C3 | Domain verification routing | Extends B4. Three-layer composition: universal → domain → task-specific. |
+| C4 | Open-problem scoring metrics | For FT-028+ (18 planned open-problem tasks). |
+| C5 | Dry-run all 27 tasks | Verify tool availability, graceful degradation, no answer leakage. |
+| C6 | Execute Bench Run 2 | 27 frontier tasks across 8 domains (mathematics, software, cross-domain, chemistry, hardware, structural, industrial, physics). |
+
+**Domain transferability assessment:** The CDSFL schema is not over-optimised for SE. The core architecture (P-Pass, convergence measurement, multi-agent review, γ/ρ tracking, registry lifecycle) is domain-agnostic. What is SE-specific are the immune pipeline's verification procedures (CT code tracing, B Cell AST analysis) and finding schema (code citations). These are parameterised, not hardcoded — domain adaptation is configuration, not rewriting. 29 directive files across 12 domains already exist.
+
+**Convergence prediction:** CDSFL may show cleaner convergence on concrete STEM tasks than on software engineering, because: (a) formal verification tools (SymPy, z3) are more directly applicable, (b) solution spaces are more bounded, (c) ground truth is more mechanically checkable. The 17:1 dedup ratio in Exp 36 reflects SE's unbounded solution space — mathematics and physics tasks with definite answers should produce lower churn.
+
+### Phase D — Documentation and Outreach
+
+| # | Task | Description |
+|---|------|-------------|
+| D1 | README rewrite | From blog post summary (founder working on blog post). Current README is outdated. |
+| D2 | Mathematical Model Companion | Plain English walkthrough of appendix. Uses concrete examples from experiments. |
+| D3 | Outreach dissemination | Blog post as main article. Point people to it, not send it directly. |
+
+### Sequencing
+
+A → B → C → D. Phases A and B can partially overlap (reference runner can be built while Exp 36 resume runs). Phase C is blocked on having a working reference runner (B1) and domain-parameterised immune cells (B4). Phase D is blocked on Bench Run 2 results for the strongest claims.
 
 ### Exp 37 — Full Experiment (After Reference Runner)
 
-**Purpose:** Full experiment with all improvements on a new test article.
+**Purpose:** Full experiment with all Phase B improvements on a new test article.
 
-**Improvements beyond the 3 minimum:**
-- Fix-application pipeline (CONFIRMED + verified fix → CLOSED) — enabled by Agent 2 (Fix Extractor)
-- Context windowing
-- Per-model rho tracking with targeted ITC
-- Pre-filter before CC2v queue
-- LLM classifier promoted from shadow to primary
-- Consolidation phase (final 3 rounds)
-- Meta-cognitive decay feedback (reserved for Exp 37, not resumed Exp 36 — see Section X)
-- CC2 sub-agents 1-3 running in parallel with CC2v
+**Test article:** To be determined. Candidates: `endocrine.py`, `insect_brain.py`, `runner_core.py`, or `immune_agents.py` itself.
 
-**Test article:** To be determined. Candidates include other components that have not been reviewed: `endocrine.py`, `insect_brain.py`, `runner_core.py`, or `immune_agents.py` itself.
+**Improvements beyond Phase A fixes:** CC2 sub-agents 1-5 running in parallel, CC2 as manager-only, fix-application pipeline (CONFIRMED → CLOSED), context windowing, per-model ρ tracking, pre-filter before CC2v queue, LLM classifier promoted, consolidation phase, meta-cognitive feedback, ascending abstraction guard, domain-parameterised immune cells.
 
 ---
 
@@ -541,3 +620,9 @@ Rationale: if introduced simultaneously with the 3 minimum fixes (contested-to-H
 | evidence.py line count | "~420 lines" | **590 lines** | Direct file read |
 | LLM classifier | "not yet active" | **Shadow** (logs only, no verdict modification) | Code confirms shadow execution when CLI available |
 | Formalisation agent | "not yet active" | **Shadow** (precondition extraction, no verdict modification) | Code confirms shadow execution in WP3d block |
+| CC2 sub-agents | "4 agents" | **5 agents** (Programmatic Verifier added) | Design discussion 8 April 2026, P-pass survives |
+| CC2 role | "player-manager (finds + verifies)" | **Manager/router only** (no finding generation) | Guardian layer parallel from Genesis, P-pass survives |
+| R²=0.985 (early decay) | "CONFIRMED" | **DISPUTED** → R²=0.961 (R1-R4 window) | Mathematical model audit, 8 April 2026 |
+| z=3.63 (R8 burst) | "CONFIRMED" | **DISPUTED** → z=5.24 (R1-R7 baseline) | Mathematical model audit, 8 April 2026 |
+| Minimum Exp 36 fixes | "3 fixes" | **5 fixes** (registry windowing + ρ as C6 are essential) | Audit coupled cascade analysis |
+| Forward path | "6-item task sequence" | **4-phase plan** (A: resume, B: reference runner, C: BR2, D: docs) | Revised 8 April 2026, 07:00 BST |
