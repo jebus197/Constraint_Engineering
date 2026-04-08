@@ -16,6 +16,7 @@ session loss, compaction event, or fresh start with a new model instance.
 6. If resuming meta-test fix work: read `~/.claude/plans/agile-wondering-hejlsberg.md`
 7. For Exp12 analysis: read `~/Desktop/CDSFL_tts/Exp12_Final_Analysis_2026-03-29.txt`
 8. For UX vision context: read `~/Desktop/CDSFL_tts/CDSFL_UX_Vision_Sketch_2026-03-28.txt`
+9. **For Exp 36 ground truth and forward path:** read `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` — canonical reference consolidating all findings, immune status corrections, 13 design improvements, mathematical model gaps, and resumption plan.
 
 This is enough to resume most tasks.
 

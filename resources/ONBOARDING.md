@@ -38,7 +38,11 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   **Shadow pipeline:** B Cell v2 produced Z3 SMT counterexample (formal
   verification working). DC v1 regex 21–44% agreement with LLM classifier.
   Helper T v2 flagged ~4 duplicates/round. v2 activation indicated for Exp 37.
-  7 design improvements identified for Exp 37 (see Session Findings doc).
+  13 design improvements identified (7 session + 6 deep analysis).
+  **CORRECTION (8 April):** v2 immune was already PRIMARY in Exp 36 (DC, NK,
+  Helper T, Reg T). Skin barrier was actively filtering, not observation-only.
+  See `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` for
+  consolidated ground truth, immune status corrections, and forward path.
   **POST-RUN VERIFICATION (07:06 BST):** Three-workstream independent verification.
   Mathematical (NumPy/SciPy): 5 CONFIRMED, 2 UNCERTAIN, 0 REJECTED.
   AST: 7 code bugs CONFIRMED, 1 REJECTED (valid Python). ~9 total unique issues.
