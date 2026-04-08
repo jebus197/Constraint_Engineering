@@ -52,7 +52,7 @@ This aligns with the models-as-neurones hypothesis from the burst reasoning anal
 | 1 | Is this really metacognition, or just operational monitoring? | **Survives** | Monitored processes (discovery rate, novelty, fixation) are genuinely cognitive, not thermostatic. Defensible under MIDCA (6/8 criteria). Depends on substrate agnosticism |
 | 2 | Was it "always designed to be" this? | **Partially survives** | Design intent was always measurement. Specific instruments (γ, ρ, ITC feedback detection, convergence gate) emerged through Exp 11–36, not from day-one design. Microscope was built by looking through it |
 | 3 | Is "microscope" the right metaphor? | **Survives** | Microscope reveals invisible structure. Exp 36 phenomena (17:1 dedup, three-phase decay, burst reasoning, feedback loop) invisible without instrumentation |
-| 4 | Could this be confirmation bias? | **Survives with caveat** | Measurements empirically grounded: exponential decay R²=0.985, R8 burst z=3.63, churn signal confirmed by component decomposition. Metacognition interpretation on top of statistics depends on substrate agnosticism |
+| 4 | Could this be confirmation bias? | **Survives with caveat** | Measurements empirically grounded: exponential decay R²=0.961 (R1-R4), R8 burst z=5.24 (R1-R7 baseline), churn signal confirmed by component decomposition. Prior R²=0.985/z=3.63 disputed — qualitative findings unchanged. Metacognition interpretation on top of statistics depends on substrate agnosticism |
 
 **Result:** Survives. The P-pass findings — that the metacognition is system-level and that the instruments emerged iteratively — are consistent with the claim. The microscope metaphor holds for the system as a whole.
 

@@ -116,14 +116,14 @@ CC2's low count (9.3%) is explained by its dual role as both discovery model and
 | R2 | 0.626 | telemetry | First gamma computation |
 | **R4** | **0.675** | telemetry | **Peak gamma** |
 | R5-R7 | 0.671-0.643 | telemetry | Post-peak plateau |
-| **R8** | **0.594** | telemetry | **Burst reasoning** (21 novel, z=3.63) |
+| **R8** | **0.594** | telemetry | **Burst reasoning** (21 novel, z=5.24 per R1-R7 baseline) |
 | R9-R14 | 0.556-0.453 | telemetry | Steady decline |
 | **R15** | **0.440** | **soft** | Soft gate threshold crossed |
 | R16-R19 | 0.431-0.416 | soft | Gradual decline |
 | **R20** | **0.414** | **hard** | Hard gate activated |
 | R21-R22 | 0.412-0.411 | hard | Static — gamma effectively stalled |
 
-**Two-phase structure confirmed mathematically:** Phase 1 slope = +0.025/round (rising), Phase 2 slope = -0.013/round (declining). R² = 0.985 for early exponential decay of novelty.
+**Two-phase structure confirmed mathematically:** Phase 1 slope = +0.025/round (rising), Phase 2 slope = -0.013/round (declining). R² = 0.961 for R1-R4 early exponential decay of novelty (computed 8 April audit; prior R² = 0.985 claim could not be reproduced — see `Mathematical_Model_Audit_2026-04-08.md`).
 
 ### Convergence Gate — 5 Conditions at Termination
 
@@ -251,7 +251,7 @@ The CDSFL methodology worked. The five-model panel found the bugs, the immune pi
 
 Two signals diverged and nothing in the instrumentation detected it:
 
-**Gamma (novelty-derived):** Declining steadily. 0.675 at R4 to 0.411 at R22. The decay curve of novel findings was exponential early (R-squared = 0.985 for R0-R4) then flattened to a low but non-zero residual rate.
+**Gamma (novelty-derived):** Declining steadily. 0.675 at R4 to 0.411 at R22. The decay curve of novel findings was exponential early (R² = 0.961 for R1-R4, computed 8 April audit) then flattened to a low but non-zero residual rate.
 
 **Raw output:** Stable. Not rising, but not declining. Findings per round averaged ~20 with no downward trend. Models kept producing at roughly the same rate throughout.
 

@@ -19,7 +19,7 @@ Seven experiment-level claims were tested programmatically using NumPy, SciPy, a
 
 **Method:** Fit exponential model N(t) = a·e^(−bt) via log-linear regression on R0–R4 data.
 
-**Result:** R² = 0.9854. Decay rate b = 0.796. The fit is extremely strong — 98.5% of variance explained by exponential decay.
+**Result:** R² = 0.9854. Decay rate b = 0.796. (**Disputed 8 April 2026:** Independent audit using the same exponential model over R1-R7 produced R² = 0.257; R1-R4 window produced R² = 0.961. The original fitting window or method could not be reproduced. The qualitative finding — early novel counts decay rapidly — is confirmed by both analyses. See `Mathematical_Model_Audit_2026-04-08.md`.)
 
 **Verdict: CONFIRMED.**
 
@@ -29,7 +29,7 @@ Seven experiment-level claims were tested programmatically using NumPy, SciPy, a
 
 **Method:** Computed z-score of R8 novel count against R1–R22 distribution (excluding R0 blind round).
 
-**Result:** z = 3.63 (p < 0.001). R8 is 3.63 standard deviations above mean. By any conventional threshold, this is a statistically significant outlier.
+**Result:** z = 3.63 (p < 0.001). (**Disputed 8 April 2026:** Independent audit using R1-R7 baseline (mean=5.0, std=3.06) produced z = 5.24. The original baseline could not be reproduced. The qualitative finding — R8 is a statistically significant outlier — is confirmed and strengthened. See `Mathematical_Model_Audit_2026-04-08.md`.)
 
 **Verdict: CONFIRMED.**
 

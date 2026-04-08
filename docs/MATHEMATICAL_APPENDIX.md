@@ -200,6 +200,14 @@ When f_del(i) = 1 (all responses parseable), this reduces to the existing model.
 
 **Estimation:** f_del can be estimated empirically from the ratio of non-empty responses to total API calls for each model, stratified by budget allocation. For models with CoT architectures, f_del is a decreasing function of prompt complexity (more complex prompts → more reasoning → higher probability of budget exhaustion).
 
+**Context degradation (Exp 36 audit):** f_del is not a fixed per-model constant. In multi-round experiments where context grows monotonically, f_del degrades as a per-model function of cumulative context size:
+
+> **f_del(i, t) = f_del,0(i) + α_i · context%(t)**
+
+Where f_del,0(i) is the baseline delivery feasibility for model i, α_i is the per-model context sensitivity coefficient, and context%(t) is the context size at round t as a fraction of model i's context budget. The slope α_i differs by model and can be positive (model improves with context, e.g. DeepSeek) or negative (model degrades, e.g. Codex).
+
+Exp 36 per-model output (early 8 rounds → late 8 rounds mean findings/round): Codex 5.8 → 1.6 (α < 0, sharp degradation); DeepSeek 3.8 → 6.1 (α > 0); ChatGPT 4.2 → 3.9 (α ≈ 0); Gemini 3.1 → 3.9 (α ≈ 0); CC2 1.9 → 1.1 (α < 0, mild). Context grew from 94.8% to 405.6% of budget over 23 rounds. The aggregate correlation (r = −0.260, p = 0.269) is non-significant because opposite per-model trends cancel in aggregation. Per-model analysis is required. (Added 8 April 2026, computed during mathematical model audit.)
+
 **Calibration from Experiment 15:** DeepSeek Reasoner with max_tokens=32768 showed f_del ≈ 0.8 (1 budget exhaustion in 5 rounds). Reducing max_tokens to 16384 with retry-on-empty is the operational mitigation; the formal model captures the residual risk. (Added during failure mode analysis, 30 March 2026.)
 
 ### Decomposition Yield Bounds (η_dec)
@@ -251,6 +259,8 @@ where τ_chars is a minimum response size threshold (indicating the model produc
 When both f_del(i) = 1 and φ_fmt(i) = 1, this reduces to the existing model.
 
 **Calibration from Experiment 15:** DeepSeek Reasoner used `**F001**` format (bold markdown IDs) instead of the expected `FINDING_ID: F001` text format. Raw output: 9738 chars, 14 actual findings, 0 parsed findings → φ = 0. This is a pure format divergence, not a detection failure — the model's analytical capability was intact. (Added during failure mode analysis, 30 March 2026.)
+
+**Fix pipeline format failure (Exp 36 audit):** The fix pipeline (NL fix → applicable code change) showed φ_fmt = 0.0 across 285 fix evaluations in 23 rounds — 100% UNEVALUABLE. This is distinct from the per-model finding format yield above: it is a complete pipeline-level format failure where no proposed fix was ever in a form the pipeline could evaluate. The fix pipeline's φ_fmt is effectively a separate parameter from the finding-level φ_fmt(i) and should be tracked independently. (Added 8 April 2026, computed during mathematical model audit.)
 
 ### Diversity Separability Axiom
 
@@ -375,9 +385,9 @@ This matches the white paper's stance: "if a better model is proposed that predi
 | Emergence (§8.2) | Formalised, empirical evidence from 3-arch review | 3-architecture review validates; full bench test pending | Measure Y_composite vs max(Y_i) across all conditions |
 | Metacognition (§8.1) | Protocol defined, MIDCA mapping established | Advisory implementation; mandatory pending API access | Measure pre/post feedback γ and v̄ changes |
 | Substrate agnosticism (§8.4) | Prediction stated | Not tested (requires human trials) | Design human-team protocol experiment |
-| f_del (delivery feasibility) | Well-defined, reduces to existing when f_del=1 | Exp15: DeepSeek f_del≈0.8 at 32K tokens | Calibrate per-model f_del from API response data |
+| f_del (delivery feasibility) | Well-defined, reduces to existing when f_del=1; context degradation formalised (Exp 36 audit) | Exp15: DeepSeek f_del≈0.8 at 32K. Exp36: per-model α_i diverge (Codex −4.1, DeepSeek +2.4) | Calibrate per-model f_del(i,t) from multi-round API response data |
 | η_dec (decomposition yield) | Well-defined, reduces to existing when η_dec=1 | Exp15: Gemini η_dec≈0.17 (6→1 findings) | Measure per-model η_dec across decomposition thresholds |
-| φ_fmt(i) (format yield) | Well-defined, sequential with f_del | Exp15: DeepSeek φ=0 (14 actual, 0 parsed) | Implement format-adaptive re-extraction |
+| φ_fmt(i) (format yield) | Well-defined, sequential with f_del; fix pipeline φ_fmt=0.0 documented (Exp 36 audit) | Exp15: DeepSeek φ=0. Exp36: fix pipeline 285/285 UNEVALUABLE | Implement format-adaptive re-extraction; fix pipeline format separately |
 
 ---
 
@@ -586,6 +596,48 @@ Where ν ∈ [0, 1] is the Re-injection Coefficient (probability that a structur
 
 (Error re-injection modified from informal Gemini constructs and adopted during Round 8, 31 March 2026. SymPy verified: dλ/dn < 0 for β < 1 confirmed.)
 
+**Context-loss re-injection extension:** The ν · Δ_{n−1} term above models fix-induced re-injection: adopting a structural fix in round n−1 introduces a new fault with probability ν. A distinct re-injection mechanism was observed in Exp 36 at R8 (ITC restart_fresh). When the runner wipes a model's context and restarts it, the model re-enters a partially depleted defect space with no memory of prior discoveries — producing rediscoveries, not new defects.
+
+Define the context-loss re-injection term:
+
+> **λ_itc(n) = μ_i · I(restart_i, n) · D_seen(n − 1)**
+
+Where μ_i ∈ [0, 1] is the per-model context-loss rediscovery rate (fraction of previously seen defects the model will re-find after context wipe), I(restart_i, n) is a binary indicator for whether model i underwent restart_fresh at round n, and D_seen(n − 1) is the cumulative unique defect count at the end of round n − 1.
+
+The full extended intensity becomes:
+
+> **λ_full(n) = (β / η) · (n / η)^(β − 1) + ν · Δ_{n−1} + Σ_i λ_itc,i(n)**
+
+**Distinction from ν · Δ:** The fix-induced term (ν · Δ) introduces genuinely new faults; the context-loss term (λ_itc) rediscovers existing faults. The fix-induced term depends on adoption magnitude; the context-loss term depends on cumulative discovery count and is per-model (different models have different μ_i values — Exp 36 data: Codex jumped 1→9, DeepSeek 2→7, Gemini 1→4 at R8).
+
+**Reduction properties:** When no restart occurs (I = 0 for all i), λ_full = λ_ext. When additionally ν = 0, λ_full = λ — the standard Duane model.
+
+**Empirical calibration (Exp 36):** The R8 burst produced 21 novel findings from 29 raw. Adding a burst term to the standard Duane model improved fit significantly (F = 13.49, p = 0.0017, burst magnitude ν_burst = 12.96). The standard Duane under-predicts post-R8 cumulative novel counts. (Added 8 April 2026, computed during mathematical model audit.)
+
+### 7.1a Discovery Efficiency ρ (Churn Detection)
+
+The Duane convergence parameter γ classifies the finding rate trajectory but is blind to a specific failure mode: the system can maintain a constant raw output rate while novel output declines — churn. Gamma sees the novel deceleration and reports convergence, but cannot detect that operational waste is increasing because it does not track raw output independently.
+
+Define the discovery efficiency for round t:
+
+> **ρ(t) = novel(t) / raw(t)**
+
+Where novel(t) is the count of findings in round t that are not duplicates of any prior finding, and raw(t) is the total finding count in round t. ρ(t) ∈ [0, 1]; ρ = 1 means all output is novel; ρ → 0 means the system is churning.
+
+**Churn detection condition:** Define the 3-round rolling discovery efficiency:
+
+> **ρ̄₃(t) = (ρ(t) + ρ(t−1) + ρ(t−2)) / 3**
+
+The churn signal activates when:
+
+> **churn(t) ≡ (ρ̄₃(t) < θ_ρ) ∧ (t ≥ t_earliest)**
+
+Where θ_ρ = 0.25 is the churn threshold and t_earliest is the minimum round for convergence evaluation (matching the runner's earliest_stop parameter). The t_earliest guard prevents false positives from early-round depletion, which is a normal phase of the discovery process and not churn.
+
+**Justification (Exp 36):** Logistic regression comparing gamma-only (AIC = 24.2) vs gamma + rho (AIC = 17.7) for predicting convergence gate satisfaction: ΔAIC = 6.5 in favour of the combined model. Rho carries predictive information gamma does not have. Cross-experiment rho trends: significant decline in Exp 33 (p = 0.003) and Exp 36 (p = 0.035). Threshold θ_ρ = 0.25 with t_earliest = 12 first triggers at R16 in Exp 36, matching the estimated epistemic saturation point (~R15). (Added 8 April 2026, computed during mathematical model audit.)
+
+**Relationship to gamma:** γ and ρ are complementary, not redundant. γ measures the rate of novel discovery deceleration (power-law shape). ρ measures the ratio of useful work to total work (efficiency). A system can have γ > 0 (novel rate declining, classified as converging) while ρ is low (most output is waste). Exp 36 demonstrated this: γ = 0.411 (converging) while post-R8 mean ρ = 0.242 (75.8% of output was waste).
+
 ### 7.2 Abstraction Index H(x) (Finding Depth)
 
 Not all findings are equal. A syntax error and a paradigm-level architectural flaw both count as one finding, but contribute different analytical value. The Abstraction Index scores each finding on three dimensions:
@@ -642,6 +694,26 @@ v_w(t) is the sliding-window smoothed generation rate. λ(t) is the empirical de
 > **ascending_abstraction(t) ≡ (dH̄/dt > 0) ∧ (dλ/dt < 0) ∧ ((dH̄/dt)/H̄(t) > |dλ/dt|/λ(t))**
 
 V̂ stop recommendations require both conditions: the count-based remaining estimate is below threshold ε, AND ascending abstraction is not active. Ascending abstraction (§7.3) holds when the finding rate is decreasing but the relative depth increase exceeds the relative rate decrease, guaranteeing that total yield Y(t) is still increasing. V̂ underestimates remaining value in this mode because it is count-based. In bimodal discovery patterns (surface findings → lull → late deep findings), ungated V̂ would recommend premature termination during the lull. (Originally identified during CC × Gemini 3.1 Pro Extended P-Pass; quantitative condition added during 5-model meta-test, 27 March 2026.)
+
+**Runner convergence gate (operational implementation):** The experiment runners implement termination as a 5-condition Boolean gate, all conditions must be satisfied for `consecutive_required` (default: 2) consecutive rounds:
+
+> **converged(t) ≡ C₁(t) ∧ C₂(t) ∧ C₃(t) ∧ C₄(t) ∧ C₅(t)**
+>
+> C₁: t ≥ t_earliest (minimum round threshold, default 12)
+> C₂: contested(t) ≤ 1 (finding-level dispute near resolution)
+> C₃: novel(t) ≤ max_novel (default 2) for consecutive_required rounds
+> C₄: γ(t) < γ_hard (default 0.35, hard threshold)
+> C₅: γ gate passed (γ trend direction confirms deceleration)
+
+**Reconciliation (Exp 36 audit):** The runner gate and the appendix's stop_valid are not equivalent. Three structural differences were identified:
+
+1. The runner has no concept of ascending abstraction. V̂ underestimates remaining value during creative deepening; the runner gate cannot detect this mode. **Action required (runner → appendix direction):** implement H̄(t) tracking and the ascending abstraction guard as a convergence gate override — if ascending abstraction is active, the gate cannot trigger regardless of other conditions.
+
+2. The appendix has no concept of contested findings. In Exp 36, contested findings were the sole convergence blocker at R19 (4/5 conditions met, C₂ failed). The appendix's V̂ estimator does not distinguish contested from confirmed findings. **Action required (appendix → runner direction):** the contested condition (C₂) is load-bearing and should be formalised in the appendix as a finding-level dispute resolution requirement.
+
+3. Two of the runner's 5 conditions (C₃ and C₄) were non-contributing in Exp 36: C₃ was met in 1/11 eligible rounds; C₄ was met in 0/11 rounds (γ stalled at 0.411). The churn detection condition from §7.1a (ρ̄₃ < θ_ρ) should replace or augment C₄, since γ's hard threshold does not fire when γ stalls above it. **Action required (both directions):** add churn(t) (§7.1a) as C₆ in the runner gate, and add the runner's contested condition as a formal term in the appendix.
+
+(Reconciliation added 8 April 2026, based on mathematical model audit of Exp 33-36 data.)
 
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 
@@ -802,10 +874,13 @@ No single number tells the whole story. A model might find many things quickly (
 | τ_defer (§2) | Verified, reduction proven | Ready for implementation |
 | ρ domain constraint (§6) | Verified | Ready for implementation |
 | HIL framing penalty (§6) | Verified, limits confirmed | Ready for implementation |
-| Duane NHPP + re-injection (§7.1) | Verified, AICc-tested, divergence condition proven | Implemented in decay_analysis.py (base); re-injection pending |
+| Duane NHPP + re-injection (§7.1) | Verified, AICc-tested, divergence condition proven | Implemented in decay_analysis.py (base); fix re-injection pending; context-loss re-injection pending |
+| Context-loss re-injection (§7.1) | Defined, Exp 36 calibrated (F=13.49, p=0.0017) | Pending implementation |
+| ρ discovery efficiency (§7.1a) | Defined, ΔAIC=6.5, θ_ρ=0.25 calibrated | Pending implementation (Task 3 runner fix) |
 | H(x) (§7.2) | Verified, 33.4× discrimination | Ready for implementation |
 | Y(t) (§7.3) | Verified | Ready for implementation |
 | V̂ estimator (§7.4) | Verified, convergence proven | Ready for implementation |
+| Runner convergence gate (§7.4) | 5-condition gate operational; 2/5 non-contributing in Exp 36 | Implemented; C₆ (churn) pending; ascending abstraction guard pending |
 | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
 | Δ (§7.6) | Verified | Ready for implementation |
 | Sev(f) (§7.7) | Verified | Implemented in pipeline |
