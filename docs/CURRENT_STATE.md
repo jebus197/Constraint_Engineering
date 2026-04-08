@@ -1,23 +1,16 @@
 # CDSFL Current State
 
-Generated: 8 April 2026 01:25 BST (2026-04-08T01:25:44+01:00)
+Generated: 8 April 2026 02:16 BST (2026-04-08T02:16:10+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `ddc8f87` Add metacognition microscope, model revision plain English, and MIDCA reassessment analyses
-- **Committed:** 2026-04-07 21:06:26 +0100
+- **Last commit:** `acdaddd` Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script
+- **Committed:** 2026-04-08 02:13:50 +0100
 - **Remote:** up to date
-- **Working tree:** DIRTY — uncommitted changes present
-
-Uncommitted files:
-- `?? .claude/`
-- `?? docs/ARCHITECTURE.md`
-- `?? docs/GLOSSARY.md`
-- `?? docs/REPRODUCING.md`
-- `?? scripts/`
+- **Working tree:** clean
 
 ---
 
@@ -87,6 +80,9 @@ NEXT STEPS:
 
 ## Recent Commits
 
+- `acdaddd Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script`
+- `613ef9b Fix QC reference checker (85→3), add interactive onboarding installer, fix stale TTS paths`
+- `f72fca8 Add automation scripts, layered documentation, and project CLAUDE.md`
 - `ddc8f87 Add metacognition microscope, model revision plain English, and MIDCA reassessment analyses`
 - `4d448aa Fix Agent 2 ≠ semantic layer in design analysis, correct evidence.py line count`
 - `61f4bb6 Fix Agent 2 ≠ semantic layer conflation in recovery docs`
@@ -94,6 +90,3 @@ NEXT STEPS:
 - `c5fae42 Design analysis: Bugzilla gap, fix pipeline, v2 immune, resumption plan`
 - `71d9a98 Scope mathematical model audit: 5 gaps in appendix vs Exp 29–36 data`
 - `e2177df Fix churn signal verification: CONFIRMED, not UNCERTAIN`
-- `42e51ef Exp 36 post-run verification: 19 CONFIRMED, 5 UNCERTAIN, 1 REJECTED`
-- `a04a8ab Exp 36 complete: evidence layer review, 23 rounds, 153 canonical findings`
-- `94d6131 Update ONBOARDING.md and RECOVERY.md with review fixes, ANALYSE, change_focus`
