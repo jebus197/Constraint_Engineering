@@ -1,6 +1,6 @@
 # Experiment 36 — Ground Truth Reference
 
-**Date:** 8 April 2026, 02:42 BST
+**Date:** 8 April 2026, 02:42 BST (updated 04:10 BST)
 **Purpose:** Single canonical reference consolidating all findings, observations, fixes, mathematical insights, and forward path from Experiment 36. This document supersedes the seven individual Exp 36 notes as the authoritative source for project planning.
 
 **Source documents consolidated:**
@@ -239,7 +239,49 @@ Context grew to 406% of budget by R22. The endocrine layer detected this and sug
 
 ---
 
-## IV. Immune Pipeline Status — Corrections
+## IV. Convergence Was Reached — Instrumentation Failed to Detect It
+
+### The Observation
+
+The discovery space was exhausted by approximately R15. The model panel had found ~9 actual bugs in a 590-line file. From R15-R22, the 17:1 dedup ratio means models were rediscovering the same bugs, reformulating them, and re-submitting. Novel findings were mostly <=2 per round (the R21 spike of 6 was caused by an ITC restart_fresh injecting a fresh model into a depleted space).
+
+The CDSFL methodology worked. The five-model panel found the bugs, the immune pipeline classified them, CC2v verified them. The failure was purely in the measurement layer — the convergence gate's 5 conditions weren't calibrated for what "done" actually looks like.
+
+### The Gamma/Rho Divergence
+
+Two signals diverged and nothing in the instrumentation detected it:
+
+**Gamma (novelty-derived):** Declining steadily. 0.675 at R4 to 0.411 at R22. The decay curve of novel findings was exponential early (R-squared = 0.985 for R0-R4) then flattened to a low but non-zero residual rate.
+
+**Raw output:** Stable. Not rising, but not declining. Findings per round averaged ~20 with no downward trend. Models kept producing at roughly the same rate throughout.
+
+The gap between these two is the churn. 452 raw findings, 153 novel. 299 findings (66% of all output) were rediscoveries of known bugs in slightly different words. By the late rounds, rho (novel/raw) was running at 8-25%, meaning 75-92% of operational output was waste.
+
+Gamma only sees the novel count. It does not know how much raw output was produced to generate those novel findings. A round with 33 raw and 5 novel looks identical to gamma as a round with 5 raw and 5 novel. The first is churning. The second is efficient. Gamma cannot distinguish them.
+
+### Three Instrumentation Failures
+
+1. **Contested findings not escalated** — two findings the models couldn't resolve autonomously held the gate open. These needed a human, not more rounds.
+2. **ITC restart_fresh inflated novelty** — fresh models re-entered a depleted space and produced "novel" reformulations of known bugs. This kept the novel count above the <=2 threshold.
+3. **Gamma couldn't see the churn** — gamma=0.411 looks like "moderate depletion" but the raw-to-novel ratio (17:1) shows the system was effectively saturated.
+
+### The Coupled Cascade
+
+The five mathematical model gaps (see Section VII below) form one coupled failure chain:
+
+- **Gap 4 starts the chain.** Context grows. Models degrade.
+- **Gap 3 amplifies.** ITC restarts models. Fresh models rediscover known bugs. Registry grows. Context grows further.
+- **Gap 1 hides the problem.** Gamma reports convergence. It cannot see the churn.
+- **Gap 2 means nobody has a metric to see it.** Rho would reveal the divergence immediately. But rho does not exist in the formal framework.
+- **Gap 5 means the system cannot terminate.**
+
+### Resolution
+
+Formalise rho, add it to the convergence gate, and use gamma AND rho jointly for system-level classification. The mathematical model audit (Section VII) validates this computationally. Then formalisation follows. Then code. No appendix changes without founder approval.
+
+---
+
+## V. Immune Pipeline Status — Corrections
 
 ### IMPORTANT CORRECTION
 
@@ -282,7 +324,7 @@ The regex classifier systematically over-classifies findings as "mathematical" w
 
 ---
 
-## V. The 13 Design Improvements — Status
+## VI. The 13 Design Improvements — Status
 
 | # | Improvement | Priority | Status | Source |
 |---|-------------|----------|--------|--------|
@@ -325,7 +367,7 @@ With these three fixes, estimated 3-5 additional rounds to convergence.
 
 ---
 
-## VI. Mathematical Model Gaps
+## VII. Mathematical Model Gaps
 
 Five structural gaps between `docs/MATHEMATICAL_APPENDIX.md` and experimental reality (scoped 7 April, execution pending):
 
@@ -341,7 +383,7 @@ Five structural gaps between `docs/MATHEMATICAL_APPENDIX.md` and experimental re
 
 ---
 
-## VII. Findings to Fold into CDSFL Schema
+## VIII. Findings to Fold into CDSFL Schema
 
 ### Already in Schema (Directives/Constraints)
 
@@ -374,66 +416,109 @@ These are operational parameters that vary per experiment, not protocol-level co
 
 ---
 
-## VIII. Forward Path
+## IX. CC2 Sub-Agent Design — Closed Constraint Space
 
-### Immediate: Resume Exp 36 (Validation Run)
+### Architecture
 
-**Purpose:** Test whether the 3 minimum fixes unblock convergence on a known baseline.
+The CDSFL experiment architecture has two distinct layers:
 
-**Prerequisites:**
-1. Implement contested-to-HIL escalation (5-round threshold)
-2. Implement gamma-aware ITC DEGRADATION threshold
-3. Implement dedup-aware CC2v (check prior confirmations before re-verifying)
+- **5-model discovery panel** (DeepSeek, ChatGPT, Codex, Gemini, CC2) — the discovery layer. These are models in the panel. They explore the test article freely and produce findings. The cost of that freedom is hallucination, conflation, and churn. The immune pipeline exists to filter the consequences.
+- **4 CC2 sub-agents** (Citation Verifier, Fix Extractor, Dedup Assessor, CC2v) — the verification layer. All closed constraint space. All mechanical. All running in parallel. No open-ended exploration. No generative function.
 
-**Execution:**
-- Resume from R22 checkpoint (452 raw, 153 canonical, full registry state)
-- 2 contested findings escalate to HIL immediately (>10 rounds unresolved) — founder resolves
-- ITC stops restart_fresh cycling (gamma indicates depletion)
-- Expected 3-5 additional rounds to convergence
+There are no "open-space agents." The previous CC1 instance's error was conflating the sub-agents with a "structural/semantic/integration" discovery specialist design. The discovery is handled by the panel. The sub-agents verify, extract, classify, and deduplicate what the panel produces.
 
-**Scientific value:** Controlled comparison — same test article, same data, different design. Isolates the impact of the fixes.
+### Design Principle — Closed Constraint Space
 
-### Next: Reference Runner for Exp 37+
+Each sub-agent operates in a **closed constraint space**: bounded operational domain, rigid input/output contract, claims mechanically verifiable against the constraint boundaries.
 
-A reference runner should be built as the canonical entry point for future experiments. This runner:
-- Incorporates all 13 design improvements (or as many as are implemented)
-- Is parameterised (test article, topology, round limits, convergence thresholds)
-- Serves as the executable that a future UX layer calls
-- Replaces the per-experiment runner scripts (run_exp35, run_exp36, etc.)
+Each agent has:
+1. **A single question it answers.** Not "what bugs exist?" but "does this specific finding describe the code at this specific location?"
+2. **A rigid output schema.** Structured verdicts with mandatory evidence fields. If the agent can't fill the evidence fields from what it observed, it can't produce the output.
+3. **Expert encoding as boundary.** Each agent receives only information relevant to its task — not the full registry, not the full codebase context, not other models' findings. The encoding limits what it can perceive, claim, and hallucinate about.
+4. **Mechanical verifiability of outputs.** Every claim is testable against something concrete. "This code exists at line 47" — check the file. "This diff applies cleanly" — apply it.
 
-This is distinct from the automation scripts (sv, qc, recover, onboard). Those manage project state. The reference runner manages experiment execution.
+This prevents **conflation** (the agent cannot see things outside its constraint space) and **hallucination** (the output schema requires mechanically checkable evidence; hallucinations fail validation at the boundary, not downstream).
 
-### Then: Fresh Exp 37
+### The 4 Agents
+
+| Agent | Constraint Question | Output Schema | Capability |
+|-------|-------------------|---------------|------------|
+| 1 — Citation Verifier | "Does this finding accurately describe the code at the cited location?" | `{verified, cited_code, match_assessment, confidence}` | Haiku-level |
+| 2 — Fix Extractor | "Can this natural-language fix be expressed as an applicable code change?" | `{extractable, diff, applies_cleanly, test_result}` | Opus-level (NL→code is hard) |
+| 3 — Dedup Assessor | "Does this new finding describe the same bug as an existing one?" | `{duplicate, shared_root_cause, evidence_from_both}` | Haiku-level |
+| 4 — CC2v (existing) | "Confirm, reject, duplicate, or escalate?" | Confidence-gated verdict | Opus-level |
+
+All 4 run in **parallel** on each finding. Efficiency is a primary goal — with 4 agents running simultaneously, throughput increases and findings that fail early checks (bad citation, known duplicate) are flagged immediately rather than consuming CC2v slots.
+
+### Implementation Structure
+
+Each agent needs:
+- **Directive** — constraint space definition, goes in `bench/directives/`
+- **Schema** — output format, goes in agent dispatch code
+- **Validator** — Python function checking output against cited evidence; if validation fails, output is discarded (same principle as immune pipeline rejection)
+
+Agent 2 (Fix Extractor) is the highest-leverage addition — it bridges the fix-application gap (100% UNEVALUABLE in Exp 36) and closes the CONFIRMED → CLOSED pathway that drove the 17:1 dedup ratio.
+
+### Relationship to Immune Pipeline
+
+The CC2 sub-agents mirror the immune pipeline's architecture. The skin barrier is a constraint (does this file:line exist?). NK is a constraint (is this semantically distinct?). B-Cell is a constraint (does this mathematical claim hold?). Each immune cell has a narrow expert encoding and a binary output domain. The CC2 sub-agents apply the same pattern to the pre-verification stage.
+
+---
+
+## X. Meta-Cognitive Feedback — Design Decision
+
+### Specification
+
+The mathematical appendix (section 8.1) defines a "Metacognitive Feedback Protocol" with three signals: novelty trajectory, discovery efficiency (rho), and cumulative gamma. A prompt template exists:
+
+> DISCOVERY METRICS: Your panel has discovered [N] new findings in the last 3 rounds (trajectory: [N, N-1, N-2]). Discovery efficiency is [X]% (novel/total this round). Cumulative gamma: [Y]. If your novel contribution is declining, prioritise high-quality verdicts on existing findings over new discoveries.
+
+### Decision
+
+**Meta-cognitive feedback is reserved for Experiment 37.** It will not be introduced in the resumed Exp 36.
+
+Rationale: if introduced simultaneously with the 3 minimum fixes (contested-to-HIL, gamma-aware ITC, dedup-aware CC2v), the effect cannot be isolated. The resumed Exp 36 is a controlled comparison — same test article, same data, different design. Adding meta-cognitive feedback would confound the results.
+
+### Constraints for Exp 37 Implementation
+
+- **Data only, no authority.** The prompt presents metrics. It does not instruct the model to stop, slow down, or declare convergence. The convergence gate retains sole authority.
+- **Constrained response space.** The model is told: "Use these metrics to adjust your search strategy. Do not reduce output quality. Do not declare convergence. Focus on OPEN findings you haven't addressed and issue verdicts on existing findings."
+- **Gaming risk.** Exp 32 showed models can learn to signal false convergence. Mitigation: the prompt reframes low novelty as a good signal (the space is depleted, time to consolidate), not a failure.
+
+---
+
+## XI. Forward Path
+
+### Confirmed Task Sequence (8 April 2026)
+
+| # | Task | Description |
+|---|------|-------------|
+| 1 | **Mathematical model audit** | 5 gap tests against Exp 29-36 data using NumPy/SciPy/SymPy/Wolfram. Validates the coupled cascade hypothesis. Findings first, formalisation second. No appendix changes without founder approval. |
+| 2 | **CC2 sub-agent implementation** | 4 closed-constraint agents (Citation Verifier, Fix Extractor, Dedup Assessor, CC2v). Parallel execution. Mechanical only. See Section IX. |
+| 3 | **3 minimum runner fixes** | Contested-to-HIL escalation (5-round threshold), gamma-aware ITC DEGRADATION threshold, dedup-aware CC2v (check prior confirmations). These unblock convergence. |
+| 4 | **Resume Experiment 36** | From R22 checkpoint with all fixes in place. 2 contested findings escalate to HIL immediately. ITC stops restart_fresh cycling. Expected 3-5 rounds to convergence. Same test article (evidence.py), controlled comparison. |
+| 5 | **Reference runner for Exp 37+** | Parameterised (test article, topology, round limits, convergence thresholds). Incorporates all 13 design improvements. Serves as the executable a future UX layer calls. Replaces per-experiment runner scripts. |
+| 6 | **Mathematical model companion** | Plain English walkthrough of the appendix. Explains significance, not just notation. Uses concrete examples from experiments. Addresses the "so what" question. |
+
+### Exp 37 — Full Experiment (After Reference Runner)
 
 **Purpose:** Full experiment with all improvements on a new test article.
 
-**Likely improvements beyond the 3 minimum:**
-- Fix-application pipeline (CONFIRMED + verified fix → CLOSED)
+**Improvements beyond the 3 minimum:**
+- Fix-application pipeline (CONFIRMED + verified fix → CLOSED) — enabled by Agent 2 (Fix Extractor)
 - Context windowing
 - Per-model rho tracking with targeted ITC
 - Pre-filter before CC2v queue
 - LLM classifier promoted from shadow to primary
 - Consolidation phase (final 3 rounds)
-- Meta-cognitive decay feedback (inject rho, gamma into prompts from R5+)
-- CC2 Agents 1-3 (structural, semantic, integration)
+- Meta-cognitive decay feedback (reserved for Exp 37, not resumed Exp 36 — see Section X)
+- CC2 sub-agents 1-3 running in parallel with CC2v
 
 **Test article:** To be determined. Candidates include other components that have not been reviewed: `endocrine.py`, `insect_brain.py`, `runner_core.py`, or `immune_agents.py` itself.
 
 ---
 
-## IX. Confirmation of Plan
-
-The plan as understood from the previous session is confirmed:
-
-1. **Resume Exp 36 with the 3 minimum fixes** — validate that contested-to-HIL, gamma-aware ITC, and dedup-aware CC2v unblock convergence. Expect 3-5 rounds.
-2. **Build a reference runner** — parameterised, incorporating all improvements, serves as the executable entry point for future experiments and eventually the UX layer.
-3. **Run a fresh Exp 37** — full experiment with all improvements on a new test article, using the reference runner.
-
-The evidence layer (evidence.py) should continue as the test article for the resumed Exp 36. This is its first activation in the schema, and the model panel has already built substantial context about it. Changing the test article mid-experiment would invalidate the controlled comparison.
-
----
-
-## X. Cross-References
+## XII. Cross-References
 
 ### Existing Exp 36 Notes (Retained, This Document Supersedes for Planning)
 
