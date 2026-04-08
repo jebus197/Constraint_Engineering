@@ -1,19 +1,16 @@
 # CDSFL Current State
 
-Generated: 8 April 2026 04:15 BST (2026-04-08T04:15:48+01:00)
+Generated: 8 April 2026 04:53 BST (2026-04-08T04:53:51+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `4296dba` sv: correct immune status, settle CC2 sub-agent design, update forward path
-- **Committed:** 2026-04-08 03:54:15 +0100
-- **Remote:** up to date
-- **Working tree:** DIRTY — uncommitted changes present
-
-Uncommitted files:
-- `M experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md`
+- **Last commit:** `2016073` Add mathematical model audit: 25 internal checks pass, 5 gaps confirmed against Exp 33-36 data
+- **Committed:** 2026-04-08 04:53:42 +0100
+- **Remote:** ahead by 1
+- **Working tree:** clean
 
 ---
 
@@ -88,6 +85,8 @@ NEXT STEPS:
 
 ## Recent Commits
 
+- `2016073 Add mathematical model audit: 25 internal checks pass, 5 gaps confirmed against Exp 33-36 data`
+- `3b6d9f5 Update Exp 36 ground truth: convergence detection failure, CC2 closed-constraint design, 6-item task sequence`
 - `4296dba sv: correct immune status, settle CC2 sub-agent design, update forward path`
 - `ebb50d4 Add Exp 36 ground truth reference — consolidated findings, immune corrections, forward path`
 - `9b16013 sv: update state snapshot, timestamps — working tree clean, MC commands in place`
@@ -96,5 +95,3 @@ NEXT STEPS:
 - `f72fca8 Add automation scripts, layered documentation, and project CLAUDE.md`
 - `ddc8f87 Add metacognition microscope, model revision plain English, and MIDCA reassessment analyses`
 - `4d448aa Fix Agent 2 ≠ semantic layer in design analysis, correct evidence.py line count`
-- `61f4bb6 Fix Agent 2 ≠ semantic layer conflation in recovery docs`
-- `510d902 Add CC2 Option A four-agent model to design analysis and next steps`
