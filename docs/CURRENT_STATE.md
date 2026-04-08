@@ -1,15 +1,15 @@
 # CDSFL Current State
 
-Generated: 8 April 2026 05:17 BST (2026-04-08T05:17:50+01:00)
+Generated: 8 April 2026 06:05 BST (2026-04-08T06:05:12+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `6451e5d` sv: state snapshot after mathematical model audit commit
-- **Committed:** 2026-04-08 04:53:56 +0100
-- **Remote:** ahead by 2
+- **Last commit:** `317b8f1` Fill 5 appendix gaps with computed values, correct disputed numbers across docs
+- **Committed:** 2026-04-08 06:05:06 +0100
+- **Remote:** ahead by 4
 - **Working tree:** clean
 
 ---
@@ -43,7 +43,7 @@ Generated: 8 April 2026 05:17 BST (2026-04-08T05:17:50+01:00)
 ## Pending Work
 
 NEXT STEPS:
-  0. EXECUTE mathematical model audit (5 gap tests, see audit doc)
+  0. MATHEMATICAL MODEL AUDIT — COMPLETE (8 April 2026, 04:46 BST). See audit entry above.
   0a. IMPLEMENT 3 minimum runner fixes for Exp 36 resumption:
       - Contested → HIL escalation (5-round threshold)
       - Gamma-aware ITC DEGRADATION threshold
@@ -85,6 +85,8 @@ NEXT STEPS:
 
 ## Recent Commits
 
+- `317b8f1 Fill 5 appendix gaps with computed values, correct disputed numbers across docs`
+- `3664c08 sv: update RECOVERY.md with audit execution results, mark Task 1 complete`
 - `6451e5d sv: state snapshot after mathematical model audit commit`
 - `2016073 Add mathematical model audit: 25 internal checks pass, 5 gaps confirmed against Exp 33-36 data`
 - `3b6d9f5 Update Exp 36 ground truth: convergence detection failure, CC2 closed-constraint design, 6-item task sequence`
@@ -93,5 +95,3 @@ NEXT STEPS:
 - `9b16013 sv: update state snapshot, timestamps — working tree clean, MC commands in place`
 - `acdaddd Add metacognitive command reference to project CLAUDE.md, REPRODUCING.md, and onboarding script`
 - `613ef9b Fix QC reference checker (85→3), add interactive onboarding installer, fix stale TTS paths`
-- `f72fca8 Add automation scripts, layered documentation, and project CLAUDE.md`
-- `ddc8f87 Add metacognition microscope, model revision plain English, and MIDCA reassessment analyses`
