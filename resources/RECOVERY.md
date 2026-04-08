@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 8 April 2026 04:53 BST
+Last updated: 8 April 2026 05:17 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -146,10 +146,33 @@ MATHEMATICAL MODEL AUDIT SCOPED (7 April 2026, 08:40 BST):
   (4) f_del, φ_fmt modelled as constants but degrade with context inflation
   (5) Runner gate ≠ appendix termination (V̂ + ascending abstraction not implemented)
   Execution plan: 5 gap tests using NumPy/SciPy/SymPy/Wolfram across Exp 29–36 data.
-  Status: SCOPED, discussed with founder, execution pending next session.
   Founder directive: discuss findings before any appendix changes.
-  Audit: experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md
-  TTS: ~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt
+  Scoping: experimental_notes/Exp36_Mathematical_Model_Audit_2026-04-07.md
+  TTS (scoping): ~/Desktop/CDSFL_tts/Exp36_Mathematical_Model_Audit_2026-04-07.txt
+
+MATHEMATICAL MODEL AUDIT EXECUTED (8 April 2026, 04:46 BST):
+  8 tools: SymPy, SciPy, NumPy, z3, statsmodels, lmfit, uncertainties, Wolfram MCP.
+  INTERNAL CONSISTENCY: SOUND. 15 SymPy reductions (all PASS), 5 Wolfram
+  cross-checks (all CONFIRMED), 5 z3 formal proofs (all PROVED). 25/25.
+  GAP TESTS: All 5 gaps confirmed against Exp 33–36 data.
+    Gap 1: Raw flat (p=0.423), γ=0.411 says "converging." R14 vs R18: 3.7x waste
+      difference invisible to γ. Two prior claims DISPUTED: R²=0.985 (got 0.257),
+      z=3.63 (got 5.24). Different fitting window suspected.
+    Gap 2: Rho adds predictive power (ΔAIC=6.5). Proposed 0.15/3-consecutive
+      threshold too aggressive — never triggered in Exp 36. Needs calibration.
+    Gap 3: R8 burst significant (F=13.49, p=0.0017). Appendix ν term models wrong
+      mechanism: fix-induced re-injection vs context-loss rediscovery.
+    Gap 4: Aggregate r=−0.260, p=0.269 (not significant). Per-model: Codex −4.1,
+      DeepSeek +2.4 — opposite trends mask each other. Fix pipeline φ_fmt=0.0
+      across 285 evaluations (complete format failure).
+    Gap 5: 2/5 runner conditions non-contributing (C3: 1/11, C4: 0/11). R19 was
+      4/5 — contested was sole blocker. Appendix has no contested concept.
+  COUPLED CASCADE confirmed: context grows → ITC bursts → γ hides churn → no ρ
+    to flag it → runner gate can't terminate. Each link has distinct statistical test.
+  OPEN DECISIONS: (1) Handle disputed R²/z claims, (2) Calibrate rho threshold.
+  Audit: experimental_notes/Mathematical_Model_Audit_2026-04-08.md
+  TTS: ~/Desktop/CDSFL_tts/Mathematical_Model_Audit_2026-04-08.txt
+  TTS (plain English): ~/Desktop/CDSFL_tts/Mathematical_Model_Audit_Plain_English_2026-04-08.txt
 
 DESIGN ANALYSIS (7 April 2026, 09:11 BST):
   Critical Bugzilla model gap: CONFIRMED ≠ CLOSED. Runner doesn't extract/apply/
@@ -220,7 +243,7 @@ EXP 36 GROUND TRUTH REFERENCE (8 April 2026, 02:42 BST):
   TTS: ~/Desktop/CDSFL_tts/Exp36_Ground_Truth_Reference_2026-04-08.txt
 
 NEXT STEPS:
-  0. EXECUTE mathematical model audit (5 gap tests, see audit doc)
+  0. MATHEMATICAL MODEL AUDIT — COMPLETE (8 April 2026, 04:46 BST). See audit entry above.
   0a. IMPLEMENT 3 minimum runner fixes for Exp 36 resumption:
       - Contested → HIL escalation (5-round threshold)
       - Gamma-aware ITC DEGRADATION threshold
