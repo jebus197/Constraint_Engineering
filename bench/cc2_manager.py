@@ -54,7 +54,7 @@ DEDUP_SIMILARITY_THRESHOLD = 0.65  # Below this, skip dedup agent
 
 # Model IDs for claude -p dispatch
 HAIKU_MODEL = "claude-haiku-4"
-OPUS_MODEL = "claude-opus-4"
+OPUS_MODEL = "claude-opus-4-6"
 
 # Per-agent timeouts (seconds)
 CITATION_TIMEOUT = 60

@@ -12,7 +12,7 @@
         "proposed_fix": "ANALYSE: CONFIRMED.\nFIX:\n<<<<\n        for i in indices:\n            if not (0 <= i < len(raw_records)):\n                raise IndexError(f\"Record index {i} out of range\")\n            records_out.append(raw_records[i])\n            proof = self._chain.build_inclusion_proof(i)\n            proofs_out.append(proof)\n\n        # Get the Merkle root from the latest epoch, or compute it\n        epochs = self._chain.epochs\n        if epochs:\n            merkle_root = epochs[-1][\"merkle_root\"]\n        else:",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 36,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -198,6 +198,12 @@
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 36,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 39,
             "evidence": ""
           }
         ],
@@ -479,9 +485,9 @@
         "severity": 0.84,
         "description": "FIND: trace_finding() claims chronological ordering but sorts only by record index, not by timestamp. Location: bench/evidence.py, trace_finding(), `for i in sorted(indices):`. Evidence: docstring says 'ordered by timestamp' / 'chronological provenance trace'. VerificationChain preserves append order, but its timestamps are caller-supplied and not guaranteed monotonic; verification_chain.py explicitly normalizes timestamps but does not enforce increasing time across records. Therefore append ord",
         "proposed_fix": "ANALYSE: CONFIRMED.\nFIX:\n<<<<\n        events: List[ProvenanceEvent] = []\n        for i in sorted(indices):\n            rec = self._records[i]\n            event_type = _classify_event(rec, finding_id)\n            detail = _describe_event(rec, finding_id)\n            events.append(ProvenanceEvent(\n                record_index=i,\n                event_type=event_type,\n                timestamp_utc=rec.timestamp_utc,\n                model=rec.model,\n                round_idx=rec.round_idx,\n         ",
-        "status": "REOPENED",
+        "status": "MERGED",
         "open_since_round": 0,
-        "last_status_change_round": 37,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -638,11 +644,42 @@
             "verdict": "REOPEN",
             "round": 37,
             "evidence": "The code in `trace_finding` still sorts by record index (`sorted(indices)`) rather than timestamp as documented. The docstring explicitly states \"ordered by timestamp\". Chain append-only property guar"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 39,
+            "evidence": "merged_into=C0203"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "The bug is real: `sorted(indices)` produces index-order, not timestamp-order. In an append-only chain, index order equals insertion order, which *usually* equals chronological order \u2014 but the chain ac"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 39,
+            "evidence": "merged_into=C0203"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "The bug is confirmed. `trace_finding()` sorts by record index (chain order) but claims chronological ordering by timestamp. The fix must sort by `timestamp_utc` then `record_index` for determinism."
           }
         ],
         "verified": true,
         "escalated": true,
-        "flaw_class": 5
+        "flaw_class": 5,
+        "merged_into": "C0203"
       },
       "C0004": {
         "canonical_id": "C0004",
@@ -769,7 +806,7 @@
         "proposed_fix": "ANALYSE: CONFIRMED.\nFIX:\n<<<<\n        # Get the Merkle root from the latest epoch, or compute it\n        epochs = self._chain.epochs\n        if epochs:\n            merkle_root = epochs[-1][\"merkle_root\"]\n        else:\n            # No epoch sealed yet \u2014 compute from all records\n            leaves = [_digest_bytes(r[\"chain_hash\"]) for r in raw_records]\n            merkle_root = \"sha256:\" + rfc9162_merkle_root(leaves).hex()\n====\n        # Proofs are built over the current full record set, so the b",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 37,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "Codex",
@@ -938,6 +975,12 @@
             "verdict": "CONFIRM",
             "round": 37,
             "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -955,7 +998,7 @@
         "proposed_fix": "ANALYSE: CONFIRMED.\nFIX:\n<<<<\n        # Extract finding IDs from payload if available\n        if er.payload and isinstance(er.payload, dict):\n            er.finding_ids = _extract_finding_ids(er.payload)\n====\n        # Extract finding IDs from payload when present, otherwise fall back\n        # to metadata so hash_only records remain queryable.\n        if er.payload is not None:\n            er.finding_ids = _extract_finding_ids(er.payload)\n        else:\n            er.finding_ids = _extract_find",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 34,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "Codex",
@@ -1069,6 +1112,12 @@
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 34,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 39,
             "evidence": ""
           }
         ],
@@ -2435,7 +2484,7 @@
         "proposed_fix": "",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 36,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "DeepSeek",
@@ -2562,6 +2611,12 @@
             "verdict": "CONFIRM",
             "round": 36,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -2629,7 +2684,7 @@
         "proposed_fix": "<<<<\n        events: List[ProvenanceEvent] = []\n        for i in sorted(indices):\n            rec = self._records[i]\n            event_type = _classify_event(rec, finding_id)\n            detail = _describe_event(rec, finding_id)\n            events.append(ProvenanceEvent(\n                record_index=i,\n                event_type=event_type,\n                timestamp_utc=rec.timestamp_utc,\n                model=rec.model,\n                round_idx=rec.round_idx,\n                detail=detail,\n   ",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 36,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "CC2",
@@ -2732,6 +2787,12 @@
             "verdict": "CONFIRM",
             "round": 36,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -2749,7 +2810,7 @@
         "proposed_fix": "",
         "status": "CLOSED",
         "open_since_round": 0,
-        "last_status_change_round": 36,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "DeepSeek",
@@ -2900,6 +2961,12 @@
             "verdict": "CONFIRM",
             "round": 36,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -2917,7 +2984,7 @@
         "proposed_fix": "",
         "status": "MERGED",
         "open_since_round": 0,
-        "last_status_change_round": 32,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "Gemini",
@@ -2965,6 +3032,12 @@
             "model": "DeepSeek",
             "verdict": "CONFIRM",
             "round": 32,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
             "evidence": ""
           }
         ],
@@ -3637,7 +3710,7 @@
         "proposed_fix": "FIX\n<<<<\n        errors: List[str] = []\n        for i, (record, proof) in enumerate(\n            zip(bundle.records, bundle.inclusion_proofs)\n        ):\n            valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\n            if not valid:\n                errors.append(\n                    f\"Record {i} (seq={record.get('sealed_body', {}).get('seq', '?')}): \"\n                    f\"inclusion proof invalid\"\n                )\n        return len(errors) == 0, errors\n====\n        ",
         "status": "MERGED",
         "open_since_round": 1,
-        "last_status_change_round": 25,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -3679,6 +3752,12 @@
             "model": "Gemini",
             "verdict": "CONFIRM",
             "round": 25,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 39,
             "evidence": ""
           }
         ],
@@ -5626,7 +5705,7 @@
         "proposed_fix": "",
         "status": "CLOSED",
         "open_since_round": 8,
-        "last_status_change_round": 20,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "CC2",
@@ -5644,6 +5723,12 @@
             "model": "DeepSeek",
             "verdict": "CONFIRM",
             "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
             "evidence": ""
           }
         ],
@@ -9328,9 +9413,9 @@
         "severity": 0.9,
         "description": "FIND \u2014 `verify_bundle` does not verify that a record's contents match its `chain_hash`. It iterates through the bundle, checking only that `record.get(\"chain_hash\") == proof.get(\"chain_hash\")`, and then validates the Merkle proof for that hash. Because it never recomputes `entry_hash` and `chain_hash` from `record[\"sealed_body\"]`, an attacker can arbitrarily alter a record's payload, metadata, or verdicts in the bundle file while leaving the valid `chain_hash` intact.\nFOLLOW: External auditors r",
         "proposed_fix": "FIX\n<<<<\n        for i, (record, proof) in enumerate(\n            zip(bundle.records, bundle.inclusion_proofs)\n        ):\n            # C0034/C0060/C0106: verify chain_hash matches before proof check\n            record_hash = record.get(\"chain_hash\", \"\")\n            proof_hash = proof.get(\"chain_hash\", \"\")\n            if record_hash and proof_hash and record_hash != proof_hash:\n                errors.append(\n                    f\"Record {i}: chain_hash mismatch \"\n                    f\"(record={r",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 36,
-        "last_status_change_round": 37,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -9349,11 +9434,24 @@
             "verdict": "CONFIRM",
             "round": 37,
             "evidence": "The `verify_bundle` method only verifies inclusion proofs and chain_hash matching between record and proof, but does not validate internal consistency of each record. Without verifying that the record"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 39,
+            "evidence": "merged_into=C0204"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "The `verify_bundle` method only checks that stored `chain_hash` values have valid Merkle inclusion proofs. It does NOT recompute `entry_hash` from `sealed_body`, so post-export tampering of record con"
           }
         ],
         "verified": true,
         "escalated": false,
-        "flaw_class": 5
+        "flaw_class": 5,
+        "merged_into": "C0204"
       },
       "C0200": {
         "canonical_id": "C0200",
@@ -9366,7 +9464,7 @@
         "proposed_fix": "",
         "status": "CONFIRMED",
         "open_since_round": 36,
-        "last_status_change_round": 37,
+        "last_status_change_round": 39,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -9379,6 +9477,12 @@
             "verdict": "CONFIRM",
             "round": 37,
             "evidence": "F002"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "Settled family \u2014 finding-ID extraction limitations are well-documented across the C0006/C0073/C0099/C0114/C0133 merger chain. The root cause (extraction only from payload+metadata, not from other reco"
           }
         ],
         "verified": false,
@@ -9396,8 +9500,15 @@
         "proposed_fix": "",
         "status": "OPEN",
         "open_since_round": 37,
-        "last_status_change_round": 37,
-        "verdicts": [],
+        "last_status_change_round": 39,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 39,
+            "evidence": "The finding description is truncated and unclear. Without complete evidence, cannot assess."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 1
@@ -9411,13 +9522,39 @@
         "severity": 0.5,
         "description": "finding_id=\"F001\")` will silently omit records that legitimately reference these findings, leading to incomplete data indexing and broken provenance traces.\nPROPOSED_FIX: FIX\n<<<<\n_FINDING_ID_RE = re.",
         "proposed_fix": "FIX\n<<<<\n_FINDING_ID_RE = re.compile(r\"\\bC\\d{4}\\b\")\n====\n_FINDING_ID_RE = re.compile(r\"\\b[A-Za-z]\\d{3,5}\\b\")\n>>>>",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 37,
-        "last_status_change_round": 37,
-        "verdicts": [],
+        "last_status_change_round": 39,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "The regex `r\"\\bC\\d{4}\\b\"` misses non-canonical finding IDs (e.g., `F001`, `F009` used by models before canonicalization). However, the system's canonical ID format IS `C\\d{4}`. Model-local IDs (`F001`"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 39,
+            "evidence": "merged_into=C0201"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 39,
+            "evidence": "The finding claims the regex `r\"\\bC\\d{4}\\b\"` should be broadened to `r\"\\b[A-Za-z]\\d{3,5}\\b\"` to capture non-standard finding IDs. This is incorrect for CDSFL. The codebase exclusively uses canonical f"
+          }
+        ],
         "verified": true,
         "escalated": false,
-        "flaw_class": 1
+        "flaw_class": 1,
+        "merged_into": "C0201"
       },
       "C0203": {
         "canonical_id": "C0203",
@@ -9445,16 +9582,63 @@
         "severity": 0.7,
         "description": "FIND \u2014 `bench/evidence.py`, `EvidenceStore.verify_bundle()`, lines 303-311. The method verifies inclusion proofs but does not validate that each record's payload_hash matches the actual payload. For `full_payload` records, the sealed body includes a `payload_hash` field that must equal SHA-256(canonical_json(payload)). Without this check, a bundle could contain a record where the payload has been altered but the chain_hash remains valid (if the attacker also tampers with entry_hash and chain_has",
         "proposed_fix": "FIX \u2014 Add payload_hash verification for `full_payload` records in the internal consistency check.\n<<<<\n                # 1. Compute entry_hash from sealed_body\n                from bench.verification_chain import _compute_entry_hash\n                computed_entry = _compute_entry_hash(sealed_body)\n                if record.get(\"entry_hash\") != computed_entry:\n                    errors.append(\n                        f\"Record {i}: entry_hash mismatch\"\n                    )\n                    co",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 37,
-        "last_status_change_round": 37,
-        "verdicts": [],
+        "last_status_change_round": 39,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 39,
+            "evidence": "The bug is confirmed. `verify_bundle()` only verifies inclusion proofs and chain_hash matches but doesn't verify that `full_payload` records have a payload_hash matching their payload. This allows tam"
+          }
+        ],
         "verified": true,
         "escalated": false,
         "flaw_class": 5
+      },
+      "C0205": {
+        "canonical_id": "C0205",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_\"...\")` will silently return empty result sets for those findings."
+        ],
+        "severity": 0.5,
+        "description": "finding_id=\"...\")` will silently return empty result sets for those findings.\nANALYSE: CONFIRMED. The regex restricts standard format variations, directly causing the reported indexing omissions.\nFIX:",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 39,
+        "last_status_change_round": 39,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1
+      },
+      "C0206": {
+        "canonical_id": "C0206",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_...)`, and the `finding_ids` property to miss records that reference findings but only store payload hashes. The index's `by_finding` map becomes incomplete."
+        ],
+        "severity": 0.5,
+        "description": "finding_id=...)`, and the `finding_ids` property to miss records that reference findings but only store payload hashes. The index's `by_finding` map becomes incomplete.  \nANALYSE: CONFIRMED. Hash-only",
+        "proposed_fix": "Clarify in docstring; ensure metadata extraction is sufficient. No code change needed\u2014the bug is in expectation, not implementation. The finding ID extraction from metadata is already present.",
+        "status": "OPEN",
+        "open_since_round": 39,
+        "last_status_change_round": 39,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1
       }
     },
-    "next_id": 205,
+    "next_id": 207,
     "alias_map": {
       "ChatGPT:ChatGPT_F001": "C0001",
       "ChatGPT:ChatGPT_F002": "C0002",
@@ -9659,7 +9843,9 @@
       "ChatGPT:ChatGPT_...)`, and `finding_ids`. FOLLOW: omission propagates into `_classify_event()` indirectly because traces are built from `by_finding`; records that mention such IDs never enter provenance/event classification at all, so the semantic layer silently drops them rather than misclassifying them.": "C0201",
       "Gemini:Gemini_\"F001\")` will silently omit records that legitimately reference these findings, leading to incomplete data indexing and broken provenance traces.": "C0202",
       "DeepSeek:DeepSeek_F201": "C0203",
-      "DeepSeek:DeepSeek_F202": "C0204"
+      "DeepSeek:DeepSeek_F202": "C0204",
+      "Gemini:Gemini_\"...\")` will silently return empty result sets for those findings.": "C0205",
+      "DeepSeek:DeepSeek_...)`, and the `finding_ids` property to miss records that reference findings but only store payload hashes. The index's `by_finding` map becomes incomplete.": "C0206"
     }
   },
   "novelty_counts": [
@@ -9697,7 +9883,8 @@
     1,
     0,
     2,
-    4
+    4,
+    2
   ],
   "raw_counts": [
     30,
@@ -9734,6 +9921,7 @@
     12,
     9,
     12,
+    11,
     11
   ],
   "rho_history": [
@@ -9771,7 +9959,8 @@
     0.083333,
     0.0,
     0.166667,
-    0.363636
+    0.363636,
+    0.181818
   ],
   "gamma_history": [
     0.0,
@@ -9808,7 +9997,8 @@
     0.395787,
     0.39447,
     0.393583,
-    0.3927
+    0.3927,
+    0.392157
   ],
   "gate_history": [
     false,
@@ -9845,6 +10035,7 @@
     true,
     false,
     false,
+    false,
     false
   ],
   "open_ch_history": [
@@ -9870,7 +10061,8 @@
     0,
     0,
     1,
-    2
+    2,
+    1
   ],
   "stall_history": [
     {
@@ -10012,7 +10204,11 @@
     {
       "open_ch": 2,
       "contested": 0
+    },
+    {
+      "open_ch": 1,
+      "contested": 0
     }
   ],
-  "cumulative_context_chars": 1092028
+  "cumulative_context_chars": 1131528
 }
