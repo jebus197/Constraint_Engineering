@@ -271,6 +271,27 @@ constraint_class = "SOFT"
 min_layer = "domain"
 description = "Verify conservation laws (energy, momentum, charge)."
 
+[verification.stoichiometric_balance_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify reactants and products are stoichiometrically balanced."
+
+[verification.thermodynamic_consistency]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify enthalpy/entropy/Gibbs free energy are self-consistent."
+
+[constraints.conservation_of_mass]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Mass must balance across chemical reactions."
+
 [verification.safety_factor_required]
 type = "bool"
 default = false

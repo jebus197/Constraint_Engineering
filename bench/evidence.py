@@ -105,9 +105,14 @@ class EvidenceRecord:
         er.model = meta.get("model", "")
         er.round_idx = meta.get("round", -1)
 
-        # Extract finding IDs from payload if available
-        if er.payload and isinstance(er.payload, dict):
-            er.finding_ids = _extract_finding_ids(er.payload)
+        # Extract finding IDs from payload and metadata
+        ids: set = set()
+        if er.payload is not None:
+            ids.update(_extract_finding_ids(er.payload))
+        if meta:
+            ids.update(_extract_finding_ids(meta))
+        if ids:
+            er.finding_ids = sorted(ids)
 
         return er
 
@@ -178,12 +183,18 @@ _FINDING_ID_RE = re.compile(r"\bC\d{4}\b")
 
 
 def _extract_finding_ids(obj: Any) -> List[str]:
-    """Recursively extract finding IDs (C0001-C9999) from a payload."""
+    """Recursively extract finding IDs (C0001-C9999) from a payload.
+
+    Searches dict keys AND values, strings, and list/tuple elements.
+    Handles non-dict payloads (strings, lists) directly.
+    """
     ids: Set[str] = set()
     if isinstance(obj, str):
         ids.update(_FINDING_ID_RE.findall(obj))
     elif isinstance(obj, dict):
-        for v in obj.values():
+        for k, v in obj.items():
+            if isinstance(k, str):
+                ids.update(_FINDING_ID_RE.findall(k))
             ids.update(_extract_finding_ids(v))
     elif isinstance(obj, (list, tuple)):
         for v in obj:
@@ -278,6 +289,7 @@ class EvidenceStore:
         ]
         self._index = _EvidenceIndex(self._records)
         self._verified: Optional[bool] = None
+        self._verified_with_verifier: bool = False
         self._verify_message: str = ""
 
     @classmethod
@@ -306,12 +318,19 @@ class EvidenceStore:
     def verify(self, verifier: Optional[Verifier] = None) -> Tuple[bool, str]:
         """Verify the underlying chain integrity.
 
-        Caches the result — subsequent calls return the cached value.
+        Caches by verifier presence: a cached structural-only result is
+        discarded if a verifier is supplied (C0008/C0174/C0181).
         """
-        if self._verified is None:
+        needs_verify = (
+            self._verified is None
+            or (verifier is not None and self._verified_with_verifier is False)
+        )
+        if needs_verify:
             self._verified, self._verify_message = self._chain.verify_chain(
                 verifier=verifier
             )
+            if verifier is not None:
+                self._verified_with_verifier = True
         return self._verified, self._verify_message
 
     @property
@@ -418,6 +437,7 @@ class EvidenceStore:
         finding_id: Optional[str] = None,
         model: Optional[str] = None,
         round_idx: Optional[int] = None,
+        experiment: Optional[str] = None,
     ) -> EvidenceBundle:
         """Export a self-contained evidence bundle with inclusion proofs.
 
@@ -430,6 +450,7 @@ class EvidenceStore:
             finding_id: Include all records referencing this finding.
             model: Include all records from this model.
             round_idx: Include all records from this round.
+            experiment: Include all records from this experiment.
 
         Returns:
             EvidenceBundle that can be saved and verified externally.
@@ -438,6 +459,7 @@ class EvidenceStore:
             indices = sorted(set(record_indices))
         else:
             indices = self._index.search(
+                experiment=experiment,
                 finding_id=finding_id,
                 model=model,
                 round_idx=round_idx,
@@ -459,14 +481,13 @@ class EvidenceStore:
             proof = self._chain.build_inclusion_proof(i)
             proofs_out.append(proof)
 
-        # Get the Merkle root from the latest epoch, or compute it
+        # Compute Merkle root from all records — must match the tree
+        # used by build_inclusion_proof(), which always covers all records.
+        # Using the epoch root would mismatch when records exist after
+        # the last seal (C0001/C0005/C0010/C0017).
         epochs = self._chain.epochs
-        if epochs:
-            merkle_root = epochs[-1]["merkle_root"]
-        else:
-            # No epoch sealed yet — compute from all records
-            leaves = [_digest_bytes(r["chain_hash"]) for r in raw_records]
-            merkle_root = "sha256:" + rfc9162_merkle_root(leaves).hex()
+        leaves = [_digest_bytes(r["chain_hash"]) for r in raw_records]
+        merkle_root = "sha256:" + rfc9162_merkle_root(leaves).hex()
 
         return EvidenceBundle(
             experiment=self._experiment,
@@ -487,9 +508,28 @@ class EvidenceStore:
         Returns (all_valid, list_of_error_messages).
         """
         errors: List[str] = []
+
+        # C0009/C0173/C0182: check list lengths match before iterating
+        if len(bundle.records) != len(bundle.inclusion_proofs):
+            errors.append(
+                f"Length mismatch: {len(bundle.records)} records vs "
+                f"{len(bundle.inclusion_proofs)} proofs"
+            )
+            return False, errors
+
         for i, (record, proof) in enumerate(
             zip(bundle.records, bundle.inclusion_proofs)
         ):
+            # C0034/C0060/C0106: verify chain_hash matches before proof check
+            record_hash = record.get("chain_hash", "")
+            proof_hash = proof.get("chain_hash", "")
+            if record_hash and proof_hash and record_hash != proof_hash:
+                errors.append(
+                    f"Record {i}: chain_hash mismatch "
+                    f"(record={record_hash[:16]}... vs proof={proof_hash[:16]}...)"
+                )
+                continue
+
             valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)
             if not valid:
                 errors.append(
@@ -510,7 +550,13 @@ class EvidenceStore:
                 by_model[rec.model] = by_model.get(rec.model, 0) + 1
 
         epochs = self._chain.epochs
-        merkle_root = epochs[-1]["merkle_root"] if epochs else ""
+        # Compute from all records (consistent with export_bundle/proofs)
+        raw_records = self._chain.records
+        if raw_records:
+            leaves = [_digest_bytes(r["chain_hash"]) for r in raw_records]
+            merkle_root = "sha256:" + rfc9162_merkle_root(leaves).hex()
+        else:
+            merkle_root = ""
 
         return StoreSummary(
             experiment=self._experiment,

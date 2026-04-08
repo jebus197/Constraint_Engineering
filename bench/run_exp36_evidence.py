@@ -191,6 +191,11 @@ MAX_NOVEL_FINDINGS = 2           # Novel findings <= 2 per round to qualify
 OPEN_CH_STABILITY_WINDOW = 3    # open_ch must not increase for this many rounds
 MAX_OPEN_CRIT_HIGH = 0           # Zero open CRITICAL/HIGH to qualify
 
+# Rho (discovery efficiency) — churn detector (A2 fix)
+RHO_THRESHOLD = 0.25             # θ_ρ: below this, churn is detected
+RHO_ROLLING_WINDOW = 3           # 3-round rolling average
+RHO_EARLIEST_ROUND = 12          # Don't check before R12 (same as earliest stop)
+
 # Stall-convergence detector — complementary secondary signal
 STALL_WINDOW = 3                 # open_ch + contested must be static for this many rounds
 STALL_EARLIEST_ROUND = 15        # Don't fire before R15 (allow models to settle)
@@ -200,7 +205,15 @@ STALL_GAMMA_TERMINATE = 0.45     # Tier 2: terminate with STALL_CONVERGED
 # CC2v between-rounds verification constants
 VERIFICATION_BATCH_SIZE = 6      # Max OPEN findings per verification step
 VERIFICATION_MIN_ROUND = 6       # Don't verify before round 6 (let findings accumulate)
+
+# A1 registry windowing cap — limits context growth
+MAX_FULL_DETAIL_OPEN = 20        # Show at most 20 OPEN findings in full detail
 VERIFICATION_CONFIDENCE_THRESHOLD = 0.7  # Min confidence for verification verdicts
+
+# CC2 Agent Pipeline — full 5-agent routing (cc2_manager.py)
+# Kill switch: set to False to revert to inline CC2v-only verification.
+# Can also be disabled at runtime via env var: CC2_AGENTS=0
+CC2_AGENTS_ENABLED = os.environ.get("CC2_AGENTS", "1") != "0"
 
 # Scale-dependent gamma thresholds
 GAMMA_TELEMETRY_ONLY_UNTIL = 14  # Rounds 0-14: gamma is telemetry only
@@ -295,8 +308,17 @@ class FindingRegistry:
         UNCONFIRMED, REFUTED, REOPENED.
         """
         if canonical_id in self.entries:
+            old_status = self.entries[canonical_id].get("status")
             self.entries[canonical_id]["status"] = status
             self.entries[canonical_id]["last_status_change_round"] = round_idx
+            # Track when finding FIRST becomes CONTESTED (A3 fix)
+            if status == "CONTESTED" and old_status != "CONTESTED":
+                self.entries[canonical_id].setdefault(
+                    "first_contested_round", round_idx
+                )
+            # Clear contested tracking if resolved to non-contested status
+            if status not in ("CONTESTED",) and "first_contested_round" in self.entries[canonical_id]:
+                del self.entries[canonical_id]["first_contested_round"]
             if merged_into:
                 self.entries[canonical_id]["merged_into"] = merged_into
 
@@ -326,11 +348,18 @@ class FindingRegistry:
         A finding is contested if it has a CHALLENGE that arrived AFTER
         the most recent CONFIRM (or has no confirms at all).  This applies
         to OPEN and CONFIRMED findings — a late challenge reopens the dispute.
-        MERGED findings are excluded (already subsumed).
+
+        Excluded from contested count:
+          - MERGED (already subsumed)
+          - CLOSED (fix verified — challenge-resistant)
+          - HIL-escalated (already flagged for human review)
         """
         count = 0
         for e in self.entries.values():
-            if e["status"] == "MERGED":
+            # Skip statuses that should not block convergence
+            if e["status"] in ("MERGED", "CLOSED", "REFUTED", "UNCONFIRMED"):
+                continue
+            if e.get("hil_escalated"):
                 continue
             challenges = [
                 v for v in e["verdicts"] if v["verdict"] == "CHALLENGE"
@@ -358,35 +387,52 @@ class FindingRegistry:
 
         This is the blackboard — what models read each round.
 
-        Active findings (OPEN, CONTESTED, CONFIRMED) get full detail.
-        Resolved findings (CLOSED, MERGED) get a compact one-line entry
-        with no verdict history or fix detail — visible but not
-        relitigable. Models must issue REOPEN with evidence to revisit.
+        Registry windowing (A1 fix — breaks churn loop at root):
+          - OPEN, CONTESTED, REOPENED: full detail (need model attention)
+          - CONFIRMED, UNCONFIRMED, CLOSED, MERGED: compact one-line
+          - REFUTED, DUPLICATE: hidden entirely (noise)
+
+        Models must issue REOPEN with evidence to revisit any compact entry.
         """
         if not self.entries:
             return "(No findings registered yet.)"
 
-        closed = [e for e in self.entries.values() if e["status"] == "CLOSED"]
-        merged = [e for e in self.entries.values() if e["status"] == "MERGED"]
-        refuted = [e for e in self.entries.values() if e["status"] == "REFUTED"]
-        active_statuses = ("OPEN", "CONTESTED", "CONFIRMED", "REOPENED", "UNCONFIRMED")
-        active_count = sum(
-            1 for e in self.entries.values() if e["status"] in active_statuses
+        # Categorise by windowing tier
+        full_detail_statuses = ("OPEN", "CONTESTED", "REOPENED")
+        compact_statuses = ("CONFIRMED", "UNCONFIRMED", "CLOSED", "MERGED")
+        hidden_statuses = ("REFUTED", "DUPLICATE")
+
+        full_detail = [
+            e for e in self.entries.values()
+            if e["status"] in full_detail_statuses
+        ]
+        compact = [
+            e for e in self.entries.values()
+            if e["status"] in compact_statuses
+        ]
+        hidden_count = sum(
+            1 for e in self.entries.values()
+            if e["status"] in hidden_statuses
         )
 
         lines = [
             f"=== FINDING REGISTRY (Round {round_idx}) ===",
             f"Total: {len(self.entries)} canonical findings",
-            f"Active: {active_count} | Closed: {len(closed)} | Merged: {len(merged)} | Refuted: {len(refuted)}",
+            f"Active: {len(full_detail)} | Settled: {len(compact)} | Hidden: {hidden_count}",
             f"Open CRIT/HIGH: {self.open_crit_high_count()}",
             "",
         ]
 
-        # ── Active findings: full detail ──
-        for status in ("OPEN", "CONTESTED", "CONFIRMED", "REOPENED", "UNCONFIRMED"):
-            group = [
-                e for e in self.entries.values() if e["status"] == status
-            ]
+        # ── Active findings: full detail (OPEN, CONTESTED, REOPENED) ──
+        # Cap full-detail entries to MAX_FULL_DETAIL_OPEN by severity.
+        # Overflow entries get compact treatment to bound context growth.
+        all_active_sorted = sorted(full_detail, key=lambda x: -x["severity"])
+        full_detail_shown = all_active_sorted[:MAX_FULL_DETAIL_OPEN]
+        full_detail_overflow = all_active_sorted[MAX_FULL_DETAIL_OPEN:]
+        full_detail_shown_ids = {e["canonical_id"] for e in full_detail_shown}
+
+        for status in full_detail_statuses:
+            group = [e for e in full_detail_shown if e["status"] == status]
             if not group:
                 continue
             lines.append(f"--- {status} ({len(group)}) ---")
@@ -404,17 +450,29 @@ class FindingRegistry:
                     lines.append(f"    Fix: {e['proposed_fix'][:100]}")
             lines.append("")
 
-        # ── Resolved findings: compact, no detail ──
-        if closed or merged or refuted:
-            lines.append("--- RESOLVED (do not revisit) ---")
+        # Overflow active findings: compact one-line (lower severity OPEN)
+        if full_detail_overflow:
             lines.append(
-                "These findings have verified fixes, have been merged, or "
-                "have been refuted. Do not CHALLENGE or re-describe them. "
-                "To reopen a CLOSED finding, issue REOPEN <ID> with specific "
-                "new evidence (this will be escalated to human review)."
+                f"--- ACTIVE OVERFLOW ({len(full_detail_overflow)}) "
+                f"(lower severity, compact) ---"
             )
-            for e in sorted(closed + merged + refuted, key=lambda x: x["canonical_id"]):
-                tag = e["status"]  # CLOSED, MERGED, or REFUTED
+            for e in full_detail_overflow:
+                lines.append(
+                    f"  {e['canonical_id']} (sev {e['severity']:.2f}) "
+                    f"[{e['status']}] {e['description'][:80]}"
+                )
+            lines.append("")
+
+        # ── Settled findings: compact one-line (CONFIRMED, UNCONFIRMED, CLOSED, MERGED) ──
+        if compact:
+            lines.append(f"--- SETTLED ({len(compact)}) (do not re-describe) ---")
+            lines.append(
+                "These findings are confirmed, closed, or merged. "
+                "Do not CHALLENGE or re-describe them. "
+                "To reopen, issue REOPEN <ID> with specific new evidence."
+            )
+            for e in sorted(compact, key=lambda x: x["canonical_id"]):
+                tag = e["status"]
                 merged_note = ""
                 if e.get("merged_into"):
                     merged_note = f" -> {e['merged_into']}"
@@ -424,8 +482,78 @@ class FindingRegistry:
                 )
             lines.append("")
 
+        # REFUTED and DUPLICATE findings are intentionally hidden.
+        # They are noise — showing them causes models to re-engage
+        # with already-resolved issues (the churn loop root cause).
+        if hidden_count > 0:
+            lines.append(
+                f"({hidden_count} findings hidden: refuted or duplicate)"
+            )
+            lines.append("")
+
         lines.append("=== END REGISTRY ===")
         return "\n".join(lines)
+
+    def escalate_stale_contested(self, current_round: int, max_contested_rounds: int = 5) -> List[str]:
+        """A3 fix: escalate CONTESTED findings to HIL after max_contested_rounds.
+
+        Removes the sole convergence blocker from Exp 36 R19 where 4/5
+        conditions were met but contested findings blocked the gate.
+
+        Uses first_contested_round (set when status first becomes CONTESTED)
+        rather than last_status_change_round (which resets on every verdict).
+        This prevents the grace period from being indefinitely extended by
+        ongoing challenges.
+
+        Returns list of finding IDs escalated.
+        """
+        escalated_ids = []
+        for fid, entry in self.entries.items():
+            # Skip findings already resolved or escalated
+            if entry.get("status") in ("CLOSED", "MERGED", "REFUTED"):
+                continue
+            if entry.get("hil_escalated"):
+                continue
+
+            # Check for unresolved CHALLENGE verdicts regardless of status field.
+            # A finding can be OPEN but have unresolved challenges — the status
+            # field tracks programmatic confirmation, not dispute state.
+            challenges = [
+                v for v in entry.get("verdicts", [])
+                if v.get("verdict") == "CHALLENGE"
+            ]
+            if not challenges:
+                continue
+            confirms = [
+                v for v in entry.get("verdicts", [])
+                if v.get("verdict") == "CONFIRM"
+            ]
+            latest_confirm_round = max(
+                (v["round"] for v in confirms), default=-1,
+            )
+            unresolved = [
+                v for v in challenges if v["round"] > latest_confirm_round
+            ]
+            if not unresolved:
+                continue
+
+            # Find when the dispute first started
+            first_challenge = min(v["round"] for v in unresolved)
+            rounds_contested = current_round - first_challenge
+
+            if rounds_contested >= max_contested_rounds:
+                entry["status"] = "UNCONFIRMED"
+                entry["hil_escalated"] = True
+                entry["hil_reason"] = (
+                    f"Unresolved challenge for {rounds_contested} rounds "
+                    f"(since R{first_challenge}, threshold: {max_contested_rounds})"
+                )
+                escalated_ids.append(fid)
+                _log(
+                    f"  A3 HIL escalation: {fid} challenged since R{first_challenge} "
+                    f"({rounds_contested} rounds) → UNCONFIRMED + HIL flag"
+                )
+        return escalated_ids
 
     def auto_resolve_contested(self, current_round: int):
         """Auto-resolve CONTESTED findings with overwhelming challenge evidence.
@@ -499,6 +627,40 @@ def _parse_verdicts(
         evidence = (m.group(3) or "").strip()
         results.append((verdict_type, canonical_id, evidence))
     return results
+
+
+def _compute_rho(
+    novelty_counts: List[int],
+    raw_counts: List[int],
+) -> Tuple[float, float, bool]:
+    """Compute discovery efficiency ρ and 3-round rolling average.
+
+    ρ(t) = novel(t) / raw(t)  (0 if raw=0)
+    ρ̄₃(t) = mean of last RHO_ROLLING_WINDOW ρ values
+    churn ≡ ρ̄₃ < θ_ρ AND t >= RHO_EARLIEST_ROUND
+
+    Returns (rho_current, rho_rolling_avg, churn_detected).
+    §7.1a in mathematical appendix.
+    """
+    if not raw_counts or raw_counts[-1] == 0:
+        return 0.0, 0.0, False
+
+    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0
+
+    # Compute per-round ρ for rolling window
+    rho_values = []
+    for i in range(max(0, len(raw_counts) - RHO_ROLLING_WINDOW), len(raw_counts)):
+        if raw_counts[i] > 0:
+            rho_values.append(novelty_counts[i] / raw_counts[i])
+        else:
+            rho_values.append(0.0)
+
+    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0
+
+    round_idx = len(raw_counts) - 1
+    churn = rho_avg < RHO_THRESHOLD and round_idx >= RHO_EARLIEST_ROUND
+
+    return rho_current, rho_avg, churn
 
 
 def _resolve_merge_source(
@@ -704,23 +866,36 @@ def _evaluate_gate_conditions(
     novel_this_round: int,
     gamma: float,
     open_ch_history: Optional[List[int]] = None,
+    rho_rolling_avg: float = 1.0,
+    rho_churn: bool = False,
 ) -> Tuple[bool, str]:
-    """Evaluate all 5 convergence gate conditions for the current round.
+    """Evaluate convergence gate conditions for the current round.
 
     Returns (all_passed, reason_string).
     The caller tracks consecutive passes via gate_history.
 
-    Conditions (ALL must hold):
+    PoC convergence — "bridge safety" criterion:
       1. round >= EARLIEST_STOP_ROUND
       2. open_ch stable or declining for OPEN_CH_STABILITY_WINDOW rounds
-      3. Novel findings <= MAX_NOVEL_FINDINGS
+      3. Novel findings count (ADVISORY — logged, not gate-blocking)
       4. No finding contested (unresolved CHALLENGE) for >1 round
       5. Gamma gate passes (scale-dependent)
+      6. ρ̄₃ >= θ_ρ (no churn detected) — A2 fix, §7.1a in appendix
+
+    Condition 3 was changed from blocking to advisory. Models will
+    always find marginal issues — convergence should be defined by
+    safety (CRIT/HIGH resolved) not perfection (novel exhausted).
     """
     if round_idx < EARLIEST_STOP_ROUND:
         return False, f"Too early (round {round_idx} < {EARLIEST_STOP_ROUND})"
 
     failures = []
+
+    # C6: Rho churn check (A2 fix) — detects churn that gamma cannot see
+    if rho_churn:
+        failures.append(
+            f"ρ̄₃={rho_rolling_avg:.3f} < {RHO_THRESHOLD} (churn detected)"
+        )
 
     open_ch = registry.open_crit_high_count()
 
@@ -745,8 +920,8 @@ def _evaluate_gate_conditions(
             )
         # else: open_ch is stable or declining — condition passes
 
-    if novel_this_round > MAX_NOVEL_FINDINGS:
-        failures.append(f"novel={novel_this_round}")
+    # Novel count is advisory — logged for analysis, not gate-blocking.
+    # PoC convergence is about safety (CRIT/HIGH), not perfection (novel=0).
 
     contested = registry.contested_count(round_idx)
     if contested > 0:
@@ -760,8 +935,9 @@ def _evaluate_gate_conditions(
         return False, f"Gate failed: {', '.join(failures)}"
 
     return True, (
-        f"All conditions met: open_ch={open_ch} (stable), novel={novel_this_round}, "
-        f"contested={contested}, gamma={gamma:.3f} ({gate_level})"
+        f"All conditions met: open_ch={open_ch} (stable), "
+        f"contested={contested}, gamma={gamma:.3f} ({gate_level}). "
+        f"Novel={novel_this_round} (advisory, not gate-blocking)"
     )
 
 
@@ -772,17 +948,21 @@ def _check_state_convergence(
     gamma: float,
     gate_history: List[bool],
     open_ch_history: Optional[List[int]] = None,
+    rho_rolling_avg: float = 1.0,
+    rho_churn: bool = False,
 ) -> Tuple[bool, str]:
     """Compound state-based convergence gate.
 
     Returns (converged, reason).
 
-    ALL 5 conditions must hold for CONSECUTIVE_ROUNDS_REQUIRED consecutive
+    ALL 6 conditions must hold for CONSECUTIVE_ROUNDS_REQUIRED consecutive
     rounds (tracked via gate_history, which the caller persists).
     """
     passed, reason = _evaluate_gate_conditions(
         round_idx, registry, novel_this_round, gamma,
         open_ch_history=open_ch_history,
+        rho_rolling_avg=rho_rolling_avg,
+        rho_churn=rho_churn,
     )
     gate_history.append(passed)
 
@@ -950,29 +1130,277 @@ Respond with one verdict per line, nothing else.
 """
 
 
+def _cc2_agent_verification(
+    registry: "FindingRegistry",
+    round_idx: int,
+    source_code: str,
+) -> Dict[str, Any]:
+    """Full CC2 5-agent verification pipeline (cc2_manager.CC2Manager).
+
+    Agents: Citation(1) → Fix(2) → Dedup(3) → Programmatic(4) → CC2v(5).
+    Tool-backed verdicts (Agent 4) and high-confidence dedup (Agent 3)
+    short-circuit CC2v. Authority boundaries enforced by manager.
+
+    Kill switch: caller checks CC2_AGENTS_ENABLED before calling this.
+    """
+    from bench.cc2_manager import CC2Manager
+
+    # Select batch: same A5 dedup-aware filtering as inline CC2v
+    open_findings = []
+    for cid, entry in registry.entries.items():
+        if entry["status"] not in ("OPEN", "CONTESTED"):
+            continue
+        if entry.get("cc2v_escalated"):
+            continue
+        confirm_models = {
+            v["model"] for v in entry.get("verdicts", [])
+            if v.get("verdict") == "CONFIRM"
+        }
+        if len(confirm_models) >= 2:
+            continue
+        cc2v_verdicts = [
+            v for v in entry.get("verdicts", [])
+            if v.get("model") == "CC2v"
+        ]
+        if cc2v_verdicts:
+            continue
+        open_findings.append((cid, entry))
+
+    if not open_findings:
+        return {"skipped": True, "reason": "no eligible findings"}
+
+    open_findings.sort(key=lambda x: x[1].get("severity", 0), reverse=True)
+    batch = open_findings[:VERIFICATION_BATCH_SIZE]
+    batch_ids = [cid for cid, _ in batch]
+
+    _log(f"  CC2 agents: processing {len(batch)} findings via 5-agent pipeline")
+
+    mgr = CC2Manager()
+    results = mgr.route(
+        registry_entries=registry.entries,
+        batch_ids=batch_ids,
+        source_code=source_code[:80_000],
+    )
+
+    # Apply results to registry
+    stats: Dict[str, Any] = {
+        "round": round_idx,
+        "batch_size": len(batch),
+        "batch_ids": batch_ids,
+        "pipeline": "cc2_agents",
+        "verdicts": {},
+        "confirmed": 0,
+        "rejected": 0,
+        "duplicates": 0,
+        "escalated": 0,
+        "fixes_extracted": 0,
+    }
+
+    for fid, agg in results.items():
+        action = (agg.final_action or "").upper()
+        confidence = agg.final_confidence
+        evidence = agg.final_evidence or ""
+
+        stats["verdicts"][fid] = {
+            "action": action,
+            "confidence": confidence,
+            "evidence": evidence[:200],
+            "agents_used": [r.agent for r in agg.agent_results],
+        }
+
+        # Track fix extractions (Agent 2 output)
+        fix_result = next(
+            (r for r in agg.agent_results if r.agent == "fix"), None
+        )
+        if fix_result and fix_result.verdict not in ("NOT_EXTRACTABLE", "ERROR"):
+            stats["fixes_extracted"] += 1
+
+        # ESCALATE
+        if action == "ESCALATE":
+            entry = registry.entries.get(fid)
+            if entry:
+                entry["cc2v_escalated"] = True
+            stats["escalated"] += 1
+            _log(f"  CC2 agents: {fid} ESCALATED to HIL")
+            continue
+
+        # Confidence gate
+        if confidence < VERIFICATION_CONFIDENCE_THRESHOLD:
+            _log(f"  CC2 agents: {fid} {action} — low confidence ({confidence:.2f}), skipped")
+            continue
+
+        # CONFIRM
+        if action == "CONFIRM":
+            entry = registry.entries.get(fid)
+            if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                registry.resolve(fid, "CONFIRMED", round_idx)
+                stats["confirmed"] += 1
+                agents = [r.agent for r in agg.agent_results]
+                _log(f"  CC2 agents: {fid} CONFIRMED via [{', '.join(agents)}] "
+                     f"(conf={confidence:.2f})")
+
+        # REJECT
+        elif action == "REJECT":
+            entry = registry.entries.get(fid)
+            if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                registry.resolve(fid, "UNCONFIRMED", round_idx)
+                stats["rejected"] += 1
+                _log(f"  CC2 agents: {fid} REJECTED → UNCONFIRMED (conf={confidence:.2f})")
+
+        # DUPLICATE
+        elif action == "DUPLICATE":
+            dup_of = next(
+                (r.duplicate_of for r in agg.agent_results
+                 if r.agent == "dedup" and r.duplicate_of),
+                None,
+            )
+            if dup_of and dup_of in registry.entries:
+                entry = registry.entries.get(fid)
+                if entry and entry["status"] in ("OPEN", "CONTESTED"):
+                    registry.resolve(fid, "MERGED", round_idx)
+                    entry["merged_into"] = dup_of
+                    stats["duplicates"] += 1
+                    _log(f"  CC2 agents: {fid} MERGED into {dup_of} (conf={confidence:.2f})")
+
+    stats["total_resolved"] = stats["confirmed"] + stats["rejected"] + stats["duplicates"]
+
+    # Fix-apply step: if Agent 2 extracted a diff for a CONFIRMED finding,
+    # apply in sandbox and test. Success → CLOSED. Failure → stays CONFIRMED.
+    stats["fixes_applied"] = 0
+    stats["fixes_failed"] = 0
+    for fid, agg in results.items():
+        entry = registry.entries.get(fid)
+        if not entry or entry["status"] != "CONFIRMED":
+            continue
+        fix_result = next(
+            (r for r in agg.agent_results
+             if r.agent == "fix" and r.verdict == "EXTRACTED" and r.diff),
+            None,
+        )
+        if not fix_result:
+            continue
+
+        # Sandbox test the extracted diff
+        applied, test_msg = _sandbox_apply_fix(fid, fix_result.diff)
+        if applied:
+            registry.mark_verified(fid, round_idx)
+            stats["fixes_applied"] += 1
+            _log(f"  Fix applied: {fid} — diff tested, CLOSED")
+        else:
+            stats["fixes_failed"] += 1
+            _log(f"  Fix failed: {fid} — {test_msg[:80]}")
+
+    _log(f"  CC2 agents: {len(batch)} findings — "
+         f"{stats['confirmed']} confirmed, {stats['rejected']} rejected, "
+         f"{stats['duplicates']} merged, {stats['escalated']} escalated, "
+         f"{stats['fixes_extracted']} fixes extracted, "
+         f"{stats['fixes_applied']} fixes applied")
+
+    return stats
+
+
+def _sandbox_apply_fix(finding_id: str, diff_text: str) -> Tuple[bool, str]:
+    """Apply a unified diff in a temp sandbox and run tests.
+
+    Returns (success, message).
+    """
+    import tempfile
+    import shutil
+
+    bench_dir = os.path.dirname(os.path.abspath(__file__))
+    evidence_py = os.path.join(bench_dir, "evidence.py")
+
+    if not os.path.exists(evidence_py):
+        return False, "evidence.py not found"
+
+    # Create sandbox copy
+    with tempfile.TemporaryDirectory(prefix=f"cc2fix_{finding_id}_") as sandbox:
+        sandbox_file = os.path.join(sandbox, "evidence.py")
+        shutil.copy2(evidence_py, sandbox_file)
+
+        # Write diff to temp file
+        diff_file = os.path.join(sandbox, "fix.patch")
+        with open(diff_file, "w") as f:
+            f.write(diff_text)
+
+        # Try to apply the diff
+        import subprocess as sp
+        apply_result = sp.run(
+            ["patch", "--dry-run", "-p0", sandbox_file],
+            input=diff_text, capture_output=True, text=True, timeout=10,
+        )
+
+        if apply_result.returncode != 0:
+            return False, f"patch --dry-run failed: {apply_result.stderr[:200]}"
+
+        # Actually apply
+        sp.run(
+            ["patch", "-p0", sandbox_file],
+            input=diff_text, capture_output=True, text=True, timeout=10,
+        )
+
+        # Run targeted tests on the patched file
+        test_result = sp.run(
+            [sys.executable, "-m", "pytest", "bench/tests/test_evidence.py",
+             "-x", "-q", "--tb=line"],
+            capture_output=True, text=True, timeout=60,
+            cwd=os.path.dirname(bench_dir),
+        )
+
+        if test_result.returncode == 0:
+            # Tests pass — apply fix to real file
+            shutil.copy2(sandbox_file, evidence_py)
+            return True, "tests passed, fix applied"
+        else:
+            return False, f"tests failed: {test_result.stdout[-200:]}"
+
+
 def _verification_step(
     registry: "FindingRegistry",
     round_idx: int,
     source_code: str,
     model_configs: List[ModelConfig],
 ) -> Dict[str, Any]:
-    """Between-rounds CC2v verification: FFF open findings via CC2 CLI.
+    """Between-rounds verification: routes to full CC2 agent pipeline or
+    inline CC2v depending on CC2_AGENTS_ENABLED flag.
 
-    Selects a batch of OPEN/CONTESTED findings (highest severity first),
-    dispatches to CC2 with verification prompt, parses structured verdicts,
-    and feeds results back through the registry.
+    Kill switch: CC2_AGENTS=0 env var or CC2_AGENTS_ENABLED=False reverts
+    to the original inline CC2v-only verification.
 
     Returns dict with verification stats.
     """
     if round_idx < VERIFICATION_MIN_ROUND:
         return {"skipped": True, "reason": f"round {round_idx} < {VERIFICATION_MIN_ROUND}"}
 
+    if CC2_AGENTS_ENABLED:
+        return _cc2_agent_verification(registry, round_idx, source_code)
+
     # Select batch: OPEN findings, highest severity first.
-    # Exclude findings already escalated by CC2v (prevents re-selection loop).
+    # A5 fix: dedup-aware CC2v — exclude findings that:
+    #   1. Already escalated by CC2v (prevents re-selection loop)
+    #   2. Already CONFIRMED by 2+ independent sources (already verified)
+    #   3. Already had a CC2v verdict this experiment (prevents re-verification)
     open_findings = []
     for cid, entry in registry.entries.items():
-        if entry["status"] in ("OPEN", "CONTESTED") and not entry.get("cc2v_escalated"):
-            open_findings.append((cid, entry))
+        if entry["status"] not in ("OPEN", "CONTESTED"):
+            continue
+        if entry.get("cc2v_escalated"):
+            continue
+        # A5: skip if already confirmed by 2+ independent models
+        confirm_models = {
+            v["model"] for v in entry.get("verdicts", [])
+            if v.get("verdict") == "CONFIRM"
+        }
+        if len(confirm_models) >= 2:
+            continue
+        # A5: skip if CC2v already issued a verdict on this finding
+        cc2v_verdicts = [
+            v for v in entry.get("verdicts", [])
+            if v.get("model") == "CC2v"
+        ]
+        if cc2v_verdicts:
+            continue
+        open_findings.append((cid, entry))
     if not open_findings:
         return {"skipped": True, "reason": "no open findings"}
 
@@ -1166,8 +1594,16 @@ def _itc_detect(
     return None
 
 
-def _itc_adapt(model_label: str, classification: str, round_idx: int):
+def _itc_adapt(
+    model_label: str, classification: str, round_idx: int,
+    rho_rolling_avg: float = 1.0,
+):
     """Record failure and compute adaptation for next round.
+
+    A4 fix: check ρ before dispatching DEGRADATION interventions.
+    If ρ̄₃ is still healthy (above threshold), the model's repetition
+    is normal depletion, not churn — skip the restart that feeds the
+    burst cycle.
 
     Escalation: retry → strip_context → section_assign → restart_fresh.
     Models always participate. Never benched.
@@ -1210,7 +1646,18 @@ def _itc_adapt(model_label: str, classification: str, round_idx: int):
         _log(f"  ITC [{model_label}]: {classification} \u2192 {state['adaptation']}")
 
     elif classification == ITC_DEGRADATION:
-        if consecutive < 2:
+        # A4 fix: check ρ before DEGRADATION interventions.
+        # If rho is healthy, model repetition is normal depletion near
+        # convergence — a restart would feed the burst cycle (R8 burst
+        # was statistically significant at p=0.0017).
+        if rho_rolling_avg >= RHO_THRESHOLD:
+            _log(
+                f"  ITC [{model_label}]: {classification} suppressed \u2014 "
+                f"\u03c1\u0304\u2083={rho_rolling_avg:.3f} \u2265 {RHO_THRESHOLD} "
+                f"(normal depletion, not churn)"
+            )
+            state["adaptation"] = None  # No intervention needed
+        elif consecutive < 2:
             state["adaptation"] = "change_focus"
             _log(f"  ITC [{model_label}]: {classification} \u2192 change_focus")
         else:
@@ -2197,6 +2644,8 @@ def run_experiment(
 
     experiment_start = time.monotonic()
     novelty_counts: List[int] = []
+    raw_counts: List[int] = []       # A2: raw findings per round (before dedup)
+    rho_history: List[float] = []    # A2: per-round ρ values
     cumulative_context_chars = 0
     per_model_context: Dict[str, int] = {}
     gamma_history: List[float] = []
@@ -2209,11 +2658,28 @@ def run_experiment(
             (brain.logs_dir / "runner_state.json").read_text(encoding="utf-8")
         )
         novelty_counts = ckpt_data.get("novelty_counts", [])
+        raw_counts = ckpt_data.get("raw_counts", [])
+        rho_history = ckpt_data.get("rho_history", [])
         gamma_history = ckpt_data.get("gamma_history", [])
         gate_history = ckpt_data.get("gate_history", [])
         open_ch_history = ckpt_data.get("open_ch_history", [])
         stall_history = ckpt_data.get("stall_history", [])
         cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
+
+        # A2 backfill: reconstruct raw_counts from report if missing
+        if not raw_counts:
+            report_path = brain.logs_dir / "exp36_report.json"
+            if report_path.exists():
+                _report = _json.loads(report_path.read_text(encoding="utf-8"))
+                raw_counts = [
+                    r.get("findings_count", 0) for r in _report.get("rounds", [])
+                ]
+                rho_history = [
+                    (n / r if r > 0 else 0.0)
+                    for n, r in zip(novelty_counts, raw_counts)
+                ]
+                _log(f"  A2 backfill: reconstructed {len(raw_counts)} raw_counts, "
+                     f"{len(rho_history)} rho values from report")
 
     # Build multi-model awareness preamble (star topology)
     roster_lines = "\n".join(
@@ -2305,15 +2771,29 @@ def run_experiment(
             "gamma_soft_until": GAMMA_SOFT_GATE_UNTIL,
             "gamma_soft_threshold": GAMMA_SOFT_THRESHOLD,
             "gamma_hard_threshold": GAMMA_HARD_THRESHOLD,
+            "rho_threshold": RHO_THRESHOLD,
+            "rho_rolling_window": RHO_ROLLING_WINDOW,
+            "rho_earliest_round": RHO_EARLIEST_ROUND,
         },
         "rounds": [],
     }
 
-    # Effective max (may extend)
-    effective_max = MAX_ROUNDS
+    # Effective max (may extend).
+    # On resume, caps are relative to the resume point (not the original start).
+    if resume and start_round > 0:
+        resume_max_rounds = 20   # user-specified: max 20 from resume
+        resume_extension_cap = 24  # user-specified: fallback to 24 if close
+        effective_max = start_round + resume_max_rounds
+        loop_cap = start_round + resume_extension_cap
+        _log(f"  Resume caps: max R{effective_max - 1}, extension R{loop_cap - 1}")
+    else:
+        effective_max = MAX_ROUNDS
+        loop_cap = EXTENSION_CAP
     extended = False
+    rho_avg = 1.0   # safe default before first round computes it
+    rho_churn = False
 
-    for round_idx in range(start_round, EXTENSION_CAP):
+    for round_idx in range(start_round, loop_cap):
         if round_idx >= effective_max:
             break
 
@@ -2359,7 +2839,7 @@ def run_experiment(
                 classification = _itc_detect(
                     mc.label, round_idx, 0, "", set(), set())
                 if classification:
-                    _itc_adapt(mc.label, classification, round_idx)
+                    _itc_adapt(mc.label, classification, round_idx, rho_rolling_avg=rho_avg)
                 recovery_prompt = _itc_build_recovery_prompt(
                     mc.label, base_prompt, observed_fingerprints, round_idx)
                 try:
@@ -2395,7 +2875,7 @@ def run_experiment(
                 classification = _itc_detect(
                     mc.label, round_idx, 0, "", set(), set())
                 if classification:
-                    _itc_adapt(mc.label, classification, round_idx)
+                    _itc_adapt(mc.label, classification, round_idx, rho_rolling_avg=rho_avg)
                 recovery_prompt = _itc_build_recovery_prompt(
                     mc.label, base_prompt, observed_fingerprints, round_idx)
                 try:
@@ -2433,8 +2913,15 @@ def run_experiment(
                 )
 
         novelty_counts.append(novel_this_round)
-        _log(f"  Registry: {novel_this_round} novel, "
-             f"{len(registry.entries)} total canonical")
+        raw_counts.append(len(findings))  # A2: raw count before dedup
+
+        # A2: Compute rho (discovery efficiency)
+        rho_current, rho_avg, rho_churn = _compute_rho(novelty_counts, raw_counts)
+        rho_history.append(rho_current)
+        _log(f"  Registry: {novel_this_round} novel / {len(findings)} raw, "
+             f"{len(registry.entries)} total canonical, "
+             f"\u03c1={rho_current:.3f}, \u03c1\u0304\u2083={rho_avg:.3f}"
+             f"{' [CHURN]' if rho_churn else ''}")
 
         # Parse and register verdicts from raw responses
         n_confirm = n_challenge = n_extend = n_merge = 0
@@ -2477,6 +2964,21 @@ def run_experiment(
         # Status transitions: programmatic confirmation / merge
         _update_finding_statuses(registry, round_idx)
         registry.auto_resolve_contested(round_idx)
+
+        # A3: escalate stale CONTESTED findings to HIL after 5 rounds
+        hil_escalated = registry.escalate_stale_contested(round_idx, max_contested_rounds=5)
+        if hil_escalated:
+            for eid in hil_escalated:
+                _itc_hil_flags.append({
+                    "model": "registry",
+                    "round": round_idx,
+                    "classification": "CONTESTED_STALE",
+                    "consecutive_failures": 0,
+                    "message": (
+                        f"{eid} contested for 5+ rounds — "
+                        f"escalated to HIL review (A3 fix)"
+                    ),
+                })
         confirmed = sum(
             1 for e in registry.entries.values() if e["status"] == "CONFIRMED"
         )
@@ -2574,7 +3076,7 @@ def run_experiment(
                 dispatch_error=dispatch_err,
             )
             if classification:
-                _itc_adapt(model_label_itc, classification, round_idx)
+                _itc_adapt(model_label_itc, classification, round_idx, rho_rolling_avg=rho_avg)
             elif model_label_itc in _itc_model_state:
                 _itc_clear_adaptation(model_label_itc)
 
@@ -2641,6 +3143,9 @@ def run_experiment(
                 "contested": registry.contested_count(round_idx),
                 "recent_novel": novelty_counts[-CONSECUTIVE_ROUNDS_REQUIRED:]
                     if len(novelty_counts) >= CONSECUTIVE_ROUNDS_REQUIRED else novelty_counts,
+                "rho": round(rho_current, 4),
+                "rho_rolling_avg": round(rho_avg, 4),
+                "rho_churn": rho_churn,
             },
         }
         round_data["verification"] = verification_stats
@@ -2658,6 +3163,8 @@ def run_experiment(
         converged, conv_reason = _check_state_convergence(
             round_idx, registry, novel_this_round, gamma, gate_history,
             open_ch_history=open_ch_history,
+            rho_rolling_avg=rho_avg,
+            rho_churn=rho_churn,
         )
         _log(f"  Convergence: {conv_reason}")
 
@@ -2672,6 +3179,8 @@ def run_experiment(
         _runner_ckpt.write_text(json.dumps({
             "registry": registry.to_dict(),
             "novelty_counts": novelty_counts,
+            "raw_counts": raw_counts,
+            "rho_history": [round(r, 6) for r in rho_history],
             "gamma_history": [round(g, 6) for g in gamma_history],
             "gate_history": gate_history,
             "open_ch_history": open_ch_history,

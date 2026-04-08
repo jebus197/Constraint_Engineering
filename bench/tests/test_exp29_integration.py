@@ -43,7 +43,7 @@ from bench.immune_agents import (
     _get_claude_cli,
     _extract_preconditions,
     _preconditions_to_z3,
-    formalisation_agent_shadow,
+    formalisation_agent,
 )
 from bench.runner_core import CONTEXT_CHAR_BUDGET, MODEL_SPECS
 
@@ -600,7 +600,7 @@ class TestFormalisationAgentShadow:
         bcell_verdicts = [
             CellVerdict(CellType.B_CELL, "f1", "REJECTED", 0.8, "", "sympy"),
         ]
-        results = formalisation_agent_shadow(triaged, bcell_verdicts)
+        results = formalisation_agent(triaged, bcell_verdicts)
         assert len(results) == 1
         assert results[0]["finding_id"] == "f1"
         assert results[0]["preconditions_found"] >= 1
@@ -612,7 +612,7 @@ class TestFormalisationAgentShadow:
             _make_finding(fid="f1", desc="Bug in parser logic"),
         ]
         triaged = dendritic_cell_triage(findings)
-        results = formalisation_agent_shadow(triaged, [])
+        results = formalisation_agent(triaged, [])
         assert len(results) == 0  # behavioural findings are skipped
 
 
@@ -625,7 +625,7 @@ class TestTypedLLMClassifierShadow:
     def test_import_and_constants(self):
         """Verify the classifier components are importable."""
         from bench.immune_agents import (
-            typed_llm_classifier_shadow,
+            typed_llm_classifier,
             _CLASSIFIER_SYSTEM_PROMPT,
             _CLASSIFIER_MODEL,
         )
@@ -636,11 +636,11 @@ class TestTypedLLMClassifierShadow:
     def test_no_cli_returns_empty(self):
         """Without claude CLI, shadow should return empty gracefully."""
         from unittest.mock import patch
-        from bench.immune_agents import typed_llm_classifier_shadow
+        from bench.immune_agents import typed_llm_classifier
         findings = [_make_finding(fid="f1", desc="Bug in parser")]
         triaged = dendritic_cell_triage(findings)
         with patch("bench.immune_agents._get_claude_cli", return_value=None):
-            results = typed_llm_classifier_shadow(findings, triaged)
+            results = typed_llm_classifier(findings, triaged)
         assert results == []
 
 

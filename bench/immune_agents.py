@@ -1519,7 +1519,7 @@ def skin_barrier_check(
     passed = sum(1 for r in results if r.passed)
     failed = sum(1 for r in results if not r.passed)
     _shadow_log.info(
-        "Skin barrier (shadow): %d passed, %d failed out of %d findings",
+        "Skin barrier (v2): %d passed, %d failed out of %d findings",
         passed, failed, len(findings),
     )
     for r in results:
@@ -1668,7 +1668,7 @@ def _verify_search_manifest(
     return verified, len(manifest), issues
 
 
-def cytotoxic_t_cell_v2_shadow(
+def cytotoxic_t_cell_v2(
     triaged: List[TriagedFinding],
     source_paths: List[str],
     timeout: int = 180,
@@ -1685,11 +1685,11 @@ def cytotoxic_t_cell_v2_shadow(
     ]
 
     if not code_findings:
-        _shadow_log.info("CT v2 (shadow): no code findings to investigate")
+        _shadow_log.info("CT v2 (v2): no code findings to investigate")
         return []
 
     if not _get_claude_cli():
-        _shadow_log.info("CT v2 (shadow): claude CLI not available")
+        _shadow_log.info("CT v2 (v2): claude CLI not available")
         return []
 
     prompt = _build_ct_v2_prompt(code_findings, source_paths)
@@ -1755,7 +1755,7 @@ def cytotoxic_t_cell_v2_shadow(
                 verdict=std_verdict,
                 confidence=round(confidence, 3),
                 evidence=(
-                    f"[CT_v2_shadow] {v2_verdict} severity={test_severity} "
+                    f"[CT_v2] {v2_verdict} severity={test_severity} "
                     f"{manifest_note}. {counter_evidence[:200]}"
                 ),
                 tool_used="ct_v2_falsifier",
@@ -1763,7 +1763,7 @@ def cytotoxic_t_cell_v2_shadow(
             ))
 
         _shadow_log.info(
-            "CT v2 (shadow): %d verdicts in %.1fs — %s",
+            "CT v2 (v2): %d verdicts in %.1fs — %s",
             len(verdicts), elapsed,
             {v.verdict: sum(1 for vv in verdicts if vv.verdict == v.verdict)
              for v in verdicts} if verdicts else "none",
@@ -1777,10 +1777,10 @@ def cytotoxic_t_cell_v2_shadow(
         return verdicts
 
     except sp.TimeoutExpired:
-        _shadow_log.warning("CT v2 (shadow): timeout after %ds", timeout)
+        _shadow_log.warning("CT v2 (v2): timeout after %ds", timeout)
         return []
     except Exception as e:
-        _shadow_log.warning("CT v2 (shadow): error: %s: %s", type(e).__name__, e)
+        _shadow_log.warning("CT v2 (v2): error: %s: %s", type(e).__name__, e)
         return []
 
 
@@ -1926,7 +1926,7 @@ def _flip_op(op: str) -> str:
             "==": "==", "!=": "!="}[op]
 
 
-def _verify_z3_v2_shadow(
+def _verify_z3_v2(
     claim: str,
     source_paths: List[str],
 ) -> CellVerdict:
@@ -1952,7 +1952,7 @@ def _verify_z3_v2_shadow(
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="",
             verdict="UNCERTAIN", confidence=0.15,
-            evidence="[B_v2_shadow] Cannot ground claim in source AST",
+            evidence="[B_v2] Cannot ground claim in source AST",
             tool_used="z3_v2_smt2",
         )
 
@@ -1992,7 +1992,7 @@ except Exception as e:
             cell_type=CellType.B_CELL, finding_id="",
             verdict="CONFIRMED", confidence=0.85,
             evidence=(
-                f"[B_v2_shadow] z3 SMT-LIB grounded proof. "
+                f"[B_v2] z3 SMT-LIB grounded proof. "
                 f"Grounded vars: {grounded_vars}. {output}"
             ),
             tool_used="z3_v2_smt2", elapsed_s=elapsed,
@@ -2002,7 +2002,7 @@ except Exception as e:
             cell_type=CellType.B_CELL, finding_id="",
             verdict="REJECTED", confidence=0.85,
             evidence=(
-                f"[B_v2_shadow] z3 SMT-LIB grounded counterexample. "
+                f"[B_v2] z3 SMT-LIB grounded counterexample. "
                 f"Grounded vars: {grounded_vars}. {output}"
             ),
             tool_used="z3_v2_smt2", elapsed_s=elapsed,
@@ -2011,12 +2011,12 @@ except Exception as e:
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="",
             verdict="UNCERTAIN", confidence=0.20,
-            evidence=f"[B_v2_shadow] z3 SMT-LIB: {output}",
+            evidence=f"[B_v2] z3 SMT-LIB: {output}",
             tool_used="z3_v2_smt2", elapsed_s=elapsed,
         )
 
 
-def b_cell_v2_shadow(
+def b_cell_v2(
     triaged: List[TriagedFinding],
     source_paths: List[str],
 ) -> List[CellVerdict]:
@@ -2034,12 +2034,12 @@ def b_cell_v2_shadow(
             continue
 
         fid = tf.finding.finding_id
-        v = _verify_z3_v2_shadow(tf.extracted_claim, source_paths)
+        v = _verify_z3_v2(tf.extracted_claim, source_paths)
         v.finding_id = fid
         verdicts.append(v)
 
     _shadow_log.info(
-        "B Cell v2 (shadow): %d claims checked, %d grounded proofs",
+        "B Cell v2 (v2): %d claims checked, %d grounded proofs",
         len(verdicts),
         sum(1 for v in verdicts if "grounded" in v.evidence.lower()),
     )
@@ -2133,7 +2133,7 @@ def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
     return ClaimType.UNCATEGORISED, desc, 0.30
 
 
-def dendritic_cell_v2_shadow(
+def dendritic_cell_v2(
     findings: List[Finding],
     v1_triaged: List[TriagedFinding],
 ) -> List[TriagedFinding]:
@@ -2165,7 +2165,7 @@ def dendritic_cell_v2_shadow(
                 )
 
     _shadow_log.info(
-        "DC v2 (shadow): %d/%d findings reclassified",
+        "DC v2 (v2): %d/%d findings reclassified",
         diffs, len(findings),
     )
     return v2_triaged
@@ -2173,7 +2173,7 @@ def dendritic_cell_v2_shadow(
 
 # ── NK Cell v2 — FP continue fix + intra-round dedup ─────────────────
 
-def nk_cell_v2_shadow(
+def nk_cell_v2(
     triaged: List[TriagedFinding],
     prior_findings: List[Finding],
     tau_sim: float = 0.50,  # Raised from 0.33: class_match base (0.30) + shared
@@ -2326,7 +2326,7 @@ def nk_cell_v2_shadow(
     bugs_escalated = sum(1 for v in verdicts if v.tool_used == "v2_escalated")
     intra_dups = sum(1 for v in verdicts if v.tool_used == "v2_intra_round_dedup")
     _shadow_log.info(
-        "NK v2 (shadow): %d verdicts (%d intra-round dups, %d bugs closed, %d escalated to HIL)",
+        "NK v2 (v2): %d verdicts (%d intra-round dups, %d bugs closed, %d escalated to HIL)",
         len(verdicts), intra_dups, bugs_closed, bugs_escalated,
     )
 
@@ -2385,7 +2385,7 @@ def _log_odds_to_confidence(lo: float) -> float:
     return 1.0 / (1.0 + _math.exp(-abs(lo)))
 
 
-def helper_t_v2_shadow(
+def helper_t_v2(
     triaged: List[TriagedFinding],
     all_verdicts: List[CellVerdict],
     rejection_asymmetry: float = 0.7,
@@ -2483,7 +2483,7 @@ def helper_t_v2_shadow(
             final_confidences[fid] = 0.0
 
     _shadow_log.info(
-        "Helper T v2 (shadow): %d findings — %d CONFIRMED, %d REJECTED, "
+        "Helper T v2 (v2): %d findings — %d CONFIRMED, %d REJECTED, "
         "%d UNCERTAIN, %d DUPLICATE",
         len(final_verdicts),
         sum(1 for v in final_verdicts.values() if v == "CONFIRMED"),
@@ -2497,7 +2497,7 @@ def helper_t_v2_shadow(
 
 # ── Regulatory T v2 — fixed removal rate + proportional model check ──
 
-def regulatory_t_v2_shadow(
+def regulatory_t_v2(
     final_verdicts: Dict[str, str],
     triaged: List[TriagedFinding],
     max_rejection_rate: float = 0.65,
@@ -2552,12 +2552,12 @@ def regulatory_t_v2_shadow(
 
     if reasons:
         _shadow_log.info(
-            "RT v2 (shadow): AUTOIMMUNE flagged — %s", "; ".join(reasons),
+            "RT v2 (v2): AUTOIMMUNE flagged — %s", "; ".join(reasons),
         )
         return True, "; ".join(reasons)
 
     _shadow_log.info(
-        "RT v2 (shadow): healthy — %.1f%% removal rate", removal_rate * 100,
+        "RT v2 (v2): healthy — %.1f%% removal rate", removal_rate * 100,
     )
     return False, f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
 
@@ -2595,7 +2595,7 @@ return values, incorrect state transitions, or logic errors.
 _CLASSIFIER_MODEL = "haiku"  # Claude CLI model alias — Max plan
 
 
-def typed_llm_classifier_shadow(
+def typed_llm_classifier(
     findings: List[Finding],
     regex_triaged: List[TriagedFinding],
 ) -> List[Dict[str, Any]]:
@@ -2614,7 +2614,7 @@ def typed_llm_classifier_shadow(
 
     if not _get_claude_cli():
         _shadow_log.info(
-            "Typed LLM classifier shadow: DISABLED (claude CLI not available). "
+            "LLM classifier: DISABLED (claude CLI not available). "
             "%d findings skipped.", len(findings),
         )
         return comparisons
@@ -2629,7 +2629,7 @@ def typed_llm_classifier_shadow(
     }
 
     _shadow_log.info(
-        "Typed LLM classifier shadow: ENABLED (CLI Haiku). "
+        "LLM classifier: ENABLED (CLI Haiku). "
         "%d findings to classify.", len(findings),
     )
 
@@ -2650,7 +2650,7 @@ def typed_llm_classifier_shadow(
 
             with _CLAUDE_CLI_LOCK:
                 result = sp.run(
-                    cmd, capture_output=True, text=True, timeout=15,
+                    cmd, capture_output=True, text=True, timeout=45,
                 )
             elapsed = time.monotonic() - t0
             response = result.stdout.strip()
@@ -2685,13 +2685,13 @@ def typed_llm_classifier_shadow(
                 "elapsed_s": round(elapsed, 3),
             })
             _shadow_log.warning(
-                "LLM classifier shadow error for %s: %s", f.finding_id, e,
+                "LLM classifier error for %s: %s", f.finding_id, e,
             )
 
     match_count = sum(1 for c in comparisons if c["match"])
     total = len(comparisons)
     _shadow_log.info(
-        "Typed LLM classifier shadow: %d/%d agree with regex (%.1f%%)",
+        "LLM classifier: %d/%d agree with regex (%.1f%%)",
         match_count, total, (match_count / max(total, 1)) * 100,
     )
 
@@ -2785,7 +2785,7 @@ def _preconditions_to_z3(preconditions: List[str], claim: str) -> Optional[str]:
     return "\n".join(lines)
 
 
-def formalisation_agent_shadow(
+def formalisation_agent(
     triaged: List[TriagedFinding],
     b_cell_verdicts: List[CellVerdict],
 ) -> List[Dict[str, Any]]:
@@ -2865,7 +2865,7 @@ def formalisation_agent_shadow(
     with_pc = sum(1 for c in comparisons if c["preconditions_found"] > 0)
     potential_fr = sum(1 for c in comparisons if c["potential_false_rejection"])
     _shadow_log.info(
-        "Formalisation agent shadow: %d math/logic findings, %d with "
+        "Formalisation agent: %d math/logic findings, %d with "
         "preconditions, %d potential false rejections",
         total, with_pc, potential_fr,
     )
@@ -3041,7 +3041,7 @@ def run_immune_pipeline(
     timings["dendritic_v1"] = round(time.monotonic() - t0, 4)
 
     t0_dc_v2 = time.monotonic()
-    triaged = dendritic_cell_v2_shadow(new_findings, v1_triaged)
+    triaged = dendritic_cell_v2(new_findings, v1_triaged)
     timings["dendritic"] = round(time.monotonic() - t0_dc_v2, 4)
 
     # Log claim type distribution
@@ -3054,11 +3054,11 @@ def run_immune_pipeline(
     # Runs alongside DC v2 regex — logs comparison data for activation decision
     t0_llm_cls = time.monotonic()
     try:
-        llm_classifier_results = typed_llm_classifier_shadow(new_findings, triaged)
+        llm_classifier_results = typed_llm_classifier(new_findings, triaged)
     except Exception as e:
-        _shadow_log.warning("Typed LLM classifier shadow failed: %s", e)
+        _shadow_log.warning("LLM classifier failed: %s", e)
         llm_classifier_results = []
-    timings["llm_classifier_shadow"] = round(time.monotonic() - t0_llm_cls, 4)
+    timings["llm_classifier"] = round(time.monotonic() - t0_llm_cls, 4)
 
     # ── Stage 2: Parallel verification (WP6a: v2 components active) ──
     all_verdicts: List[CellVerdict] = []
@@ -3081,7 +3081,7 @@ def run_immune_pipeline(
         # 2a': CT v2 falsifier (WP6a: now ACTIVE, verdicts feed pipeline)
         if ct_enabled:
             futures["ct_v2"] = pool.submit(
-                cytotoxic_t_cell_v2_shadow, triaged, source_paths, ct_timeout,
+                cytotoxic_t_cell_v2, triaged, source_paths, ct_timeout,
             )
 
         # 2b: B-Cell v1 (SymPy + z3 + stats — still primary for non-AST claims)
@@ -3089,12 +3089,12 @@ def run_immune_pipeline(
 
         # 2b': B-Cell v2 AST-grounded z3 (WP6a: now ACTIVE)
         futures["b_cell_v2"] = pool.submit(
-            b_cell_v2_shadow, triaged, source_paths,
+            b_cell_v2, triaged, source_paths,
         )
 
         # 2c: NK v2 (WP6a: now PRIMARY — FP continue fix + intra-round dedup)
         futures["nk_v2"] = pool.submit(
-            nk_cell_v2_shadow, triaged_for_nk, prior_findings, tau_sim,
+            nk_cell_v2, triaged_for_nk, prior_findings, tau_sim,
             false_positive_db,
         )
 
@@ -3131,11 +3131,11 @@ def run_immune_pipeline(
     # could have been prevented by preserving context
     t0_formal = time.monotonic()
     try:
-        formalisation_results = formalisation_agent_shadow(triaged, all_verdicts)
+        formalisation_results = formalisation_agent(triaged, all_verdicts)
     except Exception as e:
-        _shadow_log.warning("Formalisation agent shadow failed: %s", e)
+        _shadow_log.warning("Formalisation agent failed: %s", e)
         formalisation_results = []
-    timings["formalisation_shadow"] = round(time.monotonic() - t0_formal, 4)
+    timings["formalisation"] = round(time.monotonic() - t0_formal, 4)
 
     # ── Stage 3a: Helper T v1 synthesis (kept for reconciliation) ────
     t0 = time.monotonic()
@@ -3144,7 +3144,7 @@ def run_immune_pipeline(
 
     # ── Stage 3a': Helper T v2 synthesis (WP6a: active) ──────────────
     t0 = time.monotonic()
-    v2_final, v2_conf = helper_t_v2_shadow(triaged, all_verdicts)
+    v2_final, v2_conf = helper_t_v2(triaged, all_verdicts)
     timings["helper_t_v2"] = round(time.monotonic() - t0, 4)
 
     # ── Stage 3a.5: RECONCILIATION GATE (WP3b) ──────────────────────
@@ -3171,7 +3171,7 @@ def run_immune_pipeline(
     v1_autoimmune, v1_reg_reason = regulatory_t_cell_check(
         final_verdicts, triaged, max_rejection_rate,
     )
-    v2_autoimmune, v2_reg_reason = regulatory_t_v2_shadow(
+    v2_autoimmune, v2_reg_reason = regulatory_t_v2(
         final_verdicts, triaged, max_rejection_rate,
     )
     # WP6a: v2 is primary, v1 for comparison logging
