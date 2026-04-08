@@ -269,6 +269,12 @@ def _decomposed_openrouter(
             temperature=0.0,
             timeout=timeout,
         )
+        if not response.choices:
+            raise CircuitBreakerTripped(
+                "empty_response", model_id, "dispatch",
+                f"API returned no choices after chunk {n} "
+                f"(possible upstream 500 error)"
+            )
         resp_text = (response.choices[0].message.content or "").strip()
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": user_msg})
@@ -292,6 +298,13 @@ def _decomposed_openrouter(
         temperature=0.0,
         timeout=timeout,
     )
+    if not response.choices:
+        elapsed = time.monotonic() - t0
+        raise CircuitBreakerTripped(
+            "empty_response", model_id, "dispatch",
+            f"API returned no choices after {elapsed:.1f}s "
+            f"(possible upstream 500 error)"
+        )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
     turns.append({"role": "user", "content": final_msg})
@@ -357,6 +370,12 @@ def _decomposed_deepseek(
             max_tokens=256,
             timeout=timeout,
         )
+        if not response.choices:
+            raise CircuitBreakerTripped(
+                "empty_response", model_id, "dispatch",
+                f"API returned no choices after chunk {n} "
+                f"(possible upstream 500 error)"
+            )
         resp_text = (response.choices[0].message.content or "").strip()
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": user_msg})
@@ -379,6 +398,13 @@ def _decomposed_deepseek(
         max_tokens=max_tokens,
         timeout=timeout,
     )
+    if not response.choices:
+        elapsed = time.monotonic() - t0
+        raise CircuitBreakerTripped(
+            "empty_response", model_id, "dispatch",
+            f"API returned no choices after {elapsed:.1f}s "
+            f"(possible upstream 500 error)"
+        )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
     turns.append({"role": "user", "content": final_msg})

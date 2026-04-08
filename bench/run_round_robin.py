@@ -1970,6 +1970,11 @@ class DeepSeekReviewChat:
                     timeout=timeout,
                 )
                 elapsed = time.monotonic() - t0
+                if not response.choices:
+                    raise RuntimeError(
+                        f"API returned no choices after {elapsed:.1f}s "
+                        f"(possible upstream 500 error)"
+                    )
                 text = response.choices[0].message.content or ""
                 text = text.strip()
                 self.messages.append({"role": "assistant", "content": text})

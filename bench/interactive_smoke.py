@@ -367,6 +367,8 @@ class DeepSeekChat:
             model="deepseek-chat", messages=self.history,
             max_tokens=4096, temperature=0.0,
         )
+        if not response.choices:
+            raise RuntimeError("API returned no choices (possible upstream 500)")
         text = response.choices[0].message.content.strip()
         self.history.append({"role": "assistant", "content": text})
         return text

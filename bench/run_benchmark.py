@@ -356,6 +356,8 @@ def call_openai(
         max_completion_tokens=4096,
         messages=messages,
     )
+    if not response.choices:
+        raise RuntimeError(f"API returned no choices for {model} (possible upstream 500)")
     return response.choices[0].message.content or ""
 
 
@@ -386,6 +388,8 @@ def call_openai_reasoning(
         max_completion_tokens=16000,
         messages=messages,
     )
+    if not response.choices:
+        raise RuntimeError(f"API returned no choices for {model} (possible upstream 500)")
     return response.choices[0].message.content or ""
 
 
@@ -565,6 +569,8 @@ def call_groq(
         max_tokens=4096,
         messages=messages,
     )
+    if not response.choices:
+        raise RuntimeError(f"API returned no choices for {model} (possible upstream 500)")
     return response.choices[0].message.content or ""
 
 
@@ -599,6 +605,8 @@ def call_github_models(
         max_tokens=4096,
         messages=messages,
     )
+    if not response.choices:
+        raise RuntimeError(f"API returned no choices for {model} (possible upstream 500)")
     return response.choices[0].message.content or ""
 
 
