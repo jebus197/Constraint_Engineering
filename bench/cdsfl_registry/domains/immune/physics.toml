@@ -1,0 +1,63 @@
+# Immune pipeline parameterisation — Physics Domain (Phase B4)
+# Extracted from domains/physics.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bEq\\(|\\bGt\\(|\\bLt\\()",
+    "(?:\\bbound\\b|\\bthreshold\\b|\\binequality\\b|\\bformula\\b|\\bequation\\b)",
+    "(?:\\b\\d+\\s*[*/+\\-])",
+    "(?:\\bNewton|\\bEuler|\\bLagrangian|\\bHamiltonian)",
+    "(?:\\bforce\\b|\\btorque\\b|\\bmomentum\\b|\\benergy\\b)\\s*[=<>]",
+    "(?:\\bwave\\s*equation|\\bSchrodinger|\\bMaxwell|\\bBoltzmann)",
+    "(?:dimensional\\s*analysis|units?\\s*(?:check|mismatch|inconsisten))",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\binvariant\\b|\\bconservation\\b.*\\bviolat)",
+    "(?:\\bcausality\\b|\\bsimultaneity\\b|\\bframe\\s*of\\s*reference)",
+    "(?:\\bforbidden\\s*transition|\\bselection\\s*rule)",
+    "(?:\\balways\\b.*\\bnever\\b|\\bnever\\b.*\\balways\\b)",
+]
+
+statistical = [
+    "(?:\\bsignificant\\b|\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bmeasurement\\s*uncertainty|\\berror\\s*propagation)",
+    "(?:\\bdistribution\\b|\\bcorrelation\\b|\\bregression\\b)",
+    "(?:\\bchi-squared\\b|\\bstandard\\s*deviation\\b)",
+]
+
+[immune.verification_tools]
+
+# Primary: SymPy for symbolic physics + pint for unit analysis.
+# Fallback: z3 for constraint satisfaction.
+mathematical = ["sympy", "dimensional_analysis", "z3"]
+logical = ["z3", "sympy"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating physics claims. Your output will be mechanically verified.
+
+For derivation claims: verify each step follows from the previous, and that units are consistent.
+For conservation claims: verify that the conserved quantity is actually conserved across the boundary.
+For dimensional claims: verify that both sides of every equation have the same dimensions.
+For numerical claims: verify significant figures and order-of-magnitude plausibility.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:equation|eq\\.?|derivation|step|assumption)\\s*(?:#|:)?\\s*(\\d+(?:\\.\\d+)*)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:units?\\s*(?:cancel|drop).*(?:natural\\s*units|Planck\\s*units|geometrised))"
+source = "Natural units FP: c=1, hbar=1, G=1 are valid conventions where units cancel by design"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:negative\\s*(?:mass|energy).*(?:anti-?particle|binding\\s*energy|mass\\s*defect))"
+source = "Negative energy FP: binding energy and mass defects are legitimately negative"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:velocity|speed)\\s*(?:>|greater|exceed).*(?:c|speed\\s*of\\s*light).*(?:phase|group))"
+source = "Superluminal phase velocity FP: phase velocity > c is physical, group velocity > c is not"

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T072411Z",
+  "phase": "r23",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2129,
+  "response": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.65,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.35,\n    \"DESCRIPTION\": \"CHALLENGE C0137 | FIND: `_extract_finding_ids()` in `bench/evidence.py` uses `_FINDING_ID_RE = re.compile(r\\\"\\\\bC\\\\d{4}\\\\b\\\")`. The open registry proposal says broadening to `r\\\"\\\\b[A-Za-z]\\\\d{3,5}\\\\b\\\"` is directionally correct. That fix is not justified by the target file. Evidence from this file only: all user-facing docs and helper comments in `evidence.py` consistently define finding IDs as canonical `C` IDs — docstring examples use `C0042`, `_extract_finding_ids` docstring says `C0001-C9999`, `query(... finding_id)` says `e.g. \\\"C0042\\\"`, and `trace_finding(\\\"C0042\\\")` is the provenance API example. There is concrete evidence the current regex may be too narrow for non-4-digit canonical IDs only if such IDs are actually produced here, but there is no evidence in `evidence.py` that arbitrary leading letters are valid finding IDs. Expanding to any `[A-Za-z]` will index unrelated tokens like `F001`, which this very review protocol uses as reviewer-local IDs, and can therefore contaminate finding-based queries with non-canonical identifiers.\",\n    \"FOLLOW\": \"The proposed overbroad fix would affect every finding-indexed surface built on `_extract_finding_ids()`: `_EvidenceIndex.by_finding`, `query(finding_id=...)`, `trace_finding()`, `export_bundle(finding_id=...)`, and `finding_ids`. Because model chat logs and reports can contain reviewer-local IDs such as `F001`, those tokens would be indexed as findings, causing false-positive bundles and provenance traces for identifiers that are not canonical registry findings. This is the same downstream family already noted in unconfirmed entries about overmatching, and it is sufficient reason to reject the currently proposed replacement pattern.\",\n    \"PROPOSED_FIX\": \"REJECTED — do not replace `r\\\"\\\\bC\\\\d{4}\\\\b\\\"` with `r\\\"\\\\b[A-Za-z]\\\\d{3,5}\\\\b\\\"` on the evidence available from `evidence.py`. If reopened, the fix must remain scoped to canonical finding ID formats actually accepted by this module.\",\n    \"VERIFIED\": true\n  }\n]",
+  "metadata": {
+    "round": 23,
+    "elapsed": 10.6,
+    "chars": 2129,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

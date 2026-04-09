@@ -385,6 +385,7 @@ class Finding:
     proposed_fix: str = ""  # Model's proposed fix (CX: was parsed but discarded)
     verified: bool = False  # Whether finding was independently verified (SymPy, etc.)
     escalated: bool = False  # Escalated to HIL — no programmatic fix possible
+    falsification_present: bool = False  # Whether finding contains falsification evidence
     pm_verdict: str = ""  # PM's verdict on this finding (Category 2)
     dedup_of: str = ""  # finding_id this is a duplicate of, if any (Category 2)
 

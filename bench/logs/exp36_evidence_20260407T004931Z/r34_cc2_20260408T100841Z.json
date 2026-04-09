@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T100841Z",
+  "phase": "r34",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1784,
+  "response": "## Round 34 — CC2 Review\n\n**No new discoveries to file.**\n\nAll 198 canonical findings are settled (CLOSED, CONFIRMED, or MERGED). I have re-examined evidence.py against the full registry and the verification_chain.py interface. The major bug families — finding-ID extraction completeness (C0006 family), missing `experiment` parameter in `export_bundle` (C0065/C0076/C0088 family), verify caching (C0008), bundle length mismatch (C0009), Merkle root computation scope (C0001/C0005/C0010), event classification substring matching (C0011/C0028), and chain_hash pre-check in `verify_bundle` (C0034) — are all addressed in the current code.\n\nSpecific checks performed this round:\n\n1. **`_extract_finding_ids`** — now recursively searches dict keys, dict values, strings, and list/tuple elements. Covers the C0006/C0073/C0099/C0133 metadata and non-dict payload families.\n2. **`export_bundle` signature** — includes `experiment` parameter and forwards it to `self._index.search()`. Covers C0065/C0076/C0088.\n3. **`verify()` caching** — uses `_verified_with_verifier` flag to invalidate structural-only cache when a verifier is supplied. Covers C0008/C0174/C0181.\n4. **`verify_bundle`** — checks `len(records) != len(inclusion_proofs)` before `zip`, and validates `chain_hash` consistency before proof verification. Covers C0009/C0034.\n5. **Merkle root in `export_bundle` and `summary`** — both compute from `rfc9162_merkle_root` over all chain records, consistent with `build_inclusion_proof`. Covers C0001/C0005/C0010/C0017.\n6. **`_classify_event`** — checked for residual substring-match issues; the settled finding (C0011/C0028/C0186) accepted current behaviour as sufficient for PoC.\n\nNo CRITICAL or HIGH issues remain. The evidence layer is end-to-end operational for its PoC purpose.",
+  "metadata": {
+    "round": 34,
+    "elapsed": 93.4,
+    "chars": 1784,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

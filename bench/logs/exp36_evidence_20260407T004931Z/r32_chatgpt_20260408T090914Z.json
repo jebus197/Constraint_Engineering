@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T090914Z",
+  "phase": "r32",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 931,
+  "response": "{\n  \"discoveries\": [],\n  \"verdicts\": [\n    {\n      \"action\": \"CONFIRM\",\n      \"canonical_id\": \"C0196\",\n      \"evidence\": \"In bench/evidence.py, _classify_event() only inspects rec.payload when it is a dict: `if rec.payload and isinstance(rec.payload, dict): payload_str = json.dumps(rec.payload) ...`. For model_chat_log records whose payload is a string/list or where verdict tokens are outside dict payloads, the function falls through to `submitted` even if the record text contains `CONFIRM/CHALLENGE/EXTEND/MERGE <finding_id>`. This produces silently wrong provenance event types.\"\n    },\n    {\n      \"action\": \"MERGE\",\n      \"canonical_id\": \"C0196\",\n      \"source_finding_id\": \"F001\",\n      \"evidence\": \"Same root cause as the open classification bug: verdict detection is restricted to dict payload serialization instead of searching the actual sealed content that may carry verdict tokens in non-dict payloads.\"\n    }\n  ]\n}",
+  "metadata": {
+    "round": 32,
+    "elapsed": 6.8,
+    "chars": 931,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260408T081633Z",
+  "phase": "r27",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1119,
+  "response": "CONFIRM C0154\nFIND: `bench/evidence.py`, `_FINDING_ID_RE = re.compile(r\"\\bC\\d{4}\\b\")` and `_extract_finding_ids()`. The implementation only recognizes exactly four digits after `C`, while the module-level docstrings and API examples talk about generic “finding ID” handling rather than enforcing a four-digit-only contract. Concrete evidence from code: `_extract_finding_ids(\"C123\")` returns `[]`, so any record referencing `C123` is not indexed.\nFOLLOW: This propagates through all finding-indexed paths because `_EvidenceIndex.__init__()` populates `by_finding` only from `rec.finding_ids`. Therefore `query(finding_id=\"C123\")` returns no records, `trace_finding(\"C123\")` returns `[]`, `export_bundle(finding_id=\"C123\")` raises `ValueError(\"No records match...\")`, and `finding_ids` omits such IDs entirely.\nANALYSE: CONFIRMED. The regex is exact and excludes shorter canonical IDs like `C123`; the downstream finding-indexed features depend exclusively on this extraction.\nFIX: Already covered by existing registry finding C0154; no alternate fix proposed.\n\nNo new discovery findings beyond the settled registry set.",
+  "metadata": {
+    "round": 27,
+    "elapsed": 11.1,
+    "chars": 1119,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260408T094149Z",
+  "phase": "r33",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2532,
+  "response": "{\n  \"discoveries\": [\n    {\n      \"FINDING_ID\": \"F001\",\n      \"SEVERITY\": 0.67,\n      \"FLAW_CLASS\": 2,\n      \"ABSTRACTION_INDEX\": 0.41,\n      \"DESCRIPTION\": \"FIND: bench/evidence.py, module imports and EvidenceBundle.save_json(). The file imports `os` and `Sequence` but does not use them anywhere in the target module. Evidence: `os` is imported near the top of evidence.py but every filesystem operation in this file uses `Path` or plain `open`; `Sequence` is imported from typing but no annotation references it. FOLLOW: No runtime bug is created in the current code path; the consequence is limited to dead imports and reduced signal during maintenance/static analysis. ANALYSE: CONFIRMED — this is directly observable from the file text.\",\n      \"FOLLOW\": \"No downstream impact identified.\",\n      \"PROPOSED_FIX\": \"<<<<\\nimport json\\nimport os\\nimport re\\nfrom collections import defaultdict\\nfrom dataclasses import dataclass, field\\nfrom pathlib import Path\\nfrom typing import Any, Dict, List, Optional, Sequence, Set, Tuple\\n====\\nimport json\\nimport re\\nfrom collections import defaultdict\\nfrom dataclasses import dataclass, field\\nfrom pathlib import Path\\nfrom typing import Any, Dict, List, Optional, Set, Tuple\\n>>>>\",\n      \"VERIFIED\": true\n    }\n  ],\n  \"verdicts\": [\n    \"CONFIRM C0060 — FIND: verify_bundle checks `record_hash` vs `proof_hash` only when both fields are truthy. If a bundled record omits `chain_hash`, the mismatch check is skipped and verification proceeds using only `proof['chain_hash']`. This is a real interface correctness issue because the bundle verifier no longer binds each exported record to its proof.\",\n    \"CONFIRM C0088 — FIND: export_bundle accepts an `experiment` argument but its filter path historically dropped experiment partitioning when resolving entity filters. Mixed-experiment stores can therefore over-include records. That consequence is visible from the search call interface and is a correctness issue for exported bundles.\",\n    \"CONFIRM C0186 — FIND: _classify_event uses ad hoc substring search over `json.dumps(rec.payload)` for `CONFIRM/CHALLENGE/EXTEND/MERGE`. This is structurally fragile and misclassifies verdict events when formatting/casing differs from the exact substring.\",\n    \"CONFIRM C0196 — FIND: _classify_event only performs verdict parsing for `artifact_type == 'model_chat_log'`; records whose artifact type is `verdict` are flattened to generic `verdict`, so provenance loses the actual action semantics for confirm/challenge/extend/merge.\"\n  ]\n}",
+  "metadata": {
+    "round": 33,
+    "elapsed": 12.6,
+    "chars": 2532,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T105238Z",
+  "phase": "r37",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2229,
+  "response": "CONFIRM C0199 | FIND: `bench/evidence.py`, `EvidenceStore.verify_bundle()`, lines in the `for i, (record, proof)` loop. The function only compares `record.get(\"chain_hash\")` to `proof.get(\"chain_hash\")`, then calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)`. It never recomputes a chain hash from `record[\"sealed_body\"]`, `record[\"entry_hash\"]`, and `record[\"prev_hash\"]`, and never checks `record[\"entry_hash\"]`, `record[\"prev_hash\"]`, or `sealed_body[\"payload_hash\"]` against the bundled record contents. Evidence: a bundle record can be tampered by changing `sealed_body[\"payload\"]` while leaving top-level `chain_hash` unchanged; `verify_bundle()` still accepts it because inclusion is proven only for the supplied `proof[\"chain_hash\"]`, not for the record body. FOLLOW: this makes exported bundles misleading as “self-contained proof packages”: `EvidenceBundle.records` can contain false content while `verify_bundle()` returns success, so external audit can accept corrupted record bodies; provenance/detail consumers using bundled records are then operating on unauthenticated content.\n\nCONFIRM C0200 | FIND: `bench/evidence.py`, `EvidenceRecord.from_chain_record()` and `_extract_finding_ids()`. Current extraction uses `_FINDING_ID_RE = re.compile(r\"\\bC\\d{4}\\b\")`, so only exactly four-digit canonical IDs are indexed. Evidence from code: `from_chain_record()` populates `er.finding_ids` exclusively from `_extract_finding_ids(er.payload)` and `_extract_finding_ids(meta)`, and all finding-indexed operations depend on `self._index.by_finding`. Any valid project finding identifiers outside `Cdddd` are omitted from `query(finding_id=...)`, `trace_finding()`, `export_bundle(finding_id=...)`, and `finding_ids`. FOLLOW: omission propagates into `_classify_event()` indirectly because traces are built from `by_finding`; records that mention such IDs never enter provenance/event classification at all, so the semantic layer silently drops them rather than misclassifying them.\n\nNo genuinely new CRITICAL/HIGH findings beyond the two open registry items were identified from `evidence.py`. Definitive stance: both open findings should be confirmed; no new canonical discovery is warranted this round.",
+  "metadata": {
+    "round": 37,
+    "elapsed": 11.0,
+    "chars": 2229,
+    "findings_count": 2,
+    "decomposed": false
+  }
+}

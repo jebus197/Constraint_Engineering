@@ -1,0 +1,725 @@
+## Constraint classification
+
+**HARD**
+- Algebraic correctness of the proposed extension
+- Correctness of special cases
+- Correctness of the gain formula and break-even condition
+- Logical assessment of identifiability / over-parameterisation
+- Honest falsification attempts
+- Mathematical consistency and boundary conditions
+
+**SOFT**
+- Elegance/minimality of any proposed improvement
+- Operational usefulness as a practical self-assessment tool
+
+---
+
+# PASS 1 — Initial verification
+
+## Structured certificate
+
+### Premises
+Let
+\[
+R:=R_k(i-1)\in[0,1],\quad
+q:=\eta d p\in[0,1],\quad
+\sigma\in[0,1],\quad
+\nu\in[0,1].
+\]
+
+Proposed extension:
+\[
+R_{\det}=\frac{R(1-q)}{1-qR}
+\]
+and
+\[
+R' := R_k(i)= \sigma\,[R_{\det}(1-\nu)+\nu] +(1-\sigma)R.
+\]
+
+We verify:
+1. state-space preservation,
+2. special cases,
+3. gain formula,
+4. break-even condition.
+
+---
+
+## 1. Algebraic verification of the extension
+
+Substitute \(R_{\det}\):
+\[
+R'=\sigma\left[(1-\nu)\frac{R(1-q)}{1-qR}+\nu\right]+(1-\sigma)R.
+\]
+
+This is algebraically well-formed for all \(qR\neq 1\). Since \(q,R\in[0,1]\), the only singular point is \(q=R=1\). But the numerator also vanishes there in the detection term:
+\[
+\frac{R(1-q)}{1-qR}=\frac{1\cdot 0}{0},
+\]
+so the formula needs boundary interpretation there. Taking \(q\to 1\) with \(R<1\) gives \(R_{\det}\to 0\), and at \(R=1,q=1\), the Bayesian-style detection map is naturally completed by continuity as \(R_{\det}=0\). So the intended domain is fine with that removable boundary completion.
+
+### Range preservation
+For \(R,q\in[0,1]\),
+\[
+0\le R_{\det}\le R\le 1.
+\]
+Proof:
+- \(1-qR\ge 1-q\ge 0\), so denominator is nonnegative.
+- Since \(1-q \le 1-qR\) for \(R\le 1\),
+\[
+\frac{1-q}{1-qR}\le 1 \implies R_{\det}\le R.
+\]
+Thus \(R_{\det}\in[0,R]\).
+
+Then
+\[
+A:=R_{\det}(1-\nu)+\nu \in [\nu,1]
+\]
+since \(R_{\det}\in[0,1]\). Finally
+\[
+R'=\sigma A+(1-\sigma)R
+\]
+is a convex combination of two quantities in \([0,1]\), so \(R'\in[0,1]\).
+
+**Conclusion:** the proposed recursion is internally state-preserving.
+
+---
+
+## 2. Special cases
+
+I check each stated case.
+
+### Case A: \(\eta=0,\sigma=0\)
+Then \(q=0\), and
+\[
+R_{\det}=R,\qquad R' = 0\cdot[\cdots]+1\cdot R=R.
+\]
+**Confirmed.**
+
+### Case B: \(\eta=1,\sigma=1,\nu=0\)
+Then
+\[
+R'=R_{\det}.
+\]
+**Confirmed.**
+
+### Case C: \(\eta=1,\sigma=1,\nu=1\)
+Then
+\[
+R' = R_{\det}\cdot 0 +1 =1.
+\]
+**Confirmed.**
+
+### Case D: \(\eta=1,\sigma=0\)
+Then regardless of \(q,\nu\),
+\[
+R'=R.
+\]
+**Confirmed.**
+
+### Case E: \(\eta=0,\sigma=1,\nu=0\)
+Then \(q=0\), so \(R_{\det}=R\), hence
+\[
+R'=R.
+\]
+**Confirmed.**
+
+### Case F: \(q=1,\sigma=1,\nu=0\)
+For \(R<1\),
+\[
+R_{\det}=\frac{R(1-1)}{1-R}=0,\quad R'=0.
+\]
+At \(R=1\), continuity gives the same limit.  
+**Confirmed, with removable boundary caveat at \(R=1\).**
+
+### Case G: \(\sigma=1\)
+Then
+\[
+R' = R_{\det}(1-\nu)+\nu,
+\]
+which is exactly the refined baseline.  
+**Confirmed.**
+
+### Additional edge cases not listed
+
+- \(R=0\):
+\[
+R_{\det}=0,\quad R'=\sigma\nu.
+\]
+This is important: unlike the baseline refined equation, the extension gives
+\[
+R'= \sigma \nu,
+\]
+not \(R'=\nu\).
+
+This is not a contradiction, because your extension explicitly says failed resolution should revert to the pre-cycle state; when \(R=0\), there is nothing to fix, so reinjection only occurs to the extent a fix is actually executed/effective under your model. But this is already a semantic warning: \(\sigma\) is doing more than “correctness of fix”; it also gates whether reinjection occurs at all.
+
+- \(q=0,\sigma=1\):
+\[
+R'=R(1-\nu)+\nu.
+\]
+So if there is no detection but a fix is still applied, risk changes. That is mathematically valid, but semantically questionable unless the model allows “blind fixes”.
+
+That is a first falsification flag.
+
+---
+
+## 3. Gain formula
+
+Define gain as reduction in residual risk:
+\[
+\Delta R := R-R'.
+\]
+
+Compute:
+\[
+R'=\sigma\left[(1-\nu)\frac{R(1-q)}{1-qR}+\nu\right]+(1-\sigma)R.
+\]
+Hence
+\[
+\Delta R
+=R-\sigma\left[(1-\nu)\frac{R(1-q)}{1-qR}+\nu\right]-(1-\sigma)R
+=\sigma\left[R-\frac{R(1-q)(1-\nu)}{1-qR}-\nu\right].
+\]
+
+Put over common denominator \(1-qR\):
+\[
+\Delta R
+=\sigma\frac{R(1-qR)-R(1-q)(1-\nu)-\nu(1-qR)}{1-qR}.
+\]
+
+Expand numerator:
+\[
+R-R^2q -R(1-q-\nu+q\nu)-\nu+\nu qR.
+\]
+Distribute the second term:
+\[
+R-R^2q -R +Rq +R\nu -Rq\nu -\nu +\nu qR.
+\]
+The last two mixed terms cancel:
+\[
+-Rq\nu+\nu qR=0.
+\]
+So numerator becomes
+\[
+-qR^2+qR+R\nu-\nu
+= qR(1-R) -\nu(1-R)
+= (1-R)(qR-\nu).
+\]
+Therefore
+\[
+\Delta R = \sigma\,\frac{(1-R)(qR-\nu)}{1-qR}.
+\]
+
+Your factored form was
+\[
+\Delta R_{\text{cycle}}=\sigma\,(R-1)\,\frac{Rq-\nu}{Rq-1}.
+\]
+These are equivalent because
+\[
+(R-1)/(Rq-1) = (1-R)/(1-Rq).
+\]
+
+**Confirmed exactly.**
+
+---
+
+## 4. Break-even condition
+
+Assume \(R,q\in[0,1]\). Then \(1-qR\ge 0\), strictly positive except at \(R=q=1\). Also \(\sigma\ge 0\), \(1-R\ge 0\).
+
+Thus for interior points:
+\[
+\operatorname{sign}(\Delta R)=\operatorname{sign}(qR-\nu)
+\]
+whenever \(\sigma>0\). If \(\sigma=0\), then \(\Delta R=0\) identically.
+
+Therefore:
+- beneficial if \(qR>\nu\),
+- harmful if \(qR<\nu\),
+- break-even if \(qR=\nu\),
+- additionally, \(\sigma=0\) gives break-even regardless of \(q,\nu\).
+
+So the statement “\(\sigma\) scales magnitude only — does not affect break-even point” is **almost** correct but needs refinement:
+
+### Precise statement
+For all \(\sigma>0\), the nontrivial break-even surface is
+\[
+\nu^*=qR.
+\]
+For \(\sigma=0\), every point is operationally break-even because no update is applied.
+
+So the preserved critical reinjection rate is valid **conditional on active resolution**.
+
+**Conclusion:** preserved with a boundary qualification.
+
+---
+
+## 5. Log-odds statement
+
+Since
+\[
+R_{\det}=\frac{R(1-q)}{1-qR},
+\]
+compute odds:
+\[
+\frac{R_{\det}}{1-R_{\det}}
+=\frac{R(1-q)}{1-qR}\bigg/\left(1-\frac{R(1-q)}{1-qR}\right).
+\]
+The denominator simplifies:
+\[
+1-\frac{R(1-q)}{1-qR}
+=\frac{1-qR-R+Rq}{1-qR}
+=\frac{1-R}{1-qR}.
+\]
+Hence
+\[
+\frac{R_{\det}}{1-R_{\det}}=\frac{R(1-q)}{1-R}.
+\]
+So
+\[
+\logit(R_{\det})=\logit(R)+\log(1-q).
+\]
+With \(q=\eta dp\), this becomes
+\[
+\logit(R_{\det})=\logit(R)+\log(1-\eta dp).
+\]
+**Confirmed.**
+
+---
+
+# PASS 2 — Falsification of Pass 1
+
+Now I try to break the model, not just verify algebra.
+
+## FFAF 1 — Issue: semantic mismatch in \(\sigma\)
+
+### FIND
+The stated meaning:
+> \(\sigma\) measures the probability that the proposed fix actually resolves the detected flaw.
+
+But the equation
+\[
+R'=\sigma[R_{\det}(1-\nu)+\nu]+(1-\sigma)R
+\]
+does more than that. It also suppresses reinjection when \(\sigma\) is low.
+
+If \(R=0\),
+\[
+R'=\sigma\nu.
+\]
+So an ineffective fix (\(\sigma\approx 0\)) introduces almost no new risk.
+
+That means \(\sigma\) is not merely “probability the fix resolves the flaw”; it is also acting like “probability the fix is applied / takes effect at all”.
+
+### FOLLOW
+This affects:
+- interpretation of \(R'=R\) when \(\sigma=0\),
+- protective-property claims,
+- the meaning of divergent cycles,
+- distinction between “bad fix” and “no fix”.
+
+### ANALYSE
+**CONFIRMED issue.**
+
+A wrong fix in reality can absolutely inject new flaws. Your current \(\sigma\)-gating says the opposite in the \(R=0\) and low-\(R\) regimes.
+
+### FIX
+The simplest sufficient correction is to separate:
+- **resolution success** \(\sigma\),
+- **application/execution propensity** \(a\) or **fix attempt rate**,
+- reinjection conditional on attempt, not on success.
+
+One minimal alternative:
+\[
+R' = \sigma\,R_{\text{post-good}} + (1-\sigma)\,R_{\text{post-bad}}
+\]
+with
+\[
+R_{\text{post-good}}=R_{\det}(1-\nu_g)+\nu_g,\qquad
+R_{\text{post-bad}}=R+\nu_b(1-R),
+\]
+or more simply
+\[
+R' = R - \sigma(R-R_{\det}) + \nu_a,
+\]
+where \(\nu_a\) is expected injected risk from attempting the fix. But that is already a structural change, not a cosmetic one.
+
+---
+
+## FFAF 2 — Issue: \(\eta\) does not actually model novelty in the stated sense
+
+### FIND
+You define \(\eta\) as output novelty: whether the finding is genuinely new versus a rehash.
+
+But in the recursion, \(\eta\) only multiplies \(q\), thereby reducing **detection effectiveness**:
+\[
+q=\eta dp.
+\]
+
+This means if a model correctly rediscovers a real flaw already known elsewhere, the model's update is weakened as though it detected less.
+
+That is not epistemically correct for **model-level self-assessment** if the model itself did not previously know the flaw.
+
+### FOLLOW
+This affects the interpretation of Blind Spot A. There are two different notions of novelty:
+1. **System novelty**: new to the collective process.
+2. **Local epistemic novelty**: new to this model/pass.
+
+Your \(\eta\) appears to target (1), but the recursion governs the model's own residual risk, which should depend on (2).
+
+### ANALYSE
+**CONFIRMED issue.**
+
+A non-novel finding can still legitimately reduce the model's residual risk if it corrects the model's prior ignorance. So \(\eta\) conflates *discovery value* with *risk-reduction value*.
+
+### FIX
+Do not insert system-level novelty directly into the single-model risk recursion.
+
+Instead split:
+- detection efficacy \(q=dp\) for risk update,
+- novelty score \(\eta\) as a parallel utility/output metric,
+- or, if you really need a novelty-weighted epistemic term, use **local novelty** \(\eta^{\text{local}}\), not global novelty.
+
+So:
+\[
+R_{\det}=\frac{R(1-dp)}{1-dpR}
+\]
+and track
+\[
+U_{\text{discovery}}=\eta^{\text{global}} \cdot \text{finding count}
+\]
+separately.
+
+---
+
+## FFAF 3 — Issue: over-parameterisation / non-identifiability
+
+### FIND
+Only products appear:
+\[
+q=\eta d p.
+\]
+From observed \(R\to R_{\det}\), one can identify \(q\), not \(\eta,d,p\) separately, without external instrumentation.
+
+Similarly, from
+\[
+R' = \sigma A + (1-\sigma)R
+\]
+with known \(R,A\), one may infer \(\sigma\) from realized \(R'\), but in self-assessment the true \(R'\) is not directly observed at update time; it is latent.
+
+### FOLLOW
+This impacts operational estimability:
+- the model cannot reliably self-estimate \(\eta\) separate from \(d,p\),
+- the model cannot reliably estimate \(\sigma\) online without delayed ground truth,
+- adding these parameters may create a pseudo-explanatory layer rather than a measurable one.
+
+### ANALYSE
+**CONFIRMED issue.**
+
+The extension is identifiable only with external labels or delayed adjudication:
+- novelty oracle / database comparison for \(\eta\),
+- retrospective fix validation for \(\sigma\).
+
+Without that, the model is self-scoring hidden variables.
+
+### FIX
+Treat \(\eta,\sigma\) as **estimated latent calibration variables**, not directly known state variables. Then the proper model is hierarchical:
+\[
+\hat \eta,\hat \sigma \text{ with confidence intervals or posterior distributions.}
+\]
+At minimum, the equation should annotate these as uncertain estimates, not deterministic inputs.
+
+---
+
+## FFAF 4 — Issue: absurd edge case for \(q=0,\sigma=1,\nu>0\)
+
+### FIND
+If no detection occurred (\(q=0\)) but the fix branch runs with \(\sigma=1\):
+\[
+R'=R(1-\nu)+\nu.
+\]
+If \(R<1\) and \(\nu>0\), this can either increase or decrease risk depending on \(R\). For example:
+\[
+R'=R+\nu(1-R)-R\nu = R+\nu - R\nu -R\nu? 
+\]
+More directly:
+\[
+R'-R = \nu(1-R)-0? 
+\]
+Actually
+\[
+R(1-\nu)+\nu -R = \nu(1-R)>0
+\]
+for \(R<1\).
+
+So risk strictly increases.
+
+The model says “no detection, but a fully effective fix was applied” and that increases risk via reinjection. This is possible if blind code changes are made, but it is inconsistent with the prose:
+> When \(\sigma=0\), revert as if the cycle never happened.
+
+There is no explicit gate linking resolution to actual detected content.
+
+### FOLLOW
+This means the model allows a fix attempt even when nothing was found.
+
+### ANALYSE
+**CONFIRMED issue.**
+
+If the intended semantics are “resolution of a detected flaw”, then resolution should be conditioned on detection.
+
+### FIX
+Introduce a fix-attempt gate \(f(q)\), simplest being \(f=q\) or a binary event variable. Expected-form version:
+\[
+R' = R + \sigma\left(\,[R_{\det}(1-\nu)+\nu]-R\right)\cdot g(q)
+\]
+with \(g(0)=0\), \(g(1)=1\).  
+This is only justified if you want “no finding, no fix”.
+
+---
+
+# PASS 3 — Falsification of Pass 2 survivors
+
+I now test whether the criticisms above themselves survive.
+
+## Claim under test 1
+“The extension is internally consistent.”
+
+### Attempted falsifier
+Look for violations of bounds, discontinuities, sign reversals.
+
+- Bounds: preserved.
+- Continuous except removable completion at \(R=q=1\).
+- Gain sign algebra is correct.
+- No contradiction in recursion.
+
+**Survives.** Internal consistency stands.
+
+---
+
+## Claim under test 2
+“The extension is not externally complete.”
+
+### Attempted falsifier
+Could the stated blind spots be sufficiently addressed for the intended scope?
+
+Maybe the intent is not truth-level causal realism, but a practical scalar penalty:
+- \(\eta\) penalises uninformative duplication,
+- \(\sigma\) penalises low-confidence fixes.
+
+Even then, completeness fails because:
+1. \(\eta\) still conflates novelty with risk reduction,
+2. \(\sigma\) still conflates correctness with execution effects,
+3. no representation of calibration uncertainty in the parameters,
+4. no delayed verification loop.
+
+**Survives.** Not externally complete.
+
+---
+
+## Claim under test 3
+“The extension is not fit as the final operational equation without qualification.”
+
+### Attempted falsifier
+Could it still be fit-for-purpose as a first-order operational approximation?
+
+Yes, but only if the purpose is narrowed:
+- a heuristic update rule,
+- not a complete metacognitive equation.
+
+As a final operational equation for CDSFL model-level metacognition, the answer remains no, because CDSFL explicitly requires falsification, dependency tracing, and honest boundary marking. This equation lacks delayed refutation handling and parameter uncertainty.
+
+**Survives.**
+
+---
+
+# PASS 4 — Look for possible minimal salvage rather than rejection
+
+## Candidate improvement A — remove \(\eta\) from risk recursion
+
+### Proposal
+Use
+\[
+q=dp
+\]
+in the risk recursion, and track novelty separately.
+
+### Why this is minimal
+It preserves the verified baseline and avoids conflating novelty with risk reduction.
+
+### Mathematical consequence
+All algebraic properties remain unchanged with \(q=dp\). Break-even becomes
+\[
+\nu^* = Rdp.
+\]
+Novelty becomes an auxiliary metric, not a state-evolution term.
+
+### Assessment
+This is the cleanest correction if your target is **residual risk** rather than **research value**.
+
+---
+
+## Candidate improvement B — split fix quality from fix side effects
+
+### Proposal
+Replace \(\sigma\)-gated reinjection with separate successful resolution and side-effect terms.
+
+One simple expected-risk form:
+\[
+R' = R - \sigma(R-R_{\det}) + \mu(1-R),
+\]
+where:
+- \(\sigma\in[0,1]\): proportion of the detection gain actually realized,
+- \(\mu\in[0,1]\): expected new risk injected by the attempted fix.
+
+### Checks
+- If \(\sigma=1,\mu=\nu\) and \(\nu\) is interpreted as additive injected-risk floor, this is not identical to baseline, so it is a genuine alternative, not a reduction.
+- If \(\sigma=0\), then
+\[
+R'=R+\mu(1-R),
+\]
+capturing that a bad fix attempt can still make things worse.
+- If no fix attempt is made, set \(\mu=0\).
+
+### Assessment
+This better matches the prose semantics but sacrifices preservation of the baseline refined equation.
+
+So this is useful only if semantic fidelity matters more than backward compatibility.
+
+---
+
+# PASS 5 — Final adversarial check
+
+I try to overturn the strongest conclusion: that \(\eta,\sigma\) are not operationally identifiable.
+
+Could a model estimate them internally?
+- \(\eta\): only if it has access to a memory/database of prior findings and a novelty criterion. Then it can estimate novelty relative to that store. So \(\eta\) is identifiable **relative to a reference corpus**, not intrinsically.
+- \(\sigma\): only with delayed outcome evaluation, tests, or external adjudication. Not instantaneously.
+
+Thus the objection weakens slightly:
+- \(\eta\) can be operational if defined against a concrete reference set.
+- \(\sigma\) can be operational only retrospectively or with calibrated prediction of fix success.
+
+This does **not** rescue the current semantics inside the recursion; it only clarifies the conditions under which the parameters are measurable.
+
+---
+
+# Retracted or qualified claims
+
+1. **Qualified:** “\(\nu^*=qR\) is preserved.”
+   - Precise version: preserved for \(\sigma>0\). If \(\sigma=0\), all updates are break-even by null action.
+
+2. **Qualified:** “\(\eta\) is non-identifiable.”
+   - Precise version: non-identifiable from the recursion alone; operationally estimable only relative to an explicit novelty reference set.
+
+---
+
+# Final assessment
+
+## VERIFIED results
+
+### Confirmed algebra
+The proposed extension
+\[
+q=\eta d p,\qquad
+R_{\det}=\frac{R(1-q)}{1-qR},\qquad
+R'=\sigma[R_{\det}(1-\nu)+\nu]+(1-\sigma)R
+\]
+is algebraically consistent and preserves \(R'\in[0,1]\).
+
+### Confirmed special cases
+All listed special cases are correct, with the usual removable-boundary caveat at \(R=q=1\).
+
+### Confirmed gain formula
+\[
+\Delta R:=R-R'=\sigma\frac{(1-R)(Rq-\nu)}{1-Rq}
+\]
+equivalently
+\[
+\Delta R=\sigma\,(R-1)\,\frac{Rq-\nu}{Rq-1}.
+\]
+
+### Confirmed break-even
+For \(\sigma>0\),
+\[
+\Delta R \gtrless 0 \iff Rq-\nu \gtrless 0,
+\]
+so the critical reinjection rate is
+\[
+\nu^*=Rq.
+\]
+
+---
+
+## FALSIFICATION outcome
+
+## Confirmed weaknesses
+
+### 1. \(\eta\) does not cleanly solve Blind Spot A
+It mixes **novelty value** with **risk-reduction efficacy**. A non-novel finding can still validly reduce a model's residual risk. So using \(\eta\) inside \(q\) is only justified if novelty is defined as **new to the updating model**, not **new to the broader system**.
+
+### 2. \(\sigma\) does not cleanly solve Blind Spot B
+It is not purely “fix correctness”. It also gates whether reinjection occurs at all. This creates questionable behavior such as
+\[
+R=0 \implies R'=\sigma\nu,
+\]
+meaning an incorrect or unapplied fix causes less injected risk simply because \(\sigma\) is low.
+
+### 3. Over-parameterisation is real
+From the recursion, only \(q=\eta dp\) is directly structural. \(\eta,d,p\) are not separately identifiable without external definitions and measurements.
+
+### 4. \(\sigma\) is not generally online-identifiable
+Fix efficacy usually requires delayed validation. As an instantaneous self-assessment variable, it is speculative unless backed by a calibrated predictive model.
+
+### 5. Missing control-flow interaction
+The model allows “resolution” effects even when no flaw was detected (\(q=0\)), unless additional semantics are imposed.
+
+---
+
+## Completeness assessment
+
+The extended equation is:
+
+- **internally consistent:** yes
+- **externally complete:** no
+- **fit for purpose as a heuristic operational approximation:** yes, with strict boundary statements
+- **fit for purpose as the final operational self-assessment equation for CDSFL metacognition:** no
+
+### What remains unmodelled
+At minimum:
+1. **Delayed validation / retrospective refutation** of fixes
+2. **Parameter uncertainty** for \(\eta,\sigma,d,p,\nu\)
+3. **Dependence on reference class** for novelty
+4. **Control-flow gating** between finding and fixing
+5. **Dependency tracing across modules/boundaries**, which CDSFL explicitly requires
+6. **Correlated flaw classes / interaction terms** between \(k\)-classes
+7. **Truth of explanation vs truth of patch** — detecting a flaw and proposing the right causal mechanism are different
+
+---
+
+## Simplest sufficient improvement
+
+If the goal is a **residual-risk equation**, the best minimal correction is:
+
+### Keep risk recursion about risk
+\[
+q=dp
+\]
+not \(\eta dp\).
+
+### Track novelty separately
+Use \(\eta\) as an auxiliary discovery metric, not as a risk-update multiplier.
+
+### Treat \(\sigma\) as a calibrated latent variable
+Use it only with explicit uncertainty marking or retrospective estimation.
+
+This preserves the mathematical core and avoids mixing distinct phenomena.
+
+---
+
+## Definitive stance
+
+**Verdict:** the proposed extension is **mathematically valid but semantically overloaded**. It is **internally consistent** and the stated algebra, special cases, gain formula, and conditional preservation of \(\nu^*=Rq\) are correct. But it is **not externally complete**, and in its current form it is **not fit to serve as the final operational CDSFL self-assessment equation**.
+
+The strongest surviving conclusion is:
+
+**Keep the refined equation as the core residual-risk engine. Do not promote \(\eta\) and \(\sigma\) into the core recursion in their current meanings. If retained, redefine \(\eta\) as local novelty or move it outside the risk recursion, and treat \(\sigma\) as a separate, explicitly uncertain calibration variable with delayed validation.**

@@ -1,0 +1,14 @@
+# CDSFL Registry — Layer 2: Chemistry Domain
+# Applied when task domain is "chemistry".
+
+[verification]
+sympy_verification = "mandatory"        # symbolic verification for chemical equations
+stoichiometric_balance_check = true     # reactants and products must balance
+thermodynamic_consistency = true        # enthalpy/entropy/Gibbs must be self-consistent
+unit_consistency_check = true           # dimensional analysis (energy, concentration, etc.)
+physical_bounds_check = true            # concentrations >= 0, temperatures > 0 K
+
+[constraints]
+conservation_of_mass = true             # mass must balance across reactions
+
+# Immune pipeline parameterisation lives in domains/immune/chemistry.toml

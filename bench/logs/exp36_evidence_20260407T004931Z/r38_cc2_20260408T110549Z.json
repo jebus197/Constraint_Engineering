@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T110549Z",
+  "phase": "r38",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2737,
+  "response": "## Round 38 — CC2 Verdicts\n\n### Verdicts on Open Entries\n\n**MERGE C0203 <- C0003** — C0203 describes the identical bug as C0003: `trace_finding()` sorts by record index (`sorted(indices)`) rather than by `timestamp_utc`. Same root cause, same fix. C0003 is the canonical entry.\n\n**CONFIRM C0003** — The fix is correct: replace `for i in sorted(indices)` with sorting the resulting events list by `timestamp_utc`. The simplest sufficient fix:\n\n```python\nevents.sort(key=lambda e: e.timestamp_utc)\n```\n\nappended after the loop. Record index as tiebreaker for equal timestamps is acceptable (Python's `sort` is stable, so the existing insertion order from `sorted(indices)` provides this implicitly).\n\n**MERGE C0204 <- C0199** — C0204 (payload_hash not verified in `verify_bundle`) is a subset of C0199 (record contents not verified against chain_hash). The broader issue: `verify_bundle` confirms the chain_hash is included in the Merkle tree, and confirms the proof's chain_hash matches the record's chain_hash, but never recomputes `entry_hash` from `sealed_body` to confirm the record contents haven't been tampered with. payload_hash verification is one consequence. C0199 is the correct canonical entry.\n\n**CONFIRM C0199** — The fix should recompute `entry_hash` from `sealed_body` for each record in the bundle and compare against the stored `entry_hash`. This catches both content tampering and payload_hash inconsistency in one check:\n\n```python\nfrom bench.verification_chain import _compute_entry_hash\n\n# Inside verify_bundle loop, after chain_hash check:\nexpected_entry = _compute_entry_hash(record.get(\"sealed_body\", {}))\nif record.get(\"entry_hash\", \"\") != expected_entry:\n    errors.append(f\"Record {i}: entry_hash mismatch (contents tampered)\")\n    continue\n```\n\nThis subsumes the payload_hash concern because `_compute_entry_hash` hashes the full sealed_body including the payload field.\n\n**CONFIRM C0202** — The regex `r\"\\bC\\d{4}\\b\"` misses valid finding IDs like `F001`, `F003`, etc. (the format models natively produce). The fix broadening to `r\"\\b[A-Za-z]\\d{3,5}\\b\"` is correct for PoC scope.\n\n**CONFIRM C0201** — Same family as C0202. Finding ID extraction gaps propagate into traces and queries.\n\n### New Findings\n\nNo new CRITICAL or HIGH findings to file. After 38 rounds and 199 settled findings, the evidence layer's significant bugs are registered. The remaining open items (C0003 timestamp sorting, C0199 content verification, C0202 regex) are the genuine residuals. All have correct proposed fixes.\n\n**CONFIRM C0087** — Valid observation but LOW severity at PoC. Stable sort on equal timestamps produces deterministic output using record index as implicit tiebreaker, which is the natural ordering. No fix needed.",
+  "metadata": {
+    "round": 38,
+    "elapsed": 118.0,
+    "chars": 2737,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 9 April 2026 18:16 BST
+Last updated: 9 April 2026 19:25 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -23,7 +23,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 37 CONVERGED (9 April 2026 18:16 BST):**
+- **EXP 37 CONVERGED (9 April 2026 19:25 BST):**
   Target: `bench/evidence.py`, star topology, 5 models.
   16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
   257 raw findings → 257 canonical entries.

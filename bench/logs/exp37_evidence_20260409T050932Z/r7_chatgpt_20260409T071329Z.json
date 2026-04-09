@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260409T071329Z",
+  "phase": "r7",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2429,
+  "response": "CONFIRM C0113 — `EvidenceRecord.from_chain_record()` takes `model`, `experiment`, and `round` only from metadata, but chain producers identify the recorder in `sealed_body[\"recorded_by\"]`. In this file, `from_chain_record()` sets `er.model = meta.get(\"model\", \"\")` while `EvidenceRecord` already stores `recorded_by=body[\"recorded_by\"]`. Concrete trace: a chain record with `sealed_body.recorded_by=\"Gemini\"` and `metadata={}` yields `er.model=\"\"`; downstream `query(model=\"Gemini\")`, `summary().records_by_model`, and provenance event descriptions lose attribution. The proposed fallback to `body.get(\"recorded_by\")` is the simplest sufficient correction. This is HARD/interface correctness and CONFIRMED.\n\nEXTEND C0113 | FOLLOW: this also misclassifies provenance for `model_chat_log` records because `trace_finding()` copies `rec.model` into each `ProvenanceEvent`. With metadata-only extraction, a valid verdict record becomes e.g. `\"Finding C0042 confirmed by  in round -1\"`, which is silently wrong output to the reviewer, not just a missed query hit.\n\nCORROBORATION for EXTEND C0113: R_old=0.5; η=0.35 (extension of existing finding, not new root cause); d=0.62 (followed provenance rendering path rather than index-construction path); p=0.93; q=0.35*0.62*0.93=0.20181; R_det=0.5*(1-0.20181)/(1-0.20181*0.5)=0.443939; σ=0.88; R_base=0.88*0.443939+0.12*0.5=0.450666; ν=0.03; R_k=0.450666*0.97+0.03=0.467146. Residual risk acceptable for an extension; no new fix beyond C0113 needed.\n\nCONFIRM C0121 — `_classify_event()` only detects verdict keywords inside `model_chat_log`, but the module separately recognizes `artifact_type == \"verdict\"` and then returns the generic `\"verdict\"` label. Premise: provenance is supposed to identify CONFIRM/CHALLENGE/EXTEND/MERGE; code path for actual verdict records does not inspect payload content. Concrete example: `artifact_type=\"verdict\"`, payload `{\"text\":\"CONFIRM C0042\"}` returns `\"verdict\"` instead of `\"confirmed\"`. Downstream, `trace_finding()` and `_describe_event()` lose semantic verdict type. HARD/logic, CONFIRMED.\n\nCORROBORATION for CONFIRM C0121: R_old=0.5; η=0.2; d=0.55; p=0.95; q=0.1045; R_det=0.472432; σ=0.94; R_base=0.474486; ν=0.02; R_k=0.4850.\n\nNo novel findings survived falsification beyond the existing registry. Given γ=0.467 and ρ̄₃=0.158, filing additional low-confidence duplicates would be noise. Definitive stance: 2 verdicts issued, 0 new discoveries.",
+  "metadata": {
+    "round": 7,
+    "elapsed": 14.9,
+    "chars": 2429,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

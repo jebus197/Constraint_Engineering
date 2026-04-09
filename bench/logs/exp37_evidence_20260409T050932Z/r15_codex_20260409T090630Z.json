@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260409T090630Z",
+  "phase": "r15",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1961,
+  "response": "CONFIRM C0201 | Premises: `EvidenceStore.verify()` caches with two fields: `_verified: Optional[bool]` and `_verified_with_verifier: bool`. Re-execution gate is `self._verified is None or (verifier is not None and self._verified_with_verifier is False)`. Concrete trace: first call `verify(verifier=v1)` on a valid chain signed by key K1 sets `_verified=True`, `_verify_message=\"All N records verified.\"`, `_verified_with_verifier=True`. Second call `verify(verifier=v2)` with a different verifier object for the wrong key does not satisfy `needs_verify`; method returns cached `(True, \"All N records verified.\")` without calling `self._chain.verify_chain(verifier=v2)`. Formal conclusion: verification result is cached by “some verifier was used” rather than by verifier identity, so subsequent verification with a different verifier can return a false authenticated success. FOLLOW: this crosses the public verification interface, affects any consumer that rotates keys or validates with multiple candidate public keys, and can silently misreport authenticated provenance as valid. ANALYSE: HARD, CONFIRMED. FIX: cache by verifier identity/material, not boolean presence; simplest sufficient fix is to store a cache key such as `id(verifier)` or explicit verifier fingerprint and re-run when it changes. FALSIFICATION: FALSIFIER: if a second call with a different verifier necessarily re-runs verification, the finding is false. ATTEMPT: traced control flow through `needs_verify` for first authenticated call then second authenticated call with different object. RESULT: second call skips re-verification because `_verified_with_verifier` is already `True`; claim holds. CORROBORATION: `R_old=0.5, η=0.2, d=0.8, p=0.95, σ=0.9, ν=0.05`; `q=0.152`; `R_det=0.4587155963`; `R_base=0.4628440367`; `R_k=0.4897018349`.\n\nNo new unregistered finding in `bench/evidence.py` survived deduplication and falsification above consequence threshold beyond that confirmation.",
+  "metadata": {
+    "round": 15,
+    "elapsed": 11.3,
+    "chars": 1961,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 9 April 2026 18:16 BST
+Last updated: 9 April 2026 19:25 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,11 +21,11 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (9 April 2026 18:16 BST)
+## Current Pending Work (9 April 2026 19:25 BST)
 
 Experiments 12–37 ALL COMPLETE. 690 tests pass.
 
-EXP 37 CONVERGED (9 April 2026 18:16 BST):
+EXP 37 CONVERGED (9 April 2026 19:25 BST):
   Target: bench/evidence.py, star, 16 rounds.
   257 findings, γ=0.467. STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
   Logs: bench/logs/exp37_evidence_20260409T050932Z/
@@ -48,11 +48,11 @@ Uncommitted changes in working tree:
   M bench/logs/exp36_evidence_20260407T004931Z/runner_state.json
   M bench/logs/immune_shadow.log
   M bench/run_exp36_evidence.py
-  M docs/CURRENT_STATE.md
-  M resources/ONBOARDING.md
-  M resources/RECOVERY.md
-  M scripts/cdsfl_sv.py
-  ... and 213 more
+  ?? bench/cdsfl_registry/domains/chemistry.toml
+  ?? bench/cdsfl_registry/domains/immune/
+  ?? bench/confer_novelty_extension.py
+  ?? bench/directives/universal/cdsfl_operational.md
+  ... and 209 more
 
 Remote: up to date.
 

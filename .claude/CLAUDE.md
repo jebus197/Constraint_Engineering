@@ -70,6 +70,59 @@ Single-letter and short commands that direct model behaviour. Combinable
 
 Example: `cx ge cc2` = confer with all three on current task.
 
+## Local Tool Constraint Box
+
+CC1 (this instance) and all CC2 sub-agents operate within a defined tool envelope.
+The tool output IS the evidence. LLM reasoning selects and interprets tool output — it does not substitute for it.
+If the tools cannot verify a claim, the claim is UNVERIFIABLE — escalate, do not guess.
+
+### STEM / Mathematical Tools (Python)
+
+| Tool | Import | Use When |
+|------|--------|----------|
+| SymPy 1.14.0 | `import sympy` | Algebraic manipulation, symbolic calculus, equation solving, simplification, limit/series analysis. **Default for any mathematical claim.** |
+| z3 4.16.0 | `import z3` | Constraint satisfaction, formal verification, SAT/SMT problems, logical entailment, bound checking. **Default for logical/constraint claims.** |
+| NumPy 2.0.2 | `import numpy` | Numerical arrays, linear algebra, FFT, random sampling, vectorised arithmetic. |
+| SciPy 1.13.1 | `import scipy` | Optimisation, integration, interpolation, signal processing, statistical tests (scipy.stats). |
+| statsmodels 0.14.6 | `import statsmodels` | Regression diagnostics, hypothesis tests, time series (ARIMA, ADF), GLM, survival analysis. |
+| mpmath 1.3.0 | `import mpmath` | Arbitrary-precision arithmetic, special functions, numerical verification of symbolic results. |
+| uncertainties 3.2.3 | `import uncertainties` | Error propagation, measurement uncertainty, automatic partial derivatives. |
+| pandas 2.3.3 | `import pandas` | Data frames, time series aggregation, pivot tables, merge/join operations. |
+| Wolfram (MCP) | `mcp__Wolfram__*` | WolframAlpha (natural language queries), WolframLanguageEvaluator (Wolfram Language code), WolframContext (knowledge base). Use for cross-validation of SymPy results, specialised knowledge queries, or when Wolfram Language is more natural than Python. |
+
+### Code Analysis Tools (Python)
+
+| Tool | Invocation | Use When |
+|------|-----------|----------|
+| AST (stdlib) | `import ast` | Parse Python source, inspect structure, detect dead code, trace call graphs, verify imports. **Default for structural code claims.** |
+| pytest 8.4.2 | `python3 -m pytest` | Run test suites, verify fixes don't break existing tests. |
+| ruff 0.15.9 | `python3 -m ruff check` | Fast linting — unused imports, style violations, potential bugs. |
+| mypy 1.19.1 | `python3 -m mypy` | Static type checking — signature mismatches, type errors, unreachable code. |
+| bandit 1.8.6 | `python3 -m bandit` | Security-focused static analysis — injection, hardcoded secrets, unsafe deserialization. |
+| dis (stdlib) | `import dis` | Bytecode disassembly — verify control flow, optimisation claims, dead branches. |
+| inspect (stdlib) | `import inspect` | Live object introspection — verify signatures, source locations, inheritance. |
+| difflib (stdlib) | `import difflib` | Structural diff — verify claimed code changes, detect semantic duplicates. |
+
+### Claude Code Native Tools
+
+Read, Grep, Glob, Edit, Write, Bash — for source inspection, search, and modification.
+These are available to CC1 directly and should be wired to CC2 sub-agents that need source access.
+
+### When to Use What
+
+- **Mathematical claim** → SymPy first, z3 if constraint/logic, Wolfram to cross-validate
+- **Statistical claim** → scipy.stats or statsmodels, NumPy for computation, pandas for data
+- **Code correctness claim** → AST parse + Read source + pytest run
+- **Code quality claim** → ruff + mypy + bandit
+- **Logical/constraint claim** → z3
+- **Measurement/uncertainty claim** → uncertainties + mpmath for precision
+- **Any claim** → if tools can verify it, tools MUST verify it before verdict
+
+### What Is NOT Installed (do not attempt)
+
+matplotlib, scikit-learn, networkx, rdkit, pint, astropy, biopython, pylint, radon, vulture, pyflakes.
+If a domain needs these, flag it and request installation.
+
 ## Identity
 
 CC1 = this instance (UX mode, interactive). CC2 = CLI headless instance.

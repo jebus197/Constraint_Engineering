@@ -1,0 +1,223 @@
+{
+  "round_idx": 13,
+  "timestamp": "2026-04-09T08:17:17.546480+00:00",
+  "finding_count": 17,
+  "duration_s": 274.2526938333176,
+  "failures": {},
+  "findings": [
+    {
+      "finding_id": "Codex_..., model=..., round_idx=...)` and omits `artifact_type`, so the public entity-filter path cannot restrict bundles by type even though `query()` can. Concrete trace: with records in same round for `model_chat_log`, `health_scan`, and `policy_snapshot`, `export_bundle(model=\"Gemini\", round_idx=5)` includes all three. If a caller needs only a report bundle, there is no corresponding parameter. Conclusion: confirmed interface incompleteness.",
+      "model_id": "Codex",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id=..., model=..., round_idx=...)` and omits `artifact_type`, so the public entity-filter path cannot restrict bundles by type even though `query()` can. Concrete trace: with records in same r",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_F040",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 2,
+      "severity": 0.89,
+      "abstraction_index": 0.56,
+      "description": "FINDING_ID: F040\nSEVERITY: 0.89\nFLAW_CLASS: 2\nABSTRACTION_INDEX: 0.56\nFIND: `EvidenceStore.export_bundle()` cannot export by `artifact_type` even though the module contract explicitly advertises \u201centi",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_Optional[str] = None,",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id: Optional[str] = None,\n        model: Optional[str] = None,\n        round_idx: Optional[int] = None,\n        experiment: Optional[str] = None,\n    ) -> EvidenceBundle:\n...\n            indic",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_finding_id,",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id=finding_id,\n                model=model,\n                round_idx=round_idx,\n            )\n====\n    def export_bundle(\n        self,\n        record_indices: Optional[List[int]] = None,",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_Optional[str] = None,",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id: Optional[str] = None,\n        model: Optional[str] = None,\n        round_idx: Optional[int] = None,\n        experiment: Optional[str] = None,\n        artifact_type: Optional[str] = None,\n ",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_finding_id,",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id=finding_id,\n                model=model,\n                round_idx=round_idx,\n                artifact_type=artifact_type,\n            )\n>>>>\nFALSIFICATION: FALSIFIER: bundle export may be ",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_F041",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 5,
+      "severity": 0.84,
+      "abstraction_index": 0.42,
+      "description": "FINDING_ID: F041\nSEVERITY: 0.84\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.42\nFIND: `EvidenceRecord.from_chain_record()` stores `meta.get(\"round\", -1)` into `round_idx` without type normalization, while downs",
+      "proposed_fix": "<<<< OLD\ner.round_idx = meta.get(\"round\", -1)\n==== NEW\nround_val = meta.get(\"round\", -1)\n        er.round_idx = round_val if isinstance(round_val, int) and round_val >= 0 else -1\n>>>>",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "ChatGPT_F042",
+      "model_id": "ChatGPT",
+      "round_idx": 13,
+      "flaw_class": 5,
+      "severity": 0.81,
+      "abstraction_index": 0.38,
+      "description": "FINDING_ID: F042\nSEVERITY: 0.81\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.38\nFIND: `trace_finding()` claims \u201cchronological provenance trace\u201d but sorts timestamps lexicographically as raw strings, not by norm",
+      "proposed_fix": "<<<< OLD\nevents.sort(key=lambda e: e.timestamp_utc)\n==== NEW\nfrom bench.verification_chain import _normalize_timestamp\n        events.sort(key=lambda e: _normalize_timestamp(e.timestamp_utc))\n>>>>",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "CC2_F040",
+      "model_id": "CC2",
+      "round_idx": 13,
+      "flaw_class": 5,
+      "severity": 0.65,
+      "abstraction_index": 0.48,
+      "description": "FINDING_ID: F040\nSEVERITY: 0.65\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.48\n\nFIND: `trace_finding` sorts events by `timestamp_utc` using string comparison (line: `events.sort(key=lambda e: e.t",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "DeepSeek_CODEX\u2011EVID\u2011001",
+      "model_id": "DeepSeek",
+      "round_idx": 13,
+      "flaw_class": 4,
+      "severity": 0.8,
+      "abstraction_index": 0.3,
+      "description": "FINDING_ID: CODEX\u2011EVID\u2011001  \nSEVERITY: 0.80  \nFLAW_CLASS: 4 (completeness)  \nABSTRACTION_INDEX: 0.3  \n\n### Layer 1 \u2014 Structured Certificate  \n*Premises*  \n1. `_EvidenceIndex.__init__` indexes a record",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_F048",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.95,
+      "abstraction_index": 0.8,
+      "description": "FINDING_ID: F048\nSEVERITY: 0.95\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.8\nFIND: `EvidenceStore` violates the `fail_closed_unassessed` policy constraint by allowing reads on unverified chains. The `from_cha",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_finding_id,",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id=finding_id,\n        )\n==== NEW\n        if self._verified is False or (self._verified is None and not self.verify()[0]):\n            raise RuntimeError(\"Chain verification failed; queries un",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_finding_id,",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.5,
+      "abstraction_index": 0.5,
+      "description": "finding_id=finding_id,\n        )\n>>>>\nFALSIFICATION:\nFALSIFIER: The constructor or load methods verify the chain inherently.\nATTEMPT: Traced `from_chain_file()` execution. It strictly calls `Verificat",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_F045",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.85,
+      "abstraction_index": 0.4,
+      "description": "FINDING_ID: F045\nSEVERITY: 0.85\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.4\nFIND: `EvidenceRecord.from_chain_record` blindly assigns the raw value of `metadata[\"round\"]` to `er.round_idx`. If a record contai",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_F046",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 4,
+      "severity": 0.7,
+      "abstraction_index": 0.3,
+      "description": "FINDING_ID: F046\nSEVERITY: 0.70\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.3\nFIND: `_EvidenceIndex.__init__` uses truthiness checks (`if rec.experiment:`) that silently drop records with empty strings from th",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_F047",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 1,
+      "severity": 0.75,
+      "abstraction_index": 0.4,
+      "description": "FINDING_ID: F047\nSEVERITY: 0.75\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.4\nFIND: `_classify_event` fails to classify the source finding of a `MERGE` operation. The protocol string `MERGE C0001 <- C0042` con",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    },
+    {
+      "finding_id": "Gemini_C0029",
+      "model_id": "Gemini",
+      "round_idx": 13,
+      "flaw_class": 6,
+      "severity": 0.85,
+      "abstraction_index": 0.3,
+      "description": "FINDING_ID: C0029\nSEVERITY: 0.85\nFLAW_CLASS: 6\nABSTRACTION_INDEX: 0.3\nFIND: CONFIRM C0029. The `_FINDING_ID_RE` regex `\\b[A-Za-z]\\d{3,5}\\b` strictly bounds the prefix to exactly one letter. It silentl",
+      "proposed_fix": "",
+      "verified": false,
+      "escalated": false
+    }
+  ],
+  "model_responses": {
+    "Codex": "No novel findings survived falsification above consequence threshold from `bench/evidence.py`.\n\nVERDICT: CONFIRM C0181 | Premises: `EvidenceStore.verify_bundle()` only compares `record[\"chain_hash\"]` and `proof[\"chain_hash\"]` when both are truthy. Concrete trace: if `record = {\"sealed_body\": {\"seq\": 7}}` and `proof = {\"chain_hash\": \"sha256:...valid...\", \"proof\": [...], \"merkle_root\": root}`, then `record_hash=\"\"`, `proof_hash=\"sha256:...\"`, mismatch branch is skipped, and verification proceeds solely on `proof`. Expected for a self-contained bundle verifier is rejection because record/proof binding is absent. Conclusion: confirmed interface/correctness flaw.\n\nVERDICT: CONFIRM C0175 | Premises: `export_bundle()` calls `_index.search(experiment=..., finding_id=..., model=..., round_idx=...)` and omits `artifact_type`, so the public entity-filter path cannot restrict bundles by type even though `query()` can. Concrete trace: with records in same round for `model_chat_log`, `health_scan`, and `policy_snapshot`, `export_bundle(model=\"Gemini\", round_idx=5)` includes all three. If a caller needs only a report bundle, there is no corresponding parameter. Conclusion: confirmed interface incompleteness.\n\nVERDICT: CONFIRM C0134 | Premises: `trace_finding()` appends events in record-index order, then sorts only by `timestamp_utc`. Python sort is stable, so ties preserve append order, but chronology is derived from wall-clock strings rather than append order. Verification chain context explicitly states timestamps are claimed wall-clock UTC and do not prove accuracy. Concrete trace: record 0 timestamp `\"2026-01-01T10:00:01Z\"`, record 1 timestamp `\"2026-01-01T09:59:59Z\"` due to skew/manual timestamp; trace returns record 1 before record 0, contradicting chain order. Conclusion: confirmed correctness flaw in provenance ordering semantics.\n\nVERDICT: CONFIRM C0100 | Premises: `summary()` reports `merkle_root` computed from all current records, not the last sealed epoch root, while the `StoreSummary` field name is unqualified and the module doc describes verification against published epoch roots. Concrete trace: chain has 10 records, epoch sealed at 8, then 2 more records appended; `summary().epoch_count == 1` but `summary().merkle_root` is root over 10, not the only epoch root available for publication. This is semantically misleading. Conclusion: confirmed completeness/interface flaw.\n\nFALSIFICATION P-PASS:\n- Pass 1: looked for unregistered crashes in `from_chain_file`, `query`, `trace_finding`, `export_bundle`, `verify_bundle`, `summary`. Candidate issues found overlapped registry items around finding-id extraction, bundle verification binding, and trace classification.\n- Pass 2: tried to derive a new issue from `EvidenceRecord.from_chain_record` handling of metadata types. The code can raise if `metadata` is non-dict, but `verification_chain.append_record()` and `_build_sealed_body()` treat metadata as optional dict and existing registry already contains multiple interface/validation issues around malformed bundle/record handling. Novelty insufficient.\n- Pass 3: tested whether `trace_finding()` omits inclusion proofs despite module doc promising them. `ProvenanceEvent` lacks proof material, but registry already contains completeness/provenance findings and multiple trace-related confirmed items; unable to isolate a distinct new root cause from visible registry.\n- Pass 4: tested import hygiene (`os`, `Sequence`, `Tuple` unused). Low consequence only; below PoC threshold.\n- Pass 5: re-checked for distributed-systems-relevant failure modes. No additional confirmed end-to-end blockers in `evidence.py` beyond registered issues.\n\nCORROBORATION:\n- Claim class: no-novel-finding report.\n- R_old = 0.5\n- \u03b7 = 0.2 (registry depletion is strong; most candidates matched existing findings)\n- d = 0.8 (independent pass focused on interface contracts and chronology semantics)\n- p = 0.65 (moderate capability for this flaw class)\n- \u03c3 = 1.0 (no code fix proposed; reporting only)\n- \u03bd = 0.0 (no modification proposed)\n\nWorking:\n- q = \u03b7 \u00b7 d \u00b7 p = 0.2 \u00b7 0.8 \u00b7 0.65 = 0.104\n- R_det = 0.5 \u00b7 (1 \u2212 0.104) / (1 \u2212 0.104 \u00b7 0.5) = 0.448 / 0.948 = 0.4726\n- R_base = 1.0 \u00b7 0.4726 + 0.0 \u00b7 0.5 = 0.4726\n- R_k = 0.4726 \u00b7 (1 \u2212 0.0) + 0.0 = 0.4726\n\nDefinitive stance: no new discovery is justified this round; the useful output is confirmation of C0181, C0175, C0134, and C0100.",
+    "ChatGPT": "CONFIRM C0181 \u2014 `verify_bundle()` compares `record.get(\"chain_hash\")` against proof `chain_hash`, but exported records are raw chain records with top-level `chain_hash`; this is a confirmed correctness fix and aligns with `VerificationChain.build_inclusion_proof()` / `verify_inclusion_proof()` contract.\n\nEXTEND C0181 | FOLLOW: because `verify_bundle()` only compares hashes when both are truthy, any malformed bundle record missing top-level `chain_hash` skips the consistency guard and falls through to proof verification. Concrete trace: `record = {\"sealed_body\": {...}}`, `proof = {\"chain_hash\": valid_hash, \"proof\": [...], \"merkle_root\": root}` \u21d2 `record_hash=\"\"`, `proof_hash=valid`, mismatch check skipped, `verify_inclusion_proof()` can still return True based solely on the proof. Result: the bundle verifier may accept a bundle whose displayed record content is not bound to the verified proof. Simplest sufficient fix is not just path correction but fail-closed presence enforcement: require non-empty top-level `record[\"chain_hash\"]` and exact equality with `proof[\"chain_hash\"]`, else error.  \nFALSIFICATION: FALSIFIER: raw bundle records might already nest `chain_hash` under `sealed_body`, making presence enforcement wrong. ATTEMPT: traced `export_bundle()`; it appends `raw_records[i]` directly from `VerificationChain.records`, whose schema stores `chain_hash` at record top level. RESULT: falsifier fails; top-level presence is required by the actual interface.  \nCORROBORATION: R_old=0.5, \u03b7=0.35, d=0.55, p=0.9, \u03c3=0.95, \u03bd=0.03. q=0.17325. R_det=0.4529. R_base=0.4553. R_k=0.4716.\n\nDISCOVERY\nFINDING_ID: F040\nSEVERITY: 0.89\nFLAW_CLASS: 2\nABSTRACTION_INDEX: 0.56\nFIND: `EvidenceStore.export_bundle()` cannot export by `artifact_type` even though the module contract explicitly advertises \u201centity-indexed queries \u2014 by experiment, model, round, finding, type\u201d and `query()` supports `artifact_type`. Location: `EvidenceStore.export_bundle()` signature and its `_index.search(...)` call omit `artifact_type`. Evidence from code: signature accepts only `record_indices`, `finding_id`, `model`, `round_idx`, `experiment`; call site passes only those four filters. Concrete example: `store.query(artifact_type=\"experiment_report\")` returns matching records, but there is no corresponding `store.export_bundle(artifact_type=\"experiment_report\")`; attempting that call raises `TypeError: got an unexpected keyword argument 'artifact_type'`.\nFOLLOW: This blocks one of the evidence layer\u2019s advertised end-to-end paths: type-scoped external audit bundles. A reviewer can discover records by type, but cannot export the same set as a self-contained proof package without first doing a separate query and manually extracting indices. That breaks interface symmetry between query and export, increases caller-side glue code, and makes \u201cexport evidence for all policy snapshots / experiment reports / health scans\u201d fail on the happy path for PoC consumers using the documented entity model.\nANALYSE: HARD, CONFIRMED. This is an interface-contract mismatch in the reviewed module, not a preference issue.\nFIX: Add `artifact_type: Optional[str] = None` to `export_bundle()` and pass it through to `_index.search(...)`.\n<<<<\n    def export_bundle(\n        self,\n        record_indices: Optional[List[int]] = None,\n        finding_id: Optional[str] = None,\n        model: Optional[str] = None,\n        round_idx: Optional[int] = None,\n        experiment: Optional[str] = None,\n    ) -> EvidenceBundle:\n...\n            indices = self._index.search(\n                experiment=experiment,\n                finding_id=finding_id,\n                model=model,\n                round_idx=round_idx,\n            )\n====\n    def export_bundle(\n        self,\n        record_indices: Optional[List[int]] = None,\n        finding_id: Optional[str] = None,\n        model: Optional[str] = None,\n        round_idx: Optional[int] = None,\n        experiment: Optional[str] = None,\n        artifact_type: Optional[str] = None,\n    ) -> EvidenceBundle:\n...\n            indices = self._index.search(\n                experiment=experiment,\n                finding_id=finding_id,\n                model=model,\n                round_idx=round_idx,\n                artifact_type=artifact_type,\n            )\n>>>>\nFALSIFICATION: FALSIFIER: bundle export may be intentionally narrower than query, with callers expected to use `record_indices` for type export. ATTEMPT: checked module docstring and task statement. The module claims entity-indexed queries by type and evidence bundle export as a first-class capability of the same semantic layer; no doc states export is intentionally missing type support. Also traced `query()` and `_EvidenceIndex.search()`, which already support type filtering, so plumbing exists and omission is local to `export_bundle()`. RESULT: falsifier fails; this is a confirmed interface gap. Fix-break test: adding one optional parameter only threads an existing filter into existing search logic; no cross-interface schema change required.\nCORROBORATION: R_old=0.5, \u03b7=0.82, d=0.74, p=0.88, \u03c3=0.96, \u03bd=0.04. q=0.534016. R_det=0.3176. R_base=0.3249. R_k=0.3519.\n\nDISCOVERY\nFINDING_ID: F041\nSEVERITY: 0.84\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.42\nFIND: `EvidenceRecord.from_chain_record()` stores `meta.get(\"round\", -1)` into `round_idx` without type normalization, while downstream index/search assumes rounds are integers. Location: `EvidenceRecord.from_chain_record()` and `_EvidenceIndex.__init__()`. Evidence from code: `round_idx` field is typed `int`, but assignment is unvalidated; `_EvidenceIndex.__init__()` does `if rec.round_idx >= 0: self.by_round[rec.round_idx].append(i)`. Concrete example: if chain metadata contains `\"round\": \"5\"` (string), record construction succeeds but index build evaluates `\"5\" >= 0`, raising `TypeError`. If metadata contains `\"round\": 5.0`, it indexes under float key `5.0`; later `query(round_idx=5)` may coincide by Python numeric key equality, but `rounds` property returns `[5.0]`, violating the declared `List[int]` contract.\nFOLLOW: This is on the load path. One malformed-but-plausible record prevents `EvidenceStore` construction entirely, so no query, trace, summary, or bundle export works. In PoC terms that is high severity because the evidence layer fails to open the chain. Even when it does not crash (e.g. float), summary and API typing become silently wrong.\nANALYSE: HARD, CONFIRMED. The module\u2019s own dataclass contract and indexing logic require integer rounds; unvalidated external metadata crosses an interface boundary from `VerificationChain`.\nFIX: Normalize `meta[\"round\"]` to an integer during record construction, else fall back to `-1`.\n<<<<\n        er.round_idx = meta.get(\"round\", -1)\n====\n        round_val = meta.get(\"round\", -1)\n        er.round_idx = round_val if isinstance(round_val, int) and round_val >= 0 else -1\n>>>>\nFALSIFICATION: FALSIFIER: upstream chain writer may always emit integer rounds, making this unreachable in practice. ATTEMPT: checked `VerificationChain.append_record()` in context; it accepts arbitrary `metadata` and does no schema enforcement. `EvidenceStore.from_chain_file()` loads persisted JSON from disk, so string/inconsistent metadata is a real interface possibility. RESULT: falsifier fails; the evidence layer must defend itself at load time. Fix-break test: tried counterexample `round_val=True`; because `bool` is an `int` subclass in Python, the proposed fix would wrongly accept it as round 1. Revised fix should exclude bool: `isinstance(round_val, int) and not isinstance(round_val, bool)`. That survives the falsification pass.\nCORROBORATION: R_old=0.5, \u03b7=0.78, d=0.79, p=0.84, \u03c3=0.9, \u03bd=0.05. q=0.517608. R_det=0.3251. R_base=0.3426. R_k=0.3755.\n\nDISCOVERY\nFINDING_ID: F042\nSEVERITY: 0.81\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.38\nFIND: `trace_finding()` claims \u201cchronological provenance trace\u201d but sorts timestamps lexicographically as raw strings, not by normalized time. Location: `trace_finding()` final sort `events.sort(key=lambda e: e.timestamp_utc)`. Evidence from context interface: `VerificationChain` normalizes timestamps only when records are appended through its API, but `load_json()` accepts persisted records as-is and `EvidenceStore` trusts them. Concrete example with two loaded records referencing the same finding: `\"2026-04-05T10:00:00+01:00\"` and `\"2026-04-05T09:30:00Z\"`. Real UTC order is 09:00Z then 09:30Z, but lexicographic sort places `+01:00` string after or before incorrectly depending on formatting, so provenance order can be wrong.\nFOLLOW: Wrong event order degrades the core provenance feature. Reviewers using traces to inspect lifecycle can see verdicts before submissions or later references before earlier ones. That is silently misleading output, which is HIGH in this PoC because the point of the layer is auditability and chronological traceability.\nANALYSE: HARD, CONFIRMED. \u201cChronological\u201d is an explicit contract; raw string ordering is not equivalent across timezone-offset representations.\nFIX: Normalize timestamps before sorting, using the same parser logic as the chain.\n<<<<\n        events.sort(key=lambda e: e.timestamp_utc)\n====\n        from bench.verification_chain import _normalize_timestamp\n        events.sort(key=lambda e: _normalize_timestamp(e.timestamp_utc))\n>>>>\nFALSIFICATION: FALSIFIER: all persisted timestamps might already be canonical UTC `Z`, making string sort safe. ATTEMPT: checked `VerificationChain.load_json()`: it preserves loaded records without re-normalizing, so externally supplied or older persisted records with offsets remain possible. Also `EvidenceStore` is documented as loading existing chain files, not only freshly appended in-memory chains. RESULT: falsifier fails within interface scope. Fix-break test: malformed timestamp would cause `_normalize_timestamp` to raise during trace. That is acceptable only if caller should fail on malformed chain data; if not, safer minimal variant is sort by normali",
+    "CC2": "**Round 13 \u2014 CC2 (Claude Opus 4.6)**\n\n**Depletion assessment:** \u03b3=0.503, \u03c1=0.182. Strong depletion confirmed. I have reviewed the full registry and evidence.py source. Most significant bugs are covered. I file one finding I believe to be semantically novel, plus verdicts on key open entries.\n\n---\n\n## VERDICTS\n\n**CONFIRM C0156** \u2014 verify_bundle correctness issue is real and high-severity.\n\n**CONFIRM C0131** \u2014 EvidenceRecord.from_chain_record correctness finding is valid.\n\n**CONFIRM C0005** \u2014 Merkle root computation finding is valid; the code now computes from all records (matching build_inclusion_proof), so this appears addressed in current source.\n\n**CONFIRM C0122** \u2014 Logic finding is valid.\n\n**CONFIRM C0175** \u2014 Interface mismatch finding is real.\n\n**EXTEND C0101** | The `trace_finding` timestamp sort has an additional failure mode beyond what F022 describes \u2014 see F040 below.\n\n---\n\n## NEW FINDING\n\n**FINDING_ID:** F040\n**SEVERITY:** 0.65\n**FLAW_CLASS:** 5 (correctness)\n**ABSTRACTION_INDEX:** 0.48\n\n**FIND:** `trace_finding` sorts events by `timestamp_utc` using string comparison (line: `events.sort(key=lambda e: e.timestamp_utc)`). ISO 8601 string comparison fails when timestamps have mixed sub-second precision. `_utc_now()` produces `\"2026-04-09T10:00:00Z\"` (no fractional seconds), while `_normalize_timestamp()` preserves input precision via `datetime.isoformat()`, producing e.g. `\"2026-04-09T10:00:00.500000Z\"`. At position 19, `\".\"` (0x2E) < `\"Z\"` (0x5A), so `\"...T10:00:00.500000Z\"` sorts BEFORE `\"...T10:00:00Z\"` despite being chronologically simultaneous or later. Any chain with a mix of default-timestamped and externally-timestamped records produces incorrect provenance ordering.\n\n**FOLLOW:** `trace_finding` is the primary provenance interface. Incorrect chronological ordering means an auditor sees events out of sequence \u2014 a CONFIRM could appear before the submission it confirms. This silently corrupts the provenance narrative without any error signal. Downstream consumers (evidence bundles, audit reports) that rely on trace ordering inherit the defect.\n\n**ANALYSE:** Correct chronological ordering in an audit trace is a HARD constraint (data integrity for provenance). CONFIRMED \u2014 the ASCII ordering of \".\" vs \"Z\" is deterministic and reproducible.\n\n**FIX:**\n```\n<<<< OLD\n        events.sort(key=lambda e: e.timestamp_utc)\n==== NEW\n        from datetime import datetime, timezone\n        def _parse_ts(ts: str) -> datetime:\n            if ts.endswith(\"Z\"):\n                return datetime.fromisoformat(ts[:-1] + \"+00:00\")\n            return datetime.fromisoformat(ts)\n        events.sort(key=lambda e: _parse_ts(e.timestamp_utc))\n>>>>\n```\n\n**FALSIFICATION:**\n- **FALSIFIER:** The string sort produces correct chronological order for all realistic timestamp pairs.\n- **ATTEMPT:** Constructed concrete comparison: `\"2026-04-09T10:00:00.500000Z\" < \"2026-04-09T10:00:00Z\"` evaluates to `True` in Python (verified: `ord(\".\") = 46 < ord(\"Z\") = 90`). Chronologically, 10:00:00.5 \u2265 10:00:00, so the sort is wrong. The conditions for this to manifest: (1) at least one record uses `_normalize_timestamp` with sub-second input, (2) another record in the same trace uses `_utc_now()`. Condition (1) occurs when `append_record` receives an explicit timestamp with fractional seconds.\n- **RESULT:** Falsifier satisfied \u2014 string sort produces incorrect ordering. Claim holds.\n- **Fix falsification:** The datetime-based sort parses every timestamp into a proper datetime object before comparison, eliminating format-dependent ordering. Would the parse fail? `_normalize_timestamp` guarantees RFC 3339 output, so `fromisoformat` handles both formats. Confirmed safe.\n\n**CORROBORATION:**\n- R_old = 0.5 (new finding, default prior)\n- \u03b7 = 0.7 (registry has trace_finding findings but none specifically about mixed-precision timestamp sort failure \u2014 partially novel)\n- d = 0.6 (ASCII code-point analysis is a different approach from most registry findings which focus on structural/logic issues)\n- p = 0.85 (string comparison semantics are deterministic and verifiable)\n- \u03c3 = 0.9 (datetime parsing is a well-understood fix)\n- \u03bd = 0.05 (localised change, no shared state modified)\n- q = \u03b7 \u00d7 d \u00d7 p = 0.7 \u00d7 0.6 \u00d7 0.85 = 0.357\n- R_det = 0.5 \u00d7 (1 \u2212 0.357) / (1 \u2212 0.357 \u00d7 0.5) = 0.5 \u00d7 0.643 / 0.8215 = 0.391\n- R_base = 0.9 \u00d7 0.391 + 0.1 \u00d7 0.5 = 0.352 + 0.05 = 0.402\n- R_k = 0.402 \u00d7 (1 \u2212 0.05) + 0.05 = 0.382 + 0.05 = 0.432\n- \u03bd* = \u03c3 \u00d7 R \u00d7 q / (1 \u2212 q \u00d7 R \u00d7 (1 \u2212 \u03c3)) = 0.9 \u00d7 0.5 \u00d7 0.357 / (1 \u2212 0.357 \u00d7 0.5 \u00d7 0.1) = 0.161 / 0.982 = 0.164\n- \u03bd (0.05) < \u03bd* (0.164): cycle is convergent. Proceed.\n\n---\n\n**Honest status:** With \u03b3 > 0.45 and 187 findings in registry, the evidence layer has been thoroughly reviewed. Most remaining novel discoveries will be edge cases in the MEDIUM severity range. The major correctness bugs (verify_bundle hash comparison, finding ID regex over-matching, _classify_event gaps, missing artifact_type in export_bundle) are all registered and confirmed. Further rounds on this artifact will yield diminishing returns.",
+    "DeepSeek": "**Layer 4 \u2014 Conversational Context**\n\nI\u2019ve reviewed `evidence.py` against the registry. Given the strong depletion (\u03b3=0.503) and low discovery efficiency (\u03c1=0.182), novel findings are scarce. The registry already contains extensive coverage of the regex pattern, event classification, bundle verification, and index behavior. My analysis confirms most open findings are correct, and the remaining issues are either low\u2011severity or already captured.\n\nAfter applying the four\u2011layer protocol, I identify one novel completeness issue that has not been explicitly registered: the index does not support querying for missing entity values (round=-1, empty experiment/model). This is a direct consequence of the index\u2011building logic, which excludes those values, breaking the query API\u2019s ability to filter for records without a round, experiment, or model.\n\nI also issue confirmations on two high\u2011severity open findings where I have independent evidence.\n\n---\n\n**FINDING_ID**: CODEX\u2011EVID\u2011001  \n**SEVERITY**: 0.80  \n**FLAW_CLASS**: 4 (completeness)  \n**ABSTRACTION_INDEX**: 0.3  \n\n### Layer 1 \u2014 Structured Certificate  \n*Premises*  \n1. `_EvidenceIndex.__init__` indexes a record\u2019s `round_idx` only if `rec.round_idx >= 0`.  \n2. It indexes `experiment` and `model` only if the string is non\u2011empty.  \n3. `_EvidenceIndex.search` uses dictionary membership (`key in index_map`) to intersect candidates.  \n4. If a key is not present in the index map (e.g., `-1` for rounds, `\"\"` for experiment/model), `_intersect` sets `candidates = set()` \u2192 empty result.  \n\n*Concrete example*  \n- Record R has `round_idx=-1`, `experiment=\"\"`, `model=\"\"`.  \n- `by_round` contains no key `-1`; `by_experiment` and `by_model` contain no key `\"\"`.  \n- Query `store.query(round_idx=-1)` \u2192 `_intersect(self.by_round, -1)` \u2192 `-1 not in self.by_round` \u2192 `candidates = set()` \u2192 returns `[]`.  \n- Expected: return R (and any other records with `round_idx=-1`).  \n\n*Formal conclusion*  \nThe index does not support querying for missing entity values, breaking the query API\u2019s completeness.\n\n### Layer 2 \u2014 FIND\u2011FOLLOW\u2011ANALYSE\u2011FIX  \n**FIND**: Index does not allow querying for missing entity values (`round_idx=-1`, empty `experiment`/`model`).  \nLocation: `_EvidenceIndex.__init__` (lines 190\u2011195) and `_EvidenceIndex.search` (lines 207\u2011223).  \nEvidence: Index\u2011building conditions exclude `round_idx < 0` and empty strings; search relies on index membership.\n\n**FOLLOW**:  \n- `EvidenceStore.query` uses this index \u2192 users cannot filter for records without a round, experiment, or model.  \n- `EvidenceStore.finding_ids`, `models`, `rounds`, `artifact_types` properties are unaffected (they list existing keys).  \n- `EvidenceStore.export_bundle` with `round_idx=-1` returns no records, even if some exist without a round.  \n- Downstream: audit trails, evidence bundles, and statistical summaries become incomplete for missing\u2011value records.\n\n**ANALYSE**:  \nConstraint: HARD (API completeness).  \nStatus: **CONFIRMED** by code inspection and trace.\n\n**FIX**: Remove the conditions that skip indexing of missing values.  \n<<<< OLD  \n```python\n        for rec in records:\n            i = rec.index\n            if rec.experiment:\n                self.by_experiment[rec.experiment].append(i)\n            if rec.model:\n                self.by_model[rec.model].append(i)\n            if rec.round_idx >= 0:\n                self.by_round[rec.round_idx].append(i)\n            self.by_type[rec.artifact_type].append(i)\n            for fid in rec.finding_ids:\n                self.by_finding[fid].append(i)\n```\n==== NEW  \n```python\n        for rec in records:\n            i = rec.index\n            self.by_experiment[rec.experiment].append(i)\n            self.by_model[rec.model].append(i)\n            self.by_round[rec.round_idx].append(i)\n            self.by_type[rec.artifact_type].append(i)\n            for fid in rec.finding_ids:\n                self.by_finding[fid].append(i)\n```\n>>>>\n\n### Layer 3 \u2014 Iterated Falsification  \n**Falsifier**: The index might already handle missing values via a fallback or the search function might treat missing keys as \u201cmatch all\u201d.  \n**Attempt**:  \n- Pass 1: Re\u2011read `_EvidenceIndex.search`. The `_intersect` helper returns empty set when key not in index map. No fallback.  \n- Pass 2: Construct mental test: record with `round_idx=-1` is not added to `by_round`. Query with `round_idx=-1` \u2192 `-1 not in by_round` \u2192 `candidates = set()`.  \n- Pass 3: Check whether any other code path (e.g., `export_bundle`) compensates. It calls `_index.search` directly \u2192 same behavior.  \n**Result**: Finding stands; no disproof.\n\n### Layer 4 \u2014 CORROBORATION (Residual Risk)  \nR_old = 0.5 (default prior)  \n\u03b7 = 0.9 (novelty: registry has index\u2011related findings but none about missing\u2011value querying)  \nd = 0.7 (diversity: static analysis + trace examples, different from regex or classification approaches)  \np = 0.9 (capability: straightforward logic bug)  \n\u03c3 = 0.95 (fix quality: one\u2011line change, no side effects)  \n\u03bd = 0.02 (re\u2011injection: change is local to index building)  \n\nq = \u03b7\u00b7d\u00b7p = 0.9\u00b70.7\u00b70.9 = 0.567  \nR_det = R_old\u00b7(1\u2011q)/(1\u2011q\u00b7R_old) = 0.5\u00b7(1\u20110.567)/(1\u20110.567\u00b70.5) = 0.5\u00b70.433/(1\u20110.2835) = 0.2165/0.7165 \u2248 0.302  \nR_base = \u03c3\u00b7R_det + (1\u2011\u03c3)\u00b7R_old = 0.95\u00b70.302 + 0.05\u00b70.5 = 0.2869 + 0.025 = 0.3119  \nR_k = R_base\u00b7(1\u2011\u03bd) + \u03bd = 0.3119\u00b70.98 + 0.02 = 0.3057 + 0.02 = 0.3257  \n\nResidual risk R_k \u2248 0.33. The cycle reduces risk by \u0394R \u2248 0.174.\n\n---\n\n**VERDICT on existing registry entries**  \n\n**CONFIRM C0181**  \nI independently verify the chain\u2011hash mismatch check in `EvidenceStore.verify_bundle` is necessary and correctly implemented. The fix shown in the registry snippet aligns with the code I see.\n\n**CONFIRM C0156**  \nThe `_classify_event` function\u2019s use of `json.dumps` and substring search is indeed fragile and can produce false positives/negatives. The finding\u2019s severity (0.95) is justified; the proposed fix (structured verdict detection) is correct.\n\n---\n\n**Summary**  \nOne novel finding (index completeness) and two confirmations. Given the depletion metrics, I have no further novel findings above the consequence threshold. The evidence layer is otherwise functionally sound for PoC purposes.",
+    "Gemini": "### Layer 4 \u2014 Conversational Analysis & System Status\nThe `evidence.py` layer provides a semantic wrapper around the underlying cryptographic `VerificationChain`. The architecture correctly separates read-only indexing from the immutable chain. However, because it trusts the structural integrity of the underlying dictionary objects without runtime validation (relying instead on the consumer to manually trigger verification), it violates the `fail_closed_unassessed` constraint. Additionally, type assumptions during indexing create brittle failure modes where a single malformed metadata field can crash the entire layer.\n\nI am issuing **CONFIRM** verdicts on two critical regex/string matching bugs (C0029, C0141) and filing three novel structural discoveries (F045, F046, F048) alongside one interface completeness finding (F047). I am actively skipping C0118 and C0109 as they are correctly settled.\n\n---\n\n### Layer 1 & 2 \u2014 Structured Certificates & Findings\n\nFINDING_ID: F048\nSEVERITY: 0.95\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.8\nFIND: `EvidenceStore` violates the `fail_closed_unassessed` policy constraint by allowing reads on unverified chains. The `from_chain_file` and `from_experiment_dir` methods load the chain and build the index without automatically calling `.verify()`, and the query methods (`query`, `trace_finding`, `export_bundle`) do not check if `self._verified` is `True`. \nFOLLOW: An auditor loading a tampered chain will silently receive corrupted records. Because the system defaults to trusting unassessed data rather than failing closed, downstream audit reports will confidently display false provenance.\nANALYSE: HARD constraint (fail_closed_unassessed). CONFIRMED.\nFIX:\n<<<< OLD\n        indices = self._index.search(\n            experiment=experiment,\n            model=model,\n            round_idx=round_idx,\n            artifact_type=artifact_type,\n            finding_id=finding_id,\n        )\n==== NEW\n        if self._verified is False or (self._verified is None and not self.verify()[0]):\n            raise RuntimeError(\"Chain verification failed; queries unsafe\")\n        indices = self._index.search(\n            experiment=experiment,\n            model=model,\n            round_idx=round_idx,\n            artifact_type=artifact_type,\n            finding_id=finding_id,\n        )\n>>>>\nFALSIFICATION:\nFALSIFIER: The constructor or load methods verify the chain inherently.\nATTEMPT: Traced `from_chain_file()` execution. It strictly calls `VerificationChain.load_json()` and `cls(chain, experiment)`. `__init__` sets `self._verified = None`. A query can be executed immediately while the integrity status remains `None`. Falsifier defeated.\nCORROBORATION:\nR_old = 0.5. \u03b7 = 1.0 (novel), d = 0.9 (policy trace), p = 0.9 (capability). q = 0.81. R_det = 0.5 * 0.19 / (1 - 0.405) = 0.159. \u03c3 = 0.98. R_base = 0.98 * 0.159 + 0.02 * 0.5 = 0.165. \u03bd = 0.01. R_k = 0.165 * 0.99 + 0.01 = 0.173.\n\nFINDING_ID: F045\nSEVERITY: 0.85\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.4\nFIND: `EvidenceRecord.from_chain_record` blindly assigns the raw value of `metadata[\"round\"]` to `er.round_idx`. If a record contains a string value (e.g. `{\"round\": \"3\"}`), the subsequent check in `_EvidenceIndex.__init__` (`if rec.round_idx >= 0:`) crashes with `TypeError`.\nFOLLOW: `VerificationChain.append_record` does not strictly enforce the schema of the `metadata` dictionary. A single record with a string-typed round will permanently prevent the `EvidenceStore` from initializing, resulting in a denial-of-service against the query layer for that chain.\nANALYSE: HARD constraint (availability / type safety). CONFIRMED.\nFIX:\n<<<< OLD\n        # Extract entity references from metadata\n        er.experiment = meta.get(\"experiment\", \"\")\n        er.model = meta.get(\"model\", \"\")\n        er.round_idx = meta.get(\"round\", -1)\n==== NEW\n        # Extract entity references from metadata\n        er.experiment = meta.get(\"experiment\", \"\")\n        er.model = meta.get(\"model\", \"\")\n        try:\n            er.round_idx = int(meta.get(\"round\", -1))\n        except (ValueError, TypeError):\n            er.round_idx = -1\n>>>>\nFALSIFICATION:\nFALSIFIER: The `VerificationChain` enforces integer typing for `round` before writing to disk.\nATTEMPT: Examined `VerificationChain.append_record` in the provided context. It accepts `metadata: Optional[dict] = None` and serializes it without schema validation. The string survives into the chain. Falsifier defeated.\nCORROBORATION:\nR_old = 0.5. \u03b7 = 1.0, d = 0.9, p = 0.9. q = 0.81. R_det = 0.159. \u03c3 = 0.99. R_base = 0.162. \u03bd = 0.01. R_k = 0.170.\n\nFINDING_ID: F046\nSEVERITY: 0.70\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.3\nFIND: `_EvidenceIndex.__init__` uses truthiness checks (`if rec.experiment:`) that silently drop records with empty strings from the `by_experiment` and `by_model` lookup tables.\nFOLLOW: Records representing system-level events, health scans, or genesis states typically omit the model or experiment attribute (resulting in `\"\"`). Because they are dropped from the index, a query explicitly searching for them (`store.query(model=\"\")`) will incorrectly return an empty list rather than the matching records.\nANALYSE: SOFT constraint (query completeness). CONFIRMED.\nFIX:\n<<<< OLD\n            if rec.experiment:\n                self.by_experiment[rec.experiment].append(i)\n            if rec.model:\n                self.by_model[rec.model].append(i)\n==== NEW\n            self.by_experiment[rec.experiment].append(i)\n            self.by_model[rec.model].append(i)\n>>>>\nFALSIFICATION:\nFALSIFIER: Empty strings are an invalid querying state; `None` is used instead.\nATTEMPT: Checked `EvidenceRecord.from_chain_record()`. Missing fields default to explicit empty strings (`meta.get(\"model\", \"\")`). A caller looking for unassigned records must pass `\"\"`. Falsifier defeated.\nCORROBORATION:\nR_old = 0.5. \u03b7 = 1.0, d = 0.8, p = 0.8. q = 0.64. R_det = 0.264. \u03c3 = 0.98. R_base = 0.268. \u03bd = 0.01. R_k = 0.275.\n\nFINDING_ID: F047\nSEVERITY: 0.75\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.4\nFIND: `_classify_event` fails to classify the source finding of a `MERGE` operation. The protocol string `MERGE C0001 <- C0042` contains `f\"MERGE C0001\"`, but does not contain `f\"MERGE C0042\"`. \nFOLLOW: When an auditor traces the provenance of `C0042`, the event parser falls through to the default, misclassifying the terminal merge action as a mere \"submitted\" event. This breaks the lifecycle audit trail for merged findings.\nANALYSE: HARD constraint (correctness). CONFIRMED.\nFIX:\n<<<< OLD\n            if f\"MERGE {finding_id}\" in payload_str:\n                return \"merged\"\n==== NEW\n            if f\"MERGE {finding_id}\" in payload_str or f\"<- {finding_id}\" in payload_str:\n                return \"merged\"\n>>>>\nFALSIFICATION:\nFALSIFIER: `<-` is not a strict protocol standard, risking false positives.\nATTEMPT: Verified the mandated communication topology rules in the prompt: `\"MERGE C0001 <- [your_finding_id]\"`. The string is exact and standardized. Falsifier defeated.\nCORROBORATION:\nR_old = 0.5. \u03b7 = 1.0, d = 0.9, p = 0.8. q = 0.72. R_det = 0.218. \u03c3 = 0.95. R_base = 0.232. \u03bd = 0.02. R_k = 0.247.\n\nFINDING_ID: C0029\nSEVERITY: 0.85\nFLAW_CLASS: 6\nABSTRACTION_INDEX: 0.3\nFIND: CONFIRM C0029. The `_FINDING_ID_RE` regex `\\b[A-Za-z]\\d{3,5}\\b` strictly bounds the prefix to exactly one letter. It silently misses valid IDs generated by different models (e.g., `DS001`, `CC2-EVID-002`).\nFOLLOW"
+  },
+  "model_responses_truncated": {
+    "ChatGPT": true
+  }
+}

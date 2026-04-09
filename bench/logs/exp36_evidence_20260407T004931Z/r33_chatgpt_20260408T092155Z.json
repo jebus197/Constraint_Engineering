@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T092155Z",
+  "phase": "r33",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2537,
+  "response": "{\n  \"discoveries\": [\n    {\n      \"FINDING_ID\": \"F001\",\n      \"SEVERITY\": 0.82,\n      \"FLAW_CLASS\": 5,\n      \"ABSTRACTION_INDEX\": 0.42,\n      \"DESCRIPTION\": \"FIND: bench/evidence.py, EvidenceStore.summary(), lines 452-468. For unsealed chains (`self._chain.epochs` empty), `summary()` returns `merkle_root=\\\"\\\"` even though `export_bundle()` computes a Merkle root over all current records when no epoch exists. Evidence: `summary()` sets `merkle_root = epochs[-1][\\\"merkle_root\\\"] if epochs else \\\"\\\"`, while `export_bundle()` explicitly computes `\\\"sha256:\\\" + rfc9162_merkle_root(leaves).hex()` in the `else` branch when `epochs` is empty. This yields inconsistent store state reporting for the same underlying chain: bundles expose a verifiable root, but summary claims no root.\",\n      \"FOLLOW\": \"This inconsistency propagates to any consumer using `summary()` as the advertised root source for external verification. A PoC reviewer can export a bundle from an unsealed chain, then compare against `summary().merkle_root` and conclude the bundle is unverifiable or mismatched. It also makes the 'Store summary — record counts by type, model, round' interface misleading because the returned summary omits a cryptographically meaningful value that the module itself already knows how to compute for the same chain state.\",\n      \"PROPOSED_FIX\": \"ANALYSE: CONFIRMED\\nFIX:\\n<<<<\\n        epochs = self._chain.epochs\\n        merkle_root = epochs[-1][\\\"merkle_root\\\"] if epochs else \\\"\\\"\\n====\\n        epochs = self._chain.epochs\\n        if epochs:\\n            merkle_root = epochs[-1][\\\"merkle_root\\\"]\\n        elif self._records:\\n            leaves = [_digest_bytes(r.chain_hash) for r in self._records]\\n            merkle_root = \\\"sha256:\\\" + rfc9162_merkle_root(leaves).hex()\\n        else:\\n            merkle_root = \\\"\\\"\\n>>>>\",\n      \"VERIFIED\": true\n    }\n  ],\n  \"verdicts\": [\n    \"CONFIRM C0029 — summary() returns an empty/stale merkle_root that diverges from bundle/export proof material. Evidence directly visible in summary() vs export_bundle().\",\n    \"CONFIRM C0036 — downstream impact includes external consumers reading summary().merkle_root as the verification anchor for exported bundles from unsealed chains.\",\n    \"CONFIRM C0180 — export_bundle() experiment partition loss is confirmed by the method signature and call to _index.search() without an experiment parameter.\",\n    \"CONFIRM C0184 — finding-index-driven APIs systematically omit valid records when finding IDs are not extracted into by_finding.\"\n  ]\n}",
+  "metadata": {
+    "round": 33,
+    "elapsed": 15.6,
+    "chars": 2537,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

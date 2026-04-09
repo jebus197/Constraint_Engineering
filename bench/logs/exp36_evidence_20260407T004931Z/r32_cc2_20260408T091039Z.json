@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T091039Z",
+  "phase": "r32",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1499,
+  "response": "## Round 32 — CC2 Verdicts\n\n### Verdicts on Open Findings\n\n**MERGE C0194 <- C0184** | Same root cause: `_extract_finding_ids` only processes dict payloads, so records with non-dict payloads (strings, lists) are invisible to all finding-ID-dependent operations. C0184 is the canonical entry for this family and is already CONFIRMED.\n\n**MERGE C0195 <- C0184** | Identical root cause and identical downstream consequences (query, trace, export omissions). This is a duplicate of the C0184 family.\n\n**MERGE C0197 <- C0184** | Same finding-ID extraction limitation affecting non-dict payloads. No new information beyond what C0184 already captures.\n\n### New Findings\n\nNo new DISCOVERY findings to file. After 31 rounds and 197 canonical entries, the evidence.py codebase has been exhaustively reviewed. The remaining open findings (C0194, C0195, C0197) are duplicates of the already-confirmed C0184 family. All CRITICAL and HIGH severity bugs have been identified and settled.\n\nThe three bug families that matter for PoC end-to-end operation are all settled:\n\n1. **Finding-ID extraction from non-dict payloads** (C0184 family) — extraction silently skips records where payload is a string/list\n2. **`export_bundle` missing `experiment` parameter** (C0180 family) — bundles can cross-contaminate across experiments\n3. **Finding-ID extraction from metadata** (C0133 family) — IDs in metadata fields are never indexed\n\nAll three have confirmed fixes. No further passes will produce above-threshold findings.",
+  "metadata": {
+    "round": 32,
+    "elapsed": 92.1,
+    "chars": 1499,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

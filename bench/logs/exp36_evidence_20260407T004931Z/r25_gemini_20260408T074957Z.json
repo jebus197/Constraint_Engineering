@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T074957Z",
+  "phase": "r25",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2610,
+  "response": "MERGE C0137 <- F005\n\nFINDING_ID: F005\nSEVERITY: 0.8\nFLAW_CLASS: 4\nABSTRACTION_INDEX: 0.1\nDESCRIPTION: FIND: `_FINDING_ID_RE` uses `r\"\\bC\\d{4}\\b\"`, matching only 4-digit canonical IDs (C0001) but silently missing model-generated finding IDs (e.g., F001). \nFOLLOW: `_extract_finding_ids()` misses local finding IDs in payloads. Consequently, `er.finding_ids` omits them, leading `EvidenceStore.query(finding_id=\"F001\")`, `trace_finding(\"F001\")`, and `export_bundle(finding_id=\"F001\")` to return empty results for valid model findings. This replaces the overbroad `[A-Za-z]` proposal in C0137 with a strict Canonical/Finding prefix check.\nPROPOSED_FIX: FIX\n<<<<\n_FINDING_ID_RE = re.compile(r\"\\bC\\d{4}\\b\")\n====\n_FINDING_ID_RE = re.compile(r\"\\b(?:C|F)\\d{3,4}\\b\")\n>>>>\nVERIFIED: TRUE\n\nFINDING_ID: F006\nSEVERITY: 0.6\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.2\nDESCRIPTION: FIND: In `_classify_event`, the merge detection `f\"MERGE {finding_id}\" in payload_str` matches the source finding ID but misses the target of the merge (e.g., `MERGE C0001 <- F001` misses F001).\nFOLLOW: When tracing the provenance of the target finding (`F001`), the merge event is not recognized and falls through to be misclassified as `\"submitted\"`. `trace_finding` will incorrectly show the merge event as a new submission.\nPROPOSED_FIX: FIX\n<<<<\n            if f\"MERGE {finding_id}\" in payload_str:\n                return \"merged\"\n====\n            if f\"MERGE {finding_id}\" in payload_str or f\"<- {finding_id}\" in payload_str or f\"-> {finding_id}\" in payload_str:\n                return \"merged\"\n>>>>\nVERIFIED: TRUE\n\nFINDING_ID: F007\nSEVERITY: 1.0\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.8\nDESCRIPTION: FIND: `verify_bundle` calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` but NEVER checks that the `proof` belongs to the `record`. It does not assert `record[\"chain_hash\"] == proof[\"chain_hash\"]`.\nFOLLOW: An attacker can construct an evidence bundle with completely tampered `record` contents (e.g., altering verdicts or finding descriptions) while supplying an intact `proof` from a valid record. `verify_bundle` will report the tampered bundle as valid because it blindly verifies the proof without cryptographically linking it to the record.\nPROPOSED_FIX: FIX\n<<<<\n            valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\n            if not valid:\n====\n            if record.get(\"chain_hash\") != proof.get(\"chain_hash\"):\n                valid = False\n            else:\n                valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\n            if not valid:\n>>>>\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 25,
+    "elapsed": 199.1,
+    "chars": 2610,
+    "findings_count": 5,
+    "decomposed": false
+  }
+}

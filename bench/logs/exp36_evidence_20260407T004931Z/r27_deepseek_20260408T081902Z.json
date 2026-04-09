@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260408T081902Z",
+  "phase": "r27",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2286,
+  "response": "**DISCOVERY — NEW FINDING**\n\nFINDING_ID: F001\nSEVERITY: 0.8 (HIGH)\nFLAW_CLASS: 2 (interface)\nABSTRACTION_INDEX: 0.3 (surface)\nDESCRIPTION: \n**FIND:** In `bench/evidence.py`, lines 81-86, `EvidenceRecord.from_chain_record()` sets `er.round_idx = meta.get(\"round\", -1)` without validating the type. The metadata `round` field is user‑supplied and may be a non‑integer (e.g., string, float). When `_EvidenceIndex` is built, the condition `if rec.round_idx >= 0:` (line 148) raises `TypeError` for non‑integer rounds, crashing index construction. Even if the comparison somehow succeeds, the `by_round` index expects integer keys, causing type mismatches in lookups.\n**FOLLOW:** Any record with a non‑integer `round` in its metadata will cause the `_EvidenceIndex` constructor to crash, preventing the `EvidenceStore` from being built. Consequently, all queries (`query()`, `trace_finding()`, `export_bundle()`) will fail. If the comparison does not crash (e.g., string \"5\" >= 0 is allowed in Python 3), the round will be indexed as a string, breaking `query(round_idx=5)` (integer) because the index key is a string.\n**ANALYSE:** CONFIRMED. The code assumes `round` is an integer. No validation or conversion is performed. The condition `rec.round_idx >= 0` fails with `TypeError` when `round_idx` is a non‑numeric string or other non‑comparable type.\n**PROPOSED_FIX:** Convert the round value to an integer if possible; otherwise set to -1 (meaning “unknown round”) to skip indexing. Use safe conversion that rejects non‑integer floats.\n```python\n<<<<\n        # Extract entity references from metadata\n        er.experiment = meta.get(\"experiment\", \"\")\n        er.model = meta.get(\"model\", \"\")\n        er.round_idx = meta.get(\"round\", -1)\n====\n        # Extract entity references from metadata\n        er.experiment = meta.get(\"experiment\", \"\")\n        er.model = meta.get(\"model\", \"\")\n        round_val = meta.get(\"round\", -1)\n        # Convert to integer only if it's an integer value; otherwise set to -1\n        if isinstance(round_val, float) and not round_val.is_integer():\n            er.round_idx = -1\n        else:\n            try:\n                er.round_idx = int(round_val)\n            except (ValueError, TypeError):\n                er.round_idx = -1\n>>>>\n```\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 27,
+    "elapsed": 160.1,
+    "chars": 2286,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

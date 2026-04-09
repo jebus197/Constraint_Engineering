@@ -1,0 +1,86 @@
+=== CDSFL CLASSIFICATION ===
+**Constraint Classes:**
+- Mathematical correctness and algebraic validity: HARD (Physics/Math tier)
+- Logical consistency with CDSFL Appendix: HARD (Physics/Math tier)
+- Unification completeness claims: HARD (Explicit absolute)
+
+**Precedence:** Mathematical proofs take absolute priority. Where the claimed equation contradicts the established formal model in the Appendix, the mathematics will adjudicate.
+
+---
+
+### 1. Verification of the $\pi$-Vanishing Property
+**Status: VERIFIED.**
+
+The algebraic elimination of the prior $\pi$ is correct. The derivation successfully substitutes the miss probability $m$ out of the Bayesian posterior, expressing the new state entirely in terms of the prior state and the current pass's detection probability. 
+
+**Proof of elimination:**
+Starting from $R_{new} = \frac{\pi \cdot m \cdot (1-q)}{(1-\pi) + \pi \cdot m \cdot (1-q)}$ and substituting $m = \frac{R(1-\pi)}{\pi(1-R)}$:
+$$R_{new} = \frac{\pi \cdot \left[\frac{R(1-\pi)}{\pi(1-R)}\right] \cdot (1-q)}{(1-\pi) + \pi \cdot \left[\frac{R(1-\pi)}{\pi(1-R)}\right] \cdot (1-q)}$$
+The $\pi$ terms in the numerator and denominator products cancel immediately. Dividing the entire fraction by $(1-\pi)$ and multiplying by $(1-R)$ yields exactly:
+$$R_{new} = \frac{R(1-q)}{1 - qR}$$
+
+**Edge cases:** $\pi$ never re-enters the recursive loop. It exists exclusively as the initial condition $R_k(0) = \pi_k$. The only boundary condition is $R=1$ (which implies $\pi=1$ and $m>0$), yielding $R_{new} = \frac{1-q}{1-q} = 1$. This correctly preserves the Appendix §1 axiom that a certain flaw ($\pi=1$) cannot be updated away.
+
+### 2. Verification of the Recursive Form
+**Status: VERIFIED.**
+
+The recursive form $R_k(i) = R_k(i-1) \frac{1 - q_{ik}}{1 - q_{ik} R_k(i-1)}$ is a mathematically exact representation of the Bayesian update under the assumption of conditional independence. 
+
+**Proof of Marginal Gain ($\Delta R_k$):**
+$$\Delta R_k = R - R_{new} = R - \frac{R(1-q)}{1-qR} = \frac{R(1-qR) - R(1-q)}{1-qR} = \frac{R - qR^2 - R + qR}{1-qR} = \frac{qR(1-R)}{1-qR}$$
+The claimed marginal gain formula is exact.
+
+### 3. Verification of Special Case Reductions
+**Status: VERIFIED.**
+
+All claimed special cases hold under limit analysis:
+- $q=0 \implies R_{new} = R(1)/1 = R$ (Useless pass leaves risk unchanged).
+- $q=1 \implies R_{new} = R(0)/(1-R) = 0$ for $R \neq 1$ (Perfect pass eliminates risk).
+- $R=0 \implies R_{new} = 0(1-q)/1 = 0$ (Zero risk cannot be increased by detection).
+- $d=0 \implies q=0 \implies R_{new} = R$ (Zero independence yields zero effective detection).
+- Reduction to $R_n = \frac{(1-p)^n}{1 + (1-p)^n}$ holds exactly when $R_0 = 0.5$ and $q_i = p$ for all $i$.
+
+### 4. Adversarial Falsification (Breaking the Equation)
+**Status: VULNERABILITIES FOUND.**
+
+The equation is algebraically sound but structurally vulnerable to domain violations if inputs are not strictly bounded.
+
+**Falsifier 1: $q > 1$ (Over-weighted detection)**
+If an empirical diversity estimator or delivery factor anomaly pushes $q > 1$, the term $(1-q)$ becomes negative. Because $R \in [0,1]$, the denominator $(1-qR)$ can remain positive while the numerator becomes negative, resulting in $R_{new} < 0$. This violates probability axioms. 
+*Resolution:* The equation strictly requires the domain constraint $q_{ik} \in [0,1]$.
+
+**Falsifier 2: $w_k$ summation**
+If $\sum w_k \neq 1$, $R_n$ ceases to be a strict probability and becomes an expected loss score (equivalent to $L_n$ in Appendix §4). The recursive update survives this because it operates strictly on the per-class probability $R_k$. The linear combination at the end is mathematically safe, provided $R_n$ is interpreted as a risk index rather than a pure probability.
+
+### 5. Assessment of Unification Claims
+**Status: PARTIALLY FALSIFIED.**
+
+The claim that this equation unifies "the model-reasoning-relevant parts of Sections 0.1, 1, 2, and 6" is false. It unifies Sections 1, 2, and 6, but it structurally severs Section 0.1.
+
+**The Ising Model Severance:**
+The recursive derivation relies on $m_{new} = m_{old}(1-q)$. This is the definition of Branch 1 (Independent) from Appendix §0.1. Branch 2 (Correlated - Normalised Ising/Boltzmann) defines the joint failure probability using pairwise couplings $\psi_{ij}$ across the *entire history* of passes. A Markovian update $R_i = f(R_{i-1}, q_i)$ cannot compute the Ising joint probability because it lacks the backward-looking pairwise couplings to prior states. 
+*Conclusion:* The equation is a brilliant unification of the independent/structured branch, but it cannot claim to subsume the exact physical correlated model.
+
+### 6. Utilitarian Extension: The Re-injection Deficit
+**Status: EXTENSION REQUIRED.**
+
+The proposed equation models *falsification* (Find) but is blind to *resolution* (Fix/Follow). 
+
+Because $q \in [0,1]$ and $R \in [0,1]$, the equation forces $\Delta R_k \ge 0$. Risk can only decrease or stall; it can never increase. However, Appendix §7.1 and §7.12 explicitly define Error Re-injection ($\nu$), where applying a fix introduces a new defect. A true model-level metacognitive equation must account for the probability that the system damages itself during the Fix phase.
+
+**The FFF State Extension:**
+To unify the Find-Fix-Follow loop, the state update must be split into a detection phase and a resolution phase.
+
+1. **Detection Update:** $R_{det} = \frac{R_{old}(1-q)}{1-q R_{old}}$
+2. **Resolution Update:** Let $\nu_k \in [0,1]$ be the probability that the applied fix injects a new flaw of class $k$. Assuming the injection is independent of the survival of the prior flaw, the post-fix risk is the union of survival and injection:
+   $$R_{new} = R_{det} + \nu_k - (R_{det} \cdot \nu_k) = R_{det}(1-\nu_k) + \nu_k$$
+
+**Revised Stopping Rule:**
+The proposed stopping rule ($\sum w_k \Delta R_k > \theta$) evaluates only the detection gain. Under FFF, the true marginal gain of a cycle is $\Delta R_{cycle} = R_{old} - R_{new}$. 
+If the re-injection rate $\nu_k$ is high, $\Delta R_{cycle}$ becomes negative (the cycle injected more risk than it removed). The stopping rule becomes:
+> Continue while $\sum_k w_k (R_k(i-1) - R_k(i)) > \theta$
+
+This naturally triggers a Hard Exit if the system becomes divergent (doing more harm than good), perfectly unifying the Substrate Ceiling (§1) and Divergence conditions (§7.1) into the core recursive loop.
+
+### Final Stance
+The derived equation is mathematically sound, algebraically elegant, and successfully collapses the prior $\pi$ into a Markovian state variable. It is a massive operational upgrade for agentic self-assessment. However, its claim to unify Section 0.1 Branch 2 is refuted, and it requires the $\nu_k$ re-injection extension to accurately model the full Find-Fix-Follow cycle. The extended two-step update ($R_{det}$ then $R_{new}$) should be adopted as the canonical state equation for independent-branch execution.

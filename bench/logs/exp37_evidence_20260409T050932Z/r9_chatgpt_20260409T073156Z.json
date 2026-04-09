@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260409T073156Z",
+  "phase": "r9",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1054,
+  "response": "CONFIRM C0133 — `EvidenceStore.verify_bundle()` accepts dict-like bundle inputs and then dereferences `.records`/`.inclusion_proofs`, causing an AttributeError instead of a clean verification failure. The target file shows no input type validation in `verify_bundle`, and `EvidenceBundle.to_dict()`/JSON export make dict-shaped inputs an expected interchange form. This is a PoC-breaking interface bug for external bundle verification.\n\nEXTEND C0133 | Additional consequence: `EvidenceBundle.save_json()` exports plain JSON objects, but `verify_bundle()` only accepts an `EvidenceBundle` instance. End-to-end external audit flow therefore fails unless callers manually rehydrate JSON into the dataclass. Simplest sufficient fix remains to accept either `EvidenceBundle` or `dict` and normalize once at method entry.\n\nNo novel findings survived falsification above consequence threshold from `bench/evidence.py` beyond registry-covered issues. Existing open findings already cover the remaining high-consequence defects I could independently substantiate.",
+  "metadata": {
+    "round": 9,
+    "elapsed": 6.9,
+    "chars": 1054,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

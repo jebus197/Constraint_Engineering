@@ -1,0 +1,87 @@
+**Findings**
+
+1. The recursion is mathematically sound, but the unification claim is too strong as written. It exactly unifies the **Bayesian residual-risk branch** with factorised effective detection `q_ik`, not the full CDSFL model. In particular, the exact correlated Ising/Boltzmann branch in §0.1 is **not** captured by a single scalar `q_ik` recursion unless you first approximate those correlations away.
+
+2. `F_n is recoverable from R_n` needs a boundary condition. That inversion works only when the prior is known and strictly interior: `0 < pi_k < 1`. At `pi_k = 0` or `pi_k = 1`, different coverage states collapse to the same posterior risk, so `F_k` is not recoverable from `R_k`.
+
+3. The recursion needs an explicit hard domain guard: `0 <= R_k <= 1` and `0 <= q_ik <= 1`. Outside that domain it breaks immediately:
+   - `R=0.4, q=1.2` gives `R' = -0.1538`
+   - `R=0.4, q=-0.2` gives `R' = 0.4444`
+   - `R=0.4, q=2.5 = 1/R` is undefined
+   This matters because your `eta_dec` term can exceed 1, so `q_ik = eta_dec * d_ik * p_ik` needs clipping or a stated admissibility condition.
+
+4. `R_n = sum_k w_k R_k(n)` is not generally a probability unless the `w_k` are normalized to sum to 1. With arbitrary consequence weights it is a **weighted residual-risk score** or expected-loss proxy, not a posterior probability. Example: `0.8*0.9 + 0.7*0.8 = 1.28`.
+
+5. The stopping rule is correct in form but should be indexed by the next pass: `Delta_R_k(i)` depends on the upcoming `q_ik`, not just on a generic `q`.
+
+**Verified**
+
+`pi` really does vanish from the recursive update after initialization. Starting from
+
+`R = pi*m / ((1-pi) + pi*m)`
+
+solve for `m`:
+
+`m = R*(1-pi) / (pi*(1-R))`
+
+Then apply one more pass with miss update `m_new = m*(1-q)` and substitute back. The result simplifies exactly to
+
+`R_new = R*(1-q) / (1-q*R)`
+
+I checked that symbolically. The difference from the claimed form is `0`.
+
+The recursion is therefore an exact restatement of the Bayesian update, not an approximation, provided the model assumptions hold.
+
+The closed form after multiple passes is
+
+`R_k(n) = pi_k * prod_i(1-q_ik) / ((1-pi_k) + pi_k * prod_i(1-q_ik))`
+
+so the recursive and product forms are equivalent.
+
+The stated special cases hold, with one boundary qualification:
+- `q=0` gives `R' = R`
+- `q=1` gives `R' = 0` for every admissible `R < 1`
+- `R=0` stays `0`
+- `R -> 1` with `q < 1` stays near `1`
+- `d=0` implies `q=0`, so `R` is unchanged
+- with `K=1`, `d=1`, all `p_ik=p`, `pi=0.5`, you get  
+  `R_n = (1-p)^n / (1 + (1-p)^n)`
+
+The marginal gain formula is also correct:
+
+`Delta_R = R - R' = q*R*(1-R)/(1-q*R)`
+
+**Assessment**
+
+The equation is sound as a unification of the **per-class posterior self-assessment dynamics** in the residual-risk model. It cleanly absorbs `d_ik`, `f_del`, and similar multiplicative modifiers into `q_ik`, and it reproduces the white-paper `R_n` exactly.
+
+What it does **not** do is replace all the earlier models without loss:
+- it does not preserve exact Ising-style correlation structure
+- it does not let you recover `F_n` or `C(n)` from `R_n` unless `pi` is retained and `0 < pi < 1`
+
+So the strongest defensible conclusion is:
+
+The unified recursion is mathematically valid and genuinely useful, but it is a unification of the **Bayesian residual-risk layer**, not a lossless replacement for every separate CDSFL formulation.
+
+**Useful extension**
+
+One extension is worth making because it simplifies the whole picture:
+
+`O_k(i) = R_k(i)/(1-R_k(i))`
+
+Then the update becomes
+
+`O_k(i) = O_k(i-1) * (1-q_ik)`
+
+and therefore
+
+`logit(R_k(i)) = logit(pi_k) + sum_t log(1-q_tk)`
+
+That is the cleanest form of the result. It makes the role of `pi` completely explicit: `pi` enters once as the initial log-odds, then every pass adds evidence through `log(1-q)`.
+
+**Verdict**
+
+The core equation survives falsification. The algebra is correct, the recursion is correct, and the main special cases are correct. What should be retracted or tightened are the over-broad claims:
+- not every earlier model is recoverable from `R` alone
+- exact correlated-branch structure is not preserved
+- the admissible domain for `q` and `R` must be stated explicitly

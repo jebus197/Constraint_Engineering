@@ -103,7 +103,10 @@ class EvidenceRecord:
         # Extract entity references from metadata
         er.experiment = meta.get("experiment", "")
         er.model = meta.get("model", "")
-        er.round_idx = meta.get("round", -1)
+        try:
+            er.round_idx = int(meta.get("round", -1))
+        except (ValueError, TypeError):
+            er.round_idx = -1
 
         # Extract finding IDs from payload and metadata
         ids: set = set()
@@ -179,7 +182,7 @@ class StoreSummary:
 # Finding ID extraction
 # ---------------------------------------------------------------------------
 
-_FINDING_ID_RE = re.compile(r"\bC\d{4}\b")
+_FINDING_ID_RE = re.compile(r"\b[A-Za-z]\d{3,5}\b")
 
 
 def _extract_finding_ids(obj: Any) -> List[str]:
@@ -427,6 +430,8 @@ class EvidenceStore:
                 chain_hash=rec.chain_hash,
             ))
 
+        # Sort by timestamp for true chronological order (C0207)
+        events.sort(key=lambda e: e.timestamp_utc)
         return events
 
     # -- Evidence bundles ---------------------------------------------------

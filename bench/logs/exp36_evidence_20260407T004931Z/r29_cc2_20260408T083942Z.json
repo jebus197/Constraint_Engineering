@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T083942Z",
+  "phase": "r29",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1920,
+  "response": "## Round 29 — CC2 Verdicts\n\nNo new discoveries. 174 findings over 29 rounds have thoroughly covered this module. The three open items are valid and I'm issuing verdicts to close them out.\n\n---\n\nCONFIRM C0168 — This is a restatement of the settled root cause in C0006/C0073/C0099/C0133: `_extract_finding_ids` only runs on `er.payload` when it's a `dict`, missing finding IDs in metadata, non-dict payloads, and `hash_only` records. The fix is the same as the settled family: also extract from `er.metadata` and handle non-dict payloads. Recommend MERGE into C0165 (which is the latest confirmed canonical for this family) and close.\n\n---\n\nCONFIRM C0169 — `_FINDING_ID_RE = re.compile(r\"\\bC\\d{4}\\b\")` rejects valid IDs outside the 4-digit range. In the CDSFL protocol, models natively generate `F001`–`F999` (3-digit) finding IDs, and canonical IDs can reach `C00001`+ (5-digit) as the registry grows past 9999. The proposed fix broadening to `r\"\\b[A-Za-z]\\d{3,5}\\b\"` is correct for PoC scope. One note: this must stay coordinated with whatever the runner normalises IDs to — if the runner guarantees `C\\d{4}` canonically, then only the alpha prefix class and the digit range matter, not arbitrary letters. For PoC, the broadened regex is the simplest sufficient fix.\n\n---\n\nCONFIRM C0172 — `export_bundle()` signature lacks `experiment` and its `self._index.search()` call omits it. This means `export_bundle(model=\"Gemini\", round_idx=5)` returns records from *all* experiments matching that model/round, not scoped to one experiment. The fix adds `experiment: Optional[str] = None` to the signature and passes it through to `self._index.search()`. Identical root cause to C0088/C0101/C0113. Recommend MERGE into C0088 and close.\n\n---\n\nNo further findings to file. All significant bugs in `evidence.py` are registered. The remaining open items are confirmations of already-identified root causes. The review is converged.",
+  "metadata": {
+    "round": 29,
+    "elapsed": 32.8,
+    "chars": 1920,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

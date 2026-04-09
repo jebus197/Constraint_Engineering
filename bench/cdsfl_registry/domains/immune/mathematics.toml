@@ -1,0 +1,62 @@
+# Immune pipeline parameterisation — Mathematics Domain (Phase B4)
+# Extracted from domains/mathematics.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bEq\\(|\\bGt\\(|\\bLt\\()",
+    "(?:\\bbound\\b|\\bthreshold\\b|\\binequality\\b|\\bformula\\b|\\bequation\\b)",
+    "(?:\\btheorem\\b|\\blemma\\b|\\bcorollary\\b|\\bproposition\\b)",
+    "(?:\\bproof\\b|\\bQ\\.?E\\.?D\\b|\\bsquare\\b.*\\bcomplete)",
+    "(?:\\bconverg|\\bdiverge|\\blimit\\b|\\bsupremum\\b|\\binfimum\\b)",
+    "(?:\\bintegral\\b|\\bderivative\\b|\\bdifferential\\b)",
+    "(?:\\beigenvalue|\\bdeterminant|\\bmatrix|\\brank\\b)",
+    "(?:\\b\\d+\\s*[*/+\\-])",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\breachable\\b|\\bunreachable\\b)",
+    "(?:\\binvariant\\b|\\bprecondition\\b|\\bpostcondition\\b)",
+    "(?:\\balways\\b.*\\bnever\\b|\\bnever\\b.*\\balways\\b)",
+    "(?:\\biff\\b|\\bnecessary\\b.*\\bsufficient\\b|\\bcontrapositive\\b)",
+    "(?:\\bexists\\b.*\\bforall\\b|\\bforall\\b.*\\bexists\\b)",
+    "(?:\\binduction\\b.*\\bstep\\b|\\bbase\\s*case\\b)",
+]
+
+statistical = [
+    "(?:\\bsignificant\\b|\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bdistribution\\b|\\bcorrelation\\b|\\bregression\\b)",
+    "(?:\\bexpected\\s*value\\b|\\bvariance\\b|\\bstandard\\s*deviation\\b)",
+]
+
+[immune.verification_tools]
+
+mathematical = ["sympy", "z3"]
+logical = ["z3", "sympy"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating mathematical claims. Your output will be mechanically verified.
+
+For theorem claims: identify the precise statement, its hypotheses, and the proof structure.
+For computation claims: identify the formula, its inputs, and the expected output.
+For proof claims: identify each logical step and whether it follows from the previous.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:theorem|lemma|corollary|proposition|step|equation)\\s*(?:#|:)?\\s*(\\d+(?:\\.\\d+)*)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:trivial\\s*identity|(?:a\\s*=\\s*a|x\\s*=\\s*x|0\\s*=\\s*0))"
+source = "Trivial identity FP: tautological equalities are not bugs"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:notation\\s*variant|equivalent\\s*notation|alternative\\s*form)"
+source = "Notation variant FP: sin^2(x) vs (sin(x))^2 are equivalent"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:missing\\s*(?:absolute\\s*value|modulus).*(?:positive|non-negative)\\s*(?:domain|input))"
+source = "Abs-value FP: |x| = x when domain is already non-negative"

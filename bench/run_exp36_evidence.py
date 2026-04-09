@@ -180,6 +180,17 @@ MODEL_ROSTER = {
 
 MULTITURN_CHUNK_TARGET = 30_000
 
+# Operational CDSFL directive — working protocol (Exp 37: models compute and
+# act on C(n), R_n, γ, ρ from their own output). Loaded once, appended after
+# composer output so all models receive it regardless of phenotype transforms.
+_OPERATIONAL_DIRECTIVE_PATH = (
+    REPO_ROOT / "bench" / "directives" / "universal" / "cdsfl_operational.md"
+)
+_OPERATIONAL_DIRECTIVE_TEXT = (
+    _OPERATIONAL_DIRECTIVE_PATH.read_text(encoding="utf-8")
+    if _OPERATIONAL_DIRECTIVE_PATH.exists() else ""
+)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Convergence parameters (corrected from Exp 32 meta-analysis)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2152,6 +2163,10 @@ def _dispatch_single_model(
         _log(f"  {mc.label}: composer failed ({e}), using raw CDSFL")
         model_cdsfl = cdsfl_text
 
+    # Append operational protocol — models compute C(n), R_n, γ on own output
+    if _OPERATIONAL_DIRECTIVE_TEXT:
+        model_cdsfl += "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
+
     pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
 
     if _should_decompose(mc.label, mgr):
@@ -2231,6 +2246,8 @@ def _dispatch_round(
     round_idx: int,
     pattern_name: str,
     registry: Optional["FindingRegistry"] = None,
+    rho_history: Optional[List[float]] = None,
+    gamma_history: Optional[List[float]] = None,
 ) -> tuple[List[Finding], Dict[str, str], Dict[str, float]]:
     """Dispatch to all models in parallel (star topology).
 
@@ -2262,8 +2279,57 @@ def _dispatch_round(
             focus_prefix = _build_change_focus_instruction(registry, round_idx)
             _log(f"  ITC [{mc_label}]: injecting change_focus instruction (star)")
 
-        # Star topology: inject registry summary, not other models' prose
+        # Star topology: inject registry summary + live metrics
+        # Per-round metrics from the CDSFL mathematical model — models
+        # use these to calibrate effort (see cdsfl_operational.md §5, §10)
+        metrics_section = ""
+        if round_idx >= 2 and registry is not None:
+            rho_val = rho_history[-1] if rho_history else 0.0
+            rho_bar3 = (sum(rho_history[-3:]) / min(3, len(rho_history))
+                        if rho_history else 0.0)
+            gamma_val = gamma_history[-1] if gamma_history else 0.0
+            n_open = sum(1 for e in registry.entries.values()
+                         if e.get("status") in ("OPEN", "CONTESTED"))
+            n_confirmed = sum(1 for e in registry.entries.values()
+                              if e.get("status") == "CONFIRMED")
+            n_closed = sum(1 for e in registry.entries.values()
+                           if e.get("status") in ("CLOSED", "MERGED"))
+            metrics_section = (
+                f"\n=== PANEL METRICS (Round {round_idx}) ===\n"
+                f"ρ (discovery efficiency this round) = {rho_val:.3f}\n"
+                f"ρ̄₃ (3-round rolling average) = {rho_bar3:.3f}\n"
+                f"γ (Duane reliability growth) = {gamma_val:.3f}\n"
+                f"Registry: {n_open} OPEN, {n_confirmed} CONFIRMED, "
+                f"{n_closed} CLOSED/MERGED\n"
+                f"\n"
+                f"Interpretation: "
+            )
+            if gamma_val >= 0.45:
+                metrics_section += (
+                    "Strong depletion — novel discoveries are rare. If you "
+                    "cannot find genuinely new issues, report that honestly. "
+                    "Redundant re-descriptions waste compute.\n"
+                )
+            elif gamma_val >= 0.30:
+                metrics_section += (
+                    "Moderate depletion — novel discoveries are slowing. "
+                    "Focus on areas not yet covered by existing findings. "
+                    "Check the registry before submitting.\n"
+                )
+            else:
+                metrics_section += (
+                    "Productive phase — continue finding and falsifying.\n"
+                )
+            if rho_bar3 < 0.25:
+                metrics_section += (
+                    f"WARNING: ρ̄₃ = {rho_bar3:.3f} indicates high redundancy. "
+                    f"Most recent findings duplicate existing entries. "
+                    f"Check registry carefully before submitting.\n"
+                )
+            metrics_section += "=== END METRICS ===\n\n"
+
         star_section = (
+            f"{metrics_section}"
             f"{registry_summary}\n\n"
             f"This is Round {round_idx}. Review the registry above. "
             f"File new DISCOVERY findings for bugs not yet registered. "
@@ -2825,6 +2891,8 @@ def run_experiment(
                 base_prompt, registry_summary, cdsfl_text, full_code,
                 round_idx, pattern_name,
                 registry=registry,
+                rho_history=rho_history,
+                gamma_history=gamma_history,
             )
 
         # Safety check — removes empty/refused responses, never benches

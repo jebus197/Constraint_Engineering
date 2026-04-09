@@ -1,0 +1,62 @@
+# Immune pipeline parameterisation — Chemistry Domain (Phase B4)
+# Extracted from domains/chemistry.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+# Stoichiometric and reaction claims
+mathematical = [
+    "(?:stoichiometr|mole|mol\\b|molar|molarity|molality)",
+    "(?:yield|conversion|selectivity)\\s*[=<>]",
+    "(?:enthalpy|entropy|gibbs|free\\s*energy|\\bG\\b\\s*=|\\bH\\b\\s*=|\\bS\\b\\s*=)",
+    "(?:equilibrium\\s*constant|K_?[abeqpsc]\\s*[=<>])",
+    "(?:rate\\s*(?:constant|law|equation)|k\\s*=|\\bA\\s*e\\^)",
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b|\\bln\\b)",
+    "(?:formula|equation|balanced?\\s*equation)",
+    "(?:pH\\s*[=<>]|pOH\\s*[=<>]|pK_?[ab]\\s*[=<>])",
+    "(?:ideal\\s*gas|PV\\s*=\\s*nRT|van\\s*der\\s*Waals)",
+]
+
+logical = [
+    "(?:if\\b.*\\bthen\\b|implies|contradiction)",
+    "(?:Le\\s*Chatelier|equilibrium\\s*shift)",
+    "(?:exothermic.*\\bincrease\\b|endothermic.*\\bdecrease\\b)",
+    "(?:conservation\\b.*\\bviolat|mass\\s*balance\\s*(?:fail|error|violat))",
+]
+
+statistical = [
+    "(?:significant|p-value|p\\s*[<=]\\s*0?\\.\\d)",
+    "(?:measurement\\s*uncertainty|error\\s*propagation|confidence\\s*interval)",
+    "(?:regression|correlation|R[²2]\\s*[=<>])",
+]
+
+[immune.verification_tools]
+
+# Primary: SymPy for symbolic chemistry. Fallback: stoichiometric checker.
+mathematical = ["sympy", "stoichiometric_balance"]
+logical = ["z3", "sympy"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating chemistry claims. Your output will be mechanically verified.
+
+For chemical equations: verify stoichiometric balance (atom counts, charge balance).
+For thermodynamic claims: verify sign conventions (exothermic = negative dH) and unit consistency.
+For kinetics claims: verify rate law form matches the stated mechanism.
+For equilibrium claims: verify the relationship between K, dG, and concentrations.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:reaction|equation|step|mechanism)\\s*(?:#|:)?\\s*(\\d+)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:noble\\s*gas|inert\\s*gas).*react"
+source = "Noble gas reactivity FP: noble gases do form compounds (XeF2 etc.)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:water\\s*is\\s*(?:always|only)\\s*(?:a\\s*)?(?:solvent|liquid))"
+source = "Water phase FP: water can be reactant, product, gas, or solid"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:organic\\s*compound.*(?:must|always).*carbon)"
+source = "Organic definition FP: CO, CO2, carbonates are inorganic despite containing C"

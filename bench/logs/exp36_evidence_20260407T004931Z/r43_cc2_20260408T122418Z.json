@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T122418Z",
+  "phase": "r43",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2210,
+  "response": "## Round 43 — CC2 Review\n\nAll 209 canonical findings are settled, 0 open CRIT/HIGH. I have re-read `evidence.py` end-to-end against the registry. No new CRITICAL or HIGH bugs remain.\n\n### Verdicts on UNCONFIRMED entries\n\n**CONFIRM C0087** — Timestamp lexicographic sort can misorder events when `_utc_now()` (no fractional seconds: `…T10:00:00Z`) and `_normalize_timestamp()` (preserving fractional: `…T10:00:00.123456Z`) produce records in the same second. `\".\"` (0x2E) sorts before `\"Z\"` (0x5A), so `10:00:00.500000Z` sorts before `10:00:00Z` even though both represent the same second (and `.5` is later). This is MEDIUM — it only triggers when two events share the same wall-clock second with mixed timestamp precision, which is unlikely in the PoC flow where all timestamps come from `_utc_now()`. Severity: 0.3.\n\n**CONFIRM C0208** — Valid concern about `trace_finding` completeness. The finding-ID extraction limitations (covered by the C0006/C0073/C0176/C0184 family) mean `trace_finding` inherits the same blind spots: records where finding IDs appear only in metadata keys, non-dict payloads (for hash_only records), or non-canonical ID formats are absent from traces. This is downstream of the settled extraction-family findings and does not represent a new root cause.\n\n**CONFIRM C0209** — Same as C0208. This is a restatement of the trace_finding completeness concern that flows from the settled finding-ID extraction family.\n\n### New findings\n\nNo new CRITICAL, HIGH, or MEDIUM findings identified. The evidence layer's significant defects — finding-ID extraction scope (C0006 family), export_bundle experiment parameter (C0068/C0088 family), verify caching (C0008/C0174/C0181), verify_bundle zip truncation (C0009/C0173/C0182), merkle root computation (C0001/C0005/C0010), event classification string matching (C0011/C0028/C0186), and trace_finding ordering (C0082/C0203/C0207) — are all settled with fixes that address the root causes.\n\nThe code is fit for PoC end-to-end operation. Remaining rough edges (double `_classify_event` calls in `_describe_event`, deep-copy cost in `summary()`, empty-string model/round display in provenance descriptions) are LOW/polish and not relevant at PoC stage.",
+  "metadata": {
+    "round": 43,
+    "elapsed": 131.4,
+    "chars": 2210,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

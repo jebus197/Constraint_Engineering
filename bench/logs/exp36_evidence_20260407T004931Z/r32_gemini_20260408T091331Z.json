@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T091331Z",
+  "phase": "r32",
+  "model_label": "Gemini",
+  "prompt_length": 203,
+  "response_length": 2663,
+  "response": "MERGE C0194 -> C0165\nMERGE C0195 -> C0165\nMERGE C0197 -> C0165\n\nFINDING_ID: F001\nSEVERITY: 0.7\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.5\nDESCRIPTION: FIND: In `bench/evidence.py`, `_EvidenceIndex.__init__` explicitly skips indexing default or empty metadata fields by using truthy checks like `if rec.experiment:` and `if rec.round_idx >= 0:`. \nFOLLOW: Because records with `experiment=\"\"`, `model=\"\"`, or `round_idx=-1` are omitted from the index maps, any explicit query filtering for these global or unaffiliated records (e.g., `store.query(experiment=\"\")` or `store.query(round_idx=-1)`) will hit the `elif key is not None:` branch in `_intersect()`, silently returning an empty list instead of the matching records. This breaks retrieval for system-level entities.\nPROPOSED_FIX: FIX\n<<<<\n            if rec.experiment:\n                self.by_experiment[rec.experiment].append(i)\n            if rec.model:\n                self.by_model[rec.model].append(i)\n            if rec.round_idx >= 0:\n                self.by_round[rec.round_idx].append(i)\n====\n            self.by_experiment[rec.experiment].append(i)\n            self.by_model[rec.model].append(i)\n            self.by_round[rec.round_idx].append(i)\n>>>>\nVERIFIED: TRUE\n\nFINDING_ID: F002\nSEVERITY: 0.9\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.8\nDESCRIPTION: FIND: In `bench/evidence.py`, `EvidenceStore.verify_bundle()` calls `self._chain.verify_inclusion_proof(proof, bundle.merkle_root)` but never actually checks that the `record` in the bundle matches the `proof`. There is no check asserting `record.get(\"chain_hash\") == proof.get(\"chain_hash\")`.\nFOLLOW: An attacker can distribute a tampered `EvidenceBundle` containing completely fabricated `records`, alongside valid `inclusion_proofs` borrowed from the real chain. `verify_bundle()` will verify the proofs against the root and return `True`, falsely validating the tampered records and completely defeating the external audit guarantee.\nPROPOSED_FIX: FIX\n<<<<\n            valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\n            if not valid:\n                errors.append(\n                    f\"Record {i} (seq={record.get('sealed_body', {}).get('seq', '?')}): \"\n                    f\"inclusion proof invalid\"\n                )\n====\n            valid = self._chain.verify_inclusion_proof(proof, bundle.merkle_root)\n            if not valid or record.get(\"chain_hash\") != proof.get(\"chain_hash\"):\n                errors.append(\n                    f\"Record {i} (seq={record.get('sealed_body', {}).get('seq', '?')}): \"\n                    f\"inclusion proof invalid or mismatched record hash\"\n                )\n>>>>\nVERIFIED: TRUE",
+  "metadata": {
+    "round": 32,
+    "elapsed": 263.5,
+    "chars": 2663,
+    "findings_count": 2,
+    "decomposed": false
+  }
+}

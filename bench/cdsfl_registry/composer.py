@@ -765,6 +765,42 @@ _PRESET_THREE_LAYER_SCHEMA = (
     "Start natural, escalate only when needed.\n"
 )
 
+# Combined 4-layer schema: Meta Structured + CDSFL + FFAFP + Conversational.
+# First deployment: novelty extension confer (9 April 2026). Combines the
+# structured certificate rigour of C4/C5 with FFAF analysis gate and iterated
+# P-pass falsification. Conversational fallback where structure adds no rigour.
+_PRESET_FOUR_LAYER = (
+    "## Combined 4-Layer Review Protocol (MANDATORY for this round)\n\n"
+    "Apply ALL four layers simultaneously. They are complementary, not alternatives.\n\n"
+    "### Layer 1 — Structured Certificates\n\n"
+    "For EVERY finding, state your premises explicitly. Trace execution "
+    "through concrete examples (with specific inputs and expected outputs). "
+    "Derive a formal conclusion. Do not assert conclusions without the "
+    "derivation that supports them.\n\n"
+    "### Layer 2 — FIND-FOLLOW-ANALYSE-FIX\n\n"
+    "For EVERY finding:\n"
+    "   FIND: State the bug, its location, and your evidence.\n"
+    "   FOLLOW: Before proposing any fix, trace consequences through the "
+    "entire system. What depends on this? What interfaces does it cross? "
+    "What breaks downstream?\n"
+    "   ANALYSE: State dispassionately whether this is CONFIRMED, UNCERTAIN, "
+    "or REJECTED based on what the code does, not what it might do.\n"
+    "   FIX: For CONFIRMED findings only, apply the simplest sufficient "
+    "correction that addresses root cause AND downstream consequences.\n\n"
+    "### Layer 3 — Iterated Falsification (P-Pass)\n\n"
+    "After completing your analysis, P-pass your own results. Actively try "
+    "to disprove your own conclusions. Retract claims you can disprove. "
+    "Continue for up to 5 passes or until two consecutive passes produce "
+    "no new findings above consequence threshold. Only present claims that "
+    "survive all passes.\n\n"
+    "### Layer 4 — Conversational Fallback\n\n"
+    "Where structured format does not naturally apply (context-setting, "
+    "qualitative observations, boundary identification), use natural "
+    "conversational prose. Do not force structure where it adds no rigour. "
+    "Depth over format compliance.\n\n"
+    "Show your working. Depth over breadth.\n"
+)
+
 # Control condition. No CDSFL, no structure.
 _PRESET_UNCONSTRAINED = (
     "## Review Protocol\n\n"
@@ -778,6 +814,7 @@ INTERACTION_PATTERN_PRESETS: dict[str, tuple[str, str, set[str]]] = {
     "conversational": (_PRESET_CONVERSATIONAL, "SOFT", {"conversational", "hil", "c1"}),
     "three_layer_schema": (_PRESET_THREE_LAYER_SCHEMA, "SOFT", {"three_layer", "c5", "adaptive"}),
     "unconstrained": (_PRESET_UNCONSTRAINED, "SOFT", {"control", "unconstrained"}),
+    "four_layer": (_PRESET_FOUR_LAYER, "HARD", {"meta", "structured", "fff", "ffaf", "p_pass", "four_layer"}),
 }
 
 

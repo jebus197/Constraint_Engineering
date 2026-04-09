@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260408T103905Z",
+  "phase": "r36",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1953,
+  "response": "{\n  \"discoveries\": [\n    {\n      \"FINDING_ID\": \"F001\",\n      \"SEVERITY\": 0.68,\n      \"FLAW_CLASS\": 5,\n      \"ABSTRACTION_INDEX\": 0.38,\n      \"DESCRIPTION\": \"FIND: bench/evidence.py, _describe_event(), final event-type handling block. The function has explicit descriptions for \\\"submitted\\\", \\\"confirmed\\\", \\\"challenged\\\", \\\"extended\\\", \\\"merged\\\", \\\"reported\\\", \\\"checkpoint\\\", \\\"health_scan\\\", and \\\"policy\\\", but no branch for event_type == \\\"verdict\\\" even though _classify_event() returns \\\"verdict\\\" for artifact_type == \\\"verdict\\\". Evidence: for any verdict record, _describe_event() falls through to the generic fallback `Finding {finding_id} referenced in verdict record` instead of a verdict-specific description. This is a real mismatch between classifier output and describer coverage in the same file.\",\n      \"FOLLOW\": \"trace_finding() always calls both _classify_event() and _describe_event() for each indexed finding record. Therefore every provenance trace containing artifact_type == \\\"verdict\\\" emits a low-information generic detail string, even though the event_type field is correctly set to \\\"verdict\\\". This does not break indexing or bundle export, but it degrades one of the module's stated features: provenance traces as human-readable lifecycle descriptions. No other functions consume the detail string programmatically in this file.\",\n      \"PROPOSED_FIX\": \"ANALYSE: CONFIRMED\\nFIX:\\n<<<<\\n    if event_type == \\\"policy\\\":\\n        return f\\\"Policy snapshot at round {rec.round_idx}\\\"\\n\\n    return f\\\"Finding {finding_id} referenced in {rec.artifact_type} record\\\"\\n====\\n    if event_type == \\\"policy\\\":\\n        return f\\\"Policy snapshot at round {rec.round_idx}\\\"\\n    if event_type == \\\"verdict\\\":\\n        return f\\\"Verdict record for {finding_id} at round {rec.round_idx}\\\"\\n\\n    return f\\\"Finding {finding_id} referenced in {rec.artifact_type} record\\\"\\n>>>>\",\n      \"VERIFIED\": true\n    }\n  ],\n  \"verdicts\": []\n}",
+  "metadata": {
+    "round": 36,
+    "elapsed": 9.4,
+    "chars": 1953,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

@@ -1,0 +1,426 @@
+Surviving findings only.
+
+## Bottom line
+
+**Conditionally fit for purpose, but not yet aligned enough to trust the Experiment 37 claims.**  
+It will likely **run a 5-model star-topology review**, and the core dispatch/topology plumbing for that looks present. But there are **spec/runner mismatches and at least one likely hard parser contract problem** that make it **not fully fit for the stated purpose** of testing the new operational directive and 4-layer schema.
+
+If you run it as-is, I expect:
+1. **the star review itself to execute**,  
+2. **models to only partially comply with the new operational directive**, and  
+3. **your measured results to conflate runner/parser incompatibilities with model capability**.
+
+So my stance is:
+
+- **Fit to execute**: yes, probably.
+- **Fit to validly evaluate Experiment 37’s new protocol**: **not yet**.
+
+---
+
+# 1. Is this runner fit for purpose?
+
+## Short answer
+**Partially.** It supports the main mechanics of a 5-model star/blackboard review, but it is **not cleanly wired to the new protocol**.
+
+## What survives scrutiny
+
+### A. The 5-model star topology is implemented
+This is the strongest surviving positive finding.
+
+Evidence:
+- `BASELINE_MODELS = {"CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"}`
+- `_dispatch_round(...)` explicitly dispatches to all eligible non-collator models in parallel.
+- Round 0 is blind; Round 1+ injects `registry_summary`.
+- Metrics injection for `γ`, `ρ`, `ρ̄₃` is present for later rounds.
+- Responses and findings are aggregated centrally, which is consistent with a blackboard/star topology.
+
+This is enough to say the runner **will perform a 5-model star-topology review**, assuming model configs and credentials are valid.
+
+### B. The operational directive is actually appended to model instructions
+Evidence:
+```python
+if _OPERATIONAL_DIRECTIVE_TEXT:
+    model_cdsfl += "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
+```
+So the new equation and protocol are not merely documented; they are transmitted.
+
+### C. Per-round panel metrics are injected
+The metrics block is present and reasonably consistent with the operational text:
+- `ρ`
+- `ρ̄₃`
+- `γ`
+- registry counts
+- depletion guidance
+
+That means the runner does attempt to operationalise “act on current panel state”.
+
+## Why it is not fully fit
+
+### D. The base prompt still encodes the old schema, not the new required output contract
+This is the biggest fitness-for-purpose problem.
+
+The operational directive says every finding **must include**:
+- FIND
+- FOLLOW
+- ANALYSE
+- FIX
+- FALSIFICATION
+- CORROBORATION
+
+But the base prompt asks for:
+- `FINDING_ID`
+- `SEVERITY`
+- `FLAW_CLASS`
+- `ABSTRACTION_INDEX`
+- `DESCRIPTION`
+- `FOLLOW`
+- `PROPOSED_FIX`
+- `VERIFIED`
+
+That is a **different schema**.
+
+The runner is therefore asking models to satisfy **two competing output contracts**:
+- one from the old/base review format,
+- one from the new operational directive.
+
+In practice, frontier models usually obey the **nearest explicit structured output format**, i.e. the base prompt key list. So many responses will likely preserve the old keys and either:
+- omit `ANALYSE`, `FALSIFICATION`, `CORROBORATION`, or
+- include them inconsistently as prose.
+
+That makes the experiment **weak as a test of the new directive**.
+
+### E. The docstring/comments overclaim what is enforced
+The code comments say:
+- “Falsification gate in parser”
+- “models compute C(n), R_n, γ on own output”
+
+But the operational directive no longer uses simplified `C(n)` as the main mechanism; it uses the 3-phase `R` update. The comment is stale and conceptually wrong for Exp 37.
+
+This is not just cosmetic. It is a sign the implementation narrative is lagging the experiment design.
+
+### F. The runner appears designed to test multiple changes at once
+You changed:
+1. self-assessment equation,
+2. 4-layer prompting pattern,
+3. CC2 sub-agent fixes,
+4. parser gate,
+5. metrics injection,
+6. registry None guard.
+
+That’s too many simultaneous moving parts if the goal is causal interpretation. Even if the runner works operationally, **the experiment will be hard to interpret scientifically**.
+
+---
+
+# 2. Will the operational directive work?
+
+## Short answer
+**Partially, but not in the strong sense intended.**
+
+Models will probably:
+- understand the prose,
+- attempt some self-critique,
+- sometimes produce falsification sections,
+- sometimes estimate qualitative risk factors.
+
+They will **not reliably perform the full self-assessment discipline as an operational control loop** unless the runner and parser force it much harder.
+
+## What likely works
+
+### A. The directive is understandable to frontier models
+The equation is conceptually legible:
+- `q = η·d·p`
+- Bayesian detection update
+- fix efficacy `σ`
+- re-injection `ν`
+- break-even `ν*`
+- stop if divergent
+
+This is understandable prose/maths for strong models. They can reason about it qualitatively.
+
+### B. Qualitative self-assessment is more likely than numeric compliance
+The directive itself softens the requirement:
+> “You do not need to report exact numbers. What matters is the qualitative assessment…”
+
+That helps. Models can usually do:
+- novelty low/high,
+- diversity low/high,
+- fix confidence high/medium/low,
+- re-injection low/high.
+
+So you’ll probably get **narrative self-assessment**.
+
+## What likely fails
+
+### C. Models are unlikely to compute the equation consistently on their own output
+Failure mode:
+- they mention `η`, `d`, `p`, `σ`, `ν`,
+- maybe even quote `R_k`,
+- but they won’t perform stable, comparable calculations across rounds/findings.
+
+Reasons:
+1. No explicit numeric output schema.
+2. No parser-visible fields for the parameters.
+3. No calibration examples.
+4. No indication that outputs will be rejected if `CORROBORATION` is vague.
+5. Models are being asked to do code review, registry comparison, verdicting, falsification, and self-risk accounting all at once.
+
+So the directive will mostly act as **behavioral priming**, not a reliable measurement instrument.
+
+### D. The novelty term `η` is under-supported in the prompt flow
+The directive requires registry-relative novelty assessment. In star rounds `>0`, models do get registry summaries. Good.
+
+But:
+- Round 0 has no registry.
+- Registry summaries may not expose enough root-cause structure for accurate novelty estimation.
+- Models may confuse “different evidence” with “novel finding”.
+
+So `η` will be noisy.
+
+### E. The diversity term `d` is weakly grounded
+Models are told to consider whether their approach differs from previous checks, but in star topology they generally do **not** see others’ actual reasoning traces, only registry state. That means they cannot robustly estimate method independence.
+
+So `d` will often be hand-wavy.
+
+### F. `ν*` as a HARD EXIT is unlikely to be obeyed consistently
+This is the most ambitious part of the directive and the least likely to operationalise well.
+
+Why:
+- models are not doing actual edits in the codebase; they are proposing fixes;
+- re-injection estimation is speculative;
+- they are rewarded to produce fixes unless strongly constrained otherwise;
+- the base prompt still says “Produce ALL findings you can identify” and asks for `PROPOSED_FIX`.
+
+Net effect: many models will still propose fixes even when, under the directive, they should say “finding only, no safe fix”.
+
+---
+
+# 3. Are there bugs? Crashes, logic errors, mismatches
+
+## Yes. Surviving issues:
+
+### 3.1 Likely parser/schema mismatch bug
+**Most important implementation risk.**
+
+The prompt schema shown in `base_prompt` does **not include** the mandatory new sections required by the operational directive. Yet the experiment description says:
+> “A finding without a FALSIFICATION section will be rejected by the parser.”
+
+If `parse_findings(...)` actually enforces that gate, then many model outputs will be rejected because the **primary requested format doesn’t contain that field**.
+
+That creates a runner-induced false negative:
+- not “model failed to falsify”
+- but “runner asked for incompatible structure”
+
+This is the strongest surviving bug/mismatch.
+
+### 3.2 Comment/documentation mismatch: C(n) vs new R-based equation
+In `_dispatch_single_model`:
+```python
+# Append operational protocol — models compute C(n), R_n, γ on own output
+```
+For Exp 37 this is stale. The operational directive explicitly says simplified `C(n)` was replaced. `γ` is panel telemetry, not something models compute “on own output” in the same sense.
+
+Not a crash bug, but evidence of implementation drift.
+
+### 3.3 Experiment identity mismatch in logs/messages
+The main loop docstring/logs still say:
+- `"""Run Experiment 36: ..."""`
+- `_log("EXPERIMENT 36: Evidence Layer Code Review")`
+
+This is not fatal, but it is a real operational bug:
+- wrong experiment labeling,
+- potential resume/report confusion,
+- analysis contamination if downstream tooling keys off experiment identity text.
+
+### 3.4 Possible multiturn chunking label/content corruption risk
+`_multiturn_fallback` splits `full_code` using:
+```python
+re.split(r'\n\n===\s+(?:TARGET|CONTEXT)\s+', full_code)
+```
+But the artifact headers in `full_code` are:
+- `=== TARGET FILE (REVIEW THIS): ... ===`
+- `=== CONTEXT FILE: ... ===`
+
+Because the regex cuts at `=== TARGET` / `=== CONTEXT`, the resulting chunks may begin mid-header, dropping semantic framing like “FILE”, “REVIEW THIS”, path, or warning text. That may reduce decomposition quality and can blur target/context distinction.
+
+I would not call it a guaranteed crash, but it is a real logic-quality bug.
+
+### 3.5 Metrics injection starts only at round >= 2
+Operational text says models will receive per-round metrics each round. Runner injects metrics only when:
+```python
+if round_idx >= 2 and registry is not None:
+```
+So rounds 1 lacks metrics even though there is already registry state from round 0.
+
+This is a mismatch, not catastrophic, but it weakens the “operational directive in first production deployment” claim.
+
+### 3.6 Round numbering semantics may confuse models
+The star message says:
+- Round 0: blind
+- Round 1+: registry available
+- metrics only from Round 2
+
+But the operational text treats rounds/cycles as continuous self-calibration. Models may interpret missing metrics in Round 1 as omission or inconsistency.
+
+### 3.7 Registry status count mismatch possibility
+Metrics count:
+- `OPEN`, `CONTESTED`
+- `CONFIRMED`
+- `CLOSED`, `MERGED`
+
+Docstring earlier mentions:
+- `OPEN -> CONFIRMED / MERGED / CONTESTED / UNCONFIRMED`
+
+If `UNCONFIRMED` exists but is omitted from metrics/reporting summaries, panel state shown to models is incomplete. I can’t prove from the excerpt that this status is actively used, so this survives only as a likely mismatch, not a confirmed bug.
+
+---
+
+# 4. What will go wrong? Most likely failure modes
+
+## 4.1 Output-format conflict will dominate behavior
+Most likely outcome:
+- models follow the explicit key list in `base_prompt`,
+- sprinkle some extra prose from the operational directive,
+- parser either partially parses or rejects sections,
+- you get low-quality comparability across models.
+
+This is the highest-probability failure mode.
+
+## 4.2 “Falsification” will collapse into self-assertion
+Even strong models often respond with:
+- “I checked X”
+- “No counterexample found”
+- “Fix seems safe”
+
+without a concrete adversarial test. Unless the parser demands structured falsifier/attempt/result content, much of the claimed falsification will be ceremonial.
+
+## 4.3 CORROBORATION/R estimates will be non-comparable
+You will likely see:
+- some models use qualitative labels,
+- some give rough numbers,
+- some ignore the equation,
+- some report `R_k` without the intermediate variables,
+- some confuse flaw-class residual risk with finding confidence.
+
+So any cross-model quantitative analysis of the new equation will be weak.
+
+## 4.4 Registry novelty calibration will be noisy
+Especially in later rounds, models may:
+- avoid valid rediscoveries that would have provided confirmation,
+- incorrectly label extensions as novel,
+- over-suppress output under low `ρ̄₃/high γ`,
+- or game toward “no novel findings” too early.
+
+## 4.5 The 4-layer stack may overload some models
+You are combining:
+- composed CDSFL directives,
+- operational directive,
+- topology instructions,
+- prior fix summary,
+- target/context artifact,
+- registry summary,
+- metrics,
+- structured output schema.
+
+This is a lot. Likely effects:
+- instruction dilution,
+- partial compliance,
+- model-specific collapse to shortest familiar format,
+- more multiturn fallback use.
+
+## 4.6 Multiturn decomposition may weaken target/context discipline
+Because chunking appears header-fragile, some models may lose the strong distinction:
+- review `evidence.py`,
+- do not review `verification_chain.py`.
+
+This may produce spurious interface findings or context-file criticism.
+
+## 4.7 Experiment interpretation will be confounded
+If outcomes are poor, you won’t know whether the cause was:
+- the new equation,
+- the 4-layer schema,
+- parser strictness,
+- registry/metrics pressure,
+- or model-specific routing fixes.
+
+That is a design-level failure mode.
+
+---
+
+# 5. Specific answers to your four questions
+
+## 1. Is this runner fit for purpose?
+**For running a 5-model star review: yes.**  
+**For validly testing the new equation + 4-layer schema: not yet.**
+
+## 2. Will the operational directive work?
+**Partially.** Models will understand it and may produce some self-assessment behavior, but **not reliably enough to treat the outputs as faithful operational execution of the directive**. The main gaps are:
+- no aligned output schema,
+- no strong enforcement of equation fields,
+- weak grounding for `η` and `d`,
+- likely noncompliance with `ν*` hard exit.
+
+## 3. Are there bugs?
+**Yes.**
+Primary surviving ones:
+- likely parser/output-schema mismatch around mandatory `FALSIFICATION`,
+- stale `C(n)` comment/mental model,
+- Experiment 36/37 naming mismatch,
+- likely multiturn chunking/header degradation,
+- metrics injection starting too late relative to the spec.
+
+## 4. What will go wrong?
+Most likely:
+- models follow old output schema,
+- falsification becomes performative,
+- residual-risk reporting is inconsistent,
+- novelty/diversity estimates are noisy,
+- results become hard to interpret causally.
+
+---
+
+# 6. Minimal fixes before running
+
+If you want Experiment 37 to be meaningfully valid, do these first:
+
+1. **Align the base prompt with the operational directive.**  
+   Replace the old field list with:
+   - FINDING_ID
+   - SEVERITY
+   - FLAW_CLASS
+   - ABSTRACTION_INDEX
+   - FIND
+   - FOLLOW
+   - ANALYSE
+   - FIX
+   - FALSIFICATION
+   - CORROBORATION
+
+2. **Make parser contract explicit and mirrored in the prompt.**  
+   If `FALSIFICATION` is mandatory, say so in the primary output schema, not only in appended directive prose.
+
+3. **Decide whether CORROBORATION is qualitative or numeric.**  
+   If numeric, require:
+   - `ETA`
+   - `DIVERSITY`
+   - `CAPABILITY`
+   - `SIGMA`
+   - `NU`
+   - `R_ESTIMATE`
+   Otherwise accept only qualitative categories and stop pretending it is a measured equation.
+
+4. **Fix experiment labeling.**  
+   Change remaining “Experiment 36” strings.
+
+5. **Inject metrics from Round 1 onward**, not Round 2, if the spec says per-round once registry exists.
+
+6. **Fix multiturn chunk boundaries** so target/context headers are preserved exactly.
+
+7. **Reduce simultaneous novelty in one run** if you want interpretable results.  
+   If possible, freeze CC2/routing changes or treat this as an ops shakedown, not a clean scientific comparison.
+
+---
+
+## Final stance
+
+**Run it only as a shakedown, not as a clean evidentiary experiment.**  
+The runner will probably execute the star-topology review, but the current prompt/parser/spec alignment is too loose to support strong conclusions about whether the new operational directive and 4-layer schema actually worked.

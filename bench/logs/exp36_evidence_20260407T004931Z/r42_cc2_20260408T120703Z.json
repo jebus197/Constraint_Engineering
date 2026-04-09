@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T120703Z",
+  "phase": "r42",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2132,
+  "response": "## Round 42 — CC1 Review\n\nAfter thorough review of `bench/evidence.py` against all 206 settled registry entries, I have no new CRITICAL or HIGH findings to file.\n\nThe code reflects fixes for all major bug families:\n- **Merkle root computation** (C0001/C0005/C0010/C0017): `export_bundle` and `summary` both compute from all records via `rfc9162_merkle_root`, consistent with `build_inclusion_proof`.\n- **Finding ID extraction** (C0006/C0012/C0027/C0073/C0114/C0200 family): `_extract_finding_ids` now handles dict keys, values, strings, lists, tuples, and is called on both `payload` and `metadata`.\n- **verify() caching** (C0008/C0174/C0181): `_verified_with_verifier` flag correctly invalidates structural-only cache when a verifier is supplied.\n- **verify_bundle zip truncation** (C0009/C0173/C0182): Length mismatch check precedes iteration.\n- **verify_bundle chain_hash cross-check** (C0034/C0060/C0106): Record vs proof hash comparison added.\n- **export_bundle experiment parameter** (C0065/C0076/C0088 family): `experiment` parameter now present in signature and forwarded to `_index.search`.\n- **trace_finding sort order** (C0203/C0087): Sorts by `timestamp_utc` for chronological order.\n\n### Verdict on UNCONFIRMED entry\n\n**CONFIRM C0087** — Identical-timestamp ordering is a real ambiguity, but the current implementation uses Python's stable sort over `sorted(indices)` order, which gives record-index tiebreaking. For PoC this is adequate. The severity (acknowledged as edge-case) does not warrant additional fix complexity.\n\n### Assessment\n\nAll CRITICAL and HIGH paths are addressed. The evidence layer correctly:\n1. Partitions records by entity via `_EvidenceIndex`\n2. Extracts finding IDs from payload AND metadata recursively (keys and values)\n3. Classifies CONFIRM/CHALLENGE/EXTEND/MERGE events from payload content\n4. Produces chronologically-sorted provenance traces\n5. Exports bundles with inclusion proofs that verify against a consistently-computed Merkle root\n6. Interfaces correctly with `VerificationChain` (deep-copy awareness, proof/root consistency)\n\nNo new discoveries. The module is ready for PoC ship.",
+  "metadata": {
+    "round": 42,
+    "elapsed": 105.8,
+    "chars": 2132,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

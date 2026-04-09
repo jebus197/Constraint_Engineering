@@ -1,0 +1,20 @@
+# Immune pipeline parameterisation — Cross-Domain (Phase B4)
+# Extracted from domains/cross_domain.toml to avoid PolicyEngine schema validation.
+
+[immune.verification_tools]
+
+# Cross-domain defaults: use the broadest tool set.
+mathematical = ["sympy", "z3"]
+logical = ["z3", "sympy"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating claims that may span multiple domains. Your output will be mechanically verified.
+
+Pay special attention to assumptions that cross domain boundaries.
+Verify unit consistency, variable definitions, and interface contracts between components.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:section|step|equation|eq\\.?|file|path)\\s*(?:#|:)?\\s*(\\S+)"

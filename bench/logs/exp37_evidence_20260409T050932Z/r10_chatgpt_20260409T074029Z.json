@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260409T074029Z",
+  "phase": "r10",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2416,
+  "response": "No novel findings survived falsification above consequence threshold from `bench/evidence.py` after registry deduplication.\n\nVERDICT payloads:\n\nCONFIRM C0135 — `trace_finding()` sorts by raw `timestamp_utc` string, so malformed/non-normalized timestamps can misorder provenance chronology. Evidence: `EvidenceRecord.from_chain_record()` copies `sealed_body[\"timestamp_utc\"]` without normalization; `trace_finding()` uses `events.sort(key=lambda e: e.timestamp_utc)`. ISO-8601 lexical order is only reliable for normalized UTC timestamps. If a loaded chain contains mixed offsets like `2026-04-01T10:00:00+01:00` and `2026-04-01T09:30:00Z`, lexical sort yields the wrong chronology. This affects provenance trace correctness directly.\n\nCONFIRM C0144 — `_classify_event()` uses substring search on JSON text for `CONFIRM/CHALLENGE/EXTEND/MERGE`, which can misclassify if those strings appear in unrelated fields. Evidence: `payload_str = json.dumps(rec.payload)` followed by plain `if f\"CONFIRM {finding_id}\" in payload_str`. That is not schema-aware parsing and will classify based on incidental text.\n\nCONFIRM C0140 — `_extract_finding_ids()` uses `_FINDING_ID_RE = re.compile(r\"\\b[A-Za-z]\\d{3,5}\\b\")`, not the stated CDSFL canonical `C####` pattern. This admits non-finding identifiers and can pollute `by_finding`, `finding_ids`, query results, and bundles.\n\nFALSIFICATION SUMMARY:\n- Falsifier for “no novel findings”: a distinct, high-consequence bug in `evidence.py` not semantically covered by registry entries.\n- Attempt: checked target areas named in prompt against code paths: index partitioning, finding extraction, event classification, chronology, bundle proof verification, and interface use with `verification_chain.py`; compared against registry themes already covering regex over/under-match, classification skips/misclassification, bundle verification flaws, and trace ordering/completeness.\n- Result: candidate issues reduced to already-registered root causes. No surviving semantically novel bug remained.\n\nCORROBORATION:\n- R_old = 0.5\n- For the claim “no novel findings remain above threshold”: η=0.2, d=0.7, p=0.55, σ=1.0, ν=0.0\n- q = η·d·p = 0.2·0.7·0.55 = 0.077\n- R_det = 0.5·(1−0.077)/(1−0.077·0.5) = 0.4799895951\n- R_base = 1.0·0.4799895951 + 0.0·0.5 = 0.4799895951\n- R_k = 0.4799895951·(1−0.0)+0.0 = 0.4799895951\n\nDefinitive stance: no new discovery filed; three existing findings confirmed.",
+  "metadata": {
+    "round": 10,
+    "elapsed": 13.0,
+    "chars": 2416,
+    "findings_count": 0,
+    "decomposed": false
+  }
+}

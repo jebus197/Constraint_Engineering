@@ -1,14 +1,14 @@
 # CDSFL Current State
 
-Generated: 9 April 2026 18:16 BST (2026-04-09T18:16:11+01:00)
+Generated: 9 April 2026 19:25 BST (2026-04-09T19:25:53+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `944ec3e` Exp 37 converged: 6 fixes, mathematical lineage, brain signal wiring
-- **Committed:** 2026-04-09 17:43:18 +0100
+- **Last commit:** `f528314` Enhance sv script: auto-update ONBOARDING.md and RECOVERY.md
+- **Committed:** 2026-04-09 18:16:35 +0100
 - **Remote:** up to date
 - **Working tree:** DIRTY — uncommitted changes present
 
@@ -59,6 +59,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `f528314 Enhance sv script: auto-update ONBOARDING.md and RECOVERY.md`
 - `944ec3e Exp 37 converged: 6 fixes, mathematical lineage, brain signal wiring`
 - `9c2ee82 Guard all choices[0] access against empty upstream 500 responses`
 - `d848863 Merge remote-tracking branch 'origin/claude/debug-api-500-error-AFfcu'`
@@ -68,4 +69,3 @@ Uncommitted files:
 - `14fc964 FFAF: fix CC2v all-escalation bug, expand Agent 4 routing, increase CT timeout`
 - `9538e81 Exp 36: apply all verified fixes, promote shadow→active, wire CC2 agents, FFAF churn`
 - `6abb7d1 Add canonical 4-phase execution plan to ground truth document`
-- `7180e11 sv: 4-phase plan in RECOVERY.md, appendix gap-fill entry, revised next steps`

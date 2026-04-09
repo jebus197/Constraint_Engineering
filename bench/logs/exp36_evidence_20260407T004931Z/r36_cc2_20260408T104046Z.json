@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T104046Z",
+  "phase": "r36",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1899,
+  "response": "## Round 36 — CC1 Review\n\nAll 198 canonical findings are settled (CLOSED or MERGED). I have reviewed evidence.py line-by-line against the current registry.\n\n**No new DISCOVERY findings to file.**\n\nThe code as written addresses every CRITICAL and HIGH issue previously identified:\n\n- **Finding ID extraction** (`_extract_finding_ids`): now searches dict keys AND values, handles str/dict/list/tuple. Metadata is also searched in `from_chain_record`. (C0006 family, all settled.)\n- **Verify caching** (`verify`): correctly invalidates structural-only cache when a `Verifier` is supplied. (C0008/C0174/C0181, settled.)\n- **Bundle Merkle root**: computed from all records via `rfc9162_merkle_root`, matching `build_inclusion_proof`'s tree. No epoch-root mismatch. (C0001/C0005/C0010/C0017, settled.)\n- **`verify_bundle` length check**: guards against `zip` truncation before iterating. (C0009/C0173/C0182, settled.)\n- **`verify_bundle` chain_hash cross-check**: validates record hash matches proof hash before proof verification. (C0034/C0060/C0106, settled.)\n- **`export_bundle` experiment parameter**: present in signature and forwarded to `_index.search`. (C0088 family, settled.)\n- **`_classify_event`**: checks `isinstance(rec.payload, dict)` before `json.dumps`. (C0196, settled.)\n- **`trace_finding` ordering**: sorts by index, which equals chronological order in an append-only chain. Docstring promise satisfied. (C0003/C0082, settled.)\n\n**On C0087 (UNCONFIRMED):** This finding extended C0082 suggesting timestamp-based sorting has edge cases. The current code sorts by record index, and C0082 was CLOSED accepting index-order as chronologically correct for an append-only chain. C0087 is moot — index ordering is the right choice here and produces correct chronological traces by construction.\n\nNo CRITICAL or HIGH issues remain. The evidence layer is end-to-end functional for its PoC scope.",
+  "metadata": {
+    "round": 36,
+    "elapsed": 112.3,
+    "chars": 1899,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

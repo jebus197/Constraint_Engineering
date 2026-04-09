@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T085118Z",
+  "phase": "r30",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 2227,
+  "response": "## Round 30 — CC2 Verdicts\n\nNo new findings to file. After 30 rounds and 186 canonical entries, evidence.py's significant bugs have been identified and settled. The open findings below are duplicates of settled families.\n\n---\n\n### Verdicts on Open Findings\n\n**MERGE C0176 <- C0099** | The description references `by_finding` index and finding-ID-dependent APIs missing records. This is the same root cause as C0099 (finding IDs only extracted from dict payloads) and the broader C0006 family. No new information.\n\n**MERGE C0177 <- C0101** | Export bundle lacking experiment partitioning. Identical to C0101/C0076/C0065 family (export_bundle drops experiment parameter).\n\n**MERGE C0178 <- C0101** | Bundle including records from wrong experiment due to missing experiment filter. Same root cause as C0177 above — C0101 family.\n\n**MERGE C0179 <- C0118** | The signature snippet shows export_bundle's parameter list without experiment. This is C0118/C0101, already confirmed and settled.\n\n**MERGE C0180 <- C0118** | Same snippet, same bug. Duplicate of C0179, both map to C0118.\n\n**MERGE C0184 <- C0099** | Finding-ID-dependent operations omitting valid records due to extraction limitations. The description and fix match C0099/C0006 family exactly.\n\n**CONFIRM C0186** — `_classify_event` classification logic. The event classifier falls through to `\"submitted\"` for any `model_chat_log` where the payload doesn't contain the exact string pattern `\"CONFIRM {finding_id}\"` etc. This matches the C0083 family (case/format sensitivity in verdict detection). If this is meant as a standalone finding about the classifier's structure rather than the string-matching bug, it's valid but low-severity for PoC — the classifier produces a usable default.\n\n---\n\n### Assessment\n\nAll 7 open findings are duplicates of well-established settled families:\n- **Finding-ID extraction** (C0006/C0099/C0114/C0133): extraction limited to dict payload values\n- **Export bundle experiment gap** (C0065/C0076/C0101/C0118): `export_bundle` doesn't forward `experiment`\n- **Event classification fragility** (C0011/C0083): string containment matching\n\nNo novel bugs remain. The registry should close or merge these 7 open entries to reach full settlement.",
+  "metadata": {
+    "round": 30,
+    "elapsed": 57.6,
+    "chars": 2227,
+    "findings_count": 2,
+    "decomposed": false
+  }
+}

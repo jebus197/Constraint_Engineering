@@ -1,0 +1,47 @@
+# Immune pipeline parameterisation — Engineering Domain (Phase B4)
+# Extracted from domains/engineering.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bformula\\b|\\bequation\\b|\\bcalculat)",
+    "(?:\\bstress\\b|\\bstrain\\b|\\bdeflection\\b|\\bload\\b)\\s*[=<>]",
+    "(?:\\bfactor\\s*of\\s*safety\\b|\\bFOS\\b|\\bsafety\\s*factor\\b)\\s*[=<>]",
+    "(?:\\btolerance\\b|\\bclearance\\b|\\bfit\\b)\\s*[=<>]",
+    "(?:dimensional\\s*analysis|units?\\s*(?:check|mismatch))",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\bconservation\\b.*\\bviolat|\\bbalance\\b.*\\bfail)",
+    "(?:\\bfailure\\s*mode\\b|\\bfault\\s*tree\\b|\\bFMEA\\b)",
+]
+
+statistical = [
+    "(?:\\bsignificant\\b|\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bmeasurement\\s*uncertainty|\\berror\\s*propagation|\\btolerance\\s*stack)",
+    "(?:\\bWeibull\\b|\\breliability\\b|\\bfailure\\s*rate\\b)",
+]
+
+[immune.verification_tools]
+
+mathematical = ["sympy", "dimensional_analysis"]
+logical = ["z3"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating engineering claims. Your output will be mechanically verified.
+
+For structural claims: verify load paths, stress calculations, and safety factors.
+For material claims: verify properties against standard references.
+For dimensional claims: verify unit consistency throughout the calculation chain.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:equation|eq\\.?|section|clause|step)\\s*(?:#|:)?\\s*(\\d+(?:\\.\\d+)*)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:safety\\s*factor\\s*(?:<|less)\\s*1\\.0.*(?:cosmetic|non[- ]?structural))"
+source = "FOS FP: FOS < 1.0 is acceptable for non-structural/cosmetic elements"

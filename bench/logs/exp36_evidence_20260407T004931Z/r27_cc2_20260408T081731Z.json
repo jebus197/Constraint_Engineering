@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260408T081731Z",
+  "phase": "r27",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1213,
+  "response": "## Round 27 — CC2 Assessment\n\nAll 164 canonical findings are settled. Zero open CRIT/HIGH remain.\n\nI have re-read `evidence.py` line by line against the registry. Every significant bug class is covered:\n\n| Bug class | Registry coverage |\n|---|---|\n| Finding ID extraction from non-dict payloads | C0006 family (C0022, C0026, C0027, etc.) |\n| Finding IDs in metadata not searched | C0114, C0119, C0133, C0163 family |\n| `export_bundle` missing `experiment` parameter | C0066, C0068, C0101, C0113, C0147 family |\n| `trace_finding` sort-by-index not timestamp | C0003, C0007, C0082, C0087 |\n| `verify()` caches first result permanently | C0008, C0019, C0032, C0040 |\n| `verify_bundle` zip truncation on length mismatch | C0009, C0018, C0039 |\n| `_classify_event` string containment fragility | C0004, C0011, C0028, C0083 |\n| Merkle root epoch mismatch in bundles | C0001, C0005, C0010, C0017 |\n| `_FINDING_ID_RE` rejects non-C or non-4-digit IDs | C0013, C0137, C0154 |\n| `from_chain_file` experiment name inference | C0020, C0160 |\n\nNo new DISCOVERY findings. The evidence layer review is complete. All bugs that would prevent end-to-end operation or produce silently wrong results have been identified and settled.",
+  "metadata": {
+    "round": 27,
+    "elapsed": 68.3,
+    "chars": 1213,
+    "findings_count": 1,
+    "decomposed": false
+  }
+}

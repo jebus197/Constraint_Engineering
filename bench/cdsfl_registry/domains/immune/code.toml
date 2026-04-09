@@ -1,0 +1,78 @@
+# Immune pipeline parameterisation — Code/Software Domain (Phase B4)
+# Extracted from domains/code.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+code_structural = [
+    "(?:@\\w+\\s+decorator)",
+    "(?:\\bmissing\\b.*\\bmethod\\b|\\bmethod\\b.*\\bmissing\\b)",
+    "(?:\\bno\\b.*\\bclass\\b|\\bclass\\b.*\\bnot\\s+defined\\b)",
+    "(?:\\bdecorator\\b.*\\bnot\\s+found\\b)",
+    "(?:\\bmissing\\b.*\\bimport\\b|\\bimport\\b.*\\bnot\\s+found\\b)",
+    "(?:\\bundefined\\b.*\\bvariable\\b|\\bname\\s*error\\b)",
+    "(?:\\bsignature\\b.*\\bmismatch\\b|\\barity\\b.*\\bwrong\\b)",
+    "(?:\\binterface\\b.*\\bnot\\s+implement|\\babstract\\b.*\\bmethod\\b)",
+]
+
+code_behavioral = [
+    "(?:\\bbug\\b|\\berror\\b|\\bwrong\\s+(?:return|output|result|value)\\b)",
+    "(?:\\boff-by-one\\b|\\bfencepost\\b|\\bboundary\\b.*\\berror\\b)",
+    "(?:\\brace\\s*condition\\b|\\bdeadlock\\b|\\bdata\\s*race\\b)",
+    "(?:\\bnull\\s*pointer\\b|\\bNone\\s*(?:type|error)\\b|\\bAttributeError\\b)",
+    "(?:\\binfinite\\s*loop\\b|\\bstack\\s*overflow\\b|\\brecursion\\s*(?:limit|depth)\\b)",
+    "(?:\\btype\\s*error\\b|\\btype\\s*mismatch\\b)",
+    "(?:\\bincorrect\\b.*\\blogic\\b|\\blogic\\b.*\\berror\\b)",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\binvariant\\b|\\bprecondition\\b|\\bpostcondition\\b)",
+    "(?:\\breachable\\b|\\bunreachable\\b|\\bdead\\s*code\\b)",
+]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bformula\\b|\\bequation\\b|\\bcalculat)",
+    "(?:\\bcomplexity\\b|\\bO\\(|\\bTheta\\(|\\bOmega\\()",
+]
+
+[immune.verification_tools]
+
+code_structural = ["ast_analysis", "type_checker"]
+code_behavioral = ["ast_analysis", "test_runner"]
+mathematical = ["sympy", "z3"]
+logical = ["z3"]
+
+[immune.ct_prompt_template]
+template = """You are investigating code claims. Your output will be mechanically verified.
+
+For structural claims: locate the specific class, method, or decorator and report whether it exists.
+For behavioural claims: trace the execution path and report what the code actually does at each step.
+For each piece of evidence, cite the exact file path, line number, and verbatim code snippet.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:file|path)\\s*:?\\s*([^\\s:]+)\\s*(?::|-|line)\\s*(\\d+)"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:@dataclass\\s+decorator.*missing)"
+source = "Run 7b: Codex hallucinated missing @dataclass"
+expected_model = "Codex"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:missing\\s+@dataclass)"
+source = "Run 7b: @dataclass false positive cluster"
+expected_model = "Codex"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:missing\\s+import.*(?:__future__|annotations))"
+source = "Future import FP: __future__ imports are optional in Python 3.10+"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:unused\\s+import.*(?:TYPE_CHECKING|__all__))"
+source = "TYPE_CHECKING import FP: used only at type-check time, not runtime"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:missing\\s+type\\s*hint.*(?:self|cls)\\s*(?:parameter|argument))"
+source = "Self type hint FP: self/cls type annotations are optional by convention"
