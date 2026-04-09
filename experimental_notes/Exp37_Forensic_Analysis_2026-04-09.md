@@ -370,7 +370,7 @@ The R11 spike (28 findings) corresponds to DeepSeek (13) and Gemini (7) discover
 |-----|------|-------------|
 | CC2 parser aliases | `runner_core.py` | FIND→DESCRIPTION, chevron labels, FIX alias |
 | CC2v max_turns | `cc2_manager.py` | 2→4 for verification + citation agents |
-| Consecutive rounds | `run_exp37_evidence.py` | 2→1 (PoC resolution) |
+| Consecutive rounds | `run_exp37_evidence.py` | Discussed 2→1 but not needed: Exp 37 converged with 2 consecutive passes at the higher bar. Code updated to 1 for future experiments. |
 | Brain signal wiring | `run_exp37_evidence.py` | Runner now sets `brain.state.converged=True` |
 | sv script enhancement | `scripts/cdsfl_sv.py` | Auto-updates ONBOARDING.md + RECOVERY.md |
 
@@ -398,7 +398,7 @@ The R11 spike (28 findings) corresponds to DeepSeek (13) and Gemini (7) discover
 
 ## 12. Areas for Improvement
 
-- **Consecutive rounds parameter** — revisit for production (1 is sufficient for PoC).
+- **Consecutive rounds parameter** — Exp 37 converged at the stricter bar (2 consecutive passes). Code now set to 1 for future PoC experiments; production may want 2 or 3.
 - **Empty description bug** — 2/6 R14 verification entries had no description text. Harden parser.
 - **DeepSeek confirmation rate** — 20% vs panel average 36%. Tune directive for more aggressive self-filtering via R_k.
 - **Endocrine health scan integration** — same 7 diagnostics in R14 and R15 (not consumed by pipeline). Should inform finding prioritisation.

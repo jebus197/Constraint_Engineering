@@ -1,33 +1,22 @@
 # CDSFL Current State
 
-Generated: 9 April 2026 19:25 BST (2026-04-09T19:25:53+01:00)
+Generated: 9 April 2026 21:28 BST (2026-04-09T21:28:48+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `f528314` Enhance sv script: auto-update ONBOARDING.md and RECOVERY.md
-- **Committed:** 2026-04-09 18:16:35 +0100
+- **Last commit:** `9d2ac85` Exp 37 forensic analysis, exp36 late-round logs, new modules
+- **Committed:** 2026-04-09 19:26:37 +0100
 - **Remote:** up to date
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M .claude/CLAUDE.md`
-- `M bench/cdsfl_registry/composer.py`
-- `M bench/dm/_types.py`
-- `M bench/evidence.py`
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Gemini.json`
-- `M bench/logs/exp36_evidence_20260407T004931Z/checkpoint.json`
-- `M bench/logs/exp36_evidence_20260407T004931Z/completion_signal.json`
-- `M bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json`
-- `M bench/logs/exp36_evidence_20260407T004931Z/experiment_chain.json`
-- `M bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`
-- `M bench/logs/immune_shadow.log`
+- `M experimental_notes/Exp37_Forensic_Analysis_2026-04-09.md`
+- `?? bench/confer_solution_reliability.py`
+- `?? bench/logs/confer_solution_reliability/`
+- `?? experimental_notes/Sk_Confer_Synthesis_2026-04-09.md`
 
 ---
 
@@ -59,6 +48,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `9d2ac85 Exp 37 forensic analysis, exp36 late-round logs, new modules`
 - `f528314 Enhance sv script: auto-update ONBOARDING.md and RECOVERY.md`
 - `944ec3e Exp 37 converged: 6 fixes, mathematical lineage, brain signal wiring`
 - `9c2ee82 Guard all choices[0] access against empty upstream 500 responses`
@@ -68,4 +58,3 @@ Uncommitted files:
 - `6f1de65 Fix CC2 agent model ID: claude-opus-4 → claude-opus-4-6`
 - `14fc964 FFAF: fix CC2v all-escalation bug, expand Agent 4 routing, increase CT timeout`
 - `9538e81 Exp 36: apply all verified fixes, promote shadow→active, wire CC2 agents, FFAF churn`
-- `6abb7d1 Add canonical 4-phase execution plan to ground truth document`

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 9 April 2026 19:25 BST
+Last updated: 9 April 2026 21:28 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,38 +21,21 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (9 April 2026 19:25 BST)
+## Current Pending Work (9 April 2026 21:28 BST)
 
 Experiments 12–37 ALL COMPLETE. 690 tests pass.
 
-EXP 37 CONVERGED (9 April 2026 19:25 BST):
+EXP 37 CONVERGED (9 April 2026 21:28 BST):
   Target: bench/evidence.py, star, 16 rounds.
   257 findings, γ=0.467. STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
   Logs: bench/logs/exp37_evidence_20260409T050932Z/
   Report: bench/logs/exp37_evidence_20260409T050932Z/exp37_report.json
 
 Uncommitted changes in working tree:
-  M .claude/CLAUDE.md
-  M bench/cdsfl_registry/composer.py
-  M bench/dm/_types.py
-  M bench/evidence.py
-  M bench/fingerprints/CC2.json
-  M bench/fingerprints/ChatGPT.json
-  M bench/fingerprints/Codex.json
-  M bench/fingerprints/DeepSeek.json
-  M bench/fingerprints/Gemini.json
-  M bench/logs/exp36_evidence_20260407T004931Z/checkpoint.json
-  M bench/logs/exp36_evidence_20260407T004931Z/completion_signal.json
-  M bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json
-  M bench/logs/exp36_evidence_20260407T004931Z/experiment_chain.json
-  M bench/logs/exp36_evidence_20260407T004931Z/runner_state.json
-  M bench/logs/immune_shadow.log
-  M bench/run_exp36_evidence.py
-  ?? bench/cdsfl_registry/domains/chemistry.toml
-  ?? bench/cdsfl_registry/domains/immune/
-  ?? bench/confer_novelty_extension.py
-  ?? bench/directives/universal/cdsfl_operational.md
-  ... and 209 more
+  M experimental_notes/Exp37_Forensic_Analysis_2026-04-09.md
+  ?? bench/confer_solution_reliability.py
+  ?? bench/logs/confer_solution_reliability/
+  ?? experimental_notes/Sk_Confer_Synthesis_2026-04-09.md
 
 Remote: up to date.
 
