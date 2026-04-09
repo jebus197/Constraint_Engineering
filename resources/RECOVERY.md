@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 8 April 2026 07:00 BST
+Last updated: 9 April 2026 17:42 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -20,9 +20,30 @@ session loss, compaction event, or fresh start with a new model instance.
 
 This is enough to resume most tasks.
 
-## Current Pending Work (8 April 2026, 03:52 BST)
+## Current Pending Work (9 April 2026, 17:42 BST)
 
-Experiments 12–36 ALL COMPLETE. 690 tests pass.
+Experiments 12–37 ALL COMPLETE. 690 tests pass.
+
+EXP 37 CONVERGED (9 April 2026, 10:18 BST):
+  Evidence layer review (evidence.py + verification_chain.py), star topology,
+  5 models, 16 rounds, 1335s. STATE_CONVERGED at R15 (R14+R15 both passed gate).
+  257 raw findings, 222 canonical. γ=0.467. Merkle chain sealed.
+  All 5 models computed R_k self-assessment equation in reasoning.
+  Logs: bench/logs/exp37_evidence_20260409T050932Z/
+  Report: bench/logs/exp37_evidence_20260409T050932Z/exp37_report.json
+  Live log: bench/logs/exp37_live.log
+
+  Fixes applied this session (all in working tree, NOT YET COMMITTED):
+  1. run_exp37_evidence.py: NameError fix, convergence gate strong_depletion
+     override, CONSECUTIVE_ROUNDS_REQUIRED 2→1, brain signal wiring
+  2. runner_core.py: CC2 parser FIND→DESCRIPTION alias, chevron labels,
+     FIX→PROPOSED_FIX alias
+  3. cc2_manager.py: CC2v/citation max_turns 2→4
+  4. PAPER.md: §2.3 model evolution lineage
+  5. docs/MATHEMATICAL_APPENDIX.md: §1.1 unified self-assessment equation
+  6. Brain signal bug: runner now sets brain.state.converged=True (was INCOMPLETE)
+
+  NEXT: Commit all fixes. Post-experiment analysis. Bench Run 2 preparation.
 
 EXP 35 COMPLETE (6 April 2026, ~18:00 BST):
   PolicyEngine review, relay mode, 5 models, 23 rounds.

@@ -6,7 +6,7 @@
 
 ## Status
 
-The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. Benchmark data from the three-architecture adversarial review now provides a basis for initial calibration of these extensions. They are stated precisely so they can be tested, and discarded if they do not improve prediction. The full model was declared mathematically coherent after an 8-round audit (31 March 2026) involving 6 models with 39 independent algebra checks, all passing.
+The models in this appendix are **extensions**, not replacements. The core equations in the white paper remain the canonical formal statement. Benchmark data from the three-architecture adversarial review now provides a basis for initial calibration of these extensions. They are stated precisely so they can be tested, and discarded if they do not improve prediction. The full model was declared mathematically coherent after an 8-round audit (31 March 2026) involving 6 models with 39 independent algebra checks, all passing. The unified self-assessment equation (§1.1, April 2026) collapses the residual risk model into a recursive form and extends it with fix-phase mechanics (novelty η, fix efficacy σ, re-injection ν). This is the operational form used in the CDSFL directive and by the Exp 37+ runner. The white paper §2.3 documents the full lineage from C(n) to the three-phase operational form.
 
 ---
 
@@ -147,6 +147,106 @@ The methodology is an efficiency multiplier on the union of substrate capabiliti
 **Relationship to §8.4:** §8.4 asserts substrate agnosticism (the framework applies to any analytical agent). The substrate ceiling establishes the complementary boundary: the framework cannot exceed the union of its components' capabilities, regardless of substrate type.
 
 (Modified from informal Gemini constructs and adopted during Round 8, 31 March 2026. SymPy verified: R → π_risk,k when all m = 1.)
+
+---
+
+## 1.1 Unified Self-Assessment Equation
+
+### Model Evolution
+
+The mathematical model evolved through five stages. Each is a strict generalisation of the previous — the earlier model is a special case of the later one under simplifying assumptions.
+
+| Stage | Equation | What it adds | Source |
+|---|---|---|---|
+| 1 | C(n) = 1 − (1−p)ⁿ | Core corroboration | White paper §2.1 |
+| 2 | F_n = Σ_k w_k · [1 − Π_i (1 − d_i · p_ik)] | Multi-class, diversity | White paper §2.2 |
+| 3 | R_n = Σ_k w_k · (π_k · m_k) / ((1−π_k) + π_k · m_k) | Bayesian posterior, prior | This appendix §1 |
+| 4 | R_k(i) = R_k(i-1) · (1−q) / (1−q·R_k(i-1)), q = d·p | Recursive collapse, π vanishes | This section |
+| 5 | Three-phase: R_det → R_base → R_k with q = η·d·p, σ, ν | Novelty, fix efficacy, re-injection | Operational directive §3 |
+
+### From R_n to the Recursive Form (Stage 3 → 4)
+
+The batch formula in §1 computes residual risk after n passes by accumulating the miss probability product m_k = Π_i(1 − d_i · p_ik) and applying Bayes' theorem once. The recursive form computes the same quantity one pass at a time.
+
+Define q_ik = d_ik · p_ik as the effective detection probability of pass i for flaw class k. After pass i, the single-step Bayesian update is:
+
+> **R_k(i) = R_k(i-1) · (1 − q_ik) / (1 − q_ik · R_k(i-1))**
+
+with initial condition R_k(0) = π_k.
+
+**Derivation.** The batch Bayesian posterior for class k is:
+
+> R_k = π_k · m_k / ((1−π_k) + π_k · m_k)
+
+Substituting m_k = Π_j(1 − q_jk) and unrolling the product one factor at a time produces the recursive form. The prior π_k enters once at R_k(0) and never appears in the update rule again — it is absorbed into the running estimate. (Verified by SymPy and Wolfram Alpha, 8 April 2026.)
+
+**The π-vanishing property.** Once you have your current risk estimate R_k(i), the update depends on only two quantities: R_k(i) itself and the effective detection q of the next pass. No history beyond the current state is required. This makes the equation self-contained at every step — a model can pick it up at any point, assess current risk, and decide what to do next.
+
+**Marginal gain.** The risk reduction from one additional pass is:
+
+> ΔR_k = q · R_k · (1 − R_k) / (1 − q · R_k)
+
+The (1 − R_k) factor encodes diminishing returns: the less risk remains, the less there is to gain. The stopping rule follows naturally — continue while Σ_k w_k · ΔR_k > θ, where θ is the consequence threshold.
+
+**Reduction.** Under K=1, d=1, all q=p, π=0.5, the recursive form produces R_n = (1−p)^n / (1 + (1−p)^n), the standard Bayesian posterior for repeated Bernoulli non-detection. This is the simplified model in the white paper §2.1, re-derived from first principles.
+
+### Three-Phase Extension (Stage 4 → 5)
+
+The recursive form (Stage 4) models detection only. Two confer analyses (Gemini 3.1 Pro and Codex GPT-5.4, 8 April 2026) independently identified that detection-only risk is incomplete — the act of fixing introduces its own risk. The extension adds three parameters:
+
+- **η (novelty):** Is this finding genuinely new? Restating a known issue gives η ≈ 0. New content gives η ≈ 1. Replaces the implicit assumption that all passes contribute novel information.
+- **σ (fix efficacy):** Does the proposed fix actually resolve the detected flaw? σ = 1 means the fix works perfectly. σ = 0 means the fix fails entirely and risk reverts to the pre-detection level.
+- **ν (re-injection rate):** Does the fix attempt introduce new flaws? Localised one-line changes have low ν. Changes to shared interfaces have higher ν.
+
+The three phases per cycle are:
+
+**Phase 1 — Detection.** Effective detection now includes novelty:
+
+> q = η · d · p
+>
+> R_det = R_old · (1 − q) / (1 − q · R_old)
+
+**Phase 2 — Resolution.** The fix may or may not resolve the target flaw:
+
+> R_base = σ · R_det + (1 − σ) · R_old
+
+When σ = 1, the full detection benefit is captured. When σ = 0, risk stays at R_old — the fix failed and the pre-detection risk level applies.
+
+**Phase 3 — Re-injection.** Modifying the system can introduce new problems:
+
+> R_k(i) = R_base · (1 − ν) + ν
+
+Re-injection applies to the result of the attempt, not the success. A failed fix that modifies code still carries re-injection risk.
+
+**Break-even re-injection rate.** Below this threshold, the cycle does more good than harm:
+
+> ν* = σ · R · q / (1 − q · R · (1 − σ))
+
+When σ = 1: ν* = q · R. When σ = 0: ν* = 0 (any re-injection is harmful since the fix provides zero benefit).
+
+**Divergence condition.** If ν > ν*, the cycle is net harmful — ΔR_cycle < 0. This is a hard exit condition: stop fixing and report the finding for human review.
+
+**Substrate ceiling (re-derived).** The re-injection rate ν is the absolute floor for residual risk:
+
+> lim_{n→∞} R_{n,k} ≥ ν_k
+
+This is consistent with §1's substrate ceiling result but more precise — the floor is set by fix quality, not just detection capability.
+
+### Reduction Properties (All Verified)
+
+| Condition | Result | Meaning |
+|---|---|---|
+| η = 1, σ = 1, ν = 0 | Stage 4 (detection-only recursive) | Clean fix, novel finding |
+| Additionally K=1, d=1, p uniform, π=0.5 | Stage 1 (white paper C(n)) | All simplifications applied |
+| σ = 0, ν = 0 | R unchanged | Fix failed, no side effects |
+| σ = 0, ν > 0 | R increases | Fix failed and introduced new problems |
+| η = 0 | q = 0, R unchanged | Redundant finding adds nothing |
+| ν = 1 | R = 1 | Fix always breaks something |
+| q = 1, σ = 1, ν > 0 | R = ν | Perfect detection, re-injection is the floor |
+
+The complete lineage from C(n) to the three-phase operational form is a chain of strict generalisations, each adding one mechanistic dimension that the previous stage assumed away.
+
+(Unified equation derived 8 April 2026. Three-phase extension derived 8–9 April 2026. Confer-verified by Gemini 3.1 Pro and Codex GPT-5.4. SymPy + Wolfram Alpha verified. Full derivation logs: `bench/logs/confer_unified_equation/`. Operational specification: `bench/directives/universal/cdsfl_operational.md` §3.)
 
 ---
 
@@ -1103,9 +1203,14 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | E*(t) | Bayesian posterior expertise estimate | White paper §7.1, this appendix §6 |
 | κ | HIL calibration metric | This appendix §6 |
 | λ(t) | Duane NHPP intensity function | This appendix §7.1 |
-| ν | Error re-injection coefficient | This appendix §7.1 |
+| ν | Re-injection rate (fix introduces new flaw) | This appendix §1.1, §7.1 |
 | β | Duane shape parameter | This appendix §7.1 |
-| η | Duane scale parameter | This appendix §7.1 |
+| η (§1.1) | Novelty of finding (new content vs restated) | This appendix §1.1 |
+| η (§7.1) | Duane scale parameter | This appendix §7.1 |
+| σ (§1.1) | Fix efficacy (probability fix resolves flaw) | This appendix §1.1 |
+| R_det | Post-detection residual risk (Phase 1 output) | This appendix §1.1 |
+| R_base | Post-resolution residual risk (Phase 2 output) | This appendix §1.1 |
+| ν* | Break-even re-injection rate | This appendix §1.1 |
 | γ | Convergence parameter (1 − β) | This appendix §7.1 |
 | τ_defer | Synthesis deferral penalty | This appendix §2 |
 | H(x) | Abstraction Index (finding depth) | This appendix §7.2 |
@@ -1148,7 +1253,7 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 
 ## Attribution
 
-The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary.
+The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary. The unified self-assessment equation (§1.1, 8 April 2026) was derived during the Exp 37 build. The recursive form was verified by SymPy and Wolfram Alpha. The three-phase extension (η, σ, ν) was confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 — both falsified the original σ placement and corrected it (confer logs: `bench/logs/confer_unified_equation/`). A 25-check internal consistency audit (SymPy, Wolfram, z3) confirmed all 5 identified gaps and disputed two prior claims. The operational form is specified in the CDSFL operational directive §3 and first deployed in Experiment 37 (9 April 2026).
 
 ---
 

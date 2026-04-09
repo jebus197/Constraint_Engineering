@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 8 April 2026 07:00 BST
+Last updated: 9 April 2026 17:42 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -21,6 +21,32 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 **Local path:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/`
 
 ## Current State (update after each major milestone)
+
+- **EXP 37 CONVERGED (9 April 2026, 10:18 BST):**
+  Evidence layer review (`evidence.py` + `verification_chain.py`), star topology,
+  5 models. 16 rounds (R0–R15), 1335s (~22 min). **STATE_CONVERGED** — convergence
+  gate passed R14 and R15 (2 consecutive passes). 257 raw findings → 222 canonical
+  entries. γ final=0.467 (strong depletion). Per model: Gemini 87, ChatGPT 51,
+  DeepSeek 48, CC2 40, Codex 31. Merkle chain sealed (140 records).
+  **Key milestone:** All 5 models computed R_k self-assessment equation numerically
+  in their reasoning — deriving q=η·d·p, R_det, R_base, R_k, and using ΔR>0 to
+  assess cycle productivity. First demonstration of models reasoning through the
+  unified mathematical framework in production.
+  **Fixes applied mid-experiment:** (1) NameError crash in `_make_model_prompt`
+  (novelty_counts not in scope, replaced with ρ). (2) Convergence gate
+  contradiction — ρ churn + open_ch deadlocked when γ≥0.45; added strong_depletion
+  advisory override. (3) CC2 parser: added FIND→DESCRIPTION alias, chevron format
+  with labels. (4) CC2v/citation max_turns 2→4. (5) CONSECUTIVE_ROUNDS_REQUIRED
+  2→1 (PoC resolution). (6) Brain signal wiring: runner now sets
+  brain.state.converged=True on gate convergence.
+  **Immune system:** z3 SMT counterexample on Gemini_C0191 (both pipelines agreed,
+  locked rejection). B Cell formal verification active. Reconciliation tribunal
+  autoimmune protection triggered R2 (100% ChatGPT removal → resurrection).
+  **Observations:** Semantic novelty filter working (ID-based ρ~0.74, real ρ~0.18).
+  R10 and R14 novelty resurgences (ρ=0.636, ρ=0.929) after sustained depletion.
+  Regex/LLM classifier agreement 12–60% across rounds.
+  **Mathematical model lineage:** Documented C(n)→F_n→R_n→unified recursive→3-phase
+  operational in PAPER.md §2.3 and MATHEMATICAL_APPENDIX.md §1.1.
 
 - **EXP 36 COMPLETE (7 April 2026, 05:34 BST):**
   Evidence layer review (`evidence.py`, 591 lines), star topology, 5 models.

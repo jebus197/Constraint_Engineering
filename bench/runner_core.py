@@ -531,21 +531,31 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             r'\*{0,2}[Aa][Bb][Ss][Tt][Rr][Aa][Cc][Tt][Ii][Oo][Nn][\s_-]*'
             r'[Ii][Nn][Dd][Ee][Xx]\*{0,2}\s*[:=\-]\s*([\d.]+)', block
         )
+        # DESCRIPTION or FIND (CC2 uses FIND: instead of DESCRIPTION:)
         desc_match = re.search(
-            r'\*{0,2}[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]\*{0,2}'
+            r'\*{0,2}(?:[Dd][Ee][Ss][Cc][Rr][Ii][Pp][Tt][Ii][Oo][Nn]'
+            r'|[Ff][Ii][Nn][Dd])\*{0,2}'
             r'\s*[:=\-]\s*(.+?)'
             r'(?=\n\s*(?:\*{0,2}(?:[Pp][Rr][Oo][Pp]|[Vv][Ee][Rr][Ii]|'
-            r'[Ff][Ii][Nn][Dd])|$))',
+            r'[Ff][Oo][Ll][Ll]|[Ff][Ii][Nn][Dd])|$))',
             block, re.DOTALL
         )
         ver_match = re.search(
             r'\*{0,2}[Vv][Ee][Rr][Ii][Ff][Ii][Ee][Dd]\*{0,2}'
             r'\s*[:=\-]\s*(TRUE|FALSE|true|false|True|False)', block
         )
+        # Extract PROPOSED_FIX — try chevron format first, then freeform
+        # CC2 uses labels: <<<< OLD / ==== NEW / >>>>
+        chevron_match = re.search(
+            r'(?m)^<{4,}[^\n]*$\n(.*?)\n^={4,}[^\n]*$\n(.*?)\n^>{4,}[^\n]*$',
+            block, re.DOTALL | re.MULTILINE
+        )
+        # PROPOSED_FIX or FIX (CC2 uses FIX: instead of PROPOSED_FIX:)
         fix_match = re.search(
-            r'\*{0,2}[Pp][Rr][Oo][Pp][Oo][Ss][Ee][Dd][\s_-]*'
+            r'\*{0,2}(?:[Pp][Rr][Oo][Pp][Oo][Ss][Ee][Dd][\s_-]*)?'
             r'[Ff][Ii][Xx]\*{0,2}\s*[:=\-]\s*(.+?)'
-            r'(?=\n\s*(?:\*{0,2}(?:[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd])|$))',
+            r'(?=\n\s*(?:\*{0,2}(?:[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd]|'
+            r'[Ff][Aa][Ll][Ss][Ii]|[Cc][Oo][Rr][Rr][Oo])|$))',
             block, re.DOTALL
         )
 
@@ -557,7 +567,15 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
         description = desc_match.group(1).strip() if desc_match else block[:200]
-        proposed_fix = fix_match.group(1).strip() if fix_match else ""
+        # Chevron format preferred: captures old→new as structured diff
+        if chevron_match:
+            old_code = chevron_match.group(1).strip()
+            new_code = chevron_match.group(2).strip()
+            proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
+        elif fix_match:
+            proposed_fix = fix_match.group(1).strip()
+        else:
+            proposed_fix = ""
         verified = (
             ver_match.group(1).upper() == "TRUE" if ver_match else False
         )
@@ -598,6 +616,29 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             description=response[:500],
             verified=False,
         ))
+
+    # ── Falsification gate ───────────────────────────────────────────
+    # Findings without falsification evidence are marked unverified and
+    # flagged. The FALSIFICATION section must contain a concrete attempt
+    # to disprove the claim — not just "VERIFIED: TRUE".
+    _FALSIF_MARKERS = re.compile(
+        r'(?:FALSIF(?:ICATION|IER|IED)|CORROBORATION\s*:'
+        r'|ATTEMPT(?:ED)?[\s_-]*TO[\s_-]*(?:BREAK|DISPROVE[DN]?|REFUTE[DN]?)'
+        r'|DISPROVE[DN]?\s+by|REFUTE[DN]?\s+by'
+        r'|COUNTER[\s_-]*EXAMPLE|WOULD[\s_-]*(?:BREAK|FAIL|DISPROVE)'
+        r'|EDGE[\s_-]*CASE[\s_-]*(?:TEST|CHECK)'
+        r'|BOUNDARY[\s_-]*(?:CONDITION|CHECK|TEST))',
+        re.IGNORECASE
+    )
+    for f in findings:
+        desc = f.description + (f.proposed_fix or "")
+        if _FALSIF_MARKERS.search(desc):
+            object.__setattr__(f, 'falsification_present', True)
+        else:
+            object.__setattr__(f, 'falsification_present', False)
+            # Downgrade confidence — unfalsified findings get lower priority
+            if f.verified:
+                object.__setattr__(f, 'verified', False)  # Self-certification without falsification
 
     return findings
 

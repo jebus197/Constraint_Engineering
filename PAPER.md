@@ -153,6 +153,32 @@ The simple model C(n) operates entirely within A0. The structured model F_n can 
 
 A further extension — the combined machine-HIL detection model (G_n) — is presented separately in Part VII, after the reader has encountered the human role (Part III), the persistence and verification architecture (Part V), and the quality defence problem (Part VI). G_n resolves a gap that becomes apparent only once those sections have been read: how to quantify the human expert's contribution and couple it to the verification infrastructure.
 
+#### 2.3 Model Evolution: From C(n) to the Operational Self-Assessment Equation
+
+The models presented above evolved through operational use. Each stage is a strict generalisation — the previous model is a special case under simplifying assumptions.
+
+**Stage 1: C(n) = 1 − (1−p)ⁿ** (§2.1 above). Single flaw type, single detection probability, independence assumed. Captures the core dynamic: corroboration accumulates through survived falsification.
+
+**Stage 2: F_n with multi-class d_i, p_ik** (§2.2 above). Adds flaw classes, consequence weighting, and diversity discounts. Answers "how hard did we try?"
+
+**Stage 3: R_n with Bayesian posterior** (Mathematical Appendix §1). Introduces the prior flaw rate π_k and answers a different question: "how much risk remains?" Bayesian update using miss probabilities. Coverage and risk are complementary views of the same process.
+
+**Stage 4: Recursive collapse.** The batch Bayesian formula from Stage 3 can be unrolled into a single recursive update applied after each pass:
+
+> **R_k(i) = R_k(i-1) · (1 − q) / (1 − q · R_k(i-1))**
+
+where q = d · p. The prior π_k enters once as R_k(0) = π_k and then vanishes from the update rule. This makes the equation self-contained at every step — no history beyond the current risk estimate is needed. Under the simplifying assumptions of Stage 1 (K=1, d=1, uniform p, π=0.5), it reduces to the standard Bayesian posterior (1−p)^n / (1 + (1−p)^n), which is the Bayesian form of C(n).
+
+**Stage 5: Three-phase operational form.** The recursive equation models detection only. In practice, the act of fixing introduces its own risk. Three additional parameters complete the cycle:
+
+- **η (novelty):** Is this finding genuinely new content? q becomes η · d · p.
+- **σ (fix efficacy):** Does the proposed fix actually resolve the flaw? Interpolates between full detection benefit (σ=1) and no benefit (σ=0).
+- **ν (re-injection rate):** Does the fix introduce new problems? Sets the absolute floor for residual risk.
+
+The three phases per cycle — detection (Bayesian update), resolution (σ-weighted interpolation), re-injection (ν floor) — are specified operationally in the CDSFL operational directive and derived formally in the Mathematical Appendix §1.1. The break-even re-injection rate ν* = σ · R · q / (1 − q · R · (1−σ)) determines whether a cycle does net good or net harm.
+
+The complete lineage is a chain of strict generalisations. C(n) captures the principle. F_n adds structure. R_n adds risk. The recursive collapse makes it self-contained. The three-phase extension makes it operational. Each step was verified computationally (SymPy, Wolfram Alpha) and validated through multi-architecture confer (Gemini 3.1 Pro, Codex GPT-5.4, April 2026). Full derivation: Mathematical Appendix §1.1.
+
 ### 3. Constraint Classification
 
 Before any synthesis, all constraints are classified:

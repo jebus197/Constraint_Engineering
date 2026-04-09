@@ -50,11 +50,12 @@ sys.path.insert(0, str(REPO_ROOT / "bench"))
 VERIFICATION_MIN_ROUND = 6
 VERIFICATION_BATCH_SIZE = 8       # Slightly larger than old CC2v — parallel agents
 VERIFICATION_CONFIDENCE_THRESHOLD = 0.7
-DEDUP_SIMILARITY_THRESHOLD = 0.65  # Below this, skip dedup agent
+DEDUP_SIMILARITY_THRESHOLD = 0.35  # Lowered from 0.65 — Exp 36 showed 4:1 redundancy with semantic duplicates slipping through at higher thresholds
 
 # Model IDs for claude -p dispatch
-HAIKU_MODEL = "claude-haiku-4"
+SONNET_MODEL = "claude-sonnet-4-6"
 OPUS_MODEL = "claude-opus-4-6"
+HAIKU_MODEL = "haiku"  # Kept for dedup (sufficient for similarity)
 
 # Per-agent timeouts (seconds)
 CITATION_TIMEOUT = 60
@@ -190,20 +191,26 @@ class AggregatedResult:
 _CITATION_PROMPT = """You are a Citation Verifier. Your ONLY task is to check whether the
 finding accurately describes the cited code.
 
+You have access to: Read, Grep, Glob. Use them to verify file:line references
+in the finding against the actual source code. Do not rely on the source excerpt
+alone — read the referenced files directly when the finding cites specific
+locations.
+
 Rules:
 - Check ONLY whether the description matches what the code actually does.
 - Do NOT assess severity, importance, or whether the issue matters.
-- Cite specific line numbers and code as evidence.
+- You MUST use tools to read the cited code. Do not reason without evidence.
+- Cite specific line numbers and actual code content as evidence.
 - One verdict only. No preamble, no explanation beyond the evidence field.
 
-SOURCE CODE:
+SOURCE CODE (excerpt):
 {source_code}
 
 FINDING:
 [{finding_id}] {description}
 
 Respond with EXACTLY one line in this format:
-VERIFIED | <confidence 0.0-1.0> | <evidence citing specific code lines>
+VERIFIED | <confidence 0.0-1.0> | <evidence citing specific code lines from tool output>
 UNVERIFIED | <confidence 0.0-1.0> | <what the code actually does vs what the finding claims>
 UNCLEAR | <confidence 0.0-1.0> | <what cannot be determined and why>
 """
@@ -255,16 +262,26 @@ the claim in this finding can be verified using formal or computational tools.
 
 You have access to: Read, Bash, Grep, Glob.
 
-Use these tools to:
-- Run SymPy to verify mathematical claims
-- Parse AST to verify structural code claims
-- Run z3 to verify logical invariants
-- Run SciPy/statsmodels to verify statistical claims
-- Execute targeted code snippets to verify behavioural claims
+The tool output IS your evidence. Your reasoning selects and interprets tool
+output — it does not substitute for it. If the tools cannot verify the claim,
+the claim is UNVERIFIABLE. Do not guess.
+
+Available verification methods (use via Bash):
+- `import ast` — parse Python source, verify structure, trace call graphs
+- `import sympy` — verify mathematical claims symbolically
+- `import z3` — verify logical invariants, constraint satisfaction
+- `import scipy.stats` / `import statsmodels` — verify statistical claims
+- `import numpy` — numerical verification, array operations
+- `python3 -m pytest <test_file>` — run tests to verify behavioural claims
+- Direct code execution — construct targeted test cases for the claim
+
+The CDSFL corroboration model: your tool-backed verification has high detection
+probability p (typically p > 0.7 for mechanical checks). A single tool-backed
+pass contributes more corroboration than multiple reasoning-only passes.
 
 Rules:
 - You MUST use tools. Do not reason about correctness without running code.
-- If no tool can verify the claim, say UNVERIFIABLE.
+- If no tool can verify the claim, say UNVERIFIABLE — do not guess.
 - Report the exact tool output as evidence.
 
 SOURCE CODE:
@@ -285,15 +302,28 @@ UNVERIFIABLE | <confidence 0.0-1.0> | <why no tool can determine this>
 _CC2V_PROMPT = """You are CC2v, the verdict agent. You receive a finding plus results from
 prior verification agents. Your task: produce a final structured verdict.
 
+You have access to: Read, Grep, Glob. Use them to ground your verdict in
+actual source code. Evidence must come from tool output, not reasoning alone.
+
+The CDSFL corroboration model applies to your verdict:
+  C(n) = 1 - (1-p)^n
+where p is the probability of detecting a flaw and n is the number of
+independent verification attempts. Prior agents have already contributed
+passes. Your verdict adds one more. If prior agents produced strong tool-backed
+evidence (programmatic verification, AST parse), that evidence has high p and
+your verdict MUST align unless you find a specific error using your own tools.
+
+If no tool can resolve the verdict, ESCALATE. Do not guess. An honest ESCALATE
+is more valuable than a confident but ungrounded verdict.
+
 Rules:
-- Use FFF: Find the issue in the source, Follow consequences, then Fix (verdict).
-- If prior agents already produced strong evidence, your verdict MUST align
-  unless you find a specific error in their reasoning.
-- Confidence must reflect actual certainty. If you cannot determine, ESCALATE.
-- Evidence must cite specific code lines or prior agent outputs, not impressions.
+- Use FFF: Find the issue in the source (Read/Grep), Follow consequences
+  (trace callers and dependencies), then render verdict.
+- Confidence must reflect actual certainty grounded in evidence.
+- Evidence must cite specific code lines from tool output, not impressions.
 - One verdict. No preamble.
 
-SOURCE CODE:
+SOURCE CODE (excerpt):
 {source_code}
 
 FINDING:
@@ -303,10 +333,10 @@ PRIOR AGENT RESULTS:
 {prior_results}
 
 Respond with EXACTLY one line:
-CONFIRM {finding_id} | <confidence 0.0-1.0> | <evidence trace>
-REJECT {finding_id} | <confidence 0.0-1.0> | <counterexample>
+CONFIRM {finding_id} | <confidence 0.0-1.0> | <evidence trace from tool output>
+REJECT {finding_id} | <confidence 0.0-1.0> | <counterexample from tool output>
 DUPLICATE {finding_id} OF <canonical_id> | <confidence 0.0-1.0> | <evidence>
-ESCALATE {finding_id} | <reason it cannot be determined>
+ESCALATE {finding_id} | <reason it cannot be determined with available tools>
 """
 
 
@@ -321,8 +351,9 @@ def citation_verify(
 ) -> AgentResult:
     """Agent 1: Does the finding accurately describe the cited code?
 
-    Uses Haiku for speed. Closed constraint space: structured input,
-    one-line structured output.
+    Uses Sonnet with Read/Grep/Glob tools. Upgraded from Haiku (which returned
+    UNCLEAR on 100% of invocations in Exp 36) — code reasoning requires a
+    model that can use tools to inspect source.
     """
     prompt = _CITATION_PROMPT.format(
         finding_id=finding_id,
@@ -330,7 +361,11 @@ def citation_verify(
         source_code=source_code[:SOURCE_CAP_CITATION],
     )
     try:
-        text, elapsed = _dispatch_cli(HAIKU_MODEL, prompt, CITATION_TIMEOUT)
+        text, elapsed = _dispatch_cli(
+            SONNET_MODEL, prompt, CITATION_TIMEOUT,
+            allowed_tools=["Read", "Grep", "Glob"],
+            max_turns=4,
+        )
     except Exception as e:
         return AgentResult(
             agent="citation", finding_id=finding_id,
@@ -590,7 +625,11 @@ def cc2v_verdict(
         prior_results=prior_block,
     )
     try:
-        text, elapsed = _dispatch_cli(OPUS_MODEL, prompt, CC2V_TIMEOUT)
+        text, elapsed = _dispatch_cli(
+            OPUS_MODEL, prompt, CC2V_TIMEOUT,
+            allowed_tools=["Read", "Grep", "Glob"],
+            max_turns=4,
+        )
     except Exception as e:
         return AgentResult(
             agent="cc2v", finding_id=finding_id,
@@ -731,8 +770,10 @@ def _route_finding(
     if candidates:
         agents.append("dedup")
 
-    # Agent 4: Programmatic Verifier — if finding has verifiable claim
-    # Trigger on math/stat claims OR code-behavioral claims with testable assertions
+    # Agent 4: Programmatic Verifier — if finding has a mechanically verifiable claim
+    # Broadened from Exp 36 where Agent 4 fired once in 45 rounds.
+    # Trigger on: math/stat, code-behavioral, hash/crypto, index/extraction,
+    # sort/order, validation/verification claims — anything tools can check.
     _code_verify_pattern = re.compile(
         r"(returns?\s+(empty|None|wrong|incorrect|unexpected)|"
         r"(miss(es|ing)?|skip(s|ping)?|omit(s|ting)?|fail(s|ing)?|break(s|ing)?)\s+"
@@ -740,7 +781,20 @@ def _route_finding(
         r"silently\s+(drop|ignore|miss|omit)|"
         r"sort(s|ed|ing)?\s+by\s+\w+\s+(instead|rather)|"
         r"never\s+(call|invoke|pass|set)|"
-        r"dead\s+code|unreachable)",
+        r"dead\s+code|unreachable|"
+        # Hash/crypto/integrity claims (would have caught C0211)
+        r"hash\s+(?:integrity|tamper|chain|verify|comput|mismatch|collision)|"
+        r"tamper(?:ed|ing)?|merkle|chain_hash|entry_hash|"
+        # Index/extraction/regex claims (would have caught C0200)
+        r"index\s+(?:out\s+of|error|off[\s-]by|extract|missing)|"
+        r"extract(?:s|ed|ing)?\s+(?:wrong|incorrect|empty|nothing)|"
+        r"regex\s+(?:miss|fail|skip|pattern)|pattern\s+miss|silently\s+return|"
+        # Sort/order/stability claims (would have caught C0087)
+        r"sort\s+(?:key|order|stab)|tiebreak|chronolog|"
+        # Validation/verification claims
+        r"verif(?:y|ied|ication)\s+(?:does\s+not|never|fail)|"
+        r"accept(s|ed)?\s+(?:invalid|tamper|malform)|"
+        r"bypass(?:es|ed|ing)?\s+\w+|circumvent)",
         re.IGNORECASE,
     )
     if _MATH_STAT_PATTERN.search(desc) or _code_verify_pattern.search(desc):
