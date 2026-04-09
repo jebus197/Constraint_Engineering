@@ -1,0 +1,141 @@
+Domain: Python Software — S_k Solution Verification Gates
+Version: 1.0
+Date: 9 April 2026
+Layers-on: universal/cdsfl_core.txt, software/software_security.txt (if applicable)
+Companion: universal/expert_encoding_template.md
+
+This encoding extends existing software directives with S_k solution
+verification gates. It defines how proposed fixes to Python codebases
+are evaluated by the tool gate pipeline to produce S_k scores.
+
+[HARD GATES — Admissibility]
+
+g1: AST Parse
+  Tool: ast.parse(source)
+  Input: The modified source file after applying the proposed fix
+  Pass: ast.parse() succeeds without SyntaxError (score = 1)
+  Fail: ast.parse() raises SyntaxError (score = 0)
+  Rationale: A fix that doesn't parse cannot be evaluated further.
+
+g2: Import Resolution
+  Tool: python3 -c "import <module>"
+  Input: The modified module
+  Pass: Import succeeds without ImportError or ModuleNotFoundError (score = 1)
+  Fail: Import raises ImportError (score = 0)
+  Rationale: A fix that breaks imports breaks all downstream evaluation.
+
+g3: Type Check (structural)
+  Tool: python3 -m mypy --no-error-summary <file>
+  Input: The modified file
+  Pass: No new type errors introduced (delta from baseline = 0) (score = 1)
+  Fail: New type errors introduced (delta > 0) (score = 0)
+  Note: Pre-existing type errors are not counted. Only NEW errors from
+  the fix constitute failure. Baseline is captured before fix application.
+
+[EFFECT EVIDENCE — Graded]
+
+e1: Targeted Test Resolution
+  Tool: python3 -m pytest <targeted_test> -v
+  Input: A test specifically written or identified for the finding being fixed.
+         The finding's proposed fix must include or reference a targeted test.
+  Scoring: pass_count / total_test_count for the targeted test set.
+           1.0 = all targeted tests pass. 0.0 = all fail.
+  Weight: 3 (highest — this is the primary evidence of fix efficacy)
+
+e2: Regression Suite
+  Tool: python3 -m pytest <test_suite> -v
+  Input: The full existing test suite
+  Scoring: pass_count / total_test_count.
+           Only tests that PASSED before the fix are counted.
+           New failures = regression. Pre-existing failures excluded.
+  Weight: 2 (high — regressions are the primary collateral damage signal)
+
+e3: Static Analysis Non-Regression
+  Tool: python3 -m ruff check <file> --output-format=json
+  Input: The modified file
+  Scoring: 1.0 - (new_violations / (baseline_violations + 1)).
+           Clamped to [0, 1]. New violations reduce score.
+  Weight: 1 (moderate — style issues are less severe than test failures)
+
+e4: Security Non-Regression
+  Tool: python3 -m bandit -f json <file>
+  Input: The modified file
+  Scoring: 1.0 if no new HIGH/MEDIUM findings. Deduct 0.5 per new HIGH,
+           0.2 per new MEDIUM. Clamped to [0, 1].
+  Weight: 2 (high — security regressions are critical)
+
+e5: Symbolic Property Verification (when applicable)
+  Tool: SymPy (sympy.simplify, sympy.solve) or z3 (z3.Solver)
+  Input: Mathematical claims in the fix (e.g., boundary conditions,
+         invariants, convergence criteria)
+  Scoring: verified_properties / total_claimed_properties.
+           Only applicable when fix contains mathematical claims.
+           If no mathematical claims, this gate is skipped (score = 1.0).
+  Weight: 2 (high when applicable — mathematical correctness is HARD)
+
+[FIX FORMAT]
+
+Models must propose fixes as SEARCH/REPLACE blocks with the following
+exact format. No deviation is permitted.
+
+  <<<< SEARCH file_path
+  [Exact lines from the target file, verbatim, including whitespace]
+  ====
+  [Exact replacement lines]
+  >>>> REPLACE
+
+Multiple blocks may be proposed for a single fix. Each block must:
+  - Specify the target file path
+  - Contain the EXACT current content (verified by string match)
+  - Contain the EXACT replacement content
+  - Be independently parseable
+
+If the SEARCH content does not match the current file content exactly,
+the block is REJECTED and g1 is not evaluated (pre-gate failure).
+
+Accompanying natural language explanation is permitted ONLY as commentary
+outside the SEARCH/REPLACE blocks. It does not contribute to S_k.
+
+[TOOL MAPPING]
+
+ast:      import ast           — Python AST parsing and structural analysis
+pytest:   python3 -m pytest    — Test execution and result collection
+ruff:     python3 -m ruff      — Fast linting, style, potential bugs
+mypy:     python3 -m mypy      — Static type checking
+bandit:   python3 -m bandit    — Security-focused static analysis
+sympy:    import sympy         — Symbolic mathematics verification
+z3:       import z3            — Constraint satisfaction, formal verification
+difflib:  import difflib       — Structural diff for SEARCH/REPLACE validation
+
+[S* GUIDANCE]
+
+Typical nu_b range: 0.02-0.10
+  Rationale: Well-maintained codebases have low base re-injection. Poorly
+  tested codebases may reach 0.10. Above 0.10 suggests systemic quality
+  issues beyond individual fix scope.
+
+Typical nu_f range: 0.10-0.40
+  Rationale: Failed fixes in code commonly introduce 1-4 new issues per
+  fix attempt. 0.10 = minor side effects. 0.40 = fix is broadly destructive.
+  Values above 0.40 suggest the model does not understand the codebase.
+
+Recommended S* floor: 0.60
+  Rationale: Below 0.60, the probability of introducing regressions or
+  failing to resolve the target finding exceeds the benefit of partial
+  resolution. This is a conservative floor; the computed S* from the
+  equation may be higher in practice.
+
+[SOLUTION VERIFICATION LIMITATIONS]
+
+Cannot verify:
+  - Concurrency correctness (race conditions, deadlocks) without runtime
+    instrumentation or model checking tools not in the standard pipeline
+  - Performance improvements without benchmarking infrastructure
+  - UX/UI changes without rendering or screenshot comparison
+  - Documentation accuracy without human review
+  - Architectural appropriateness (a fix may pass all gates but be the
+    wrong abstraction — this requires human judgment)
+  - Cross-service integration (fixes to one service may break contracts
+    with dependent services not included in the test suite)
+
+These categories must be escalated to HIL review when encountered.

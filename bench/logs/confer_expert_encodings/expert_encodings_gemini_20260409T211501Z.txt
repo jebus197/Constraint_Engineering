@@ -1,0 +1,203 @@
+**STRUCTURED CERTIFICATE**
+**Premises:**
+1. The S_k framework defines fix reliability as $S_k = A \cdot E$, where $A \in \{0, 1\}$ (product of admissibility gates) and $E \in [0, 1]$ (weighted aggregate of effect evidence).
+2. All gates must be tool-executable, deterministic, and bounded, requiring zero human intervention.
+3. The underlying domain directives dictate the logical rules; the expert encoding translates these into tool-specific execution.
+
+**Execution Trace:**
+- Analyzed the template and Python reference against the CDSFL constraints (specifically strict tool execution and isolation).
+- Drafted exact tool mappings for 4 highly distinct domains (Math, Chemistry, Structural, Hardware) to test the universality of the $S_k$ template.
+- Traced the topological limits of the $A \cdot E$ mathematical model when applied to systems with unobservable states.
+
+**Conclusion:**
+The $S_k$ template is structurally sound but operationally incomplete regarding execution sandboxing and metric aggregation. The Python reference contains a non-executable gate (e5). Tool-based verification is viable for formal/digital domains but structurally degrades in physical/spatial domains without strictly parameterized models. 
+
+---
+
+### Part 1: P-PASS THE TEMPLATE STRUCTURE
+
+**FFAF 1.1: Aggregation Ambiguity in $E$**
+*   **FIND:** Section 2 (Effect Evidence) states "Aggregated as weighted product (geometric mean or raw product depending on calibration)". This is mathematically unstable.
+*   **FOLLOW:** If $E$ is a raw product, a single 0.0 score from a minor style linter ($e_i=0$) forces $E=0$, acting exactly like a Hard Gate ($A$). If it is a geometric mean, $0^{1/n}$ still equals 0. This destroys the "Graded" concept of effect evidence.
+*   **ANALYSE:** CONFIRMED. The current aggregation formula violates the definition of graded evidence.
+*   **FIX:** $E$ must be defined as a weighted arithmetic mean: $E = \frac{\sum (w_i \cdot e_i)}{\sum w_i}$. This allows partial success to yield a non-zero $S_k$ score.
+
+**FFAF 1.2: Environment State Corruption**
+*   **FIND:** Section 4 (Tool Mapping) lacks an isolation constraint. 
+*   **FOLLOW:** If tool $g_1$ modifies a file or leaves a rogue background process, tool $g_2$ evaluates a corrupted state. This breaks determinism.
+*   **ANALYSE:** CONFIRMED.
+*   **FIX:** Add to Section 4: "Execution Constraint: Every tool MUST execute in a stateless or instantly restorable sandbox (e.g., ephemeral container or strict filesystem rollback). State must not bleed between gates."
+
+**FFAF 1.3: Empty Evidence Sets**
+*   **FIND:** The template does not specify what happens if no graded effect tools apply to a domain (i.e., the set of $e$ gates is empty).
+*   **FOLLOW:** If $E$ is undefined, $S_k$ cannot be calculated.
+*   **ANALYSE:** CONFIRMED. 
+*   **FIX:** Add explicit default: "If a domain has no applicable graded tools (only hard gates), $E \equiv 1.0$, rendering $S_k = A$."
+
+---
+
+### Part 2: P-PASS THE PYTHON REFERENCE
+
+**FFAF 2.1: Non-Executable Gate (e5: SymPy/z3)**
+*   **FIND:** The Python reference includes `e5: Symbolic Property Verification`, inputting "Mathematical claims in the fix" into SymPy/z3.
+*   **FOLLOW:** A raw Python text diff does not output a formal specification language automatically. Extracting "mathematical claims" from a Python file requires an LLM to read the code, translate it to z3 syntax, and run it. This violates the "tool executable without human/model intervention" constraint.
+*   **ANALYSE:** CONFIRMED. The constraint box principle is violated.
+*   **FIX:** Replace `e5` with a tool that natively bridges Python and formal logic without NLP translation, such as `crosshair` (symbolic execution for Python) or `icontract` (design-by-contract).
+    *   *Revised e5 Tool:* `python3 -m crosshair check <file>`
+    *   *Revised Input:* Python source containing PEP 316-style docstrings or `assert` statements.
+
+**FFAF 2.2: Missing Test Execution Boundary**
+*   **FIND:** `e1` requires running a targeted test, but the FIX FORMAT does not explain how the model supplies this test.
+*   **FOLLOW:** If the model just proposes test code in natural language, `pytest` cannot run it.
+*   **ANALYSE:** CONFIRMED.
+*   **FIX:** Append to FIX FORMAT: "If introducing a new test, the model must provide a separate `<<<< SEARCH ==== >>>> REPLACE` block targeting the appropriate `test_*.py` file."
+
+---
+
+### Part 3: PROPOSED $S_k$ ENCODINGS [SPECULATIVE]
+
+#### A. Mathematics (Proofs and Derivations)
+```text
+Domain: Mathematics — Proof Verification
+[HARD GATES — Admissibility]
+g1: Formal Syntax Check
+  Tool: leanprover/lean4: `lake build`
+  Input: Lean 4 source file containing the proposed proof
+  Pass: Compiles without syntax/parsing errors (score=1)
+  Fail: Syntax error raised (score=0)
+g2: Type/Axiom Checker
+  Tool: Lean 4 kernel
+  Input: Compiled Lean environment
+  Pass: Theorem typechecks against its stated signature, no 'sorry' macros remaining (score=1)
+  Fail: Type mismatch or 'sorry' macro detected (score=0)
+
+[EFFECT EVIDENCE — Graded]
+e1: Coverage / Axiom Minimization
+  Tool: custom python script parsing lean export
+  Input: Proof dependency graph
+  Scoring: 1.0 - (number of non-constructive axioms used / total steps). Clamped [0,1].
+  Weight: 1
+
+[FIX FORMAT]
+Verbatim block containing a complete `theorem` and `proof` block in Lean 4 syntax.
+
+[TOOL MAPPING]
+lean: `lake build` — Full formal verification kernel
+```
+
+#### B. Chemistry (Process/Pharma)
+```text
+Domain: Chemistry — Process Verification
+[HARD GATES — Admissibility]
+g1: Structural Validity
+  Tool: python -c "from rdkit import Chem; Chem.MolFromSmiles(sys.argv[1])"
+  Input: Product SMILES string
+  Pass: RDKit returns valid Mol object (score=1)
+  Fail: RDKit returns None (score=0)
+g2: Stoichiometric Mass Balance
+  Tool: custom python script parsing reaction JSON using `mendeleev` lib
+  Input: JSON mapping reactants -> products + coefficients
+  Pass: Sum of input atoms exactly equals sum of output atoms (score=1)
+  Fail: Atom imbalance (score=0)
+
+[EFFECT EVIDENCE — Graded]
+e1: Thermodynamic Margin (dT_ad) [VERIFY:current - Cantera CLI usage]
+  Tool: python -m cantera <script>
+  Input: Reactant mixture YAML
+  Scoring: If dT_ad < 50K -> 1.0. If dT_ad > 100K -> 0.0. Linear interpolate between.
+  Weight: 3
+e2: Atom Economy
+  Tool: RDKit calculation script
+  Input: Reaction JSON
+  Scoring: Molecular weight of desired product / Total MW of all reactants
+  Weight: 1
+
+[FIX FORMAT]
+Machine-readable JSON schema defining: `reactants` (SMILES, eq), `products`, `solvent`, `temperature_C`.
+```
+
+#### C. Physics/Structural (Bridge Design)
+```text
+Domain: Structural Engineering — Bridge Design
+[HARD GATES — Admissibility]
+g1: Dimensional Consistency
+  Tool: python script using `pint` library
+  Input: JSON file of structural parameters + derived equations
+  Pass: All equations dimensionally resolve (e.g., Force/Area == Pressure) (score=1)
+  Fail: DimensionalityMismatchError raised (score=0)
+g2: Static Equilibrium / Solver Convergence
+  Tool: python -m openseespy <model.py>
+  Input: Parameterized structural topology and load script
+  Pass: Analysis completes, `analyze()` returns 0 (score=1)
+  Fail: Singular matrix or non-convergence (score=0)
+
+[EFFECT EVIDENCE — Graded]
+e1: Capacity/Demand (Utilization) Ratio
+  Tool: OpenSees node/element recorders parsing script
+  Input: output.xml from OpenSees
+  Scoring: 1.0 if max element utilization <= 0.85. Deduct 0.1 for every 0.05 over 0.85. 0.0 if >= 1.0.
+  Weight: 3
+e2: Deflection Limits
+  Tool: OpenSees node recorder
+  Input: Displacements under LM1 load
+  Scoring: 1.0 if max deflection < Span/400. 0.0 if > Span/250.
+  Weight: 2
+
+[FIX FORMAT]
+Parametric JSON payload overriding baseline values (e.g., `{"element_12": {"area_m2": 0.05}}`).
+```
+
+#### D. Hardware (Embedded)
+```text
+Domain: Hardware Engineering — Embedded PCB
+[HARD GATES — Admissibility]
+g1: Electrical Rules Check (ERC)
+  Tool: `kicad-cli sch erc` [VERIFY:current - KiCad 8.0 CLI syntax]
+  Input: Modified KiCad schematic file (`.kicad_sch`)
+  Pass: ERC violation count == 0 (excluding pre-existing baseline) (score=1)
+  Fail: New ERC violations introduced (score=0)
+g2: Netlist Resolution
+  Tool: `kicad-cli sch export netlist`
+  Input: Modified schematic
+  Pass: Netlist generates successfully with all components mapped (score=1)
+  Fail: Unresolved component symbols (score=0)
+
+[EFFECT EVIDENCE — Graded]
+e1: Power Budget Margin
+  Tool: custom python script parsing BOM and netlist JSON
+  Input: Extracted netlist + component database
+  Scoring: 1.0 if (Total Estimated Current < Regulator Max Current * 0.8). 0.0 if margin < 0%.
+  Weight: 2
+
+[FIX FORMAT]
+Standard diff applied to the S-expression based `.kicad_sch` file, or a strict JSON patch mapping for parameter changes.
+```
+
+---
+
+### Part 4: CROSS-DOMAIN GAPS (Where S_k Fails)
+
+The $S_k$ pipeline fundamentally requires a **machine-executable constraint box**. It fails entirely in domains where the ground truth resides in physical reality uncoupled from a deterministic simulator, or in subjective human interpretation.
+
+1.  **Biomedical / Clinical Protocols:** Proposing a fix to a dosing regimen or a physical therapy protocol cannot be evaluated. There is no CLI tool for `run_human_metabolism`. (HIL mandatory).
+2.  **Legal / Regulatory Compliance:** Aside from simple regex checks (e.g., "does the text contain the required GDPR clause?"), evaluating whether a proposed structural redesign *meets the intent* of CD 377 parapet requirements is an NLP/semantic task, not a deterministic tool task.
+3.  **Industrial Logistics (Physical layout):** While graph-based logistics (TSP routing) can be tested, physical layout fixes (e.g., "move the chemical dosing skid 3 meters left to avoid the forklift path") require spatial awareness not easily captured in parametric tests without exhaustive 3D simulation tools (which fail the execution time-bounding constraint).
+4.  **UX / UI Architecture:** A fix that resolves a visual contrast issue or accessibility flow cannot be easily validated without a human.
+
+**Conclusion for Directives:** For these domains, the directive must explicitly set $E \equiv 0, A \equiv \text{Syntax Only}$, and append `[REQUIRES HIL VERIFICATION]` to the fix format.
+
+---
+
+### Part 5: STRUCTURAL GAPS IN THE TEMPLATE
+
+1.  **The "Unknown Unknowns" Boundary (Topological Defect):**
+    The $A \cdot E$ model operates exclusively on *defined* gates. If a model proposes a fix in Chemistry that perfectly balances the stoichiometry ($g_2$ passes) and optimizes the heat output ($e_1$ passes) but creates a novel, highly toxic byproduct that the `mendeleev` script isn't programmed to look for, $S_k$ evaluates to a high score. The S_k formula evaluates the *tools*, not the *solution*.
+    *Fix:* A structural limitation warning must be placed in the universal template stating: *"S_k is an upper bound on solution confidence, not a proof of absolute correctness. It measures absence of known failure modes, not absence of all failure modes."*
+
+2.  **Fix Format Universality:**
+    The `<<<< SEARCH ==== >>>> REPLACE` format is deeply tied to line-based software code. Applying this to a KiCad schematic (which is an S-expression file where component UIDs shift) or a CAD file (binary) is impossible. 
+    *Fix:* The fix format must be structurally decoupled. Domains dealing in S-expressions/binaries must specify a JSON-Patch or API-based parameter override format rather than raw text diffs.
+
+3.  **The Halting/Timeout Problem:**
+    Evaluating a PyTest suite takes seconds. Evaluating an OpenSeesPy bridge model or a Cantera thermodynamic mesh might take 45 minutes. If a bounded pipeline kills the process at 60 seconds, $S_k$ registers as 0 (Fail). The template assumes all domains have execution temporal parity. They do not. 
+    *Fix:* The template must introduce $t_{max}$ (Maximum execution bound) explicitly per domain. If a tool times out, it must yield an epistemic state (e.g., $S_k$ = UNVERIFIED) rather than a hard fail ($A=0$), which triggers an escalation rather than a silent rejection.

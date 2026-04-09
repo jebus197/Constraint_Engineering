@@ -1,0 +1,1171 @@
+Below is a survivor-only answer after internal P-pass. I am not claiming certainty on present-day regulatory nuances or all practitioner subcultures; where claims depend on current standards interpretation or field practice drift, treat them as [VERIFY:current].
+
+# Executive stance
+
+Your diagnosis is correct: the current encodings are mostly **compliance skeletons**, not **expert operating knowledge**. They encode “what must not be violated,” but not enough of “how experienced practitioners recognise looming failure,” “which simplifications break first,” “what tools lie to you,” and “which edge cases dominate real losses.” The right fix is **not** just adding more rules; it is adding a layered expert schema with explicit separation between **machine-checkable constraints**, **empirical heuristics**, **diagnostic patterns**, and **HIL-required judgment calls**.
+
+For Bench Run 2, some domains can operate at **CROSS-VERIFIED** for research use, but any domain with direct safety, regulatory, or high-liability consequences must require **VALIDATED** before operational deployment. The enrichment process should be **independent draft → isolated adversarial review → reconciliation → human validation where required**, not collaborative co-drafting from the outset.
+
+---
+
+# 1. Enrichment strategy
+
+## First: what is structurally missing from the current encodings
+
+Across almost all 27 directives, the missing expertise falls into the same recurring buckets:
+
+1. **Failure mode priors**
+   - What actually fails first in practice, not just what the code checks.
+   - Example: structures fail at connections/details; embedded systems fail at power integrity and brownout edges; process chemistry fails at scale-specific heat/mass transfer transitions.
+
+2. **Diagnostic patterns**
+   - “If you see X and Y together, suspect Z.”
+   - These are often more valuable than formulas.
+
+3. **Regime boundaries / model breakpoints**
+   - Conditions under which the textbook equation stops being trustworthy.
+   - Example: lumped thermal models, ideal mixing assumptions, normality assumptions, asymptotic approximations.
+
+4. **Tool realism**
+   - What simulation, testing, standards tables, and instrumentation systematically miss.
+   - Example: Moldflow predicts fill better than warpage; FEA gives false confidence if contacts/boundaries are idealised.
+
+5. **Tacit sequencing knowledge**
+   - The order in which experts check things.
+   - Example: in industrial equipment, first hazard elimination, then safeguarding, then controls, then labelling.
+
+6. **Exception catalogs**
+   - Known edge cases that invalidate standard heuristics.
+   - Example: freeze-sensitive vaccines, metastable polymorphs, PLL lock-time and oscillator startup interactions.
+
+7. **Consequence-ranked attention**
+   - Experts know which 20% of issues cause 80% of disasters.
+   - Thin encodings treat all clauses too uniformly.
+
+8. **Disagreement maps**
+   - Areas where domain experts genuinely differ.
+   - These should be encoded as “contested practice,” not flattened into fake certainty.
+
+9. **Evidence quality grading**
+   - Distinguish code requirement, consensus best practice, vendor lore, plant lore, and anecdotal heuristic.
+
+That should become the enrichment template.
+
+---
+
+## Recommended enrichment schema for every directive
+
+Each directive should be expanded from:
+- HARD
+- SOFT
+- Verification
+- Limitations
+
+into:
+
+1. **Hard constraints**
+2. **Soft preferences**
+3. **Primary failure modes**
+4. **Early warning indicators / diagnostic patterns**
+5. **Model breakpoints / invalid assumptions**
+6. **Tool-specific caveats**
+7. **Edge-case catalog**
+8. **Experienced-practitioner heuristics**
+9. **Typical bad simplifications**
+10. **Verification mapping**
+    - tool-verifiable
+    - inspection-verifiable
+    - HIL-only
+11. **Confidence / evidence provenance**
+    - code-derived
+    - standard-derived
+    - literature-derived
+    - practitioner-heuristic
+12. **Escalation triggers**
+    - when to stop and require a domain expert
+
+That is the right enrichment architecture.
+
+---
+
+## By domain: what is missing, what seniors would add, and what is tool-verifiable
+
+You asked “for each of the 9 domains.” The materials actually span more than 9 top-level clusters, so I’ll group them into 9 operational domain families for enrichment:
+
+1. Biomedical
+2. Chemistry
+3. Cross-domain HW/SW interfaces
+4. Hardware/electronics
+5. Industrial/manufacturing
+6. Logistics
+7. Mathematics
+8. Product/regulatory engineering
+9. Structural engineering
+10. Software systems
+
+I am including software as a tenth because collapsing it into cross-domain would hide meaningful differences. If you strictly need nine, merge software systems into cross-domain, but that is a worse ontology.
+
+---
+
+## 1) Biomedical
+
+Includes:
+- biomedical_clinical
+- biomedical_device
+- biomedical_pharma
+
+### a. Missing expert knowledge categories
+- Endpoint fragility and estimand ambiguity
+- Operational bias channels
+- Recruitment/site heterogeneity patterns
+- Missing data pathologies
+- CMC/manufacturing-development coupling
+- Device-human factors reality vs standard usability artifacts
+- Clinical relevance vs statistical significance
+- Regulatory negotiation patterns
+- Batch failure priors and formulation “unknown unknowns”
+
+### b. What a senior practitioner would add
+
+#### Clinical trials
+- **Most Phase III failures are not due to arithmetic sample-size mistakes but bad assumptions**: effect size optimism, wrong endpoint sensitivity, underestimated placebo response, and protocol complexity that degrades adherence.
+- **Site variability often dominates nominal randomization strength**: a “balanced” randomization can still fail if a few high-enrolling low-quality sites drive noise.
+- **Protocol amendments are not neutral**: late amendments often change patient mix, event rates, and operational estimand in ways only partially recoverable statistically.
+- **Open-label rescue medication quietly destroys interpretability** unless rescue rules and handling are pre-specified.
+- **Composite endpoints frequently fail because one easy, weak component drives significance while the clinically important component does not move.**
+- **Intercurrent events are where estimands go to die**: treatment discontinuation, rescue therapy, death before endpoint assessment, pandemic disruptions.
+- **Dropout is not just power loss**; informative dropout can invert treatment interpretation.
+- **Central review and blinded adjudication are often the difference between credible and non-credible open-label confirmatory trials.**
+
+#### Medical devices
+- **Usability failures are usually normal-use failures, not “user error.”**
+- **The riskiest hazards are often at interfaces**: connectors, charging, cleaning/reprocessing, accessories, consumables.
+- **IEC 60601 compliance does not imply clinically safe workflow integration.**
+- **Biocompatibility failures often come from process residues, colorants, adhesives, and sterilization byproducts, not the headline polymer.**
+- **Field failures commonly come from supplier drift**: resin grade change, PCB finish change, cable overmold change.
+- **Alarm systems fail by nuisance accumulation**; users learn to ignore them.
+
+#### Pharma formulation
+- **Dissolution failures are often granulation/compression history problems, not just formulation composition problems.**
+- **Scale-up breaks because shear, drying history, and particle morphology move together.**
+- **Polymorph and hydrate surprises often enter through API lot changes or milling, not formal formulation redesign.**
+- **Excipient compatibility studies underrepresent long-tail interactions** if they ignore moisture uptake and packaging.
+- **Stability failures often first appear as trend changes, not OOS events**; slope matters before limit crossing.
+- **Parenterals fail in container closure and particulates more often than naive formulation models expect.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- Sample size math
+- Multiplicity logic
+- endpoint hierarchy completeness
+- randomization schema consistency
+- dropout sensitivity calculations
+- stability trend fitting
+- dissolution acceptance calculations
+- AV/content uniformity math
+- biocompatibility matrix completeness
+- risk file traceability consistency
+- FMEA linkage coverage
+
+**Needs HIL**
+- Clinical meaningfulness of delta
+- endpoint appropriateness
+- whether open-label justification is truly adequate
+- whether rescue med handling is estimand-faithful
+- whether device usability study is actually representative
+- whether formulation risk from polymorphism/packaging interaction is sufficiently covered
+- regulatory acceptability of a trial narrative beyond formal compliance
+
+---
+
+## 2) Chemistry
+
+Includes:
+- chemistry_analytical
+- chemistry_pharma
+- chemistry_process
+
+### a. Missing categories
+- Scale-dependent failure priors
+- impurity mechanism intuition
+- calorimetry interpretation patterns
+- metastability/polymorph trap catalog
+- “looks fine in lab, fails in plant” transitions
+- analytical artifact recognition
+- workup/purge realism
+- operator-sequence sensitivity
+
+### b. Senior-practitioner additions
+
+#### Analytical
+- **The most dangerous validated method is one that passes system suitability while silently missing the wrong impurity/coelution.**
+- **Forced degradation is often underdesigned**: too harsh gives nonsense, too mild proves nothing.
+- **Filter adsorption, diluent mismatch, sonication, and sample hold time are repeat offenders.**
+- **Gradient impurity methods often look robust until column aging or buffer pH drift shifts critical pairs.**
+- **Low-level impurity work is often limited by glassware carryover and prep technique before instrument sensitivity.**
+
+#### Pharmaceutical synthesis
+- **Purge arguments are strongest when they align with physical process reality**; paper purge without robust mechanistic support is fragile.
+- **The route that is elegant on paper can be commercially dead because of isolation and solvent burden.**
+- **Metals and mutagenic impurities are often controlled in mother liquors and crystallization behavior, not just reaction stoichiometry.**
+- **Chiral integrity can erode in quench/workup, not just reaction step.**
+- **Solid-form control is a process control problem, not just an analytical characterization problem.**
+
+#### Process chemistry / scale-up
+- **The dangerous transition is often from tempered to untempered behavior at higher conversion or after accumulation.**
+- **Micromixing at feed point, not bulk mixing, is the real killer for selective fast reactions.**
+- **Lab calorimetry can underrepresent fouling, gas holdup, phase inversion, and real feed maldistribution.**
+- **“Semi-batch” is not safe if the inventory can still accumulate faster than you can remove heat after a disturbance.**
+- **Venting and pressure hazard are often driven by foaming and two-phase behavior, not ideal gas production alone.**
+- **Crystallization scale-up failures are usually seeding, supersaturation trajectory, and local cooling-history failures.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- impurity limit calculations
+- residual solvent limits
+- TTC-based ppm calculations
+- thermal balance calculations
+- dT_ad estimates
+- vent sizing formulas
+- mass balance checks
+- system suitability metrics
+- calibration and LOQ calculations
+- process mass intensity calculations
+- stoichiometric and solvent inventory checks
+
+**Needs HIL**
+- whether a purge argument is scientifically persuasive
+- whether mixing-sensitive risk is acceptably mitigated
+- whether calorimetry covers the true worst case
+- whether solid-form control strategy is robust enough
+- whether analytical specificity is real or only apparent
+- whether proposed scale-up pathway is plant-realistic
+
+---
+
+## 3) Cross-domain HW/SW interfaces
+
+Includes:
+- cross_mechanical_electrical
+- cross_software_hardware
+- cross_thermal_electrical
+
+### a. Missing categories
+- interface failure priors
+- tolerance stack interactions
+- EMC/debugging heuristics
+- cache/DMA race archetypes
+- thermal-mechanical fatigue patterns
+- assembly/service-induced failures
+- “works on bench, fails in field” signatures
+
+### b. Senior additions
+
+- **Most field failures occur at interfaces and transitions**: cable exits, connectors, seams, power-up sequencing, interrupt boundaries.
+- **A design that passes static clearance/creepage can still fail due to contamination, condensation, or manufacturing burrs.**
+- **SPI bugs often look like software corruption but are deterministic timing or mode mismatch.**
+- **DMA coherency bugs are highly intermittent and load-sensitive; they disappear under debugger timing changes.**
+- **Thermal failures are frequently cyclic-fatigue failures, not absolute-temperature exceedances.**
+- **EMI fixes often move the problem rather than solve it**: a ferrite may pass one band and create another issue via grounding or return path change.
+- **IP-rated enclosures often fail at cable glands, fastener penetrations, pressure-equalization features, and assembly variation, not at the nominal gasket plane.**
+- **Connector wear and fretting corrosion dominate low-current intermittent failures in vibration environments.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- creepage/clearance calculators
+- worst-case Tj calculations
+- cache-coherency code pattern scans
+- ISR source-clear review
+- CPOL/CPHA consistency checks
+- aperture vs wavelength checks
+- bend-radius geometry checks
+- stack depth static analysis
+
+**Needs HIL**
+- whether EMI mitigation is robust in the real installation
+- whether service/assembly practices will break the interface
+- whether vibration/fretting risk is acceptable
+- whether thermal cycling life is adequate for actual duty
+- whether the interface architecture is sensible, not merely compliant
+
+---
+
+## 4) Hardware/electronics
+
+Includes:
+- hardware_embedded
+- hardware_power
+- hardware_rf
+
+### a. Missing categories
+- power integrity priors
+- battery behavior under pulse load and temperature
+- startup/transient state failures
+- layout-dominated failure modes
+- measurement deception
+- RF tuning/manufacturing spread issues
+- derating realism
+
+### b. Senior additions
+
+#### Embedded/IoT
+- **Battery-powered systems die from pulse-current voltage collapse long before average-current math says they should.**
+- **Low-power products often fail because firmware never truly reaches intended sleep state.**
+- **Brownout thresholds, regulator dropout, and radio TX bursts interact in ugly ways.**
+- **Debug probes and bench supplies hide real battery problems.**
+- **Crystal startup and LF clock accuracy are often environmental and layout problems, not just capacitor-value problems.**
+
+#### Power electronics
+- **Layout parasitics dominate switching behavior.**
+- **Thermal calculations that ignore spreading resistance, mounting torque, TIM voids, or airflow uncertainty are fantasy.**
+- **SOA failures often occur during transients and fault recovery, not steady state.**
+- **Snubbers tuned on one prototype may not survive component and layout variation.**
+- **Current-sharing in parallel devices is much worse dynamically than static Rds(on) reasoning suggests.**
+
+#### RF/high-speed PCB
+- **The board stackup as actually fabricated matters more than the nominal stackup spreadsheet.**
+- **Antenna performance is enclosure- and hand-effect-dependent; board-only tuning is incomplete.**
+- **Ground continuity errors and reference plane transitions are the source of many “mysterious” RF underperformances.**
+- **ESD devices often detune antennas or add insertion loss if chosen only by protection spec.**
+- **2.4 GHz designs fail because of packaging, battery, display, and cable interactions as much as trace impedance.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- duty-cycle power budgets
+- battery pulse load calculations if ESR modeled
+- brownout margin checks
+- timing budget checks
+- thermal resistance chain calculations
+- SOA plot comparisons
+- creepage/clearance
+- line impedance approximations
+- link budgets
+- decoupling presence/rules-based layout checks
+
+**Needs HIL**
+- whether layout will really behave
+- whether battery/radio interactions are acceptable in field conditions
+- whether the antenna tune is robust across enclosure, hand, tolerance, and certification conditions
+- whether fault transients are adequately handled
+- whether EMI/ESD fixes are production-robust
+
+---
+
+## 5) Industrial/manufacturing
+
+Includes:
+- industrial_cnc
+- industrial_injection
+- industrial_welding
+
+### a. Missing categories
+- process-window robustness
+- machine/operator dependence
+- distortion and residual-stress intuition
+- material-lot and moisture sensitivity
+- fixture and tooling wear patterns
+- cosmetic-vs-structural tradeoffs
+
+### b. Senior additions
+
+#### CNC
+- **Tool deflection and chatter, not nominal spindle power, usually set the real limit.**
+- **A program that cuts one good prototype may be non-production-worthy because tool life is too unstable.**
+- **Thin-wall geometry moves during machining; sequence is as important as feeds/speeds.**
+- **Workholding failures are often dynamic and intermittent during entry/exit and interrupted cuts.**
+- **Heat growth of machine, spindle, and workpiece dominates tight-tolerance work over long runs.**
+
+#### Injection moulding
+- **Gate freeze, venting, and packing profile often dominate quality more than nominal fill completion.**
+- **Warpage is driven by differential shrink and orientation history; equal wall thickness alone does not save you.**
+- **Moisture-sensitive resins fail silently if drying discipline slips.**
+- **Moldflow is useful for relative guidance but can mislead on cosmetic defects and true warpage if material data are poor.**
+- **A process window that only works on one machine/operator/tool-temperature regime is not a production process.**
+
+#### Welding
+- **Most serious failures come from poor joint prep, restraint, hydrogen management, and sequence—not machine settings alone.**
+- **Distortion management is half the job on real fabrications.**
+- **Toughness/HAZ cracking problems often appear only with thickness, restraint, and ambient-condition changes.**
+- **A qualified WPS does not guarantee production quality if fit-up, consumable storage, or welder access are bad.**
+- **Inspection planning matters: some defects are cheapest to prevent, expensive to detect, and catastrophic to miss.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- feeds/speeds formula checks
+- tool deflection estimates
+- clamp force estimates
+- shrink compensation calculations
+- residence time checks
+- clamp tonnage checks
+- preheat calculations
+- heat input calculations
+- CE formulas
+- tie checks to WPS/WPQR ranges
+
+**Needs HIL**
+- whether the process is production-capable
+- whether distortion control is adequate
+- whether fixturing/workholding is actually robust
+- whether moldflow or CAM assumptions match reality
+- whether weld accessibility and sequence are buildable
+- whether operator/process variability is acceptable
+
+---
+
+## 6) Logistics
+
+Includes:
+- logistics_cold_chain
+- logistics_maritime
+- logistics_supply_chain
+
+### a. Missing categories
+- variability and disruption priors
+- hidden buffer dependencies
+- sensor-placement deception
+- route/season lane instability
+- documentation and customs failure patterns
+- operational gaming behavior
+
+### b. Senior additions
+
+#### Cold chain
+- **Logger data can look compliant while product core temperature is not.**
+- **Door-opening count is less informative than duration, ambient, air exchange path, and pallet geometry.**
+- **Pre-cooling paperwork is often cleaner than actual thermal conditioning.**
+- **Passive systems fail from conditioning errors and packout variability more than insulation specs.**
+- **Excursion disposition requires product-specific stability knowledge; generic TTOR rules can be wrong.**
+
+#### Maritime
+- **Port congestion, transshipment dwell, and customs/terminal handling variation often dominate headline sailing time.**
+- **A legal stow plan can still be operationally fragile.**
+- **VGM/documentation/commercial cut-off issues routinely create avoidable rollovers.**
+- **Schedule reliability by carrier/service matters more than brochure transit time.**
+- **Hazmat compliance fails in documentation classification as often as in physical segregation.**
+
+#### Supply chain
+- **Master data quality is a first-order operational variable.**
+- **Inventory accuracy below stated levels silently destroys reorder logic.**
+- **ABC analysis goes stale quickly after promotions, seasonality shifts, or customer changes.**
+- **Theoretical warehouse utilisation and throughput are routinely overstated because congestion and exception handling are ignored.**
+- **Lead-time variance matters more than mean lead time in many planning failures.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- safety stock formulas
+- ROP calculations
+- lead-time decomposition completeness
+- route time calculations
+- cold-chain thermal budget calculations
+- draft and gross mass checks
+- lane/season map completeness
+- stack weight compliance
+
+**Needs HIL**
+- whether route qualification is truly representative
+- whether shipment packaging execution is disciplined
+- whether service reliability assumptions are trustworthy
+- whether customs/document workflows are robust
+- product disposition after excursion
+
+---
+
+## 7) Mathematics
+
+### a. Missing categories
+- theorem precondition vigilance
+- asymptotic trap catalog
+- hidden regularity assumptions
+- numerical conditioning intuition
+- proof failure patterns
+- measure-theoretic caveats behind standard manipulations
+
+### b. Senior additions
+- **Uniform convergence is the hidden assumption behind many illegal termwise operations.**
+- **Pointwise convergence is weak; dominated convergence, monotone convergence, and absolute convergence often do the real work.**
+- **Fubini/Tonelli misuse is rampant; absolute integrability or non-negativity matters.**
+- **Stationary point is not enough for extremum; degenerate Hessian cases need more care.**
+- **Taylor expansions outside controlled remainder bounds are a major source of fake proofs.**
+- **Ill-conditioned problems can make an algebraically correct method numerically worthless.**
+- **Dimensionless grouping often reveals whether a model is overparameterised or nonsense.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- symbolic derivation checks
+- unit checks
+- domain checks
+- back-substitution
+- convergence tests for standard families
+- interval/bound checks
+- numeric cross-verification
+
+**Needs HIL**
+- whether a proof strategy is elegant or appropriate
+- whether theorem assumptions are being interpreted correctly in ambiguous contexts
+- whether an approximation is acceptable for the intended use
+- handling nonstandard or research-level mathematics
+
+---
+
+## 8) Product/regulatory engineering
+
+Includes:
+- product_automotive
+- product_consumer
+- product_industrial_eq
+
+### a. Missing categories
+- certification-body reality
+- supplier documentation fraud/quality drift
+- integration risk
+- abuse/misuse patterns
+- market surveillance triggers
+- change-control failure patterns
+
+### b. Senior additions
+
+#### Automotive
+- **PPAP paperwork can be perfect while process capability is fragile.**
+- **Special characteristics are often underidentified at interface features and assembly datums.**
+- **Customer-specific requirements override generic quality assumptions constantly.**
+- **Change control failures usually come through sub-suppliers and material substitutions.**
+- **Vibration and thermal cycling failures cluster at connectors, clips, potting edges, and overmold transitions.**
+
+#### Consumer products
+- **CE is not a test mark; the recurring failure is missing an applicable directive or mis-scoping the product.**
+- **The compliance risk is often in the accessory set, charger, battery pack, cable, or firmware mode actually shipped.**
+- **Material declarations without supply-chain credibility are weak evidence.**
+- **EMC failures are configuration-sensitive; one cable or mode can sink the product.**
+- **Labelling and language mistakes create market access failures independent of electrical safety.**
+
+#### Industrial equipment
+- **Warnings are overused where guarding or redesign should have been implemented.**
+- **Safety functions fail in architecture and reset behavior, not just component selection.**
+- **Maintenance and cleaning modes are where many real injuries occur.**
+- **Bypass/defeat of interlocks is predictable and should be treated as a design input.**
+- **A safety PLC does not make a function safe unless architecture, diagnostics, and fault response are correct.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- standards applicability matrices
+- PPAP document completeness
+- Cpk threshold calculations
+- PL calculations if data supplied
+- creepage/clearance checks
+- BOM substance checks against declarations
+- directive mapping completeness
+- label content completeness
+
+**Needs HIL**
+- whether evidence would survive customer/notified body/NRTL scrutiny
+- whether a risk assessment is materially adequate
+- whether misuse/defeat scenarios are realistically covered
+- whether process capability is genuinely stable
+- whether supplier evidence is trustworthy
+
+---
+
+## 9) Structural engineering
+
+Includes:
+- structural_bridge
+- structural_building
+- structural_temporary
+
+### a. Missing categories
+- detail-dominated failures
+- robustness/progressive-collapse thinking
+- constructability and erection-state hazards
+- connection realism
+- load-path discontinuity diagnostics
+- water/durability deterioration priors
+- temporary-state dominance
+
+### b. Senior additions
+
+#### Buildings
+- **Connection design and detailing are where many failures actually live.**
+- **Punching shear in flat slabs is a disproportionate-collapse trigger and deserves elevated attention.**
+- **Stability and load path matter more than passing isolated member checks.**
+- **Deflection compatibility with partitions/façades often drives practical failure before strength.**
+- **Construction tolerances and second-order effects are often underappreciated in nominally simple frames.**
+
+#### Bridges
+- **Fatigue and details govern life more than static resistance in many steel bridges.**
+- **Drainage/water ingress and durability failures silently control long-term performance.**
+- **Bearings, joints, deck ends, and parapet anchorage are chronic weak spots.**
+- **Load model compliance is not enough; local details and maintenance access determine actual durability and inspectability.**
+
+#### Temporary works
+- **The worst case is often mid-construction, not final state.**
+- **Missing ties, poor ground assumptions, and sequence changes collapse temporary works.**
+- **Temporary works fail from coordination and unauthorized change as much as from design arithmetic.**
+- **Formwork pressure assumptions and early striking are chronic accident sources.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- code load combinations
+- member capacities
+- bearing movement calculations
+- deflection limits
+- buckling formulas
+- fatigue calculations where details are explicit
+- temporary load calculations
+- sole plate bearing checks
+
+**Needs HIL**
+- whether the load path is truly continuous in the real structure
+- whether details are buildable and durable
+- whether erection sequence assumptions are valid
+- whether connection behavior matches the analysis idealization
+- whether robustness/progressive collapse risk is adequately addressed
+
+---
+
+## 10) Software systems
+
+Includes:
+- software_distributed
+- software_python_sk
+- software_realtime
+- software_security
+
+### a. Missing categories
+- operational failure archetypes
+- observability and recovery design
+- specification ambiguity traps
+- workload/pathology realism
+- hidden shared-state assumptions
+- unsafe-but-passing-test patterns
+
+### b. Senior additions
+
+#### Distributed systems
+- **Most outages come from timeouts, retries, overload interactions, and partial dependency failures, not pure consensus failure.**
+- **Idempotency is often broken in edge fields, side effects, or downstream integrations.**
+- **Backpressure and bounded queues matter more than elegant architecture diagrams.**
+- **Staleness semantics must be explicit to users and upstream systems.**
+- **Exactly-once is usually marketing unless the scope is tightly defined.**
+
+#### Python/S_k
+- **A fix that passes targeted tests can still be semantically wrong if the test is too narrow.**
+- **AST/import/type/lint/security gates are admissibility checks, not proof of correctness.**
+- **Search/replace exact-match protocols are robust operationally but can bias fixes toward local edits instead of architectural correctness.**
+
+#### Real-time
+- **The common failure is not average slowness but rare blocking/jitter spikes.**
+- **Interrupt storms, priority inversion, and lock contention at bad times dominate field failures.**
+- **Measurement under debugger or instrumentation can hide actual deadline misses.**
+- **Watchdog design often fails because the watchdog is fed by the wrong evidence of health.**
+
+#### Security
+- **The dominant failure is incomplete mitigation at the trust boundary.**
+- **Authentication is often sound while authorization is subtly wrong.**
+- **Secure primitives in insecure composition remain insecure.**
+- **Secrets leak through logs, CI, crash dumps, and client bundles more often than source code alone.**
+- **Rate limiting and abuse detection are often bypassed through workflow asymmetries.**
+
+### c. Tool-verifiable vs HIL
+
+**Tool-verifiable**
+- static scans for security patterns
+- timeout/retry config presence
+- idempotency key presence
+- monotonic clock misuse scans
+- WCET-related syntactic red flags
+- malloc usage in RT paths
+- ISR/shared-state patterns
+- test, lint, mypy, bandit, AST/import gates
+
+**Needs HIL**
+- whether consistency model matches business need
+- whether real-time schedulability proof assumptions hold
+- whether threat model is complete
+- whether the architecture is operationally resilient
+- whether tests actually evidence the claim being made
+
+---
+
+# 2. Synthetic expertise quality
+
+## a. Domains where my coverage is relatively strong
+
+Strongest coverage tends to be where there is:
+- extensive published literature
+- mature standards
+- large public technical discussion corpus
+- strong textbook + practitioner overlap
+
+That includes:
+
+1. **Mathematics**
+2. **Software security**
+3. **Distributed systems**
+4. **General software / Python verification patterns**
+5. **Embedded software-hardware interface**
+6. **Consumer product compliance at a high level**
+7. **Analytical chemistry / pharmaceutical analytical validation**
+8. **General structural design principles**
+9. **General electronics thermal/power/RF first-principles**
+
+Caveat: “strong” here means useful expert augmentation is plausible, not that I replace a practicing chartered engineer, QP, PI, or security lead.
+
+## b. Domains where coverage is weak, patchy, or skewed
+
+Patchiest domains are those where the critical knowledge is:
+- tacit plant-floor knowledge
+- proprietary OEM/customer standards
+- up-to-the-minute regulation
+- sparse public postmortems
+- highly local or subdiscipline-specific
+
+Weak/patchy:
+1. **Clinical trial operational design at sponsor/regulator negotiation depth**
+2. **Medical device regulatory strategy beyond general standards**
+3. **Process chemistry scale-up plant reality**
+4. **Injection moulding production optimization**
+5. **CNC production machining heuristics**
+6. **Welded fabrication with code-specific practical judgment**
+7. **Cold chain route qualification and operational disposition**
+8. **Maritime operations at current lane/service reality**
+9. **Automotive supplier/OEM-specific release practice**
+10. **Temporary works coordination and site execution**
+11. **Industrial machinery safety validation beyond standard text**
+12. **RF productization under certification and enclosure/manufacturing variability**
+
+## c. Failure modes of synthetic expertise
+
+This is the critical part.
+
+### Main failure modes
+
+1. **Textbook-over-practice bias**
+- Gives correct first-order principles while missing what actually causes failures in field/plant/site.
+
+2. **Code-book flattening**
+- Treats standards clauses as equally important, missing practical consequence ranking.
+
+3. **Plausible synthesis hallucination**
+- Combines true fragments into a subtly false expert-sounding claim.
+
+4. **Regime confusion**
+- Applies a rule outside its validity range.
+- Example: using a normal-distribution safety stock model where demand is lumpy/intermittent.
+
+5. **Version drift**
+- Standards/regulations evolve; older interpretations linger in training data. [VERIFY:current]
+
+6. **Vendor-lore contamination**
+- Repeats common design folklore that is useful but not universal.
+
+7. **Failure-to-see hidden dependencies**
+- Correct local claim, wrong system claim because boundary tracing was incomplete.
+
+8. **False quantification**
+- Provides overly precise percentages or thresholds where domain evidence is weak.
+
+9. **Underspecification masquerading as expertise**
+- Gives a heuristic without the conditions under which it holds.
+
+10. **Overgeneralizing from public postmortems**
+- Public failures are not representative of the entire error distribution.
+
+### Where I am most likely to be subtly wrong
+
+Highest risk:
+- current regulatory expectations
+- what a notified body/FDA reviewer/OEM will practically accept
+- exact plant-scale hazard interpretation
+- process windows that depend on specific equipment
+- manufacturability under tolerance/variation
+- route/season/reliability logistics
+- nuanced fatigue/detail classifications if details are incomplete
+- real-time schedulability under hardware-specific microarchitectural effects
+- EMC/RF fixes that depend on physical implementation
+
+Definitive stance: synthetic expertise is best treated as **high-value drafting and adversarial review capability**, not as final authority in high-consequence domains.
+
+---
+
+# 3. Verification status framework
+
+## a. Is DRAFT / CROSS-VERIFIED / VALIDATED sufficient?
+
+It is good but not sufficient.
+
+You need at least two more states:
+
+1. **CURATED**
+- Edited for internal consistency, deduplicated, provenance-tagged, but not yet cross-verified.
+
+2. **CONDITIONALLY VALIDATED**
+- Reviewed by a domain expert for a constrained scope, not for general operational use.
+
+Recommended ladder:
+
+- **SEED**: raw extracted/thin directive
+- **DRAFT**: model-enriched
+- **CURATED**: normalized, provenance-tagged, scoped
+- **CROSS-VERIFIED**: survives multi-model adversarial P-pass
+- **CONDITIONALLY VALIDATED**: HIL-approved for bounded scope/use case
+- **VALIDATED**: HIL-approved for operational use in stated scope
+- **RETIRED / SUPERSEDED**: versioned out
+
+This matters because many encodings will be strong enough for research benchmarking before they are safe enough for operations.
+
+## b. Which domains can proceed at CROSS-VERIFIED vs require VALIDATED
+
+### Can proceed at CROSS-VERIFIED for Bench Run 2 research/internal benchmarking
+- mathematics_general
+- software_distributed
+- software_python_sk
+- software_security
+- software_realtime
+- cross_software_hardware
+- cross_thermal_electrical
+- hardware_embedded
+- hardware_power
+- hardware_rf
+- chemistry_analytical
+- parts of logistics_supply_chain
+
+These are still not “safe for consequential deployment” without human review, but for internal benchmark runs they can proceed.
+
+### Must have VALIDATED before operational use
+- biomedical_clinical
+- biomedical_device
+- biomedical_pharma
+- chemistry_process
+- chemistry_pharma
+- industrial_welding
+- industrial_injection
+- industrial_cnc if used for shop-floor parameter prescription
+- logistics_cold_chain
+- logistics_maritime
+- product_automotive
+- product_consumer
+- product_industrial_eq
+- structural_bridge
+- structural_building
+- structural_temporary
+
+Reason: these involve direct safety, regulatory, patient, public, or high-liability consequences and contain substantial tacit-practice content.
+
+## c. Minimum cross-verification protocol
+
+Minimum for DRAFT → CROSS-VERIFIED:
+
+### Models
+- **3 independent drafting/review models minimum**
+- Better: **4 + 1 isolated adversary**
+  - M1 draft
+  - M2 independent red-team review
+  - M3 independent reconstruction from source material
+  - M4 contradiction hunt / edge-case expansion
+  - M5 isolated adversary with no access to prior analyses except the draft and source corpus
+
+### Required passes
+1. **Constraint pass**
+   - Are any proposed additions inconsistent with hard standards or scope?
+
+2. **Boundary pass**
+   - Are claims local or system-dependent? Trace dependencies.
+
+3. **Falsifier pass**
+   - For each heuristic, identify strongest counterexample.
+
+4. **Evidence pass**
+   - Tag each addition as:
+     - standard-backed
+     - literature-backed
+     - practitioner-heuristic
+     - anecdotal/contested
+
+5. **Operational consequence pass**
+   - If wrong, what happens? This determines whether HIL is mandatory.
+
+### Acceptance criteria
+Move to CROSS-VERIFIED only if:
+- no unresolved contradictions on HARD content
+- all heuristics tagged with evidence class
+- all claims scoped by applicability conditions
+- all additions classified as tool-verifiable vs HIL-only
+- isolated adversary finds no high-consequence unaddressed falsifier
+- residual disputed claims are either removed or explicitly marked “contested practice”
+
+Definitive stance: **3 models is the floor, 5-pass review is the minimum acceptable protocol, and an isolated adversarial pass is mandatory for any high-consequence domain.**
+
+---
+
+# 4. Enrichment process design
+
+## a. Process structure
+
+Best structure:
+
+### Not recommended
+- one model drafts, others lightly review
+- collaborative co-writing from the start
+
+These encourage convergence on shared error.
+
+### Recommended
+**Stage 1: Independent generation**
+- At least 2 models independently produce rich encodings from the thin seed plus cited standards/literature summary.
+
+**Stage 2: Independent adversarial review**
+- A separate model reviews each draft for:
+  - false certainty
+  - scope creep
+  - unsupported heuristics
+  - outdated regulation
+  - model-breakpoint omissions
+
+**Stage 3: Synthesis**
+- A synthesizer merges only consensus or explicitly contested items.
+
+**Stage 4: Isolated red-team pass**
+- Fresh context, no prior chain-of-thought, attack the synthesized encoding.
+
+**Stage 5: Human review where required**
+
+That is superior to iterative collaboration because it preserves error independence longer.
+
+## b. Signals that synthetic expertise is wrong
+
+Strong warning signs:
+
+1. **No applicability conditions**
+- Real expert heuristics are conditional.
+
+2. **Excessive numerical precision with no provenance**
+- “20–40%” can be real or fabricated; provenance must be attached.
+
+3. **No mention of failure tradeoffs**
+- Real experts know fixing one failure mode often worsens another.
+
+4. **Standards-name-dropping without operational detail**
+- Signals text regurgitation.
+
+5. **No edge cases**
+- Experts spontaneously mention the cases that break the rule.
+
+6. **Uniform confidence across claims**
+- Real expertise is uneven and scoped.
+
+7. **Heuristics that cannot be falsified**
+- Bad sign; they are too vague.
+
+8. **Ignoring sequence/installation/maintenance**
+- Common synthetic omission in engineering domains.
+
+9. **No distinction between compliance and actual safety/performance**
+- Serious red flag.
+
+10. **Independent models converge suspiciously fast**
+- May indicate shared textbook priors, not true corroboration.
+
+## c. Can S_k be used to verify expert encodings?
+
+Yes, but only partially.
+
+### What S_k can help with
+For encoding quality, define analog gates:
+
+- **g1 syntax/schema pass**: directive parses against schema
+- **g2 internal consistency**: no contradictory thresholds/claims
+- **g3 source-traceability**: every hard claim linked to standard/literature/provenance class
+
+Evidence gates:
+- **e1 standards alignment**: matches cited normative source
+- **e2 cross-model consensus**: independent agreement rate
+- **e3 example-case performance**: encoding yields correct answers on curated domain cases
+- **e4 regression**: enrichment does not break previously correct benchmark answers
+- **e5 formal/math verification**: formulas/unit consistency check
+
+### What S_k cannot verify
+- practical adequacy of heuristics
+- whether tacit knowledge is actually representative
+- whether a regulator/site auditor/senior engineer would endorse it
+- whether omitted edge cases are dangerous
+
+So yes: **use S_k as a structural and non-regression gate, not as a substitute for HIL on expert content.**
+
+---
+
+# 5. Priority ordering
+
+## a. Which domains should be enriched first for maximum impact
+
+First priority should be domains with all three:
+1. high consequence if wrong
+2. thin encodings currently omit major tacit knowledge
+3. benchmark tasks likely to exercise missing tacit knowledge
+
+That points to:
+
+1. **Structural engineering**
+2. **Biomedical clinical/device/pharma**
+3. **Chemistry process/pharma**
+4. **Industrial equipment / product safety**
+5. **Software security + distributed systems** if benchmark-heavy
+6. **Hardware power/RF/embedded**
+7. **Temporary works and logistics cold chain**
+8. **Manufacturing process domains**
+9. **Mathematics** last among high-value domains because it is already relatively less thin and more verifiable
+
+## b. Highest risk from thin encodings
+
+Highest consequence if wrong:
+
+### Tier 1 risk
+- biomedical_clinical
+- biomedical_device
+- chemistry_process
+- structural_temporary
+- structural_building
+- structural_bridge
+- product_industrial_eq
+- industrial_welding
+- logistics_cold_chain
+
+### Tier 2 risk
+- biomedical_pharma
+- chemistry_pharma
+- hardware_power
+- product_consumer
+- product_automotive
+- software_security
+- software_realtime
+
+### Tier 3 risk
+- hardware_embedded
+- hardware_rf
+- industrial_injection
+- industrial_cnc
+- logistics_maritime
+- logistics_supply_chain
+- chemistry_analytical
+- mathematics_general
+- software_distributed
+- software_python_sk
+
+## c. Concrete enrichment ordering
+
+Recommended order for enrichment work:
+
+### Wave 1 — immediate
+1. **structural_temporary**
+   - Temporary-state failures are common, high consequence, and poorly captured by thin rule sets.
+2. **chemistry_process**
+   - Thin encodings miss the exact tacit knowledge that prevents scale-up incidents.
+3. **biomedical_clinical**
+   - Massive gap between standards compliance and expert trial design.
+4. **product_industrial_eq**
+   - Safety architecture and misuse/maintenance hazards need expert enrichment.
+5. **logistics_cold_chain**
+   - Silent product damage and disposition logic require expert patterns.
+
+### Wave 2
+6. **structural_building**
+7. **structural_bridge**
+8. **biomedical_device**
+9. **biomedical_pharma**
+10. **industrial_welding**
+
+### Wave 3
+11. **chemistry_pharma**
+12. **hardware_power**
+13. **product_consumer**
+14. **product_automotive**
+15. **software_security**
+
+### Wave 4
+16. **hardware_embedded**
+17. **hardware_rf**
+18. **cross_software_hardware**
+19. **cross_thermal_electrical**
+20. **software_realtime**
+21. **software_distributed**
+
+### Wave 5
+22. **industrial_injection**
+23. **industrial_cnc**
+24. **logistics_maritime**
+25. **logistics_supply_chain**
+26. **chemistry_analytical**
+27. **mathematics_general**
+28. **software_python_sk**
+
+If you insist on exactly the 27 listed directives, remove the grouped cross-domain distinction and keep the same relative ordering logic.
+
+Rationale:
+- Wave 1 targets domains where thinness most directly hides catastrophic failure modes.
+- Wave 2 targets major safety/regulatory domains with strong tacit content.
+- Wave 3 targets domains where first-principles are strong but implementation traps remain consequential.
+- Wave 4–5 target domains where existing thin encodings already cover more of what matters or are more machine-verifiable.
+
+---
+
+# Final recommendations
+
+## Recommended policy decisions
+
+1. **Do not treat enriched encodings as monolithic truth.**
+   Separate:
+   - normative constraints
+   - empirical heuristics
+   - contested practitioner beliefs
+
+2. **Require provenance tags on every expert addition.**
+   At minimum:
+   - standard
+   - peer-reviewed literature
+   - vendor/application note
+   - practitioner heuristic
+   - contested
+
+3. **Make HIL mandatory for high-consequence operational domains.**
+   CROSS-VERIFIED is enough for research benchmarking, not deployment.
+
+4. **Use independent generation plus isolated adversarial review.**
+   Do not rely on collaborative multi-model drafting alone.
+
+5. **Add explicit escalation triggers.**
+   Example:
+   - if claim depends on plant-specific behavior, HIL
+   - if claim depends on current regulation, [VERIFY:current]
+   - if claim is heuristic with severe downside if wrong, HIL
+
+6. **Use S_k-style gates for structure and regression only.**
+   Not for final expert validation.
+
+## Condensed answer to the core question
+
+Yes: the directives are thin.  
+The right enrichment is to add:
+- failure modes
+- diagnostic patterns
+- regime boundaries
+- tool caveats
+- edge cases
+- expert heuristics
+- provenance
+- verification class
+- escalation triggers
+
+And the right governance is:
+- DRAFT → CURATED → CROSS-VERIFIED → CONDITIONALLY VALIDATED → VALIDATED
+
+With mandatory HIL before operational use in biomedical, structural, process, safety-critical product, and other high-consequence domains.
+
+Definitive stance: **build the enrichment pipeline as a disciplined evidence-tagged expert-augmentation system, not as a bigger rulebook, and do not operationalize high-consequence enriched encodings without human validation.**

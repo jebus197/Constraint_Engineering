@@ -1,0 +1,1129 @@
+**Definitive stance:** the template is close but not yet universal. It needs a few structural additions to work across all domains without ambiguity, and the Python reference is good as a software-specific encoding but not fully sufficient as written. I’m presenting only the proposals that survive a multi-pass falsification review, with explicit limits where tool-verification is not honestly possible.
+
+---
+
+# STRUCTURED CERTIFICATE
+
+## Premises
+
+1. **HARD constraints** from your request:
+   - Need a domain-invariant `S_k = A · E` framework.
+   - Every gate must map to an executable tool.
+   - “Model judgment” is not admissible evidence.
+   - Need sections usable across multiple domains.
+   - Need specific encodings for mathematics, chemistry, physics/engineering, and hardware.
+   - Need cross-domain and structural gap analysis.
+   - Must apply P-pass / self-falsification.
+
+2. **Operational reality constraints**:
+   - Some domains permit deterministic tool checking of syntax, consistency, units, balance, simulation constraints, formal properties.
+   - Some domains do **not** permit full automatic verification of semantic correctness, safety, or field performance without human-in-the-loop, experimental apparatus, or unavailable context.
+   - Therefore any universal template must cleanly distinguish:
+     - machine-verifiable admissibility,
+     - machine-verifiable effect evidence,
+     - baseline/delta handling,
+     - applicability/skipping rules,
+     - escalation conditions.
+
+3. **Mathematical observation**:
+   - `A · E` works only if:
+     - `A ∈ {0,1}` is a true veto layer,
+     - `E ∈ [0,1]` is defined over the admissible subset,
+     - missing evidence is handled explicitly (skip, neutral score, or fail), not silently.
+
+## Formal conclusion
+
+The current six-section template is **not yet fully complete as a universal schema**. It should be extended to **eight universal sections**:
+
+1. Hard Gates  
+2. Effect Evidence  
+3. Fix Format  
+4. Tool Mapping  
+5. **Baseline / Comparator Definition**  
+6. **Applicability / Skip Rules**  
+7. S* Guidance  
+8. Limitations / HIL Escalation
+
+That is the minimum structure that survives cross-domain use.
+
+---
+
+# P-PASS RESULT 1 — TEMPLATE STRUCTURE
+
+## FIND
+
+### Issue T1 — Missing baseline semantics
+**Location:** template sections 1–2  
+**Evidence:** Several gates in your Python example rely on “delta from baseline,” “new violations,” “tests passed before fix,” but the template itself does not define how baseline is captured.
+
+### FOLLOW
+Without a universal baseline section:
+- domains will define “non-regression” inconsistently,
+- some encodings will compare absolute values, others deltas,
+- S_k becomes non-comparable across domains.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Add a universal section:
+
+```text
+# 5. BASELINE / COMPARATOR
+# Define the reference state against which admissibility failures and effect
+# scores are measured: current artefact, prior validated revision, approved
+# nominal model, lab baseline, code baseline, etc.
+#
+# Must specify:
+#   - baseline source
+#   - delta method
+#   - how pre-existing failures are excluded
+#   - when absolute thresholds are used instead of deltas
+```
+
+---
+
+## FIND
+
+### Issue T2 — Missing applicability/skip semantics
+**Location:** effect evidence section  
+**Evidence:** Python e5 says “if no mathematical claims, skipped = 1.0”. That rule is domain-critical and cannot be left ad hoc.
+
+### FOLLOW
+Without universal skip rules:
+- one domain may neutralise absent evidence to 1.0,
+- another may omit weight renormalisation,
+- another may fail closed.
+This breaks calibration and comparability.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Add a universal section:
+
+```text
+# 6. APPLICABILITY / SKIP RULES
+# For each gate/evidence item, define:
+#   - applicability predicate
+#   - behaviour when not applicable:
+#       * skipped with neutral score = 1.0
+#       * skipped with weight renormalisation
+#       * hard fail (not enough evidence)
+#   - behaviour when required tool is unavailable
+```
+
+My recommendation:
+- **Hard gates:** if applicable tool unavailable → **fail closed** or escalate to HIL.
+- **Effect evidence:** if non-applicable by construction → **skip with weight renormalisation**, not forced 1.0 in the raw product.
+
+Weight renormalisation is mathematically cleaner than neutral 1.0 if you want comparability.
+
+---
+
+## FIND
+
+### Issue T3 — Limitations section is too weak; escalation needs to be explicit
+**Location:** limitations  
+**Evidence:** “does not cover” is not enough when the framework is intended to drive acceptance/rejection.
+
+### FOLLOW
+A system needs to know whether:
+- S_k is inapplicable,
+- S_k is partial and must be paired with HIL,
+- S_k can reject but not approve,
+- S_k can approve only under bounded scope.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Rename section 6 to:
+
+```text
+# 8. LIMITATIONS / HIL ESCALATION
+# Must explicitly state:
+#   - what is outside automatic verification scope
+#   - whether S_k may still be computed as partial evidence
+#   - whether human sign-off is mandatory for release/use
+```
+
+---
+
+## FIND
+
+### Issue T4 — Tool determinism requirement is too strong as written
+**Location:** Tool Mapping  
+**Evidence:** Many admissible tools (SAT/SMT solvers, numerical optimisers, CFD, EDA timing engines, theorem provers with configurable search) are operationally deterministic under pinned versions/config, but not inherently deterministic across environments or seeds.
+
+### FOLLOW
+If “deterministic” is interpreted literally, you exclude useful classes of tools needed in engineering domains.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Change:
+- “Deterministic”  
+to
+- “**Reproducible under pinned version, configuration, and seed where relevant**”
+
+---
+
+## FIND
+
+### Issue T5 — Fix format may not be universally singular
+**Location:** Fix Format  
+**Evidence:** Software can use SEARCH/REPLACE; mathematics may need structured proof-step replacement; chemistry may need reaction JSON; hardware may need netlist/constraint patches.
+
+### FOLLOW
+A universal notion of “one fix format” is false. What is universal is that the fix must be:
+- machine-readable,
+- minimally scoped,
+- directly evaluable by the pipeline.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Keep “Fix Format” universal as a section, but state explicitly:
+- **the concept is universal; the concrete representation is domain-specific.**
+
+---
+
+## Surviving template recommendation
+
+## Revised universal template sections
+
+1. Solution Verification Gates  
+2. Hard Gates  
+3. Effect Evidence  
+4. Fix Format  
+5. Tool Mapping  
+6. Baseline / Comparator  
+7. Applicability / Skip Rules  
+8. S* Guidance  
+9. Limitations / HIL Escalation  
+
+If you must keep six top-level sections, then **Baseline / Comparator** and **Applicability / Skip Rules** should be mandatory subsections under Effect Evidence and Hard Gates. But structurally that is worse.
+
+---
+
+# P-PASS RESULT 2 — PYTHON REFERENCE
+
+## STRUCTURED CERTIFICATE
+
+### Premises
+- Python fixes can be evaluated at source, import, type, lint, test, and security levels.
+- A Python fix representation should be machine-applicable and reject mismatch.
+- Tool-only evidence is allowed; architectural fitness is not automatically verifiable.
+
+### Concrete example
+If a fix changes:
+```python
+return x / y
+```
+to
+```python
+return x // y
+```
+then:
+- g1 parse likely passes,
+- g2 import likely passes,
+- g3 mypy may pass,
+- e1 targeted tests should detect semantic failure if tests exist,
+- otherwise S_k may overestimate quality.
+
+### Conclusion
+The current Python encoding is **good but incomplete**. It survives with amendments.
+
+---
+
+## FIND
+
+### Issue P1 — Import gate is too brittle and not universally meaningful
+**Location:** g2 Import Resolution  
+**Evidence:** many Python modules require environment variables, optional deps, side-effectful imports, DB connections, or package context. `python3 -c "import <module>"` can fail for reasons unrelated to the fix.
+
+### FOLLOW
+This creates false vetoes in admissibility.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Replace g2 with a narrower, more reproducible admissibility gate:
+
+```text
+g2: Build / Module Compilation
+  Tool: python3 -m py_compile <file>  (or compileall for package scope)
+  Pass: compilation succeeds
+  Fail: compilation raises error
+```
+
+If project-specific import smoke tests exist, they belong in **effect evidence**, not a universal hard gate.
+
+---
+
+## FIND
+
+### Issue P2 — Type check gate should be optional/applicable, not universal hard gate
+**Location:** g3 Type Check  
+**Evidence:** many Python codebases are untyped or partially typed. mypy may be absent or produce noisy baselines.
+
+### FOLLOW
+A universal hard veto on mypy would reject many otherwise valid codebases.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Move type checking into:
+- hard gate **only when the repo has an existing mypy baseline**, or
+- effect evidence otherwise.
+
+Suggested wording:
+```text
+g3: Static Type Non-Regression
+  Applicable only if mypy is configured in the repository baseline.
+```
+
+---
+
+## FIND
+
+### Issue P3 — SEARCH/REPLACE exact match is insufficient for some multi-file or generated-code scenarios
+**Location:** Fix Format  
+**Evidence:** exact string-match blocks are robust for patch application but fragile for line-ending drift, formatting changes, generated sections, or repeated snippets.
+
+### FOLLOW
+False pre-gate rejection may occur.
+
+### ANALYSE
+**UNCERTAIN but material**
+
+### FIX
+Keep SEARCH/REPLACE as the primary format, but allow a second admissible form:
+- unified diff with exact context lines,
+- or AST-targeted patch format for structured edits.
+
+Minimal change recommendation:
+```text
+Primary fix format: exact SEARCH/REPLACE blocks
+Optional secondary format: unified diff with exact context
+```
+
+If you want maximal toolability, SEARCH/REPLACE alone is still defensible; just state the limitation.
+
+---
+
+## FIND
+
+### Issue P4 — Weighting is plausible but under-specified
+**Location:** e1–e5 weights  
+**Evidence:** weights 3/2/1/2/2 are reasonable heuristics, but aggregation method was left ambiguous (“weighted product, geometric mean or raw product depending on calibration”).
+
+### FOLLOW
+If aggregation is not fixed, different implementations produce different S_k.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Fix the composition rule. Recommended:
+
+\[
+E = \prod_i e_i^{w_i / \sum w}
+\]
+
+with skipped gates removed and weights renormalised over applicable evidence only.
+
+For Python, surviving weights:
+- e1 targeted test resolution: 4
+- e2 regression suite: 3
+- e3 static analysis non-regression: 1
+- e4 security non-regression: 2
+- e5 formal property verification: 2 when applicable
+
+This keeps targeted fix proof strongest.
+
+---
+
+## FIND
+
+### Issue P5 — Missing coverage for dependency and packaging regressions
+**Location:** hard/effect set  
+**Evidence:** a fix may parse and test locally but break package metadata, dependency locks, entry points, or wheel build.
+
+### FOLLOW
+S_k can overstate deployability.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Add optional evidence:
+```text
+e6: Packaging/Build Non-Regression
+  Tool: python3 -m build
+  Scoring: 1.0 if build succeeds; 0.0 otherwise
+  Weight: 1
+  Applicable when project is packaged/distributed
+```
+
+---
+
+## FIND
+
+### Issue P6 — Missing baseline section in the domain encoding
+**Location:** whole reference  
+**Evidence:** the reference uses baseline semantics ad hoc.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Add explicit baseline section:
+- baseline commit / working tree,
+- pre-existing test failures excluded,
+- pre-existing lint/type/security findings excluded from penalty unless worsened.
+
+---
+
+## Surviving Python encoding judgment
+
+**Correctness:** mostly correct.  
+**Completeness:** sufficient for ordinary Python application fixes after amendment, not for concurrency, performance, distributed integration, or architecture.  
+**Definitive stance:** retain it, but revise g2, conditionalise g3, formalise composition, and add baseline/applicability rules.
+
+---
+
+# PROPOSED S_k ENCODINGS
+
+---
+
+# A. Mathematics — Proofs and Derivations
+
+**Domain:** Mathematics — Proofs / Derivations / Symbolic Corrections  
+**Version:** 1.0  
+**Date:** 9 April 2026  
+**Layers-on:** universal/cdsfl_core.txt, mathematics directive  
+**Companion:** universal/expert_encoding_template.md
+
+This encoding covers corrections to symbolic derivations, algebraic manipulations,
+calculus steps, elementary proofs with checkable inference chains, and applied
+mathematical calculations with explicit assumptions.
+
+## [HARD GATES — Admissibility]
+
+**g1: Structured Parse of Proof Object**  
+Tool: JSON Schema validator / proof-step parser  
+Input: machine-readable proof/derivation object  
+Pass: object parses and conforms to schema  
+Fail: malformed object, missing fields, invalid references  
+Rationale: unstructured natural language cannot enter the gate pipeline
+
+**g2: Reference Integrity**  
+Tool: proof graph checker  
+Input: proof-step object with step IDs and dependencies  
+Pass: every non-axiom step references existing prior steps; dependency graph is acyclic  
+Fail: dangling references, cyclic dependency, undefined premise  
+Rationale: prevents non-local or circular “proofs”
+
+**g3: Domain/Constraint Admissibility**  
+Tool: SymPy assumption engine / custom domain checker  
+Input: step claims plus declared variable domains  
+Pass: no step invokes an operation outside declared domain (e.g. sqrt of negative real, log non-positive real, division by zero, invalid substitution bounds)  
+Fail: any domain violation detected  
+Rationale: domain legality is non-negotiable
+
+**g4: Local Rule Legitimacy**  
+Tool: rewrite-rule verifier / theorem-specific checker  
+Input: each step transformation  
+Pass: every step is justified by an allowed rule class:
+- algebraic equivalence
+- differentiation rule
+- integration rule
+- substitution rule with transformed bounds
+- theorem instantiation with explicit premises
+Fail: any step uses an unrecognised or invalid transformation  
+Rationale: proof steps must be machine-checkable, not asserted
+
+## [EFFECT EVIDENCE — Graded]
+
+**e1: Step Validity Rate**  
+Tool: SymPy / custom rule checker / SMT solver where needed  
+Input: all claimed transformed steps  
+Scoring: verified_steps / total_nontrivial_steps  
+Weight: 4
+
+**e2: Final Result Equivalence**  
+Tool: SymPy simplify / equality checker / numerical sampling under assumptions  
+Input: original target statement and corrected final statement  
+Scoring:
+- 1.0 if symbolic equivalence proven
+- 0.8 if not symbolically proven but passes high-confidence numeric sampling under assumptions
+- 0.0 if counterexample found
+Weight: 4
+
+**e3: Boundary / Special Case Preservation**  
+Tool: SymPy limit / substitution / interval checker  
+Input: endpoints, singularities, parameter edge cases  
+Scoring: passed_cases / total_required_cases  
+Weight: 2
+
+**e4: Dimensional / Unit Consistency (applied mathematics only)**  
+Tool: Pint / SymPy units  
+Input: equations with units annotations  
+Scoring: 1.0 if all checked expressions are dimensionally consistent, else 0.0  
+Weight: 2  
+Applicability: only when physical quantities with units are present
+
+**e5: Independent Method Corroboration**  
+Tool: alternate solver path (e.g. differentiate antiderivative, numerical quadrature, linear algebra residual check, optimisation KKT residual)  
+Input: corrected result  
+Scoring: corroborating checks passed / total attempted corroborating checks  
+Weight: 2
+
+## [FIX FORMAT]
+
+Corrections must be provided as a machine-readable proof patch object:
+
+```json
+{
+  "artifact_type": "math_proof_patch",
+  "target_id": "derivation_or_proof_name",
+  "assumptions": [
+    "x > 0",
+    "a != 0"
+  ],
+  "replace_steps": [
+    {
+      "step_id": "s12",
+      "premises": ["s10", "s11"],
+      "rule": "substitution_definite_integral",
+      "before": "Integral(f(u(x)), (x, a, b))",
+      "after": "Integral(f(u), (u, u(a), u(b)))",
+      "side_conditions": ["u is differentiable on [a,b]", "u'(x) present in integrand"]
+    }
+  ],
+  "final_claim": "Eq(result_expr, target_expr)"
+}
+```
+
+Natural language commentary may accompany the patch but is not evidence.
+
+## [TOOL MAPPING]
+
+- `jsonschema` — structural validation of proof patch
+- `networkx` or custom DAG checker — dependency graph validity
+- `sympy` — algebraic equivalence, calculus identities, assumptions, limits
+- `z3` — logical side-condition satisfiability / counterexample search
+- `pint` — dimensional consistency for applied problems
+- `mpmath` — numerical corroboration under sampled admissible points
+
+## [BASELINE / COMPARATOR]
+
+Baseline is the original derivation/proof artifact before correction.  
+Only the corrected/replaced steps and downstream dependent steps are re-evaluated.  
+Pre-existing invalid upstream steps outside dependency scope are recorded separately and do not count as regressions caused by the fix.
+
+## [APPLICABILITY / SKIP RULES]
+
+- e4 skipped with weight renormalisation if no units are present.
+- e5 skipped with weight renormalisation if no independent corroboration method exists.
+- If symbolic proof fails but numeric sampling passes, this is graded evidence only; it does not override any hard gate failure.
+
+## [S* GUIDANCE]
+
+Typical nu_b range: 0.01–0.05  
+Rationale: formal mathematical corrections usually have low background re-breakage when scoped.
+
+Typical nu_f range: 0.10–0.30  
+Rationale: incorrect derivation fixes often create downstream inconsistency if a local step is wrong.
+
+Recommended S* floor: 0.75  
+Rationale: mathematics tolerates little ambiguity; final equivalence should be strongly evidenced.
+
+## [SOLUTION VERIFICATION LIMITATIONS / HIL ESCALATION]
+
+Cannot fully verify automatically:
+- informal prose proofs,
+- high-level existence arguments,
+- proof strategies requiring semantic creativity,
+- theorem proving outside supported formal rule classes,
+- novel proofs in abstract domains without formal libraries.
+
+These require human mathematical review. S_k may provide partial evidence for local algebraic correctness only.
+
+---
+
+# B. Chemistry — Process / Pharma
+
+**Domain:** Chemistry — Process Chemistry / Pharmaceutical Process Verification  
+**Version:** 1.0  
+**Date:** 9 April 2026
+
+## [HARD GATES — Admissibility]
+
+**g1: Structured Reaction Patch Parse**  
+Tool: JSON Schema validator  
+Input: reaction/process patch object  
+Pass: valid schema, all required fields present  
+Fail: malformed or incomplete patch
+
+**g2: Atomic Stoichiometric Balance**  
+Tool: RDKit reaction parser + elemental balance checker  
+Input: reactants, products, stoichiometric coefficients  
+Pass: each element conserved; net charge conserved where specified  
+Fail: imbalance in atoms or charge  
+Rationale: unbalanced chemistry is inadmissible
+
+**g3: Process Constraint Legality**  
+Tool: constraint evaluator  
+Input: temperatures, pressures, concentrations, feed rates, vessel limits, material compatibility data  
+Pass: no hard process constraint violated relative to domain directive:
+- T/P within equipment limits
+- incompatible materials not selected
+- flammability/inerting constraints met
+- MAWP and dose-control constraints satisfied
+Fail: any hard process violation
+
+**g4: Unit / Quantity Consistency**  
+Tool: Pint / custom engineering-units checker  
+Input: all quantitative expressions  
+Pass: all equations dimensionally consistent  
+Fail: dimensional mismatch
+
+## [EFFECT EVIDENCE — Graded]
+
+**e1: Reaction Mass Balance Closure**  
+Tool: RDKit + molecular weight calculator  
+Input: full reaction and charge balance  
+Scoring: 1.0 if closure exact within tolerance; otherwise max(0, 1 - relative_error/tol_scale)  
+Weight: 3
+
+**e2: Target Stoichiometry Resolution**  
+Tool: stoichiometry solver  
+Input: limiting reagent, equivalents, expected product amount  
+Scoring: fraction of corrected stoichiometric inconsistencies resolved  
+Weight: 3
+
+**e3: Thermal Safety Margin**  
+Tool: process calculator for \(Q_{removal}\), \(Q_{rxn,max}\), \(\Delta T_{ad}\)  
+Input: enthalpy, kinetics surrogate, heat transfer area, U, dosing mode  
+Scoring:
+- 1.0 if required safety inequalities hold with margin
+- otherwise scaled by worst violated margin, clamped to [0,1]
+Weight: 4
+
+**e4: Equipment / Materials Compatibility Non-Regression**  
+Tool: materials compatibility table lookup + rules engine  
+Input: reagents, solvent, temperature, equipment material  
+Scoring: 1.0 if no newly introduced incompatibility, 0.0 otherwise  
+Weight: 3
+
+**e5: Process Window Robustness**  
+Tool: Monte Carlo parameter sweep within allowed uncertainty bands  
+Input: temperature, concentration, dosing rate, hold time  
+Scoring: successful runs / total sampled runs meeting safety and target conversion constraints  
+Weight: 2
+
+**e6: Regulatory / GMP Metadata Completeness**  
+Tool: schema/rules validator  
+Input: batch record fields, impurity limits, CPP/CQA annotations if applicable  
+Scoring: completed_required_fields / total_required_fields  
+Weight: 1  
+Applicability: pharma / GMP contexts only
+
+## [FIX FORMAT]
+
+Fixes must be submitted as a structured reaction/process patch:
+
+```json
+{
+  "artifact_type": "chem_process_patch",
+  "target_id": "step_3_nitration",
+  "reaction": {
+    "reactants": [{"smiles": "CCO", "eq": 1.0}],
+    "products": [{"smiles": "CC=O", "eq": 1.0}],
+    "reagents": [{"name": "oxidant", "eq": 1.05}]
+  },
+  "process_conditions": {
+    "temperature_C": 5,
+    "pressure_bar": 1.2,
+    "addition_mode": "semi_batch",
+    "addition_rate_kg_per_min": 0.15
+  },
+  "equipment": {
+    "vessel_material": "glass_lined",
+    "MAWP_bar_g": 3.5
+  },
+  "replace_fields": ["reaction", "process_conditions"]
+}
+```
+
+Natural language descriptions do not count as the primary fix representation.
+
+## [TOOL MAPPING]
+
+- `jsonschema` — patch validation
+- `rdkit` — molecular parsing, elemental formulas, stoichiometric checks
+- `pint` — units validation
+- custom process safety calculator — heat release/removal, venting, dosing constraints
+- compatibility rules engine / local materials DB — corrosion and compatibility checks
+- `numpy/scipy` — sensitivity sweeps
+
+## [BASELINE / COMPARATOR]
+
+Baseline is the approved current reaction/process specification.  
+Only newly introduced imbalances, incompatibilities, or safety deficits count as regression.  
+Pre-existing unresolved hazards remain recorded as baseline debt.
+
+## [APPLICABILITY / SKIP RULES]
+
+- e6 skipped with weight renormalisation outside GMP/pharma contexts.
+- If required thermodynamic or kinetic parameters are missing, e3 cannot be scored; escalate to HIL rather than impute.
+- If structure is unavailable and only names are given, g2 fails unless a trusted local species dictionary resolves identities.
+
+## [S* GUIDANCE]
+
+Typical nu_b range: 0.03–0.12  
+Typical nu_f range: 0.20–0.60  
+Recommended S* floor: 0.80
+
+Rationale: process chemistry fixes can create severe collateral hazards; admissibility must be strict and effect evidence strong.
+
+## [SOLUTION VERIFICATION LIMITATIONS / HIL ESCALATION]
+
+Cannot fully verify automatically:
+- actual reaction kinetics without validated model/data,
+- impurity formation and selectivity without analytical or experimental evidence,
+- scale-up mixing behaviour without CFD or plant/lab data,
+- polymorph risks, crystallisation behaviour, filtration performance,
+- operator ergonomics and procedural compliance.
+
+These require experiment, calorimetry, pilot data, or specialist human review.
+
+---
+
+# C. Physics / Engineering — Dimensional, Structural, Calculation Corrections
+
+**Domain:** Physics / Engineering — Calculation and Parameter Verification  
+**Version:** 1.0  
+**Date:** 9 April 2026
+
+## [HARD GATES — Admissibility]
+
+**g1: Structured Calculation Patch Parse**  
+Tool: JSON Schema validator  
+Pass: patch object valid  
+Fail: malformed
+
+**g2: Dimensional Consistency**  
+Tool: Pint / SymPy units  
+Input: all corrected equations  
+Pass: all equations dimensionally homogeneous  
+Fail: any mismatch
+
+**g3: Constraint / Code Bound Satisfaction**  
+Tool: rules engine or solver  
+Input: corrected design parameters against applicable hard constraints  
+Pass: all mandatory code inequalities satisfied  
+Fail: any mandatory bound violated  
+Examples:
+- stress ≤ allowable
+- deflection ≤ limit
+- factor of safety ≥ minimum
+- load combinations complete where required
+
+**g4: Numerical Solvability / Internal Consistency**  
+Tool: solver / residual checker  
+Input: equation system and substituted values  
+Pass: system solves and residuals within tolerance  
+Fail: no solution, inconsistent data, or residual beyond tolerance
+
+## [EFFECT EVIDENCE — Graded]
+
+**e1: Target Error Resolution**  
+Tool: equation checker / residual evaluator  
+Input: original flagged error and corrected parameter set  
+Scoring: proportion of flagged inconsistencies eliminated  
+Weight: 4
+
+**e2: Margin to Hard Limits**  
+Tool: calculator / FE post-processor / structural code checker  
+Input: corrected parameters  
+Scoring: scaled reserve margin above minimum hard threshold, clamped to [0,1]  
+Weight: 3
+
+**e3: Independent Cross-Check Agreement**  
+Tool: alternate calculation method  
+Examples:
+- hand formula vs FE result
+- static equilibrium sum vs matrix solution
+- symbolic derivation vs numerical simulation
+Scoring: 1 - normalised discrepancy  
+Weight: 3
+
+**e4: Sensitivity / Robustness**  
+Tool: parameter sweep / uncertainty propagation  
+Input: plausible variation bands  
+Scoring: fraction of perturbed cases still satisfying hard constraints  
+Weight: 2
+
+**e5: Documentation Traceability Completeness**  
+Tool: schema validator  
+Input: assumptions, loads, units, references, code clauses  
+Scoring: required_trace_items_present / total_required  
+Weight: 1
+
+## [FIX FORMAT]
+
+```json
+{
+  "artifact_type": "engineering_calc_patch",
+  "target_id": "beam_design_calc_17",
+  "assumptions": {
+    "material": "S355",
+    "load_model": "LM1",
+    "span_m": 24.0
+  },
+  "replace_equations": [
+    {
+      "eq_id": "eq_12",
+      "before": "sigma = M / Z_plastic",
+      "after": "sigma = M_ed / W_el",
+      "units": {"sigma": "MPa", "M_ed": "kN*m", "W_el": "mm^3"}
+    }
+  ],
+  "replace_values": [
+    {"name": "M_ed", "value": 1850, "unit": "kN*m"}
+  ]
+}
+```
+
+## [TOOL MAPPING]
+
+- `jsonschema` — patch validation
+- `pint` — unit checking
+- `sympy` — symbolic consistency / algebra
+- `numpy/scipy` — numerical solving, sensitivity
+- domain-specific calculators / FE post-processors — stress, deflection, load combinations
+- `z3` — inequality/constraint checks where appropriate
+
+## [BASELINE / COMPARATOR]
+
+Baseline is the existing approved calculation set or design model.  
+Only corrected equations/values and their downstream dependent outputs are re-evaluated.
+
+## [APPLICABILITY / SKIP RULES]
+
+- e3 skipped with weight renormalisation if no independent second method exists.
+- If code clause mapping is incomplete, g3 fails in regulated structural domains.
+- If FE or simulation tools are required but unavailable locally, escalate to HIL.
+
+## [S* GUIDANCE]
+
+Typical nu_b range: 0.02–0.08  
+Typical nu_f range: 0.15–0.50  
+Recommended S* floor: 0.75
+
+## [SOLUTION VERIFICATION LIMITATIONS / HIL ESCALATION]
+
+Cannot fully verify automatically:
+- real-world boundary conditions not encoded in the model,
+- model-form adequacy,
+- fatigue detail classification from ambiguous geometry,
+- ground conditions, as-built deviations, field loads,
+- code interpretation disputes.
+
+These require competent engineer review.
+
+---
+
+# D. Hardware — Embedded / RF / Power
+
+**Domain:** Hardware Engineering — Embedded / RF / Power Verification  
+**Version:** 1.0  
+**Date:** 9 April 2026
+
+## [HARD GATES — Admissibility]
+
+**g1: Structured Schematic/Constraint Patch Parse**  
+Tool: JSON Schema validator  
+Pass: valid patch object  
+Fail: malformed
+
+**g2: Netlist / ERC Validity**  
+Tool: KiCad ERC / ngspice netlist parse / EDA checker  
+Input: modified schematic/netlist  
+Pass: no new ERC-fatal violations; netlist compiles  
+Fail: floating power pins, shorts, illegal pin classes, invalid netlist
+
+**g3: Datasheet Bound Compliance**  
+Tool: rules engine using local component constraint database  
+Input: voltages, currents, timing, thermal dissipation, ratings  
+Pass: all component operating limits and deratings satisfied  
+Fail: any overvoltage, overcurrent, thermal, timing, or absolute max violation
+
+**g4: Timing / Clock / Interface Constraint Validity**  
+Tool: static timing calculator / protocol constraint checker  
+Input: clock trees, setup/hold values, bus timing, watchdog periods  
+Pass: all mandatory timing inequalities hold with margin  
+Fail: any mandatory timing violation
+
+## [EFFECT EVIDENCE — Graded]
+
+**e1: Target Constraint Resolution**  
+Tool: rules checker / simulator  
+Input: the specific finding being corrected  
+Scoring: fraction of target violations eliminated  
+Weight: 4
+
+**e2: Electrical Simulation Agreement**  
+Tool: ngspice / PySpice / power integrity calculator  
+Input: corrected subcircuit or power stage  
+Scoring: 1 - normalised deviation from required operating envelope  
+Weight: 3  
+Applicability: analog/power/RF-supporting subcircuits only
+
+**e3: Non-Regression in ERC/DRC Findings**  
+Tool: KiCad ERC/DRC or equivalent  
+Input: full design  
+Scoring: 1.0 if no new serious findings; otherwise penalty by severity count  
+Weight: 3
+
+**e4: Margin to Rated Limits**  
+Tool: datasheet rules engine  
+Input: worst-case voltage/current/temp/frequency conditions  
+Scoring: scaled minimum reserve margin across checked constraints  
+Weight: 3
+
+**e5: Firmware/Hardware Interface Coherence**  
+Tool: pin map / peripheral config checker  
+Input: netlist pins, MCU config, interrupt/timer allocations  
+Scoring: verified_bindings / total_required_bindings  
+Weight: 2  
+Applicability: embedded systems with firmware coupling
+
+**e6: RF Match / Signal Integrity Proxy**  
+Tool: local RF calculator / transmission line model / S-parameter fit checker  
+Input: matching network or high-speed interconnect parameters  
+Scoring: fraction of target impedance/bandwidth criteria met  
+Weight: 2  
+Applicability: RF / high-speed only
+
+## [FIX FORMAT]
+
+```json
+{
+  "artifact_type": "hardware_patch",
+  "target_id": "power_stage_revB",
+  "replace_components": [
+    {
+      "ref": "R17",
+      "before": {"value": "1k", "package": "0402"},
+      "after": {"value": "4.7k", "package": "0402"}
+    }
+  ],
+  "replace_nets": [],
+  "constraints": {
+    "vin_max_V": 5.5,
+    "i_peak_mA": 12,
+    "clock_Hz": 32768
+  }
+}
+```
+
+For PCB or schematic-native flows, an equivalent netlist diff or EDA patch file is acceptable if machine-applicable.
+
+## [TOOL MAPPING]
+
+- `jsonschema` — patch validation
+- KiCad ERC/DRC CLI or equivalent — electrical/design rule checks
+- `ngspice` / `PySpice` — circuit simulation
+- custom component rules DB — datasheet bounds, derating
+- timing/protocol checker — setup/hold, bus timing, watchdog constraints
+- pinmap consistency checker — firmware/hardware signal binding
+- RF calculator / local solver — impedance, matching, VSWR proxy checks
+
+## [BASELINE / COMPARATOR]
+
+Baseline is the current schematic/netlist/constraints set.  
+Only newly introduced ERC/DRC/timing/rating violations count against the fix; pre-existing violations are baseline debt.
+
+## [APPLICABILITY / SKIP RULES]
+
+- e2 skipped with weight renormalisation where no meaningful simulation model exists.
+- e6 skipped with weight renormalisation outside RF/high-speed contexts.
+- If component datasheet data are unavailable in the local rules DB, g3 cannot pass automatically; escalate to HIL.
+
+## [S* GUIDANCE]
+
+Typical nu_b range: 0.03–0.10  
+Typical nu_f range: 0.15–0.45  
+Recommended S* floor: 0.78
+
+## [SOLUTION VERIFICATION LIMITATIONS / HIL ESCALATION]
+
+Cannot fully verify automatically:
+- EMI/EMC compliance,
+- antenna detuning in enclosure,
+- thermal performance without physical stack-up and measurement,
+- manufacturing yield and assembly tolerances beyond encoded rules,
+- analog stability where vendor macromodels are missing or inaccurate,
+- field reliability and environmental robustness.
+
+These require lab test, chamber test, prototype measurement, or specialist review.
+
+---
+
+# CROSS-DOMAIN GAPS
+
+## FIND
+
+### Issue X1 — Some domains cannot support full S_k acceptance purely via tool evidence
+**Evidence:** domains involving human biology, operator behaviour, UX, legal interpretation, organisational process, open-world environment, or missing formal artefacts cannot be fully tool-verified.
+
+### ANALYSE
+**CONFIRMED**
+
+## Domains that must honestly require HIL for approval
+
+1. **Biomedical / clinical**
+   - You can tool-check dosage arithmetic, contraindication table consistency, unit conversions.
+   - You cannot tool-verify patient safety, diagnosis correctness, or treatment appropriateness from static artefacts alone.
+   - **S_k can be partial evidence only. HIL mandatory.**
+
+2. **Industrial operations / SOP corrections**
+   - You can validate procedure structure, interlock presence, alarm thresholds, maybe P&ID consistency.
+   - You cannot fully verify operator execution quality, maintenance state, or plant-specific latent hazards.
+   - **HIL mandatory.**
+
+3. **Logistics / routing / supply chain**
+   - You can optimise against encoded constraints and simulate schedules.
+   - You cannot verify real-time disruptions, customs/legal exceptions, labour availability, or market conditions without live data.
+   - **[VERIFY:current] and often HIL required.**
+
+4. **Product engineering involving user desirability / ergonomics**
+   - Tool verification can cover tolerance stacks, stress, manufacturability proxies.
+   - It cannot fully verify usability, market fit, or customer comprehension.
+   - **HIL / user test mandatory.**
+
+5. **Security beyond encoded local artefacts**
+   - Static checks are partial.
+   - Absence of findings is not proof of security, especially for auth logic, business logic abuse, supply chain, deployment config.
+   - **Pen testing / expert review often mandatory.**
+
+6. **Pure proof-heavy mathematics outside formal libraries**
+   - For informal theorem proofs, fully automatic verification is often not available.
+   - **HIL mandatory unless proof is in a formal proof assistant ecosystem.**
+
+---
+
+# STRUCTURAL GAPS IN THE A · E MODEL
+
+## FIND
+
+### Issue S1 — A · E does not break, but evidence omission must be formalised
+**Evidence:** if some evidence channels are unavailable, `E` is undefined unless skip semantics are explicit.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Use:
+
+\[
+A = \prod_{g \in G_{app}} g,\quad g \in \{0,1\}
+\]
+
+\[
+E = \prod_{i \in E_{app}} e_i^{w_i/\sum_{j \in E_{app}} w_j}
+\]
+
+where only applicable effect evidence is included.
+
+---
+
+## FIND
+
+### Issue S2 — Some domains need “mandatory evidence” distinct from hard admissibility
+**Evidence:** example: in chemistry, if no calorimetry/thermal model exists for an exotherm, the fix may be syntactically admissible but not safely approvable.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+Introduce a universal concept:
+
+- **Required evidence gates**
+  - not binary admissibility about the artefact itself,
+  - but mandatory evidence availability conditions.
+  - If absent, result = **Escalate/HIL**, not necessarily `S=0`.
+
+This is the one place your current template is underpowered.
+
+You have three choices:
+1. Treat missing required evidence as hard fail.
+2. Treat it as a third state: `INCOMPLETE`.
+3. Keep binary S_k but require an external status flag:
+   - `status ∈ {ADMISSIBLE, REJECTED, ESCALATE}`
+
+I recommend **option 3**. It preserves `S_k = A·E` while avoiding dishonest zeroing where the real issue is incompleteness, not demonstrated badness.
+
+---
+
+## FIND
+
+### Issue S3 — “Fix format” is not universal if the underlying domain artefact is not formalised
+**Evidence:** legal reasoning, human factors, prose policy corrections, conceptual architecture decisions.
+
+### ANALYSE
+**CONFIRMED**
+
+### FIX
+State explicitly:
+- S_k applies only where the domain directive defines a **machine-readable artefact representation**.
+- If the artefact cannot be formalised, S_k cannot be primary verification.
+
+---
+
+# FINAL SURVIVOR RECOMMENDATIONS
+
+## 1. Template verdict
+**Not fully complete as written.**  
+Add:
+- Baseline / Comparator
+- Applicability / Skip Rules
+- explicit HIL escalation semantics  
+Optionally add:
+- external status flag `ADMISSIBLE / REJECTED / ESCALATE`
+
+## 2. Python verdict
+**Good reference, but revise before canonising.**
+Required changes:
+- replace import hard gate with compile/build admissibility,
+- conditionalise mypy,
+- fix aggregation formula,
+- add baseline/applicability sections,
+- optionally add packaging/build evidence.
+
+## 3. Proposed domain encodings
+The four encodings above are viable survivors, with the stated limits.
+
+## 4. Cross-domain honesty requirement
+Some domains cannot support full automatic approval. In those domains:
+- S_k may be partial,
+- HIL must be mandatory,
+- the directive should say so explicitly.
+
+## 5. Structural model verdict
+`A · E` is sound **only if**:
+- admissibility is binary,
+- effect evidence has explicit applicability and weight renormalisation,
+- missing required evidence triggers escalation rather than being silently neutralised,
+- the domain has a machine-readable fix representation.
+
+**Definitive stance:** adopt S_k, but do not freeze the template until you add baseline, applicability, and escalation semantics. Without those, cross-domain behaviour will drift and some domains will produce misleading scores.

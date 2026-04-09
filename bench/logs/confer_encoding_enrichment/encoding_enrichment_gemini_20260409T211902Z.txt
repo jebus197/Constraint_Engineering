@@ -1,0 +1,130 @@
+[STRUCTURED CERTIFICATE]
+- FORMAT: Combined 4-Layer Schema (Meta + CDSFL Core + FFAFP + Prose)
+- PASSES: 4 (Converged)
+- CONSTRAINT CLASSIFICATION:
+  - HARD: Life-safety validation routing, S_k admissibility gates, multi-model isolation for cross-verification.
+  - SOFT: Specific chronological ordering of domain enrichment, exact naming of verification tiers.
+- EPISTEMIC MARKING: Applied ([SPECULATIVE] for training data composition, [VERIFY:current] for regulatory boundaries).
+- RESOLUTION: Definitive strategy for domain encoding enrichment, synthetic expertise calibration, and execution ordering.
+
+[FFAFP SYSTEM RECORD]
+**Claim 1:** Synthetic models can reliably enrich all 9 domains to expert level using cross-verification.
+*Strongest Falsifier:* Domains relying heavily on tacit, unpublished practitioner knowledge (e.g., injection moulding tooling tricks, maritime demurrage negotiation) will result in consensus on "textbook" knowledge rather than actual expertise, creating a false sense of security.
+*Attempt:* Limit synthetic enrichment to domains with deep open-source or published post-mortem literature (Software, Structural).
+*Revision (Accept with limits):* Claim falsified for physical/tacit domains. CROSS-VERIFIED status is insufficient for domains lacking deep mathematical or programmatic representation in the training corpus. VALIDATED (HIL) is a HARD constraint for physical/safety-critical domains.
+
+**Claim 2:** The 3-tier verification status (DRAFT, CROSS-VERIFIED, VALIDATED) is sufficient.
+*Strongest Falsifier:* An encoding can be validated by a human but fail catastrophically when parsed by the tool gate pipeline because the human didn't understand the tool's parser constraints.
+*Attempt:* Add a system-integration tier.
+*Revision:* Framework revised to 4 tiers: DRAFT, CROSS-VERIFIED, VALIDATED (HIL), and OPERATIONAL (passes all S_k syntax/parsing gates and demonstrates >0.0 nu_b utility on baseline tests).
+
+**Claim 3:** There are 27 domain directives.
+*Strongest Falsifier:* Counting the provided text blocks yields 29 distinct domain files.
+*Attempt:* Correct the baseline assumption.
+*Revision:* Acknowledged 29 directives across the 9 broad domains.
+
+---
+
+### 1. ENRICHMENT STRATEGY
+
+To move from "thin standards" to "domain expertise", the encodings require tacit heuristics and failure mode catalogues. 
+
+**a. Missing Categories of Expert Knowledge**
+- **Diagnostic Heuristics:** Rules of thumb used to quickly bound a problem before running full calculations.
+- **Failure Mode Biases:** Knowledge of which 20% of the components cause 80% of the field failures.
+- **Tool Chain Reality:** Acknowledgment that theoretical standards often conflict with the quirks of industry-standard software (e.g., Ansys, Moldflow, SAP2000).
+- **Standard Loopholes & "Gotchas":** Knowing where the code is silent, contradictory, or where "industry practice" diverges from literal interpretation.
+
+**b. Concrete Expert Additions (Examples)**
+- *Biomedical Device:* The thin directive quotes ISO 10993. An expert encoding adds: *"Extractables/leachables failures rarely originate from the bulk polymer; they originate from undocumented mould-release agents, colourant masterbatch carriers, or adhesive off-gassing. Always mandate FTIR/GC-MS on the exact manufacturing process, not just raw material coupons."*
+- *Industrial CNC:* The thin directive quotes cutting speeds. An expert encoding adds: *"Internal corner radii govern tool deflection. Program feed rate reductions to 50% when entering internal corners where tool engagement angle suddenly increases from 90° to 180°, otherwise chatter will gouge the part and break the tool."*
+- *Software Real-time:* The thin directive quotes Rate Monotonic Scheduling. An expert encoding adds: *"RMS assumes zero context switch overhead. In practice, task context switching and cache-thrashing at high frequencies destroy schedulability. Any task period < 1ms on a standard MCU requires interrupt-driven bare-metal handling, not an RTOS task."*
+
+**c. Tool-Verifiable vs. Human Judgment**
+- *Tool-Verifiable (S_k eligible):* Software syntax/types, mathematics constraint solving (SymPy/Z3), dimensional analysis, explicit boundary checks, and API adherence.
+- *Human Judgment (HIL required):* Hazard identification, physical world tool interactions (e.g., welding metallurgy realism), clinical safety relevance, and aesthetic/usability constraints.
+
+### 2. SYNTHETIC EXPERTISE QUALITY
+
+LLM training data is biased toward digital text, academic papers, and open-source code. It is heavily deficient in proprietary manufacturing data and physical intuition.
+
+**a. STRONG Coverage (High Confidence)**
+- *Software (all subdomains):* Open-source code, GitHub issues, and stack overflow provide massive empirical data on how software actually fails.
+- *Mathematics:* Heavy representation of textbooks, proofs, and computational libraries.
+- *Electronics/RF:* High availability of component datasheets, application notes (e.g., Texas Instruments, Analog Devices), and ham radio/maker community empirical data.
+
+**b. WEAK or PATCHY Coverage (Low Confidence)**
+- *Industrial Injection/CNC/Welding:* Proprietary trade secrets. [SPECULATIVE] The models have textbook theory (e.g., Hagen-Poiseuille flow) but lack the tacit knowledge of a 20-year toolmaker.
+- *Process Chemistry:* Scale-up failure data is closely guarded by pharma companies. Academic chemistry is small-scale; industrial scale-up literature is sparse.
+- *Maritime Logistics:* Highly dependent on tacit negotiation, unwritten port customs, and rapidly changing geopolitical realities.
+
+**c. Failure Modes of Synthetic Expertise**
+- **Seductive Ideality:** Applying pristine mathematical formulas to noisy physical systems (e.g., trusting FEA stress results at a sharp internal corner without acknowledging singularity).
+- **Standard Blending:** Subtly mixing US (ASME/AWS) and EU (ISO/EN) standard requirements, creating a Frankenstein constraint that is legally invalid in both jurisdictions.
+- **Chronological Stagnation:** Relying on superseded standards. [VERIFY:current] Regulatory frameworks like the EU MDR and FDA SaMD guidelines evolve rapidly; model weights lag.
+
+### 3. VERIFICATION STATUS FRAMEWORK
+
+The proposed 3-tier framework is insufficient. It lacks a feedback loop from the operational toolchain.
+
+**a. Revised 4-Tier Framework**
+1. **DRAFT:** Model-generated, single-pass.
+2. **CROSS-VERIFIED:** Survived multi-model adversarial P-pass (minimum 3 distinct models).
+3. **VALIDATED (HIL):** Reviewed by a human domain expert.
+4. **OPERATIONAL:** Successfully parsed by the S_k tool gates and executed against baseline problems without triggering syntax/logic failures.
+
+**b. Tier Requirements for Bench Run 2**
+- *May proceed at CROSS-VERIFIED:* Software (Python, Distributed), Mathematics, Analytical Chemistry. (Failures here result in failed tests or rejected code, which the toolchain catches).
+- *MUST be VALIDATED (HIL) before use:* Structural, Biomedical (all), Hardware Power, Industrial Process Chem. (Failures here map to physical safety/compliance risks that the S_k toolchain cannot simulate).
+
+**c. Minimum Cross-Verification Protocol**
+Execute the **Extended P-Pass (DAG Structure)** defined in `cdsfl_core.txt`:
+- Model A acts as the Generative node, drafting the enriched encoding.
+- Models B and C act as Modular passes, independently falsifying specific constraints (e.g., one checks physics, one checks regulatory).
+- Model D acts as the Isolated Adversarial pass. It receives the draft without seeing B/C's work, tasked *only* with finding edge cases where following the directive causes catastrophic failure.
+- *Acceptance:* Zero unmitigated HARD constraint violations identified by Model D.
+
+### 4. ENRICHMENT PROCESS DESIGN
+
+**a. Drafting Strategy: Generative-Adversarial DAG**
+Do not use iterative collaboration (which trends toward polite consensus and mean-reversion). Use isolated adversarial drafting. Model A writes the directive. Model B is explicitly prompted: *"Assume Model A's directive will cause a critical failure in production. Find the exact mechanism of that failure."* Model C resolves the conflict.
+
+**b. Detecting False Expertise**
+The primary signal of hallucinated synthetic expertise is the absence of trade-off friction. Real engineering is constrained by time, cost, and physical limits. If a model proposes a verification procedure that requires infinite precision, perfectly rigid bodies, or economically unviable testing (e.g., "perform 100% X-ray CT scanning on all injection moulded consumer parts"), it is hallucinating textbook ideality.
+
+**c. The S_k Framework as an Ouroboros**
+Yes, S_k can verify encodings. 
+1. Inject a known historical failure (e.g., a specific Python concurrency bug) into a codebase.
+2. Provide the tool with the new `software_python_sk` directive.
+3. If the directive is expertly written, the resulting fix will pass gates `g1-g3` and `e1-e2`, yielding a high S_k. 
+4. If the directive is poor, the LLM will generate a fix that fails the gates. The S_k score of the *solutions produced under the directive* becomes the quantitative benchmark for the *quality of the directive itself*.
+
+### 5. PRIORITY ORDERING
+
+I am pushing back on the premise that all 29 directives must be enriched simultaneously. Resources should be allocated based on risk asymmetry and immediate utility to Bench Run 2.
+
+**Priority 1: Tool-Chain Enablers (Immediate Impact)**
+Enriching these first ensures the underlying verification machinery works.
+1. `software_python_sk` (Governs the S_k scoring itself)
+2. `mathematics_general` (Governs formal logic verification)
+3. `cross_software_hardware` (Bridges code and physical systems)
+
+**Priority 2: High Consequence, High Formalism (Safety Critical)**
+These carry catastrophic failure risks but operate strictly by physics and formal codes, making them excellent candidates for synthetic enhancement.
+4. `structural_building` & `structural_bridge` & `structural_temporary`
+5. `hardware_power` & `cross_thermal_electrical`
+6. `chemistry_process`
+
+**Priority 3: High Consequence, High Tacit Need (HIL Heavy)**
+These carry severe safety/legal risks but rely heavily on proprietary data. They will require the most human validation time.
+7. `biomedical_clinical` & `biomedical_device` & `biomedical_pharma`
+8. `product_automotive` & `product_industrial_eq`
+
+**Priority 4: Lower Life-Safety Risk / Highly Variable**
+These are economically vital but a failure here results in inefficiency or component degradation rather than immediate catastrophic safety events.
+9. All Logistics (`cold_chain`, `maritime`, `supply_chain`)
+10. All Industrial Manufacturing (`cnc`, `injection`, `welding`)
+11. Remaining Software and Chemistry
+
+**Execution Posture:** 
+Begin Layer 1/2 integration on Priority 1 immediately. Hold Priority 3 and 4 at their current "thin" baseline until Priority 1 and 2 achieve OPERATIONAL status. Unverified deep expertise is more dangerous than explicitly verified shallow constraints.
