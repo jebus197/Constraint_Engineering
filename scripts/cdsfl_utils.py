@@ -142,11 +142,18 @@ def latest_experiment() -> Optional[dict[str, Any]]:
         try:
             data = json.loads(report_files[0].read_text())
             comp = data.get("completion_signal", {})
+            # Fallback: if brain signal says INCOMPLETE but the runner
+            # recorded converged_at, the experiment DID converge (brain
+            # wiring bug fixed in Exp 37 session).
+            status = comp.get("status", "UNKNOWN")
+            if status == "INCOMPLETE" and data.get("converged_at") is not None:
+                status = "CONVERGED"
+            reason = comp.get("reason", "") or data.get("convergence_reason", "")
             return {
                 "number": max_n,
                 "name": data.get("experiment", f"exp{max_n}"),
-                "status": comp.get("status", "UNKNOWN"),
-                "reason": comp.get("reason", ""),
+                "status": status,
+                "reason": reason,
                 "total_rounds": data.get("total_rounds", 0),
                 "total_findings": data.get("total_findings", 0),
                 "gamma": data.get("gamma", 0.0),

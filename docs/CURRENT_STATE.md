@@ -1,21 +1,19 @@
 # CDSFL Current State
 
-Generated: 9 April 2026 17:42 BST (2026-04-09T17:42:04+01:00)
+Generated: 9 April 2026 18:16 BST (2026-04-09T18:16:11+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** main
-- **Last commit:** `9c2ee82` Guard all choices[0] access against empty upstream 500 responses
-- **Committed:** 2026-04-08 19:07:59 +0100
-- **Remote:** ahead by 14
+- **Last commit:** `944ec3e` Exp 37 converged: 6 fixes, mathematical lineage, brain signal wiring
+- **Committed:** 2026-04-09 17:43:18 +0100
+- **Remote:** up to date
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
 - `M .claude/CLAUDE.md`
-- `M PAPER.md`
-- `M bench/cc2_manager.py`
 - `M bench/cdsfl_registry/composer.py`
 - `M bench/dm/_types.py`
 - `M bench/evidence.py`
@@ -28,6 +26,8 @@ Uncommitted files:
 - `M bench/logs/exp36_evidence_20260407T004931Z/completion_signal.json`
 - `M bench/logs/exp36_evidence_20260407T004931Z/exp36_report.json`
 - `M bench/logs/exp36_evidence_20260407T004931Z/experiment_chain.json`
+- `M bench/logs/exp36_evidence_20260407T004931Z/runner_state.json`
+- `M bench/logs/immune_shadow.log`
 
 ---
 
@@ -40,7 +40,7 @@ Uncommitted files:
 ## Latest Experiment
 
 - **Experiment:** exp37_evidence (#37)
-- **Status:** INCOMPLETE
+- **Status:** CONVERGED
 - **Topology:** star
 - **Target:** `bench/evidence.py`
 - **Rounds:** 16
@@ -59,6 +59,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `944ec3e Exp 37 converged: 6 fixes, mathematical lineage, brain signal wiring`
 - `9c2ee82 Guard all choices[0] access against empty upstream 500 responses`
 - `d848863 Merge remote-tracking branch 'origin/claude/debug-api-500-error-AFfcu'`
 - `d773f12 Fix unguarded choices[0] access in OpenRouter and DeepSeek API handlers`
@@ -68,4 +69,3 @@ Uncommitted files:
 - `9538e81 Exp 36: apply all verified fixes, promote shadow→active, wire CC2 agents, FFAF churn`
 - `6abb7d1 Add canonical 4-phase execution plan to ground truth document`
 - `7180e11 sv: 4-phase plan in RECOVERY.md, appendix gap-fill entry, revised next steps`
-- `b3a9cf4 sv: state snapshot after appendix gap-fill commit`

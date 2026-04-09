@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 9 April 2026 17:42 BST
+Last updated: 9 April 2026 18:16 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -21,6 +21,23 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 **Local path:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/`
 
 ## Current State (update after each major milestone)
+
+<!-- SV:LATEST_EXP_START -->
+- **EXP 37 CONVERGED (9 April 2026 18:16 BST):**
+  Target: `bench/evidence.py`, star topology, 5 models.
+  16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
+  257 raw findings → 257 canonical entries.
+  γ final=0.467 (strong depletion).
+  Per model: Gemini 87, ChatGPT 51, DeepSeek 48, CC2 40, Codex 31.
+  Logs: `bench/logs/exp37_evidence_20260409T050932Z/`
+  Per round: [24, 24, 23, 17, 14, 18, 13, 8, 13, 7, 11, 28, 11, 17, 14, 15]
+  γ history: [0.000, 0.000, 0.320, 0.366, 0.399, 0.433, 0.467, 0.487, 0.500, 0.514, 0.512, 0.506, 0.503, 0.501, 0.486, 0.467]
+
+  **Qualitative observations** (add manually after sv):
+  <!-- Add: model reasoning behaviour, immune highlights,
+       mid-experiment fixes, key design findings -->
+<!-- SV:LATEST_EXP_END -->
+
 
 - **EXP 37 CONVERGED (9 April 2026, 10:18 BST):**
   Evidence layer review (`evidence.py` + `verification_chain.py`), star topology,
