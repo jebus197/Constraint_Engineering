@@ -27,11 +27,17 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import math
 import os
+import py_compile
 import re
+import shlex
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -195,6 +201,11 @@ class RunnerConfig:
     max_contested_rounds: int = 5
     multiturn_chunk_target: int = 30_000
 
+    # S_k pipeline
+    sk_enabled: bool = False
+    test_cmd: Optional[str] = None
+    sk_s_floor: float = 0.0  # domain-specific minimum S*
+
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
             stem = Path(self.test_article).stem
@@ -212,6 +223,31 @@ class RunnerConfig:
     def from_json(cls, path: str) -> "RunnerConfig":
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         return cls.from_dict(data)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# S_k Solution Verification — Data Structures
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class FixBlock:
+    """A single SEARCH/REPLACE edit block parsed from model output."""
+    file_path: str
+    search: str
+    replace: str
+
+
+@dataclass
+class SkResult:
+    """Result of S_k computation for a proposed fix."""
+    sk: float
+    A: float  # product of hard gates (binary admissibility)
+    E: float  # weighted effect evidence aggregate
+    tristate: str  # ADMISSIBLE, REJECTED, ESCALATE
+    gate_details: Dict[str, Any] = field(default_factory=dict)
+    blocks_parsed: int = 0
+    blocks_applied: int = 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -241,7 +277,7 @@ class FindingRegistry:
             "source_aliases": [finding.finding_id],
             "severity": finding.severity,
             "description": finding.description[:500],
-            "proposed_fix": finding.proposed_fix[:500] if finding.proposed_fix else "",
+            "proposed_fix": finding.proposed_fix[:5000] if finding.proposed_fix else "",
             "status": "OPEN",
             "open_since_round": getattr(finding, "round_idx", 0),
             "last_status_change_round": getattr(finding, "round_idx", 0),
@@ -1439,6 +1475,548 @@ def _verification_step(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# S_k Solution Verification Pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+
+def parse_search_replace_blocks(text: str) -> List[FixBlock]:
+    """Parse <<<< SEARCH file_path ... ==== ... >>>> REPLACE blocks.
+
+    Uses a line-oriented state machine instead of regex so that delimiter-
+    like content inside payloads (e.g. literal '====' lines) does not
+    break parsing.
+
+    Returns list of FixBlock. Empty list if no valid blocks found.
+    """
+    blocks: List[FixBlock] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        # Look for block start: <<<< SEARCH <filepath>
+        if line.strip().startswith("<<<<") and "SEARCH" in line.upper():
+            rest = line.strip()[4:].strip()
+            # Remove 'SEARCH' keyword
+            for prefix in ("SEARCH ", "SEARCH\t"):
+                if rest.upper().startswith(prefix.upper()):
+                    rest = rest[len(prefix):].strip()
+                    break
+            file_path = rest
+            i += 1
+            # Collect search lines until bare ==== separator
+            search_lines: List[str] = []
+            while i < len(lines):
+                if lines[i].rstrip() == "====" or lines[i].rstrip() == "====":
+                    i += 1
+                    break
+                search_lines.append(lines[i])
+                i += 1
+            else:
+                # Reached end without finding separator — skip this block
+                continue
+            # Collect replace lines until >>>> REPLACE
+            replace_lines: List[str] = []
+            while i < len(lines):
+                if lines[i].strip().startswith(">>>>") and "REPLACE" in lines[i].upper():
+                    i += 1
+                    break
+                replace_lines.append(lines[i])
+                i += 1
+            else:
+                continue
+            search = "\n".join(search_lines)
+            replace = "\n".join(replace_lines)
+            if file_path and search:
+                blocks.append(FixBlock(
+                    file_path=file_path, search=search, replace=replace,
+                ))
+        else:
+            i += 1
+    return blocks
+
+
+def apply_fix_blocks(
+    source: str, blocks: List[FixBlock], target_path: str,
+) -> Tuple[Optional[str], int]:
+    """Apply fix blocks to source. Returns (modified_source, blocks_applied).
+
+    Only applies blocks whose file_path matches target_path (by basename or
+    full path). Returns None if any matched block's SEARCH content is not
+    found in the source (pre-gate failure).
+    """
+    modified = source
+    applied = 0
+    for block in blocks:
+        # Match by basename or full path
+        if not (block.file_path == target_path or
+                Path(block.file_path).name == Path(target_path).name):
+            continue
+        if block.search not in modified:
+            _log(f"  S_k: SEARCH block not found in source "
+                 f"(first 60 chars: {block.search[:60]!r})")
+            return None, 0
+        modified = modified.replace(block.search, block.replace, 1)
+        applied += 1
+    return modified, applied
+
+
+def _run_hard_gate_ast(modified_source: str) -> Tuple[int, str]:
+    """g1: AST parse. Returns (score, detail)."""
+    try:
+        ast.parse(modified_source)
+        return 1, "AST parse succeeded"
+    except SyntaxError as e:
+        return 0, f"SyntaxError: {e}"
+
+
+def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
+    """g2: py_compile (replaces import resolution). Returns (score, detail)."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        py_compile.compile(tmp_path, doraise=True)
+        return 1, "py_compile succeeded"
+    except py_compile.PyCompileError as e:
+        return 0, f"CompileError: {e}"
+    finally:
+        os.unlink(tmp_path)
+
+
+def _run_effect_regression(
+    modified_source: str, source_path: str, test_cmd: Optional[str] = None,
+) -> Tuple[Optional[float], str]:
+    """e2: Regression suite — run existing tests against modified source.
+
+    Returns (score in [0,1] or None if unavailable, detail). Copies the
+    entire repo into a sandbox, overlays the modified source, and runs
+    tests there so that pytest evaluates the actual proposed fix, not
+    the original.
+    """
+    if not test_cmd:
+        return None, "no test command configured"
+    target_path = Path(source_path).resolve()
+    try:
+        rel_target = target_path.relative_to(REPO_ROOT)
+    except ValueError:
+        return None, f"source not under REPO_ROOT"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        sandbox = Path(tmpdir) / "sandbox"
+        shutil.copytree(
+            REPO_ROOT, sandbox,
+            ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", ".pytest_cache", "*.pyc", "bench/logs",
+            ),
+        )
+        # Overlay the modified source into the sandbox
+        sandbox_target = sandbox / rel_target
+        sandbox_target.parent.mkdir(parents=True, exist_ok=True)
+        sandbox_target.write_text(modified_source, encoding="utf-8")
+        try:
+            result = subprocess.run(
+                shlex.split(test_cmd),
+                capture_output=True, text=True, timeout=120,
+                cwd=str(sandbox),
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            output = result.stdout + result.stderr
+            m = re.search(r'(\d+)\s+passed', output)
+            passed = int(m.group(1)) if m else 0
+            m = re.search(r'(\d+)\s+failed', output)
+            failed = int(m.group(1)) if m else 0
+            total = passed + failed
+            if total == 0:
+                return 1.0, "no tests found (skipped)"
+            score = passed / total
+            return score, f"{passed}/{total} passed (sandbox)"
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return None, f"test execution failed: {e}"
+
+
+def _run_effect_ruff(modified_source: str, baseline_violations: int) -> Tuple[Optional[float], str]:
+    """e3: Static analysis non-regression via ruff."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            violations = json.loads(result.stdout)
+            total_count = len(violations)
+        except (json.JSONDecodeError, TypeError):
+            total_count = 0
+        # Delta-based: only NEW violations reduce score (0.1 penalty each)
+        delta = max(0, total_count - baseline_violations)
+        score = max(0.0, 1.0 - delta * 0.1)
+        return score, f"{total_count} total, {delta} new (baseline: {baseline_violations})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"ruff unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+
+
+def _run_effect_bandit(modified_source: str, baseline_findings: int) -> Tuple[Optional[float], str]:
+    """e4: Security non-regression via bandit."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            data = json.loads(result.stdout)
+            results_list = data.get("results", [])
+            high_med = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError):
+            high_med = 0
+        new_findings = max(0, high_med - baseline_findings)
+        score = max(0.0, 1.0 - new_findings * 0.5)
+        return score, f"{high_med} HIGH/MEDIUM (baseline: {baseline_findings}, new: {new_findings})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"bandit unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+
+
+def _capture_baseline(source: str) -> Dict[str, Any]:
+    """Capture baseline gate scores before fix application."""
+    baseline: Dict[str, Any] = {}
+    # Ruff violations on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            violations = json.loads(result.stdout)
+            baseline["ruff_violations"] = len(violations)
+        except (json.JSONDecodeError, TypeError):
+            baseline["ruff_violations"] = 0
+    except (subprocess.TimeoutExpired, OSError):
+        baseline["ruff_violations"] = 0
+    finally:
+        os.unlink(tmp_path)
+
+    # Bandit findings on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            data = json.loads(result.stdout)
+            results_list = data.get("results", [])
+            baseline["bandit_high_med"] = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError):
+            baseline["bandit_high_med"] = 0
+    except (subprocess.TimeoutExpired, OSError):
+        baseline["bandit_high_med"] = 0
+    finally:
+        os.unlink(tmp_path)
+
+    return baseline
+
+
+def compute_sk(
+    fix_text: str,
+    source: str,
+    source_path: str,
+    baseline: Optional[Dict[str, Any]] = None,
+    test_cmd: Optional[str] = None,
+) -> SkResult:
+    """Full S_k computation pipeline for a proposed fix.
+
+    Parses SEARCH/REPLACE blocks, applies them, runs hard gates and
+    effect evidence gates. Returns SkResult with tristate.
+    """
+    blocks = parse_search_replace_blocks(fix_text)
+    if not blocks:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate="ESCALATE",
+            gate_details={"error": "no SEARCH/REPLACE blocks found"},
+            blocks_parsed=0, blocks_applied=0,
+        )
+
+    modified, applied = apply_fix_blocks(source, blocks, source_path)
+    if modified is None or applied == 0:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            gate_details={"error": "SEARCH block content not found in source"},
+            blocks_parsed=len(blocks), blocks_applied=0,
+        )
+
+    # Hard gates
+    details: Dict[str, Any] = {}
+    g1_score, g1_detail = _run_hard_gate_ast(modified)
+    details["g1_ast"] = {"score": g1_score, "detail": g1_detail}
+
+    g2_score, g2_detail = _run_hard_gate_compile(modified, source_path)
+    details["g2_compile"] = {"score": g2_score, "detail": g2_detail}
+
+    A = g1_score * g2_score
+
+    if A == 0:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            gate_details=details,
+            blocks_parsed=len(blocks), blocks_applied=applied,
+        )
+
+    # Effect evidence gates
+    if baseline is None:
+        baseline = {}
+
+    # Gate weights (from Python expert encoding)
+    effect_gates: List[Tuple[str, float, float]] = []  # (name, score, weight)
+    unavailable_gates: List[str] = []
+
+    # e2: regression suite
+    e2_score, e2_detail = _run_effect_regression(modified, source_path, test_cmd)
+    details["e2_regression"] = {"score": e2_score, "detail": e2_detail}
+    if e2_score is not None:
+        effect_gates.append(("e2_regression", e2_score, 2.0))
+    elif test_cmd:  # configured but unavailable
+        unavailable_gates.append("e2_regression")
+
+    # e3: ruff non-regression
+    e3_score, e3_detail = _run_effect_ruff(
+        modified, baseline.get("ruff_violations", 0))
+    details["e3_ruff"] = {"score": e3_score, "detail": e3_detail}
+    if e3_score is not None:
+        effect_gates.append(("e3_ruff", e3_score, 1.0))
+    else:
+        unavailable_gates.append("e3_ruff")
+
+    # e4: bandit security
+    e4_score, e4_detail = _run_effect_bandit(
+        modified, baseline.get("bandit_high_med", 0))
+    details["e4_bandit"] = {"score": e4_score, "detail": e4_detail}
+    if e4_score is not None:
+        effect_gates.append(("e4_bandit", e4_score, 2.0))
+    else:
+        unavailable_gates.append("e4_bandit")
+
+    # ESCALATE if no effect gates produced evidence
+    if not effect_gates:
+        details["_unavailable"] = unavailable_gates
+        return SkResult(
+            sk=0.0, A=A, E=0.0, tristate="ESCALATE",
+            gate_details=details,
+            blocks_parsed=len(blocks), blocks_applied=applied,
+        )
+
+    # Compute E: renormalised weighted arithmetic mean over available gates.
+    # Arithmetic mean preserves graded semantics — a single zero score
+    # reduces E proportionally rather than vetoing it entirely. If a gate
+    # is genuinely non-negotiable, it belongs in the hard gates (A).
+    W = sum(w for _, _, w in effect_gates)
+    if W == 0:
+        E = 0.0
+    else:
+        E = sum((w / W) * s for _, s, w in effect_gates)
+
+    if unavailable_gates:
+        details["_unavailable"] = unavailable_gates
+
+    sk = A * E
+    tristate = "ADMISSIBLE" if sk > 0 else "REJECTED"
+
+    return SkResult(
+        sk=round(sk, 4), A=A, E=round(E, 4), tristate=tristate,
+        gate_details=details,
+        blocks_parsed=len(blocks), blocks_applied=applied,
+    )
+
+
+def compute_rk(
+    R_old: float, q: float, sk: float,
+    nu_b: float = 0.05, nu_f: float = 0.20,
+) -> float:
+    """Three-phase R_k update: detection -> resolution -> re-injection.
+
+    Uses bounded nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f).
+    """
+    # Clamp nu parameters to valid range
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+    # HARD CONSTRAINT: nu_b + nu_f <= 1
+    if nu_b + nu_f > 1.0:
+        scale = 1.0 / (nu_b + nu_f)
+        nu_b *= scale
+        nu_f *= scale
+
+    # Phase 1: Detection
+    denom = 1.0 - q * R_old
+    if abs(denom) < 1e-12:
+        R_det = R_old
+    else:
+        R_det = R_old * (1.0 - q) / denom
+
+    # Phase 2: Resolution (S_k replaces sigma)
+    R_base = sk * R_det + (1.0 - sk) * R_old
+
+    # Phase 3: Re-injection (bounded form)
+    nu_eff = 1.0 - (1.0 - nu_b) * (1.0 - (1.0 - sk) * nu_f)
+    R_k = R_base * (1.0 - nu_eff) + nu_eff
+
+    return max(0.0, min(1.0, R_k))
+
+
+def check_sk_threshold(
+    sk: float, nu_b: float, nu_f: float,
+    q: float, R: float, s_floor: float = 0.0,
+) -> Tuple[bool, float]:
+    """Check if S_k exceeds the break-even threshold S*.
+
+    Returns (passes, s_star). Fixes below S* do more harm than good
+    (Valley of Bad Fixes).
+    """
+    # Clamp nu parameters
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+    if nu_b + nu_f > 1.0:
+        scale = 1.0 / (nu_b + nu_f)
+        nu_b *= scale
+        nu_f *= scale
+
+    # Bounded S*: (nu_b + nu_f - nu_b*nu_f - q*R) / (nu_f * (1 - nu_b))
+    # Edge cases:
+    #   nu_f ≈ 0: fix can't introduce problems → S* = 0 (any fix helps)
+    #   nu_b ≈ 1: any modification is risky → S* = 1.0 (no fix good enough)
+    if nu_f < 1e-12:
+        s_star = 0.0  # no fix-induced re-injection; any positive S_k helps
+    elif (1.0 - nu_b) < 1e-12:
+        s_star = 1.0  # pathological: any modification introduces full risk
+    else:
+        denom = nu_f * (1.0 - nu_b)
+        s_star = (nu_b + nu_f - nu_b * nu_f - q * R) / denom
+        # Clamp to [0, 1]: values outside mean "always pass" or "never pass"
+        s_star = max(0.0, min(1.0, s_star))
+
+    effective_threshold = max(s_star, s_floor)
+    return sk >= effective_threshold, round(s_star, 4)
+
+
+def _evaluate_sk_for_findings(
+    registry: FindingRegistry,
+    source_code: str,
+    source_path: str,
+    baseline: Dict[str, Any],
+    round_idx: int,
+    test_cmd: Optional[str] = None,
+    s_floor: float = 0.0,
+) -> Dict[str, Any]:
+    """Evaluate S_k for all findings with proposed fixes in SEARCH/REPLACE format.
+
+    Returns stats dict for round telemetry.
+    """
+    stats: Dict[str, Any] = {
+        "round": round_idx, "evaluated": 0, "admissible": 0,
+        "rejected": 0, "escalated": 0, "results": {},
+    }
+
+    for cid, entry in registry.entries.items():
+        if entry["status"] not in ("OPEN", "CONFIRMED", "CONTESTED"):
+            continue
+        fix_text = entry.get("proposed_fix", "")
+        if not fix_text or "<<<< SEARCH" not in fix_text:
+            continue
+
+        sk_result = compute_sk(
+            fix_text, source_code, source_path,
+            baseline=baseline, test_cmd=test_cmd,
+        )
+        stats["evaluated"] += 1
+
+        # Store result on registry entry
+        entry["sk_result"] = {
+            "sk": sk_result.sk,
+            "A": sk_result.A,
+            "E": sk_result.E,
+            "tristate": sk_result.tristate,
+            "blocks_parsed": sk_result.blocks_parsed,
+            "blocks_applied": sk_result.blocks_applied,
+            "gate_details": sk_result.gate_details,
+        }
+
+        # Extract per-finding model parameters (fall back to defaults)
+        meta = entry.get("model_params", {})
+        nu_b = meta.get("nu_b", 0.05)
+        nu_f = meta.get("nu_f", 0.20)
+        q = meta.get("q", 0.5)
+        R_old = meta.get("R", 0.5)
+
+        # S* threshold check
+        if sk_result.tristate == "ADMISSIBLE":
+            passes, s_star = check_sk_threshold(
+                sk_result.sk, nu_b=nu_b, nu_f=nu_f,
+                q=q, R=R_old, s_floor=s_floor,
+            )
+            entry["sk_result"]["s_star"] = s_star
+            entry["sk_result"]["passes_threshold"] = passes
+            if passes:
+                # Close the R_k loop: compute updated risk
+                R_new = compute_rk(
+                    R_old=R_old, q=q, sk=sk_result.sk,
+                    nu_b=nu_b, nu_f=nu_f,
+                )
+                entry["sk_result"]["R_old"] = R_old
+                entry["sk_result"]["R_new"] = R_new
+                stats["admissible"] += 1
+                _log(f"  S_k [{cid}]: ADMISSIBLE sk={sk_result.sk:.3f} "
+                     f"(S*={s_star:.3f}) R: {R_old:.3f} -> {R_new:.3f}")
+            else:
+                stats["rejected"] += 1
+                entry["sk_result"]["tristate"] = "REJECTED"
+                _log(f"  S_k [{cid}]: REJECTED sk={sk_result.sk:.3f} "
+                     f"< S*={s_star:.3f} (Valley of Bad Fixes)")
+        elif sk_result.tristate == "REJECTED":
+            stats["rejected"] += 1
+            _log(f"  S_k [{cid}]: REJECTED A={sk_result.A} "
+                 f"({sk_result.gate_details})")
+        else:
+            stats["escalated"] += 1
+            _log(f"  S_k [{cid}]: ESCALATE — {sk_result.gate_details}")
+
+        stats["results"][cid] = entry["sk_result"]
+
+    if stats["evaluated"] > 0:
+        _log(f"  S_k pipeline: {stats['evaluated']} evaluated, "
+             f"{stats['admissible']} ADMISSIBLE, "
+             f"{stats['rejected']} REJECTED, "
+             f"{stats['escalated']} ESCALATE")
+    return stats
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Preflight
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1616,6 +2194,14 @@ def run_experiment(
     rho_avg = 1.0
     rho_churn = False
 
+    # S_k baseline capture (before any fixes are applied)
+    sk_baseline: Dict[str, Any] = {}
+    if cfg.sk_enabled:
+        _log("  S_k pipeline: capturing baseline gate scores...")
+        sk_baseline = _capture_baseline(target_text)
+        _log(f"  S_k baseline: ruff={sk_baseline.get('ruff_violations', 0)}, "
+             f"bandit={sk_baseline.get('bandit_high_med', 0)}")
+
     # Build awareness preamble
     roster_lines = "\n".join(
         f"  - {label}: {MODEL_ROSTER.get(label, label)}"
@@ -1647,7 +2233,12 @@ def run_experiment(
         f"  ABSTRACTION_INDEX: 0.0 to 1.0\n"
         f"  DESCRIPTION: FIND — what is wrong, where, evidence\n"
         f"  FOLLOW: trace downstream consequences before proposing a fix\n"
-        f"  PROPOSED_FIX: FIX — the simplest sufficient correction\n"
+        f"  PROPOSED_FIX: Express as SEARCH/REPLACE blocks:\n"
+        f"    <<<< SEARCH file_path\n"
+        f"    [exact current content]\n"
+        f"    ====\n"
+        f"    [exact replacement]\n"
+        f"    >>>> REPLACE\n"
         f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
         f"Produce ALL findings. Do not hold back.\n\n"
         f"=== ARTIFACT: {target_rel} + Context ({len(full_code):,} chars) ===\n\n"
@@ -1784,6 +2375,17 @@ def run_experiment(
         verification_stats = _verification_step(
             registry, round_idx, full_code, exp_config.models, cfg)
 
+        # S_k solution verification pipeline
+        sk_stats: Dict[str, Any] = {}
+        if cfg.sk_enabled:
+            sk_stats = _evaluate_sk_for_findings(
+                registry, target_text, str(target_rel),
+                baseline=sk_baseline,
+                round_idx=round_idx,
+                test_cmd=cfg.test_cmd,
+                s_floor=cfg.sk_s_floor,
+            )
+
         # ITC per-model
         for model_label in list(baseline):
             model_findings = [f for f in findings if f.model_id == model_label]
@@ -1863,6 +2465,7 @@ def run_experiment(
             "rho": round(rho_current, 4),
             "rho_avg": round(rho_avg, 4),
             "verification": verification_stats,
+            "sk_pipeline": sk_stats,
             "stall_detector": stall_result,
         }
         result["rounds"].append(round_data)

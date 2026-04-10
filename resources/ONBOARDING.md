@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 9 April 2026 22:47 BST
+Last updated: 10 April 2026 01:02 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -23,7 +23,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 37 CONVERGED (9 April 2026 22:47 BST):**
+- **EXP 37 CONVERGED (10 April 2026 01:02 BST):**
   Target: `bench/evidence.py`, star topology, 5 models.
   16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
   257 raw findings → 257 canonical entries.
@@ -36,6 +36,21 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   **Qualitative observations** (add manually after sv):
   <!-- Add: model reasoning behaviour, immune highlights,
        mid-experiment fixes, key design findings -->
+
+- **EXP 38 PLANNED (10 April 2026 01:02 BST):**
+  Type: Ouroboros — system reviews and improves itself under structured falsification.
+  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
+  Test articles: runner, operational directive, encoding template, Python encoding,
+  cell type architecture, expert encoding methodology. All are subjects for study.
+  **S_k pipeline fully implemented** — 9 confer findings from CX+GE applied and verified:
+  (1) Regression gate copytree sandbox, (2) SEARCH/REPLACE line-state machine parser,
+  (3) E weighted arithmetic mean, (4) Ruff delta scoring, (5) nu_b/nu_f clamping +
+  R_k loop closure, (6) ESCALATE for unavailable gates, (7) S* edge cases (nu_f=0,
+  nu_b=1) with [0,1] clamping, (8) Directive sigma/nu residue cleaned, (9) Python
+  encoding aligned with runner.
+  **Execution design:** Sequential burst execution with ITC switching per problem,
+  final integration pass. Composability is a HARD CONSTRAINT.
+  690 tests pass. Not yet committed.
 <!-- SV:LATEST_EXP_END -->
 
 

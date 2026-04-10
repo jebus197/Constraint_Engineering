@@ -17,12 +17,16 @@ g1: AST Parse
   Fail: ast.parse() raises SyntaxError (score = 0)
   Rationale: A fix that doesn't parse cannot be evaluated further.
 
-g2: Import Resolution
-  Tool: python3 -c "import <module>"
-  Input: The modified module
-  Pass: Import succeeds without ImportError or ModuleNotFoundError (score = 1)
-  Fail: Import raises ImportError (score = 0)
-  Rationale: A fix that breaks imports breaks all downstream evaluation.
+g2: Byte Compilation
+  Tool: py_compile.compile(source, doraise=True)
+  Input: The modified source file after applying the proposed fix
+  Pass: py_compile succeeds without error (score = 1)
+  Fail: py_compile raises py_compile.PyCompileError (score = 0)
+  Rationale: Catches syntax errors that ast.parse may miss (encoding,
+  future imports). Strictly stronger than AST parse for deployment
+  readiness.
+
+[FUTURE HARD GATES — Not yet implemented in runner]
 
 g3: Type Check (structural)
   Tool: python3 -m mypy --no-error-summary <file>
@@ -31,8 +35,9 @@ g3: Type Check (structural)
   Fail: New type errors introduced (delta > 0) (score = 0)
   Note: Pre-existing type errors are not counted. Only NEW errors from
   the fix constitute failure. Baseline is captured before fix application.
+  Status: ASPIRATIONAL — requires baseline capture integration.
 
-[EFFECT EVIDENCE — Graded]
+[FUTURE EFFECT EVIDENCE — Not yet implemented in runner]
 
 e1: Targeted Test Resolution
   Tool: python3 -m pytest <targeted_test> -v
@@ -41,6 +46,9 @@ e1: Targeted Test Resolution
   Scoring: pass_count / total_test_count for the targeted test set.
            1.0 = all targeted tests pass. 0.0 = all fail.
   Weight: 3 (highest — this is the primary evidence of fix efficacy)
+  Status: ASPIRATIONAL — requires targeted test identification pipeline.
+
+[EFFECT EVIDENCE — Graded, Implemented]
 
 e2: Regression Suite
   Tool: python3 -m pytest <test_suite> -v
@@ -53,8 +61,10 @@ e2: Regression Suite
 e3: Static Analysis Non-Regression
   Tool: python3 -m ruff check <file> --output-format=json
   Input: The modified file
-  Scoring: 1.0 - (new_violations / (baseline_violations + 1)).
-           Clamped to [0, 1]. New violations reduce score.
+  Scoring: Delta-based. new_violations = max(0, total - baseline).
+           Score = max(0.0, 1.0 - new_violations * 0.1).
+           Only NEW violations reduce score. Pre-existing violations
+           are excluded. Score = 1.0 when no new violations introduced.
   Weight: 1 (moderate — style issues are less severe than test failures)
 
 e4: Security Non-Regression
@@ -64,14 +74,17 @@ e4: Security Non-Regression
            0.2 per new MEDIUM. Clamped to [0, 1].
   Weight: 2 (high — security regressions are critical)
 
+[FUTURE EFFECT EVIDENCE — Not yet implemented in runner]
+
 e5: Symbolic Property Verification (when applicable)
   Tool: SymPy (sympy.simplify, sympy.solve) or z3 (z3.Solver)
   Input: Mathematical claims in the fix (e.g., boundary conditions,
          invariants, convergence criteria)
   Scoring: verified_properties / total_claimed_properties.
            Only applicable when fix contains mathematical claims.
-           If no mathematical claims, this gate is skipped (score = 1.0).
+           If no mathematical claims, this gate is skipped (not applicable).
   Weight: 2 (high when applicable — mathematical correctness is HARD)
+  Status: ASPIRATIONAL — requires mathematical claim extraction pipeline.
 
 [FIX FORMAT]
 

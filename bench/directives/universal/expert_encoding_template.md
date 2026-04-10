@@ -47,7 +47,9 @@
 # -------------------------------------------------------------------------
 # Continuous scores in [0, 1]. These measure HOW WELL the fix resolves the
 # target finding without introducing new problems. Aggregated as weighted
-# product (geometric mean or raw product depending on calibration).
+# arithmetic mean over applicable gates (renormalised weights). A single
+# zero score reduces E proportionally, not to zero — if a gate is
+# non-negotiable, it belongs in the hard gates (A), not here.
 #
 # Format per evidence score:
 #   Score ID: e1, e2, ...

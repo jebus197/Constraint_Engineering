@@ -1,0 +1,794 @@
+Below is a survivor set after a full review pass over the plan, directive, encoding, and runner code you provided. I am only presenting issues that still survive self-falsification.
+
+---
+
+# Executive stance
+
+**Exp 38 is conceptually sound, but not yet operationally complete.**  
+The main failures are not in the high-level maths, but in **runner/encoding/directive misalignment** and **missing integration wiring**. The current S_k pipeline can score some fixes, but **it does not yet implement the experiment as specified**. In particular:
+
+1. **The runner does not load or enforce the expert encoding dynamically** despite the plan claiming domain-agnostic loading.
+2. **The Python encoding and runner disagree** on active gates (g3, e1, e5 missing in code; g2 outdated in encoding).
+3. **Regression evaluation is currently invalid for self-fix verification** because the modified source is written to temp but tests run against `REPO_ROOT`, not the modified artifact.
+4. **Tristate semantics are not implemented correctly**: “tool unavailable / unverifiable” is often treated as success or reject instead of true ESCALATE/UNVERIFIED handling.
+5. **S\*** threshold handling is mathematically incomplete at boundary cases and operationally miswired with hardcoded q/R/nu values.
+6. **Success criteria are not fully measurable from the current runner** because the necessary telemetry/integration points are not all present.
+
+Those are HARD findings because they affect correctness of the experiment.
+
+---
+
+# Constraint classification
+
+## HARD
+- Mathematical consistency between directive and runner
+- Correctness of S_k gate semantics
+- Correctness of R_k and S* implementation
+- Correct evaluation of modified code, not original code
+- Honest treatment of unavailable tools / non-applicable gates
+- Search/replace parser correctness for machine-verifiable fixes
+- Integration completeness needed to actually run Exp 38
+
+## SOFT
+- Biological metaphor quality
+- Naming choices like “deterministic” vs “reproducible”
+- Prompt wording polish
+- Degree of strictness in parser ergonomics
+
+---
+
+# Structured certificate
+
+## Premises
+1. The plan claims Exp 38 evaluates proposed fixes through an S_k tool gate pipeline and applies surviving improvements.
+2. The runner code shown is the operative implementation of that claim.
+3. The operational directive is supposed to match that implementation.
+4. The Python reference encoding is supposed to define the active gates for the Python domain.
+5. A self-referential experiment is only meaningful if the verification substrate actually evaluates the proposed modifications, not an unmodified environment.
+
+## Concrete trace examples
+
+### Example 1 — regression false positive/false negative
+Input:
+- `source_path = bench/reference_runner.py`
+- A fix modifies a function in that file.
+- `compute_sk(..., test_cmd="python -m pytest tests/test_runner.py")`
+
+Execution in current code:
+- Modified source is written to a temp file in temp dir.
+- Tests are run with `cwd=str(REPO_ROOT)`.
+- No replacement of the actual repo file occurs.
+- Therefore pytest imports/tests the original repository file, not the modified temp file.
+
+Expected:
+- Regression suite should evaluate the modified artifact.
+
+Observed consequence:
+- e2 can report success/failure unrelated to the proposed fix.
+
+Conclusion:
+- **Current e2 does not verify the fix under test.**
+
+### Example 2 — tool missing
+Input:
+- `ruff` not installed.
+
+Execution:
+- `_run_effect_ruff` catches OSError and returns `1.0, "... skipped"`.
+
+Expected from plan/template/tristate:
+- Unavailable required evidence should lead to ESCALATE/UNVERIFIED, not a perfect score.
+
+Observed consequence:
+- Missing tooling inflates E and may admit unverifiable fixes.
+
+Conclusion:
+- **Current effect-gate fallback semantics are wrong.**
+
+### Example 3 — S* threshold with nu_f = 0
+Directive says:
+- If `nu_f = 0`, `S* = 0`.
+
+Current code:
+```python
+denom = nu_f * (1.0 - nu_b)
+if abs(denom) < 1e-12:
+    s_star = 0.0
+```
+This also sets `s_star = 0.0` when `nu_b = 1`, which is not the same case.
+
+Expected:
+- Handle `nu_f = 0` explicitly; `nu_b = 1` is a pathological edge case, not “no fix-induced reinjection”.
+
+Conclusion:
+- **Boundary logic is too coarse.**
+
+### Example 4 — parser ambiguity
+Input text with two blocks, where replacement text in block 1 contains a literal line `====`.
+
+Current regex:
+```python
+r'<{4}\s*SEARCH\s+(.+?)\n(.*?)\n={4}\n(.*?)\n>{4}\s*REPLACE'
+```
+This is non-escaped delimiter parsing via regex and can terminate on the first matching `====` / `>>>> REPLACE` sequence.
+
+Expected:
+- Deterministic block parser with line-based state machine.
+
+Conclusion:
+- **Regex parser is fragile for delimiter-like content.**
+
+---
+
+# Findings and fixes
+
+## Finding 1 — Regression gate does not test the modified artifact
+**Location:** `bench/reference_runner.py`, `_run_effect_regression`
+
+### FIND
+The regression gate writes the modified source to a temp file, but then runs tests from `REPO_ROOT` without overlaying that modified file into the tested tree. That means tests generally execute against the original codebase, not the proposed fix.
+
+### FOLLOW
+This propagates into:
+- `compute_sk` effect evidence is invalid
+- `S_k` can be spuriously high or low
+- `S*` decision becomes meaningless
+- Exp 38 success criterion “S_k pipeline runs meaningfully on the runner’s own code” is not actually satisfied
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If tests actually import the temp modified file, then modifying code should change observed test behavior.
+- **ATTEMPT:** Traced execution path: temp file is written in temp dir, subprocess is run in `REPO_ROOT`, no symlink/copytree/module path redirection is applied.
+- **RESULT:** Falsifier satisfied; tests do not target the modified artifact.
+
+### FIX
+Simplest sufficient correction: run tests in an isolated copied tree with the target file replaced there.
+
+```text
+<<<< SEARCH bench/reference_runner.py
+def _run_effect_regression(
+    modified_source: str, source_path: str, test_cmd: Optional[str] = None,
+) -> Tuple[float, str]:
+    """e2: Regression suite — run existing tests against modified source.
+
+    Returns (score in [0,1], detail). Uses a temp directory to avoid
+    modifying the real source.
+    """
+    if not test_cmd:
+        return 1.0, "no test command configured (skipped)"
+    target_path = Path(source_path).resolve()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Copy the modified source to a temp location
+        tmp_file = Path(tmpdir) / target_path.name
+        tmp_file.write_text(modified_source, encoding="utf-8")
+        try:
+            result = subprocess.run(
+                test_cmd.split(),
+                capture_output=True, text=True, timeout=120,
+                cwd=str(REPO_ROOT),
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            # Parse pytest output for pass/fail counts
+            output = result.stdout + result.stderr
+            # Look for "X passed, Y failed" pattern
+            m = re.search(r'(\d+)\s+passed', output)
+            passed = int(m.group(1)) if m else 0
+            m = re.search(r'(\d+)\s+failed', output)
+            failed = int(m.group(1)) if m else 0
+            total = passed + failed
+            if total == 0:
+                return 1.0, "no tests found (skipped)"
+            score = passed / total
+            return score, f"{passed}/{total} passed"
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return 0.0, f"test execution failed: {e}"
+====
+def _run_effect_regression(
+    modified_source: str, source_path: str, test_cmd: Optional[str] = None,
+) -> Tuple[float, str]:
+    """e2: Regression suite — run existing tests against the modified artifact.
+
+    Returns (score in [0,1], detail). Uses an isolated temp copy of the repo,
+    replaces the target file in that copy, and runs the test command there.
+    """
+    if not test_cmd:
+        return 1.0, "no test command configured (skipped)"
+    target_path = Path(source_path).resolve()
+    try:
+        rel_target = target_path.relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return 0.0, f"source_path not under REPO_ROOT: {source_path}"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_root = Path(tmpdir) / "repo"
+        shutil.copytree(REPO_ROOT, tmp_root)
+
+        tmp_target = tmp_root / rel_target
+        tmp_target.parent.mkdir(parents=True, exist_ok=True)
+        tmp_target.write_text(modified_source, encoding="utf-8")
+
+        try:
+            result = subprocess.run(
+                shlex.split(test_cmd),
+                capture_output=True, text=True, timeout=120,
+                cwd=str(tmp_root),
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            output = result.stdout + result.stderr
+            m = re.search(r'(\d+)\s+passed', output)
+            passed = int(m.group(1)) if m else 0
+            m = re.search(r'(\d+)\s+failed', output)
+            failed = int(m.group(1)) if m else 0
+            total = passed + failed
+            if total == 0:
+                return 1.0, "no tests found (skipped)"
+            score = passed / total
+            return score, f"{passed}/{total} passed"
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return 0.0, f"test execution failed: {e}"
+>>>> REPLACE
+```
+
+---
+
+## Finding 2 — SEARCH/REPLACE parser is regex-fragile
+**Location:** `bench/reference_runner.py`, `_SEARCH_REPLACE_RE`, `parse_search_replace_blocks`
+
+### FIND
+The parser uses a single regex over a delimiter-based block format. This is fragile if replacement/search content contains delimiter-like lines or if there are malformed/nested blocks.
+
+### FOLLOW
+If parsing is wrong:
+- blocks may be truncated or merged
+- valid fixes may be rejected
+- invalid fixes may be partially parsed
+- pre-gate failure rate can remain high despite switching away from NL diff extraction
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If regex parsing is robust, delimiter-like content inside payloads should not alter parse boundaries.
+- **ATTEMPT:** Inspected regex; it is pattern-based over raw multiline text, not line-state parsing.
+- **RESULT:** Falsifier satisfied; regex approach is not robust enough for a supposedly deterministic format.
+
+### FIX
+Replace regex parser with line-oriented state machine.
+
+```text
+<<<< SEARCH bench/reference_runner.py
+_SEARCH_REPLACE_RE = re.compile(
+    r'<{4}\s*SEARCH\s+(.+?)\n(.*?)\n={4}\n(.*?)\n>{4}\s*REPLACE',
+    re.DOTALL,
+)
+
+
+def parse_search_replace_blocks(text: str) -> List[FixBlock]:
+    """Parse <<<< SEARCH file_path ... ==== ... >>>> REPLACE blocks.
+
+    Returns list of FixBlock. Empty list if no valid blocks found.
+    """
+    blocks: List[FixBlock] = []
+    for m in _SEARCH_REPLACE_RE.finditer(text):
+        file_path = m.group(1).strip()
+        search = m.group(2)
+        replace = m.group(3)
+        if file_path and search:
+            blocks.append(FixBlock(file_path=file_path, search=search, replace=replace))
+    return blocks
+====
+def parse_search_replace_blocks(text: str) -> List[FixBlock]:
+    """Parse <<<< SEARCH ... ==== ... >>>> REPLACE blocks line-by-line.
+
+    Delimiters are recognised only when they appear alone as control lines
+    (except SEARCH, which includes the file path on the same line).
+    Returns an empty list if no complete valid blocks are found.
+    """
+    blocks: List[FixBlock] = []
+    lines = text.splitlines()
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+        if not line.startswith("<<<< SEARCH "):
+            i += 1
+            continue
+
+        file_path = line[len("<<<< SEARCH "):].strip()
+        i += 1
+        search_lines: List[str] = []
+        while i < len(lines) and lines[i] != "====":
+            search_lines.append(lines[i])
+            i += 1
+        if i >= len(lines) or lines[i] != "====":
+            break
+
+        i += 1
+        replace_lines: List[str] = []
+        while i < len(lines) and lines[i] != ">>>> REPLACE":
+            replace_lines.append(lines[i])
+            i += 1
+        if i >= len(lines) or lines[i] != ">>>> REPLACE":
+            break
+
+        i += 1
+        search = "\n".join(search_lines)
+        replace = "\n".join(replace_lines)
+        if text.endswith("\n"):
+            search += "\n"
+            replace += "\n"
+        if file_path and search:
+            blocks.append(FixBlock(file_path=file_path, search=search, replace=replace))
+
+    return blocks
+>>>> REPLACE
+```
+
+Note: this still reserves exact control-line delimiters; that is acceptable for v1.
+
+---
+
+## Finding 3 — Tristate semantics are not correctly implemented
+**Location:** `bench/reference_runner.py`, `compute_sk`, effect gates; plan/directive/template semantics
+
+### FIND
+The plan defines ADMISSIBLE / REJECTED / ESCALATE, with ESCALATE for genuinely unavailable evidence. Current implementation:
+- returns `1.0 (skipped)` for many unavailable tools
+- returns ESCALATE only when no blocks are found
+- treats “no tests found” as `1.0`
+This conflates “not evaluated” with “perfect”.
+
+### FOLLOW
+This invalidates:
+- honest epistemic boundary
+- cross-domain generalisability
+- measured S_k semantics
+- comparison across domains and environments
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If unavailable tools are correctly represented, their absence should not improve E.
+- **ATTEMPT:** Traced `_run_effect_ruff`, `_run_effect_bandit`, `_run_effect_regression`.
+- **RESULT:** Tool absence often returns score 1.0, therefore unavailable evidence boosts or preserves E.
+
+### FIX
+Introduce applicability/availability metadata per gate and compute tristate from it. I cannot produce a complete SEARCH/REPLACE patch for this without surrounding runner context for gate result types/imports, so this is a survivor finding without code block-level patch certainty. The minimal required implementation is:
+
+- each gate returns `{score, applicable, available, detail}`
+- unavailable required gate ⇒ `ESCALATE`
+- non-applicable gate ⇒ exclude from denominator
+- available but failed gate ⇒ normal score/fail
+- `no tests found` should be `ESCALATE` or non-applicable based on config, not `1.0`
+
+This is a genuine implementation gap.
+
+---
+
+## Finding 4 — Runner is not domain-agnostic as claimed
+**Location:** plan §6.2 vs current code; `RunnerConfig.domain`; `compute_sk`
+
+### FIND
+The plan claims dynamic expert encoding loading and domain-agnostic gate execution. The code is hardcoded to Python-specific gates and weights.
+
+### FOLLOW
+That breaks:
+- plan truthfulness
+- cell type architecture implementation
+- “adding a new domain does not require runner code changes”
+- Exp 38 claim that the framework is testing its own generalized architecture
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If domain-agnostic loading is implemented, `compute_sk` should consume a structured encoding object and instantiate gates from it.
+- **ATTEMPT:** Inspected function signature and gate wiring; no `ExpertEncoding`, no loader, Python-specific private functions hardcoded.
+- **RESULT:** Falsifier satisfied.
+
+### FIX
+The plan needs to downgrade the claim from “implemented” to “next step”, or the runner must actually add:
+- `load_expert_encoding(domain) -> ExpertEncoding`
+- gate registry mapping symbolic tool names to invokers
+- `compute_sk(..., encoding: ExpertEncoding)`
+
+This is a real missing implementation, not a polish issue.
+
+---
+
+## Finding 5 — Python encoding is inconsistent with the runner
+**Location:** `software_python_sk.txt` vs runner code
+
+### FIND
+The encoding still specifies:
+- `g2: Import Resolution` using import execution
+- `g3: Type Check`
+- `e1: Targeted Test Resolution`
+- `e5: Symbolic Property Verification`
+
+But the runner implements:
+- `g2` as `py_compile`
+- no `g3`
+- no `e1`
+- no `e5`
+
+### FOLLOW
+This creates a broken contract:
+- the encoding cannot serve as the operational source of truth
+- panel findings based on the encoding may be mis-scored by the runner
+- Exp 38 cannot claim it is evaluating fixes according to the active expert encoding
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If encoding and implementation match, every declared active gate should correspond to implemented runner behavior or conditional loading.
+- **ATTEMPT:** Direct comparison.
+- **RESULT:** Clear mismatch.
+
+### FIX
+Update the encoding now if the runner is authoritative, or finish runner support if the encoding is authoritative. Since the plan explicitly says the Python corrections are mandatory before Exp 38, the encoding text should be updated.
+
+```text
+<<<< SEARCH bench/directives/software/software_python_sk.txt
+g2: Import Resolution
+  Tool: python3 -c "import <module>"
+  Input: The modified module
+  Pass: Import succeeds without ImportError or ModuleNotFoundError (score = 1)
+  Fail: Import raises ImportError (score = 0)
+  Rationale: A fix that breaks imports breaks all downstream evaluation.
+
+g3: Type Check (structural)
+  Tool: python3 -m mypy --no-error-summary <file>
+  Input: The modified file
+  Pass: No new type errors introduced (delta from baseline = 0) (score = 1)
+  Fail: New type errors introduced (delta > 0) (score = 0)
+  Note: Pre-existing type errors are not counted. Only NEW errors from
+  the fix constitute failure. Baseline is captured before fix application.
+====
+g2: Compilation Check
+  Tool: python3 -m py_compile <file>
+  Input: The modified file
+  Pass: The file compiles without PyCompileError (score = 1)
+  Fail: py_compile reports an error (score = 0)
+  Rationale: Compilation checks syntax without executing imports or module side effects.
+
+g3: Type Check (structural, conditional)
+  Tool: python3 -m mypy --no-error-summary <file>
+  Input: The modified file
+  Pass: No new type errors introduced (delta from baseline = 0) (score = 1)
+  Fail: New type errors introduced (delta > 0) (score = 0)
+  Applicability: Active only when the baseline file/codebase already contains
+  type annotations sufficient for mypy to be meaningful. Otherwise skipped and
+  removed from the admissibility composition.
+  Note: Pre-existing type errors are not counted. Only NEW errors from
+  the fix constitute failure. Baseline is captured before fix application.
+>>>> REPLACE
+```
+
+And:
+
+```text
+<<<< SEARCH bench/directives/software/software_python_sk.txt
+e1: Targeted Test Resolution
+  Tool: python3 -m pytest <targeted_test> -v
+  Input: A test specifically written or identified for the finding being fixed.
+         The finding's proposed fix must include or reference a targeted test.
+  Scoring: pass_count / total_test_count for the targeted test set.
+           1.0 = all targeted tests pass. 0.0 = all fail.
+  Weight: 3 (highest — this is the primary evidence of fix efficacy)
+
+e2: Regression Suite
+  Tool: python3 -m pytest <test_suite> -v
+  Input: The full existing test suite
+  Scoring: pass_count / total_test_count.
+           Only tests that PASSED before the fix are counted.
+           New failures = regression. Pre-existing failures excluded.
+  Weight: 2 (high — regressions are the primary collateral damage signal)
+====
+e1: Targeted Test Resolution (conditional)
+  Tool: python3 -m pytest <targeted_test> -v
+  Input: A test specifically written or identified for the finding being fixed.
+         The finding's proposed fix may include or reference a targeted test.
+  Scoring: pass_count / total_test_count for the targeted test set.
+           1.0 = all targeted tests pass. 0.0 = all fail.
+  Applicability: Active only when a targeted test is explicitly supplied.
+           Otherwise skipped and removed from the weight denominator.
+  Weight: 3 (highest — this is the primary evidence of fix efficacy)
+
+e2: Regression Suite
+  Tool: python3 -m pytest <test_suite> -v
+  Input: The full existing test suite
+  Scoring: pass_count / total_test_count over tests executable in the isolated
+           modified artifact environment. Pre-existing failures should be
+           excluded when baseline data is available.
+  Weight: 2 (high — regressions are the primary collateral damage signal)
+>>>> REPLACE
+```
+
+---
+
+## Finding 6 — Operational directive still contains sigma/nu wording in one mandatory section
+**Location:** operational directive §2, CORROBORATION subsection
+
+### FIND
+Section 2 still says:
+> state R_old, your estimates for η, d, p, σ, ν, and the resulting R_k.
+
+But Section 3 has replaced sigma with S_k and nu with nu_b/nu_f.
+
+### FOLLOW
+This creates direct contradiction in operational instructions to models and parsers.
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If the directive is internally consistent, all parameter lists should use the updated variables.
+- **ATTEMPT:** Cross-checked §2 and §3.
+- **RESULT:** Contradiction remains.
+
+### FIX
+
+```text
+<<<< SEARCH bench/directives/universal/cdsfl_operational.md
+CORROBORATION: After falsifying your own claim, compute your residual risk
+using the self-assessment equation below. You MUST show your working:
+state R_old, your estimates for η, d, p, σ, ν, and the resulting R_k.
+If R_k > 0.5, your claim needs more falsification or a more diverse
+approach. Qualitative assessment alone is not acceptable.
+====
+CORROBORATION: After falsifying your own claim, compute your residual risk
+using the self-assessment equation below. You MUST show your working:
+state R_old, your estimates for η, d, p, S_k, nu_b, nu_f, and the resulting R_k.
+If R_k > 0.5, your claim needs more falsification or a more diverse
+approach. Qualitative assessment alone is not acceptable.
+>>>> REPLACE
+```
+
+---
+
+## Finding 7 — Break-even threshold formula handling is incomplete at edge cases
+**Location:** `check_sk_threshold`, directive §4
+
+### FIND
+The main bounded S* formula is correctly transcribed for the normal case, but both code and directive over-compress edge handling:
+- `nu_f = 0` should be explicit
+- `nu_b = 1` is pathological and not equivalent to `nu_f = 0`
+- S* may fall outside [0,1], which should be interpreted, not just compared raw
+
+### FOLLOW
+Without explicit handling:
+- admissibility can be misleading in edge conditions
+- telemetry and logs can report nonsensical thresholds
+- downstream analysis of rejected fixes becomes noisy
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If current handling is complete, all denominator-zero cases should have equivalent semantics.
+- **ATTEMPT:** Tested logically: `nu_f=0` and `nu_b=1` are distinct.
+- **RESULT:** Not equivalent.
+
+### FIX
+At minimum:
+- explicitly branch on `nu_f == 0`
+- reject or flag invalid `nu_b` outside [0,1)
+- clamp/report S* interpretation as:
+  - `S* <= 0`: any admissible `sk > 0` passes threshold
+  - `S* >= 1`: only perfect fix can pass, otherwise reject
+
+I am not giving a full code patch because the surrounding validation policy is not shown, but this is a concrete required change.
+
+---
+
+## Finding 8 — Hardcoded q/R/nu values in `_evaluate_sk_for_findings` break model integrity
+**Location:** `_evaluate_sk_for_findings`
+
+### FIND
+Threshold check uses fixed values:
+```python
+nu_b=0.05, nu_f=0.20, q=0.5, R=0.5
+```
+This disconnects thresholding from the actual finding-level model state.
+
+### FOLLOW
+Then:
+- S* is not finding-specific
+- Exp 38 does not actually evaluate “below break-even” correctly
+- operational directive and implementation diverge materially
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If S* is correctly integrated, threshold inputs should come from the current finding/round metrics or explicit defaults documented as temporary.
+- **ATTEMPT:** Inspected function. Values are hardcoded “for now”.
+- **RESULT:** Implementation incomplete.
+
+### FIX
+Wire S* inputs from finding metadata or runner config. At minimum:
+- store `eta, d, p, R_old, nu_b, nu_f`
+- compute `q = eta*d*p`
+- pass actual values to threshold check and `compute_rk`
+
+This is a real integration gap.
+
+---
+
+## Finding 9 — `compute_sk` labels any positive score ADMISSIBLE before threshold and escalation logic
+**Location:** `compute_sk`
+
+### FIND
+`compute_sk` returns:
+```python
+tristate = "ADMISSIBLE" if sk > 0 else "REJECTED"
+```
+This is semantically wrong because:
+- ADMISSIBLE in the plan requires all hard gates pass **and** `S_k > S*`
+- ESCALATE may apply even when `sk > 0`
+
+### FOLLOW
+This requires mutation later in `_evaluate_sk_for_findings`, producing split semantics across functions.
+
+### ANALYSE
+**CONFIRMED**
+
+### FALSIFICATION
+- **FALSIFIER:** If tristate is correctly defined at this layer, `compute_sk` should not overstate admissibility.
+- **ATTEMPT:** Compared to plan §3.4.
+- **RESULT:** Mismatch.
+
+### FIX
+Rename local state from `tristate` to `prethreshold_status`, or return:
+- `HARD_FAIL`
+- `SCORED`
+- `ESCALATE`
+Then let final ADMISSIBLE/REJECTED be decided after S*.
+
+This is a semantic correction needed for clean implementation.
+
+---
+
+# Plan-level P-pass
+
+## Surviving assessment of the plan
+
+### What is sound
+- The ouroboros framing is valid: a verification system can review its own encodings and runner if the artifacts are treated as ordinary test articles.
+- The separation `S_k = A * E` is sound.
+- Bounded `nu_eff` is better than the old linear form.
+- The Valley of Bad Fixes framing is useful and mathematically coherent.
+- SEARCH/REPLACE as the fix format is a strong improvement over NL diff extraction.
+- Mandatory template fixes are directionally correct.
+
+### What is incomplete
+1. **No explicit baseline-capture execution point in run lifecycle.**
+2. **No integration spec for where `compute_sk` is called in the existing runner loop.**
+3. **No mapping from finding schema to required threshold inputs (`R_old`, eta, d, p, nu_b, nu_f).**
+4. **No statement of how ADMISSIBLE fixes are surfaced to HIL approval pipeline.**
+5. **No control/ablation design despite confer mention of three-arm experiment.** That is not strictly required to run Exp 38, but it is required if you want strong causal claims about S_k benefit.
+6. **Success criterion 2 is too contingent**: “At least one fix achieves ADMISSIBLE status” is not a robust success criterion, because a clean codebase or bad proposals could fail it without invalidating the framework.
+
+## Revised measurable success criteria
+Use:
+1. S_k pipeline executes end-to-end on all parseable fixes without runner errors.
+2. For at least one candidate fix, gate outputs differ when the modified artifact differs materially from baseline.
+3. Thresholding uses finding-level inputs, not hardcoded placeholders.
+4. At least one proposal is classified into each reachable status category under controlled fixtures: REJECTED, ADMISSIBLE, and ESCALATE.
+5. Telemetry records `A`, `E`, per-gate details, `S*`, threshold decision, and resulting `R_k`.
+
+That would make the experiment falsifiable.
+
+---
+
+# Operational directive P-pass
+
+## Surviving assessment
+The directive is mostly mathematically aligned with the new model, but three survivor issues remain:
+
+1. **Residual sigma/nu wording in §2** — confirmed contradiction.
+2. **Directive says “two consecutive attempts produce no new failures”** while core formal directives define convergence via pass delta / budget. Not fatal, but this is a mild wording mismatch.
+3. **Fix format section is adequate for production only if parser is line-based and strict about control lines.** With the current regex parser, the directive overpromises robustness.
+
+The Valley explanation is good enough. The main problem is not the prose; it is implementation fidelity.
+
+---
+
+# Cell type architecture P-pass
+
+## FIND
+The architecture is conceptually good as a protocol abstraction, but it is currently **schema-sound, implementation-incomplete**.
+
+## FOLLOW
+Claims that survive:
+- Multi-cell hard gate composition by product is valid.
+- Weighted evidence composition across active cells is valid if applicability is explicit.
+- Hybrid activation routing is reasonable.
+
+Claims that do not fully survive as currently stated:
+- “Adding a new domain does not require runner code changes” is false **today**, because the runner is hardcoded.
+- “Within STEM, every claim is in principle verifiable” is too strong. Some STEM claims are empirically testable in principle but not tool-verifiable in the current system, and not always reducible to a practical automated gate. That should be softened.
+
+## ANALYSE
+**Partly CONFIRMED, partly REJECTED as an implementation claim**
+
+## FALSIFICATION
+- **FALSIFIER:** If the architecture is operational now, dynamic cell-type loading should exist in runner code.
+- **ATTEMPT:** It does not.
+- **RESULT:** Architecture survives as design, not as current implementation.
+
+## Definitive stance
+Keep the cell type architecture as the target design, but **do not claim it is already implemented** in Exp 38.
+
+---
+
+# Missing implementation wiring for Exp 38
+
+These are the main operational gaps still needed before the experiment can actually run as described:
+
+1. **Dynamic expert encoding loader**  
+   Missing entirely.
+
+2. **Gate registry / dispatcher**
+   Needed to map encoding definitions to executable tool invocations.
+
+3. **Baseline capture integration**
+   `_capture_baseline` exists but you have not shown where it is called and persisted.
+
+4. **Per-finding model parameters**
+   Need storage and plumbing for `R_old`, `eta`, `d`, `p`, `nu_b`, `nu_f`.
+
+5. **R_k persistence**
+   `compute_rk` exists but you have not shown where it updates registry entries or brain metrics.
+
+6. **ESCALATE/UNVERIFIED semantics**
+   Must be represented in registry and telemetry, not collapsed into score 1.0.
+
+7. **Isolated repo execution for all gates with side effects**
+   Not just regression tests; any tool that may write cache/state should run in isolated temp copy.
+
+8. **Config additions**
+   Need at least:
+   - `encoding_path` or domain-to-encoding resolver
+   - gate timeouts
+   - tool availability policy
+   - targeted test config
+   - whether “no tests found” = skip or escalate
+
+9. **Immune/brain/endocrine integration**
+   Not shown:
+   - immune should consume `sk_result`
+   - brain should track status distributions / threshold failures / `R_k`
+   - endocrine should report gate/tool health, missing tools, timeout rates
+
+---
+
+# Self-falsification summary
+
+I attempted to overturn the strongest findings by considering whether:
+- the omitted surrounding code might already wire in baseline, threshold inputs, and repo-copy testing;
+- the regex parser might be “good enough” under the constrained prompt format;
+- the hardcoded values might be acknowledged placeholders acceptable for a planned experiment.
+
+Those attempts fail for the core survivor set because the current artifacts themselves make operational claims stronger than what the implementation supports. The key faults are therefore real, not stylistic.
+
+---
+
+# Final stance
+
+**Exp 38 should not be run yet as a claims-bearing experiment.**  
+It is ready for **one more implementation pass**, then a dry run. The highest-priority fixes are:
+
+1. Make regression testing run against the modified artifact in an isolated copied repo.
+2. Replace regex SEARCH/REPLACE parsing with a line-state parser.
+3. Align directive, Python encoding, and runner gate semantics.
+4. Implement honest ESCALATE/UNVERIFIED handling.
+5. Remove hardcoded S* inputs and wire real finding-level parameters.
+6. Either implement dynamic expert-encoding loading now or narrow the experiment claim to “Python-only prototype”.
+
+That is the correct next action.

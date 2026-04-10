@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 9 April 2026 22:47 BST
+Last updated: 10 April 2026 01:02 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,22 +21,42 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (9 April 2026 22:47 BST)
+## Current Pending Work (10 April 2026 01:02 BST)
 
 Experiments 12–37 ALL COMPLETE. 690 tests pass.
 
-EXP 37 CONVERGED (9 April 2026 22:47 BST):
+EXP 37 CONVERGED (10 April 2026 01:02 BST):
   Target: bench/evidence.py, star, 16 rounds.
   257 findings, γ=0.467. STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
   Logs: bench/logs/exp37_evidence_20260409T050932Z/
   Report: bench/logs/exp37_evidence_20260409T050932Z/exp37_report.json
 
 Uncommitted changes in working tree:
-  ?? experimental_notes/Cell_Type_Architecture_2026-04-09.md
+  M bench/directives/software/software_python_sk.txt
+  M bench/directives/universal/cdsfl_operational.md
+  M bench/directives/universal/expert_encoding_template.md
+  M bench/logs/immune_shadow.log
+  M bench/reference_runner.py
+  ?? bench/confer_exp38_plan.py
+  ?? bench/logs/confer_exp38_plan/
+  ?? experimental_notes/Exp38_Confer_Synthesis_2026-04-09.md
+  ?? experimental_notes/Exp38_Plan_2026-04-09.md
 
 Remote: up to date.
 
-NEXT: <!-- Add next steps manually after sv -->
+EXP 38 PLANNED — Ouroboros: self-improving solution verification.
+  Plan: experimental_notes/Exp38_Plan_2026-04-09.md
+  Confer synthesis: experimental_notes/Exp38_Confer_Synthesis_2026-04-09.md
+  S_k pipeline: fully implemented in bench/reference_runner.py (9 confer fixes applied).
+  All test articles are subjects for study (not fixed context).
+  Execution: sequential burst + ITC switching per problem, final integration pass.
+  Composability is a HARD CONSTRAINT.
+
+NEXT STEPS:
+  1. Commit all Exp 38 prep work (runner, directives, plan, confer logs).
+  2. Run Exp 38 — the ouroboros: panel reviews runner + directives + architectures.
+  3. Cell type architecture and expert encoding methodology to be converged by panel.
+  4. Burst logic execution pattern as UX candidate for system.
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

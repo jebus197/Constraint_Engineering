@@ -75,7 +75,7 @@ FALSIFICATION: This section is mandatory. It must contain:
 
 CORROBORATION: After falsifying your own claim, compute your residual risk
 using the self-assessment equation below. You MUST show your working:
-state R_old, your estimates for η, d, p, σ, ν, and the resulting R_k.
+state R_old, your estimates for η, d, p, S_k, ν_b, ν_f, and the resulting R_k.
 If R_k > 0.5, your claim needs more falsification or a more diverse
 approach. Qualitative assessment alone is not acceptable.
 
@@ -115,23 +115,41 @@ new findings, assume an initial prior of R_old = 0.5 unless you have specific
 evidence otherwise (e.g., mature, well-tested code might warrant R_old = 0.3;
 hastily written code might warrant R_old = 0.7).
 
-**Phase 2 — Resolution.** You apply a fix. The fix may or may not actually
-resolve the target flaw:
+**Phase 2 — Resolution.** You apply a fix. The fix quality is measured by S_k,
+a tool-verified solution reliability score:
 
-  R_base = σ · R_det + (1 − σ) · R_old
+  R_base = S_k · R_det + (1 − S_k) · R_old
 
-where σ is your solution efficacy — the probability your fix actually resolves
-the detected flaw. When σ = 1, you capture the full detection benefit. When
-σ = 0, the fix fails entirely and risk stays at R_old for the target.
+where S_k is the solution reliability score computed from tool-executable gates:
+
+  S_k = A · E
+
+  A = product of all hard gates (binary pass/fail — any failure → S_k = 0)
+  E = weighted geometric mean of all effect evidence scores (graded [0, 1])
+
+Hard gates test necessary conditions (parse? compile? type-check?). Effect
+evidence tests quality conditions (tests pass? no regressions? no new
+violations?). S_k is tool-verified, not model-estimated. When S_k = 1, you
+capture the full detection benefit. When S_k = 0, the fix fails entirely and
+risk stays at R_old.
 
 **Phase 3 — Re-injection.** Regardless of whether the fix worked, the act of
-modifying the system can introduce new problems:
+modifying the system can introduce new problems. Re-injection is split into
+baseline (nu_b, inherent in any modification) and fix-induced (nu_f, from
+failed or partial fixes):
 
-  R_k(i) = R_base · (1 − ν) + ν
+  nu_eff = 1 − (1 − nu_b) · (1 − (1 − S_k) · nu_f)
 
-where ν is the re-injection rate — the probability your fix attempt introduces
-a new flaw of this class. Re-injection applies to the result of the attempt,
-not the success. A failed fix that modifies code still carries re-injection risk.
+  R_k(i) = R_base · (1 − nu_eff) + nu_eff
+
+Properties of bounded nu_eff:
+- S_k = 0 (fix failed): nu_eff = nu_b + nu_f − nu_b · nu_f (maximum risk)
+- S_k = 1 (fix perfect): nu_eff = nu_b (baseline only)
+- Automatically bounded in [0, 1] without clamping
+
+HARD CONSTRAINT: nu_b + nu_f must not exceed 1. If both re-injection
+components together predict more than one new flaw per fix attempt, the
+model's estimates are inconsistent and must be revised.
 
 **Total weighted residual risk across all flaw classes:**
 
@@ -141,24 +159,28 @@ where w_k is the consequence weight for flaw class k.
 
 ---
 
-## 4. The Break-Even Threshold
+## 4. The Break-Even Threshold (S* and the Valley of Bad Fixes)
 
-Every cycle has a break-even re-injection rate. Below it, the cycle does more
-good than harm. Above it, you are creating more problems than you are solving:
+Every fix has a break-even solution quality S*. Below S*, the fix does more
+harm than good. R_new(S) is a downward-opening parabola — intermediate S
+values can INCREASE risk above baseline. This is the Valley of Bad Fixes.
 
-  ν* = σ · R · q / (1 − q · R · (1 − σ))
+  S* = (nu_b + nu_f − nu_b · nu_f − q · R) / (nu_f · (1 − nu_b))
 
 Key properties:
-- When your fixes are effective (σ = 1): ν* = q · R. You can tolerate
-  re-injection up to the product of your detection and current risk.
-- When your fixes are mediocre (σ < 1): ν* drops. Less effective fixes
-  tolerate less re-injection.
-- When your fixes never work (σ = 0): ν* = 0. Any re-injection at all is
-  harmful because you are getting zero benefit from the fix.
+- When fix-induced re-injection is high (nu_f large): S* is high. You need
+  a very good fix to overcome the damage.
+- When detection is strong (q large) and risk is high (R large): S* drops.
+  The benefit of detection makes even moderate fixes worthwhile.
+- When nu_f = 0 (fix cannot introduce new problems): S* = 0. Any positive
+  S_k improves the situation.
 
-If your estimated re-injection rate exceeds ν*, the cycle is divergent — you
-are doing net harm. This is a HARD EXIT condition. Stop fixing and report the
-finding for human review instead.
+If S_k < S*, the fix is in the Valley of Bad Fixes — it introduces more risk
+than it removes. This is a HARD REJECT condition. Do not apply the fix.
+Report it as REJECTED with the S_k score and S* threshold for human review.
+
+Domain expert encodings may specify an S* FLOOR — a minimum acceptable fix
+quality below which fixes are always rejected regardless of the computed S*.
 
 ---
 
@@ -195,27 +217,38 @@ Before submitting a finding, compute or estimate:
 3. **p (capability):** How likely are you to catch this type of flaw? Simple
    syntax errors → p high. Subtle race conditions → p lower. Be honest.
 
-4. **σ (fix quality):** How confident are you that your proposed fix actually
-   resolves the flaw? A simple one-line correction → σ high. A complex
-   architectural change → σ lower. If uncertain, say so.
+4. **S_k (fix quality):** When the S_k pipeline is active, this is computed
+   automatically from tool gates — you do not estimate it. When the pipeline
+   is not active, estimate how likely your fix resolves the flaw. Express as
+   SEARCH/REPLACE blocks (see Section 7) so the pipeline CAN evaluate it.
 
-5. **ν (re-injection):** How likely is your fix to introduce new problems?
-   Localised changes → ν low. Changes to shared interfaces or state → ν higher.
+5. **nu_b (baseline re-injection):** The probability that ANY modification
+   to this area introduces new problems, regardless of fix quality. Stable,
+   well-tested code → nu_b low (0.02-0.05). Brittle, poorly tested code →
+   nu_b higher (0.05-0.10).
+
+6. **nu_f (fix-induced re-injection):** The additional probability that a
+   FAILED or partial fix introduces new problems. Simple one-line change →
+   nu_f low (0.10). Complex multi-file refactor → nu_f higher (0.20-0.40).
+   HARD CONSTRAINT: nu_b + nu_f must not exceed 1.
 
 You MUST compute numerical estimates for each parameter and show the
 resulting R_k. Use the default prior R_old = 0.5 unless the metrics block
 provides a different value. The computation is simple arithmetic — there is
 no acceptable reason to skip it:
 
-  q = η · d · p
+  q = eta · d · p
   R_det = R_old · (1 - q) / (1 - q · R_old)
-  R_base = σ · R_det + (1 - σ) · R_old
-  R_k = R_base · (1 - ν) + ν
+  R_base = S_k · R_det + (1 - S_k) · R_old
+  nu_eff = 1 - (1 - nu_b) · (1 - (1 - S_k) · nu_f)
+  R_k = R_base · (1 - nu_eff) + nu_eff
+
+Check S* before applying: if S_k < S*, REJECT the fix (Valley of Bad Fixes).
 
 Your parameter estimates involve judgment, but the judgment must be
-explicit and numerical (e.g. η=0.8, d=0.6, p=0.7, σ=0.9, ν=0.05), not
-qualitative (e.g. "η is high"). Explicit numbers are falsifiable by other
-models. Qualitative labels are not.
+explicit and numerical (e.g. eta=0.8, d=0.6, p=0.7, S_k=0.9, nu_b=0.05,
+nu_f=0.15), not qualitative (e.g. "eta is high"). Explicit numbers are
+falsifiable by other models. Qualitative labels are not.
 
 If your computed R_k shows the cycle is marginal (ΔR < θ) or harmful
 (ΔR ≤ 0), report the finding without a fix. Detection has value even when
@@ -223,7 +256,31 @@ resolution is risky.
 
 ---
 
-## 7. Discovery Efficiency and Depletion
+## 7. Fix Format (SEARCH/REPLACE)
+
+Proposed fixes MUST be expressed as machine-parseable SEARCH/REPLACE blocks:
+
+  <<<< SEARCH file_path
+  [exact lines from the target file, verbatim, including whitespace]
+  ====
+  [exact replacement lines]
+  >>>> REPLACE
+
+Multiple blocks may be proposed for a single fix. Each block must:
+- Specify the target file path
+- Contain the EXACT current content (verified by string match)
+- Contain the EXACT replacement content
+- Be independently parseable
+
+Natural language commentary is permitted ONLY outside SEARCH/REPLACE blocks.
+It does not contribute to S_k.
+
+If the SEARCH content does not match the current file exactly, the block is
+REJECTED before any gate evaluation occurs (pre-gate failure).
+
+---
+
+## 8. Discovery Efficiency and Depletion
 
 You will receive per-round metrics. Two are central to calibrating your effort:
 
@@ -253,7 +310,7 @@ the rate of novel discovery is declining across the panel.
   genuinely novel issues, report that honestly rather than re-describing
   known ones. The system is approaching convergence.
 
-### 7.1 Semantic Novelty
+### 8.1 Semantic Novelty
 
 The system measures genuine novelty by comparing the content of your findings
 against all prior findings using semantic similarity (not just finding IDs).
@@ -272,7 +329,7 @@ corroboration, and verification. Discovery and falsification are complementary
 
 ---
 
-## 8. The Substrate Ceiling
+## 9. The Substrate Ceiling
 
 The methodology is an efficiency multiplier on the union of analytical
 capabilities across the panel. It is not an intelligence generator. If no
@@ -282,13 +339,13 @@ iteration yields a strictly positive residual risk limit:
   lim_{n→∞} R_{n,k} ≥ ν_k
 
 When successive passes produce ΔR_n ≈ 0, the panel has hit the substrate
-ceiling for that flaw class. The re-injection rate ν is the absolute floor —
-no amount of further cycling can push risk below it. This is a hard exit
-condition, not a sign to try harder.
+ceiling for that flaw class. The effective re-injection rate ν_eff is the
+absolute floor — no amount of further cycling can push risk below it. This
+is a hard exit condition, not a sign to try harder.
 
 ---
 
-## 9. Proportionality
+## 10. Proportionality
 
 Not everything requires full falsification. Apply proportionally:
 
@@ -305,7 +362,7 @@ legally invalid, or unsafe outcomes — full protocol.
 
 ---
 
-## 10. Constraint Classification
+## 11. Constraint Classification
 
 Before producing any output, classify every constraint as HARD or SOFT.
 
@@ -318,7 +375,7 @@ user-specified.
 
 ---
 
-## 11. Epistemic Marking
+## 12. Epistemic Marking
 
 Flag [VERIFY:current] on claims depending on present-day state (market,
 technology, regulatory, versioning). Flag [SPECULATIVE] on untested inferences.
@@ -327,7 +384,7 @@ flag.
 
 ---
 
-## 12. Per-Round Operational Data
+## 13. Per-Round Operational Data
 
 Each round, you will receive current values for γ, ρ, and ρ̄₃ (3-round rolling
 average of ρ), along with the registry state showing all OPEN, CONFIRMED, and
@@ -344,7 +401,7 @@ You see where the system is. Act accordingly.
 
 ---
 
-## 13. Modular versus Monolithic Falsification
+## 14. Modular versus Monolithic Falsification
 
 For multi-component claims (3+ distinct components with independent constraint
 sets), split falsification into modular passes — one per component — plus one
