@@ -1,0 +1,980 @@
+Go/no-go: **NO-GO**.
+
+There are at least **three surviving confirmed issues** on the Exp 38 execution path that can cause either a crash or a silent incorrect result:
+
+1. **`RunnerConfig` is not a dataclass in the provided artifact, but uses `field()` and `__dataclass_fields__`** → config construction/path can crash before run or on `from_dict()`.
+2. **`compute_sk()` marks any `sk > 0` as `ADMISSIBLE` before S\* check, but returns `ESCALATE` only when *no* effect gates produce evidence** → partial tool unavailability is tolerated, which is fine, but a more serious issue remains: **if `ruff`/`bandit` emit invalid JSON or are missing, baseline defaults to 0 and post-fix can also default to 0, producing false clean scores instead of honest unavailability**. That is a **silent incorrect result**.
+3. **`check_sk_threshold()` / `compute_rk()` do not clamp or validate `q`, `R_old`, or `sk` inputs**. Bad per-finding `model_params` can produce mathematically inconsistent updates, including negative denominators and nonsensical Bayesian updates. It won’t necessarily crash, but it can silently compute wrong risk.
+
+Everything else in the core S_k path looks broadly runnable. But for a go/no-go assessment, these are sufficient to block “will Exp 38 run cleanly end to end?”.
+
+---
+
+# Structured certificate
+
+## Premises
+- Assessment scope is limited to **crash, incorrect result, or silent failure** on the **actual Exp 38 path**: preflight → round loop → finding evaluation → S_k pipeline.
+- Prior confer findings listed by user are treated as already fixed and excluded.
+- Only code shown in the artifacts is assumed.
+- Exp 38 is single-domain Python; dynamic loader gaps explicitly deferred.
+
+## Execution trace summary
+1. Config is loaded/built.
+2. Main loop captures S_k baseline iff `cfg.sk_enabled`.
+3. Findings accumulate in registry.
+4. `_evaluate_sk_for_findings()` scans entries with `proposed_fix` containing `<<<< SEARCH`.
+5. `compute_sk()` parses blocks, applies matching blocks to target file source text, runs gates, computes `A`, `E`, `sk`, tristate.
+6. For provisional `ADMISSIBLE`, `check_sk_threshold()` computes S\* and `compute_rk()` closes the loop.
+
+## Conclusion
+- **Not fit for purpose yet.**
+- End-to-end run is at risk from one **preflight/config crash** and two **silent correctness defects** in scoring/risk calculation.
+
+---
+
+# 1. PARSE PATH
+
+## FIND
+Walkthrough of `parse_search_replace_blocks()`.
+
+## FOLLOW
+This feeds directly into `compute_sk()`. If parsing drops or mangles blocks, the fix is either rejected pre-gate or silently partially applied.
+
+## ANALYSE
+### Case (a): single file
+**Works** for standard form:
+```text
+<<<< SEARCH bench/reference_runner.py
+old
+====
+new
+>>>> REPLACE
+```
+It:
+- splits text into lines
+- finds start if stripped line starts with `<<<<` and contains `SEARCH`
+- strips off `SEARCH ` or `SEARCH\t`
+- captures search until a bare `====`
+- captures replace until line starts with `>>>>` and contains `REPLACE`
+
+### Case (b): multiple files
+**Parses correctly** as multiple `FixBlock`s. No state leak between blocks.
+
+### Case (c): multi-line search/replace content
+**Works**. Search and replace payloads are line-collected and `"\n".join(...)`.
+
+### Case (d): content containing delimiter-like strings
+This is where the parser is **strict, not robust**:
+- A payload line equal to bare `====` **always terminates search**.
+- A replace payload line beginning with `>>>>` and containing `REPLACE` **always terminates replace**.
+
+So if the literal source being edited contains a line exactly `====`, or a line like `>>>> REPLACE marker`, parser cannot represent it.
+
+The code comment claims delimiter-like content inside payloads does not break parsing, but that is only true for non-bare variants. Bare delimiter lines still break it.
+
+## Self-falsification
+Could this be irrelevant for Exp 38 because Python source rarely contains a bare `====` line? Mostly yes. But the question explicitly asks about delimiter-like strings, and the answer is that **bare delimiter lines break**. This is real but probably not a blocker for runner self-review.
+
+## Result
+### Surviving assessment
+- **Not a go/no-go blocker by itself** for Exp 38’s target artifacts.
+- But parser behavior is narrower than claimed.
+
+---
+
+# 2. APPLY PATH
+
+## FIND
+Walkthrough of `apply_fix_blocks()`.
+
+## FOLLOW
+This is pre-gate. Failures here reject fixes before AST/compile/test.
+
+## ANALYSE
+### Matching logic
+Block applies iff:
+```python
+block.file_path == target_path
+or Path(block.file_path).name == Path(target_path).name
+```
+
+### (a) trailing whitespace differences in search string
+If model omits or alters trailing spaces/tabs/newlines in the SEARCH payload:
+```python
+if block.search not in modified:
+    return None, 0
+```
+So **exact mismatch rejects**.
+
+That is intentional, not a bug, but operationally strict.
+
+### (b) file path uses different prefix than source
+- Exact full-path equality works.
+- Basename equality works.
+- Different relative prefixes but same basename also work.
+- Different basename fails silently by being skipped.
+
+Important edge case:
+- If **all blocks parse**, but none match `target_path`, `applied == 0`, and `compute_sk()` returns REJECTED with error `"SEARCH block content not found in source"`.
+- That message is inaccurate when real cause is **path mismatch / no matching block**, not search mismatch.
+
+This is a minor diagnostics defect, not core failure.
+
+### (c) multiple blocks target same file
+**Works sequentially** against the evolving `modified` string:
+- first replacement applied
+- second block searches in already-modified source
+
+That is correct for ordered patches.
+
+Risk:
+- overlapping or order-dependent blocks can fail if later search expects original text. That yields pre-gate rejection. Again strict but acceptable.
+
+## Self-falsification
+Could basename matching hit the wrong file? In `compute_sk()`, only one `source` string and one `source_path` are being evaluated, so wrong-file mutation inside this function does not occur. Non-target blocks are ignored. So no hidden cross-file corruption here.
+
+## Result
+### Surviving assessment
+- Apply path is **operationally strict but mostly sound**.
+- No confirmed crash here.
+- Diagnostics for “no block matched target file” are misleading.
+
+---
+
+# 3. GATE PATH
+
+## FIND
+Walkthrough of each gate and failure modes.
+
+## FOLLOW
+Gate outputs determine `A`, `E`, `sk`, `tristate`, and whether risk update runs.
+
+## ANALYSE
+
+## g1: `_run_hard_gate_ast(modified_source)`
+Input:
+- modified source string
+
+Behavior:
+- `ast.parse(modified_source)`
+- success → `(1, "AST parse succeeded")`
+- `SyntaxError` → `(0, f"SyntaxError: {e}")`
+
+Failure modes:
+- Safe; no unhandled exception expected for normal string input.
+
+## g2: `_run_hard_gate_compile(modified_source, source_path)`
+Input:
+- modified source string
+- `source_path` arg unused except signature
+
+Behavior:
+- writes temp `.py`
+- `py_compile.compile(tmp_path, doraise=True)`
+- success → `(1, "py_compile succeeded")`
+- `PyCompileError` → `(0, ...)`
+- finally unlinks temp file
+
+Failure modes:
+- If temp file creation/unlink fails unexpectedly, could raise `OSError` unhandled.
+- In normal environment, fine.
+
+## e2: `_run_effect_regression(modified_source, source_path, test_cmd)`
+Input:
+- modified source
+- source path
+- test command
+
+Behavior:
+- if no `test_cmd`: `(None, "no test command configured")`
+- computes `rel_target = target_path.relative_to(REPO_ROOT)`, else unavailable
+- copies repo to sandbox
+- overlays modified file
+- runs `subprocess.run(shlex.split(test_cmd), ...)`
+- parses `X passed`, `Y failed`
+- if `total == 0`: returns `1.0, "no tests found (skipped)"`
+
+Failure modes:
+- **Silent incorrect scoring**: if test output format differs and regex finds neither passed nor failed, `total == 0` and gate returns **1.0** as if fine.
+  - Example: pytest collection error, internal error, interrupted run, xfailed-only run, or output localized / changed.
+- Timeout/OSError returns `None`.
+
+This is a real survivor.
+
+## e3: `_run_effect_ruff(modified_source, baseline_violations)`
+Input:
+- modified source
+- baseline count
+
+Behavior:
+- temp file
+- runs `python -m ruff check ... --output-format=json --quiet`
+- tries to load JSON from stdout
+- JSON parse failure => `total_count = 0`
+- computes delta from baseline
+- returns score
+
+Failure modes:
+- **Silent incorrect scoring** if `ruff` exists but emits error/non-JSON to stderr/stdout. Code interprets that as zero violations, not unavailable/error.
+- Missing module may return subprocess exit with stderr but no `OSError`; since `python -m ruff` executes Python successfully, JSON parse likely fails and again becomes **0 violations**.
+- Therefore missing/misconfigured ruff can falsely score as clean.
+
+This is a confirmed correctness defect.
+
+## e4: `_run_effect_bandit(modified_source, baseline_findings)`
+Input:
+- modified source
+- baseline count
+
+Behavior similar to ruff:
+- runs `python -m bandit -f json tmp.py`
+- JSON parse failure => `high_med = 0`
+- delta against baseline
+- returns score
+
+Failure modes:
+- Same **silent false-clean** behavior as ruff.
+
+This is a confirmed correctness defect.
+
+## Self-falsification
+Could baseline capture neutralize this because both baseline and post-fix default to zero? No; that makes it worse. It turns unavailable/broken tools into apparent “no new problems”, which is exactly the silent failure.
+
+## Result
+### Confirmed issue 1
+**e3/e4 baseline and post-fix tool invocation mis-handle tool errors/non-JSON output as zero findings rather than unavailable.**
+- Impact: silent incorrect `E`, inflated `sk`, possible false ADMISSIBLE.
+
+### Confirmed issue 2
+**e2 treats “no parsed pass/fail counts” as score 1.0 “no tests found”, conflating absent tests with collection/internal command failure formats.**
+- Impact: silent incorrect `E`, inflated `sk`.
+
+---
+
+# 4. THRESHOLD PATH
+
+## FIND
+Walkthrough of `check_sk_threshold()` and `compute_rk()`.
+
+## FOLLOW
+Wrong math here means bad go/no-go decisions for fixes and bad stored residual risk.
+
+## ANALYSE
+### Nu clamping
+Both functions clamp `nu_b`, `nu_f` to [0,1] and proportionally scale if sum > 1.
+
+That part is fine.
+
+### S\* computation
+```python
+s_star = (nu_b + nu_f - nu_b*nu_f - q*R) / (nu_f * (1 - nu_b))
+```
+Edge cases handled:
+- `nu_f ≈ 0` => 0
+- `nu_b ≈ 1` => 1
+- final clamp to [0,1]
+
+### Missing validation
+Inputs `q`, `R`, and `sk` are not validated/clamped.
+If registry entry has:
+- `q < 0` or `q > 1`
+- `R_old < 0` or `R_old > 1`
+- `sk` outside [0,1] from corrupted entry
+
+then math remains executable but semantics break.
+
+Examples:
+- `R_old = 2.0`, `q = 0.9` gives denominator `1 - q*R_old = -0.8`, so `R_det` becomes negative or inverted.
+- `q = -1` increases risk oddly.
+- `sk = 1.5` would over-weight `R_det`.
+
+`compute_rk()` clamps only final `R_k`, masking invalid intermediate states.
+
+This is a **silent incorrect result** risk.
+
+## Self-falsification
+Could Exp 38 supply only sane params? Probably by convention, yes. But `_evaluate_sk_for_findings()` reads:
+```python
+meta = entry.get("model_params", {})
+nu_b = meta.get("nu_b", 0.05)
+nu_f = meta.get("nu_f", 0.20)
+q = meta.get("q", 0.5)
+R_old = meta.get("R", 0.5)
+```
+No guarantee these are validated upstream in the shown code. Since the question asks about end-to-end clean execution, this remains a real boundary defect.
+
+## Result
+### Confirmed issue 3
+**Risk/threshold math accepts invalid `q`, `R_old`, `sk` without validation, producing silently nonsensical outputs.**
+
+---
+
+# 5. INTEGRATION PATH
+
+## FIND
+Walkthrough of `_evaluate_sk_for_findings()`.
+
+## FOLLOW
+This determines which findings are scored and what survives into telemetry/registry.
+
+## ANALYSE
+Selection:
+```python
+if entry["status"] not in ("OPEN", "CONFIRMED", "CONTESTED"): continue
+fix_text = entry.get("proposed_fix", "")
+if not fix_text or "<<<< SEARCH" not in fix_text: continue
+```
+So only those findings are evaluated.
+
+Storage:
+```python
+entry["sk_result"] = {...}
+```
+Includes sk/A/E/tristate/block counts/gate details.
+
+Threshold:
+- only if initial `compute_sk().tristate == "ADMISSIBLE"`
+- `check_sk_threshold`
+- if pass: compute/store `R_old`, `R_new`
+- if fail: overwrite tristate to `REJECTED`
+
+Logging:
+- ADMISSIBLE with sk, S\*, R old/new
+- REJECTED either hard-gate or threshold
+- ESCALATE with details
+- round summary
+
+Feedback into next round:
+- In shown code, only registry storage and logs.
+- No evidence here that S_k results affect prompting, convergence, or finding status transitions directly.
+- That aligns with deferred integration note.
+
+Important behavior:
+- Fixes without `"<<<< SEARCH"` are silently skipped, not marked rejected/escalated.
+  - For Exp 38, prompts request this format, so okay.
+  - But operationally this can hide malformed fixes.
+
+## Self-falsification
+Is “skip malformed non-SEARCH fixes” a blocker? Probably not if prompts enforce format and Exp 38 models comply. Not sufficient alone for no-go.
+
+## Result
+Integration path itself is coherent. Main residual issue is that **stored results may be wrong because gate/math layers can silently mis-score**.
+
+---
+
+# 6. CONFIGURATION
+
+## FIND
+What must be set for S_k activation.
+
+## ANALYSE
+Required:
+- `cfg.sk_enabled = True`
+
+Needed for meaningful regression gate:
+- `cfg.test_cmd` set to a valid test command
+
+Defaults that can silently degrade/skip:
+- `sk_enabled: bool = False` → **pipeline entirely off by default**
+- `test_cmd: Optional[str] = None` → e2 unavailable
+- `sk_s_floor: float = 0.0` → okay for Exp 38 per mitigation
+
+Critical config issue:
+The provided `RunnerConfig` snippet appears **not decorated with `@dataclass`**, yet uses:
+- `field(default_factory=...)`
+- `__dataclass_fields__` in `from_dict`
+
+Without `@dataclass`, this is broken:
+- instance attributes become `Field` objects, not lists
+- `from_dict()` accessing `cls.__dataclass_fields__` raises `AttributeError`
+
+That is a **preflight crash** if artifact is faithful.
+
+## Self-falsification
+Could the actual file have `@dataclass` above the cropped snippet? Yes, possible. But based on provided artifact, this is confirmed in the presented implementation and directly relevant to “fit for purpose”. I can only assess what was shown.
+
+## Result
+### Confirmed issue 4
+**RunnerConfig dataclass decoration appears missing in the provided implementation.**
+- Impact: preflight/config construction crash or malformed defaults.
+
+---
+
+# 7. CRASH SCENARIOS
+
+## FIND
+Specific unhandled exceptions.
+
+## ANALYSE
+
+### Crash scenario A — `RunnerConfig.from_dict`
+Function:
+```python
+valid = {f.name for f in cls.__dataclass_fields__.values()}
+```
+Trigger:
+- `RunnerConfig` lacks `@dataclass`
+Input:
+- any call to `RunnerConfig.from_dict(...)`
+Exception:
+- `AttributeError: type object 'RunnerConfig' has no attribute '__dataclass_fields__'`
+
+### Crash scenario B — `entry["status"]`
+Function: `_evaluate_sk_for_findings`
+Trigger:
+- registry entry missing `"status"` key
+Input:
+```python
+registry.entries = {"x": {"proposed_fix": "..."}}
+```
+Exception:
+- `KeyError: 'status'`
+
+If FindingRegistry guarantees status, this may be impossible; in shown function it is unguarded.
+
+### Crash scenario C — `target_path.relative_to(REPO_ROOT)`
+No crash because caught and returns None.
+
+### Crash scenario D — temp file unlink
+Functions: `_run_hard_gate_compile`, `_run_effect_ruff`, `_run_effect_bandit`, `_capture_baseline`
+Trigger:
+- temp file already removed / filesystem issue before `os.unlink`
+Exception:
+- `FileNotFoundError` or `OSError` in `finally`
+These are unhandled.
+Low probability, but real.
+
+## Self-falsification
+B and D may be theoretical depending on upstream invariants/environment. A is the strongest crash case.
+
+## Result
+Primary crash blocker: **RunnerConfig dataclass defect**.
+
+---
+
+# Confirmed surviving issues only
+
+## Issue A — Config crash risk: `RunnerConfig` dataclass defect
+**Status:** CONFIRMED on provided artifact  
+**Impact:** preflight crash / invalid defaults  
+**Severity:** HARD blocker
+
+### FFAF
+**FIND:** `RunnerConfig` uses dataclass features but is declared as a plain class.  
+**FOLLOW:** Breaks config loading, default factories, and likely experiment startup.  
+**ANALYSE:** CONFIRMED from code shown.  
+**FIX:** add `@dataclass`.
+
+### SEARCH/REPLACE fix
+```text
+<<<< SEARCH bench/reference_runner.py
+class RunnerConfig:
+    """All parameters for a reference experiment run."""
+====
+@dataclass
+class RunnerConfig:
+    """All parameters for a reference experiment run."""
+>>>> REPLACE
+```
+
+---
+
+## Issue B — Ruff/Bandit tool failures are scored as zero findings instead of unavailable
+**Status:** CONFIRMED  
+**Impact:** silent false-clean `E`, inflated `sk`, wrong ADMISSIBLE decisions  
+**Severity:** HARD blocker
+
+### FFAF
+**FIND:** `_run_effect_ruff`, `_run_effect_bandit`, and `_capture_baseline` treat non-JSON/error outputs as zero violations/findings.  
+**Location:** those functions’ JSON parse fallback paths.  
+**Evidence:** `except (json.JSONDecodeError, TypeError): total_count = 0` and similar. No `return None` on tool failure/non-zero exit.
+
+**FOLLOW:**  
+- baseline can be falsely zero
+- post-fix can be falsely zero
+- delta becomes zero
+- score becomes 1.0
+- `sk` inflated
+- threshold pass and `R_k` update become wrong
+
+**ANALYSE:** CONFIRMED.
+
+**FIX:** treat non-zero exit or invalid JSON as unavailable (`None`) in effect gates; baseline should record unavailable distinctly, not as zero.
+
+### SEARCH/REPLACE fix 1: `_run_effect_ruff`
+```text
+<<<< SEARCH bench/reference_runner.py
+def _run_effect_ruff(modified_source: str, baseline_violations: int) -> Tuple[Optional[float], str]:
+    """e3: Static analysis non-regression via ruff."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            violations = json.loads(result.stdout)
+            total_count = len(violations)
+        except (json.JSONDecodeError, TypeError):
+            total_count = 0
+        # Delta-based: only NEW violations reduce score (0.1 penalty each)
+        delta = max(0, total_count - baseline_violations)
+        score = max(0.0, 1.0 - delta * 0.1)
+        return score, f"{total_count} total, {delta} new (baseline: {baseline_violations})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"ruff unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+====
+def _run_effect_ruff(modified_source: str, baseline_violations: Optional[int]) -> Tuple[Optional[float], str]:
+    """e3: Static analysis non-regression via ruff."""
+    if baseline_violations is None:
+        return None, "ruff baseline unavailable"
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode not in (0, 1):
+            return None, f"ruff failed: rc={result.returncode} stderr={result.stderr[:200]}"
+        try:
+            violations = json.loads(result.stdout)
+            if not isinstance(violations, list):
+                return None, "ruff output was not JSON list"
+            total_count = len(violations)
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"ruff output parse failed: {e}"
+        # Delta-based: only NEW violations reduce score (0.1 penalty each)
+        delta = max(0, total_count - baseline_violations)
+        score = max(0.0, 1.0 - delta * 0.1)
+        return score, f"{total_count} total, {delta} new (baseline: {baseline_violations})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"ruff unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+>>>> REPLACE
+```
+
+### SEARCH/REPLACE fix 2: `_run_effect_bandit`
+```text
+<<<< SEARCH bench/reference_runner.py
+def _run_effect_bandit(modified_source: str, baseline_findings: int) -> Tuple[Optional[float], str]:
+    """e4: Security non-regression via bandit."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            data = json.loads(result.stdout)
+            results_list = data.get("results", [])
+            high_med = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError):
+            high_med = 0
+        new_findings = max(0, high_med - baseline_findings)
+        score = max(0.0, 1.0 - new_findings * 0.5)
+        return score, f"{high_med} HIGH/MEDIUM (baseline: {baseline_findings}, new: {new_findings})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"bandit unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+====
+def _run_effect_bandit(modified_source: str, baseline_findings: Optional[int]) -> Tuple[Optional[float], str]:
+    """e4: Security non-regression via bandit."""
+    if baseline_findings is None:
+        return None, "bandit baseline unavailable"
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode not in (0, 1):
+            return None, f"bandit failed: rc={result.returncode} stderr={result.stderr[:200]}"
+        try:
+            data = json.loads(result.stdout)
+            if not isinstance(data, dict):
+                return None, "bandit output was not JSON object"
+            results_list = data.get("results", [])
+            high_med = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"bandit output parse failed: {e}"
+        new_findings = max(0, high_med - baseline_findings)
+        score = max(0.0, 1.0 - new_findings * 0.5)
+        return score, f"{high_med} HIGH/MEDIUM (baseline: {baseline_findings}, new: {new_findings})"
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return None, f"bandit unavailable: {e}"
+    finally:
+        os.unlink(tmp_path)
+>>>> REPLACE
+```
+
+### SEARCH/REPLACE fix 3: baseline capture for ruff/bandit
+```text
+<<<< SEARCH bench/reference_runner.py
+def _capture_baseline(source: str) -> Dict[str, Any]:
+    """Capture baseline gate scores before fix application."""
+    baseline: Dict[str, Any] = {}
+    # Ruff violations on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            violations = json.loads(result.stdout)
+            baseline["ruff_violations"] = len(violations)
+        except (json.JSONDecodeError, TypeError):
+            baseline["ruff_violations"] = 0
+    except (subprocess.TimeoutExpired, OSError):
+        baseline["ruff_violations"] = 0
+    finally:
+        os.unlink(tmp_path)
+
+    # Bandit findings on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        try:
+            data = json.loads(result.stdout)
+            results_list = data.get("results", [])
+            baseline["bandit_high_med"] = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError):
+            baseline["bandit_high_med"] = 0
+    except (subprocess.TimeoutExpired, OSError):
+        baseline["bandit_high_med"] = 0
+    finally:
+        os.unlink(tmp_path)
+
+    return baseline
+====
+def _capture_baseline(source: str) -> Dict[str, Any]:
+    """Capture baseline gate scores before fix application."""
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_high_med": None,
+    }
+
+    # Ruff violations on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", tmp_path,
+             "--output-format=json", "--quiet"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode in (0, 1):
+            try:
+                violations = json.loads(result.stdout)
+                if isinstance(violations, list):
+                    baseline["ruff_violations"] = len(violations)
+            except (json.JSONDecodeError, TypeError):
+                pass
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    finally:
+        os.unlink(tmp_path)
+
+    # Bandit findings on original source
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(source)
+        tmp_path = tmp.name
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode in (0, 1):
+            try:
+                data = json.loads(result.stdout)
+                if isinstance(data, dict):
+                    results_list = data.get("results", [])
+                    baseline["bandit_high_med"] = sum(
+                        1 for r in results_list
+                        if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+                    )
+            except (json.JSONDecodeError, TypeError):
+                pass
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    finally:
+        os.unlink(tmp_path)
+
+    return baseline
+>>>> REPLACE
+```
+
+---
+
+## Issue C — Regression gate mis-scores unparseable test outcomes as 1.0
+**Status:** CONFIRMED  
+**Impact:** silent false-clean regression score  
+**Severity:** HARD blocker
+
+### FFAF
+**FIND:** `_run_effect_regression` returns `1.0, "no tests found (skipped)"` whenever regex does not find passed/failed counts, even if the command errored in an unrecognized way.  
+**FOLLOW:** Failed collection/internal errors may be scored as perfect regression outcome.  
+**ANALYSE:** CONFIRMED.  
+**FIX:** use subprocess return code and parse broader pytest outcomes; only return 1.0 for explicit “collected 0 items” / known no-tests case.
+
+### SEARCH/REPLACE fix
+```text
+<<<< SEARCH bench/reference_runner.py
+        try:
+            result = subprocess.run(
+                shlex.split(test_cmd),
+                capture_output=True, text=True, timeout=120,
+                cwd=str(sandbox),
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            output = result.stdout + result.stderr
+            m = re.search(r'(\d+)\s+passed', output)
+            passed = int(m.group(1)) if m else 0
+            m = re.search(r'(\d+)\s+failed', output)
+            failed = int(m.group(1)) if m else 0
+            total = passed + failed
+            if total == 0:
+                return 1.0, "no tests found (skipped)"
+            score = passed / total
+            return score, f"{passed}/{total} passed (sandbox)"
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return None, f"test execution failed: {e}"
+====
+        try:
+            result = subprocess.run(
+                shlex.split(test_cmd),
+                capture_output=True, text=True, timeout=120,
+                cwd=str(sandbox),
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            output = result.stdout + result.stderr
+
+            m = re.search(r'(\d+)\s+passed', output)
+            passed = int(m.group(1)) if m else 0
+            m = re.search(r'(\d+)\s+failed', output)
+            failed = int(m.group(1)) if m else 0
+            m = re.search(r'collected\s+0\s+items', output)
+            collected_zero = bool(m)
+
+            total = passed + failed
+            if total > 0:
+                score = passed / total
+                return score, f"{passed}/{total} passed (sandbox)"
+
+            if collected_zero and result.returncode == 5:
+                return 1.0, "no tests collected"
+
+            return None, (
+                f"test results unavailable: rc={result.returncode} "
+                f"stdout/stderr={output[:200]!r}"
+            )
+        except (subprocess.TimeoutExpired, OSError) as e:
+            return None, f"test execution failed: {e}"
+>>>> REPLACE
+```
+
+---
+
+## Issue D — `q`, `R_old`, `sk` not validated before threshold/risk math
+**Status:** CONFIRMED  
+**Impact:** silent nonsensical S\*/R\_k values  
+**Severity:** medium, but still a no-go for “clean end-to-end”
+
+### FFAF
+**FIND:** `compute_rk()` and `check_sk_threshold()` validate only `nu_b`/`nu_f`, not `q`, `R_old`, or `sk`.  
+**FOLLOW:** corrupted or out-of-range per-finding metadata can poison risk calculations while final clamp hides the problem.  
+**ANALYSE:** CONFIRMED.  
+**FIX:** clamp `q`, `R_old`, `R`, `sk` to [0,1].
+
+### SEARCH/REPLACE fix 1: `compute_rk`
+```text
+<<<< SEARCH bench/reference_runner.py
+def compute_rk(
+    R_old: float, q: float, sk: float,
+    nu_b: float = 0.05, nu_f: float = 0.20,
+) -> float:
+    """Three-phase R_k update: detection -> resolution -> re-injection.
+
+    Uses bounded nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f).
+    """
+    # Clamp nu parameters
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+====
+def compute_rk(
+    R_old: float, q: float, sk: float,
+    nu_b: float = 0.05, nu_f: float = 0.20,
+) -> float:
+    """Three-phase R_k update: detection -> resolution -> re-injection.
+
+    Uses bounded nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f).
+    """
+    R_old = max(0.0, min(1.0, R_old))
+    q = max(0.0, min(1.0, q))
+    sk = max(0.0, min(1.0, sk))
+    # Clamp nu parameters
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+>>>> REPLACE
+```
+
+### SEARCH/REPLACE fix 2: `check_sk_threshold`
+```text
+<<<< SEARCH bench/reference_runner.py
+def check_sk_threshold(
+    sk: float, nu_b: float, nu_f: float,
+    q: float, R: float, s_floor: float = 0.0,
+) -> Tuple[bool, float]:
+    """Check if S_k exceeds the break-even threshold S*.
+
+    Returns (passes, s_star). Fixes below S* do more harm than good
+    (Valley of Bad Fixes).
+    """
+    # Clamp nu parameters
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+====
+def check_sk_threshold(
+    sk: float, nu_b: float, nu_f: float,
+    q: float, R: float, s_floor: float = 0.0,
+) -> Tuple[bool, float]:
+    """Check if S_k exceeds the break-even threshold S*.
+
+    Returns (passes, s_star). Fixes below S* do more harm than good
+    (Valley of Bad Fixes).
+    """
+    sk = max(0.0, min(1.0, sk))
+    q = max(0.0, min(1.0, q))
+    R = max(0.0, min(1.0, R))
+    s_floor = max(0.0, min(1.0, s_floor))
+    # Clamp nu parameters
+    nu_b = max(0.0, min(1.0, nu_b))
+    nu_f = max(0.0, min(1.0, nu_f))
+>>>> REPLACE
+```
+
+---
+
+# Answers to the seven explicit questions
+
+## 1. PARSE PATH
+- **(a) single file:** yes, standard block parses.
+- **(b) multiple files:** yes, multiple blocks parse.
+- **(c) multi-line search/replace:** yes.
+- **(d) delimiter-like strings:** non-bare lookalikes are okay; **bare `====` inside SEARCH or a `>>>> ... REPLACE` line inside REPLACE breaks parsing**. Not likely blocker for Exp 38, but parser is stricter than claimed.
+
+## 2. APPLY PATH
+- **(a) trailing whitespace differences:** exact string match fails; fix rejected pre-gate.
+- **(b) different file prefix:** exact full path or basename match only. Other prefixes skipped.
+- **(c) multiple blocks same file:** applied in order to evolving modified text; later blocks must match post-edit content.
+
+## 3. GATE PATH
+- **g1 AST:** safe parse gate, returns 1/0.
+- **g2 py_compile:** safe compile gate, returns 1/0, low-probability unhandled temp-file cleanup errors.
+- **e2 regression:** real bug: unparseable/abnormal output can score 1.0.
+- **e3 ruff:** real bug: tool failure/non-JSON can score as zero violations.
+- **e4 bandit:** same as ruff.
+
+## 4. THRESHOLD PATH
+- Nu handling fine.
+- S\* edge cases handled.
+- **Invalid `q`, `R_old`, `sk` are not validated**, so mathematically nonsensical but non-crashing results are possible.
+
+## 5. INTEGRATION PATH
+- Findings selected by status plus `proposed_fix` containing `<<<< SEARCH`.
+- Results stored under `entry["sk_result"]`.
+- Logs emitted for admissible/rejected/escalate and round summary.
+- In shown code, feedback is limited to registry/logging; not yet integrated into immune/brain/endocrine, as documented.
+
+## 6. CONFIGURATION
+Must set:
+- `sk_enabled=True`
+- `test_cmd` for e2 to be active/useful
+
+Defaults that silently skip/degrade:
+- `sk_enabled=False` disables entire pipeline
+- `test_cmd=None` disables regression evidence
+- provided `RunnerConfig` artifact may crash if missing `@dataclass`
+
+## 7. CRASH SCENARIOS
+Confirmed strongest:
+- `RunnerConfig.from_dict()` if class lacks `@dataclass` → `AttributeError`
+Possible:
+- `_evaluate_sk_for_findings()` if entry lacks `"status"` → `KeyError`
+- temp-file cleanup `os.unlink(...)` in finally blocks under filesystem anomaly → `OSError`
+
+---
+
+# P-pass summary
+
+## Pass 1
+Identified parser strictness, tool-output scoring defects, invalid math input handling, config dataclass defect.
+
+## Pass 2
+Tried to falsify parser issue as blocker; downgraded to non-blocking.
+
+## Pass 3
+Tried to falsify config defect as artifact truncation possibility; cannot confirm from full file, but on provided artifact it remains confirmed.
+
+## Pass 4
+Checked whether gate-output defects are merely conservative. They are not; they can inflate scores.
+
+## Pass 5
+No further revisions.
+
+Residual falsification debt: **low**, limited by absence of full `bench/reference_runner.py`.
+
+---
+
+# Definitive stance
+
+**NO-GO.**  
+Exp 38 is **not yet fit for purpose** for a clean end-to-end run. Fix the dataclass/config defect if real in file, and fix the three silent-scoring defects in `ruff`, `bandit`, and `pytest` result handling, plus clamp `q/R/sk` before risk math. After those changes, the remaining S_k path looks viable for Exp 38.

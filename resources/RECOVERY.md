@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 10 April 2026 01:02 BST
+Last updated: 10 April 2026 14:05 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,15 +21,16 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (10 April 2026 01:02 BST)
+## Current Pending Work (10 April 2026 14:05 BST)
 
 Experiments 12–37 ALL COMPLETE. 690 tests pass.
 
-EXP 37 CONVERGED (10 April 2026 01:02 BST):
-  Target: bench/evidence.py, star, 16 rounds.
-  257 findings, γ=0.467. STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
-  Logs: bench/logs/exp37_evidence_20260409T050932Z/
-  Report: bench/logs/exp37_evidence_20260409T050932Z/exp37_report.json
+EXP 38 ROUND 0 COMPLETE — PAUSED (10 April 2026 14:05 BST):
+  Target: bench/reference_runner.py, star, 5 models, burst mode (5 phases).
+  26 findings, 14 confirmed by HIL verification (70% true positive).
+  Paused to fix immune/endocrine gaps before restart.
+  Logs: bench/logs/exp38_ouroboros_20260410T122030Z/
+  Full verification: experimental_notes/Exp38_R0_Verification_2026-04-10.md
 
 Uncommitted changes in working tree:
   M bench/directives/software/software_python_sk.txt
@@ -37,26 +38,29 @@ Uncommitted changes in working tree:
   M bench/directives/universal/expert_encoding_template.md
   M bench/logs/immune_shadow.log
   M bench/reference_runner.py
-  ?? bench/confer_exp38_plan.py
-  ?? bench/logs/confer_exp38_plan/
-  ?? experimental_notes/Exp38_Confer_Synthesis_2026-04-09.md
-  ?? experimental_notes/Exp38_Plan_2026-04-09.md
+  M bench/runner_core.py
+  M experimental_notes/Exp38_Plan_2026-04-09.md
+  ?? bench/burst_planner.py
+  ?? bench/confer_exp38_fitness.py
+  ?? bench/confer_exp38_fix_review.py
+  ?? bench/exp38_config.json
+  ?? bench/logs/confer_exp38_fitness/
+  ?? bench/logs/confer_exp38_fix_review/
+  ?? bench/logs/exp38_ouroboros_20260410T104416Z/
+  ?? bench/logs/exp38_ouroboros_20260410T122030Z/
+  ?? bench/monitor_exp38.sh
+  ?? experimental_notes/Sk_What_It_Means_2026-04-09.md
 
 Remote: up to date.
 
-EXP 38 PLANNED — Ouroboros: self-improving solution verification.
-  Plan: experimental_notes/Exp38_Plan_2026-04-09.md
-  Confer synthesis: experimental_notes/Exp38_Confer_Synthesis_2026-04-09.md
-  S_k pipeline: fully implemented in bench/reference_runner.py (9 confer fixes applied).
-  All test articles are subjects for study (not fixed context).
-  Execution: sequential burst + ITC switching per problem, final integration pass.
-  Composability is a HARD CONSTRAINT.
-
 NEXT STEPS:
-  1. Commit all Exp 38 prep work (runner, directives, plan, confer logs).
-  2. Run Exp 38 — the ouroboros: panel reviews runner + directives + architectures.
-  3. Cell type architecture and expert encoding methodology to be converged by panel.
-  4. Burst logic execution pattern as UX candidate for system.
+  1. Fix endocrine SEARCH/REPLACE parser (wire runner's parse_search_replace_blocks).
+  2. Fix _find_target_file fallback (CC2 target file = None).
+  3. Promote Formalisation Agent from shadow to active.
+  4. Add SymPy verification pathway for B-Cell math claims.
+  5. Decide which of the 14 confirmed runner bugs to fix before restart.
+  6. Restart Exp 38 from Round 0 with fixed immune/endocrine pipeline.
+  7. On successful convergence: commit all changes.
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

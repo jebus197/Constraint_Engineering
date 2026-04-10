@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 10 April 2026 01:02 BST
+Last updated: 10 April 2026 14:05 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -20,37 +20,53 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 **Repository:** `github.com/jebus197/Constraint_Engineering`
 **Local path:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/`
 
+**Visual architecture:** [`docs/CDSFL_Topology.svg`](../docs/CDSFL_Topology.svg) — whole-body topology map showing all components and their biological analogues.
+
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 38 ROUND 0 COMPLETE — PAUSED (10 April 2026 14:05 BST):**
+  Type: Ouroboros — system reviews and improves itself under structured falsification.
+  Target: `bench/reference_runner.py`, star topology, 5 models, burst mode (5 phases).
+  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
+  Burst architecture: `bench/burst_planner.py` (new module, ~350 lines).
+  Config: `bench/exp38_config.json`
+  Logs: `bench/logs/exp38_ouroboros_20260410T122030Z/`
+  **Round 0 results:** 26 raw findings, all with proposed fixes.
+  HIL verification: 14 CONFIRMED, 2 PARTIAL, 4 REJECTED (70% true positive).
+  Immune pipeline: 2 CONFIRMED, 1 REJECTED, 23 UNCERTAIN, 9 escalated to HIL.
+  Fix verification: 20/20 UNEVALUABLE (endocrine parser gap — see below).
+  S_k pipeline: 3/26 evaluated before pause, all ADMISSIBLE (sk=1.000).
+
+  **Paused to fix three immune/endocrine gaps before restart:**
+  1. Endocrine `_apply_fix_to_source()` doesn't handle `<<<< SEARCH/REPLACE` blocks
+     (runner has `parse_search_replace_blocks()` but endocrine was written before that).
+  2. Endocrine `_find_target_file()` returns None for CC2 (no file path in description).
+  3. B-Cell cannot ground mathematical claims — only AST constant extraction + SMT-LIB.
+     Formalisation Agent is shadow-only. Needs: activation + SymPy verification pathway.
+  These gaps prevent the immune system from self-verifying, defeating the ouroboros loop.
+
+  **Key confirmed bugs found by panel (14 of 20 unique claims):**
+  Most consequential cluster: status transition chain (F0/F4 + F2/F5/F9 + F6) —
+  escalation timer corrupted by add_verdict, verified findings unchallengeable,
+  direct status mutation bypasses resolve(). Also: dead config max_open_crit_high (F7/F23),
+  single-model MERGE kill (F8), weak confirmation quorum (F11), contested_count
+  includes terminal statuses (F14/F22).
+
+  **Architecture built this session:**
+  - `bench/burst_planner.py`: AST section detection, capability-scaled budgets,
+    phase planning (PHASE_TARGET_CHARS=30K), convergence overrides.
+  - Runner: burst integration, phase transitions, `_build_prompt()` helper, `--burst-mode` CLI.
+  - `runner_core.py`: DeepSeek L fixed (32K→99K), dispatch token validation gate.
+  - copytree fix: `symlinks=True`, pattern `"logs"` not `"bench/logs"`.
+
+  690 tests pass. Not yet committed.
+
 - **EXP 37 CONVERGED (10 April 2026 01:02 BST):**
   Target: `bench/evidence.py`, star topology, 5 models.
-  16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15 (2 consecutive passes): All conditions met: open_ch=51, contested=0, gamma=0.467 (soft). Novel=10 (advisory)..
-  257 raw findings → 257 canonical entries.
-  γ final=0.467 (strong depletion).
-  Per model: Gemini 87, ChatGPT 51, DeepSeek 48, CC2 40, Codex 31.
+  16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15.
+  257 raw findings → 222 canonical. γ final=0.467.
   Logs: `bench/logs/exp37_evidence_20260409T050932Z/`
-  Per round: [24, 24, 23, 17, 14, 18, 13, 8, 13, 7, 11, 28, 11, 17, 14, 15]
-  γ history: [0.000, 0.000, 0.320, 0.366, 0.399, 0.433, 0.467, 0.487, 0.500, 0.514, 0.512, 0.506, 0.503, 0.501, 0.486, 0.467]
-
-  **Qualitative observations** (add manually after sv):
-  <!-- Add: model reasoning behaviour, immune highlights,
-       mid-experiment fixes, key design findings -->
-
-- **EXP 38 PLANNED (10 April 2026 01:02 BST):**
-  Type: Ouroboros — system reviews and improves itself under structured falsification.
-  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
-  Test articles: runner, operational directive, encoding template, Python encoding,
-  cell type architecture, expert encoding methodology. All are subjects for study.
-  **S_k pipeline fully implemented** — 9 confer findings from CX+GE applied and verified:
-  (1) Regression gate copytree sandbox, (2) SEARCH/REPLACE line-state machine parser,
-  (3) E weighted arithmetic mean, (4) Ruff delta scoring, (5) nu_b/nu_f clamping +
-  R_k loop closure, (6) ESCALATE for unavailable gates, (7) S* edge cases (nu_f=0,
-  nu_b=1) with [0,1] clamping, (8) Directive sigma/nu residue cleaned, (9) Python
-  encoding aligned with runner.
-  **Execution design:** Sequential burst execution with ITC switching per problem,
-  final integration pass. Composability is a HARD CONSTRAINT.
-  690 tests pass. Not yet committed.
 <!-- SV:LATEST_EXP_END -->
 
 

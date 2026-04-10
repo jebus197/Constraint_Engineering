@@ -1,0 +1,677 @@
+Structured certificate
+
+Premises
+- HARD constraints:
+  - Mathematical consistency with the stated S_k / R_k / S* model.
+  - Code-path correctness for the supplied runner fragments.
+  - No fabricated certainty about unseen code outside provided artifacts.
+- SOFT constraints:
+  - Fitness-for-purpose judgment for Exp 38.
+  - Style/maintainability observations.
+- Scope boundary:
+  - I can verify the supplied artifacts and trace their internal consistency.
+  - I cannot fully prove whole-runner fitness without the omitted portions of `bench/reference_runner.py`. Any whole-runner claim beyond the shown path carries [SPECULATIVE].
+
+Concrete trace examples
+1. No SEARCH/REPLACE blocks:
+   - `compute_sk()` → `blocks=[]` → returns `ESCALATE`.
+   - This matches “no evidence available”, not rejection.
+2. SEARCH block appears twice:
+   - `apply_fix_blocks()` sees `modified.count(block.search) > 1` → `(None, 0)`.
+   - `compute_sk()` maps to `REJECTED`.
+3. Hard gates pass, regression unavailable, ruff=1.0, bandit=1.0:
+   - `A=1`, available effect gates = e3,e4 with weights 1,2.
+   - `E=(1/3)*1 + (2/3)*1 = 1`, `sk=1`.
+4. Hard gates pass, only one available effect gate with score 0:
+   - `E=0`, `sk=0`, `tristate="REJECTED"`.
+   - This is semantically coherent with the current implementation, though not exactly with the high-level tristate wording if “no evidence available” is interpreted strictly as all unavailable only.
+5. Threshold example:
+   - `nu_b=0.05, nu_f=0.20, q=0.5, R=0.5`
+   - `S*=(0.05+0.20-0.01-0.25)/(0.20*0.95)=-0.01/0.19≈-0.0526→0.0 after clamp`
+   - So any `sk>=0` passes computed threshold unless `s_floor>0`.
+   - Code does this.
+
+Formal conclusion
+- The 6 applied fixes mostly solve their target problems.
+- The core S_k, S*, and R_k math in code is largely consistent with the stated bounded model.
+- There remain several semantic mismatches and edge-case defects, one of them material:
+  - `e2` regression gate still does not implement the documented baseline semantics.
+  - `g2` compile gate ignores `source_path` context and compiles a temp file under an unrelated name, which can mis-score valid fixes involving filename-sensitive constructs.
+  - `compute_sk()` sets `tristate="ADMISSIBLE"` whenever `sk>0`, then only later applies S*; this works operationally but is semantically sloppy.
+  - `compute_rk()` silently rescales invalid `nu_b+nu_f>1`, which is inconsistent with the stated HARD constraint.
+- Verdict: not yet a clean GO. It is close, but I would issue NO-GO for Exp 38 as a research-grade runner until the remaining correctness issues are fixed.
+
+FFAF findings
+
+1. FIND — F1+F2 mostly fixed baseline-unavailable propagation and config anchoring, but one edge remains
+Location
+- `_run_effect_ruff`
+- `_run_effect_bandit`
+- `_capture_baseline`
+- `compute_sk`
+
+Evidence
+- Baselines now use `None` rather than `0`, and `compute_sk()` now calls:
+  - `baseline.get("ruff_violations")`
+  - `baseline.get("bandit_high_med")`
+  without zero default.
+- Both effect functions return `None` on tool failure (`returncode not in (0,1)`) and on wrong JSON type.
+- Temp files are created under `Path(source_path).parent`, so local config discovery is more likely to work.
+
+FOLLOW
+- This directly affects whether unavailable tools become false-perfect scores versus honest `ESCALATE`.
+- It also affects `E` renormalisation and final triage.
+
+ANALYSE
+- CONFIRMED: the original “tool unavailable collapses to baseline 0 / false score” problem is fixed.
+- UNCERTAIN edge case: anchoring to parent directory helps config discovery, but it does not guarantee config parity for tools that depend on repo-root-relative includes or current working directory. `ruff` typically handles nearest config; `bandit` config behavior may still depend on invocation context. This is not a demonstrated bug from the shown code, just residual environment sensitivity.
+- Minor regression risk: `NamedTemporaryFile(dir=anchor_dir)` will fail if `source_path` parent does not exist or is not writable. In normal runner use this should exist.
+
+Self-falsification
+- Falsifier: if baseline unavailability still becomes a numeric score, a broken/missing tool would produce `ADMISSIBLE` instead of `ESCALATE`.
+- Attempt: trace `baseline=None`, or invalid JSON during baseline capture.
+- Result: baseline key stays `None`; effect gate returns `None`; if all effect gates unavailable, `compute_sk()` returns `ESCALATE`. Survives.
+
+Fix
+- No fix required for the original issue.
+- Residual improvement only: run tools with explicit `cwd` at repo root or source parent for stronger config determinism. Not mandatory for the original finding.
+
+2. FIND — F3 regression gate fix solves the main false-positive bug, but e2 still violates documented baseline semantics
+Location
+- `_run_effect_regression`
+
+Evidence
+- Old defect described: unparseable output returned `1.0`.
+- New code:
+  - explicit parsed total → `passed/total`
+  - only `collected 0 items` with exit code 5 → `1.0`
+  - otherwise unparseable → `None`
+- That fixes the stated bug.
+- But the Python encoding says for e2:
+  - “Only tests that PASSED before the fix are counted. New failures = regression. Pre-existing failures excluded.”
+- Current implementation has no stored regression baseline at all. It just computes current `passed / (passed+failed)` on sandbox run.
+
+FOLLOW
+- This matters to S_k because existing failing tests can depress every proposed fix score even when the fix introduces no regression.
+- In a codebase with known red tests, good fixes can be under-scored or rejected.
+
+ANALYSE
+- CONFIRMED: F3 fixes the unparseable-output mis-score.
+- CONFIRMED: the e2 implementation is still inconsistent with the documented baseline/delta semantics.
+- This is material for Experiment 38 if the suite is not perfectly green at baseline. If all 690 tests are green at baseline, the practical impact is low for this run, but the semantic inconsistency remains.
+
+Self-falsification
+- Falsifier: if baseline test failures are impossible because Exp 38 requires green baseline, then e2 baseline omission is harmless.
+- Attempt: inspect provided text. You stated “All 690 existing tests pass after each fix,” but not explicitly that baseline before fixes is green. It likely is, but not guaranteed by the code.
+- Result: even if current experiment baseline is green, the code still mismatches the specified model and can mis-score future runs. Finding stands.
+
+Fix
+- CONFIRMED issue only; proposed fix below.
+
+3. FIND — F4 ambiguous block rejection works, but error reporting is now semantically inaccurate
+Location
+- `apply_fix_blocks`
+- `compute_sk`
+
+Evidence
+- `apply_fix_blocks()` now rejects if `modified.count(block.search) > 1`.
+- In `compute_sk()`, any `modified is None or applied == 0` becomes:
+  - `tristate="REJECTED"`
+  - `gate_details={"error": "SEARCH block content not found in source"}`
+
+FOLLOW
+- Ambiguous match is a different failure mode from “not found”.
+- This affects telemetry and debugging, not core scoring.
+
+ANALYSE
+- CONFIRMED: uniqueness check fixes the ambiguity bug.
+- CONFIRMED: the surfaced error message is now inaccurate for ambiguity and for “no blocks matched target_path”.
+
+Self-falsification
+- Falsifier: if inaccurate messaging causes no operational harm, this is cosmetic only.
+- Attempt: trace downstream use. `stats["results"]`, logs, and registry store this error. Human review depends on it.
+- Result: not a scoring bug, but it does impair diagnosis. Low severity but real.
+
+Fix
+- Return structured failure reason from `apply_fix_blocks()` instead of bare `None,0`.
+
+4. FIND — F5 input clamping fixes out-of-range probability math, but violates the stated HARD constraint semantics
+Location
+- `compute_rk`
+- `check_sk_threshold`
+
+Evidence
+- Inputs are clamped to `[0,1]`.
+- If `nu_b + nu_f > 1`, code rescales both proportionally:
+  ```python
+  scale = 1.0 / (nu_b + nu_f)
+  nu_b *= scale
+  nu_f *= scale
+  ```
+- The directive says:
+  - “HARD CONSTRAINT: nu_b + nu_f must not exceed 1”
+  - “values are inconsistent and must be revised”
+
+FOLLOW
+- Silent rescaling mutates model parameters rather than rejecting invalid input.
+- This can hide bad upstream estimates and produce misleading `R_new` / `S*`.
+
+ANALYSE
+- CONFIRMED: clamping prevents numeric nonsense.
+- CONFIRMED: silent proportional rescaling is semantically inconsistent with “HARD CONSTRAINT”.
+- For a research runner, silent repair is the wrong behavior unless explicitly logged as coercion or surfaced as invalid input.
+
+Self-falsification
+- Falsifier: perhaps the runner intentionally chooses robust execution over strict validity.
+- Attempt: compare to your own task wording: “Does the code implementation match these definitions?” Under that standard, silent scaling does not match.
+- Result: finding stands.
+
+Fix
+- Raise or return invalid-parameter status instead of silently scaling, or at minimum record coercion in result metadata.
+
+5. FIND — F6 filter relaxation fixes parser-tolerance mismatch
+Location
+- `_evaluate_sk_for_findings`
+
+Evidence
+- Filter changed from checking literal `"<<<< SEARCH"` to any `"<<<<"`.
+- Parser itself accepts any line starting with `<<<<` and containing `SEARCH`.
+
+FOLLOW
+- This prevents valid fix texts from being skipped before parsing.
+
+ANALYSE
+- CONFIRMED: this fix solves the mismatch it targeted.
+- Edge case: it may now evaluate texts containing `<<<<` for unrelated reasons, but `compute_sk()` will return `ESCALATE` if no valid blocks parse. That is acceptable.
+
+Self-falsification
+- Falsifier: broad filter could create false evaluations and distort stats.
+- Attempt: unrelated prose with `<<<<` enters pipeline, `compute_sk()` returns `ESCALATE`, `evaluated += 1`.
+- Result: yes, telemetry can be slightly noisier. But compared with silently skipping valid fixes, this is the better failure mode. Fix stands.
+
+Fix
+- Optional refinement: call parser first and only count/evaluate if at least one block header parses.
+
+6. FIND — F7 parser delimiter cleanup is correct but trivial
+Location
+- `parse_search_replace_blocks`
+
+Evidence
+- Duplicate condition removed; semantics unchanged.
+
+FOLLOW
+- No downstream functional change beyond readability.
+
+ANALYSE
+- CONFIRMED as cleanup, not a substantive defect fix.
+
+Self-falsification
+- No stronger falsifier needed; this is straightforward.
+
+Fix
+- None.
+
+7. FIND — `g2` compile gate is still context-insensitive and can reject valid fixes
+Location
+- `_run_hard_gate_compile`
+
+Evidence
+- Signature includes `source_path`, but it is unused.
+- Temp file is created with arbitrary temp basename:
+  ```python
+  with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, ...)
+  ```
+- `py_compile.compile(tmp_path, doraise=True)` compiles that temp file.
+- This can differ from compiling the file at its real path/name for filename-sensitive constructs. Example:
+  - module contains `if __name__ == "__main__":` — compile unaffected.
+  - but relative assumptions from encoding declarations, path-dependent messages, and some syntax contexts tied to file naming are limited.
+- Stronger issue: because the temp file is not anchored near source, any future compile-time behaviors depending on source encoding cookie resolution or surrounding filesystem are less likely, though compile is mostly self-contained.
+
+FOLLOW
+- The encoding claims g2 is “Byte Compilation” of the modified source file. Operationally, this should emulate the target file context as closely as practical.
+- More importantly, F1/F2 fixed context anchoring for ruff/bandit, but not compile; this asymmetry means one gate still evaluates a decontextualized artifact.
+
+ANALYSE
+- UNCERTAIN on practical frequency of mis-score, but CONFIRMED as an implementation inconsistency and missed edge.
+- The larger problem is semantic: `source_path` is dead parameter here.
+
+Self-falsification
+- Falsifier: `py_compile` only needs file contents; path context is irrelevant.
+- Attempt: in most cases that is true. This lowers severity.
+- Result: issue survives as consistency/edge-case concern, not a likely common crash source.
+
+Fix
+- Compile in a temp file anchored to source directory and ideally preserve basename.
+
+8. FIND — `compute_sk()` tristate semantics are internally inconsistent with the documented architecture
+Location
+- `compute_sk`
+- `_evaluate_sk_for_findings`
+
+Evidence
+- `compute_sk()` returns `tristate="ADMISSIBLE" if sk > 0 else "REJECTED"`.
+- Then `_evaluate_sk_for_findings()` may overwrite `"ADMISSIBLE"` to `"REJECTED"` if `sk < S*`.
+- The stated model defines:
+  - ADMISSIBLE iff hard gates pass and `S_k >= S*`
+  - REJECTED iff hard gate fail or `S_k < S*`
+  - ESCALATE iff no evidence available
+
+FOLLOW
+- This split is operationally workable, but semantically `compute_sk()` does not itself compute the documented tristate.
+- Registry entries transiently represent a pre-threshold pseudo-tristate.
+
+ANALYSE
+- CONFIRMED semantic inconsistency, low-to-moderate severity.
+- No numerical error, but the API contract is muddy.
+
+Self-falsification
+- Falsifier: perhaps `compute_sk()` intentionally computes only raw gate status, and thresholding belongs outside it.
+- Attempt: if so, field should not be named final `tristate`; it should be `prethreshold_state`.
+- Result: issue stands.
+
+Fix
+- Either move thresholding into `compute_sk()` or rename the state.
+
+9. FIND — `check_sk_threshold()` return value/reporting has a minor mismatch
+Location
+- `check_sk_threshold`
+
+Evidence
+- It returns `(passes, round(s_star, 4))`.
+- But comparison uses unrounded `effective_threshold = max(s_star, s_floor)`.
+- When `s_floor > s_star`, the reported `s_star` is not the actual operative threshold.
+
+FOLLOW
+- Logs can say `S*=x` while the true comparison was against `s_floor`.
+
+ANALYSE
+- CONFIRMED minor telemetry mismatch.
+- Not a mathematical error in accept/reject itself.
+
+Self-falsification
+- Falsifier: if `s_floor=0.0` in Exp 38, issue is dormant.
+- Attempt: config default is 0.0, and plan says start with computed S* only.
+- Result: dormant for current run, but still a semantics bug.
+
+Fix
+- Return both `s_star_raw` and `effective_threshold`, or report effective threshold.
+
+10. FIND — `apply_fix_blocks()` may silently ignore blocks for other files, which conflicts with multi-block fix semantics
+Location
+- `apply_fix_blocks`
+
+Evidence
+- It only applies blocks matching `target_path` by exact path or basename.
+- All other blocks are skipped, not rejected.
+- `compute_sk()` rejects only if `applied == 0`.
+
+FOLLOW
+- A multi-file proposed fix can be partially applied and evaluated as if complete, even though omitted edits may be required for correctness.
+- Exp 38 plan says multiple blocks may be proposed; current pipeline is effectively single-target-file.
+
+ANALYSE
+- CONFIRMED semantic limitation.
+- This may be acceptable if Exp 38 intentionally evaluates only fixes to one target artifact at a time, but then multi-file fixes should be rejected or explicitly unsupported.
+- Otherwise this can mis-score incomplete fixes as admissible.
+
+Self-falsification
+- Falsifier: current task may only target `bench/reference_runner.py`.
+- Attempt: yes, your fix proposals are restricted to that file in this review.
+- Result: low immediate risk for this round, but still an end-to-end fit concern.
+
+Fix
+- Reject fix texts containing matched SEARCH/REPLACE blocks for files outside the active target, or expand pipeline to apply all blocks in sandbox.
+
+Mathematical model consistency
+
+Matches
+- `S_k = A * E`: yes.
+- `A = product of hard gates`: yes, `A = g1_score * g2_score`.
+- `E = weighted arithmetic mean renormalised over available gates`: yes.
+- `R_k` bounded re-injection:
+  - `nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f)`: yes.
+  - `R_k = R_base*(1-nu_eff) + nu_eff`: yes.
+- `S* = (nu_b + nu_f - nu_b*nu_f - q*R) / (nu_f*(1-nu_b))`: yes.
+
+Mismatches / edge cases
+1. e2 regression baseline semantics
+- Code does not implement “only tests passed in baseline count.”
+- This is the biggest model/code mismatch.
+
+2. HARD constraint handling for `nu_b + nu_f <= 1`
+- Code silently rescales instead of rejecting invalid inputs.
+- Numerically stabilizing, semantically inconsistent.
+
+3. Tristate semantics split across functions
+- Final documented tristate includes S*.
+- Code’s `compute_sk()` tristate is pre-threshold only.
+
+4. ESCALATE semantics
+- Current code escalates only when no effect evidence is available.
+- That matches your user summary.
+- But Artifact 7 / template text also contains a nearby notion: when no graded gates apply, E defaults to 1.0 and escalate if warranted. The implementation does not model “not applicable” separately from “unavailable”. For Exp 38’s hardcoded Python-only runner, that’s acceptable, but architecturally incomplete.
+
+5. Security scoring mismatch with encoding text
+- Encoding says:
+  - “Deduct 0.5 per new HIGH, 0.2 per new MEDIUM.”
+- Code deducts `0.5` per new HIGH/MEDIUM combined, no distinction.
+- This is a true semantic inconsistency with Artifact 6.
+
+6. Regression “no tests collected” = 1.0
+- This matches current code comment, but whether it matches intended evidence semantics is debatable.
+- If test suite is configured and collects zero items, calling it perfect regression evidence is optimistic. For Exp 38 it is probably harmless if test command is valid and suite exists.
+
+End-to-end fit trace
+
+Config load
+- `RunnerConfig.from_dict()` depends on dataclass fields (`__dataclass_fields__`), so the shown class must indeed be a dataclass. Your note says the previous false positive on missing `@dataclass` was excluded, so I assume that is true.
+- `__post_init__()` behavior is coherent.
+
+Preflight
+- S_k baseline capture runs once if `cfg.sk_enabled`.
+- Baseline only captures ruff/bandit, not regression baseline. That is a fit gap versus model docs.
+
+Round loop / model dispatch
+- Not enough code shown to verify round orchestration. [SPECULATIVE]
+- The clipped `awareness_preamble` snippet appears truncated in the artifact only; I assume actual code is complete.
+
+Finding evaluation
+- `_evaluate_sk_for_findings()` walks registry entries and filters on `status` and presence of `<<<<`.
+- Valid enough.
+- Potential silent issue: entries with malformed block text still count as evaluated and may inflate ESCALATE counts.
+
+S_k pipeline
+- Parser: line-oriented, reasonably robust.
+- Pre-gate application:
+  - exact string match required
+  - ambiguity rejected
+- Hard gates:
+  - AST then compile
+- Effect gates:
+  - regression in sandbox
+  - ruff/bandit with baseline deltas
+
+Threshold check
+- Applied only for pre-threshold “ADMISSIBLE” scores.
+- Numerically correct for current formula.
+
+R_k update
+- Formula implemented correctly.
+- Input sanitization may hide invalid metadata.
+
+Convergence check
+- Not shown, cannot verify. [SPECULATIVE]
+
+What could still crash
+- `os.unlink(tmp_path)` in finally blocks can raise if temp creation succeeded but file already removed externally; low probability.
+- `NamedTemporaryFile(dir=anchor_dir)` can fail if directory unwritable.
+- `shutil.copytree(REPO_ROOT, sandbox, ignore=...)` can fail on special files, permissions, very large tree.
+- `target_path.relative_to(REPO_ROOT)` fails if path roots mismatch; code handles with `None`.
+- `json.loads(result.stdout)` on enormous tool output can consume memory; unlikely here.
+
+What could still silently mis-score
+- Existing red tests depress e2 for all fixes.
+- Multi-file fixes partially ignored.
+- Bandit score severity not implemented as documented.
+- Silent scaling of invalid `nu` metadata.
+- `compute_sk()` pre-threshold tristate can be misread by downstream consumers if any exist besides `_evaluate_sk_for_findings`.
+
+Go / no-go
+
+Verdict: NO-GO.
+
+Reason
+- The runner is close, and the 6 applied fixes substantially improved it.
+- But for Experiment 38, where the point is to validate the S_k framework itself, the remaining inconsistencies are too central to wave through:
+  1. e2 regression gate still does not implement documented baseline semantics.
+  2. e4 bandit scoring does not match the Python encoding.
+  3. HARD constraint `nu_b + nu_f <= 1` is silently coerced, not enforced.
+  4. Multi-file fix semantics remain under-specified/partially implemented.
+  5. `compute_sk()` tristate contract is semantically off.
+
+That is not “broken beyond use”; it is “not yet research-clean for a self-validating experiment.”
+
+CONFIRMED fixes targeting `bench/reference_runner.py`
+
+Fix A — implement structured failure reasons for block application and correct error surfacing
+```python
+<<<< SEARCH bench/reference_runner.py
+def apply_fix_blocks(
+    source: str, blocks: List[FixBlock], target_path: str,
+) -> Tuple[Optional[str], int]:
+    """Apply fix blocks to source. Returns (modified_source, blocks_applied).
+
+    Only applies blocks whose file_path matches target_path (by basename or
+    full path). Returns None if any matched block's SEARCH content is not
+    found in the source (pre-gate failure).
+    """
+    modified = source
+    applied = 0
+    for block in blocks:
+        # Match by basename or full path
+        if not (block.file_path == target_path or
+                Path(block.file_path).name == Path(target_path).name):
+            continue
+        if block.search not in modified:
+            _log(f"  S_k: SEARCH block not found in source "
+                 f"(first 60 chars: {block.search[:60]!r})")
+            return None, 0
+        if modified.count(block.search) > 1:
+            _log(f"  S_k: SEARCH block is ambiguous ({modified.count(block.search)} "
+                 f"occurrences, first 60 chars: {block.search[:60]!r})")
+            return None, 0
+        modified = modified.replace(block.search, block.replace, 1)
+        applied += 1
+    return modified, applied
+====
+def apply_fix_blocks(
+    source: str, blocks: List[FixBlock], target_path: str,
+) -> Tuple[Optional[str], int, Optional[str]]:
+    """Apply fix blocks to source.
+
+    Returns (modified_source, blocks_applied, error_reason).
+
+    Only applies blocks whose file_path matches target_path (by basename or
+    full path). Returns modified_source=None on pre-gate failure with a
+    machine-readable error_reason.
+    """
+    modified = source
+    applied = 0
+    matched = 0
+    for block in blocks:
+        if not (block.file_path == target_path or
+                Path(block.file_path).name == Path(target_path).name):
+            continue
+        matched += 1
+        if block.search not in modified:
+            _log(f"  S_k: SEARCH block not found in source "
+                 f"(first 60 chars: {block.search[:60]!r})")
+            return None, 0, "search_not_found"
+        occurrences = modified.count(block.search)
+        if occurrences > 1:
+            _log(f"  S_k: SEARCH block is ambiguous ({occurrences} "
+                 f"occurrences, first 60 chars: {block.search[:60]!r})")
+            return None, 0, "search_ambiguous"
+        modified = modified.replace(block.search, block.replace, 1)
+        applied += 1
+
+    if matched == 0:
+        return None, 0, "no_blocks_for_target"
+
+    return modified, applied, None
+>>>> REPLACE
+```
+
+```python
+<<<< SEARCH bench/reference_runner.py
+    modified, applied = apply_fix_blocks(source, blocks, source_path)
+    if modified is None or applied == 0:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            gate_details={"error": "SEARCH block content not found in source"},
+            blocks_parsed=len(blocks), blocks_applied=0,
+        )
+====
+    modified, applied, apply_error = apply_fix_blocks(source, blocks, source_path)
+    if modified is None or applied == 0:
+        return SkResult(
+            sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
+            gate_details={"error": apply_error or "fix_blocks_not_applied"},
+            blocks_parsed=len(blocks), blocks_applied=0,
+        )
+>>>> REPLACE
+```
+
+Fix B — align g2 compile gate with source context
+```python
+<<<< SEARCH bench/reference_runner.py
+def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
+    """g2: py_compile (replaces import resolution). Returns (score, detail)."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".py", delete=False, encoding="utf-8",
+    ) as tmp:
+        tmp.write(modified_source)
+        tmp_path = tmp.name
+    try:
+        py_compile.compile(tmp_path, doraise=True)
+        return 1, "py_compile succeeded"
+    except py_compile.PyCompileError as e:
+        return 0, f"CompileError: {e}"
+    finally:
+        os.unlink(tmp_path)
+====
+def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
+    """g2: py_compile (replaces import resolution). Returns (score, detail)."""
+    source_name = Path(source_path).name if source_path else "tmp.py"
+    anchor_dir = str(Path(source_path).parent) if source_path else None
+    tmp_path = str(Path(anchor_dir or tempfile.gettempdir()) / source_name)
+    fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp:
+            tmp.write(modified_source)
+        py_compile.compile(tmp_path, doraise=True)
+        return 1, "py_compile succeeded"
+    except py_compile.PyCompileError as e:
+        return 0, f"CompileError: {e}"
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass
+>>>> REPLACE
+```
+
+Fix C — enforce documented bandit severity scoring
+```python
+<<<< SEARCH bench/reference_runner.py
+        try:
+            data = json.loads(result.stdout)
+            if not isinstance(data, dict):
+                return None, "bandit output was not JSON object"
+            results_list = data.get("results", [])
+            high_med = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+            )
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"bandit output parse failed: {e}"
+        new_findings = max(0, high_med - baseline_findings)
+        score = max(0.0, 1.0 - new_findings * 0.5)
+        return score, f"{high_med} HIGH/MEDIUM (baseline: {baseline_findings}, new: {new_findings})"
+====
+        try:
+            data = json.loads(result.stdout)
+            if not isinstance(data, dict):
+                return None, "bandit output was not JSON object"
+            results_list = data.get("results", [])
+            high_count = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() == "HIGH"
+            )
+            med_count = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() == "MEDIUM"
+            )
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"bandit output parse failed: {e}"
+
+        baseline_high = baseline_findings.get("high", 0)
+        baseline_med = baseline_findings.get("medium", 0)
+        new_high = max(0, high_count - baseline_high)
+        new_med = max(0, med_count - baseline_med)
+        score = max(0.0, 1.0 - new_high * 0.5 - new_med * 0.2)
+        return score, (
+            f"{high_count} HIGH/{med_count} MEDIUM "
+            f"(baseline: {baseline_high} HIGH/{baseline_med} MEDIUM, "
+            f"new: {new_high} HIGH/{new_med} MEDIUM)"
+        )
+>>>> REPLACE
+```
+
+```python
+<<<< SEARCH bench/reference_runner.py
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_high_med": None,
+    }
+====
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_high_med": None,
+    }
+>>>> REPLACE
+```
+
+That second block is not needed as written; the actual required baseline fix is:
+
+```python
+<<<< SEARCH bench/reference_runner.py
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_high_med": None,
+    }
+====
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_high_med": None,
+    }
+>>>> REPLACE
+```
+
+I will not pretend that is a useful patch. The correct bandit baseline change requires the corresponding `_capture_baseline` and call-site code, but I cannot produce an exact SEARCH block for those unseen surrounding lines with confidence beyond the shown fragment. So I am not claiming a machine-valid patch for that portion.
+
+Fix D — stop silently rescaling invalid nu parameters
+```python
+<<<< SEARCH bench/reference_runner.py
+    if nu_b + nu_f > 1.0:
+        scale = 1.0 / (nu_b + nu_f)
+        nu_b *= scale
+        nu_f *= scale
+====
+    if nu_b + nu_f > 1.0:
+        raise ValueError(
+            f"invalid re-injection parameters: nu_b + nu_f = {nu_b + nu_f:.4f} > 1"
+        )
+>>>> REPLACE
+```
+
+Apply same replacement in both `compute_rk()` and `check_sk_threshold()`.
+
+Falsification pass summary
+- Pass 1: identified fix-validation path and math consistency issues.
+- Pass 2: challenged whether some were merely style concerns; retained only issues with scoring/semantic consequence.
+- Pass 3: challenged whether e2 baseline omission matters in a green suite; retained because model/code mismatch remains and can affect future runs.
+- Pass 4: challenged whether g2 context issue is material; downgraded severity but retained as missed edge.
+- Pass 5: no further retractions.
+
+Survivors
+- F1+F2: verified as effective.
+- F3: verified as effective for its stated bug; e2 baseline issue remains separate.
+- F4: verified as effective; telemetry wording regression remains.
+- F5: numerically robust but semantically inconsistent with HARD constraint.
+- F6: verified as effective.
+- F7: harmless cleanup.
+- Additional confirmed residual issues: e2 baseline semantics, e4 severity scoring mismatch, silent `nu` coercion, pre-threshold tristate semantics, single-file-only partial application.
+
+Definitive stance
+- The applied fixes improved the runner substantially, but the runner is not yet fit-for-purpose as a research-clean Exp 38 validator. My verdict is NO-GO until the regression baseline semantics and parameter-validity handling are corrected, with bandit scoring alignment strongly recommended in the same patch set.

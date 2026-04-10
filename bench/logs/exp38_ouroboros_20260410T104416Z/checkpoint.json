@@ -1,0 +1,1213 @@
+{
+  "completed_round": 0,
+  "timestamp": "2026-04-10T10:58:38.667047+00:00",
+  "all_findings": [
+    [
+      {
+        "finding_id": "ChatGPT_F001",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.98,
+        "abstraction_index": 0.31,
+        "description": "FIND \u2014 bench/reference_runner.py, main(), JSON-config path handling. When --config is supplied, the runner still dereferences parser-required CLI attributes that are absent for the preflight subcommand and are not guaranteed to be supplied for config-driven runs. Evidence: build_parser() defines --test-article and the rest only on the 'run' subparser, but main() unconditionally executes `if args.test_article:` and later `if args.pattern not in INTERACTION_PATTERN_PRESETS:` after `cfg = RunnerConfig.from_json(args.config)`. In argparse, subparser-specific attributes are not reliably present on other subcommands; even on `run`, this logic contradicts the documented usage `python3 bench/reference_runner.py run --config experiment.json` because required=True on --test-article forces a CLI value before config loading. This blocks the advertised config-only entry path.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\", required=True,\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=[],\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", default=\"star\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\", default=\"directed\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\", default=\"fff\")\n    run_p.add_argument(\"--max-rounds\", type=int, default=21)\n    run_p.add_argument(\"--extension-cap\", type=int, default=24)\n    run_p.add_argument(\"--wall-clock-cap\", type=int, default=28800,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int, default=12)\n    run_p.add_argument(\"--models\", nargs=\"+\",\n                       default=[\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"])\n    run_p.add_argument(\"--experiment-name\", default=\"\")\n    run_p.add_argument(\"--domain\", default=\"software\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float, default=0.25)\n    run_p.add_argument(\"--rho-rolling-window\", type=int, default=3)\n    run_p.add_argument(\"--consecutive-rounds\", type=int, default=2)\n    run_p.add_argument(\"--config\", help=\"JSON config file (overrides CLI args)\")\n====\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\",\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=None,\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\")\n    run_p.add_argument(\"--max-rounds\", type=int)\n    run_p.add_argument(\"--extension-cap\", type=int)\n    run_p.add_argument(\"--wall-clock-cap\", type=int,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int)\n    run_p.add_argument(\"--models\", nargs=\"+\")\n    run_p.add_argument(\"--experiment-name\")\n    run_p.add_argument(\"--domain\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float)\n    run_p.add_argument(\"--rho-rolling-window\", type=int)\n    run_p.add_argument(\"--consecutive-rounds\", type=int)\n    run_p.add_argument(\"--config\", help=\"JSON config file (base config; explicit CLI flags override it)\")\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON only when explicitly provided.\n        override_map = {\n            \"test_article\": getattr(args, \"test_article\", None),\n            \"context_files\": getattr(args, \"context\", None),\n            \"topology\": getattr(args, \"topology\", None),\n            \"relay_mode\": getattr(args, \"relay_mode\", None),\n            \"pattern\": getattr(args, \"pattern\", None),\n            \"max_rounds\": getattr(args, \"max_rounds\", None),\n            \"extension_cap\": getattr(args, \"extension_cap\", None),\n            \"wall_clock_cap_s\": getattr(args, \"wall_clock_cap\", None),\n            \"earliest_stop_round\": getattr(args, \"earliest_stop\", None),\n            \"models\": getattr(args, \"models\", None),\n            \"experiment_name\": getattr(args, \"experiment_name\", None),\n            \"domain\": getattr(args, \"domain\", None),\n            \"rho_threshold\": getattr(args, \"rho_threshold\", None),\n            \"rho_rolling_window\": getattr(args, \"rho_rolling_window\", None),\n            \"consecutive_rounds_required\": getattr(args, \"consecutive_rounds\", None),\n        }\n        for attr, value in override_map.items():\n            if value is not None:\n                setattr(cfg, attr, value)\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article or \"\",\n            context_files=args.context or [],\n            topology=args.topology or \"star\",\n            relay_mode=args.relay_mode or \"directed\",\n            pattern=args.pattern or \"fff\",\n            max_rounds=args.max_rounds if args.max_rounds is not None else 21,\n            extension_cap=args.extension_cap if args.extension_cap is not None else 24,\n            wall_clock_cap_s=args.wall_clock_cap if args.wall_clock_cap is not None else 28800,\n            earliest_stop_round=args.earliest_stop if args.earliest_stop is not None else 12,\n            models=args.models or [\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"],\n            experiment_name=args.experiment_name or \"\",\n            domain=args.domain or \"software\",\n            resume=args.resume,\n            rho_threshold=args.rho_threshold if args.rho_threshold is not None else 0.25,\n            rho_rolling_window=args.rho_rolling_window if args.rho_rolling_window is not None else 3,\n            consecutive_rounds_required=args.consecutive_rounds if args.consecutive_rounds is not None else 2,\n        )\n\n    if not cfg.test_article:\n        print(\"Missing test article. Provide --test-article or set test_article in --config.\",\n              file=sys.stderr)\n        sys.exit(1)\n\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_F002",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.93,
+        "abstraction_index": 0.34,
+        "description": "FIND \u2014 bench/reference_runner.py, run_experiment(), cumulative context accounting is computed from response lengths instead of prompt/context lengths. Evidence: after Endocrine setup, the loop updates `per_model_context[label] = per_model_context.get(label, 0) + len(text)` and `cumulative_context_chars += len(text)` for each model response, then passes `cumulative_context_chars` to `endo.run(..., cumulative_context_chars=cumulative_context_chars, context_budget=max(CONTEXT_CHAR_BUDGET.values()), ...)`. The variable name and endocrine API indicate context budget tracking, but the implementation measures output volume, not input context sent to models. This makes the telemetry and any budget-based pacing logic silently wrong.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for label, text in responses.items():\n            per_model_context[label] = per_model_context.get(label, 0) + len(text)\n            cumulative_context_chars += len(text)\n====\n        for label, prompt_chars in per_model_prompt_chars.items():\n            per_model_context[label] = per_model_context.get(label, 0) + prompt_chars\n            cumulative_context_chars += prompt_chars\n>>>> REPLACE",
+        "verified": true
+      },
+      {
+        "finding_id": "ChatGPT_F003",
+        "model_id": "ChatGPT",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.89,
+        "abstraction_index": 0.36,
+        "description": "FIND \u2014 bench/reference_runner.py, fingerprint learning stores response length as if it were context capacity, corrupting ITC recovery. Evidence: `_update_observed_fingerprint(..., findings_count, response_chars, dispatch_error=None)` updates `max_successful_context_chars` and `max_failed_context_chars` from the `response_chars` argument. In the main loop it is called as `_update_observed_fingerprint(..., len(model_findings), len(model_text), dispatch_error=dispatch_err)`, where `model_text` is the model output, not the dispatched prompt/context size. `_itc_build_recovery_prompt()` then interprets `max_successful_context_chars` as a safe prompt budget and truncates prompts when `len(base_prompt) > max_ok_chars`. The recorded metric and its consumer disagree, so adaptive recovery uses the wrong variable.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, response_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n====\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, prompt_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), response_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif response_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), response_chars)\n====\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), prompt_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif prompt_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), prompt_chars)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), len(model_text), dispatch_error=dispatch_err,\n            )\n====\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), per_model_prompt_chars.get(model_label, 0), dispatch_error=dispatch_err,\n            )\n>>>> REPLACE",
+        "verified": true
+      },
+      {
+        "finding_id": "Codex_F001",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.93,
+        "abstraction_index": 0.77,
+        "description": "FIND: `bench/reference_runner.py`, function `_dispatch_single_model()`, and its callers `_dispatch_round_star()` / `_dispatch_round_relay()`. The ITC recovery adaptations are computed and stored, but the dispatch path never applies them. Evidence: `_itc_adapt()` sets `state[\"adaptation\"]` to values such as `\"retry\"`, `\"strip_context\"`, `\"change_focus\"`, `\"restart_fresh\"`, and `_itc_get_adaptation()` is consulted by `_make_prompt()` only for `\"change_focus\"` and, in relay mode, `\"strip_context\"`. The helper `_itc_build_recovery_prompt()` exists specifically to build reduced-context/fresh-instance prompts, but it is never called anywhere in the file. In `_dispatch_single_model()`, the final `prompt` passed to `dispatch_to_model()` or `_multiturn_fallback()` is always the unmodified caller-supplied prompt. As a result, ITC classifications do not trigger the intended recovery behavior for star topology and only partially affect relay topology via prompt prefixes, not true prompt rebuilding.",
+        "proposed_fix": "<<<< OLD\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== NEW\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n    observed_fingerprints: Optional[Dict[str, Dict[str, Any]]] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_F002",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.91,
+        "abstraction_index": 0.82,
+        "description": "FIND: `bench/reference_runner.py`, main round loop in `run_experiment()`, immediately after `immune_result = brain.run_immune_pipeline(findings)`. The runner ignores the immune pipeline\u2019s filtered output and instead marks registry entries verified using the original unfiltered `findings` list. Evidence: `immune_result` is assigned but never used except discarded. The loop `for f in findings: if f.verified: ... registry.mark_verified(...)` iterates over raw findings, not `immune_result.filtered_findings`. In context, `bench/immune_agents.py::run_immune_pipeline()` can reject findings, mark some as escalated, and only mark `verified=True` on `filtered_findings` after programmatic fix evaluation. Therefore the runner is consulting the wrong object set and also missing the pipeline\u2019s final filtered verdicts entirely.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n        for f in findings:\n            if f.verified:\n                canonical = registry.lookup_alias(f.model_id, f.finding_id)\n                if canonical:\n                    registry.mark_verified(canonical)\n====\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n\n        for f in immune_result.rejected_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if canonical and registry.entries.get(canonical, {}).get(\"status\") in (\"OPEN\", \"CONTESTED\"):\n                registry.resolve(canonical, \"UNCONFIRMED\", round_idx)\n\n        for f in immune_result.filtered_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if not canonical:\n                continue\n            if f.verified:\n                registry.mark_verified(canonical)\n            if f.escalated:\n                registry.entries[canonical][\"escalated\"] = True\n>>>> REPLACE",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_F003",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.88,
+        "abstraction_index": 0.74,
+        "description": "FIND: `bench/reference_runner.py`, function `_find_or_create_logs_dir()`, resume branch. It searches for `checkpoint.json`, but the runner itself persists state to `runner_state.json` and uses `brain.load_checkpoint()` for the brain state. Evidence: `_find_or_create_logs_dir()` returns an old log directory only if `(c / \"checkpoint.json\").exists()`. In the same file, the runner writes `runner_state.json` explicitly, not `checkpoint.json`, and never writes a top-level `checkpoint.json`. Therefore resume directory discovery can fail to locate resumable runs created by this runner, causing resume mode to start a new log directory instead of reusing the prior experiment directory.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n====\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"runner_state.json\").exists() or (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n>>>> REPLACE",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_F004",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 5,
+        "severity": 0.86,
+        "abstraction_index": 0.79,
+        "description": "FIND: `bench/reference_runner.py`, function `_compute_rho()`. It computes `round_idx = len(raw_counts) - 1` and compares that zero-based value to `cfg.rho_earliest_round`, which elsewhere is configured and logged as human round numbers (`earliest_stop_round`, default 12). Evidence: after the first completed round, `len(raw_counts)==1`, so `round_idx==0`; at completed round 12, `round_idx==12` only after 13 rounds of data. The runner log labels rounds directly with `round_idx` from the main loop, and `RunnerConfig.__post_init__()` sets `rho_earliest_round = earliest_stop_round`. Therefore churn detection is delayed by one round relative to the configured stop round and to the log semantics used elsewhere.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    round_idx = len(raw_counts) - 1\n    churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n====\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    current_round = len(raw_counts)\n    churn = rho_avg < cfg.rho_threshold and current_round >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n>>>> REPLACE",
+        "verified": false
+      },
+      {
+        "finding_id": "Codex_F005",
+        "model_id": "Codex",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.84,
+        "abstraction_index": 0.83,
+        "description": "FIND: `bench/reference_runner.py`, `main()`, config-loading branch for `--config`. The parser still requires `--test-article` on the `run` subcommand even when `--config` is supplied, contradicting the documented usage `python3 bench/reference_runner.py run --config experiment.json`. Evidence: `build_parser()` declares `run_p.add_argument(\"--test-article\", required=True, ...)`. In `main()`, there is explicit support for `if getattr(args, \"config\", None): cfg = RunnerConfig.from_json(args.config)`, but argparse will reject `run --config experiment.json` before that code runs because the required `--test-article` is missing.",
+        "proposed_fix": "<<<< OLD\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n==== NEW\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        if not args.test_article:\n            parser.error(\"--test-article is required unless --config is provided\")\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if not cfg.test_article:\n        parser.error(\"Configuration must provide test_article or pass --test-article\")\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "Gemini_UNSTRUCTURED",
+        "model_id": "Gemini",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.3,
+        "abstraction_index": 0.3,
+        "description": "{\n  \"FINDING_ID\": \"F001\",\n  \"SEVERITY\": 0.95,\n  \"FLAW_CLASS\": 1,\n  \"ABSTRACTION_INDEX\": 0.8,\n  \"DESCRIPTION\": \"FIND: The finding state transitions in `_update_finding_statuses` are broken. `OPEN` findings that are challenged never transition to `CONTESTED` (the transition check only applies to `CONFIRMED` findings). Furthermore, the transition from `CONTESTED` to `CONFIRMED` blindly proceeds if there are no unresolved challenges, completely bypassing the `independent_count >= 2` safety check. Fi",
+        "proposed_fix": "",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F001",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.85,
+        "abstraction_index": 0.6,
+        "description": "FIND \u2014 `_evaluate_gate_conditions` never checks `cfg.max_open_crit_high` (default 0). The convergence gate checks the *trend* of open CRIT/HIGH count (increasing vs stable) but omits an absolute threshold check. A run can converge with arbitrarily many open CRIT/HIGH findings as long as the count is not increasing over the stability window.",
+        "proposed_fix": "<<<< OLD\nif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n    else:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n==== NEW\nif open_ch > cfg.max_open_crit_high:\n        failures.append(\n            f\"open_ch={open_ch} > max_open_crit_high={cfg.max_open_crit_high}\"\n        )\n    elif open_ch_history is not None and len(open_ch_history) >= cfg.open_ch_stability_window:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n    elif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F002",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.8,
+        "abstraction_index": 0.4,
+        "description": "FIND \u2014 Extension stall check compares incompatible metrics. Line in `run_experiment`:\nregistry.open_crit_high_count() >= prev.get(\"findings_count\", 0)\n`open_crit_high_count()` is the current registry count of open CRIT/HIGH findings (a running total). `prev[\"findings_count\"]` is `len(findings)` \u2014 the raw number of findings parsed from model output in a single round. These are semantically different quantities. A typical run might have 3 open CRIT/HIGH and 25 raw findings per round, so the condition `3 >= 25` would be False and the stall would never trigger even when extension is truly stalled.",
+        "proposed_fix": "<<<< OLD\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev.get(\"findings_count\", 0)):\n                _log(\"  Extension not improving. Terminating.\")\n==== NEW\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            prev_open_ch = prev.get(\"open_crit_high\", registry.open_crit_high_count())\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev_open_ch):\n                _log(\"  Extension not improving. Terminating.\")\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F003",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.7,
+        "abstraction_index": 0.5,
+        "description": "FIND \u2014 `FindingRegistry.contested_count()` only skips MERGED entries. It iterates entries with status REFUTED, CLOSED, CONFIRMED, UNCONFIRMED \u2014 any of which may have stale challenges from before the status was set. A REFUTED finding (auto-resolved by `auto_resolve_contested` due to 3+ challenges) will still be counted by `contested_count` if its challenges are > 1 round old, because the method re-evaluates challenge history regardless of terminal status.",
+        "proposed_fix": "<<<< OLD\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        for e in self.entries.values():\n            if e[\"status\"] == \"MERGED\":\n                continue\n==== NEW\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        _terminal = (\"MERGED\", \"CLOSED\", \"REFUTED\", \"DUPLICATE\")\n        for e in self.entries.values():\n            if e[\"status\"] in _terminal:\n                continue\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F004",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.6,
+        "abstraction_index": 0.5,
+        "description": "FIND \u2014 `_itc_adapt` for `ITC_DEGRADATION` suppresses the adaptation when `rho_rolling_avg >= rho_threshold` (sets `state[\"adaptation\"] = None`), but the history entry with `classification=ITC_DEGRADATION` is already appended. `_itc_consecutive_failures` counts entries where `classification` is truthy, so suppressed degradations contribute to consecutive failure count. After 3 suppressed degradations, `_itc_flag_underperformer` fires a false HIL flag.",
+        "proposed_fix": "<<<< OLD\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n==== NEW\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n            # Clear classification so suppressed degradation doesn't count\n            # toward consecutive failures / HIL flagging\n            state[\"history\"][-1][\"classification\"] = None\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "CC2_F005",
+        "model_id": "CC2",
+        "round_idx": 0,
+        "flaw_class": 6,
+        "severity": 0.55,
+        "abstraction_index": 0.3,
+        "description": "FIND \u2014 `_itc_model_state` and `_itc_hil_flags` are module-level globals that are never reset between `run_experiment` calls. If the runner is invoked programmatically (tests, batch runs), ITC state from a prior experiment leaks into the next. A model flagged as underperformer in experiment A starts experiment B with a dirty history, potentially triggering immediate ITC interventions.",
+        "proposed_fix": "<<<< OLD\nexperiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n==== NEW\n# Reset module-level ITC state for clean experiment\n    global _itc_model_state, _itc_hil_flags\n    _itc_model_state = {}\n    _itc_hil_flags = []\n\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "DeepSeek_F001",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 1,
+        "severity": 0.9,
+        "abstraction_index": 0.8,
+        "description": "FIND \u2014 Critical logical error in `_compute_rho` function (line ~1140): The calculation of `rho_rolling_window` average incorrectly includes zeros for rounds where raw_counts[i] == 0. The formula `rho_avg = sum(rho_values) / len(rho_values)` divides by window length even when some rounds had zero raw findings, artificially lowering the average. This violates the mathematical definition of \u03c1 (novelty/raw) and will cause false churn detection, potentially terminating experiments prematurely. Evidence: Lines 1140-1148 calculate `rho_values` as 0.0 for rounds with raw_counts[i] == 0, then averages them with valid rounds.",
+        "proposed_fix": "<<<< OLD\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n            else:\n                rho_values.append(0.0)\n        rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n==== NEW\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n        if not rho_values:\n            rho_avg = 0.0\n        else:\n            rho_avg = sum(rho_values) / len(rho_values)\n>>>>",
+        "verified": false
+      },
+      {
+        "finding_id": "DeepSeek_F002",
+        "model_id": "DeepSeek",
+        "round_idx": 0,
+        "flaw_class": 2,
+        "severity": 0.7,
+        "abstraction_index": 0.6,
+        "description": "FIND \u2014 Interface mismatch in `_verification_step` (line ~1470): The function signature expects `source_code` parameter but calls `dispatch_to_model` with `cc2_config` and empty CDSFL text (`\"\"`). This violates the `dispatch_to_model` contract which requires valid CDSFL directives for proper constraint enforcement. Evidence: Line ~1480: `text, elapsed = dispatch_to_model(cc2_config, prompt, \"\", wall_clock_limit=cc2_config.timeout * 3)`. The empty string CDSFL directive will cause the model to operate without CDSFL constraints, potentially generating unconstrained verdicts.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _verification_step(\n    registry: FindingRegistry, round_idx: int,\n    source_code: str, model_configs: List[ModelConfig],\n    cfg: RunnerConfig,\n) -> Dict[str, Any]:\n    \"\"\"A5: dedup-aware CC2v \u2014 skip already-confirmed/escalated findings.\"\"\"\n    if round_idx < cfg.verification_min_round:\n        return {\"skipped\": True, \"reason\": f\"round {round_idx} < {cfg.verification_min_round}\"}\n\n    open_findings = []\n    for cid, entry in registry.entries.items():\n        if entry[\"status\"] not in (\"OPEN\", \"CONTESTED\"):\n            continue\n        if entry.get(\"cc2v_escalated\"):\n            continue\n        confirm_models = {\n            v[\"model\"] for v in entry.get(\"verdicts\", [])\n            if v.get(\"verdict\") == \"CONFIRM\"\n        }\n        if len(confirm_models) >= 2:\n            continue\n        cc2v_verdicts = [v for v in entry.get(\"verdicts\", []) if v.get(\"model\") == \"CC2v\"]\n        if cc2v_verdicts:\n            continue\n        open_findings.append((cid, entry))\n\n    if not open_findings:\n        return {\"skipped\": True, \"reason\": \"no open findings\"}\n\n    open_findings.sort(key=lambda x: x[1].get(\"severity\", 0), reverse=True)\n    batch = open_findings[:cfg.verification_batch_size]",
+        "verified": false
+      }
+    ]
+  ],
+  "round_records": [
+    {
+      "round_idx": 0,
+      "timestamp": "2026-04-10T10:53:48.426958+00:00",
+      "finding_count": 16,
+      "duration_s": 571.696336,
+      "failures": {},
+      "metrics": {},
+      "immune_response": {
+        "triaged": [
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F001",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.98,
+              "abstraction_index": 0.31,
+              "description": "FIND \u2014 bench/reference_runner.py, main(), JSON-config path handling. When --config is supplied, the runner still dereferences parser-required CLI attributes that are absent for the preflight subcommand and are not guaranteed to be supplied for config-driven runs. Evidence: build_parser() defines --test-article and the rest only on the 'run' subparser, but main() unconditionally executes `if args.test_article:` and later `if args.pattern not in INTERACTION_PATTERN_PRESETS:` after `cfg = RunnerConfig.from_json(args.config)`. In argparse, subparser-specific attributes are not reliably present on other subcommands; even on `run`, this logic contradicts the documented usage `python3 bench/reference_runner.py run --config experiment.json` because required=True on --test-article forces a CLI value before config loading. This blocks the advertised config-only entry path.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\", required=True,\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=[],\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", default=\"star\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\", default=\"directed\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\", default=\"fff\")\n    run_p.add_argument(\"--max-rounds\", type=int, default=21)\n    run_p.add_argument(\"--extension-cap\", type=int, default=24)\n    run_p.add_argument(\"--wall-clock-cap\", type=int, default=28800,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int, default=12)\n    run_p.add_argument(\"--models\", nargs=\"+\",\n                       default=[\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"])\n    run_p.add_argument(\"--experiment-name\", default=\"\")\n    run_p.add_argument(\"--domain\", default=\"software\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float, default=0.25)\n    run_p.add_argument(\"--rho-rolling-window\", type=int, default=3)\n    run_p.add_argument(\"--consecutive-rounds\", type=int, default=2)\n    run_p.add_argument(\"--config\", help=\"JSON config file (overrides CLI args)\")\n====\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\",\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=None,\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\")\n    run_p.add_argument(\"--max-rounds\", type=int)\n    run_p.add_argument(\"--extension-cap\", type=int)\n    run_p.add_argument(\"--wall-clock-cap\", type=int,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int)\n    run_p.add_argument(\"--models\", nargs=\"+\")\n    run_p.add_argument(\"--experiment-name\")\n    run_p.add_argument(\"--domain\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float)\n    run_p.add_argument(\"--rho-rolling-window\", type=int)\n    run_p.add_argument(\"--consecutive-rounds\", type=int)\n    run_p.add_argument(\"--config\", help=\"JSON config file (base config; explicit CLI flags override it)\")\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON only when explicitly provided.\n        override_map = {\n            \"test_article\": getattr(args, \"test_article\", None),\n            \"context_files\": getattr(args, \"context\", None),\n            \"topology\": getattr(args, \"topology\", None),\n            \"relay_mode\": getattr(args, \"relay_mode\", None),\n            \"pattern\": getattr(args, \"pattern\", None),\n            \"max_rounds\": getattr(args, \"max_rounds\", None),\n            \"extension_cap\": getattr(args, \"extension_cap\", None),\n            \"wall_clock_cap_s\": getattr(args, \"wall_clock_cap\", None),\n            \"earliest_stop_round\": getattr(args, \"earliest_stop\", None),\n            \"models\": getattr(args, \"models\", None),\n            \"experiment_name\": getattr(args, \"experiment_name\", None),\n            \"domain\": getattr(args, \"domain\", None),\n            \"rho_threshold\": getattr(args, \"rho_threshold\", None),\n            \"rho_rolling_window\": getattr(args, \"rho_rolling_window\", None),\n            \"consecutive_rounds_required\": getattr(args, \"consecutive_rounds\", None),\n        }\n        for attr, value in override_map.items():\n            if value is not None:\n                setattr(cfg, attr, value)\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article or \"\",\n            context_files=args.context or [],\n            topology=args.topology or \"star\",\n            relay_mode=args.relay_mode or \"directed\",\n            pattern=args.pattern or \"fff\",\n            max_rounds=args.max_rounds if args.max_rounds is not None else 21,\n            extension_cap=args.extension_cap if args.extension_cap is not None else 24,\n            wall_clock_cap_s=args.wall_clock_cap if args.wall_clock_cap is not None else 28800,\n            earliest_stop_round=args.earliest_stop if args.earliest_stop is not None else 12,\n            models=args.models or [\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"],\n            experiment_name=args.experiment_name or \"\",\n            domain=args.domain or \"software\",\n            resume=args.resume,\n            rho_threshold=args.rho_threshold if args.rho_threshold is not None else 0.25,\n            rho_rolling_window=args.rho_rolling_window if args.rho_rolling_window is not None else 3,\n            consecutive_rounds_required=args.consecutive_rounds if args.consecutive_rounds is not None else 2,\n        )\n\n    if not cfg.test_article:\n        print(\"Missing test article. Provide --test-article or set test_article in --config.\",\n              file=sys.stderr)\n        sys.exit(1)\n\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+              "verified": true,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "cfg = RunnerConfig.from_json(args.config), python3 bench/reference_runner.py run --config experiment.json",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F002",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.93,
+              "abstraction_index": 0.34,
+              "description": "FIND \u2014 bench/reference_runner.py, run_experiment(), cumulative context accounting is computed from response lengths instead of prompt/context lengths. Evidence: after Endocrine setup, the loop updates `per_model_context[label] = per_model_context.get(label, 0) + len(text)` and `cumulative_context_chars += len(text)` for each model response, then passes `cumulative_context_chars` to `endo.run(..., cumulative_context_chars=cumulative_context_chars, context_budget=max(CONTEXT_CHAR_BUDGET.values()), ...)`. The variable name and endocrine API indicate context budget tracking, but the implementation measures output volume, not input context sent to models. This makes the telemetry and any budget-based pacing logic silently wrong.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for label, text in responses.items():\n            per_model_context[label] = per_model_context.get(label, 0) + len(text)\n            cumulative_context_chars += len(text)\n====\n        for label, prompt_chars in per_model_prompt_chars.items():\n            per_model_context[label] = per_model_context.get(label, 0) + prompt_chars\n            cumulative_context_chars += prompt_chars\n>>>> REPLACE",
+              "verified": true,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "per_model_context[label] = per_model_context.get(label, 0) + len(text), cumulative_context_chars += len(text), endo.run(..., cumulative_context_chars=cumulative_context_chars, context_budget=max(CONTEXT_CHAR_BUDGET.values()), ...)",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "ChatGPT_F003",
+              "model_id": "ChatGPT",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.89,
+              "abstraction_index": 0.36,
+              "description": "FIND \u2014 bench/reference_runner.py, fingerprint learning stores response length as if it were context capacity, corrupting ITC recovery. Evidence: `_update_observed_fingerprint(..., findings_count, response_chars, dispatch_error=None)` updates `max_successful_context_chars` and `max_failed_context_chars` from the `response_chars` argument. In the main loop it is called as `_update_observed_fingerprint(..., len(model_findings), len(model_text), dispatch_error=dispatch_err)`, where `model_text` is the model output, not the dispatched prompt/context size. `_itc_build_recovery_prompt()` then interprets `max_successful_context_chars` as a safe prompt budget and truncates prompts when `len(base_prompt) > max_ok_chars`. The recorded metric and its consumer disagree, so adaptive recovery uses the wrong variable.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, response_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n====\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, prompt_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), response_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif response_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), response_chars)\n====\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), prompt_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif prompt_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), prompt_chars)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), len(model_text), dispatch_error=dispatch_err,\n            )\n====\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), per_model_prompt_chars.get(model_label, 0), dispatch_error=dispatch_err,\n            )\n>>>> REPLACE",
+              "verified": true,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "_update_observed_fingerprint(..., findings_count, response_chars, dispatch_error=None), _update_observed_fingerprint(..., len(model_findings), len(model_text), dispatch_error=dispatch_err),  is the model output, not the dispatched prompt/context size. , len(base_prompt) > max_ok_chars",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F001",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.93,
+              "abstraction_index": 0.77,
+              "description": "FIND: `bench/reference_runner.py`, function `_dispatch_single_model()`, and its callers `_dispatch_round_star()` / `_dispatch_round_relay()`. The ITC recovery adaptations are computed and stored, but the dispatch path never applies them. Evidence: `_itc_adapt()` sets `state[\"adaptation\"]` to values such as `\"retry\"`, `\"strip_context\"`, `\"change_focus\"`, `\"restart_fresh\"`, and `_itc_get_adaptation()` is consulted by `_make_prompt()` only for `\"change_focus\"` and, in relay mode, `\"strip_context\"`. The helper `_itc_build_recovery_prompt()` exists specifically to build reduced-context/fresh-instance prompts, but it is never called anywhere in the file. In `_dispatch_single_model()`, the final `prompt` passed to `dispatch_to_model()` or `_multiturn_fallback()` is always the unmodified caller-supplied prompt. As a result, ITC classifications do not trigger the intended recovery behavior for star topology and only partially affect relay topology via prompt prefixes, not true prompt rebuilding.",
+              "proposed_fix": "<<<< OLD\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== NEW\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n    observed_fingerprints: Optional[Dict[str, Dict[str, Any]]] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n>>>>",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.LOGICAL",
+            "extracted_claim": "FIND: `bench/reference_runner.py`, function `_dispatch_single_model()`, and its callers `_dispatch_round_star()` / `_dispatch_round_relay()`. The ITC recovery adaptations are computed and stored, but the dispatch path never applies them. Evidence: `_itc_adapt()` sets `state[\"adaptation\"]` to values such as `\"retry\"`, `\"strip_context\"`, `\"change_focus\"`, `\"restart_fresh\"`, and `_itc_get_adaptation()` is consulted by `_make_prompt()` only for `\"change_focus\"` and, in relay mode, `\"strip_context\"`. The helper `_itc_build_recovery_prompt()` exists specifically to build reduced-context/fresh-instance prompts, but it is never called anywhere in the file. In `_dispatch_single_model()`, the final `prompt` passed to `dispatch_to_model()` or `_multiturn_fallback()` is always the unmodified caller-supplied prompt. As a result, ITC classifications do not trigger the intended recovery behavior for star topology and only partially affect relay topology via prompt prefixes, not true prompt rebuilding.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F002",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.91,
+              "abstraction_index": 0.82,
+              "description": "FIND: `bench/reference_runner.py`, main round loop in `run_experiment()`, immediately after `immune_result = brain.run_immune_pipeline(findings)`. The runner ignores the immune pipeline\u2019s filtered output and instead marks registry entries verified using the original unfiltered `findings` list. Evidence: `immune_result` is assigned but never used except discarded. The loop `for f in findings: if f.verified: ... registry.mark_verified(...)` iterates over raw findings, not `immune_result.filtered_findings`. In context, `bench/immune_agents.py::run_immune_pipeline()` can reject findings, mark some as escalated, and only mark `verified=True` on `filtered_findings` after programmatic fix evaluation. Therefore the runner is consulting the wrong object set and also missing the pipeline\u2019s final filtered verdicts entirely.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n        for f in findings:\n            if f.verified:\n                canonical = registry.lookup_alias(f.model_id, f.finding_id)\n                if canonical:\n                    registry.mark_verified(canonical)\n====\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n\n        for f in immune_result.rejected_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if canonical and registry.entries.get(canonical, {}).get(\"status\") in (\"OPEN\", \"CONTESTED\"):\n                registry.resolve(canonical, \"UNCONFIRMED\", round_idx)\n\n        for f in immune_result.filtered_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if not canonical:\n                continue\n            if f.verified:\n                registry.mark_verified(canonical)\n            if f.escalated:\n                registry.entries[canonical][\"escalated\"] = True\n>>>> REPLACE",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "bench/reference_runner.py, immune_result = brain.run_immune_pipeline(findings), bench/immune_agents.py::run_immune_pipeline(), verified=True",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F003",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.88,
+              "abstraction_index": 0.74,
+              "description": "FIND: `bench/reference_runner.py`, function `_find_or_create_logs_dir()`, resume branch. It searches for `checkpoint.json`, but the runner itself persists state to `runner_state.json` and uses `brain.load_checkpoint()` for the brain state. Evidence: `_find_or_create_logs_dir()` returns an old log directory only if `(c / \"checkpoint.json\").exists()`. In the same file, the runner writes `runner_state.json` explicitly, not `checkpoint.json`, and never writes a top-level `checkpoint.json`. Therefore resume directory discovery can fail to locate resumable runs created by this runner, causing resume mode to start a new log directory instead of reusing the prior experiment directory.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n====\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"runner_state.json\").exists() or (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n>>>> REPLACE",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND: `bench/reference_runner.py`, function `_find_or_create_logs_dir()`, resume branch. It searches for `checkpoint.json`, but the runner itself persists state to `runner_state.json` and uses `brain.load_checkpoint()` for the brain state. Evidence: `_find_or_create_logs_dir()` returns an old log directory only if `(c / \"checkpoint.json\").exists()`. In the same file, the runner writes `runner_state.json` explicitly, not `checkpoint.json`, and never writes a top-level `checkpoint.json`. Therefore resume directory discovery can fail to locate resumable runs created by this runner, causing resume mode to start a new log directory instead of reusing the prior experiment directory.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F004",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 5,
+              "severity": 0.86,
+              "abstraction_index": 0.79,
+              "description": "FIND: `bench/reference_runner.py`, function `_compute_rho()`. It computes `round_idx = len(raw_counts) - 1` and compares that zero-based value to `cfg.rho_earliest_round`, which elsewhere is configured and logged as human round numbers (`earliest_stop_round`, default 12). Evidence: after the first completed round, `len(raw_counts)==1`, so `round_idx==0`; at completed round 12, `round_idx==12` only after 13 rounds of data. The runner log labels rounds directly with `round_idx` from the main loop, and `RunnerConfig.__post_init__()` sets `rho_earliest_round = earliest_stop_round`. Therefore churn detection is delayed by one round relative to the configured stop round and to the log semantics used elsewhere.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    round_idx = len(raw_counts) - 1\n    churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n====\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    current_round = len(raw_counts)\n    churn = rho_avg < cfg.rho_threshold and current_round >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n>>>> REPLACE",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "bench/reference_runner.py, round_idx = len(raw_counts) - 1, len(raw_counts)==1, round_idx==0, round_idx==12, rho_earliest_round = earliest_stop_round",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Codex_F005",
+              "model_id": "Codex",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.84,
+              "abstraction_index": 0.83,
+              "description": "FIND: `bench/reference_runner.py`, `main()`, config-loading branch for `--config`. The parser still requires `--test-article` on the `run` subcommand even when `--config` is supplied, contradicting the documented usage `python3 bench/reference_runner.py run --config experiment.json`. Evidence: `build_parser()` declares `run_p.add_argument(\"--test-article\", required=True, ...)`. In `main()`, there is explicit support for `if getattr(args, \"config\", None): cfg = RunnerConfig.from_json(args.config)`, but argparse will reject `run --config experiment.json` before that code runs because the required `--test-article` is missing.",
+              "proposed_fix": "<<<< OLD\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n==== NEW\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        if not args.test_article:\n            parser.error(\"--test-article is required unless --config is provided\")\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if not cfg.test_article:\n        parser.error(\"Configuration must provide test_article or pass --test-article\")\n>>>>",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "bench/reference_runner.py, , config-loading branch for , --test-article, --config, python3 bench/reference_runner.py run --config experiment.json, run_p.add_argument(\"--test-article\", required=True, ...), if getattr(args, \"config\", None): cfg = RunnerConfig.from_json(args.config), run --config experiment.json, --test-article",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "Gemini_UNSTRUCTURED",
+              "model_id": "Gemini",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.3,
+              "abstraction_index": 0.3,
+              "description": "{\n  \"FINDING_ID\": \"F001\",\n  \"SEVERITY\": 0.95,\n  \"FLAW_CLASS\": 1,\n  \"ABSTRACTION_INDEX\": 0.8,\n  \"DESCRIPTION\": \"FIND: The finding state transitions in `_update_finding_statuses` are broken. `OPEN` findings that are challenged never transition to `CONTESTED` (the transition check only applies to `CONFIRMED` findings). Furthermore, the transition from `CONTESTED` to `CONFIRMED` blindly proceeds if there are no unresolved challenges, completely bypassing the `independent_count >= 2` safety check. Fi",
+              "proposed_fix": "",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "independent_count >= 2",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F001",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.85,
+              "abstraction_index": 0.6,
+              "description": "FIND \u2014 `_evaluate_gate_conditions` never checks `cfg.max_open_crit_high` (default 0). The convergence gate checks the *trend* of open CRIT/HIGH count (increasing vs stable) but omits an absolute threshold check. A run can converge with arbitrarily many open CRIT/HIGH findings as long as the count is not increasing over the stability window.",
+              "proposed_fix": "<<<< OLD\nif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n    else:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n==== NEW\nif open_ch > cfg.max_open_crit_high:\n        failures.append(\n            f\"open_ch={open_ch} > max_open_crit_high={cfg.max_open_crit_high}\"\n        )\n    elif open_ch_history is not None and len(open_ch_history) >= cfg.open_ch_stability_window:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n    elif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n>>>>",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 `_evaluate_gate_conditions` never checks `cfg.max_open_crit_high` (default 0). The convergence gate checks the *trend* of open CRIT/HIGH count (increasing vs stable) but omits an absolute threshold check. A run can converge with arbitrarily many open CRIT/HIGH findings as long as the count is not increasing over the stability window.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F002",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.8,
+              "abstraction_index": 0.4,
+              "description": "FIND \u2014 Extension stall check compares incompatible metrics. Line in `run_experiment`:\nregistry.open_crit_high_count() >= prev.get(\"findings_count\", 0)\n`open_crit_high_count()` is the current registry count of open CRIT/HIGH findings (a running total). `prev[\"findings_count\"]` is `len(findings)` \u2014 the raw number of findings parsed from model output in a single round. These are semantically different quantities. A typical run might have 3 open CRIT/HIGH and 25 raw findings per round, so the condition `3 >= 25` would be False and the stall would never trigger even when extension is truly stalled.",
+              "proposed_fix": "<<<< OLD\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev.get(\"findings_count\", 0)):\n                _log(\"  Extension not improving. Terminating.\")\n==== NEW\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            prev_open_ch = prev.get(\"open_crit_high\", registry.open_crit_high_count())\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev_open_ch):\n                _log(\"  Extension not improving. Terminating.\")\n>>>>",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": ":\nregistry.open_crit_high_count() >= prev.get(\"findings_count\", 0)\n,  is the current registry count of open CRIT/HIGH findings (a running total). ,  \u2014 the raw number of findings parsed from model output in a single round. These are semantically different quantities. A typical run might have 3 open CRIT/HIGH and 25 raw findings per round, so the condition ",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F003",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.7,
+              "abstraction_index": 0.5,
+              "description": "FIND \u2014 `FindingRegistry.contested_count()` only skips MERGED entries. It iterates entries with status REFUTED, CLOSED, CONFIRMED, UNCONFIRMED \u2014 any of which may have stale challenges from before the status was set. A REFUTED finding (auto-resolved by `auto_resolve_contested` due to 3+ challenges) will still be counted by `contested_count` if its challenges are > 1 round old, because the method re-evaluates challenge history regardless of terminal status.",
+              "proposed_fix": "<<<< OLD\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        for e in self.entries.values():\n            if e[\"status\"] == \"MERGED\":\n                continue\n==== NEW\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        _terminal = (\"MERGED\", \"CLOSED\", \"REFUTED\", \"DUPLICATE\")\n        for e in self.entries.values():\n            if e[\"status\"] in _terminal:\n                continue\n>>>>",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 `FindingRegistry.contested_count()` only skips MERGED entries. It iterates entries with status REFUTED, CLOSED, CONFIRMED, UNCONFIRMED \u2014 any of which may have stale challenges from before the status was set. A REFUTED finding (auto-resolved by `auto_resolve_contested` due to 3+ challenges) will still be counted by `contested_count` if its challenges are > 1 round old, because the method re-evaluates challenge history regardless of terminal status.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F004",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.6,
+              "abstraction_index": 0.5,
+              "description": "FIND \u2014 `_itc_adapt` for `ITC_DEGRADATION` suppresses the adaptation when `rho_rolling_avg >= rho_threshold` (sets `state[\"adaptation\"] = None`), but the history entry with `classification=ITC_DEGRADATION` is already appended. `_itc_consecutive_failures` counts entries where `classification` is truthy, so suppressed degradations contribute to consecutive failure count. After 3 suppressed degradations, `_itc_flag_underperformer` fires a false HIL flag.",
+              "proposed_fix": "<<<< OLD\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n==== NEW\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n            # Clear classification so suppressed degradation doesn't count\n            # toward consecutive failures / HIL flagging\n            state[\"history\"][-1][\"classification\"] = None\n>>>>",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "rho_rolling_avg >= rho_threshold, state[\"adaptation\"] = None, classification=ITC_DEGRADATION",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "CC2_F005",
+              "model_id": "CC2",
+              "round_idx": 0,
+              "flaw_class": 6,
+              "severity": 0.55,
+              "abstraction_index": 0.3,
+              "description": "FIND \u2014 `_itc_model_state` and `_itc_hil_flags` are module-level globals that are never reset between `run_experiment` calls. If the runner is invoked programmatically (tests, batch runs), ITC state from a prior experiment leaks into the next. A model flagged as underperformer in experiment A starts experiment B with a dirty history, potentially triggering immediate ITC interventions.",
+              "proposed_fix": "<<<< OLD\nexperiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n==== NEW\n# Reset module-level ITC state for clean experiment\n    global _itc_model_state, _itc_hil_flags\n    _itc_model_state = {}\n    _itc_hil_flags = []\n\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n>>>>",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.UNCATEGORISED",
+            "extracted_claim": "FIND \u2014 `_itc_model_state` and `_itc_hil_flags` are module-level globals that are never reset between `run_experiment` calls. If the runner is invoked programmatically (tests, batch runs), ITC state from a prior experiment leaks into the next. A model flagged as underperformer in experiment A starts experiment B with a dirty history, potentially triggering immediate ITC interventions.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F001",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 1,
+              "severity": 0.9,
+              "abstraction_index": 0.8,
+              "description": "FIND \u2014 Critical logical error in `_compute_rho` function (line ~1140): The calculation of `rho_rolling_window` average incorrectly includes zeros for rounds where raw_counts[i] == 0. The formula `rho_avg = sum(rho_values) / len(rho_values)` divides by window length even when some rounds had zero raw findings, artificially lowering the average. This violates the mathematical definition of \u03c1 (novelty/raw) and will cause false churn detection, potentially terminating experiments prematurely. Evidence: Lines 1140-1148 calculate `rho_values` as 0.0 for rounds with raw_counts[i] == 0, then averages them with valid rounds.",
+              "proposed_fix": "<<<< OLD\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n            else:\n                rho_values.append(0.0)\n        rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n==== NEW\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n        if not rho_values:\n            rho_avg = 0.0\n        else:\n            rho_avg = sum(rho_values) / len(rho_values)\n>>>>",
+              "verified": false,
+              "escalated": false,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.CODE_BEHAVIORAL",
+            "extracted_claim": "FIND \u2014 Critical logical error in `_compute_rho` function (line ~1140): The calculation of `rho_rolling_window` average incorrectly includes zeros for rounds where raw_counts[i] == 0. The formula `rho_avg = sum(rho_values) / len(rho_values)` divides by window length even when some rounds had zero raw findings, artificially lowering the average. This violates the mathematical definition of \u03c1 (novelty/raw) and will cause false churn detection, potentially terminating experiments prematurely. Evidence: Lines 1140-1148 calculate `rho_values` as 0.0 for rounds with raw_counts[i] == 0, then averages them with valid rounds.",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          },
+          {
+            "finding": {
+              "finding_id": "DeepSeek_F002",
+              "model_id": "DeepSeek",
+              "round_idx": 0,
+              "flaw_class": 2,
+              "severity": 0.7,
+              "abstraction_index": 0.6,
+              "description": "FIND \u2014 Interface mismatch in `_verification_step` (line ~1470): The function signature expects `source_code` parameter but calls `dispatch_to_model` with `cc2_config` and empty CDSFL text (`\"\"`). This violates the `dispatch_to_model` contract which requires valid CDSFL directives for proper constraint enforcement. Evidence: Line ~1480: `text, elapsed = dispatch_to_model(cc2_config, prompt, \"\", wall_clock_limit=cc2_config.timeout * 3)`. The empty string CDSFL directive will cause the model to operate without CDSFL constraints, potentially generating unconstrained verdicts.",
+              "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _verification_step(\n    registry: FindingRegistry, round_idx: int,\n    source_code: str, model_configs: List[ModelConfig],\n    cfg: RunnerConfig,\n) -> Dict[str, Any]:\n    \"\"\"A5: dedup-aware CC2v \u2014 skip already-confirmed/escalated findings.\"\"\"\n    if round_idx < cfg.verification_min_round:\n        return {\"skipped\": True, \"reason\": f\"round {round_idx} < {cfg.verification_min_round}\"}\n\n    open_findings = []\n    for cid, entry in registry.entries.items():\n        if entry[\"status\"] not in (\"OPEN\", \"CONTESTED\"):\n            continue\n        if entry.get(\"cc2v_escalated\"):\n            continue\n        confirm_models = {\n            v[\"model\"] for v in entry.get(\"verdicts\", [])\n            if v.get(\"verdict\") == \"CONFIRM\"\n        }\n        if len(confirm_models) >= 2:\n            continue\n        cc2v_verdicts = [v for v in entry.get(\"verdicts\", []) if v.get(\"model\") == \"CC2v\"]\n        if cc2v_verdicts:\n            continue\n        open_findings.append((cid, entry))\n\n    if not open_findings:\n        return {\"skipped\": True, \"reason\": \"no open findings\"}\n\n    open_findings.sort(key=lambda x: x[1].get(\"severity\", 0), reverse=True)\n    batch = open_findings[:cfg.verification_batch_size]",
+              "verified": false,
+              "escalated": true,
+              "falsification_present": false,
+              "pm_verdict": "",
+              "dedup_of": ""
+            },
+            "claim_type": "ClaimType.MATHEMATICAL",
+            "extracted_claim": "text, elapsed = dispatch_to_model(cc2_config, prompt, \"\", wall_clock_limit=cc2_config.timeout * 3)",
+            "is_duplicate": false,
+            "duplicate_of": null,
+            "similarity": 0.0
+          }
+        ],
+        "cell_verdicts": {
+          "DeepSeek_F001": [
+            {
+              "cell_type": "CellType.CYTOTOXIC_T",
+              "finding_id": "DeepSeek_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.0,
+              "evidence": "CT agent did not investigate this finding",
+              "tool_used": "ct_mechanical",
+              "elapsed_s": 84.43528208300006
+            }
+          ],
+          "ChatGPT_F001": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.41353779200005647
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "ChatGPT_F002": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.29915058299991415
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "ChatGPT_F003": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax. Maybe you meant '==' or ':=' instead of '='? (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.21699995799997396
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "ChatGPT_F003",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F001": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.2,
+              "evidence": "z3: Z3_UNSTRUCTURED: claim not parseable as constraint",
+              "tool_used": "z3",
+              "elapsed_s": 0.058231040999999095
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F001",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F002": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19857979100004286
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Codex_F004": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.18995512499998313
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F004",
+              "verdict": "REJECTED",
+              "confidence": 0.85,
+              "evidence": "[B_v2] z3 SMT-LIB grounded counterexample. Grounded vars: ['earliest_stop_round', 'rho_earliest_round', 'round_idx']. SAT_COUNTEREXAMPLE: [round_idx = -1]",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.15085529199996017
+            }
+          ],
+          "Codex_F005": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F005",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.0,
+              "evidence": "SymPy: BLOCKED: claim contains disallowed token (MF-40 blocklist)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.19473408299995754
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Codex_F005",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "Gemini_UNSTRUCTURED": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Gemini_UNSTRUCTURED",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: name 'Integer' is not defined",
+              "tool_used": "sympy",
+              "elapsed_s": 0.2068432920000305
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "Gemini_UNSTRUCTURED",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F002": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F002",
+              "verdict": "REJECTED",
+              "confidence": 0.3,
+              "evidence": "z3: VERIFIED_FALSE: 0.0 < 3.0 [class-switched from SymPy]",
+              "tool_used": "z3",
+              "elapsed_s": 0.06773145900001509
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "CC2_F004": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.21108637500003624
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "CC2_F004",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ],
+          "DeepSeek_F002": [
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.3,
+              "evidence": "SymPy: UNVERIFIABLE: invalid syntax (<string>, line 1)",
+              "tool_used": "sympy",
+              "elapsed_s": 0.20617908300005183
+            },
+            {
+              "cell_type": "CellType.B_CELL",
+              "finding_id": "DeepSeek_F002",
+              "verdict": "UNCERTAIN",
+              "confidence": 0.15,
+              "evidence": "[B_v2] Cannot ground claim in source AST",
+              "tool_used": "z3_v2_smt2",
+              "elapsed_s": 0.0
+            }
+          ]
+        },
+        "final_verdicts": {
+          "CC2_F003": "UNCERTAIN",
+          "DeepSeek_F001": "UNCERTAIN",
+          "Gemini_UNSTRUCTURED": "UNCERTAIN",
+          "ChatGPT_F002": "UNCERTAIN",
+          "ChatGPT_F001": "UNCERTAIN",
+          "CC2_F001": "UNCERTAIN",
+          "Codex_F001": "UNCERTAIN",
+          "Codex_F005": "UNCERTAIN",
+          "CC2_F005": "UNCERTAIN",
+          "CC2_F004": "UNCERTAIN",
+          "ChatGPT_F003": "UNCERTAIN",
+          "CC2_F002": "UNSCORED",
+          "DeepSeek_F002": "UNCERTAIN",
+          "Codex_F002": "UNCERTAIN",
+          "Codex_F004": "REJECTED",
+          "Codex_F003": "UNCERTAIN"
+        },
+        "final_confidences": {
+          "CC2_F003": 0.0,
+          "DeepSeek_F001": 0.0,
+          "Gemini_UNSTRUCTURED": 0.0,
+          "ChatGPT_F002": 0.0,
+          "ChatGPT_F001": 0.0,
+          "CC2_F001": 0.0,
+          "Codex_F001": 0.0,
+          "Codex_F005": 0.0,
+          "CC2_F005": 0.0,
+          "CC2_F004": 0.0,
+          "ChatGPT_F003": 0.0,
+          "CC2_F002": 0.3,
+          "DeepSeek_F002": 0.0,
+          "Codex_F002": 0.0,
+          "Codex_F004": 0.85,
+          "Codex_F003": 0.0
+        },
+        "filtered_findings": [
+          {
+            "finding_id": "ChatGPT_F001",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.98,
+            "abstraction_index": 0.31,
+            "description": "FIND \u2014 bench/reference_runner.py, main(), JSON-config path handling. When --config is supplied, the runner still dereferences parser-required CLI attributes that are absent for the preflight subcommand and are not guaranteed to be supplied for config-driven runs. Evidence: build_parser() defines --test-article and the rest only on the 'run' subparser, but main() unconditionally executes `if args.test_article:` and later `if args.pattern not in INTERACTION_PATTERN_PRESETS:` after `cfg = RunnerConfig.from_json(args.config)`. In argparse, subparser-specific attributes are not reliably present on other subcommands; even on `run`, this logic contradicts the documented usage `python3 bench/reference_runner.py run --config experiment.json` because required=True on --test-article forces a CLI value before config loading. This blocks the advertised config-only entry path.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\", required=True,\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=[],\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", default=\"star\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\", default=\"directed\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\", default=\"fff\")\n    run_p.add_argument(\"--max-rounds\", type=int, default=21)\n    run_p.add_argument(\"--extension-cap\", type=int, default=24)\n    run_p.add_argument(\"--wall-clock-cap\", type=int, default=28800,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int, default=12)\n    run_p.add_argument(\"--models\", nargs=\"+\",\n                       default=[\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"])\n    run_p.add_argument(\"--experiment-name\", default=\"\")\n    run_p.add_argument(\"--domain\", default=\"software\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float, default=0.25)\n    run_p.add_argument(\"--rho-rolling-window\", type=int, default=3)\n    run_p.add_argument(\"--consecutive-rounds\", type=int, default=2)\n    run_p.add_argument(\"--config\", help=\"JSON config file (overrides CLI args)\")\n====\n    run_p = sub.add_parser(\"run\", help=\"Run an experiment\")\n    run_p.add_argument(\"--test-article\",\n                       help=\"Path to the file under review\")\n    run_p.add_argument(\"--context\", nargs=\"*\", default=None,\n                       help=\"Paths to read-only context files\")\n    run_p.add_argument(\"--topology\", choices=[\"star\", \"relay\"])\n    run_p.add_argument(\"--relay-mode\",\n                       choices=[\"directed\", \"conversational\", \"findings\"])\n    run_p.add_argument(\"--pattern\")\n    run_p.add_argument(\"--max-rounds\", type=int)\n    run_p.add_argument(\"--extension-cap\", type=int)\n    run_p.add_argument(\"--wall-clock-cap\", type=int,\n                       help=\"Wall clock limit in seconds\")\n    run_p.add_argument(\"--earliest-stop\", type=int)\n    run_p.add_argument(\"--models\", nargs=\"+\")\n    run_p.add_argument(\"--experiment-name\")\n    run_p.add_argument(\"--domain\")\n    run_p.add_argument(\"--resume\", action=\"store_true\")\n    run_p.add_argument(\"--rho-threshold\", type=float)\n    run_p.add_argument(\"--rho-rolling-window\", type=int)\n    run_p.add_argument(\"--consecutive-rounds\", type=int)\n    run_p.add_argument(\"--config\", help=\"JSON config file (base config; explicit CLI flags override it)\")\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    # Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON only when explicitly provided.\n        override_map = {\n            \"test_article\": getattr(args, \"test_article\", None),\n            \"context_files\": getattr(args, \"context\", None),\n            \"topology\": getattr(args, \"topology\", None),\n            \"relay_mode\": getattr(args, \"relay_mode\", None),\n            \"pattern\": getattr(args, \"pattern\", None),\n            \"max_rounds\": getattr(args, \"max_rounds\", None),\n            \"extension_cap\": getattr(args, \"extension_cap\", None),\n            \"wall_clock_cap_s\": getattr(args, \"wall_clock_cap\", None),\n            \"earliest_stop_round\": getattr(args, \"earliest_stop\", None),\n            \"models\": getattr(args, \"models\", None),\n            \"experiment_name\": getattr(args, \"experiment_name\", None),\n            \"domain\": getattr(args, \"domain\", None),\n            \"rho_threshold\": getattr(args, \"rho_threshold\", None),\n            \"rho_rolling_window\": getattr(args, \"rho_rolling_window\", None),\n            \"consecutive_rounds_required\": getattr(args, \"consecutive_rounds\", None),\n        }\n        for attr, value in override_map.items():\n            if value is not None:\n                setattr(cfg, attr, value)\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article or \"\",\n            context_files=args.context or [],\n            topology=args.topology or \"star\",\n            relay_mode=args.relay_mode or \"directed\",\n            pattern=args.pattern or \"fff\",\n            max_rounds=args.max_rounds if args.max_rounds is not None else 21,\n            extension_cap=args.extension_cap if args.extension_cap is not None else 24,\n            wall_clock_cap_s=args.wall_clock_cap if args.wall_clock_cap is not None else 28800,\n            earliest_stop_round=args.earliest_stop if args.earliest_stop is not None else 12,\n            models=args.models or [\"CC2\", \"Codex\", \"Gemini\", \"DeepSeek\", \"ChatGPT\"],\n            experiment_name=args.experiment_name or \"\",\n            domain=args.domain or \"software\",\n            resume=args.resume,\n            rho_threshold=args.rho_threshold if args.rho_threshold is not None else 0.25,\n            rho_rolling_window=args.rho_rolling_window if args.rho_rolling_window is not None else 3,\n            consecutive_rounds_required=args.consecutive_rounds if args.consecutive_rounds is not None else 2,\n        )\n\n    if not cfg.test_article:\n        print(\"Missing test article. Provide --test-article or set test_article in --config.\",\n              file=sys.stderr)\n        sys.exit(1)\n\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+            "verified": true,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "ChatGPT_F002",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.93,
+            "abstraction_index": 0.34,
+            "description": "FIND \u2014 bench/reference_runner.py, run_experiment(), cumulative context accounting is computed from response lengths instead of prompt/context lengths. Evidence: after Endocrine setup, the loop updates `per_model_context[label] = per_model_context.get(label, 0) + len(text)` and `cumulative_context_chars += len(text)` for each model response, then passes `cumulative_context_chars` to `endo.run(..., cumulative_context_chars=cumulative_context_chars, context_budget=max(CONTEXT_CHAR_BUDGET.values()), ...)`. The variable name and endocrine API indicate context budget tracking, but the implementation measures output volume, not input context sent to models. This makes the telemetry and any budget-based pacing logic silently wrong.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n====\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n====\n    responses: Dict[str, str] = {}\n    per_model_durations: Dict[str, float] = {}\n    per_model_prompt_chars: Dict[str, int] = {}\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for mc in eligible:\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n====\n        for mc in eligible:\n            prompt_text = _make_prompt(mc.label)\n            per_model_prompt_chars[mc.label] = len(prompt_text)\n            start_times[mc.label] = time.monotonic()\n            future_to_label[pool.submit(\n                _dispatch_single_model, mc, mgr, prompt_text,\n                cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,\n            )] = mc.label\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n    return findings, responses, per_model_durations\n====\n    return findings, responses, per_model_durations, per_model_prompt_chars\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_relay(\n                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,\n                round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            findings, responses, per_model_durations = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n====\n            findings, responses, per_model_durations, per_model_prompt_chars = _dispatch_round_star(\n                exp_config, mgr, brain, base_prompt, registry_summary,\n                cdsfl_text, full_code, round_idx, cfg, registry=registry,\n            )\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        for label, text in responses.items():\n            per_model_context[label] = per_model_context.get(label, 0) + len(text)\n            cumulative_context_chars += len(text)\n====\n        for label, prompt_chars in per_model_prompt_chars.items():\n            per_model_context[label] = per_model_context.get(label, 0) + prompt_chars\n            cumulative_context_chars += prompt_chars\n>>>> REPLACE",
+            "verified": true,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "ChatGPT_F003",
+            "model_id": "ChatGPT",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.89,
+            "abstraction_index": 0.36,
+            "description": "FIND \u2014 bench/reference_runner.py, fingerprint learning stores response length as if it were context capacity, corrupting ITC recovery. Evidence: `_update_observed_fingerprint(..., findings_count, response_chars, dispatch_error=None)` updates `max_successful_context_chars` and `max_failed_context_chars` from the `response_chars` argument. In the main loop it is called as `_update_observed_fingerprint(..., len(model_findings), len(model_text), dispatch_error=dispatch_err)`, where `model_text` is the model output, not the dispatched prompt/context size. `_itc_build_recovery_prompt()` then interprets `max_successful_context_chars` as a safe prompt budget and truncates prompts when `len(base_prompt) > max_ok_chars`. The recorded metric and its consumer disagree, so adaptive recovery uses the wrong variable.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, response_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n====\ndef _update_observed_fingerprint(\n    observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,\n    findings_count: int, prompt_chars: int,\n    dispatch_error: Optional[str] = None,\n):\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), response_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif response_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), response_chars)\n====\n        if \"context length\" in str(dispatch_error).lower():\n            fp[\"max_failed_context_chars\"] = max(\n                fp.get(\"max_failed_context_chars\", 0), prompt_chars)\n            if \"context_overflow\" not in fp.get(\"failure_modes\", []):\n                fp.setdefault(\"failure_modes\", []).append(\"context_overflow\")\n    elif prompt_chars > 0:\n        fp[\"max_successful_context_chars\"] = max(\n            fp.get(\"max_successful_context_chars\", 0), prompt_chars)\n>>>> REPLACE\n<<<< SEARCH bench/reference_runner.py\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), len(model_text), dispatch_error=dispatch_err,\n            )\n====\n            _update_observed_fingerprint(\n                observed_fingerprints, model_label, round_idx,\n                len(model_findings), per_model_prompt_chars.get(model_label, 0), dispatch_error=dispatch_err,\n            )\n>>>> REPLACE",
+            "verified": true,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F001",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.93,
+            "abstraction_index": 0.77,
+            "description": "FIND: `bench/reference_runner.py`, function `_dispatch_single_model()`, and its callers `_dispatch_round_star()` / `_dispatch_round_relay()`. The ITC recovery adaptations are computed and stored, but the dispatch path never applies them. Evidence: `_itc_adapt()` sets `state[\"adaptation\"]` to values such as `\"retry\"`, `\"strip_context\"`, `\"change_focus\"`, `\"restart_fresh\"`, and `_itc_get_adaptation()` is consulted by `_make_prompt()` only for `\"change_focus\"` and, in relay mode, `\"strip_context\"`. The helper `_itc_build_recovery_prompt()` exists specifically to build reduced-context/fresh-instance prompts, but it is never called anywhere in the file. In `_dispatch_single_model()`, the final `prompt` passed to `dispatch_to_model()` or `_multiturn_fallback()` is always the unmodified caller-supplied prompt. As a result, ITC classifications do not trigger the intended recovery behavior for star topology and only partially affect relay topology via prompt prefixes, not true prompt rebuilding.",
+            "proposed_fix": "<<<< OLD\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== NEW\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n    observed_fingerprints: Optional[Dict[str, Dict[str, Any]]] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n>>>>",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F002",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.91,
+            "abstraction_index": 0.82,
+            "description": "FIND: `bench/reference_runner.py`, main round loop in `run_experiment()`, immediately after `immune_result = brain.run_immune_pipeline(findings)`. The runner ignores the immune pipeline\u2019s filtered output and instead marks registry entries verified using the original unfiltered `findings` list. Evidence: `immune_result` is assigned but never used except discarded. The loop `for f in findings: if f.verified: ... registry.mark_verified(...)` iterates over raw findings, not `immune_result.filtered_findings`. In context, `bench/immune_agents.py::run_immune_pipeline()` can reject findings, mark some as escalated, and only mark `verified=True` on `filtered_findings` after programmatic fix evaluation. Therefore the runner is consulting the wrong object set and also missing the pipeline\u2019s final filtered verdicts entirely.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n        for f in findings:\n            if f.verified:\n                canonical = registry.lookup_alias(f.model_id, f.finding_id)\n                if canonical:\n                    registry.mark_verified(canonical)\n====\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n\n        for f in immune_result.rejected_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if canonical and registry.entries.get(canonical, {}).get(\"status\") in (\"OPEN\", \"CONTESTED\"):\n                registry.resolve(canonical, \"UNCONFIRMED\", round_idx)\n\n        for f in immune_result.filtered_findings:\n            canonical = registry.lookup_alias(f.model_id, f.finding_id)\n            if not canonical:\n                continue\n            if f.verified:\n                registry.mark_verified(canonical)\n            if f.escalated:\n                registry.entries[canonical][\"escalated\"] = True\n>>>> REPLACE",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F003",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.88,
+            "abstraction_index": 0.74,
+            "description": "FIND: `bench/reference_runner.py`, function `_find_or_create_logs_dir()`, resume branch. It searches for `checkpoint.json`, but the runner itself persists state to `runner_state.json` and uses `brain.load_checkpoint()` for the brain state. Evidence: `_find_or_create_logs_dir()` returns an old log directory only if `(c / \"checkpoint.json\").exists()`. In the same file, the runner writes `runner_state.json` explicitly, not `checkpoint.json`, and never writes a top-level `checkpoint.json`. Therefore resume directory discovery can fail to locate resumable runs created by this runner, causing resume mode to start a new log directory instead of reusing the prior experiment directory.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n====\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"runner_state.json\").exists() or (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n>>>> REPLACE",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Codex_F005",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.84,
+            "abstraction_index": 0.83,
+            "description": "FIND: `bench/reference_runner.py`, `main()`, config-loading branch for `--config`. The parser still requires `--test-article` on the `run` subcommand even when `--config` is supplied, contradicting the documented usage `python3 bench/reference_runner.py run --config experiment.json`. Evidence: `build_parser()` declares `run_p.add_argument(\"--test-article\", required=True, ...)`. In `main()`, there is explicit support for `if getattr(args, \"config\", None): cfg = RunnerConfig.from_json(args.config)`, but argparse will reject `run --config experiment.json` before that code runs because the required `--test-article` is missing.",
+            "proposed_fix": "<<<< OLD\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n==== NEW\n# Build config from CLI args or JSON\n    if getattr(args, \"config\", None):\n        cfg = RunnerConfig.from_json(args.config)\n        # CLI args override JSON for explicitly-provided values\n        if args.test_article:\n            cfg.test_article = args.test_article\n        if args.resume:\n            cfg.resume = True\n    else:\n        if not args.test_article:\n            parser.error(\"--test-article is required unless --config is provided\")\n        cfg = RunnerConfig(\n            test_article=args.test_article,\n            context_files=args.context or [],\n            topology=args.topology,\n            relay_mode=args.relay_mode,\n            pattern=args.pattern,\n            max_rounds=args.max_rounds,\n            extension_cap=args.extension_cap,\n            wall_clock_cap_s=args.wall_clock_cap,\n            earliest_stop_round=args.earliest_stop,\n            models=args.models,\n            experiment_name=args.experiment_name,\n            domain=args.domain,\n            resume=args.resume,\n            rho_threshold=args.rho_threshold,\n            rho_rolling_window=args.rho_rolling_window,\n            consecutive_rounds_required=args.consecutive_rounds,\n        )\n\n    if not cfg.test_article:\n        parser.error(\"Configuration must provide test_article or pass --test-article\")\n>>>>",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "Gemini_UNSTRUCTURED",
+            "model_id": "Gemini",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.3,
+            "abstraction_index": 0.3,
+            "description": "{\n  \"FINDING_ID\": \"F001\",\n  \"SEVERITY\": 0.95,\n  \"FLAW_CLASS\": 1,\n  \"ABSTRACTION_INDEX\": 0.8,\n  \"DESCRIPTION\": \"FIND: The finding state transitions in `_update_finding_statuses` are broken. `OPEN` findings that are challenged never transition to `CONTESTED` (the transition check only applies to `CONFIRMED` findings). Furthermore, the transition from `CONTESTED` to `CONFIRMED` blindly proceeds if there are no unresolved challenges, completely bypassing the `independent_count >= 2` safety check. Fi",
+            "proposed_fix": "",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F001",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.85,
+            "abstraction_index": 0.6,
+            "description": "FIND \u2014 `_evaluate_gate_conditions` never checks `cfg.max_open_crit_high` (default 0). The convergence gate checks the *trend* of open CRIT/HIGH count (increasing vs stable) but omits an absolute threshold check. A run can converge with arbitrarily many open CRIT/HIGH findings as long as the count is not increasing over the stability window.",
+            "proposed_fix": "<<<< OLD\nif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n    else:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n==== NEW\nif open_ch > cfg.max_open_crit_high:\n        failures.append(\n            f\"open_ch={open_ch} > max_open_crit_high={cfg.max_open_crit_high}\"\n        )\n    elif open_ch_history is not None and len(open_ch_history) >= cfg.open_ch_stability_window:\n        window = open_ch_history[-cfg.open_ch_stability_window:]\n        if window[-1] > window[0]:\n            failures.append(\n                f\"open_ch={open_ch} (increasing: \"\n                f\"{window[0]}->{window[-1]} over {cfg.open_ch_stability_window}r)\"\n            )\n    elif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:\n        if open_ch > 0:\n            failures.append(f\"open_ch={open_ch} (insufficient history)\")\n>>>>",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F003",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.7,
+            "abstraction_index": 0.5,
+            "description": "FIND \u2014 `FindingRegistry.contested_count()` only skips MERGED entries. It iterates entries with status REFUTED, CLOSED, CONFIRMED, UNCONFIRMED \u2014 any of which may have stale challenges from before the status was set. A REFUTED finding (auto-resolved by `auto_resolve_contested` due to 3+ challenges) will still be counted by `contested_count` if its challenges are > 1 round old, because the method re-evaluates challenge history regardless of terminal status.",
+            "proposed_fix": "<<<< OLD\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        for e in self.entries.values():\n            if e[\"status\"] == \"MERGED\":\n                continue\n==== NEW\ndef contested_count(self, current_round: int) -> int:\n        count = 0\n        _terminal = (\"MERGED\", \"CLOSED\", \"REFUTED\", \"DUPLICATE\")\n        for e in self.entries.values():\n            if e[\"status\"] in _terminal:\n                continue\n>>>>",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F004",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.6,
+            "abstraction_index": 0.5,
+            "description": "FIND \u2014 `_itc_adapt` for `ITC_DEGRADATION` suppresses the adaptation when `rho_rolling_avg >= rho_threshold` (sets `state[\"adaptation\"] = None`), but the history entry with `classification=ITC_DEGRADATION` is already appended. `_itc_consecutive_failures` counts entries where `classification` is truthy, so suppressed degradations contribute to consecutive failure count. After 3 suppressed degradations, `_itc_flag_underperformer` fires a false HIL flag.",
+            "proposed_fix": "<<<< OLD\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n==== NEW\nelif classification == ITC_DEGRADATION:\n        if rho_rolling_avg >= rho_threshold:\n            _log(f\"  ITC [{model_label}]: {classification} suppressed \u2014 \"\n                 f\"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)\")\n            state[\"adaptation\"] = None\n            # Clear classification so suppressed degradation doesn't count\n            # toward consecutive failures / HIL flagging\n            state[\"history\"][-1][\"classification\"] = None\n>>>>",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F005",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 6,
+            "severity": 0.55,
+            "abstraction_index": 0.3,
+            "description": "FIND \u2014 `_itc_model_state` and `_itc_hil_flags` are module-level globals that are never reset between `run_experiment` calls. If the runner is invoked programmatically (tests, batch runs), ITC state from a prior experiment leaks into the next. A model flagged as underperformer in experiment A starts experiment B with a dirty history, potentially triggering immediate ITC interventions.",
+            "proposed_fix": "<<<< OLD\nexperiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n==== NEW\n# Reset module-level ITC state for clean experiment\n    global _itc_model_state, _itc_hil_flags\n    _itc_model_state = {}\n    _itc_hil_flags = []\n\n    experiment_start = time.monotonic()\n    effective_max = cfg.max_rounds\n    loop_cap = cfg.extension_cap\n    extended = False\n    rho_avg = 1.0\n    rho_churn = False\n>>>>",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F001",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.9,
+            "abstraction_index": 0.8,
+            "description": "FIND \u2014 Critical logical error in `_compute_rho` function (line ~1140): The calculation of `rho_rolling_window` average incorrectly includes zeros for rounds where raw_counts[i] == 0. The formula `rho_avg = sum(rho_values) / len(rho_values)` divides by window length even when some rounds had zero raw findings, artificially lowering the average. This violates the mathematical definition of \u03c1 (novelty/raw) and will cause false churn detection, potentially terminating experiments prematurely. Evidence: Lines 1140-1148 calculate `rho_values` as 0.0 for rounds with raw_counts[i] == 0, then averages them with valid rounds.",
+            "proposed_fix": "<<<< OLD\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n            else:\n                rho_values.append(0.0)\n        rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n==== NEW\nrho_values = []\n        for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n            if raw_counts[i] > 0:\n                rho_values.append(novelty_counts[i] / raw_counts[i])\n        if not rho_values:\n            rho_avg = 0.0\n        else:\n            rho_avg = sum(rho_values) / len(rho_values)\n>>>>",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "DeepSeek_F002",
+            "model_id": "DeepSeek",
+            "round_idx": 0,
+            "flaw_class": 2,
+            "severity": 0.7,
+            "abstraction_index": 0.6,
+            "description": "FIND \u2014 Interface mismatch in `_verification_step` (line ~1470): The function signature expects `source_code` parameter but calls `dispatch_to_model` with `cc2_config` and empty CDSFL text (`\"\"`). This violates the `dispatch_to_model` contract which requires valid CDSFL directives for proper constraint enforcement. Evidence: Line ~1480: `text, elapsed = dispatch_to_model(cc2_config, prompt, \"\", wall_clock_limit=cc2_config.timeout * 3)`. The empty string CDSFL directive will cause the model to operate without CDSFL constraints, potentially generating unconstrained verdicts.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _verification_step(\n    registry: FindingRegistry, round_idx: int,\n    source_code: str, model_configs: List[ModelConfig],\n    cfg: RunnerConfig,\n) -> Dict[str, Any]:\n    \"\"\"A5: dedup-aware CC2v \u2014 skip already-confirmed/escalated findings.\"\"\"\n    if round_idx < cfg.verification_min_round:\n        return {\"skipped\": True, \"reason\": f\"round {round_idx} < {cfg.verification_min_round}\"}\n\n    open_findings = []\n    for cid, entry in registry.entries.items():\n        if entry[\"status\"] not in (\"OPEN\", \"CONTESTED\"):\n            continue\n        if entry.get(\"cc2v_escalated\"):\n            continue\n        confirm_models = {\n            v[\"model\"] for v in entry.get(\"verdicts\", [])\n            if v.get(\"verdict\") == \"CONFIRM\"\n        }\n        if len(confirm_models) >= 2:\n            continue\n        cc2v_verdicts = [v for v in entry.get(\"verdicts\", []) if v.get(\"model\") == \"CC2v\"]\n        if cc2v_verdicts:\n            continue\n        open_findings.append((cid, entry))\n\n    if not open_findings:\n        return {\"skipped\": True, \"reason\": \"no open findings\"}\n\n    open_findings.sort(key=lambda x: x[1].get(\"severity\", 0), reverse=True)\n    batch = open_findings[:cfg.verification_batch_size]",
+            "verified": false,
+            "escalated": true,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          }
+        ],
+        "rejected_findings": [
+          {
+            "finding_id": "Codex_F004",
+            "model_id": "Codex",
+            "round_idx": 0,
+            "flaw_class": 5,
+            "severity": 0.86,
+            "abstraction_index": 0.79,
+            "description": "FIND: `bench/reference_runner.py`, function `_compute_rho()`. It computes `round_idx = len(raw_counts) - 1` and compares that zero-based value to `cfg.rho_earliest_round`, which elsewhere is configured and logged as human round numbers (`earliest_stop_round`, default 12). Evidence: after the first completed round, `len(raw_counts)==1`, so `round_idx==0`; at completed round 12, `round_idx==12` only after 13 rounds of data. The runner log labels rounds directly with `round_idx` from the main loop, and `RunnerConfig.__post_init__()` sets `rho_earliest_round = earliest_stop_round`. Therefore churn detection is delayed by one round relative to the configured stop round and to the log semantics used elsewhere.",
+            "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    round_idx = len(raw_counts) - 1\n    churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n====\ndef _compute_rho(\n    novelty_counts: List[int],\n    raw_counts: List[int],\n    cfg: RunnerConfig,\n) -> Tuple[float, float, bool]:\n    \"\"\"A2 fix: discovery efficiency rho with configurable threshold.\"\"\"\n    if not raw_counts or raw_counts[-1] == 0:\n        return 0.0, 0.0, False\n    rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0\n    rho_values = []\n    for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):\n        if raw_counts[i] > 0:\n            rho_values.append(novelty_counts[i] / raw_counts[i])\n        else:\n            rho_values.append(0.0)\n    rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0\n    current_round = len(raw_counts)\n    churn = rho_avg < cfg.rho_threshold and current_round >= cfg.rho_earliest_round\n    return rho_current, rho_avg, churn\n>>>> REPLACE",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          },
+          {
+            "finding_id": "CC2_F002",
+            "model_id": "CC2",
+            "round_idx": 0,
+            "flaw_class": 1,
+            "severity": 0.8,
+            "abstraction_index": 0.4,
+            "description": "FIND \u2014 Extension stall check compares incompatible metrics. Line in `run_experiment`:\nregistry.open_crit_high_count() >= prev.get(\"findings_count\", 0)\n`open_crit_high_count()` is the current registry count of open CRIT/HIGH findings (a running total). `prev[\"findings_count\"]` is `len(findings)` \u2014 the raw number of findings parsed from model output in a single round. These are semantically different quantities. A typical run might have 3 open CRIT/HIGH and 25 raw findings per round, so the condition `3 >= 25` would be False and the stall would never trigger even when extension is truly stalled.",
+            "proposed_fix": "<<<< OLD\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev.get(\"findings_count\", 0)):\n                _log(\"  Extension not improving. Terminating.\")\n==== NEW\nif extended and round_idx > cfg.max_rounds and len(result[\"rounds\"]) >= 2:\n            prev = result[\"rounds\"][-2]\n            prev_open_ch = prev.get(\"open_crit_high\", registry.open_crit_high_count())\n            if (round_data.get(\"rho_avg\", 1) <= prev.get(\"rho_avg\", 0) and\n                    registry.open_crit_high_count() >= prev_open_ch):\n                _log(\"  Extension not improving. Terminating.\")\n>>>>",
+            "verified": false,
+            "escalated": false,
+            "falsification_present": false,
+            "pm_verdict": "",
+            "dedup_of": ""
+          }
+        ],
+        "rejection_rate": 0.0625,
+        "autoimmune_flag": false,
+        "stage_timings": {
+          "skin_barrier": 0.0015,
+          "dendritic_v1": 0.0018,
+          "dendritic": 0.0027,
+          "llm_classifier": 192.3564,
+          "parallel_verification": 84.4395,
+          "formalisation": 0.0032,
+          "helper_t": 0.0001,
+          "helper_t_v2": 0.0001,
+          "reconciliation_gate": 0.0001,
+          "regulatory_t": 0.0037,
+          "fix_evaluation": 0.0068
+        },
+        "tool_usage": {
+          "skin_barrier": 16,
+          "skin_barrier_blocked": 0,
+          "ct_mechanical": 1,
+          "sympy": 9,
+          "z3": 2,
+          "z3_v2_smt2": 11
+        },
+        "observation_only": false,
+        "barrier_results": [
+          {
+            "finding_id": "ChatGPT_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "ChatGPT_F002",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "ChatGPT_F003",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F002",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F003",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F004",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Codex_F005",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "Gemini_UNSTRUCTURED",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F002",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F003",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F004",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "CC2_F005",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F001",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          },
+          {
+            "finding_id": "DeepSeek_F002",
+            "passed": true,
+            "reason": "No file:line citation to verify",
+            "cited_file": "",
+            "cited_line": 0
+          }
+        ]
+      }
+    }
+  ],
+  "directed_messages": [],
+  "active_models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "converged": false,
+  "convergence_reason": "",
+  "failed": false,
+  "failure_reason": ""
+}
