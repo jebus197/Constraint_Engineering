@@ -2,6 +2,8 @@
 
 How the system works. Read this after the GLOSSARY if you are new to the project.
 
+For a visual overview of the complete system, see the **[Whole-Body Topology Map](CDSFL_Topology.svg)** — a single diagram showing every component and how they connect, using the biological paradigm that informed the design.
+
 ---
 
 ## Overview

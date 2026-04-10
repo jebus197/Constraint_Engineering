@@ -34,6 +34,14 @@ The result is systematic overconfidence. A model may produce a circuit that cann
 
 CDSFL exists to make that failure mode harder to survive.
 
+## Architecture at a glance
+
+The system maps biological verification architecture to AI-assisted technical work. Each component has a direct biological analogue — not as metaphor, but as structural design informed by 500 million years of evolutionary selection pressure on verification systems.
+
+![CDSFL Whole-Body Topology](docs/CDSFL_Topology.svg)
+
+The full architecture is documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The topology diagram is generated programmatically by [`scripts/generate_topology.py`](scripts/generate_topology.py).
+
 ## What CDSFL adds beyond "run it again"
 
 ### 1. Constraint classification
