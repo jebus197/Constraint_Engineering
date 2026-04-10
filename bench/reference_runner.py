@@ -40,7 +40,7 @@ import sys
 import tempfile
 import time
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -205,6 +205,10 @@ class RunnerConfig:
     sk_enabled: bool = False
     test_cmd: Optional[str] = None
     sk_s_floor: float = 0.0  # domain-specific minimum S*
+
+    # Burst decomposition: "auto" (decide based on fingerprints),
+    # "on" (always decompose), "off" (monolithic)
+    burst_mode: str = "auto"
 
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
@@ -1505,7 +1509,7 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
             # Collect search lines until bare ==== separator
             search_lines: List[str] = []
             while i < len(lines):
-                if lines[i].rstrip() == "====" or lines[i].rstrip() == "====":
+                if lines[i].rstrip() == "====":
                     i += 1
                     break
                 search_lines.append(lines[i])
@@ -1536,27 +1540,40 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
 
 def apply_fix_blocks(
     source: str, blocks: List[FixBlock], target_path: str,
-) -> Tuple[Optional[str], int]:
-    """Apply fix blocks to source. Returns (modified_source, blocks_applied).
+) -> Tuple[Optional[str], int, Optional[str]]:
+    """Apply fix blocks to source.
+
+    Returns (modified_source, blocks_applied, error_reason).
 
     Only applies blocks whose file_path matches target_path (by basename or
-    full path). Returns None if any matched block's SEARCH content is not
-    found in the source (pre-gate failure).
+    full path). Returns modified_source=None on pre-gate failure with a
+    machine-readable error_reason.
     """
     modified = source
     applied = 0
+    matched = 0
     for block in blocks:
         # Match by basename or full path
         if not (block.file_path == target_path or
                 Path(block.file_path).name == Path(target_path).name):
             continue
+        matched += 1
         if block.search not in modified:
             _log(f"  S_k: SEARCH block not found in source "
                  f"(first 60 chars: {block.search[:60]!r})")
-            return None, 0
+            return None, 0, "search_not_found"
+        occurrences = modified.count(block.search)
+        if occurrences > 1:
+            _log(f"  S_k: SEARCH block is ambiguous ({occurrences} "
+                 f"occurrences, first 60 chars: {block.search[:60]!r})")
+            return None, 0, "search_ambiguous"
         modified = modified.replace(block.search, block.replace, 1)
         applied += 1
-    return modified, applied
+
+    if matched == 0:
+        return None, 0, "no_blocks_for_target"
+
+    return modified, applied, None
 
 
 def _run_hard_gate_ast(modified_source: str) -> Tuple[int, str]:
@@ -1564,14 +1581,17 @@ def _run_hard_gate_ast(modified_source: str) -> Tuple[int, str]:
     try:
         ast.parse(modified_source)
         return 1, "AST parse succeeded"
-    except SyntaxError as e:
-        return 0, f"SyntaxError: {e}"
+    except (SyntaxError, ValueError) as e:
+        return 0, f"ParseError: {e}"
 
 
 def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int, str]:
     """g2: py_compile (replaces import resolution). Returns (score, detail)."""
+    # Anchor to source directory for context parity with ruff/bandit gates
+    anchor_dir = str(Path(source_path).parent) if source_path else None
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
+        dir=anchor_dir,
     ) as tmp:
         tmp.write(modified_source)
         tmp_path = tmp.name
@@ -1581,7 +1601,10 @@ def _run_hard_gate_compile(modified_source: str, source_path: str) -> Tuple[int,
     except py_compile.PyCompileError as e:
         return 0, f"CompileError: {e}"
     finally:
-        os.unlink(tmp_path)
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass
 
 
 def _run_effect_regression(
@@ -1605,8 +1628,9 @@ def _run_effect_regression(
         sandbox = Path(tmpdir) / "sandbox"
         shutil.copytree(
             REPO_ROOT, sandbox,
+            symlinks=True,
             ignore=shutil.ignore_patterns(
-                ".git", "__pycache__", ".pytest_cache", "*.pyc", "bench/logs",
+                ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs",
             ),
         )
         # Overlay the modified source into the sandbox
@@ -1621,23 +1645,43 @@ def _run_effect_regression(
                 env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
             )
             output = result.stdout + result.stderr
+
             m = re.search(r'(\d+)\s+passed', output)
             passed = int(m.group(1)) if m else 0
             m = re.search(r'(\d+)\s+failed', output)
             failed = int(m.group(1)) if m else 0
+            collected_zero = bool(re.search(r'collected\s+0\s+items', output))
+
             total = passed + failed
-            if total == 0:
-                return 1.0, "no tests found (skipped)"
-            score = passed / total
-            return score, f"{passed}/{total} passed (sandbox)"
+            if total > 0:
+                score = passed / total
+                return score, f"{passed}/{total} passed (sandbox)"
+
+            # Genuine "no tests" — pytest exit code 5 = no tests collected
+            if collected_zero and result.returncode == 5:
+                return 1.0, "no tests collected"
+
+            # Unparseable output (collection error, crash, etc.) — unavailable
+            return None, (
+                f"test results unavailable: rc={result.returncode} "
+                f"output={output[:200]!r}"
+            )
         except (subprocess.TimeoutExpired, OSError) as e:
             return None, f"test execution failed: {e}"
 
 
-def _run_effect_ruff(modified_source: str, baseline_violations: int) -> Tuple[Optional[float], str]:
+def _run_effect_ruff(
+    modified_source: str, baseline_violations: Optional[int],
+    source_path: str = "",
+) -> Tuple[Optional[float], str]:
     """e3: Static analysis non-regression via ruff."""
+    if baseline_violations is None:
+        return None, "ruff baseline unavailable"
+    # Anchor temp file to source directory so ruff picks up pyproject.toml
+    anchor_dir = str(Path(source_path).parent) if source_path else None
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
+        dir=anchor_dir,
     ) as tmp:
         tmp.write(modified_source)
         tmp_path = tmp.name
@@ -1647,11 +1691,15 @@ def _run_effect_ruff(modified_source: str, baseline_violations: int) -> Tuple[Op
              "--output-format=json", "--quiet"],
             capture_output=True, text=True, timeout=30,
         )
+        if result.returncode not in (0, 1):
+            return None, f"ruff failed: rc={result.returncode} stderr={result.stderr[:200]}"
         try:
             violations = json.loads(result.stdout)
+            if not isinstance(violations, list):
+                return None, "ruff output was not JSON list"
             total_count = len(violations)
-        except (json.JSONDecodeError, TypeError):
-            total_count = 0
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"ruff output parse failed: {e}"
         # Delta-based: only NEW violations reduce score (0.1 penalty each)
         delta = max(0, total_count - baseline_violations)
         score = max(0.0, 1.0 - delta * 0.1)
@@ -1662,10 +1710,22 @@ def _run_effect_ruff(modified_source: str, baseline_violations: int) -> Tuple[Op
         os.unlink(tmp_path)
 
 
-def _run_effect_bandit(modified_source: str, baseline_findings: int) -> Tuple[Optional[float], str]:
-    """e4: Security non-regression via bandit."""
+def _run_effect_bandit(
+    modified_source: str, baseline_findings: Optional[Dict[str, int]],
+    source_path: str = "",
+) -> Tuple[Optional[float], str]:
+    """e4: Security non-regression via bandit.
+
+    Scoring per Python encoding: -0.5 per new HIGH, -0.2 per new MEDIUM.
+    baseline_findings is a dict with 'high' and 'medium' keys.
+    """
+    if baseline_findings is None:
+        return None, "bandit baseline unavailable"
+    # Anchor temp file to source directory for config discovery
+    anchor_dir = str(Path(source_path).parent) if source_path else None
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
+        dir=anchor_dir,
     ) as tmp:
         tmp.write(modified_source)
         tmp_path = tmp.name
@@ -1674,30 +1734,56 @@ def _run_effect_bandit(modified_source: str, baseline_findings: int) -> Tuple[Op
             [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
             capture_output=True, text=True, timeout=30,
         )
+        if result.returncode not in (0, 1):
+            return None, f"bandit failed: rc={result.returncode} stderr={result.stderr[:200]}"
         try:
             data = json.loads(result.stdout)
+            if not isinstance(data, dict):
+                return None, "bandit output was not JSON object"
             results_list = data.get("results", [])
-            high_med = sum(
+            high_count = sum(
                 1 for r in results_list
-                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
+                if r.get("issue_severity", "").upper() == "HIGH"
             )
-        except (json.JSONDecodeError, TypeError):
-            high_med = 0
-        new_findings = max(0, high_med - baseline_findings)
-        score = max(0.0, 1.0 - new_findings * 0.5)
-        return score, f"{high_med} HIGH/MEDIUM (baseline: {baseline_findings}, new: {new_findings})"
+            med_count = sum(
+                1 for r in results_list
+                if r.get("issue_severity", "").upper() == "MEDIUM"
+            )
+        except (json.JSONDecodeError, TypeError) as e:
+            return None, f"bandit output parse failed: {e}"
+        baseline_high = baseline_findings.get("high", 0)
+        baseline_med = baseline_findings.get("medium", 0)
+        new_high = max(0, high_count - baseline_high)
+        new_med = max(0, med_count - baseline_med)
+        score = max(0.0, 1.0 - new_high * 0.5 - new_med * 0.2)
+        return score, (
+            f"{high_count} HIGH/{med_count} MEDIUM "
+            f"(baseline: {baseline_high}H/{baseline_med}M, "
+            f"new: {new_high}H/{new_med}M)"
+        )
     except (subprocess.TimeoutExpired, OSError) as e:
         return None, f"bandit unavailable: {e}"
     finally:
         os.unlink(tmp_path)
 
 
-def _capture_baseline(source: str) -> Dict[str, Any]:
-    """Capture baseline gate scores before fix application."""
-    baseline: Dict[str, Any] = {}
+def _capture_baseline(source: str, source_path: str = "") -> Dict[str, Any]:
+    """Capture baseline gate scores before fix application.
+
+    Values are None when a tool is unavailable, so downstream gates
+    can distinguish 'no violations' (0) from 'tool broken' (None).
+    """
+    baseline: Dict[str, Any] = {
+        "ruff_violations": None,
+        "bandit_findings": None,
+    }
+    # Anchor temp files to source directory for config discovery
+    anchor_dir = str(Path(source_path).parent) if source_path else None
+
     # Ruff violations on original source
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
+        dir=anchor_dir,
     ) as tmp:
         tmp.write(source)
         tmp_path = tmp.name
@@ -1707,19 +1793,22 @@ def _capture_baseline(source: str) -> Dict[str, Any]:
              "--output-format=json", "--quiet"],
             capture_output=True, text=True, timeout=30,
         )
-        try:
-            violations = json.loads(result.stdout)
-            baseline["ruff_violations"] = len(violations)
-        except (json.JSONDecodeError, TypeError):
-            baseline["ruff_violations"] = 0
+        if result.returncode in (0, 1):
+            try:
+                violations = json.loads(result.stdout)
+                if isinstance(violations, list):
+                    baseline["ruff_violations"] = len(violations)
+            except (json.JSONDecodeError, TypeError):
+                pass
     except (subprocess.TimeoutExpired, OSError):
-        baseline["ruff_violations"] = 0
+        pass
     finally:
         os.unlink(tmp_path)
 
     # Bandit findings on original source
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".py", delete=False, encoding="utf-8",
+        dir=anchor_dir,
     ) as tmp:
         tmp.write(source)
         tmp_path = tmp.name
@@ -1728,17 +1817,25 @@ def _capture_baseline(source: str) -> Dict[str, Any]:
             [sys.executable, "-m", "bandit", "-f", "json", tmp_path],
             capture_output=True, text=True, timeout=30,
         )
-        try:
-            data = json.loads(result.stdout)
-            results_list = data.get("results", [])
-            baseline["bandit_high_med"] = sum(
-                1 for r in results_list
-                if r.get("issue_severity", "").upper() in ("HIGH", "MEDIUM")
-            )
-        except (json.JSONDecodeError, TypeError):
-            baseline["bandit_high_med"] = 0
+        if result.returncode in (0, 1):
+            try:
+                data = json.loads(result.stdout)
+                if isinstance(data, dict):
+                    results_list = data.get("results", [])
+                    baseline["bandit_findings"] = {
+                        "high": sum(
+                            1 for r in results_list
+                            if r.get("issue_severity", "").upper() == "HIGH"
+                        ),
+                        "medium": sum(
+                            1 for r in results_list
+                            if r.get("issue_severity", "").upper() == "MEDIUM"
+                        ),
+                    }
+            except (json.JSONDecodeError, TypeError):
+                pass
     except (subprocess.TimeoutExpired, OSError):
-        baseline["bandit_high_med"] = 0
+        pass
     finally:
         os.unlink(tmp_path)
 
@@ -1765,11 +1862,11 @@ def compute_sk(
             blocks_parsed=0, blocks_applied=0,
         )
 
-    modified, applied = apply_fix_blocks(source, blocks, source_path)
+    modified, applied, apply_error = apply_fix_blocks(source, blocks, source_path)
     if modified is None or applied == 0:
         return SkResult(
             sk=0.0, A=0.0, E=0.0, tristate="REJECTED",
-            gate_details={"error": "SEARCH block content not found in source"},
+            gate_details={"error": apply_error or "fix_blocks_not_applied"},
             blocks_parsed=len(blocks), blocks_applied=0,
         )
 
@@ -1808,7 +1905,7 @@ def compute_sk(
 
     # e3: ruff non-regression
     e3_score, e3_detail = _run_effect_ruff(
-        modified, baseline.get("ruff_violations", 0))
+        modified, baseline.get("ruff_violations"), source_path=source_path)
     details["e3_ruff"] = {"score": e3_score, "detail": e3_detail}
     if e3_score is not None:
         effect_gates.append(("e3_ruff", e3_score, 1.0))
@@ -1817,7 +1914,7 @@ def compute_sk(
 
     # e4: bandit security
     e4_score, e4_detail = _run_effect_bandit(
-        modified, baseline.get("bandit_high_med", 0))
+        modified, baseline.get("bandit_findings"), source_path=source_path)
     details["e4_bandit"] = {"score": e4_score, "detail": e4_detail}
     if e4_score is not None:
         effect_gates.append(("e4_bandit", e4_score, 2.0))
@@ -1864,9 +1961,12 @@ def compute_rk(
 
     Uses bounded nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f).
     """
-    # Clamp nu parameters to valid range
-    nu_b = max(0.0, min(1.0, nu_b))
-    nu_f = max(0.0, min(1.0, nu_f))
+    # Defensive cast and clamp all probability-space inputs to [0, 1]
+    R_old = max(0.0, min(1.0, float(R_old)))
+    q = max(0.0, min(1.0, float(q)))
+    sk = max(0.0, min(1.0, float(sk)))
+    nu_b = max(0.0, min(1.0, float(nu_b)))
+    nu_f = max(0.0, min(1.0, float(nu_f)))
     # HARD CONSTRAINT: nu_b + nu_f <= 1
     if nu_b + nu_f > 1.0:
         scale = 1.0 / (nu_b + nu_f)
@@ -1899,9 +1999,13 @@ def check_sk_threshold(
     Returns (passes, s_star). Fixes below S* do more harm than good
     (Valley of Bad Fixes).
     """
-    # Clamp nu parameters
-    nu_b = max(0.0, min(1.0, nu_b))
-    nu_f = max(0.0, min(1.0, nu_f))
+    # Defensive cast and clamp all probability-space inputs to [0, 1]
+    sk = max(0.0, min(1.0, float(sk)))
+    q = max(0.0, min(1.0, float(q)))
+    R = max(0.0, min(1.0, float(R)))
+    s_floor = max(0.0, min(1.0, float(s_floor)))
+    nu_b = max(0.0, min(1.0, float(nu_b)))
+    nu_f = max(0.0, min(1.0, float(nu_f)))
     if nu_b + nu_f > 1.0:
         scale = 1.0 / (nu_b + nu_f)
         nu_b *= scale
@@ -1947,7 +2051,7 @@ def _evaluate_sk_for_findings(
         if entry["status"] not in ("OPEN", "CONFIRMED", "CONTESTED"):
             continue
         fix_text = entry.get("proposed_fix", "")
-        if not fix_text or "<<<< SEARCH" not in fix_text:
+        if not fix_text or "<<<<" not in fix_text:
             continue
 
         sk_result = compute_sk(
@@ -2136,6 +2240,68 @@ def run_experiment(
     _log(f"  Context: {len(context_parts)} files")
     _log(f"  Total: {len(full_code):,} chars with headers")
 
+    # Burst decomposition planning
+    burst_plan = None
+    burst_state: Optional[Dict[str, Any]] = None
+    context_chars = sum(len(p) for p in context_parts)
+
+    if cfg.burst_mode != "off":
+        from bench.burst_planner import (
+            should_burst, plan_phases, build_phase_code,
+            build_integration_code, build_findings_summary,
+            phase_convergence_overrides, integration_convergence_overrides,
+            extract_signatures,
+        )
+        need_burst = cfg.burst_mode == "on"
+        burst_reason = "burst_mode=on" if need_burst else ""
+
+        if not need_burst:
+            need_burst, burst_reason = should_burst(
+                len(target_text), context_chars,
+                MODEL_SPECS, INITIAL_FINGERPRINTS, sorted(baseline),
+            )
+
+        if need_burst:
+            burst_plan = plan_phases(
+                target_text, MODEL_SPECS, INITIAL_FINGERPRINTS,
+                sorted(baseline), str(target_rel),
+            )
+            # Context file signatures for integration round
+            ctx_sigs = ""
+            for ctx_path in context_paths:
+                try:
+                    ctx_text = ctx_path.read_text(encoding="utf-8")
+                    ctx_sigs += (
+                        f"# === {ctx_path.name} ===\n"
+                        + extract_signatures(ctx_text) + "\n"
+                    )
+                except Exception:
+                    pass
+
+            burst_state = {
+                "phase_idx": 0,
+                "phase_round_offset": 0,
+                "phase_findings": {},  # {phase_name: findings_summary}
+                "integration_started": False,
+                "integration_done": False,
+                "original_cfg_overrides": {},
+                "context_signatures": ctx_sigs,
+            }
+            _log(f"\n  BURST MODE: {burst_reason}")
+            _log(f"  Phases: {len(burst_plan.phases)} + integration round")
+            _log(f"  Budget: {burst_plan.budget_chars_per_phase:,} chars/phase")
+            _log(f"  Signatures: {len(burst_plan.signatures):,} chars")
+            for p in burst_plan.phases:
+                sections = [s.name for s in p.sections]
+                _log(f"    Phase {p.index}: {p.name} "
+                     f"({p.char_count:,} chars, {len(sections)} sections)")
+
+            # Override full_code and base_prompt for first phase
+            phase = burst_plan.phases[0]
+            full_code = build_phase_code(
+                phase, str(target_rel), burst_plan.signatures)
+            _log(f"\n  Starting Phase 0: {phase.name}")
+
     # Build DynamicManager
     dm_config = DynamicManagementConfig(
         pre_decompose_models={"Codex", "DeepSeek"},
@@ -2190,6 +2356,14 @@ def run_experiment(
     experiment_start = time.monotonic()
     effective_max = cfg.max_rounds
     loop_cap = cfg.extension_cap
+    # Burst mode: extend loop cap to accommodate all phases + integration
+    if burst_plan:
+        phase_rounds_each = 8  # generous per-phase budget
+        burst_total = (len(burst_plan.phases) + 1) * phase_rounds_each
+        loop_cap = max(loop_cap, burst_total)
+        effective_max = max(effective_max, burst_total)
+        _log(f"  Burst loop cap: {loop_cap} rounds "
+             f"({len(burst_plan.phases)} phases × {phase_rounds_each} + integration)")
     extended = False
     rho_avg = 1.0
     rho_churn = False
@@ -2198,9 +2372,9 @@ def run_experiment(
     sk_baseline: Dict[str, Any] = {}
     if cfg.sk_enabled:
         _log("  S_k pipeline: capturing baseline gate scores...")
-        sk_baseline = _capture_baseline(target_text)
-        _log(f"  S_k baseline: ruff={sk_baseline.get('ruff_violations', 0)}, "
-             f"bandit={sk_baseline.get('bandit_high_med', 0)}")
+        sk_baseline = _capture_baseline(target_text, source_path=str(target_path))
+        _log(f"  S_k baseline: ruff={sk_baseline.get('ruff_violations', '?')}, "
+             f"bandit={sk_baseline.get('bandit_findings', '?')}")
 
     # Build awareness preamble
     roster_lines = "\n".join(
@@ -2221,31 +2395,37 @@ def run_experiment(
         f"{_GOOD_ENOUGH_INSTRUCTION}"
     )
 
-    base_prompt = (
-        f"{awareness_preamble}"
-        f"YOUR TASK:\n"
-        f"Review {target_rel} under full CDSFL + FFF constraints.\n\n"
-        f"For each finding, provide (keys in this exact order):\n"
-        f"  FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\n"
-        f"  SEVERITY: 0.0 to 1.0\n"
-        f"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, "
-        f"4=completeness, 5=correctness, 6=edge-case, 7=performance, 8=documentation)\n"
-        f"  ABSTRACTION_INDEX: 0.0 to 1.0\n"
-        f"  DESCRIPTION: FIND — what is wrong, where, evidence\n"
-        f"  FOLLOW: trace downstream consequences before proposing a fix\n"
-        f"  PROPOSED_FIX: Express as SEARCH/REPLACE blocks:\n"
-        f"    <<<< SEARCH file_path\n"
-        f"    [exact current content]\n"
-        f"    ====\n"
-        f"    [exact replacement]\n"
-        f"    >>>> REPLACE\n"
-        f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
-        f"Produce ALL findings. Do not hold back.\n\n"
-        f"=== ARTIFACT: {target_rel} + Context ({len(full_code):,} chars) ===\n\n"
-        f"{full_code}\n\n"
-        f"=== END ARTIFACT ===\n\n"
-        f"Produce your findings now."
-    )
+    def _build_prompt(code_payload: str, artifact_label: str = "") -> str:
+        """Build base prompt from awareness preamble + code payload."""
+        label = artifact_label or f"{target_rel} + Context"
+        return (
+            f"{awareness_preamble}"
+            f"YOUR TASK:\n"
+            f"Review {target_rel} under full CDSFL + FFF constraints.\n\n"
+            f"For each finding, provide (keys in this exact order):\n"
+            f"  FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\n"
+            f"  SEVERITY: 0.0 to 1.0\n"
+            f"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, "
+            f"4=completeness, 5=correctness, 6=edge-case, 7=performance, "
+            f"8=documentation)\n"
+            f"  ABSTRACTION_INDEX: 0.0 to 1.0\n"
+            f"  DESCRIPTION: FIND — what is wrong, where, evidence\n"
+            f"  FOLLOW: trace downstream consequences before proposing a fix\n"
+            f"  PROPOSED_FIX: Express as SEARCH/REPLACE blocks:\n"
+            f"    <<<< SEARCH file_path\n"
+            f"    [exact current content]\n"
+            f"    ====\n"
+            f"    [exact replacement]\n"
+            f"    >>>> REPLACE\n"
+            f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
+            f"Produce ALL findings. Do not hold back.\n\n"
+            f"=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\n\n"
+            f"{code_payload}\n\n"
+            f"=== END ARTIFACT ===\n\n"
+            f"Produce your findings now."
+        )
+
+    base_prompt = _build_prompt(full_code)
 
     result: Dict[str, Any] = {
         "experiment": cfg.experiment_name,
@@ -2470,38 +2650,138 @@ def run_experiment(
         }
         result["rounds"].append(round_data)
 
-        if converged:
-            _log(f"\n  CONVERGED at round {round_idx}: {conv_reason}")
-            result["converged_at"] = round_idx
-            result["convergence_reason"] = conv_reason
-            break
+        # ── Phase transition or final convergence ──
+        phase_transition = False
 
-        if stall_result.get("terminate"):
-            _log(f"\n  STALL_CONVERGED at round {round_idx}: {stall_result['reason']}")
-            result["converged_at"] = round_idx
-            result["convergence_reason"] = "STALL_CONVERGED"
-            break
+        if converged or stall_result.get("terminate"):
+            reason_str = conv_reason if converged else stall_result.get("reason", "stall")
+            reason_type = "CONVERGED" if converged else "STALL_CONVERGED"
 
-        # Budget extension
-        if round_idx == cfg.max_rounds - 1 and not extended:
-            gamma_prev = gamma_history[-2] if len(gamma_history) >= 2 else 0.0
-            should_extend, ext_reason = _check_budget_extension(
-                round_idx, registry, gamma, gamma_prev)
-            if should_extend:
-                effective_max = cfg.extension_cap
-                extended = True
-                _log(f"\n  BUDGET EXTENDED to {cfg.extension_cap}: {ext_reason}")
-                result["budget_extended"] = True
+            if burst_plan and burst_state and not burst_state["integration_done"]:
+                # Burst mode: transition to next phase or integration
+                phase_idx = burst_state["phase_idx"]
+                current_phase_name = burst_plan.phases[phase_idx].name
 
-        # Extension stall
-        if extended and round_idx > cfg.max_rounds and len(result["rounds"]) >= 2:
-            prev = result["rounds"][-2]
-            if (round_data.get("rho_avg", 1) <= prev.get("rho_avg", 0) and
-                    registry.open_crit_high_count() >= prev.get("findings_count", 0)):
-                _log("  Extension not improving. Terminating.")
+                # Record phase findings
+                burst_state["phase_findings"][current_phase_name] = (
+                    build_findings_summary(registry.to_dict(), current_phase_name)
+                )
+
+                if phase_idx + 1 < len(burst_plan.phases):
+                    # Transition to next phase
+                    next_idx = phase_idx + 1
+                    next_phase = burst_plan.phases[next_idx]
+                    burst_state["phase_idx"] = next_idx
+                    burst_state["phase_round_offset"] = round_idx + 1
+
+                    _log(f"\n  Phase {phase_idx} ({current_phase_name}) "
+                         f"{reason_type} at round {round_idx}")
+                    _log(f"  Transitioning to Phase {next_idx}: {next_phase.name}")
+
+                    # Build prior findings summary for cross-phase awareness
+                    prior_summary = "\n".join(
+                        burst_state["phase_findings"].values())
+
+                    full_code = build_phase_code(
+                        next_phase, str(target_rel),
+                        burst_plan.signatures, prior_summary)
+                    base_prompt = _build_prompt(
+                        full_code,
+                        f"{target_rel} Phase {next_idx}: {next_phase.name}")
+
+                    # Rebase convergence thresholds for new phase
+                    overrides = phase_convergence_overrides(round_idx + 1)
+                    cfg = replace(cfg, **overrides)
+
+                    # Reset per-phase convergence state
+                    gate_history.clear()
+                    stall_history.clear()
+                    novelty_counts.clear()
+                    raw_counts.clear()
+                    rho_history.clear()
+                    gamma_history.clear()
+                    open_ch_history.clear()
+                    extended = False
+
+                    phase_transition = True
+                    _log(f"  Phase {next_idx} starts at round {round_idx + 1}")
+
+                elif not burst_state["integration_started"]:
+                    # All phases done — start integration round
+                    burst_state["integration_started"] = True
+                    burst_state["phase_round_offset"] = round_idx + 1
+
+                    _log(f"\n  Phase {phase_idx} ({current_phase_name}) "
+                         f"{reason_type} at round {round_idx}")
+                    _log("  All phases converged — starting integration round")
+
+                    all_findings = "\n".join(
+                        burst_state["phase_findings"].values())
+                    full_code = build_integration_code(
+                        target_text, str(target_rel), all_findings,
+                        burst_state["context_signatures"])
+                    base_prompt = _build_prompt(
+                        full_code, f"{target_rel} Integration")
+
+                    # Tight integration convergence
+                    overrides = integration_convergence_overrides(
+                        round_idx + 1)
+                    cfg = replace(cfg, **overrides)
+
+                    gate_history.clear()
+                    stall_history.clear()
+                    novelty_counts.clear()
+                    raw_counts.clear()
+                    rho_history.clear()
+                    gamma_history.clear()
+                    open_ch_history.clear()
+                    extended = False
+
+                    phase_transition = True
+                    _log(f"  Integration starts at round {round_idx + 1}")
+
+                else:
+                    # Integration converged — done
+                    burst_state["integration_done"] = True
+                    _log(f"\n  INTEGRATION {reason_type} at round {round_idx}")
+                    result["converged_at"] = round_idx
+                    result["convergence_reason"] = f"BURST_{reason_type}"
+                    result["burst_phases"] = len(burst_plan.phases)
+                    break
+            else:
+                # Non-burst mode or integration done: final convergence
+                _log(f"\n  {reason_type} at round {round_idx}: {reason_str}")
                 result["converged_at"] = round_idx
-                result["convergence_reason"] = "EXTENSION_STALLED"
+                result["convergence_reason"] = reason_str
                 break
+
+        if not phase_transition:
+            # Budget extension (only in non-burst or during integration)
+            if (not burst_plan or (burst_state and
+                    burst_state.get("integration_started"))) and \
+                    round_idx == cfg.max_rounds - 1 and not extended:
+                gamma_prev = (gamma_history[-2]
+                              if len(gamma_history) >= 2 else 0.0)
+                should_extend, ext_reason = _check_budget_extension(
+                    round_idx, registry, gamma, gamma_prev)
+                if should_extend:
+                    effective_max = cfg.extension_cap
+                    extended = True
+                    _log(f"\n  BUDGET EXTENDED to {cfg.extension_cap}: "
+                         f"{ext_reason}")
+                    result["budget_extended"] = True
+
+            # Extension stall
+            if (extended and round_idx > cfg.max_rounds and
+                    len(result["rounds"]) >= 2):
+                prev = result["rounds"][-2]
+                if (round_data.get("rho_avg", 1) <= prev.get("rho_avg", 0)
+                        and registry.open_crit_high_count() >=
+                        prev.get("findings_count", 0)):
+                    _log("  Extension not improving. Terminating.")
+                    result["converged_at"] = round_idx
+                    result["convergence_reason"] = "EXTENSION_STALLED"
+                    break
 
     # Finalise
     final_round = len(brain.state.all_findings) - 1
@@ -2579,6 +2859,10 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--rho-rolling-window", type=int, default=3)
     run_p.add_argument("--consecutive-rounds", type=int, default=2)
     run_p.add_argument("--config", help="JSON config file (overrides CLI args)")
+    run_p.add_argument("--burst-mode", default="auto",
+                       choices=["auto", "on", "off"],
+                       help="Burst decomposition: auto (fingerprint-driven), "
+                            "on (always), off (monolithic)")
 
     return p
 
@@ -2609,6 +2893,8 @@ def main():
             cfg.test_article = args.test_article
         if args.resume:
             cfg.resume = True
+        if hasattr(args, "burst_mode"):
+            cfg.burst_mode = args.burst_mode
     else:
         cfg = RunnerConfig(
             test_article=args.test_article,
@@ -2627,6 +2913,7 @@ def main():
             rho_threshold=args.rho_threshold,
             rho_rolling_window=args.rho_rolling_window,
             consecutive_rounds_required=args.consecutive_rounds,
+            burst_mode=args.burst_mode,
         )
 
     if args.pattern not in INTERACTION_PATTERN_PRESETS:

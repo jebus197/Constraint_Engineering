@@ -77,7 +77,7 @@ MODEL_SPECS = {
     "CC2": {"tau": 400.0, "L": 168000.0, "c": 0.015, "L_std": 0.0},
     "ChatGPT": {"tau": 200.0, "L": 96000.0, "c": 0.02, "L_std": 0.0},
     "Gemini": {"tau": 350.0, "L": 968000.0, "c": 0.01, "L_std": 0.0},
-    "DeepSeek": {"tau": 200.0, "L": 32000.0, "c": 0.01, "L_std": 0.0},
+    "DeepSeek": {"tau": 200.0, "L": 99000.0, "c": 0.01, "L_std": 0.0},
     "Codex": {"tau": 600.0, "L": 96000.0, "c": 0.02, "L_std": 10000.0},
 }
 
@@ -672,6 +672,19 @@ def dispatch_to_model(
     Default wall_clock_limit = model timeout * 2.
     """
     import multiprocessing as mp
+
+    # Pre-dispatch context validation — hard gate against model L budget
+    estimated_chars = len(prompt) + len(cdsfl_text)
+    estimated_tokens = estimated_chars / 3.5  # conservative chars-per-token
+    model_L = MODEL_SPECS.get(model_config.label, {}).get("L", float("inf"))
+    if estimated_tokens > model_L:
+        raise ValueError(
+            f"{model_config.label}: estimated {estimated_tokens:,.0f} tokens "
+            f"exceeds context budget L={model_L:,.0f} tokens "
+            f"(prompt={len(prompt):,} chars, system={len(cdsfl_text):,} chars, "
+            f"total≈{estimated_chars:,} chars). "
+            f"Burst decomposition required."
+        )
 
     if wall_clock_limit <= 0:
         wall_clock_limit = model_config.timeout * 2

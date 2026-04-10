@@ -125,7 +125,7 @@ where S_k is the solution reliability score computed from tool-executable gates:
   S_k = A · E
 
   A = product of all hard gates (binary pass/fail — any failure → S_k = 0)
-  E = weighted geometric mean of all effect evidence scores (graded [0, 1])
+  E = weighted arithmetic mean of all effect evidence scores (graded [0, 1])
 
 Hard gates test necessary conditions (parse? compile? type-check?). Effect
 evidence tests quality conditions (tests pass? no regressions? no new
@@ -326,6 +326,33 @@ Novelty is recognised, not exempted. A genuinely novel finding still must
 survive the full Popperian pipeline: FALSIFICATION evidence, independent
 corroboration, and verification. Discovery and falsification are complementary
 — the system promotes the first and enforces the second.
+
+### 8.2 Suspicious Fast Convergence
+
+Agreement between models is not the same as independent corroboration if
+the models share the same training biases. When multiple models converge
+quickly on the same conclusion, verify whether this represents genuine
+independent confirmation or shared-prior agreement.
+
+Signals of suspicious convergence:
+- All models agree within 1–2 rounds on a non-trivial claim
+- The agreed conclusion maps closely to standard textbook treatment
+- No model raised an objection that was later withdrawn — they simply
+  all started at the same answer
+- The claim lies in a domain where models are known to share training
+  data biases (e.g., common software patterns, introductory-level
+  physics, widely-taught algorithms)
+
+When you detect suspicious convergence, state it explicitly. "All five
+models agree, but this may reflect shared priors rather than independent
+verification." This does not invalidate the conclusion — it means the
+conclusion needs tool-based or human verification before it carries the
+weight of genuine multi-source corroboration.
+
+Fast convergence on mechanically verifiable claims (test results, compiler
+output, mathematical identity) is NOT suspicious — the tools confirm
+independently. Fast convergence on judgment calls, design preferences, or
+empirical claims IS suspicious until independently verified.
 
 ---
 

@@ -86,6 +86,32 @@ e5: Symbolic Property Verification (when applicable)
   Weight: 2 (high when applicable — mathematical correctness is HARD)
   Status: ASPIRATIONAL — requires mathematical claim extraction pipeline.
 
+[BASELINE CAPTURE]
+
+e2 (regression):
+  What: test pass/fail counts from the full test suite
+  When: captured at experiment start (before any fix applied)
+  Delta: only tests that PASSED in baseline count. New failures = regression.
+  Pre-existing failures are excluded from scoring.
+
+e3 (ruff):
+  What: total ruff violation count
+  When: captured at experiment start on the unmodified source
+  Delta: new_violations = max(0, post_fix_count - baseline_count).
+  Score penalty applies only to NEW violations.
+
+e4 (bandit):
+  What: count of HIGH and MEDIUM severity findings
+  When: captured at experiment start on the unmodified source
+  Delta: new_findings = max(0, post_fix_count - baseline_count).
+  Score penalty applies only to NEW findings.
+
+e1 (targeted test — ASPIRATIONAL): absolute mode (no baseline; tests
+  written for the fix do not pre-exist).
+
+e5 (symbolic — ASPIRATIONAL): absolute mode (properties either verify
+  or they do not; no pre-existing baseline applies).
+
 [FIX FORMAT]
 
 Models must propose fixes as SEARCH/REPLACE blocks with the following
@@ -152,3 +178,80 @@ Cannot verify:
     with dependent services not included in the test suite)
 
 These categories must be escalated to HIL review when encountered.
+
+[DOMAIN KNOWLEDGE]
+
+Failure mode priors:
+  - Off-by-one errors in loop bounds and slice indices
+  - Mutable default arguments (def f(x=[]))
+  - Unhandled None propagation through call chains
+  - Import side effects masking test isolation
+  - String encoding mismatches (bytes vs str) at I/O boundaries
+  - Race conditions in shared mutable state (threading/async)
+
+Diagnostic heuristics:
+  - TypeError/AttributeError on None → trace the None source backward
+  - Test passes locally, fails in CI → environment or ordering dependency
+  - Intermittent failures → shared state or timing dependency
+  - Import errors after refactor → circular import or missing __init__.py
+
+Tool-chain realism:
+  - pytest can mask import-time side effects via module caching
+  - ruff does not catch semantic errors (logic bugs, wrong algorithm)
+  - mypy --strict can produce false positives on dynamic code (ORMs,
+    metaclasses, decorator factories)
+  - bandit flags patterns, not exploits — high severity != exploitable
+  - Coverage metrics measure line execution, not branch correctness
+
+Regime boundaries:
+  - Small scripts → direct testing sufficient
+  - Multi-module packages → need integration tests, not just unit tests
+  - Async code → synchronous testing tools give incomplete coverage
+  - C extensions/FFI → Python-level tools cannot verify native code
+
+Standard gotchas:
+  - `is` vs `==` for value comparison
+  - Shallow copy vs deep copy for nested structures
+  - Generator exhaustion (single-use iterators)
+  - `except Exception` swallowing unexpected errors
+  - Global interpreter lock (GIL) not preventing data races in all cases
+
+Disagreement maps:
+  - Type annotation strictness (gradual typing vs full strict)
+  - Test granularity (many small unit tests vs fewer integration tests)
+  - Error handling philosophy (EAFP vs LBYL)
+  - Import style (absolute vs relative within packages)
+
+Evidence quality grading:
+  - Tool output (pytest, ruff, mypy, bandit) = mechanically verified
+  - Python language specification (PEPs) = authoritative standard
+  - Standard library documentation = high reliability
+  - Third-party library documentation = variable, version-dependent
+  - Stack Overflow / blog posts = anecdotal, may be outdated
+  - Model-generated reasoning = requires tool verification
+
+Tacit sequencing:
+  1. Does it parse? (ast/py_compile)
+  2. Does it import? (quick smoke)
+  3. Do existing tests pass? (regression)
+  4. Does the specific fix work? (targeted test)
+  5. Any new lint/security issues? (ruff/bandit)
+  6. Type-safe? (mypy, if configured)
+
+Escalation triggers:
+  - Fix touches security-sensitive code (auth, crypto, input validation)
+  - Fix changes public API signatures
+  - Fix modifies database schema or migration logic
+  - Fix affects deployment configuration
+  - Fix introduces new external dependencies
+  - Fix changes behaviour in ways not covered by existing tests
+
+[VERIFICATION STATUS]
+
+Tier: CROSS-VERIFIED
+Date: 10 April 2026
+Evidence: Reviewed by Codex GPT-5.4 and Gemini 3.1 Pro under CDSFL
+  4-layer schema (expert encoding confer, 9 April 2026). Gate definitions
+  challenged and refined. 9 findings applied to runner implementation.
+  All 690 tests pass. Enrichment added 10 April 2026 based on confer
+  synthesis categories.

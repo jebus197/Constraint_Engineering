@@ -1,0 +1,25 @@
+{
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/cc2_manager.py",
+        "bench/immune_agents.py",
+        "bench/evidence.py"
+    ],
+    "topology": "star",
+    "relay_mode": "directed",
+    "pattern": "fff",
+    "max_rounds": 21,
+    "extension_cap": 24,
+    "wall_clock_cap_s": 28800,
+    "earliest_stop_round": 12,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp38_ouroboros",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": "python3 -m pytest bench/tests/ -q --tb=line",
+    "sk_s_floor": 0.0,
+    "burst_mode": "auto"
+}
