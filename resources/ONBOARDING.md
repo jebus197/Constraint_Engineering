@@ -25,17 +25,26 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 38 UNKNOWN (11 April 2026 19:02 BST):**
-  Target: `bench/reference_runner.py`, star topology, 5 models.
-  24 rounds, unknown. **UNKNOWN**.
-  545 raw findings → 545 canonical entries.
-  γ final=0.000 (productive).
-  Per model: unavailable.
-  Logs: `bench/logs/exp38_ouroboros_20260411T041938Z/`
+- **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
+  Type: Ouroboros — system reviews and improves itself under structured falsification.
+  Target: `bench/reference_runner.py`, star topology, 5 models, adaptive rounds.
+  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
+  Config: `bench/exp38_config.json` (max 21 rounds, earliest stop R12, wall cap 8h)
+  Findings: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
+  Report: `bench/logs/exp38_ouroboros_20260411T041938Z/exp38_ouroboros_report.json`
 
-  **Qualitative observations** (add manually after sv):
-  <!-- Add: model reasoning behaviour, immune highlights,
-       mid-experiment fixes, key design findings -->
+  **24 rounds (R0-R23), 545 raw findings, 169 canonical. γ_final=0.510.**
+  Never converged. Terminated by wall clock cap (29,503s / 8h12m).
+  All 24 rounds stuck in Phase 0 due to convergence override bug.
+  Phases 1-5 + integration NEVER REACHED. Closest to convergence: R21 (contested=9 only).
+  59 HIL flags: CC2 21, ChatGPT 13, Codex 13, DeepSeek 7, Gemini 5.
+  6 corroborated runner bugs + 6 design findings (D1-D6) from monitoring.
+  γ crossed 0.5 at R20 (strong depletion). Sawtooth novelty pattern persisted
+  throughout but broke strict alternation from R16 onward.
+  See RECOVERY.md for full Exp 39 fix plan (9 items).
+
+  **Fix cycle prior to this run (10 April 2026 17:28 BST):**
+  All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
 <!-- SV:LATEST_EXP_END -->
 
 

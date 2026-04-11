@@ -23,40 +23,58 @@ This is enough to resume most tasks.
 <!-- SV:PENDING_START -->
 ## Current Pending Work (11 April 2026 19:02 BST)
 
-Experiments 12–38 ALL COMPLETE. 762 tests pass.
+762 tests pass. Exp 38 COMPLETE (wall clock cap, 24 rounds, 169 canonical).
 
-EXP 38 UNKNOWN (11 April 2026 19:02 BST):
-  Target: bench/reference_runner.py, star, 24 rounds.
-  545 findings, γ=0.000.
-  Logs: bench/logs/exp38_ouroboros_20260411T041938Z/
-  Report: bench/logs/exp38_ouroboros_20260411T041938Z/exp38_report.json
+**Exp 38 Ouroboros — COMPLETE (14:33 BST):**
+- 24 rounds (R0-R23), 545 raw findings, 169 canonical. γ_final=0.510.
+- Never converged. Wall clock cap at 29,503s. Phase 0 consumed entire budget.
+- Closest to convergence: R21 (only blocker: contested=9).
+- 59 HIL flags: CC2 21, ChatGPT 13, Codex 13, DeepSeek 7, Gemini 5.
+- 6 corroborated runner bugs + 6 design findings (D1-D6) from monitoring.
+- Findings: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
+- Report: `bench/logs/exp38_ouroboros_20260411T041938Z/exp38_ouroboros_report.json`
 
-Uncommitted changes in working tree:
-  M .claude/CLAUDE.md
-  M bench/fingerprints/CC2.json
-  M bench/fingerprints/ChatGPT.json
-  M bench/fingerprints/Codex.json
-  M bench/fingerprints/DeepSeek.json
-  M bench/fingerprints/Gemini.json
-  M bench/logs/exp38_live_output.log
-  M bench/logs/exp38_ouroboros_20260411T041938Z/checkpoint.json
-  M bench/logs/exp38_ouroboros_20260411T041938Z/runner_state.json
-  M bench/logs/immune_pipeline.log
-  M experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md
-  M resources/ONBOARDING.md
-  M resources/RECOVERY.md
-  M scripts/cdsfl_sv.py
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/completion_signal.json
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/exp38_ouroboros_report.json
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/r14_cc2_20260411T110030Z.json
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/r14_chatgpt_20260411T105959Z.json
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/r14_codex_20260411T110043Z.json
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/r14_deepseek_20260411T110442Z.json
-  ... and 76 more
+**Bug: Phase 0 missing convergence overrides (CRITICAL):**
+Burst mode active (6 phases + integration) but `phase_convergence_overrides()`
+only applied at phase transitions (line 2831). Phase 0 runs with base config
+(`earliest_stop_round: 12`), not per-phase override (round 3).
+Phase 0 consumed entire 24-round budget. Phases 1-5 never reached.
 
-Remote: ahead by 6.
+**Runner bugs found by model panel (6 corroborated):**
+1. `_compute_rho()` early return on zero raw (sev 0.95)
+2. `contested_count()` wrong unresolved-challenge logic (sev 0.93)
+3. `open_crit_high_count()` missing REOPENED status (sev 0.93)
+4. `_compute_rho()` off-by-one (sev 0.91)
+5. `RunnerConfig.__post_init__` silent override (sev 0.90)
+6. `contested_count()` hardcoded grace period (sev 0.85)
 
-NEXT: <!-- Add next steps manually after sv -->
+**Design findings from monitoring (D1-D6):**
+- D1: Churn detection without adaptive response
+- D2: Contested timeout and HIL escalation needed
+- D3: z3 grounding works for config-space claims (R22 proof)
+- D4: MERGE deadlock accumulation (12+ findings permanently deferred)
+- D5: Gemini UNSTRUCTURED finding format degradation
+- D6: DeepSeek chunk delivery failures
+
+**Parser/pipeline bugs:**
+- P1: ~75% findings lack SEARCH/REPLACE blocks → S_k ESCALATE
+- P2/P3: Gemini V-prefix / no TARGET_FILE → UNEVALUABLE
+- Regex classifier ~15% agreement with LLM (fundamentally broken for code)
+
+**Phase B schema design (deferred):**
+Per-schema-element convergence. Distinct from code-structure burst decomposition.
+
+NEXT (Exp 39 fix list, ordered by impact):
+1. Fix Phase 0 convergence override bug (CRITICAL)
+2. Fix 6 corroborated runner bugs
+3. Implement D2: contested timeout + HIL escalation
+4. Implement D1: churn feedback mechanism
+5. Strengthen SEARCH/REPLACE parser (P1)
+6. Fix confirmation-finding parser (P2/P3)
+7. Address D4: MERGE deadlock arbitration
+8. Replace/calibrate regex classifier
+9. Uninstall deprecated google-generativeai
+10. Run Exp 39 with all fixes on same target
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)
