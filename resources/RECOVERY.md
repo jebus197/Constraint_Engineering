@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 April 2026 09:45 BST
+Last updated: 11 April 2026 11:43 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,50 +21,69 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (11 April 2026 09:45 BST)
+## Current Pending Work (11 April 2026 11:43 BST)
 
 762 tests pass. Exp 38 live run in progress (PID 15636, started 04:19 BST).
 
-**Exp 38 Ouroboros — LIVE (R7 in progress):**
-- R0–R6 complete. R7 immune pipeline running. 99 total canonical findings.
-- γ=0.377 (R6), ρ_avg=0.131 (R7). ITC threshold 0.25 crossed at R4.
-- R6 was CC2-only dispatch. R7 resumed full 5-model. Novelty burst in R7 (9 novel).
-- 7 findings closed. 5 persistently ADMISSIBLE. 2 z3-CONFIRMED.
+**Exp 38 Ouroboros — LIVE (R12 S_k in progress):**
+- R0–R12 complete. R12 S_k pipeline running. 135 total canonical findings.
+- γ=0.465 (R11), ρ_avg=0.259 (R12). ITC threshold 0.25 crossed at R4.
+- Sawtooth novelty pattern: bursts (17→12→7) alternating with zero-novelty rounds.
+- Burst amplitude declining — may dampen by R15-R18.
+- **All 12 rounds stuck in Phase 0** due to override bug (see below).
+- 5 of 6 phases + integration NOT YET REACHED.
+- HIL flags: CC2 10x CAPABILITY_MISMATCH, Codex 7x, DeepSeek 4x DEGRADATION.
 - Findings collation: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
-- TTS version: `~/Desktop/CDSFL_tts/Exp38_Ouroboros_Findings_2026-04-11.txt`
-- 6 parsing issues documented (P1–P6). P1 (SEARCH/REPLACE format) is HIGH priority.
 
-**Uncommitted changes in working tree (pre-experiment fixes):**
-  M bench/immune_agents.py — logger rename, WP3c/WP3d fixes
-  M bench/runner_core.py — chevron regex fix
-  M bench/logs/immune_shadow.log — log output
+**Bug: Phase 0 missing convergence overrides:**
+Burst mode is active (6 phases + integration) but `phase_convergence_overrides()`
+is only applied at phase transitions (line 2831). Phase 0 runs with base config
+(`earliest_stop_round: 12`), not the per-phase override (`phase_round_offset + 3 = 3`).
+Phase 0 consumed entire budget. Fix before Exp 39.
+
+**Runner bugs found by Exp 38 models (6 corroborated):**
+1. `_compute_rho()` off-by-one: zero-based index vs 1-based round (5x, sev 0.91)
+2. `contested_count()` filter: wrong unresolved-challenge logic (3x, sev 0.93)
+3. `open_crit_high_count()` missing REOPENED status (3x, sev 0.93)
+4. `RunnerConfig.__post_init__` silently overrides `rho_earliest_round` (2x+, sev 0.90)
+5. `_compute_rho()` early return on zero raw: aborts instead of computing rolling avg (sev 0.95)
+6. `contested_count()` hardcoded grace period ignores parameter (2x, sev 0.85)
+
+**Parser/pipeline bugs found during monitoring:**
+- P1: Most findings lack SEARCH/REPLACE blocks → S_k ESCALATE (dominant issue)
+- P2/P3: Gemini confirmation findings (V-prefix, severity 0.0) have no TARGET_FILE
+  → UNEVALUABLE false negatives. Runner doesn't distinguish confirmation from fix findings.
+- Skin barrier false positive on code snippets in descriptions
+- Regex classifier 9.7% agreement with LLM classifier (regex says mathematical, LLM says code_behavioral)
+
+**Uncommitted changes in working tree:**
+  M .gitignore — added SPEC_single_model_integration.md
+  M bench/immune_agents.py — logger rename, WP3c/WP3d fixes (pre-experiment)
+  M bench/runner_core.py — chevron regex fix (pre-experiment)
   ?? bench/launch_exp38.sh — experiment launch script
-  ?? bench/logs/exp38_live_output.log — live output
-  ?? bench/logs/exp38_ouroboros_20260411T041938Z/ — checkpoint + responses
-  ?? bench/logs/immune_pipeline.log — pipeline log
-  ?? experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md — findings
+  ?? bench/logs/exp38_* — experiment outputs (live)
+  ?? docs/SPEC_single_model_integration.md — DRAFT single-model integration spec (gitignored)
+  ?? experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md — findings collation
 
-Remote: ahead by 4.
+Remote: ahead by 5.
+
+**Phase B schema design (deferred per Exp 38 plan §11):**
+Per-schema-element convergence (mathematical model, immune pipeline, registry,
+policy engine converging independently via finding taxonomy). Distinct from the
+code-structure-based burst decomposition that already exists.
 
 **Deferred fixes (do after experiment):**
 1. `pip3 uninstall google-generativeai` — deprecated package causing FutureWarning
-2. Cosmetic: "below threshold 0.70" log text when MATHEMATICAL guard is the real reason
-
-**Architectural gap identified by founder:**
-Runner lacks per-element convergence. Current ITC tracks one global ρ_avg.
-Founder wants per-element convergence (mathematical model, immune pipeline, registry,
-policy engine each converge independently). This would require:
-- Finding taxonomy layer (target component, not just flaw type)
-- Per-element ρ/γ computation
-- Per-element convergence gates
-This is a meaningful extension for Phase B, not a quick fix.
+2. Cosmetic: "below threshold 0.70" log text when MATHEMATICAL guard is real reason
 
 NEXT:
-1. Let Exp 38 complete (or kill if not useful — ρ_avg oscillating, global convergence at R12+)
-2. Fix P1–P4 parsing issues before Bench Run 2
-3. Commit all pre-experiment fixes + experiment outputs
-4. Consider per-element convergence design for next runner iteration
-5. Uninstall deprecated google-generativeai
+1. Decision: let Exp 38 run to max_rounds or kill now
+2. Fix Phase 0 convergence override bug
+3. Fix runner bugs #1-#6 from model findings (verify with S_k ADMISSIBLE data)
+4. Fix confirmation-finding parser (V-prefix, no target file)
+5. Fix P1 SEARCH/REPLACE parsing
+6. Run Exp 39 with all fixes on same target
+7. Uninstall deprecated google-generativeai
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

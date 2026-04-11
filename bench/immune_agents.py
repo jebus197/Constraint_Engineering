@@ -1406,7 +1406,7 @@ import threading as _threading
 # Bug#4 fix: serialise claude CLI calls to prevent contention
 _CLAUDE_CLI_LOCK = _threading.Lock()
 
-_shadow_log = _logging.getLogger("immune.shadow")
+_shadow_log = _logging.getLogger("immune.pipeline")
 
 # Configure shadow logger to write to file if not already configured.
 # This ensures v1-vs-v2 comparison data, formalisation agent output,
@@ -1420,7 +1420,7 @@ if not _shadow_log.handlers:
     )
     _os.makedirs(_shadow_log_dir, exist_ok=True)
     _shadow_fh = _logging.FileHandler(
-        _os.path.join(_shadow_log_dir, "immune_shadow.log"),
+        _os.path.join(_shadow_log_dir, "immune_pipeline.log"),
         encoding="utf-8",
     )
     _shadow_fh.setLevel(_logging.INFO)
@@ -1456,11 +1456,11 @@ def skin_barrier_check(
     Checks each finding for file:line citations. If the cited code doesn't
     exist at the cited location, the finding fails the barrier.
 
-    In shadow mode (Run 11), all findings pass through regardless.
+    Pipeline is active: findings failing the barrier are filtered out.
     The results are logged for observation.
 
     Returns:
-        (all_findings, barrier_results) — findings unchanged in shadow mode
+        (all_findings, barrier_results) — findings that passed the barrier
     """
     results: List[SkinBarrierResult] = []
     source_set = set(str(p) for p in source_paths)
@@ -2731,14 +2731,19 @@ _CLASSIFIER_MODEL = "haiku"  # Claude CLI model alias — Max plan
 def typed_llm_classifier(
     findings: List[Finding],
     regex_triaged: List[TriagedFinding],
+    override_threshold: float = 0.70,
 ) -> List[Dict[str, Any]]:
-    """WP3c shadow: classify findings via lightweight LLM call.
+    """WP3c semi-active: classify findings via lightweight LLM call.
 
     Runs alongside the DC v2 regex classifier. Logs every case where
-    the LLM would classify differently from regex. Returns comparison
-    records for analysis.
+    the LLM classifies differently from regex.
 
-    Does NOT modify triaged findings — shadow only.
+    Promoted from shadow (Exp 38 fix cycle): when the LLM disagrees with
+    regex AND LLM confidence >= override_threshold (default 0.70), the LLM
+    classification overrides regex. Safety guardrail: never overrides
+    MATHEMATICAL regex classification (to avoid suppressing genuine math).
+
+    Modifies regex_triaged in-place when overriding.
 
     Rewired from OpenRouter to Claude CLI Haiku (Max plan, local billing).
     Serialised via _CLAUDE_CLI_LOCK to prevent contention with CT cells.
@@ -2762,16 +2767,18 @@ def typed_llm_classifier(
     }
 
     _shadow_log.info(
-        "LLM classifier: ENABLED (CLI Haiku). "
-        "%d findings to classify.", len(findings),
+        "LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=%.2f). "
+        "%d findings to classify.", override_threshold, len(findings),
     )
+
+    override_count = 0
 
     for i, (f, regex_tf) in enumerate(zip(findings, regex_triaged)):
         t0 = time.monotonic()
         try:
-            # Build classification prompt — system + user in single -p call
+            # Use confidence-returning prompt format
             prompt = (
-                f"{_CLASSIFIER_SYSTEM_PROMPT}\n\n"
+                f"{_ACTIVE_CLASSIFIER_PROMPT}\n\n"
                 f"Finding description:\n{f.description[:500]}"
             )
             cmd = [
@@ -2788,24 +2795,62 @@ def typed_llm_classifier(
             elapsed = time.monotonic() - t0
             response = result.stdout.strip()
 
-            llm_category = response.strip().lower().replace(" ", "_")
+            lines = [l.strip() for l in response.split("\n") if l.strip()]
+            llm_category = lines[0].lower().replace(" ", "_") if lines else ""
             llm_type = _CATEGORY_MAP.get(llm_category, ClaimType.UNCATEGORISED)
+
+            # Parse confidence from second line (fail-safe to 0.5)
+            llm_confidence = 0.5
+            if len(lines) >= 2:
+                try:
+                    llm_confidence = float(lines[1])
+                    llm_confidence = max(0.0, min(1.0, llm_confidence))
+                except ValueError:
+                    llm_confidence = 0.5
+
+            disagrees = regex_tf.claim_type != llm_type
+            # Override conditions: LLM disagrees, high confidence, regex is
+            # not MATHEMATICAL (safety guardrail), LLM is not UNCATEGORISED
+            should_override = (
+                disagrees
+                and llm_confidence >= override_threshold
+                and regex_tf.claim_type != ClaimType.MATHEMATICAL
+                and llm_type != ClaimType.UNCATEGORISED
+            )
 
             record = {
                 "finding_id": f.finding_id,
                 "regex_type": regex_tf.claim_type.value,
                 "llm_type": llm_type.value,
+                "llm_confidence": llm_confidence,
                 "llm_raw": response.strip(),
-                "match": regex_tf.claim_type == llm_type,
+                "match": not disagrees,
+                "overridden": should_override,
                 "elapsed_s": round(elapsed, 3),
             }
             comparisons.append(record)
 
-            if regex_tf.claim_type != llm_type:
+            if should_override:
                 _shadow_log.info(
-                    "LLM classifier: %s — regex=%s llm=%s (%.1fs)",
+                    "LLM classifier OVERRIDE: %s — regex=%s → llm=%s "
+                    "(conf=%.2f, threshold=%.2f, %.1fs)",
                     f.finding_id, regex_tf.claim_type.value,
-                    llm_type.value, elapsed,
+                    llm_type.value, llm_confidence,
+                    override_threshold, elapsed,
+                )
+                regex_triaged[i] = TriagedFinding(
+                    finding=regex_tf.finding,
+                    claim_type=llm_type,
+                    extracted_claim=regex_tf.extracted_claim,
+                )
+                override_count += 1
+            elif disagrees:
+                _shadow_log.info(
+                    "LLM classifier: %s — regex=%s llm=%s "
+                    "(conf=%.2f, below threshold %.2f, %.1fs)",
+                    f.finding_id, regex_tf.claim_type.value,
+                    llm_type.value, llm_confidence,
+                    override_threshold, elapsed,
                 )
         except Exception as e:
             elapsed = time.monotonic() - t0
@@ -2813,8 +2858,10 @@ def typed_llm_classifier(
                 "finding_id": f.finding_id,
                 "regex_type": regex_tf.claim_type.value,
                 "llm_type": "ERROR",
+                "llm_confidence": 0.0,
                 "llm_raw": str(e)[:100],
                 "match": False,
+                "overridden": False,
                 "elapsed_s": round(elapsed, 3),
             })
             _shadow_log.warning(
@@ -2824,8 +2871,9 @@ def typed_llm_classifier(
     match_count = sum(1 for c in comparisons if c["match"])
     total = len(comparisons)
     _shadow_log.info(
-        "LLM classifier: %d/%d agree with regex (%.1f%%)",
+        "LLM classifier: %d/%d agree with regex (%.1f%%), %d overrides applied",
         match_count, total, (match_count / max(total, 1)) * 100,
+        override_count,
     )
 
     return comparisons
@@ -3359,8 +3407,10 @@ def run_immune_pipeline(
         key = tf.claim_type.value
         type_counts[key] = type_counts.get(key, 0) + 1
 
-    # ── Stage 1.5: Typed LLM Classifier shadow (WP3c) ────────────────
-    # Shadow runs on ALL findings for comparison logging (unchanged).
+    # ── Stage 1.5: Typed LLM Classifier SEMI-ACTIVE (WP3c promoted) ───
+    # Runs on ALL findings. Overrides regex when LLM disagrees with high
+    # confidence (>= 0.70). Never overrides MATHEMATICAL regex (safety).
+    # Still logs all comparisons for analysis.
     t0_llm_cls = time.monotonic()
     try:
         llm_classifier_results = typed_llm_classifier(new_findings, triaged)
@@ -3457,16 +3507,36 @@ def run_immune_pipeline(
     # Extracts preconditions from math/logic claims. When B-Cell rejected
     # a claim that has extractable preconditions, produces UNCERTAIN
     # counter-verdicts to prevent context-erasure false rejection locks.
+    #
+    # Promotion (Exp 38 fix cycle): counter-verdicts now REPLACE the
+    # original B-Cell REJECTED verdict for that finding, rather than being
+    # appended as a separate UNCERTAIN entry (which helper_t ignores).
+    # Safety: only replaces REJECTED -> UNCERTAIN (saves from false rejection),
+    # never introduces new rejections.
     t0_formal = time.monotonic()
     formalisation_counter_verdicts: List[CellVerdict] = []
     try:
         formalisation_results, formalisation_counter_verdicts = formalisation_agent(
             triaged, all_verdicts,
         )
-        # Feed counter-verdicts into the pipeline so reconciliation gate sees them
-        all_verdicts.extend(formalisation_counter_verdicts)
-        for v in formalisation_counter_verdicts:
-            tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+        # Apply counter-verdicts by replacing B-Cell REJECTED verdicts in-place
+        counter_fids = {v.finding_id for v in formalisation_counter_verdicts}
+        if counter_fids:
+            counter_lookup = {v.finding_id: v for v in formalisation_counter_verdicts}
+            for idx, v in enumerate(all_verdicts):
+                if (v.finding_id in counter_fids
+                        and v.cell_type == CellType.B_CELL
+                        and v.verdict == "REJECTED"):
+                    cv = counter_lookup[v.finding_id]
+                    _shadow_log.info(
+                        "Formalisation override: %s — B-Cell REJECTED → UNCERTAIN "
+                        "(preconditions detected, preventing false rejection lock)",
+                        v.finding_id,
+                    )
+                    all_verdicts[idx] = cv
+            # Also log counter-verdicts for tool usage tracking
+            for v in formalisation_counter_verdicts:
+                tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
     except Exception as e:
         _shadow_log.warning("Formalisation agent failed: %s", e)
         formalisation_results = []

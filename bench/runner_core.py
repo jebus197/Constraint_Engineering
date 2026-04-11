@@ -547,7 +547,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         # Extract PROPOSED_FIX — try chevron format first, then freeform
         # CC2 uses labels: <<<< OLD / ==== NEW / >>>>
         chevron_match = re.search(
-            r'(?m)^<{4,}[^\n]*$\n(.*?)\n^={4,}[^\n]*$\n(.*?)\n^>{4,}[^\n]*$',
+            r'(?m)^<{4,}\s*(?:SEARCH\s+)?([^\n]*?)\s*$\n(.*?)\n^={4,}[^\n]*$\n(.*?)\n^>{4,}[^\n]*$',
             block, re.DOTALL | re.MULTILINE
         )
         # PROPOSED_FIX or FIX (CC2 uses FIX: instead of PROPOSED_FIX:)
@@ -568,10 +568,16 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
         description = desc_match.group(1).strip() if desc_match else block[:200]
         # Chevron format preferred: captures old→new as structured diff
+        # group(1) = file path hint (from <<<< SEARCH path or <<<< path)
+        # group(2) = old code, group(3) = new code
         if chevron_match:
-            old_code = chevron_match.group(1).strip()
-            new_code = chevron_match.group(2).strip()
-            proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
+            file_hint = chevron_match.group(1).strip() if chevron_match.group(1) else ""
+            old_code = chevron_match.group(2).strip()
+            new_code = chevron_match.group(3).strip()
+            if file_hint:
+                proposed_fix = f"<<<< SEARCH {file_hint}\n{old_code}\n==== REPLACE\n{new_code}\n>>>>"
+            else:
+                proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
         elif fix_match:
             proposed_fix = fix_match.group(1).strip()
         else:

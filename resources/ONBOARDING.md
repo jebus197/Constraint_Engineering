@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 11 April 2026 09:45 BST
+Last updated: 11 April 2026 11:43 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -33,14 +33,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Findings collation: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
   TTS: `~/Desktop/CDSFL_tts/Exp38_Ouroboros_Findings_2026-04-11.txt`
 
-  **Live run started 04:19 BST, PID 15636.** Currently in R7 immune pipeline.
-  R0–R6 completed. R7 registry: 9 novel / 31 raw, 99 total canonical, ρ=0.290, ρ_avg=0.131.
-  γ trajectory: 0.000→0.000→0.000→0.063→0.206→0.301→0.377 (R6). Moderate depletion.
-  7 findings closed with verified fixes: C0001, C0026, C0031, C0004, C0005, C0029, C0030.
-  5 persistently ADMISSIBLE: C0002, C0032, C0041, C0063, C0085.
-  2 z3-CONFIRMED: CC2_F004 (R1), DeepSeek_F006 (R3).
-  Gemini had R4 403 PERMISSION_DENIED (billing), recovered R5 with no code change.
-  6 parsing issues identified (see findings collation). P1 (SEARCH/REPLACE format) is HIGH.
+  **Live run started 04:19 BST, PID 15636.** R12 S_k in progress (11:43 BST).
+  R0–R12 completed. 135 total canonical findings. γ=0.465 (strong depletion).
+  γ trajectory: 0→0→0→0.063→0.206→0.301→0.377→0.417→0.454→0.462→0.460→0.465.
+  Sawtooth novelty pattern: bursts (17→12→7) alternating with zero rounds.
+  All 12 rounds stuck in Phase 0 (~22k chars) due to convergence override bug.
+  Phases 1-5 + integration NOT REACHED. Experiment cannot converge as designed.
+  HIL flags: CC2 10x CAPABILITY_MISMATCH, Codex 7x, DeepSeek 4x DEGRADATION.
+  6 real runner bugs found (multi-model corroborated): _compute_rho off-by-one,
+  contested_count filter, open_crit_high_count missing REOPENED, RunnerConfig
+  __post_init__ silent override, _compute_rho zero-raw abort, contested_count
+  hardcoded grace period. Gemini confirmation-finding parser bug also identified.
+  See RECOVERY.md for full list + Exp 39 fix plan.
 
   **Fix cycle prior to this run (10 April 2026 17:28 BST):**
   All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
