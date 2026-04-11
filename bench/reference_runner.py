@@ -199,6 +199,7 @@ class RunnerConfig:
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
     max_contested_rounds: int = 5
+    exhausted_round_threshold: int = 8  # rounds stalled before EXHAUSTED bypass
     multiturn_chunk_target: int = 30_000
 
     # S_k pipeline
@@ -323,26 +324,69 @@ class FindingRegistry:
     def lookup_alias(self, model_id: str, local_id: str) -> Optional[str]:
         return self._alias_map.get(f"{model_id}:{local_id}")
 
-    def open_crit_high_count(self) -> int:
-        return sum(
-            1 for e in self.entries.values()
-            if e["status"] in ("OPEN", "CONTESTED") and e["severity"] >= 0.7
-        )
+    def open_crit_high_count(self, exhausted_round_threshold: int = 0,
+                              current_round: int = 0) -> int:
+        """Count active non-terminal critical/high findings.
 
-    def contested_count(self, current_round: int) -> int:
-        # F14/F17/F22 fix: skip terminal statuses, not just MERGED.
-        # Terminal findings should not inflate contested count or block convergence.
-        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "UNCONFIRMED"}
+        GE EXHAUSTED mechanism: findings stalled for >= exhausted_round_threshold
+        rounds are treated as fully processed and excluded from the count.
+        The gate threshold stays fixed; finding eligibility changes.
+        """
+        _NON_TERMINAL = ("OPEN", "CONTESTED")
         count = 0
         for e in self.entries.values():
-            if e["status"] in _TERMINAL:
+            if e["status"] not in _NON_TERMINAL or e["severity"] < 0.7:
                 continue
+            # EXHAUSTED bypass: stalled findings that have been fully reviewed
+            if exhausted_round_threshold > 0 and current_round > 0:
+                age = current_round - e.get("last_status_change_round", 0)
+                if age >= exhausted_round_threshold:
+                    e["exhausted"] = True
+                    continue
+            count += 1
+        return count
+
+    def contested_count(self, current_round: int, grace_period: int = 2) -> int:
+        """Count actively contested non-terminal findings.
+
+        Composed CX + GE design:
+        - MERGED/CLOSED/REFUTED/DUPLICATE: irrecoverable terminal, always excluded.
+        - UNCONFIRMED: recoverable. Included during grace period (awaiting review).
+          After grace period, excluded. Reopened if new evidence arrives.
+        """
+        _IRRECOVERABLE = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
+        count = 0
+        for e in self.entries.values():
+            if e["status"] in _IRRECOVERABLE:
+                continue
+            # UNCONFIRMED: grace period logic
+            if e["status"] == "UNCONFIRMED":
+                rounds_in_status = current_round - e.get("last_status_change_round", 0)
+                if rounds_in_status < grace_period:
+                    # Still in grace window — count as contested
+                    count += 1
+                else:
+                    # Grace expired — check for new evidence since UNCONFIRMED
+                    status_round = e.get("last_status_change_round", 0)
+                    new_verdicts = [
+                        v for v in e["verdicts"]
+                        if v["round"] > status_round
+                    ]
+                    if new_verdicts:
+                        # New evidence arrived — reopen for review
+                        e["status"] = "OPEN"
+                        e["last_status_change_round"] = current_round
+                        count += 1
+                        _log(f"  REOPEN {e.get('canonical_id', '?')}: "
+                             f"new evidence after UNCONFIRMED")
+                # else: grace expired, no new evidence — excluded
+                continue
+            # Non-terminal, non-UNCONFIRMED: standard contested logic
             challenges = [v for v in e["verdicts"] if v["verdict"] == "CHALLENGE"]
             if not challenges:
                 continue
             confirms = [v for v in e["verdicts"] if v["verdict"] == "CONFIRM"]
             latest_confirm_round = max((v["round"] for v in confirms), default=-1)
-            # F24 fix: use >= so same-round challenges are treated as unresolved
             unresolved = [v for v in challenges if v["round"] >= latest_confirm_round]
             if unresolved:
                 oldest = min(v["round"] for v in unresolved)
@@ -600,23 +644,46 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
                     _log(f"  REOPEN {canonical_id}: escalated to HIL")
             continue
 
-        # ── MERGE: require quorum (2+ merge verdicts or 1 + source model) ──
-        # F8 fix: single MERGE from any model previously killed a finding
-        # irrevocably with no quorum requirement.
+        # ── MERGE: contextual quorum (Round 2 confer design) ──
+        # Floor: never merge without target consensus. Never merge on 0 votes.
+        # Contextual: 2+ models on same target = pass. 1 model on small panel
+        # with high confidence = pass + HIL flag. Target disagreement = defer.
         merge_verdicts = [v for v in entry["verdicts"] if v["verdict"] == "MERGE"]
         if merge_verdicts:
-            merge_models = {v["model"] for v in merge_verdicts}
-            # Require at least 2 distinct models to agree on merge
-            if len(merge_models) >= 2:
-                merged_into = None
-                for v in merge_verdicts:
-                    # F13 parity: support 4+ digit IDs in merge evidence
-                    m = re.search(r'merged_into=(C\d{4,})', v.get("evidence", ""))
-                    if m:
-                        merged_into = m.group(1)
-                        break
-                registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
-                continue
+            # Extract per-vote targets
+            by_target: dict[str, list] = {}
+            for v in merge_verdicts:
+                m = re.search(r'merged_into=(C\d{4,})', v.get("evidence", ""))
+                target = m.group(1) if m else "__unknown__"
+                by_target.setdefault(target, []).append(v)
+
+            if len(by_target) > 1:
+                # Target disagreement — defer, do not merge
+                _log(f"  MERGE DEFERRED {canonical_id}: target disagreement "
+                     f"({', '.join(by_target.keys())})")
+            else:
+                target_id = next(iter(by_target))
+                target_votes = by_target[target_id]
+                distinct_models = {v["model"] for v in target_votes}
+                available_external = {v["model"] for v in entry["verdicts"]} - {entry["source_model"]}
+
+                if len(distinct_models) >= 2:
+                    # Clear consensus — merge
+                    merged_into = target_id if target_id != "__unknown__" else None
+                    registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
+                    continue
+                elif len(available_external) < 2 and len(distinct_models) == 1:
+                    # Small panel: allow single vote + HIL flag + reversion gate
+                    merged_into = target_id if target_id != "__unknown__" else None
+                    registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
+                    entry["hil_escalated"] = True
+                    entry["hil_reason"] = (
+                        f"Single-model merge (small panel, {len(available_external)} "
+                        f"external models). Reversion available."
+                    )
+                    _log(f"  MERGED {canonical_id} (small panel, HIL flagged)")
+                    continue
+                # else: insufficient quorum, do not merge this round
 
         # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
@@ -649,13 +716,13 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
 
         if entry["status"] in ("OPEN", "CONTESTED"):
             confirm_models = {v["model"] for v in confirms}
-            # F11 fix: require 2 independent external confirmations.
-            # Previously: 1 + len(external) counted the source model as
-            # an implicit confirmer, so 1 external confirm was enough.
-            # For a 5-model panel, 2 external confirms is still a minority
-            # but requires meaningful agreement.
+            # F11 contextual: severity-based confirmation quorum.
+            # Floor: at least 1 independent external confirmation (source excluded).
+            # Critical/High: require 2. Medium/Low: require 1.
             independent_count = len(confirm_models - {entry["source_model"]})
-            if independent_count >= 2 and not unresolved_challenges:
+            sev = entry.get("severity", 0.5)
+            required = 2 if sev >= 0.7 else 1  # 0.7 = Critical/High threshold
+            if independent_count >= required and not unresolved_challenges:
                 registry.resolve(canonical_id, "CONFIRMED", round_idx)
 
 
@@ -674,17 +741,19 @@ def _evaluate_gate_conditions(
     failures = []
     if rho_churn:
         failures.append(f"rho_avg={rho_rolling_avg:.3f} < {cfg.rho_threshold} (churn)")
-    open_ch = registry.open_crit_high_count()
+    # F7/F23 contextual gate (GE EXHAUSTED design): gate threshold stays fixed.
+    # Findings stalled >= exhausted_round_threshold are EXHAUSTED and excluded.
+    open_ch = registry.open_crit_high_count(
+        exhausted_round_threshold=cfg.exhausted_round_threshold,
+        current_round=round_idx,
+    )
 
     # F12 fix: guard against duplicate entries if called multiple times per round.
-    # Only append if history doesn't already contain this round's value as the
-    # last entry (idempotent for same-round re-evaluation).
     if open_ch_history is not None:
         if not open_ch_history or open_ch_history[-1] != open_ch:
             open_ch_history.append(open_ch)
 
-    # F7/F23 fix: enforce cfg.max_open_crit_high threshold.
-    # Previously dead config — defined in RunnerConfig but never checked here.
+    # F7/F23 fix: enforce cfg.max_open_crit_high threshold (gate stays fixed).
     if open_ch > cfg.max_open_crit_high:
         failures.append(
             f"open_ch={open_ch} > max={cfg.max_open_crit_high}"

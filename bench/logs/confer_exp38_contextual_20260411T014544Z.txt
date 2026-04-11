@@ -1,0 +1,631 @@
+CDSFL Confer Round 2: Contextual Decision Design
+Timestamp: 20260411T014544Z
+Branch: exp38-experimental
+Subject: Contextual vs static rules for F8, F11, F7/F23, F14/F17/F22
+Models: CX (GPT-5.4), GE (Gemini 3.1 Pro)
+========================================================================
+
+## Codex GPT-5.4 (CX)
+Elapsed: 64.5s
+Response length: 18237 chars
+
+Constraint classification first:
+
+- HARD:
+  - Safety floor for each fix can never be bypassed.
+  - Merge must not proceed without actual consensus on a target.
+  - Must not revisit GE-8 resolve() issue.
+  - Must not revisit CX-13 timer audit.
+  - Keep designs minimal / do not over-engineer.
+  - Use available evidence only: FindingRegistry history/attribution/confidence/timestamps/severity and immune cell-type verdict evidence strings.
+  - Ambiguity defaults to stronger measure.
+  - Clear evidence defaults to more permissive path.
+
+- SOFT:
+  - Faster convergence.
+  - Dynamic thresholds by phase/severity where beneficial.
+  - Avoid stalls on small panels / Exp 37-like behavior.
+  - Separate tracking for UNCONFIRMED if useful.
+
+I’ll keep the design minimal and explicit.
+
+---
+
+## FIX 1: F8 — Merge Quorum
+
+### Claim 1
+A merge must never proceed from raw vote count alone; votes must agree on the same merge target.
+
+- Falsifying condition: if two models vote “merge” but specify different targets, and merge still executes safely, then target consensus is unnecessary.
+- Attempt to falsify: Round 1 already identified this as a logic bug. Different targets imply incompatible actions; a single merge operation requires one target. No safe interpretation exists without an extra tie-breaker rule.
+- Result: provisionally accepted.
+- Residual uncertainty: none material.
+
+### Claim 2
+A single merge vote can be sufficient only when external model diversity is structurally unavailable and the single vote is strong.
+
+- Falsifying condition: if allowing 1 vote in small panels creates unsafe merges at unacceptable rates, single-vote sufficiency is wrong.
+- Attempt to falsify: this is possible in principle, so single-vote must be constrained by panel size and confidence and only used when quorum is impossible, not merely inconvenient.
+- Result: accepted with strict floor.
+- Residual uncertainty: confidence calibration quality [VERIFY:current].
+
+### Claim 3
+The floor should be: never merge with target disagreement; never merge on zero external support; never merge on one low-confidence vote.
+
+- Falsifying condition: if internal/history evidence alone can safely replace external support, zero-support merges might be acceptable.
+- Attempt to falsify: no such authority was provided; current system uses model verdicts as merge evidence. So zero external support is too weak.
+- Result: accepted.
+- Residual uncertainty: whether immune evidence should ever directly support merges [SPECULATIVE]; not needed for minimal design.
+
+## Design
+
+### FLOOR
+Merge allowed only if all are true:
+
+1. There is at least 1 external merge vote.
+2. All counted merge votes agree on the same target.
+3. Either:
+   - `distinct_external_models_supporting_same_target >= 2`, or
+   - `available_external_models < 2` **and** `distinct_external_models_supporting_same_target == 1` **and** vote confidence is high.
+
+Hard stop otherwise.
+
+### Evidence to inspect
+- External-model merge verdicts for this finding in current decision window.
+- Proposed merge target per verdict.
+- Distinct model IDs.
+- Confidence per verdict.
+- Count of available external models for this finding/round [VERIFY:current].
+
+### Thresholds
+- `HIGH_CONF_MERGE = 0.90` [VERIFY:current]
+- “Small panel” = `< 2 available external models`
+
+### CONTEXTUAL RULE
+- Default permissive path when evidence is clear:
+  - If 2+ distinct external models support the **same** target, allow merge.
+- Small-panel exception:
+  - If fewer than 2 external models are available, allow merge on 1 vote only if:
+    - confidence `>= 0.90`, and
+    - no competing merge target exists.
+
+### ESCALATION PATH
+Ambiguous evidence => do not merge now.
+Cases:
+- 2+ merge votes but target disagreement.
+- 1 vote only when 2+ external models were available.
+- 1 vote in small panel but confidence < 0.90.
+- No external votes.
+
+Escalate by:
+1. mark finding `merge_contested`
+2. defer merge
+3. request another round / additional external review if available
+
+### Minimal pseudocode
+```python
+def can_merge(finding, round_ctx):
+    votes = get_external_merge_votes(finding, round_ctx)  # each: model_id, target_id, confidence
+    available = count_available_external_models(finding, round_ctx)
+
+    if not votes:
+        return DENY("floor:no_external_support")
+
+    by_target = group_by(votes, key=lambda v: v.target_id)
+    if len(by_target) > 1:
+        return ESCALATE("target_disagreement")
+
+    target_id, target_votes = only_item(by_target)
+    distinct_models = count_distinct(target_votes, key=lambda v: v.model_id)
+    max_conf = max(v.confidence for v in target_votes)
+
+    if distinct_models >= 2:
+        return ALLOW(target_id, "consensus_quorum")
+
+    if available < 2 and distinct_models == 1 and max_conf >= 0.90:
+        return ALLOW(target_id, "small_panel_high_conf")
+
+    return ESCALATE("insufficient_merge_quorum")
+```
+
+---
+
+## FIX 2: F11 — Confirmation Quorum
+
+### Claim 1
+The floor should remain at least 1 independent external confirmation; zero-confirmation acceptance is too weak.
+
+- Falsifying condition: if findings can safely resolve/confirm without any independent external confirmation.
+- Attempt to falsify: current rule and Round 1 both treat independence as core safety logic. No reason supplied to drop it.
+- Result: accepted.
+- Residual uncertainty: whether some severities should require even more.
+
+### Claim 2
+Severity should modulate confirmation threshold.
+
+- Falsifying condition: if severity has no meaningful relation to harm of false confirmation, constant threshold is superior.
+- Attempt to falsify: higher severity increases cost of false positive acceptance; stronger measure under uncertainty matches founder principle.
+- Result: accepted.
+- Residual uncertainty: exact cut points.
+
+### Claim 3
+Experiment phase can permissively modulate threshold, but must not undercut the floor.
+
+- Falsifying condition: if phase-based thresholding introduces inconsistency without convergence benefit.
+- Attempt to falsify: early rounds are noisier; late rounds often accumulate stable evidence. Mild phase modulation is defensible if bounded.
+- Result: accepted.
+- Residual uncertainty: phase definition [VERIFY:current].
+
+## Design
+
+### FLOOR
+Require at least `1` independent external confirmation, excluding the source model, for any confirmation action.
+
+Never below 1.
+
+### Evidence to inspect
+- Current finding severity.
+- Independent external confirmations in registry.
+- Source model attribution.
+- Current round index / total rounds or a simple early-vs-late indicator [VERIFY:current].
+
+### Thresholds
+Minimal scheme:
+- Critical/High: require `2`
+- Medium/Low: require `1`
+- Early phase: add `+1` only for Critical findings
+- Late phase: no reduction below severity rule
+
+So:
+- Early + Critical => `3`
+- Otherwise Critical/High => `2`
+- Medium/Low => `1`
+
+This is intentionally conservative only at the top end.
+
+### CONTEXTUAL RULE
+Use stronger measure when stakes/noise are higher:
+- If `severity in {CRITICAL, HIGH}`: threshold = 2
+- If `severity in {MEDIUM, LOW}`: threshold = 1
+- If `phase == EARLY and severity == CRITICAL`: threshold = 3
+
+Use permissive path when evidence is clear and stakes are lower:
+- Medium/Low need only 1 independent external confirmation.
+
+### ESCALATION PATH
+If confirmations are below threshold:
+1. keep finding open/non-terminal
+2. route for more review next round
+3. if threshold missed by exactly 1 and phase is early, re-check in later round before stronger action
+
+### Minimal pseudocode
+```python
+def required_confirmations(finding, round_ctx):
+    sev = finding.severity
+    phase = experiment_phase(round_ctx)  # EARLY / LATE
+
+    if sev in {"CRITICAL", "HIGH"}:
+        req = 2
+    else:
+        req = 1
+
+    if phase == "EARLY" and sev == "CRITICAL":
+        req += 1
+
+    return req  # floor already embedded: never < 1
+
+def can_confirm(finding, round_ctx):
+    confirms = get_independent_external_confirmations(
+        finding,
+        exclude_source_model=True,
+        round_ctx=round_ctx,
+    )
+    req = required_confirmations(finding, round_ctx)
+
+    if len(confirms) >= req:
+        return ALLOW(f"met_confirmation_quorum:{req}")
+    return ESCALATE(f"need_{req}_have_{len(confirms)}")
+```
+
+---
+
+## FIX 3: F7/F23 — `max_open_crit_high` Convergence Gate
+
+### Claim 1
+The gate should count only non-terminal active findings; counting terminal findings would make convergence logically impossible or distorted.
+
+- Falsifying condition: if terminal findings still impose unresolved operational risk relevant to convergence.
+- Attempt to falsify: by definition terminal states are no longer active open items. Convergence gate named `open_crit_high` should track open unresolved burden, not historical artifacts.
+- Result: accepted.
+- Residual uncertainty: UNCONFIRMED status handled separately in Fix 4.
+
+### Claim 2
+The threshold may be dynamic by phase, but only in the permissive direction late in the run or stricter early if escalation is still possible.
+
+- Falsifying condition: if dynamic thresholds materially change semantics and cause regressions/stalls.
+- Attempt to falsify: Round 1 flagged regression risk. Therefore dynamic behavior must be minimal and monotone, not complicated.
+- Result: accepted with narrow design.
+- Residual uncertainty: exact default cfg values [VERIFY:current].
+
+### Claim 3
+Escalation should interact by allowing convergence block to defer to human/system escalation rather than deadlocking forever.
+
+- Falsifying condition: if escalation itself never resolves findings, then this only renames stall.
+- Attempt to falsify: yes, possible. Therefore escalation must be bounded: if gate blocks, emit explicit reason and request resolution actions; do not silently loop.
+- Result: accepted.
+- Residual uncertainty: downstream escalation executor [VERIFY:current].
+
+## Design
+
+### FLOOR
+Never allow convergence if:
+
+`active_open_crit_high > cfg.max_open_crit_high_effective`
+
+Where `active_open_crit_high` counts only findings with:
+- severity in `{CRITICAL, HIGH}`
+- status non-terminal
+- not already merged into another finding
+
+### Evidence to inspect
+- Finding severity
+- Current status
+- Whether status is terminal/non-terminal
+- Experiment phase
+
+### Thresholds
+Minimal dynamic rule:
+- Early phase: `effective_max = cfg.max_open_crit_high`
+- Late phase: `effective_max = cfg.max_open_crit_high + 1` [SPECULATIVE], capped to avoid unlimited relaxation
+
+Rationale: late phase permissiveness reduces stalls after substantial review, while preserving the hard gate.
+
+If you want even safer minimalism, keep static and only restrict the count to active non-terminals. That is the lower-risk option.
+
+Given Round 1 regression concern, I recommend:
+- **Default**: static threshold
+- **Optional contextual modulation**: `+1` only in late phase, feature-flagged [VERIFY:current]
+
+### CONTEXTUAL RULE
+- Count only active non-terminal critical/high findings.
+- Use static cfg threshold by default.
+- If phase awareness is desired, only relax by `+1` in late phase after at least one escalation cycle has occurred for the remaining blockers.
+
+### ESCALATION PATH
+If blocked:
+1. return `BLOCK_CONVERGENCE(open_crit_high_exceeded)`
+2. identify blocking findings
+3. force escalation workflow on blockers
+4. if blockers remain after escalation/review and phase is late, optionally apply `+1` relaxation if feature flag enabled
+
+### Minimal pseudocode
+```python
+TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}  # UNCONFIRMED handled separately in Fix 4
+
+def active_open_crit_high(findings):
+    return [
+        f for f in findings
+        if f.severity in {"CRITICAL", "HIGH"}
+        and f.status not in TERMINAL
+        and not is_merged_child(f)
+    ]
+
+def effective_max_open_crit_high(cfg, round_ctx, escalation_seen):
+    limit = cfg.max_open_crit_high
+    if cfg.enable_late_phase_relaxation and experiment_phase(round_ctx) == "LATE" and escalation_seen:
+        limit += 1
+    return limit
+
+def convergence_gate(findings, cfg, round_ctx, escalation_seen):
+    blockers = active_open_crit_high(findings)
+    limit = effective_max_open_crit_high(cfg, round_ctx, escalation_seen)
+
+    if len(blockers) > limit:
+        return BLOCK_CONVERGENCE("open_crit_high_exceeded", blockers)
+
+    return ALLOW()
+```
+
+---
+
+## FIX 4: F14/F17/F22 — Terminal Status in `contested_count`
+
+### Claim 1
+MERGED, CLOSED, REFUTED, and DUPLICATE are genuinely terminal for `contested_count`.
+
+- Falsifying condition: if these statuses are routinely reopened into active contention in normal runner semantics.
+- Attempt to falsify: possible in some systems, but no such reopening semantics were provided. Round 1 explicitly questioned only UNCONFIRMED.
+- Result: accepted.
+- Residual uncertainty: none significant.
+
+### Claim 2
+UNCONFIRMED is potentially recoverable and should not be treated as fully terminal for convergence semantics.
+
+- Falsifying condition: if UNCONFIRMED can never be reopened by new evidence.
+- Attempt to falsify: user explicitly raised reopenability as concern. Therefore treating it as irrecoverable is unsafe.
+- Result: accepted.
+- Residual uncertainty: exact reopen mechanics [VERIFY:current].
+
+### Claim 3
+`contested_count` should count actively contested non-terminal findings only, while UNCONFIRMED should be tracked separately as recoverable-but-not-active.
+
+- Falsifying condition: if excluding UNCONFIRMED from contested_count causes premature convergence, and separate tracking is ignored.
+- Attempt to falsify: that would happen if separate tracking has no gate effect. Therefore separate tracking must influence convergence/escalation.
+- Result: accepted with explicit rule.
+- Residual uncertainty: desired strictness for unconfirmed backlog.
+
+## Design
+
+### FLOOR
+For `contested_count`:
+- Exclude irrecoverable terminal statuses:
+  - `MERGED, CLOSED, REFUTED, DUPLICATE`
+- Do **not** lump `UNCONFIRMED` into irrecoverable terminal.
+
+### Correct semantics
+Use two counters:
+
+1. `contested_count`:
+   - findings still actively disputed / unresolved
+   - includes non-terminal statuses only
+
+2. `recoverable_unconfirmed_count`:
+   - findings in `UNCONFIRMED`
+   - excluded from `contested_count`
+   - checked separately before convergence
+
+This keeps semantics clean:
+- contested = active dispute now
+- unconfirmed = not active dispute now, but still recoverable
+
+### Evidence to inspect
+- Status per finding
+- Any new evidence since status became `UNCONFIRMED`:
+  - newer round timestamp
+  - new verdicts
+  - immune evidence strings added/changed
+
+### Thresholds
+Minimal rule:
+- `contested_count` must be `0` for convergence, or whatever existing gate requires.
+- `recoverable_unconfirmed_count` does **not** block by itself unless there is newer evidence after unconfirmation.
+- If new evidence exists for an UNCONFIRMED finding, reopen/escalate it and treat as contested again.
+
+This is the least disruptive design.
+
+### CONTEXTUAL RULE
+- If `UNCONFIRMED` has no newer evidence after terminalization, ignore for `contested_count`.
+- If newer evidence exists, it is no longer safely terminal in practice:
+  - reopen to active review
+  - include in contested handling
+
+### ESCALATION PATH
+For each `UNCONFIRMED` finding:
+1. compare `status_timestamp` vs latest verdict/evidence timestamp
+2. if no newer evidence: leave out of `contested_count`
+3. if newer evidence exists: reopen or mark `recheck_required`, and include in next contested evaluation
+
+### Minimal pseudocode
+```python
+IRRECOVERABLE_TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
+
+def has_new_evidence_since_unconfirmed(finding):
+    if finding.status != "UNCONFIRMED":
+        return False
+    return latest_evidence_ts(finding) > finding.status_ts
+
+def contested_count(findings):
+    count = 0
+    recoverable_unconfirmed = 0
+    to_reopen = []
+
+    for f in findings:
+        if f.status in IRRECOVERABLE_TERMINAL:
+            continue
+
+        if f.status == "UNCONFIRMED":
+            recoverable_unconfirmed += 1
+            if has_new_evidence_since_unconfirmed(f):
+                to_reopen.append(f)
+            continue
+
+        # all other non-terminal states are actively contested/open
+        count += 1
+
+    return {
+        "contested_count": count,
+        "recoverable_unconfirmed_count": recoverable_unconfirmed,
+        "to_reopen": to_reopen,
+    }
+```
+
+---
+
+# Consolidated recommended designs
+
+## 1) F8 Merge Quorum
+- **Floor:** never merge without at least 1 external vote, and never if votes disagree on target.
+- **Contextual rule:** 2+ distinct models agreeing on same target passes; if `<2` external models available, 1 vote with confidence `>=0.90` may pass.
+- **Escalation:** any target disagreement or insufficient quorum => defer and request more review.
+
+## 2) F11 Confirmation Quorum
+- **Floor:** at least 1 independent external confirmation, source model excluded.
+- **Contextual rule:** Medium/Low => 1; High/Critical => 2; Early Critical => 3.
+- **Escalation:** if below threshold, keep open and re-review next round.
+
+## 3) F7/F23 max_open_crit_high
+- **Floor:** convergence blocked when active non-terminal CRITICAL/HIGH findings exceed effective max.
+- **Contextual rule:** count only active non-terminals; default static threshold; optional late-phase `+1` only after escalation, feature-flagged.
+- **Escalation:** emit blockers and force escalation; optionally relax late by `+1`.
+
+## 4) F14/F17/F22 contested_count terminal handling
+- **Floor:** MERGED/CLOSED/REFUTED/DUPLICATE excluded from contested_count.
+- **Contextual rule:** UNCONFIRMED excluded from contested_count only while no newer evidence exists; track separately.
+- **Escalation:** if new evidence appears after UNCONFIRMED, reopen/recheck and treat as contested again.
+
+---
+
+# Lowest-risk implementation note
+
+If you want the smallest change set with best safety/convergence balance:
+
+1. **F8:** add target-consensus requirement and small-panel single-vote exception.
+2. **F11:** severity-based thresholds only; skip phase modulation unless needed.
+3. **F7/F23:** count only active non-terminal crit/high; keep threshold static initially.
+4. **F14/F17/F22:** split `UNCONFIRMED` from truly terminal statuses and reopen on new evidence.
+
+That is the simplest sufficient solution.
+
+========================================================================
+
+## Gemini 3.1 Pro (GE)
+Elapsed: 59.0s
+Response length: 6994 chars
+
+Here is the contextual decision logic for the 4 fixes, strictly adhering to your design principle: enforcing safety floors, modulating via available evidence (severity, confidence, timestamps, immune verdicts), and escalating ambiguity.
+
+### FIX 1: F8 — Merge Quorum
+
+**Evidence Inspected:** `votes.target_id` (for agreement), `model_id` (for panel size), `confidence`, `immune_pipeline.verdict`.
+
+1. **THE FLOOR (Hard Constraint):**
+   * Target agreement is strictly non-negotiable. If `len(unique(targets_proposed)) > 1`, the merge MUST be rejected. A finding cannot be merged into multiple distinct targets.
+   * Minimum required votes is always `min(1, panel_size)`. 0 votes never merge.
+2. **THE CONTEXTUAL RULE:**
+   * **Clear Quorum:** If `count(matching_target) >= 2`, approve merge.
+   * **Contextual Override (1 vote):** A single vote is sufficient ONLY IF:
+     * `external_panel_size < 2` (mathematically impossible to get 2), OR
+     * `vote.confidence == HIGH` AND `immune_pipeline.verdict` matches the target signature.
+3. **THE ESCALATION PATH:**
+   * If target disagreement occurs, reject the merge for the current round, clear the merge votes, and invoke the immune pipeline to generate an `evidence_string` comparing the contested targets for the next round.
+
+```python
+def check_merge(votes, panel_size, immune_verdict):
+    targets = get_unique_targets(votes)
+    
+    # FLOOR
+    if len(targets) > 1: return "ESCALATE_DISAGREEMENT" 
+    if len(targets) == 0: return "NO_MERGE"
+    
+    target, count = get_most_common(votes)
+    
+    # CONTEXTUAL
+    if count >= 2: return "MERGE"
+    if count == 1:
+        if panel_size < 2: return "MERGE"
+        high_conf = any(v.confidence == 'HIGH' for v in votes)
+        if high_conf and immune_verdict.matches(target):
+            return "MERGE"
+            
+    return "NO_MERGE"
+```
+
+---
+
+### FIX 2: F11 — Confirmation Quorum
+
+**Evidence Inspected:** `severity`, `round_timestamps` (current vs created), `immune_pipeline.verdict`, `confirmations` (excluding source).
+
+1. **THE FLOOR (Hard Constraint):**
+   * A source model can never confirm its own finding.
+   * If `external_panel_size > 0`, the absolute minimum requirement is `1` independent external confirmation. 
+2. **THE CONTEXTUAL RULE:**
+   * **Doubt / High Risk:** If `severity` is `CRITICAL` or `HIGH`, require `2` external confirmations.
+   * **Permissive / Lower Risk:** If `severity` is `MEDIUM` or `LOW`, require `1` external confirmation.
+   * **Evidence Substitution:** If a finding is lacking 1 human/model confirmation but has a `HIGH` confidence confirming cell-type verdict from the immune pipeline, treat the immune pipeline as 1 external confirmation.
+3. **THE ESCALATION PATH:**
+   * If a finding remains unconfirmed for `> 3` rounds, do not lower the threshold (which would compromise safety). Instead, escalate to the immune pipeline for a targeted cell-type analysis to explicitly force a confirmation or refutation in the next round.
+
+```python
+def is_confirmed(finding, confirmations, panel_size, immune_verdict):
+    # FLOOR
+    if panel_size == 0: return True # Only source exists
+    if len(confirmations) == 0: return False
+    
+    # CONTEXTUAL
+    required = 2 if finding.severity in ['CRITICAL', 'HIGH'] else 1
+    current_confs = len(confirmations)
+    
+    if current_confs >= required: return True
+    
+    # Evidence substitution
+    if (current_confs + 1 >= required) and immune_verdict.is_high_conf_match():
+        return True
+        
+    return False # Escalate if round_age > 3
+```
+
+---
+
+### FIX 3: F7/F23 — `max_open_crit_high` Convergence Gate
+
+**Evidence Inspected:** `status`, `severity`, `round_timestamps` (duration active).
+
+1. **THE FLOOR (Hard Constraint):**
+   * The numerical threshold `max_open_crit_high` must NEVER be dynamically raised to force convergence. Expanding the acceptable number of critical findings just because time has passed compromises the safety gate.
+   * Terminal findings (`CLOSED`, `REFUTED`, `MERGED`, `DUPLICATE`) strictly MUST NOT count against this threshold.
+2. **THE CONTEXTUAL RULE:**
+   * The count must include both `ACTIVE` and `UNCONFIRMED` findings (since an unconfirmed critical is still a critical risk).
+   * Instead of changing the threshold, change finding *eligibility*. If a critical finding has been stalled for `> N` rounds and the immune pipeline returns a `low_confidence` verdict, tag it as `EXHAUSTED`. `EXHAUSTED` findings bypass the gate.
+3. **THE ESCALATION PATH:**
+   * If `open_crit_high > max_open_crit_high` and convergence is blocked, the runner pauses convergence, gathers all blocking findings, and triggers an immediate immune pipeline override. The pipeline must explicitly `REFUTE` or mark `EXHAUSTED`. 
+
+```python
+def get_blocking_crit_count(registry, current_round, max_stall_rounds):
+    # FLOOR
+    terminal_states = {'CLOSED', 'REFUTED', 'MERGED', 'DUPLICATE'}
+    blocking_count = 0
+    
+    for f in registry.get_findings(severity=['CRITICAL', 'HIGH']):
+        if f.status in terminal_states: continue
+        
+        # CONTEXTUAL
+        age = current_round - f.created_round
+        if age > max_stall_rounds and f.immune_verdict == 'LOW_CONF':
+            f.set_tag('EXHAUSTED')
+            continue
+            
+        blocking_count += 1
+        
+    return blocking_count
+```
+
+---
+
+### FIX 4: F14/F17/F22 — Terminal Status in `contested_count`
+
+**Evidence Inspected:** `status`, `round_timestamps`.
+
+1. **THE FLOOR (Hard Constraint):**
+   * `MERGED`, `CLOSED`, `REFUTED`, and `DUPLICATE` are mathematically irrecoverable in the current execution graph. They MUST be excluded from `contested_count`. 
+2. **THE CONTEXTUAL RULE:**
+   * `UNCONFIRMED` is conditionally recoverable and directly impacts convergence.
+   * If `current_round - created_round < GRACE_PERIOD` (e.g., 2 rounds), it is actively awaiting review. Include it in `contested_count` (prevents premature convergence).
+   * If it exceeds the grace period without confirmation, it is functionally dead. Exclude it from `contested_count` (prevents the Exp 37 stall).
+3. **THE ESCALATION PATH:**
+   * When an `UNCONFIRMED` finding ages out of the `contested_count`, do not delete it. Transition it to a dedicated `ORPHANED` status. If new evidence (a delayed model vote) arrives targeting an `ORPHANED` finding, immediately reopen it and re-increment the `contested_count`.
+
+```python
+def calculate_contested(registry, current_round, grace_period=2):
+    # FLOOR
+    irrecoverable = {'MERGED', 'CLOSED', 'REFUTED', 'DUPLICATE', 'ORPHANED'}
+    contested = 0
+    
+    for f in registry.get_all():
+        if f.status in irrecoverable: 
+            continue
+            
+        # CONTEXTUAL
+        if f.status == 'UNCONFIRMED':
+            age = current_round - f.created_round
+            if age >= grace_period:
+                f.status = 'ORPHANED' # Escalation path preserves it
+                continue
+                
+        contested += 1
+        
+    return contested
+```
+
+========================================================================
+

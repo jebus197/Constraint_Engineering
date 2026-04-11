@@ -1,0 +1,216 @@
+CDSFL Confer: Exp 38 Experimental Runner Review
+Timestamp: 20260411T010339Z
+Branch: exp38-experimental
+Subject: 14 bug fixes to reference_runner.py
+Models: CX (GPT-5.4 via OpenRouter), GE (Gemini 3.1 Pro via Google)
+========================================================================
+
+## Codex GPT-5.4 (CX)
+Elapsed: 402.3s
+Response length: 14682 chars
+
+Constraints classification:
+- Review only runner logic, not immune pipeline/endocrine/classification: HARD
+- For each of 14 fixes, apply FIND/FOLLOW/FIX: HARD
+- Focus on correctness/interactions/edge cases/convergence/regression: HARD
+- Present as numbered list with FIND/FOLLOW/FIX/severity: HARD
+- Be direct, no filler: SOFT
+
+1. **F2/F5/F9: `add_verdict()` timer corruption**
+   - **Claim:** Removing `last_status_change_round` updates from `add_verdict()` is correct.
+   - **Falsifying condition:** If escalation/aging logic is intended to track any new evidence, not just status transitions, then removing the update would be wrong.
+   - **Disproof attempt:** The stated model says verdicts are evidence and only `resolve()` should change status-transition timing. That is internally consistent with the root cause: verdict traffic was masking stale status. I see no runner-logic contradiction from the diff summary.
+   - **Provisionally accepted. Residual uncertainty:** Depends on whether any downstream logic was using `last_status_change_round` as “last activity” rather than “last status change.” No evidence here that it should.
+   - **FIND:** Correct. It addresses the root cause.
+   - **FOLLOW:** Improves escalation of stagnant findings. Interaction with F6/F18 is positive: all three align timer semantics on `resolve()`.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+2. **F14/F17/F22: `contested_count` terminal status leak**
+   - **Claim:** Excluding all terminal statuses from `contested_count` is correct.
+   - **Falsifying condition:** If `UNCONFIRMED` is not terminal in this runner, or if contested terminal findings are intentionally counted for convergence gating/history.
+   - **Disproof attempt:** The patch treats `UNCONFIRMED` as terminal. That is plausible but not guaranteed from the summary alone. In many state machines, `UNCONFIRMED` can be reopened by new evidence; if so, excluding it from contested counts might undercount active disputes.
+   - **Revision:** The fix is likely correct for `MERGED/CLOSED/REFUTED/DUPLICATE`; `UNCONFIRMED` is the only questionable addition.
+   - **FIND:** Mostly correct, but there is one edge-case risk: including `UNCONFIRMED` among terminal statuses may be wrong if the runner permits later reopening or continued review of unconfirmed findings.
+   - **FOLLOW:** If `UNCONFIRMED` is actually recoverable/non-terminal, this fix could reduce `contested_count` too aggressively and allow premature convergence. If it is truly terminal, then no issue.
+   - **FIX:** Minimal correction: confirm state-machine semantics. If `UNCONFIRMED` can reopen, do **not** skip it in `contested_count`; otherwise keep as is.
+   - **Severity:** MEDIUM
+
+3. **F24: same-round challenge silently resolved**
+   - **Claim:** Changing `>` to `>=` is correct.
+   - **Falsifying condition:** If same-round confirm and challenge are ordered events and the intended semantics are “confirm wins within round unless challenge is later,” then `>=` would be too conservative.
+   - **Disproof attempt:** The summary frames rounds as the resolution unit. Under round-granularity state, same-round challenge should remain unresolved because intra-round ordering is not represented. That supports `>=`.
+   - **Provisionally accepted. Residual uncertainty:** If the runner actually stores event order/timestamps elsewhere, this could be overbroad; no evidence provided.
+   - **FIND:** Correct.
+   - **FOLLOW:** Works coherently with F0/F4 by preventing close-on-confirm when a same-round challenge exists. May slightly delay closure, but only in disputed cases.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+4. **F6: `escalate/auto_resolve` direct mutation**
+   - **Claim:** Replacing direct status mutation with `self.resolve(...)` is correct.
+   - **Falsifying condition:** If `resolve()` has side effects inappropriate for these paths, such as duplicating logs, changing unrelated fields, or enforcing rules that escalation/auto-resolve should bypass.
+   - **Disproof attempt:** The stated root cause is timer corruption from bypassing `resolve()`. Unless `resolve()` is overloaded with unrelated semantics, centralizing status changes there is the safer invariant. No conflicting evidence provided.
+   - **Provisionally accepted. Residual uncertainty:** Need to ensure `resolve()` preserves any special behavior previously associated with escalate/auto-resolve.
+   - **FIND:** Correct in principle.
+   - **FOLLOW:** Positive interaction with F2/F5/F9 and F18. Potential regression only if `resolve()` emits duplicate transition records or fails on repeated same-status resolution.
+   - **FIX:** None if `resolve()` is idempotent enough for these call sites; otherwise minimal correction is to make `resolve()` idempotent for no-op transitions.
+   - **Severity:** LOW
+
+5. **F8: single-model MERGE kill**
+   - **Claim:** Requiring 2+ distinct models to merge is correct.
+   - **Falsifying condition:** If merge is a structural deduplication operation that can be validly performed by a single authoritative determination, then requiring quorum could preserve obvious duplicates too long.
+   - **Disproof attempt:** A merge is destructive/terminal-ish because it removes an independent finding. Requiring only one model is clearly fragile. The 2-model quorum is a reasonable safeguard.
+   - **Provisionally accepted. Residual uncertainty:** On small panels (<2 effective external models), this may make merge impossible [SPECULATIVE].
+   - **FIND:** Correct, with one edge case.
+   - **FOLLOW:** Safer against false merges. However, on configurations with only one available model or one usable external vote, duplicate findings may never merge, increasing open count and delaying convergence [VERIFY:current].
+   - **FIX:** Minimal correction if small-panel mode exists: require `min(2, available_distinct_models)` or define explicit small-panel merge semantics.
+   - **Severity:** MEDIUM
+
+6. **F0/F4: challenge-before-close ordering**
+   - **Claim:** Checking unresolved challenges before closing is correct.
+   - **Falsifying condition:** If `CLOSED` is meant to coexist with unresolved challenges, or challenge handling already reopens closed findings without harm.
+   - **Disproof attempt:** The described old behavior “close immediately, then check challenges” is plainly vulnerable to skipping pending disputes. Challenge-first ordering matches expected state-machine discipline.
+   - **Provisionally accepted. Residual uncertainty:** Depends on exact definition of “verified”; but even then unresolved challenges should block closure.
+   - **FIND:** Correct.
+   - **FOLLOW:** Strong positive interaction with F24. May delay closure of findings that would previously close despite same-round or earlier unresolved challenges; that is intended, not regression.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+7. **F11: confirmation quorum inflation**
+   - **Claim:** Changing `independent_count = 1 + len(external)` to `len(external)` is correct.
+   - **Falsifying condition:** If the originating model is intentionally counted toward quorum because the finding itself encodes one model’s support, then removing the implicit +1 could over-tighten confirmation thresholds.
+   - **Disproof attempt:** The summary explicitly says “source model excluded” and for a 5-model panel now 2 external confirms required instead of effectively 1. That matches ordinary independence semantics: quorum should count corroborators, not originator.
+   - **Provisionally accepted. Residual uncertainty:** Need consistency with all other quorum calculations; no contradiction shown.
+   - **FIND:** Correct.
+   - **FOLLOW:** Reduces false confirmations; may slow convergence by requiring stronger support, but in a legitimate way.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+8. **F18: `REOPENED -> OPEN` bypass**
+   - **Claim:** Routing reopen transitions through `registry.resolve(...)` is correct.
+   - **Falsifying condition:** If reopening is not a normal resolution transition and should preserve prior timer semantics or special metadata not handled by `resolve()`.
+   - **Disproof attempt:** Same pattern as F6. Direct mutation bypasses central transition logic; that is usually a bug.
+   - **Provisionally accepted. Residual uncertainty:** As with F6, depends on `resolve()` being safe for this transition class.
+   - **FIND:** Correct.
+   - **FOLLOW:** Keeps reopen timing accurate. Good interaction with timer-related fixes.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+9. **F7/F23: dead config `max_open_crit_high`**
+   - **Claim:** Enforcing `cfg.max_open_crit_high` in `_evaluate_gate_conditions` is correct.
+   - **Falsifying condition:** If the config was intentionally dormant, experimental, or meant for reporting only; enforcement could newly block convergence in scenarios previously judged acceptable.
+   - **Disproof attempt:** A config field defined but never checked is dead. Enforcing it matches the apparent intent. But this is one of the highest regression-risk fixes because it changes convergence criteria, not just bug behavior.
+   - **Revision:** The fix is directionally correct but needs validation against baseline behavior.
+   - **FIND:** Likely correct, but [VERIFY:current] this can materially alter convergence and is the clearest convergence-impact/regression risk in the set.
+   - **FOLLOW:** If threshold defaults are too strict, runner may fail to converge where `run_exp37_evidence.py` would. If too lax, no practical effect. Also interacts with F12 if gate evaluation happens multiple times per round; duplicate history suppression helps observability, not semantics.
+   - **FIX:** Minimal correction: verify the default value and whether the gate should count only non-terminal open critical/high findings. If not already, scope it explicitly to active findings.
+   - **Severity:** HIGH
+
+10. **F12: idempotent gate history**
+   - **Claim:** Guarding `open_ch_history.append(open_ch)` against duplicate entries per round is correct.
+   - **Falsifying condition:** If multiple evaluations per round are intentional samples and history is supposed to reflect each invocation, deduping would lose information.
+   - **Disproof attempt:** Gate history usually tracks round-level state, not call count. Duplicate entries from re-entrant evaluation are noise and can distort trend logic.
+   - **Provisionally accepted. Residual uncertainty:** If any consumer expects call-frequency semantics, this changes that.
+   - **FIND:** Correct.
+   - **FOLLOW:** Prevents accidental history inflation. Good support for F7/F23 if gate evaluation is invoked multiple times. Low risk.
+   - **FIX:** None.
+   - **Severity:** LOW
+
+11. **F13: regex 4-digit ID ceiling**
+   - **Claim:** Changing `C\d{4}` to `C\d{4,}` is correct.
+   - **Falsifying condition:** If IDs can validly have fewer than 4 digits, prefixed/suffixed variants, or this regex is embedded where lack of boundaries causes overmatching.
+   - **Disproof attempt:** The specific stated bug is failure for IDs `>= C10000`. `C\d{4,}` fixes that. But there is a likely edge case: without boundaries, it may match substrings inside larger tokens.
+   - **FIND:** Correct for the stated root cause, but incomplete as a regex hardening fix.
+   - **FOLLOW:** Fixes high-ID parsing. Potential downstream issue if parser can now overmatch `C12345` inside unrelated text like `XC12345Y` [SPECULATIVE], depending on surrounding pattern.
+   - **FIX:** Minimal correction: use boundaries appropriate to the grammar, e.g. `\bC\d{4,}\b` or explicit delimiters if IDs are tokenized.
+   - **Severity:** MEDIUM
+
+12. **F19: regex character class backslash**
+   - **Claim:** Removing the backslash before `|` inside a character class is correct.
+   - **Falsifying condition:** If the regex engine or pattern context treats `\|` differently inside the actual full expression.
+   - **Disproof attempt:** In standard regex syntax, `|` inside `[]` is literal already; escaping it is unnecessary but usually harmless. So the change is cosmetic unless the old pattern was malformed for another reason.
+   - **FIND:** Correct but non-functional in most regex engines; no meaningful behavioral change by itself.
+   - **FOLLOW:** Essentially none, unless this was part of a broader cleanup. No conflict with other fixes.
+   - **FIX:** None needed. If the intent was bug repair, verify there was an actual parsing issue; otherwise treat as cleanup.
+   - **Severity:** LOW
+
+13. **Interaction check: timer-semantic unification across F2/F5/F9, F6, F18**
+   - **Claim:** These fixes are mutually consistent.
+   - **Falsifying condition:** If any code path still writes `status` directly or still updates `last_status_change_round` on non-status events, the invariant remains broken.
+   - **Disproof attempt:** From the summary, three known offending paths were fixed. But I cannot prove there are no remaining direct mutations elsewhere in `reference_runner.py`.
+   - **FIND:** The fixes are coherent, but there is residual runner-wide regression risk if other direct status writes remain.
+   - **FOLLOW:** Partial adoption of the invariant would leave intermittent timer bugs, making convergence behavior hard to reason about.
+   - **FIX:** Minimal correction: grep/audit runner for all writes to `["status"]` and `["last_status_change_round"]`; enforce “status changes only via `resolve()`.”
+   - **Severity:** MEDIUM
+
+14. **Interaction check: convergence behavior after F0/F4, F24, F11, F7/F23**
+   - **Claim:** These fixes together may slow convergence but should improve legitimacy.
+   - **Falsifying condition:** If combined thresholds/ordering make closure/confirmation/merge practically unreachable in normal runs, they overcorrect and harm convergence.
+   - **Disproof attempt:** Each individual change is defensible. In combination, they all tighten acceptance: unresolved same-round challenges persist, closes are delayed, confirmation needs more external support, and crit/high open-count now blocks convergence. This can be correct, but it is the main system-level risk area.
+   - **FIND:** No direct conflict, but there is a nontrivial aggregate risk of delayed or stalled convergence relative to Exp 37 baseline [VERIFY:current].
+   - **FOLLOW:** Especially on sparse-model or noisy rounds, contested findings may remain open longer, merges may be harder, and newly enforced gate thresholds may stop termination.
+   - **FIX:** Minimal correction: run parity checks against `run_exp37_evidence.py` on known workloads and compare rounds-to-convergence and terminal-state distributions. If regressions appear, tune only the new gate/quorum thresholds, not the challenge-ordering fixes.
+   - **Severity:** HIGH
+
+========================================================================
+
+## Gemini 3.1 Pro (GE)
+Elapsed: 102.3s
+Response length: 4199 chars
+
+Here is the FFF (Find-Follow-Fix) review of the 14 bug fixes applied to the runner logic. 
+
+**1. F2/F5/F9 (Timer corruption)**
+- FIND: Correct. Consolidating timer updates strictly to `resolve()` is mathematically sound.
+- FOLLOW: Ensures verdicts on `OPEN` findings do not reset the escalation clock, guaranteeing that continuously contested findings will hit their timeout limits and be escalated. 
+
+**2. F14/F17/F22 (Terminal status leak)**
+- FIND: Correct. 
+- FOLLOW: Safely excludes resolved/terminal findings from holding up convergence metrics, preventing ghost findings from creating infinite runner loops.
+
+**3. F24 (Same-round challenge)**
+- FIND: Correct. The `>=` operator creates a mathematically robust chronological barrier.
+- FOLLOW: If a challenge and a confirm occur in the same round (Round N), `N >= N` evaluates to True. The challenge remains active. It will strictly block closure until a *subsequent* confirm in Round N+1 (or later) updates the `latest_confirm_round`, outvoting the challenge.
+
+**4. F6 (Escalate direct mutation)**
+- FIND: Correct.
+- FOLLOW: Reusing `resolve()` guarantees that auto-escalated findings correctly trigger the state machine guardrails and timer updates that direct dict mutation bypassed.
+
+**5. F8 (Single-model MERGE kill)**
+- FIND: Requiring 2+ models is necessary but insufficient if the models disagree on the target.
+- FOLLOW: If Model A votes to merge finding X into Y, and Model B votes to merge X into Z, a naive `len(merge_verdicts) >= 2` check passes. The runner will execute the merge (likely defaulting to the first available target), resulting in contested graph corruption being executed without true consensus.
+- FIX: The quorum must require agreement on the *specific* target ID: `any(count(v) >= 2 for v in verdicts if v.type == MERGE and v.target == T)`.
+- SEVERITY: **HIGH**
+
+**6. F0/F4 (Challenge-before-close ordering)**
+- FIND: Correct. 
+- FOLLOW: Works flawlessly in tandem with F24. If an active dispute exists, closure is blocked. If a rogue model permanently disputes a finding, F0/F4 blocks closure until the finding hits the maximum round limit, at which point F6 safely auto-escalates it to `UNCONFIRMED`.
+
+**7. F11 (Confirmation quorum inflation)**
+- FIND: Correct.
+- FOLLOW: Excluding the source model from the count mathematically guarantees that at least two *distinct, external* agents must validate a finding before it can be closed, ensuring true independent consensus.
+
+**8. F18 (REOPENED -> OPEN bypass)**
+- FIND: Using `resolve(fid, "OPEN", round_idx)` correctly resets the timer, but assumes `resolve()` permits transitions to non-terminal states. [SPECULATIVE: internal state of resolve()]
+- FOLLOW: In many state machines, "resolve" enforces finality. If the internal logic of `resolve()` asserts that its target must be a terminal state (e.g., `status in [CLOSED, REFUTED, UNCONFIRMED...]`), passing "OPEN" will raise a state transition exception and crash the runner during the reopen operation.
+- FIX: Verify `resolve()` permits transitions to "OPEN". If it enforces terminal states, F18 must either bypass the guard safely or use a dedicated `reopen()` method to update the timer. [VERIFY:current]
+- SEVERITY: **MEDIUM**
+
+**9. F7/F23 (Dead config max_open_crit_high)**
+- FIND: Correct.
+- FOLLOW: Gate enforcement securely blocks early convergence. There is no risk of a permanent deadlock: if the panel cannot resolve the critical finding, the finding will eventually hit timeout limits, auto-escalate to `UNCONFIRMED` (via F6), drop out of the "open" count, and safely unblock the runner.
+
+**10. F12 (Idempotent gate history)**
+- FIND: Correct.
+- FOLLOW: Guards against metric inflation if the runner evaluates conditions multiple times within the same execution round.
+
+**11. F13 (Regex 4-digit ID ceiling)**
+- FIND: Correct.
+- FOLLOW: `\d{4,}` safely expands match length without breaking existing ID extraction.
+
+**12. F19 (Regex character class backslash)**
+- FIND: Correct.
+- FOLLOW: Inside a Python character class `[]`, the pipe `|` has no special meaning and does not require escaping. Removing the backslash safely cleans up the syntax warning without changing the evaluated character set.
+
+========================================================================
+

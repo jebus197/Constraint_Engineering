@@ -136,12 +136,14 @@ class TestSameRoundChallenge:
 # =============================================================================
 
 class TestMergeQuorum:
-    def test_single_merge_does_not_kill(self):
-        """A single MERGE verdict should not merge the finding."""
+    def test_single_merge_on_full_panel_does_not_kill(self):
+        """A single MERGE verdict with 2+ external models available should not merge."""
         reg = FindingRegistry()
-        cid = _register(reg, _make_finding())
+        cid = _register(reg, _make_finding(model_id="CC2"))
+        # Two external models have verdicts — full panel
         reg.add_verdict(cid, "Gemini", "MERGE", round_idx=1,
                        evidence="merged_into=C0002")
+        reg.add_verdict(cid, "Codex", "CONFIRM", round_idx=1)  # Not a merge
         _update_finding_statuses(reg, round_idx=1)
         assert reg.entries[cid]["status"] != "MERGED"
 
@@ -244,12 +246,13 @@ class TestMaxOpenCritHigh:
     def test_gate_fails_when_over_threshold(self):
         """Gate should fail when open_ch exceeds cfg.max_open_crit_high."""
         reg = FindingRegistry()
-        # Register a critical finding (severity >= 0.7, status OPEN)
-        _register(reg, _make_finding(severity=0.9))
+        # Register a recent critical finding (severity >= 0.7, status OPEN)
+        _register(reg, _make_finding(severity=0.9, round_idx=12))
         cfg = RunnerConfig(
             max_open_crit_high=0,  # default: no open critical/high allowed
             earliest_stop_round=0,
         )
+        # Round 15: finding is only 3 rounds old — not exhausted (threshold 8)
         passed, msg = _evaluate_gate_conditions(
             round_idx=15, registry=reg, novel_this_round=0,
             gamma=0.5, cfg=cfg, open_ch_history=[],
@@ -301,3 +304,121 @@ class TestVerdictRegex:
         """3-digit ID should not match (minimum 4 digits)."""
         m = _VERDICT_RE.search("CONFIRM C042")
         assert m is None
+
+
+# =============================================================================
+# Contextual fixes (Round 2 confer design)
+# =============================================================================
+
+class TestContextualMergeQuorum:
+    """F8 contextual: target consensus + small-panel + HIL flag."""
+
+    def test_target_disagreement_defers_merge(self):
+        """Merge votes with different targets should NOT merge."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding())
+        reg.add_verdict(cid, "Gemini", "MERGE", round_idx=1,
+                       evidence="merged_into=C0002")
+        reg.add_verdict(cid, "Codex", "MERGE", round_idx=1,
+                       evidence="merged_into=C0003")  # Different target
+        _update_finding_statuses(reg, round_idx=1)
+        assert reg.entries[cid]["status"] != "MERGED"
+
+    def test_same_target_consensus_merges(self):
+        """Two models agreeing on same target should merge."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding())
+        reg.add_verdict(cid, "Gemini", "MERGE", round_idx=1,
+                       evidence="merged_into=C0002")
+        reg.add_verdict(cid, "Codex", "MERGE", round_idx=1,
+                       evidence="merged_into=C0002")
+        _update_finding_statuses(reg, round_idx=1)
+        assert reg.entries[cid]["status"] == "MERGED"
+
+    def test_single_merge_on_small_panel_hil_flagged(self):
+        """Single merge on small panel should merge but flag for HIL."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding(model_id="CC2"))
+        # Only one external model has ANY verdict — small panel
+        reg.add_verdict(cid, "Gemini", "MERGE", round_idx=1,
+                       evidence="merged_into=C0002")
+        _update_finding_statuses(reg, round_idx=1)
+        assert reg.entries[cid]["status"] == "MERGED"
+        assert reg.entries[cid].get("hil_escalated") is True
+
+
+class TestContextualConfirmationQuorum:
+    """F11 contextual: severity-based thresholds."""
+
+    def test_low_severity_one_confirm_enough(self):
+        """Medium/Low severity finding needs only 1 external confirm."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding(model_id="CC2", severity=0.4))
+        reg.add_verdict(cid, "Gemini", "CONFIRM", round_idx=1)
+        _update_finding_statuses(reg, round_idx=1)
+        assert reg.entries[cid]["status"] == "CONFIRMED"
+
+    def test_high_severity_one_confirm_not_enough(self):
+        """Critical/High severity still needs 2 external confirms."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding(model_id="CC2", severity=0.9))
+        reg.add_verdict(cid, "Gemini", "CONFIRM", round_idx=1)
+        _update_finding_statuses(reg, round_idx=1)
+        assert reg.entries[cid]["status"] == "OPEN"
+
+
+class TestExhaustedBypass:
+    """F7/F23 GE design: stalled findings bypass gate as EXHAUSTED."""
+
+    def test_stalled_finding_excluded_from_open_ch(self):
+        """Finding stalled >= threshold rounds should be EXHAUSTED."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding(severity=0.9))
+        # Finding opened at round 0, now at round 10 — stalled 10 rounds
+        count = reg.open_crit_high_count(
+            exhausted_round_threshold=8, current_round=10)
+        assert count == 0
+        assert reg.entries[cid].get("exhausted") is True
+
+    def test_recent_finding_not_exhausted(self):
+        """Finding not yet at threshold should still count."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding(severity=0.9))
+        count = reg.open_crit_high_count(
+            exhausted_round_threshold=8, current_round=5)
+        assert count == 1
+        assert reg.entries[cid].get("exhausted") is not True
+
+
+class TestUnconfirmedGracePeriod:
+    """F14/F17/F22 composed: grace period + reopen on evidence."""
+
+    def test_unconfirmed_in_grace_period_counted(self):
+        """UNCONFIRMED within grace period should count as contested."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding())
+        reg.add_verdict(cid, "Gemini", "CHALLENGE", round_idx=1)
+        reg.resolve(cid, "UNCONFIRMED", round_idx=5)
+        # Round 6: only 1 round since UNCONFIRMED, within grace period of 2
+        assert reg.contested_count(current_round=6, grace_period=2) == 1
+
+    def test_unconfirmed_after_grace_excluded(self):
+        """UNCONFIRMED past grace period with no new evidence excluded."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding())
+        reg.add_verdict(cid, "Gemini", "CHALLENGE", round_idx=1)
+        reg.resolve(cid, "UNCONFIRMED", round_idx=5)
+        # Round 10: 5 rounds since UNCONFIRMED, well past grace
+        assert reg.contested_count(current_round=10, grace_period=2) == 0
+
+    def test_unconfirmed_reopened_on_new_evidence(self):
+        """UNCONFIRMED with new evidence after grace should reopen."""
+        reg = FindingRegistry()
+        cid = _register(reg, _make_finding())
+        reg.add_verdict(cid, "Gemini", "CHALLENGE", round_idx=1)
+        reg.resolve(cid, "UNCONFIRMED", round_idx=5)
+        # New evidence arrives at round 8
+        reg.add_verdict(cid, "Codex", "CHALLENGE", round_idx=8)
+        # Round 10: past grace, but new evidence exists
+        count = reg.contested_count(current_round=10, grace_period=2)
+        assert reg.entries[cid]["status"] == "OPEN"  # Reopened

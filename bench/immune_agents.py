@@ -2249,8 +2249,12 @@ def _classify_claim_v2(
     # 5.5 Strong math signal promotion (Layer 1 complement).
     # If strong math vocabulary is present but no pattern above matched,
     # promote to MATHEMATICAL rather than letting it fall to software fallback.
+    # Guard: only promote when code-context is ABSENT. If both signals are
+    # present ("add_verdict() for every verdict" has code + "for every"),
+    # the description is ambiguous — let the software fallback handle it.
     if domain == "software" and _STRONG_MATH_SIGNAL.search(desc):
-        return ClaimType.MATHEMATICAL, desc, 0.55
+        if not _CODE_CONTEXT_PATTERN.search(desc):
+            return ClaimType.MATHEMATICAL, desc, 0.55
 
     # 6. Domain-aware fallback: in software domain, UNCATEGORISED → CODE_BEHAVIORAL
     # (low confidence, but routes to CT which can investigate rather than dead-end)
