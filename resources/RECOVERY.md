@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 10 April 2026 14:05 BST
+Last updated: 11 April 2026 00:35 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,46 +21,55 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (10 April 2026 14:05 BST)
+## Current Pending Work (11 April 2026 00:35 BST)
 
-Experiments 12–37 ALL COMPLETE. 690 tests pass.
+Experiments 12–? ALL COMPLETE. 501/502 tests pass (1 known failure, see below).
 
-EXP 38 ROUND 0 COMPLETE — PAUSED (10 April 2026 14:05 BST):
-  Target: bench/reference_runner.py, star, 5 models, burst mode (5 phases).
-  26 findings, 14 confirmed by HIL verification (70% true positive).
-  Paused to fix immune/endocrine gaps before restart.
-  Logs: bench/logs/exp38_ouroboros_20260410T122030Z/
-  Full verification: experimental_notes/Exp38_R0_Verification_2026-04-10.md
+**3-Layer DC v2 Classification Fix (10–11 April 2026):**
+Exp 38 R0 revealed 17/26 code findings misrouted to MATHEMATICAL (operators in
+code descriptions) and 3/26 defaulted to UNCATEGORISED. Implemented 3-layer fix:
+- **Layer 1:** Domain-aware code-context regex (`_CODE_CONTEXT_PATTERN`) checked
+  BEFORE math pattern. Strong-math veto (`_STRONG_MATH_SIGNAL`) preserves genuine math.
+- **Layer 2:** Targeted LLM classifier for UNCATEGORISED residue only (15s timeout,
+  fail-open, confidence threshold 0.55).
+- **Layer 3:** Domain TOML loading + hard verification gate (nothing exits without
+  at least one tool-grounded verdict from CT, B-Cell, or NK).
+- **CX confer fixes (CX-F1/F2):** Removed bare-word branches from `_CODE_CONTEXT_PATTERN`
+  (matched math vocabulary). Added 6 terms to `_STRONG_MATH_SIGNAL`.
+- **24 new tests** in `bench/tests/test_immune_agents.py`.
+
+**Known failure:** `test_cx_f1_math_with_function_word_not_misrouted` — strong-math
+signal ("bounded") is only checked inside code-context branch, not as independent
+promoter. Fix identified: add strong-math promotion gate before software fallback
+(step 5.5). NOT YET APPLIED — pending discussion.
 
 Uncommitted changes in working tree:
-  M bench/directives/software/software_python_sk.txt
-  M bench/directives/universal/cdsfl_operational.md
-  M bench/directives/universal/expert_encoding_template.md
+  M bench/endocrine.py
+  M bench/immune_agents.py
+  M bench/insect_brain.py
   M bench/logs/immune_shadow.log
   M bench/reference_runner.py
-  M bench/runner_core.py
-  M experimental_notes/Exp38_Plan_2026-04-09.md
-  ?? bench/burst_planner.py
-  ?? bench/confer_exp38_fitness.py
-  ?? bench/confer_exp38_fix_review.py
-  ?? bench/exp38_config.json
-  ?? bench/logs/confer_exp38_fitness/
-  ?? bench/logs/confer_exp38_fix_review/
-  ?? bench/logs/exp38_ouroboros_20260410T104416Z/
-  ?? bench/logs/exp38_ouroboros_20260410T122030Z/
-  ?? bench/monitor_exp38.sh
-  ?? experimental_notes/Sk_What_It_Means_2026-04-09.md
+  M bench/tests/test_endocrine.py
+  M bench/tests/test_exp29_integration.py
+  M bench/tests/test_immune_agents.py
+  M docs/CURRENT_STATE.md
+  M resources/ONBOARDING.md
+  M resources/RECOVERY.md
+  ?? bench/logs/confer_dc_fix_cx_20260410T215131Z.txt
+  ?? bench/tests/test_runner_status_transitions.py
+  ?? experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md
+  ?? experimental_notes/Exp38_Fix_Cycle_2026-04-10.md
 
 Remote: up to date.
 
-NEXT STEPS:
-  1. Fix endocrine SEARCH/REPLACE parser (wire runner's parse_search_replace_blocks).
-  2. Fix _find_target_file fallback (CC2 target file = None).
-  3. Promote Formalisation Agent from shadow to active.
-  4. Add SymPy verification pathway for B-Cell math claims.
-  5. Decide which of the 14 confirmed runner bugs to fix before restart.
-  6. Restart Exp 38 from Round 0 with fixed immune/endocrine pipeline.
-  7. On successful convergence: commit all changes.
+NEXT:
+1. Apply strong-math promotion gate fix (Option 1 from analysis — 1 line in
+   `_classify_claim_v2`, step 5.5 before software fallback)
+2. Re-run tests — expect 502/502 pass
+3. Commit all changes (17 runner/endocrine/immune fixes + 3-layer classification
+   fix + CX-F1/F2 confer fixes + 24+ new tests + confer logs)
+4. Push to origin
+5. Restart Exp 38 from R0 with 3-layer classification active
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

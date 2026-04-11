@@ -488,3 +488,328 @@ class TestCTOutputParsing:
     def test_garbage_output(self):
         results = _parse_ct_output("This is just rambling text with no JSON at all.")
         assert results == []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 1: Domain-aware DC v2 classification (Exp 38 fix cycle)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from bench.immune_agents import (
+    _classify_claim_v2,
+    _CODE_CONTEXT_PATTERN,
+    _STRONG_MATH_SIGNAL,
+    dendritic_cell_v2,
+    load_domain_config,
+)
+
+
+class TestLayer1CodeContext:
+    """Layer 1: software-domain code-context routing before math."""
+
+    def test_code_bug_with_operators_routes_to_code(self):
+        """Code finding with >= operator should NOT be misrouted to MATHEMATICAL."""
+        f = _make_finding(
+            desc="FIND: add_verdict() unconditionally overwrites "
+                 "`self.entries[canonical_id]['last_status_change_round'] = round_idx` "
+                 "on every verdict, corrupting the escalation timer"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_code_bug_status_transition_routes_to_code(self):
+        """Status transition bugs should route to CODE_BEHAVIORAL in software domain."""
+        f = _make_finding(
+            desc="The status transition from REOPENED to OPEN directly mutates "
+                 "entry['status'] = 'OPEN' bypassing resolve(), so "
+                 "last_status_change_round is never updated"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_function_def_routes_to_code(self):
+        """Finding mentioning def function_name routes to CODE_BEHAVIORAL."""
+        f = _make_finding(
+            desc="def escalate_stale_contested bypasses resolve() and does "
+                 "a direct entry['status'] = 'CONFIRMED' mutation"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+
+    def test_real_math_preserved_in_software_domain(self):
+        """Strong math signals should NOT be overridden even in software domain.
+
+        When code-context AND strong-math both match, math wins.
+        Description must also trigger code-context for the guard to apply.
+        """
+        f = _make_finding(
+            desc="The function compute_bound returns sqrt(n) but the proof "
+                 "shows the equation requires n^2 for correctness"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        # "function" triggers code-context, but "proof" + "equation" trigger
+        # _STRONG_MATH_SIGNAL, so code-context yield is suppressed.
+        # Then _MATH_PATTERN_V2 catches "sqrt(" and "equation".
+        assert ct == ClaimType.MATHEMATICAL
+
+    def test_statistical_preserved_in_software_domain(self):
+        """Statistical findings should route to STATISTICAL regardless of domain."""
+        f = _make_finding(
+            desc="The p-value of the distribution test is 0.003"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.STATISTICAL
+
+    def test_no_domain_falls_to_uncategorised(self):
+        """Without domain, ambiguous findings should be UNCATEGORISED."""
+        f = _make_finding(desc="Something vague with no clear indicators")
+        ct, _, conf = _classify_claim_v2(f, domain="")
+        assert ct == ClaimType.UNCATEGORISED
+
+    def test_software_domain_uncategorised_residue_to_code(self):
+        """In software domain, UNCATEGORISED residue defaults to CODE_BEHAVIORAL."""
+        f = _make_finding(desc="Something vague with no clear indicators")
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        assert ct == ClaimType.CODE_BEHAVIORAL
+        assert conf == 0.40  # Low confidence fallback
+
+    def test_code_context_pattern_matches_expected(self):
+        """Verify _CODE_CONTEXT_PATTERN matches Python constructs."""
+        assert _CODE_CONTEXT_PATTERN.search("def escalate_stale_contested")
+        assert _CODE_CONTEXT_PATTERN.search("self.entries[id]")
+        assert _CODE_CONTEXT_PATTERN.search("class FindingRegistry")
+        assert _CODE_CONTEXT_PATTERN.search("import json")
+        assert _CODE_CONTEXT_PATTERN.search("__init__")
+        assert _CODE_CONTEXT_PATTERN.search("raises ValueError when")
+        assert _CODE_CONTEXT_PATTERN.search("bug in runtime logic errors")
+        # CX-F1: bare words removed — "function", "method", "attribute",
+        # "variable" no longer match (they appear in math vocabulary)
+        assert not _CODE_CONTEXT_PATTERN.search("the function f(x) is bounded")
+        assert not _CODE_CONTEXT_PATTERN.search("the attribute is symmetric")
+
+    def test_strong_math_signal_matches_expected(self):
+        """Verify _STRONG_MATH_SIGNAL matches genuine math indicators."""
+        assert _STRONG_MATH_SIGNAL.search("p-value of 0.05")
+        assert _STRONG_MATH_SIGNAL.search("standard deviation is too high")
+        assert _STRONG_MATH_SIGNAL.search("proof by induction")
+        assert _STRONG_MATH_SIGNAL.search("theorem 3.2 states")
+        assert _STRONG_MATH_SIGNAL.search("O(n^2) complexity")
+        assert _STRONG_MATH_SIGNAL.search("asymptotic bound on the function")
+        # CX-F2: expanded coverage
+        assert _STRONG_MATH_SIGNAL.search("bounded above by 1")
+        assert _STRONG_MATH_SIGNAL.search("quadratic time algorithm")
+        assert _STRONG_MATH_SIGNAL.search("for all x > 0")
+        assert _STRONG_MATH_SIGNAL.search("the inequality holds")
+        assert _STRONG_MATH_SIGNAL.search("satisfies the constraint")
+        assert _STRONG_MATH_SIGNAL.search("the relation is transitive")
+        assert not _STRONG_MATH_SIGNAL.search("entry status = OPEN")
+
+    def test_cx_f1_math_with_function_word_not_misrouted(self):
+        """CX-F1 regression: 'the function f(x)' should NOT route to CODE_BEHAVIORAL."""
+        f = _make_finding(
+            desc="The function f(x) = x^2 is bounded below by 0"
+        )
+        ct, _, conf = _classify_claim_v2(f, domain="software")
+        # Should NOT be CODE_BEHAVIORAL — "function" is math vocabulary here
+        assert ct != ClaimType.CODE_BEHAVIORAL
+
+    def test_dendritic_v2_passes_domain(self):
+        """DC v2 should use domain when classifying."""
+        f = _make_finding(
+            desc="def add_verdict overwrites the timer, "
+                 "self.entries[id]['last_status_change_round'] = round_idx"
+        )
+        v1 = [TriagedFinding(finding=f, claim_type=ClaimType.CODE_BEHAVIORAL)]
+        v2 = dendritic_cell_v2([f], v1, domain="software")
+        assert v2[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    def test_exp38_code_bug_misroute_fixed(self):
+        """Regression: Exp 38 code bugs should NOT go to MATHEMATICAL.
+
+        In R0, 17/26 code findings were misrouted to MATHEMATICAL because
+        descriptions contained operators like >=, ==, = in code context.
+        Layer 1 code-context check should prevent this.
+        """
+        # Real Exp 38 finding descriptions (abbreviated)
+        descs = [
+            "add_verdict() mutates last_status_change_round for every verdict, "
+            "even when no status has changed. self.entries[canonical_id]"
+            "['last_status_change_round'] = round_idx",
+
+            "escalate_stale_contested and auto_resolve_contested bypass resolve() "
+            "and directly mutate entry['status']",
+
+            "CONFIRMED+verified close before challenge check. "
+            "if entry['status'] == 'CONFIRMED' and entry.get('verified')",
+        ]
+        for desc in descs:
+            f = _make_finding(desc=desc)
+            ct, _, _ = _classify_claim_v2(f, domain="software")
+            assert ct == ClaimType.CODE_BEHAVIORAL, (
+                f"Expected CODE_BEHAVIORAL for: {desc[:60]}..."
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 2: LLM classifier residue reclassification
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from bench.immune_agents import _apply_llm_reclassification
+
+
+class TestLayer2LLMReclassification:
+    """Layer 2: targeted LLM reclassification of UNCATEGORISED residue."""
+
+    def test_no_uncategorised_is_noop(self):
+        """If no findings are UNCATEGORISED, Layer 2 does nothing."""
+        triaged = [
+            TriagedFinding(finding=_make_finding(), claim_type=ClaimType.CODE_BEHAVIORAL),
+            TriagedFinding(finding=_make_finding(fid="f2"), claim_type=ClaimType.MATHEMATICAL),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 0
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+        assert triaged[1].claim_type == ClaimType.MATHEMATICAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_uncategorised_reclassified_by_llm(self, mock_llm):
+        """UNCATEGORISED finding reclassified when LLM returns confident result."""
+        mock_llm.return_value = (ClaimType.LOGICAL, 0.75)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="some ambiguous finding"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.LOGICAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_low_confidence_falls_back_to_code_in_software(self, mock_llm):
+        """Low LLM confidence in software domain falls back to CODE_BEHAVIORAL."""
+        mock_llm.return_value = (ClaimType.LOGICAL, 0.30)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_llm_failure_falls_back_to_code_in_software(self, mock_llm):
+        """LLM failure in software domain falls back to CODE_BEHAVIORAL."""
+        mock_llm.return_value = (None, 0.0)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="software")
+        assert count == 1
+        assert triaged[0].claim_type == ClaimType.CODE_BEHAVIORAL
+
+    @patch("bench.immune_agents._active_llm_classify")
+    def test_uncategorised_stays_without_software_domain(self, mock_llm):
+        """Without software domain, UNCATEGORISED stays if LLM fails."""
+        mock_llm.return_value = (None, 0.0)
+        triaged = [
+            TriagedFinding(
+                finding=_make_finding(desc="ambiguous"),
+                claim_type=ClaimType.UNCATEGORISED,
+            ),
+        ]
+        count = _apply_llm_reclassification(triaged, domain="")
+        assert count == 0
+        assert triaged[0].claim_type == ClaimType.UNCATEGORISED
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 3: Domain routing + hard verification gate
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestLayer3DomainRouting:
+    """Layer 3: domain config loading and verification gate."""
+
+    def test_load_software_domain_config(self):
+        """Software domain should load code.toml (via alias)."""
+        config = load_domain_config("software")
+        assert "immune" in config
+        assert "claim_patterns" in config["immune"]
+        assert "verification_tools" in config["immune"]
+
+    def test_load_mathematics_domain_config(self):
+        """Mathematics domain should load mathematics.toml."""
+        config = load_domain_config("mathematics")
+        assert "immune" in config
+        assert "mathematical" in config["immune"]["claim_patterns"]
+
+    def test_load_unknown_domain_returns_empty(self):
+        """Unknown domain returns empty dict, no error."""
+        config = load_domain_config("unknown_domain_xyz")
+        assert config == {}
+
+    def test_domain_config_cached(self):
+        """Second load should return cached result."""
+        c1 = load_domain_config("software")
+        c2 = load_domain_config("software")
+        assert c1 is c2  # Same object from cache
+
+    def test_immune_response_includes_domain(self):
+        """ImmuneResponse should carry domain field."""
+        response = ImmuneResponse(
+            triaged=[], cell_verdicts={}, final_verdicts={},
+            final_confidences={}, filtered_findings=[], rejected_findings=[],
+            rejection_rate=0.0, autoimmune_flag=False, stage_timings={},
+            tool_usage={}, observation_only=True, domain="software",
+        )
+        assert response.domain == "software"
+
+
+class TestHardVerificationGate:
+    """Stage 6: nothing exits without a tool-grounded verdict."""
+
+    def test_finding_with_ct_verdict_passes(self):
+        """Finding with CT verdict should not be escalated by gate."""
+        f = _make_finding()
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.CYTOTOXIC_T, finding_id="f1",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="Bug exists at line 305", tool_used="ct_v1",
+            ),
+        ]
+        # Simulate gate check
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) > 0  # Has tool-grounded verdict
+
+    def test_finding_with_only_helper_t_escalated(self):
+        """Finding with only Helper T verdict should be escalated."""
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.HELPER_T, finding_id="f1",
+                verdict="UNCERTAIN", confidence=0.3,
+                evidence="No cell could verify", tool_used="helper_t",
+            ),
+        ]
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) == 0  # No tool-grounded verdict → escalate
+
+    def test_finding_with_b_cell_verdict_passes(self):
+        """Finding with B-Cell verdict should not be escalated."""
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id="f1",
+                verdict="REJECTED", confidence=0.7,
+                evidence="z3 counterexample", tool_used="z3",
+            ),
+        ]
+        _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
+        tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
+        assert len(tool_v) > 0

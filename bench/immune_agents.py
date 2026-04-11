@@ -190,6 +190,61 @@ class ImmuneResponse:
     tool_usage: Dict[str, int]      # tool_name → times_used
     observation_only: bool          # if True, filtered_findings == all findings
     barrier_results: List[Any] = field(default_factory=list)  # SkinBarrierResult list
+    domain: str = ""                # experiment domain (Layer 3 routing context)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Layer 3: Domain routing interface
+#
+# Loads domain-specific immune configuration from TOML files in
+# bench/cdsfl_registry/domains/immune/. Each domain defines:
+#   - claim_patterns: regex patterns per claim type (domain-tuned)
+#   - verification_tools: which tools each claim type should use
+#   - ct_prompt_template: domain-specific CT investigation prompt
+#
+# Currently supported domains: code, mathematics, physics, chemistry,
+# engineering, cross_domain. Specialist B-Cell subtypes will plug into
+# this interface when built (Phase B4).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_DOMAIN_CONFIG_CACHE: Dict[str, Dict[str, Any]] = {}
+
+_DOMAIN_ALIAS = {
+    "software": "code",  # exp38 uses "software", TOML is "code"
+}
+
+
+def load_domain_config(domain: str) -> Dict[str, Any]:
+    """Load domain-specific immune configuration from TOML.
+
+    Returns cached config dict, or empty dict if not found.
+    Specialist B-Cell subtypes will use this to select tools and patterns.
+    """
+    if domain in _DOMAIN_CONFIG_CACHE:
+        return _DOMAIN_CONFIG_CACHE[domain]
+
+    canonical = _DOMAIN_ALIAS.get(domain, domain)
+    toml_path = (
+        Path(__file__).parent / "cdsfl_registry" / "domains" / "immune"
+        / f"{canonical}.toml"
+    )
+
+    config: Dict[str, Any] = {}
+    if toml_path.exists():
+        try:
+            import tomllib  # Python 3.11+
+        except ImportError:
+            try:
+                import tomli as tomllib  # type: ignore[no-redef]
+            except ImportError:
+                _DOMAIN_CONFIG_CACHE[domain] = config
+                return config
+
+        with open(toml_path, "rb") as fh:
+            config = tomllib.load(fh)
+
+    _DOMAIN_CONFIG_CACHE[domain] = config
+    return config
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2087,16 +2142,69 @@ _CITATION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Software-domain code context pattern (Layer 1, Exp 38 fix cycle).
+# Matches Python/software constructs that indicate a code finding even when
+# descriptions lack file:line citations. Checked BEFORE math pattern to
+# prevent misrouting of code bugs that happen to contain operators.
+_CODE_CONTEXT_PATTERN = re.compile(
+    r"(?:"
+    r"\bdef\s+\w+"                             # function definition
+    r"|\bclass\s+\w+"                          # class definition
+    r"|\bself\.\w+"                            # instance attribute/method
+    r"|\bimport\s+\w+"                         # import statement
+    r"|\b__\w+__"                              # dunder methods/attrs
+    r"|\breturn\s"                             # return statement
+    r"|\braises?\s+\w+Error"                   # exception raising
+    r"|\b\w+Error\b|\b\w+Exception\b"         # exception types
+    r"|\bif\s+.*\bentry\b|\bentry\[|entries\[" # dict access patterns
+    r"|\bstatus\b.*\b(?:transition|change|mutate|overwrite|corrupt)" # status mutation
+    r"|\b(?:bug|flaw|defect)\b.*\b(?:runtime|logic|behavior)"       # bug language
+    r"|\b\w+\(\)\s"                            # function call: foo()
+    r")",
+    re.IGNORECASE,
+)
 
-def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
+# Strong math/stats signals that should NOT be overridden by code context.
+# Even in software domain, if these are present the finding is genuinely
+# mathematical or statistical.
+_STRONG_MATH_SIGNAL = re.compile(
+    r"(?:"
+    r"\bp[- ]?value\b"
+    r"|\bdistribution\b"
+    r"|\bconfidence\s+interval\b"
+    r"|\bstandard\s+deviation\b"
+    r"|\bproof\b"
+    r"|\btheorem\b"
+    r"|\blemma\b"
+    r"|\bcorollary\b"
+    r"|\bconvergence\s+(?:rate|bound|guarantee)"
+    r"|\bO\([^)]+\)"                             # Big-O notation: O(n), O(n log n)
+    r"|\bbig[- ]?O\b"
+    r"|\basymptotic\b"
+    r"|\bbounded\b"                              # bounded above/below
+    r"|\b(?:quadratic|polynomial|exponential)\s+time\b"  # complexity classes
+    r"|\bfor\s+(?:all|every)\b"                  # universal quantification
+    r"|\binequality\b"
+    r"|\bsatisf(?:y|ies)\b"                      # constraint satisfaction
+    r"|\b(?:symmetric|transitive|reflexive)\b"   # relation properties
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _classify_claim_v2(
+    finding: Finding,
+    domain: str = "",
+) -> Tuple[ClaimType, str, float]:
     """V2 classifier: tightened math pattern, citation-aware routing.
 
     Changes from v1:
     1. Code-citing findings route to CODE_BEHAVIORAL (not MATH/LOGIC)
     2. Math pattern requires equation context (no bare +/-/=)
-    3. Classification order: STAT → STRUCT → CITATION → MATH → LOGIC
+    3. Classification order: STAT → STRUCT → CITATION → CODE_CONTEXT → MATH → LOGIC
     4. Default is UNCATEGORISED (not CODE_BEHAVIORAL garbage-can)
     5. Returns confidence score for downstream gating
+    6. Domain-aware: in software domain, code-context check before math (Layer 1)
 
     Returns (claim_type, extracted_claim, confidence).
     """
@@ -2115,6 +2223,15 @@ def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
     if _CITATION_PATTERN.search(desc):
         return ClaimType.CODE_BEHAVIORAL, desc, 0.75
 
+    # 3.5 (Layer 1): Software-domain code-context check BEFORE math.
+    # In software domain, findings that mention Python constructs (def, self.,
+    # class, __init__, status transition, etc.) should route to CODE_BEHAVIORAL
+    # even when they contain operators that would match the math pattern.
+    # Exception: preserve strong math/stats signals (proof, theorem, p-value).
+    if domain == "software" and _CODE_CONTEXT_PATTERN.search(desc):
+        if not _STRONG_MATH_SIGNAL.search(desc):
+            return ClaimType.CODE_BEHAVIORAL, desc, 0.65
+
     # 4. Mathematical (tightened v2 — requires equation context)
     # Bug#17 fix: use ", " separator instead of " AND " (invalid SymPy syntax)
     if _MATH_PATTERN_V2.search(desc):
@@ -2129,13 +2246,25 @@ def _classify_claim_v2(finding: Finding) -> Tuple[ClaimType, str, float]:
     if _LOGIC_PATTERN.search(desc):
         return ClaimType.LOGICAL, desc, 0.65
 
-    # 6. Default: UNCATEGORISED (v1 used CODE_BEHAVIORAL as garbage-can)
+    # 5.5 Strong math signal promotion (Layer 1 complement).
+    # If strong math vocabulary is present but no pattern above matched,
+    # promote to MATHEMATICAL rather than letting it fall to software fallback.
+    if domain == "software" and _STRONG_MATH_SIGNAL.search(desc):
+        return ClaimType.MATHEMATICAL, desc, 0.55
+
+    # 6. Domain-aware fallback: in software domain, UNCATEGORISED → CODE_BEHAVIORAL
+    # (low confidence, but routes to CT which can investigate rather than dead-end)
+    if domain == "software":
+        return ClaimType.CODE_BEHAVIORAL, desc, 0.40
+
+    # 7. Default: UNCATEGORISED
     return ClaimType.UNCATEGORISED, desc, 0.30
 
 
 def dendritic_cell_v2(
     findings: List[Finding],
     v1_triaged: List[TriagedFinding],
+    domain: str = "",
 ) -> List[TriagedFinding]:
     """Dendritic Cell v2: tightened classification with v1 comparison logging.
 
@@ -2146,7 +2275,7 @@ def dendritic_cell_v2(
     diffs = 0
 
     for i, f in enumerate(findings):
-        claim_type, extracted, confidence = _classify_claim_v2(f)
+        claim_type, extracted, confidence = _classify_claim_v2(f, domain=domain)
         tf = TriagedFinding(
             finding=f,
             claim_type=claim_type,
@@ -2698,6 +2827,148 @@ def typed_llm_classifier(
     return comparisons
 
 
+# ── Layer 2: Active LLM classifier for UNCATEGORISED residue ──────────
+# Targets only findings that DC v2 regex + domain-aware code-context still
+# cannot classify. Short timeout, fail-open (keeps existing classification).
+# Returns structured {category, confidence} instead of bare category name.
+
+_ACTIVE_CLASSIFIER_PROMPT = """\
+You are a claim type classifier for a code verification pipeline.
+Classify the following finding description into exactly ONE category.
+
+Respond with EXACTLY two lines:
+Line 1: the category name (one of the options below)
+Line 2: your confidence as a decimal between 0.0 and 1.0
+
+Categories:
+- MATHEMATICAL: equations, inequalities, bounds, numeric relationships verifiable symbolically.
+- LOGICAL: if/then claims, invariant assertions, reachability arguments about code paths.
+- STATISTICAL: distributions, p-values, confidence intervals, statistical significance.
+- CODE_STRUCTURAL: missing or incorrect code structure (decorators, class hierarchy, absent method).
+- CODE_BEHAVIORAL: runtime behaviour bugs, wrong return values, incorrect state transitions.
+- UNCATEGORISED: does not clearly fit any of the above."""
+
+
+def _active_llm_classify(
+    finding: Finding,
+    timeout: int = 15,
+) -> Tuple[Optional[ClaimType], float]:
+    """Layer 2: classify a single finding via LLM with confidence.
+
+    Returns (claim_type, confidence) or (None, 0.0) on failure.
+    Fail-open: caller keeps existing classification on None.
+    """
+    cli = _get_claude_cli()
+    if not cli:
+        return None, 0.0
+
+    _CATEGORY_MAP = {
+        "mathematical": ClaimType.MATHEMATICAL,
+        "logical": ClaimType.LOGICAL,
+        "statistical": ClaimType.STATISTICAL,
+        "code_structural": ClaimType.CODE_STRUCTURAL,
+        "code_behavioral": ClaimType.CODE_BEHAVIORAL,
+        "uncategorised": ClaimType.UNCATEGORISED,
+    }
+
+    prompt = (
+        f"{_ACTIVE_CLASSIFIER_PROMPT}\n\n"
+        f"Finding description:\n{finding.description[:500]}"
+    )
+    cmd = [
+        cli, "-p", prompt,
+        "--model", _CLASSIFIER_MODEL,
+        "--output-format", "text",
+        "--max-turns", "1",
+    ]
+
+    try:
+        with _CLAUDE_CLI_LOCK:
+            result = sp.run(cmd, capture_output=True, text=True, timeout=timeout)
+        lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip()]
+        if not lines:
+            return None, 0.0
+
+        category_raw = lines[0].lower().replace(" ", "_")
+        claim_type = _CATEGORY_MAP.get(category_raw)
+
+        confidence = 0.0
+        if len(lines) >= 2:
+            try:
+                confidence = float(lines[1])
+                confidence = max(0.0, min(1.0, confidence))
+            except ValueError:
+                confidence = 0.5  # LLM returned non-numeric — treat as moderate
+
+        return claim_type, confidence
+    except (sp.TimeoutExpired, OSError, Exception) as e:
+        _shadow_log.warning("Active LLM classifier timeout/error for %s: %s",
+                            finding.finding_id, e)
+        return None, 0.0
+
+
+def _apply_llm_reclassification(
+    triaged: List[TriagedFinding],
+    domain: str = "",
+    confidence_threshold: float = 0.55,
+) -> int:
+    """Layer 2: reclassify UNCATEGORISED findings via LLM.
+
+    Only targets findings that are still UNCATEGORISED after DC v2 regex +
+    domain-aware code-context rules (Layer 1). Fail-open: if LLM fails or
+    returns low confidence, the finding keeps its existing classification.
+
+    In software domain with enhanced code-context (Layer 1), UNCATEGORISED
+    residue should be small (0-3 findings typical), so latency is bounded.
+
+    Returns count of reclassified findings.
+    """
+    uncategorised = [(i, tf) for i, tf in enumerate(triaged)
+                     if tf.claim_type == ClaimType.UNCATEGORISED]
+
+    if not uncategorised:
+        return 0
+
+    _shadow_log.info(
+        "Layer 2 LLM classifier: %d UNCATEGORISED findings to reclassify",
+        len(uncategorised),
+    )
+
+    reclassified = 0
+    for idx, tf in uncategorised:
+        llm_type, confidence = _active_llm_classify(tf.finding)
+        if llm_type and llm_type != ClaimType.UNCATEGORISED and confidence >= confidence_threshold:
+            _shadow_log.info(
+                "Layer 2 reclassification: %s — UNCATEGORISED → %s (conf=%.2f)",
+                tf.finding.finding_id, llm_type.value, confidence,
+            )
+            triaged[idx] = TriagedFinding(
+                finding=tf.finding,
+                claim_type=llm_type,
+                extracted_claim=tf.extracted_claim,
+            )
+            reclassified += 1
+        else:
+            # Fail-open: in software domain, fall back to CODE_BEHAVIORAL
+            if domain == "software":
+                triaged[idx] = TriagedFinding(
+                    finding=tf.finding,
+                    claim_type=ClaimType.CODE_BEHAVIORAL,
+                    extracted_claim=tf.extracted_claim,
+                )
+                _shadow_log.info(
+                    "Layer 2 fallback: %s — UNCATEGORISED → CODE_BEHAVIORAL "
+                    "(LLM %s conf=%.2f, below threshold %.2f)",
+                    tf.finding.finding_id,
+                    llm_type.value if llm_type else "FAILED",
+                    confidence,
+                    confidence_threshold,
+                )
+                reclassified += 1
+
+    return reclassified
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # WP3d SHADOW: Formalisation Agent (B-Cell enhancement)
 #
@@ -2788,8 +3059,8 @@ def _preconditions_to_z3(preconditions: List[str], claim: str) -> Optional[str]:
 def formalisation_agent(
     triaged: List[TriagedFinding],
     b_cell_verdicts: List[CellVerdict],
-) -> List[Dict[str, Any]]:
-    """WP3d shadow: extract and formalise preconditions for B-Cell claims.
+) -> Tuple[List[Dict[str, Any]], List[CellVerdict]]:
+    """WP3d ACTIVE: extract and formalise preconditions for B-Cell claims.
 
     For each MATHEMATICAL or LOGICAL finding:
     1. Extract natural language preconditions from the description
@@ -2798,9 +3069,16 @@ def formalisation_agent(
        accounted for? (i.e., would the Formalisation Agent have prevented
        a false rejection?)
 
-    Does NOT modify verdicts — shadow only. Logs comparison data.
+    ACTIVE (promoted from shadow, Exp 38 fix cycle):
+    When a potential false rejection is detected (B-Cell REJECTED a claim
+    that has extractable preconditions), produces an UNCERTAIN counter-verdict.
+    This feeds into the reconciliation gate, preventing context-erasure
+    false rejections from being locked.
+
+    Returns (comparisons, counter_verdicts).
     """
     comparisons: List[Dict[str, Any]] = []
+    counter_verdicts: List[CellVerdict] = []
 
     # Build B-Cell verdict lookup
     bcell_verdicts: Dict[str, CellVerdict] = {}
@@ -2848,9 +3126,24 @@ def formalisation_agent(
         comparisons.append(record)
 
         if potential_false_rejection:
+            # ACTIVE: produce counter-verdict to prevent false rejection lock
+            counter_verdicts.append(CellVerdict(
+                cell_type=CellType.B_CELL,
+                finding_id=fid,
+                verdict="UNCERTAIN",
+                confidence=0.45,
+                evidence=(
+                    f"[Formalisation] B-Cell REJECTED with {len(preconditions)} "
+                    f"extractable preconditions — potential context-erasure "
+                    f"false rejection. Preconditions: {preconditions}. "
+                    f"Z3 translatable: {z3_fragment is not None}"
+                ),
+                tool_used="formalisation_agent",
+            ))
             _shadow_log.info(
                 "Formalisation agent: %s — REJECTED with %d preconditions "
-                "(potential false rejection). Preconditions: %s",
+                "(potential false rejection, counter-verdict issued). "
+                "Preconditions: %s",
                 fid, len(preconditions), preconditions,
             )
         elif preconditions:
@@ -2866,11 +3159,11 @@ def formalisation_agent(
     potential_fr = sum(1 for c in comparisons if c["potential_false_rejection"])
     _shadow_log.info(
         "Formalisation agent: %d math/logic findings, %d with "
-        "preconditions, %d potential false rejections",
-        total, with_pc, potential_fr,
+        "preconditions, %d potential false rejections, %d counter-verdicts",
+        total, with_pc, potential_fr, len(counter_verdicts),
     )
 
-    return comparisons
+    return comparisons, counter_verdicts
 
 
 def _reconciliation_gate(
@@ -2989,6 +3282,7 @@ def run_immune_pipeline(
                             # At 0.50, same-class needs Jaccard >= 0.286 (real overlap).
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
     max_rejection_rate: float = 0.65,
+    domain: str = "",
 ) -> ImmuneResponse:
     """Run the full 6-cell immune pipeline.
 
@@ -3013,6 +3307,17 @@ def run_immune_pipeline(
     """
     timings: Dict[str, float] = {}
     tool_usage: Dict[str, int] = {}
+
+    # ── Layer 3: Load domain configuration ────────────────────────────
+    # Domain config provides specialist patterns, tool mappings, and
+    # prompt templates. Loaded once per pipeline invocation (cached).
+    # Specialist B-Cell subtypes will use this when built (Phase B4).
+    domain_config = load_domain_config(domain) if domain else {}
+    if domain_config:
+        _shadow_log.info(
+            "Domain config loaded: %s (%d sections)",
+            domain, len(domain_config),
+        )
 
     # ── Stage 0: Skin barrier pre-filter (WP6a: now ACTIVE) ────────
     # Deterministic check: do cited files/lines exist? Findings that fail
@@ -3041,7 +3346,7 @@ def run_immune_pipeline(
     timings["dendritic_v1"] = round(time.monotonic() - t0, 4)
 
     t0_dc_v2 = time.monotonic()
-    triaged = dendritic_cell_v2(new_findings, v1_triaged)
+    triaged = dendritic_cell_v2(new_findings, v1_triaged, domain=domain)
     timings["dendritic"] = round(time.monotonic() - t0_dc_v2, 4)
 
     # Log claim type distribution
@@ -3051,7 +3356,7 @@ def run_immune_pipeline(
         type_counts[key] = type_counts.get(key, 0) + 1
 
     # ── Stage 1.5: Typed LLM Classifier shadow (WP3c) ────────────────
-    # Runs alongside DC v2 regex — logs comparison data for activation decision
+    # Shadow runs on ALL findings for comparison logging (unchanged).
     t0_llm_cls = time.monotonic()
     try:
         llm_classifier_results = typed_llm_classifier(new_findings, triaged)
@@ -3059,6 +3364,24 @@ def run_immune_pipeline(
         _shadow_log.warning("LLM classifier failed: %s", e)
         llm_classifier_results = []
     timings["llm_classifier"] = round(time.monotonic() - t0_llm_cls, 4)
+
+    # ── Stage 1.7: Layer 2 — Active LLM reclassification (residue only) ─
+    # Targets ONLY findings still UNCATEGORISED after DC v2 regex + Layer 1
+    # domain-aware code-context. In software domain with enhanced regex, the
+    # residue is typically 0-3 findings, so latency is bounded.
+    t0_layer2 = time.monotonic()
+    layer2_count = 0
+    try:
+        layer2_count = _apply_llm_reclassification(triaged, domain=domain)
+    except Exception as e:
+        _shadow_log.warning("Layer 2 LLM reclassification failed: %s", e)
+    timings["layer2_llm_active"] = round(time.monotonic() - t0_layer2, 4)
+    if layer2_count > 0:
+        # Re-log type distribution after reclassification
+        type_counts = {}
+        for tf in triaged:
+            key = tf.claim_type.value
+            type_counts[key] = type_counts.get(key, 0) + 1
 
     # ── Stage 2: Parallel verification (WP6a: v2 components active) ──
     all_verdicts: List[CellVerdict] = []
@@ -3126,12 +3449,20 @@ def run_immune_pipeline(
     if nk_triaged_result is not None:
         triaged = nk_triaged_result
 
-    # ── Stage 2.5: Formalisation Agent shadow (WP3d) ─────────────────
-    # Extracts preconditions, logs whether B-Cell false rejections
-    # could have been prevented by preserving context
+    # ── Stage 2.5: Formalisation Agent ACTIVE (WP3d, promoted Exp 38) ──
+    # Extracts preconditions from math/logic claims. When B-Cell rejected
+    # a claim that has extractable preconditions, produces UNCERTAIN
+    # counter-verdicts to prevent context-erasure false rejection locks.
     t0_formal = time.monotonic()
+    formalisation_counter_verdicts: List[CellVerdict] = []
     try:
-        formalisation_results = formalisation_agent(triaged, all_verdicts)
+        formalisation_results, formalisation_counter_verdicts = formalisation_agent(
+            triaged, all_verdicts,
+        )
+        # Feed counter-verdicts into the pipeline so reconciliation gate sees them
+        all_verdicts.extend(formalisation_counter_verdicts)
+        for v in formalisation_counter_verdicts:
+            tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
     except Exception as e:
         _shadow_log.warning("Formalisation agent failed: %s", e)
         formalisation_results = []
@@ -3318,6 +3649,44 @@ def run_immune_pipeline(
             uncertain_escalated,
         )
 
+    # ── Stage 6: Hard verification gate (Layer 3) ─────────────────────
+    # Nothing should exit the immune system without having passed through
+    # at least one tool-grounded verification cell. A finding with zero
+    # tool-grounded verdicts means no cell actually checked it — it slipped
+    # through the routing. Escalate to HIL rather than letting it pass
+    # as if verified.
+    #
+    # Tool-grounded cells: CT v1/v2 (code investigation), B-Cell v1/v2
+    # (SymPy/z3/statsmodels), NK Cell v1/v2 (similarity dedup).
+    # NOT tool-grounded: Helper T (synthesis only), Reg T (meta-check),
+    # Formalisation Agent (precondition extraction).
+    _TOOL_GROUNDED_CELLS = {
+        CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL,
+    }
+    unverified_count = 0
+    for f in filtered:
+        if f.verified or f.escalated:
+            continue
+        fid = f.finding_id
+        tool_verdicts = [
+            v for v in all_verdicts
+            if v.finding_id == fid and v.cell_type in _TOOL_GROUNDED_CELLS
+        ]
+        if not tool_verdicts:
+            object.__setattr__(f, 'escalated', True)
+            unverified_count += 1
+            _shadow_log.info(
+                "VERIFICATION-GATE-ESCALATED to HIL: %s "
+                "(no tool-grounded cell produced a verdict)",
+                fid,
+            )
+    if unverified_count:
+        _shadow_log.info(
+            "Hard verification gate: escalated %d findings with no "
+            "tool-grounded verdicts to HIL",
+            unverified_count,
+        )
+
     # Bug#46 fix: include barrier rejections in rejection rate and rejected list
     total = len(triaged) + len(barrier_rejected)
     rej_count = sum(1 for v in final_verdicts.values() if v in ("REJECTED", "DUPLICATE"))
@@ -3343,4 +3712,5 @@ def run_immune_pipeline(
         tool_usage=tool_usage,
         observation_only=observation_only,
         barrier_results=barrier_results,
+        domain=domain,
     )

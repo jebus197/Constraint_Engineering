@@ -1214,6 +1214,7 @@ class InsectBrain:
             observation_only=observation_only,
             ct_enabled=True,
             ct_timeout=600,  # Allow CT v2 full investigation time (was 300, timed out)
+            domain=getattr(self.config, "domain", ""),
         )
         elapsed = time.monotonic() - t0
 

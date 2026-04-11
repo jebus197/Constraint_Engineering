@@ -302,7 +302,9 @@ class FindingRegistry:
             "model": model_id, "verdict": verdict,
             "round": round_idx, "evidence": evidence[:200],
         })
-        self.entries[canonical_id]["last_status_change_round"] = round_idx
+        # F2/F5/F9 fix: do NOT update last_status_change_round here.
+        # Verdicts are evidence, not status transitions. Only resolve()
+        # should update the timer, preventing escalation timer corruption.
 
     def resolve(
         self, canonical_id: str, status: str, round_idx: int,
@@ -328,16 +330,20 @@ class FindingRegistry:
         )
 
     def contested_count(self, current_round: int) -> int:
+        # F14/F17/F22 fix: skip terminal statuses, not just MERGED.
+        # Terminal findings should not inflate contested count or block convergence.
+        _TERMINAL = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "UNCONFIRMED"}
         count = 0
         for e in self.entries.values():
-            if e["status"] == "MERGED":
+            if e["status"] in _TERMINAL:
                 continue
             challenges = [v for v in e["verdicts"] if v["verdict"] == "CHALLENGE"]
             if not challenges:
                 continue
             confirms = [v for v in e["verdicts"] if v["verdict"] == "CONFIRM"]
             latest_confirm_round = max((v["round"] for v in confirms), default=-1)
-            unresolved = [v for v in challenges if v["round"] > latest_confirm_round]
+            # F24 fix: use >= so same-round challenges are treated as unresolved
+            unresolved = [v for v in challenges if v["round"] >= latest_confirm_round]
             if unresolved:
                 oldest = min(v["round"] for v in unresolved)
                 if current_round - oldest > 1:
@@ -410,7 +416,9 @@ class FindingRegistry:
             contested_since = entry.get("last_status_change_round", 0)
             rounds_contested = current_round - contested_since
             if rounds_contested >= max_contested_rounds:
-                entry["status"] = "UNCONFIRMED"
+                # F6 fix: use resolve() instead of direct mutation —
+                # ensures last_status_change_round is updated consistently.
+                self.resolve(fid, "UNCONFIRMED", current_round)
                 entry["hil_escalated"] = True
                 entry["hil_reason"] = (
                     f"Contested for {rounds_contested} rounds "
@@ -432,7 +440,8 @@ class FindingRegistry:
             challenges = sum(1 for v in recent_verdicts if v.get("verdict") == "CHALLENGE")
             confirms = sum(1 for v in recent_verdicts if v.get("verdict") == "CONFIRM")
             if challenges >= 3 and confirms == 0:
-                entry["status"] = "REFUTED"
+                # F6 fix: use resolve() instead of direct mutation.
+                self.resolve(fid, "REFUTED", current_round)
                 _log(f"  Auto-refuted {fid}: {challenges} challenges, 0 defences in last 3 rounds")
 
     def to_dict(self) -> dict:
@@ -456,8 +465,10 @@ class FindingRegistry:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _VERDICT_RE = re.compile(
-    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+(C\d{4})'
-    r'(?:\s*[*]{0,2}\s*[\|<\-\u2014\u2013\u2190]+\s*(.*))?',
+    # F13 fix: C\d{4,} supports IDs beyond 9999
+    # F19 fix: bare | inside character class (no backslash needed)
+    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+(C\d{4,})'
+    r'(?:\s*[*]{0,2}\s*[|<\-\u2014\u2013\u2190]+\s*(.*))?',
     re.MULTILINE,
 )
 
@@ -576,6 +587,7 @@ def _compute_rho(
 
 def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
     for canonical_id, entry in list(registry.entries.items()):
+        # ── Terminal statuses: only CLOSED can be reopened ──
         if entry["status"] in ("MERGED", "CLOSED"):
             if entry["status"] == "CLOSED":
                 reopen_verdicts = [
@@ -587,35 +599,62 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
                     entry["escalated"] = True
                     _log(f"  REOPEN {canonical_id}: escalated to HIL")
             continue
+
+        # ── MERGE: require quorum (2+ merge verdicts or 1 + source model) ──
+        # F8 fix: single MERGE from any model previously killed a finding
+        # irrevocably with no quorum requirement.
         merge_verdicts = [v for v in entry["verdicts"] if v["verdict"] == "MERGE"]
         if merge_verdicts:
-            merged_into = None
-            for v in merge_verdicts:
-                m = re.search(r'merged_into=(C\d{4})', v.get("evidence", ""))
-                if m:
-                    merged_into = m.group(1)
-                    break
-            registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
-            continue
+            merge_models = {v["model"] for v in merge_verdicts}
+            # Require at least 2 distinct models to agree on merge
+            if len(merge_models) >= 2:
+                merged_into = None
+                for v in merge_verdicts:
+                    # F13 parity: support 4+ digit IDs in merge evidence
+                    m = re.search(r'merged_into=(C\d{4,})', v.get("evidence", ""))
+                    if m:
+                        merged_into = m.group(1)
+                        break
+                registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
+                continue
+
+        # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
         challenges = [v for v in entry["verdicts"] if v["verdict"] == "CHALLENGE"]
         latest_confirm_round = max((v["round"] for v in confirms), default=-1)
-        unresolved_challenges = [v for v in challenges if v["round"] > latest_confirm_round]
-        if entry["status"] == "CONFIRMED" and entry.get("verified"):
-            registry.resolve(canonical_id, "CLOSED", round_idx)
-            _log(f"  CLOSED {canonical_id}: verified fix, challenge-resistant")
-            continue
+        # F24 fix: use >= so same-round challenges count as unresolved.
+        # Previously strict > meant a challenge in the same round as the
+        # latest confirm was silently treated as resolved.
+        unresolved_challenges = [v for v in challenges if v["round"] >= latest_confirm_round]
+
+        # ── F0/F4 fix: check challenges BEFORE closing ──
+        # Previously, CONFIRMED+verified closed immediately, skipping the
+        # challenge check. Now: unresolved challenges take priority.
         if entry["status"] == "CONFIRMED" and unresolved_challenges:
             registry.resolve(canonical_id, "CONTESTED", round_idx)
             continue
+        if entry["status"] == "CONFIRMED" and entry.get("verified"):
+            registry.resolve(canonical_id, "CLOSED", round_idx)
+            _log(f"  CLOSED {canonical_id}: verified fix, no unresolved challenges")
+            continue
+
         if entry["status"] == "CONTESTED" and not unresolved_challenges:
             registry.resolve(canonical_id, "CONFIRMED", round_idx)
             continue
+
+        # F18 fix: use resolve() instead of direct mutation for REOPENED → OPEN.
+        # Direct entry["status"] = "OPEN" bypassed last_status_change_round update.
         if entry["status"] == "REOPENED":
-            entry["status"] = "OPEN"
+            registry.resolve(canonical_id, "OPEN", round_idx)
+
         if entry["status"] in ("OPEN", "CONTESTED"):
             confirm_models = {v["model"] for v in confirms}
-            independent_count = 1 + len(confirm_models - {entry["source_model"]})
+            # F11 fix: require 2 independent external confirmations.
+            # Previously: 1 + len(external) counted the source model as
+            # an implicit confirmer, so 1 external confirm was enough.
+            # For a 5-model panel, 2 external confirms is still a minority
+            # but requires meaningful agreement.
+            independent_count = len(confirm_models - {entry["source_model"]})
             if independent_count >= 2 and not unresolved_challenges:
                 registry.resolve(canonical_id, "CONFIRMED", round_idx)
 
@@ -636,9 +675,21 @@ def _evaluate_gate_conditions(
     if rho_churn:
         failures.append(f"rho_avg={rho_rolling_avg:.3f} < {cfg.rho_threshold} (churn)")
     open_ch = registry.open_crit_high_count()
+
+    # F12 fix: guard against duplicate entries if called multiple times per round.
+    # Only append if history doesn't already contain this round's value as the
+    # last entry (idempotent for same-round re-evaluation).
     if open_ch_history is not None:
-        open_ch_history.append(open_ch)
-    if open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:
+        if not open_ch_history or open_ch_history[-1] != open_ch:
+            open_ch_history.append(open_ch)
+
+    # F7/F23 fix: enforce cfg.max_open_crit_high threshold.
+    # Previously dead config — defined in RunnerConfig but never checked here.
+    if open_ch > cfg.max_open_crit_high:
+        failures.append(
+            f"open_ch={open_ch} > max={cfg.max_open_crit_high}"
+        )
+    elif open_ch_history is None or len(open_ch_history) < cfg.open_ch_stability_window:
         if open_ch > 0:
             failures.append(f"open_ch={open_ch} (insufficient history)")
     else:

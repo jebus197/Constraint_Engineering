@@ -587,8 +587,9 @@ class TestFormalisationAgentShadow:
         result = _preconditions_to_z3([], "x + y")
         assert result is None
 
-    def test_shadow_runs_on_math_findings(self):
-        """Formalisation agent should process MATHEMATICAL findings."""
+    def test_runs_on_math_findings_with_counter_verdicts(self):
+        """Formalisation agent should process MATHEMATICAL findings and
+        produce counter-verdicts for potential false rejections."""
         findings = [
             _make_finding(
                 fid="f1",
@@ -600,20 +601,26 @@ class TestFormalisationAgentShadow:
         bcell_verdicts = [
             CellVerdict(CellType.B_CELL, "f1", "REJECTED", 0.8, "", "sympy"),
         ]
-        results = formalisation_agent(triaged, bcell_verdicts)
-        assert len(results) == 1
-        assert results[0]["finding_id"] == "f1"
-        assert results[0]["preconditions_found"] >= 1
-        assert results[0]["potential_false_rejection"] is True
+        comparisons, counter_verdicts = formalisation_agent(triaged, bcell_verdicts)
+        assert len(comparisons) == 1
+        assert comparisons[0]["finding_id"] == "f1"
+        assert comparisons[0]["preconditions_found"] >= 1
+        assert comparisons[0]["potential_false_rejection"] is True
+        # Active promotion: counter-verdict produced for false rejection
+        assert len(counter_verdicts) == 1
+        assert counter_verdicts[0].verdict == "UNCERTAIN"
+        assert counter_verdicts[0].finding_id == "f1"
+        assert "Formalisation" in counter_verdicts[0].evidence
 
-    def test_shadow_skips_behavioural(self):
+    def test_skips_behavioural(self):
         """Formalisation agent should skip CODE_BEHAVIORAL findings."""
         findings = [
             _make_finding(fid="f1", desc="Bug in parser logic"),
         ]
         triaged = dendritic_cell_triage(findings)
-        results = formalisation_agent(triaged, [])
-        assert len(results) == 0  # behavioural findings are skipped
+        comparisons, counter_verdicts = formalisation_agent(triaged, [])
+        assert len(comparisons) == 0  # behavioural findings are skipped
+        assert len(counter_verdicts) == 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

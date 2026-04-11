@@ -566,6 +566,7 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
     """Attempt to apply a proposed fix to source text.
 
     Tries multiple strategies:
+    0. SEARCH/REPLACE blocks (<<<< SEARCH ... ==== ... >>>> REPLACE)
     1. Search-replace pattern (Replace X with Y)
     2. Whole-file replacement (valid Python with structural content)
     3. Line-level replacement hints (Line N: old -> new)
@@ -576,6 +577,51 @@ def _apply_fix_to_source(source_text: str, proposed_fix: str) -> Optional[str]:
         return None
 
     fix = proposed_fix.strip()
+
+    # Strategy 0: SEARCH/REPLACE blocks (<<<< SEARCH ... ==== ... >>>> REPLACE)
+    # This is the format produced by CC2 and other structured model outputs.
+    # Inline parser avoids circular import from reference_runner.
+    sr_lines = fix.split("\n")
+    sr_blocks: list = []
+    i = 0
+    while i < len(sr_lines):
+        line = sr_lines[i]
+        if line.strip().startswith("<<<<") and "SEARCH" in line.upper():
+            i += 1
+            search_lines: list = []
+            while i < len(sr_lines):
+                if sr_lines[i].rstrip() == "====":
+                    i += 1
+                    break
+                search_lines.append(sr_lines[i])
+                i += 1
+            else:
+                continue
+            replace_lines: list = []
+            while i < len(sr_lines):
+                if sr_lines[i].strip().startswith(">>>>") and "REPLACE" in sr_lines[i].upper():
+                    i += 1
+                    break
+                replace_lines.append(sr_lines[i])
+                i += 1
+            else:
+                continue
+            search_text = "\n".join(search_lines)
+            replace_text = "\n".join(replace_lines)
+            if search_text:
+                sr_blocks.append((search_text, replace_text))
+        else:
+            i += 1
+
+    if sr_blocks:
+        patched = source_text
+        applied = 0
+        for search_text, replace_text in sr_blocks:
+            if search_text in patched:
+                patched = patched.replace(search_text, replace_text, 1)
+                applied += 1
+        if applied > 0:
+            return patched
 
     # Strategy 1: search-replace pattern
     # Look for patterns like "Replace X with Y" or "Change X to Y"
@@ -831,7 +877,12 @@ def _find_target_file(finding: Finding, source_paths: List[str]) -> Optional[str
             if os.path.basename(sp_path) == match_basename:
                 return sp_path
 
-    # No match — return None. The caller already handles None.
+    # Fallback: if exactly one source path, use it (no ambiguity).
+    # This handles CC2 output which often omits file paths from descriptions.
+    if len(source_paths) == 1:
+        return source_paths[0]
+
+    # Multiple source paths with no match — return None. Caller handles it.
     return None
 
 

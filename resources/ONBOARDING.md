@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 10 April 2026 14:05 BST
+Last updated: 11 April 2026 00:35 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,42 +25,79 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 38 ROUND 0 COMPLETE — PAUSED (10 April 2026 14:05 BST):**
+- **EXP 38 FIX CYCLE COMPLETE — READY TO RESTART (10 April 2026 17:30 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.
   Target: `bench/reference_runner.py`, star topology, 5 models, burst mode (5 phases).
   Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
-  Burst architecture: `bench/burst_planner.py` (new module, ~350 lines).
   Config: `bench/exp38_config.json`
-  Logs: `bench/logs/exp38_ouroboros_20260410T122030Z/`
-  **Round 0 results:** 26 raw findings, all with proposed fixes.
+
+  **Round 0 results (prior to fix cycle):** 26 raw findings, all with proposed fixes.
   HIL verification: 14 CONFIRMED, 2 PARTIAL, 4 REJECTED (70% true positive).
-  Immune pipeline: 2 CONFIRMED, 1 REJECTED, 23 UNCERTAIN, 9 escalated to HIL.
-  Fix verification: 20/20 UNEVALUABLE (endocrine parser gap — see below).
-  S_k pipeline: 3/26 evaluated before pause, all ADMISSIBLE (sk=1.000).
 
-  **Paused to fix three immune/endocrine gaps before restart:**
-  1. Endocrine `_apply_fix_to_source()` doesn't handle `<<<< SEARCH/REPLACE` blocks
-     (runner has `parse_search_replace_blocks()` but endocrine was written before that).
-  2. Endocrine `_find_target_file()` returns None for CC2 (no file path in description).
-  3. B-Cell cannot ground mathematical claims — only AST constant extraction + SMT-LIB.
-     Formalisation Agent is shadow-only. Needs: activation + SymPy verification pathway.
-  These gaps prevent the immune system from self-verifying, defeating the ouroboros loop.
+  **Fix cycle completed (10 April 2026 17:28 BST):**
+  All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
 
-  **Key confirmed bugs found by panel (14 of 20 unique claims):**
-  Most consequential cluster: status transition chain (F0/F4 + F2/F5/F9 + F6) —
-  escalation timer corrupted by add_verdict, verified findings unchallengeable,
-  direct status mutation bypasses resolve(). Also: dead config max_open_crit_high (F7/F23),
-  single-model MERGE kill (F8), weak confirmation quorum (F11), contested_count
-  includes terminal statuses (F14/F22).
+  **3 immune/endocrine fixes:**
+  1. Endocrine `_apply_fix_to_source()`: Strategy 0 added — SEARCH/REPLACE block parser
+     (inline state machine, avoids circular import from runner). CC2 structured fixes now evaluable.
+  2. Endocrine `_find_target_file()`: falls back to `source_paths[0]` for single-target
+     experiments. CC2 output (no inline file paths) no longer returns UNEVALUABLE.
+  3. Formalisation Agent promoted from shadow to active: returns UNCERTAIN counter-verdicts
+     when B-Cell REJECTED a claim with extractable preconditions (context-erasure protection).
+     Return type changed from `List[Dict]` to `Tuple[List[Dict], List[CellVerdict]]`.
+     Counter-verdicts feed into all_verdicts before reconciliation gate.
 
-  **Architecture built this session:**
-  - `bench/burst_planner.py`: AST section detection, capability-scaled budgets,
-    phase planning (PHASE_TARGET_CHARS=30K), convergence overrides.
-  - Runner: burst integration, phase transitions, `_build_prompt()` helper, `--burst-mode` CLI.
-  - `runner_core.py`: DeepSeek L fixed (32K→99K), dispatch token validation gate.
-  - copytree fix: `symlinks=True`, pattern `"logs"` not `"bench/logs"`.
+  **14 runner bug fixes (all from Exp 38 R0 confirmed findings):**
+  - F2/F5/F9: `add_verdict()` no longer corrupts `last_status_change_round` — timer only
+    updated by `resolve()`. Fixes escalation timer corruption on every verdict.
+  - F6: `escalate_stale_contested` + `auto_resolve_contested` now use `resolve()` instead
+    of direct `entry["status"]` mutation. Ensures consistent timer updates.
+  - F0/F4: Challenge check runs BEFORE close check in `_update_finding_statuses`. Previously
+    CONFIRMED+verified findings closed immediately, skipping unresolved challenges.
+  - F24: Same-round challenges treated as unresolved (`>=` not `>` in both
+    `_update_finding_statuses` and `contested_count`).
+  - F8: MERGE requires 2-model quorum. Previously a single MERGE from any model irrevocably
+    killed a finding with no consensus requirement.
+  - F11: Confirmation requires 2 independent external models (removed +1 implicit self-count).
+    For 5-model panel, source model confirm no longer counts toward quorum.
+  - F18: REOPENED to OPEN transition uses `resolve()` (was direct mutation, bypassed timer).
+  - F7/F23: `cfg.max_open_crit_high` threshold now enforced in `_evaluate_gate_conditions`.
+    Was defined in RunnerConfig but never checked — dead config.
+  - F14/F17/F22: `contested_count` skips terminal statuses (CLOSED, REFUTED, DUPLICATE,
+    UNCONFIRMED). Previously only skipped MERGED.
+  - F12: `_evaluate_gate_conditions` idempotent history append — guards against duplicate
+    entries if called multiple times per round.
+  - F13: `_VERDICT_RE` supports 4+ digit IDs (`C\d{4,}` not `C\d{4}`).
+  - F19: Clean `|` in regex character class (no backslash needed inside `[]`).
 
-  690 tests pass. Not yet committed.
+  **New test file:** `bench/tests/test_runner_status_transitions.py` — 21 tests covering
+  every runner fix (timer corruption, escalation, challenge-before-close, merge quorum,
+  confirmation quorum, contested count, gate conditions, regex).
+
+  **3-Layer DC v2 Classification Fix (10–11 April 2026):**
+  Exp 38 R0 revealed 17/26 code findings misrouted to MATHEMATICAL and 3/26 to
+  UNCATEGORISED. Root cause: operators (`>=`, `==`, `=`) in code descriptions matched
+  `_MATH_PATTERN_V2`. Implemented 3-layer fix in `bench/immune_agents.py`:
+  - **Layer 1:** `_CODE_CONTEXT_PATTERN` (12 unambiguous Python constructs) checked
+    BEFORE math. `_STRONG_MATH_SIGNAL` (18 terms) vetoes code-context override for
+    genuine math.
+  - **Layer 2:** `_apply_llm_reclassification()` targets UNCATEGORISED residue only
+    (confidence threshold 0.55, 15s timeout, fail-open).
+  - **Layer 3:** `load_domain_config()` loads domain TOML. Hard verification gate
+    ensures nothing exits without tool-grounded verdict (CT, B-Cell, or NK).
+  - **CX confer (2 rounds):** CX-F1 removed 4 bare-word branches from code-context
+    pattern (matched math vocabulary). CX-F2 added 6 terms to strong-math signal.
+  - **24 new tests** for all 3 layers + hard verification gate.
+  - **1 known failure:** strong-math promotion gate needed before software fallback.
+    Fix identified, pending application.
+  - **Confer log:** `experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md`
+
+  **Architecture (built prior session):**
+  - `bench/burst_planner.py`: AST section detection, capability-scaled budgets.
+  - Runner: burst integration, phase transitions, `_build_prompt()` helper.
+  - `scripts/generate_topology.py` + `docs/CDSFL_Topology.svg`: whole-body topology map.
+
+  714 tests pass. Not yet committed — awaiting commit + Exp 38 restart.
 
 - **EXP 37 CONVERGED (10 April 2026 01:02 BST):**
   Target: `bench/evidence.py`, star topology, 5 models.
