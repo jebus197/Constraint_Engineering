@@ -1,27 +1,33 @@
 # CDSFL Current State
 
-Generated: 11 April 2026 11:43 BST (2026-04-11T11:43:44+01:00)
+Generated: 11 April 2026 19:02 BST (2026-04-11T19:02:37+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp38-experimental
-- **Last commit:** `b78bc6a` sv: Exp 38 live run state save — R0-R6 complete, R7 in progress
-- **Committed:** 2026-04-11 09:47:38 +0100
-- **Remote:** ahead by 5
+- **Last commit:** `84d2c96` sv: Exp 38 R12 state — Phase 0 override bug identified, 6 runner bugs found
+- **Committed:** 2026-04-11 11:45:46 +0100
+- **Remote:** ahead by 6
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M .gitignore`
-- `M bench/immune_agents.py`
-- `M bench/logs/immune_shadow.log`
-- `M bench/runner_core.py`
+- `M .claude/CLAUDE.md`
+- `M bench/fingerprints/CC2.json`
+- `M bench/fingerprints/ChatGPT.json`
+- `M bench/fingerprints/Codex.json`
+- `M bench/fingerprints/DeepSeek.json`
+- `M bench/fingerprints/Gemini.json`
+- `M bench/logs/exp38_live_output.log`
+- `M bench/logs/exp38_ouroboros_20260411T041938Z/checkpoint.json`
+- `M bench/logs/exp38_ouroboros_20260411T041938Z/runner_state.json`
+- `M bench/logs/immune_pipeline.log`
+- `M experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/launch_exp38.sh`
-- `?? bench/logs/exp38_live_output.log`
-- `?? bench/logs/exp38_ouroboros_20260411T041938Z/`
-- `?? bench/logs/immune_pipeline.log`
+- `M scripts/cdsfl_sv.py`
+- `?? bench/logs/exp38_ouroboros_20260411T041938Z/completion_signal.json`
 
 ---
 
@@ -33,12 +39,21 @@ Uncommitted files:
 
 ## Latest Experiment
 
-No experiment logs found.
+- **Experiment:** exp38_ouroboros (#38)
+- **Status:** UNKNOWN
+- **Topology:** star
+- **Target:** `bench/reference_runner.py`
+- **Rounds:** 24
+- **Total findings:** 545
+- **Gamma:** 0.0000
+- **Models:** CC2, ChatGPT, Codex, DeepSeek, Gemini
+- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp38_ouroboros_20260411T041938Z`
 
 ---
 
 ## Recent Commits
 
+- `84d2c96 sv: Exp 38 R12 state — Phase 0 override bug identified, 6 runner bugs found`
 - `b78bc6a sv: Exp 38 live run state save — R0-R6 complete, R7 in progress`
 - `bcd1914 Fix 6 confer-verified bugs: getter purity, merge floor, panel size, exhaustion`
 - `96a1b1c Confer Round 3: CX+GE review of contextual implementations`
@@ -48,4 +63,3 @@ No experiment logs found.
 - `76bfdb8 Whole-body topology diagram: biological architecture map`
 - `412a5be Exp 38 Round 0: ouroboros results, verification, confer logs`
 - `032810b Burst architecture, runner fixes, and Exp 38 infrastructure`
-- `ee26f93 Exp 38 prep: S_k pipeline (9 confer fixes), plan, directives, encodings`

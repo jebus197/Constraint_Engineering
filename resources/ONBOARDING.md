@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 11 April 2026 11:43 BST
+Last updated: 11 April 2026 19:02 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,97 +25,17 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 38 LIVE RUN IN PROGRESS (11 April 2026 09:45 BST):**
-  Type: Ouroboros — system reviews and improves itself under structured falsification.
-  Target: `bench/reference_runner.py`, star topology, 5 models, adaptive rounds.
-  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
-  Config: `bench/exp38_config.json` (max 21 rounds, earliest stop R12, wall cap 8h)
-  Findings collation: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
-  TTS: `~/Desktop/CDSFL_tts/Exp38_Ouroboros_Findings_2026-04-11.txt`
+- **EXP 38 UNKNOWN (11 April 2026 19:02 BST):**
+  Target: `bench/reference_runner.py`, star topology, 5 models.
+  24 rounds, unknown. **UNKNOWN**.
+  545 raw findings → 545 canonical entries.
+  γ final=0.000 (productive).
+  Per model: unavailable.
+  Logs: `bench/logs/exp38_ouroboros_20260411T041938Z/`
 
-  **Live run started 04:19 BST, PID 15636.** R12 S_k in progress (11:43 BST).
-  R0–R12 completed. 135 total canonical findings. γ=0.465 (strong depletion).
-  γ trajectory: 0→0→0→0.063→0.206→0.301→0.377→0.417→0.454→0.462→0.460→0.465.
-  Sawtooth novelty pattern: bursts (17→12→7) alternating with zero rounds.
-  All 12 rounds stuck in Phase 0 (~22k chars) due to convergence override bug.
-  Phases 1-5 + integration NOT REACHED. Experiment cannot converge as designed.
-  HIL flags: CC2 10x CAPABILITY_MISMATCH, Codex 7x, DeepSeek 4x DEGRADATION.
-  6 real runner bugs found (multi-model corroborated): _compute_rho off-by-one,
-  contested_count filter, open_crit_high_count missing REOPENED, RunnerConfig
-  __post_init__ silent override, _compute_rho zero-raw abort, contested_count
-  hardcoded grace period. Gemini confirmation-finding parser bug also identified.
-  See RECOVERY.md for full list + Exp 39 fix plan.
-
-  **Fix cycle prior to this run (10 April 2026 17:28 BST):**
-  All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
-
-  **3 immune/endocrine fixes:**
-  1. Endocrine `_apply_fix_to_source()`: Strategy 0 added — SEARCH/REPLACE block parser
-     (inline state machine, avoids circular import from runner). CC2 structured fixes now evaluable.
-  2. Endocrine `_find_target_file()`: falls back to `source_paths[0]` for single-target
-     experiments. CC2 output (no inline file paths) no longer returns UNEVALUABLE.
-  3. Formalisation Agent promoted from shadow to active: returns UNCERTAIN counter-verdicts
-     when B-Cell REJECTED a claim with extractable preconditions (context-erasure protection).
-     Return type changed from `List[Dict]` to `Tuple[List[Dict], List[CellVerdict]]`.
-     Counter-verdicts feed into all_verdicts before reconciliation gate.
-
-  **14 runner bug fixes (all from Exp 38 R0 confirmed findings):**
-  - F2/F5/F9: `add_verdict()` no longer corrupts `last_status_change_round` — timer only
-    updated by `resolve()`. Fixes escalation timer corruption on every verdict.
-  - F6: `escalate_stale_contested` + `auto_resolve_contested` now use `resolve()` instead
-    of direct `entry["status"]` mutation. Ensures consistent timer updates.
-  - F0/F4: Challenge check runs BEFORE close check in `_update_finding_statuses`. Previously
-    CONFIRMED+verified findings closed immediately, skipping unresolved challenges.
-  - F24: Same-round challenges treated as unresolved (`>=` not `>` in both
-    `_update_finding_statuses` and `contested_count`).
-  - F8: MERGE requires 2-model quorum. Previously a single MERGE from any model irrevocably
-    killed a finding with no consensus requirement.
-  - F11: Confirmation requires 2 independent external models (removed +1 implicit self-count).
-    For 5-model panel, source model confirm no longer counts toward quorum.
-  - F18: REOPENED to OPEN transition uses `resolve()` (was direct mutation, bypassed timer).
-  - F7/F23: `cfg.max_open_crit_high` threshold now enforced in `_evaluate_gate_conditions`.
-    Was defined in RunnerConfig but never checked — dead config.
-  - F14/F17/F22: `contested_count` skips terminal statuses (CLOSED, REFUTED, DUPLICATE,
-    UNCONFIRMED). Previously only skipped MERGED.
-  - F12: `_evaluate_gate_conditions` idempotent history append — guards against duplicate
-    entries if called multiple times per round.
-  - F13: `_VERDICT_RE` supports 4+ digit IDs (`C\d{4,}` not `C\d{4}`).
-  - F19: Clean `|` in regex character class (no backslash needed inside `[]`).
-
-  **New test file:** `bench/tests/test_runner_status_transitions.py` — 21 tests covering
-  every runner fix (timer corruption, escalation, challenge-before-close, merge quorum,
-  confirmation quorum, contested count, gate conditions, regex).
-
-  **3-Layer DC v2 Classification Fix (10–11 April 2026):**
-  Exp 38 R0 revealed 17/26 code findings misrouted to MATHEMATICAL and 3/26 to
-  UNCATEGORISED. Root cause: operators (`>=`, `==`, `=`) in code descriptions matched
-  `_MATH_PATTERN_V2`. Implemented 3-layer fix in `bench/immune_agents.py`:
-  - **Layer 1:** `_CODE_CONTEXT_PATTERN` (12 unambiguous Python constructs) checked
-    BEFORE math. `_STRONG_MATH_SIGNAL` (18 terms) vetoes code-context override for
-    genuine math.
-  - **Layer 2:** `_apply_llm_reclassification()` targets UNCATEGORISED residue only
-    (confidence threshold 0.55, 15s timeout, fail-open).
-  - **Layer 3:** `load_domain_config()` loads domain TOML. Hard verification gate
-    ensures nothing exits without tool-grounded verdict (CT, B-Cell, or NK).
-  - **CX confer (2 rounds):** CX-F1 removed 4 bare-word branches from code-context
-    pattern (matched math vocabulary). CX-F2 added 6 terms to strong-math signal.
-  - **24 new tests** for all 3 layers + hard verification gate.
-  - **1 known failure:** strong-math promotion gate needed before software fallback.
-    Fix identified, pending application.
-  - **Confer log:** `experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md`
-
-  **Architecture (built prior session):**
-  - `bench/burst_planner.py`: AST section detection, capability-scaled budgets.
-  - Runner: burst integration, phase transitions, `_build_prompt()` helper.
-  - `scripts/generate_topology.py` + `docs/CDSFL_Topology.svg`: whole-body topology map.
-
-  714 tests pass. Not yet committed — awaiting commit + Exp 38 restart.
-
-- **EXP 37 CONVERGED (10 April 2026 01:02 BST):**
-  Target: `bench/evidence.py`, star topology, 5 models.
-  16 rounds, 1335s (~22 min). **CONVERGED** — STATE_CONVERGED at round 15.
-  257 raw findings → 222 canonical. γ final=0.467.
-  Logs: `bench/logs/exp37_evidence_20260409T050932Z/`
+  **Qualitative observations** (add manually after sv):
+  <!-- Add: model reasoning behaviour, immune highlights,
+       mid-experiment fixes, key design findings -->
 <!-- SV:LATEST_EXP_END -->
 
 

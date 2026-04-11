@@ -5,7 +5,7 @@ Python: 3.13+ | Tests: `python3 -m pytest bench/tests/ -v`
 
 ## Command Scripts
 
-On `sv` (save state): run `python3 scripts/cdsfl_sv.py` then update MEMORY.md and any relevant memory files.
+On `sv` (save state): make qualitative updates to ONBOARDING.md and RECOVERY.md, update memory files, then run `python3 scripts/cdsfl_sv.py --commit --push -m "sv: <description>"` as the final step. The script generates state files, stages all sv-related changes, and atomically commits + pushes in a single subprocess (compaction-safe).
 On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues.
 On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and rebuild context from output.
 

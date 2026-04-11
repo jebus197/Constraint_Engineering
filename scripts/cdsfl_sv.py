@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -372,12 +373,110 @@ def update_timestamp(filepath: Path, dry_run: bool = False) -> bool:
     return False
 
 
+# ── Atomic commit + push ────────────────────────────────────────────────
+
+_SENSITIVE_PATTERNS = (".env", "credentials", "secret", ".key", ".pem", ".p12")
+
+
+def _git(
+    *args: str,
+    root: Path | None = None,
+    timeout: int = 30,
+    check: bool = True,
+) -> str:
+    """Run a git command. Raises RuntimeError on failure if check=True."""
+    result = subprocess.run(
+        ["git", *args],
+        cwd=root or repo_root(),
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if check and result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise RuntimeError(f"git {args[0]} failed (rc={result.returncode}): {stderr}")
+    return result.stdout.strip()
+
+
+def _commit_and_push(
+    message: str,
+    push: bool = False,
+    root: Path | None = None,
+) -> bool:
+    """Stage sv-related files, commit, optionally push.
+
+    Returns True if a commit was created, False if nothing to commit.
+    Runs as a single function call — if launched via subprocess from CC,
+    the entire commit+push completes even if the conversation compacts.
+    """
+    root = root or repo_root()
+
+    # 1. Stage core sv outputs
+    for path in ("resources/ONBOARDING.md", "resources/RECOVERY.md", "docs/CURRENT_STATE.md"):
+        if (root / path).exists():
+            _git("add", path, root=root)
+
+    # 2. Stage all modifications to already-tracked files
+    _git("add", "-u", root=root)
+
+    # 3. Stage untracked experiment artifacts
+    for pattern, base in [
+        ("exp*", root / "bench" / "logs"),
+        ("Exp*", root / "experimental_notes"),
+        ("launch_exp*", root / "bench"),
+    ]:
+        if base.exists():
+            for match in base.glob(pattern):
+                rel = str(match.relative_to(root))
+                _git("add", rel, root=root, check=False)
+
+    # 4. Check what's staged
+    staged = _git("diff", "--cached", "--name-only", root=root)
+    if not staged.strip():
+        return False
+
+    # 5. Safety check — unstage anything sensitive
+    for f in staged.splitlines():
+        f = f.strip()
+        if any(s in f.lower() for s in _SENSITIVE_PATTERNS):
+            _git("reset", "HEAD", f, root=root)
+            print(f"  WARNING: Unstaged sensitive file: {f}")
+
+    # Re-check after unstaging
+    staged = _git("diff", "--cached", "--name-only", root=root)
+    if not staged.strip():
+        return False
+
+    n_files = len(staged.strip().splitlines())
+
+    # 6. Commit
+    full_msg = f"{message}\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+    _git("commit", "-m", full_msg, root=root, timeout=60)
+
+    new_hash = _git("log", "--oneline", "-1", root=root)
+    print(f"  Committed: {new_hash} ({n_files} files)")
+
+    # 7. Push
+    if push:
+        branch = _git("branch", "--show-current", root=root)
+        _git("push", "origin", branch, root=root, timeout=120)
+        print(f"  Pushed to origin/{branch}")
+
+    return True
+
+
 # ── Main ──────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CDSFL State Save")
     parser.add_argument("--dry-run", action="store_true", help="Print without writing")
+    parser.add_argument("--commit", action="store_true", help="Stage and commit sv files")
+    parser.add_argument("--push", action="store_true", help="Push after commit (implies --commit)")
+    parser.add_argument("-m", "--message", help="Commit message (default: auto-generated)")
     args = parser.parse_args()
+
+    if args.push:
+        args.commit = True
 
     root = repo_root()
     print(f"CDSFL State Save — {timestamp_iso()}")
@@ -448,9 +547,24 @@ def main() -> None:
     if exp:
         print(f"  ONBOARDING.md: experiment #{exp['number']} summary auto-generated")
         print(f"  RECOVERY.md: pending work auto-generated")
-    print()
-    print("  NOTE: Qualitative observations (model behaviour, immune highlights,")
-    print("  mid-experiment fixes) must still be added manually to ONBOARDING.md.")
+
+    # 5. Commit and push (atomic — survives compaction)
+    if args.commit and not args.dry_run:
+        print()
+        msg = args.message or f"sv: state save {timestamp_now()}"
+        try:
+            if _commit_and_push(message=msg, push=args.push, root=root):
+                print()
+                suffix = " and pushed" if args.push else ""
+                print(f"State save committed{suffix}.")
+            else:
+                print("Nothing to commit — all sv files match HEAD.")
+        except RuntimeError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
+    elif not args.commit:
+        print()
+        print("  TIP: Use --commit --push to atomically commit and push.")
 
 
 if __name__ == "__main__":
