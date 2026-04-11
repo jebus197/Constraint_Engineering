@@ -324,62 +324,43 @@ class FindingRegistry:
     def lookup_alias(self, model_id: str, local_id: str) -> Optional[str]:
         return self._alias_map.get(f"{model_id}:{local_id}")
 
-    def open_crit_high_count(self, exhausted_round_threshold: int = 0,
-                              current_round: int = 0) -> int:
+    def open_crit_high_count(self) -> int:
         """Count active non-terminal critical/high findings.
 
-        GE EXHAUSTED mechanism: findings stalled for >= exhausted_round_threshold
-        rounds are treated as fully processed and excluded from the count.
-        The gate threshold stays fixed; finding eligibility changes.
+        Pure reader — no state mutation. Exhausted findings (marked by
+        _update_finding_statuses) are excluded from the count.
+        Gate threshold stays fixed; finding eligibility changes.
         """
         _NON_TERMINAL = ("OPEN", "CONTESTED")
         count = 0
         for e in self.entries.values():
             if e["status"] not in _NON_TERMINAL or e["severity"] < 0.7:
                 continue
-            # EXHAUSTED bypass: stalled findings that have been fully reviewed
-            if exhausted_round_threshold > 0 and current_round > 0:
-                age = current_round - e.get("last_status_change_round", 0)
-                if age >= exhausted_round_threshold:
-                    e["exhausted"] = True
-                    continue
+            if e.get("exhausted"):
+                continue
             count += 1
         return count
 
     def contested_count(self, current_round: int, grace_period: int = 2) -> int:
         """Count actively contested non-terminal findings.
 
-        Composed CX + GE design:
+        Pure reader — no state mutation. UNCONFIRMED reopens are handled
+        by _update_finding_statuses() before this is called.
+
         - MERGED/CLOSED/REFUTED/DUPLICATE: irrecoverable terminal, always excluded.
-        - UNCONFIRMED: recoverable. Included during grace period (awaiting review).
-          After grace period, excluded. Reopened if new evidence arrives.
+        - UNCONFIRMED: counted during grace period only.
         """
         _IRRECOVERABLE = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
         count = 0
         for e in self.entries.values():
             if e["status"] in _IRRECOVERABLE:
                 continue
-            # UNCONFIRMED: grace period logic
+            # UNCONFIRMED: grace period read-only check
             if e["status"] == "UNCONFIRMED":
                 rounds_in_status = current_round - e.get("last_status_change_round", 0)
                 if rounds_in_status < grace_period:
-                    # Still in grace window — count as contested
                     count += 1
-                else:
-                    # Grace expired — check for new evidence since UNCONFIRMED
-                    status_round = e.get("last_status_change_round", 0)
-                    new_verdicts = [
-                        v for v in e["verdicts"]
-                        if v["round"] > status_round
-                    ]
-                    if new_verdicts:
-                        # New evidence arrived — reopen for review
-                        e["status"] = "OPEN"
-                        e["last_status_change_round"] = current_round
-                        count += 1
-                        _log(f"  REOPEN {e.get('canonical_id', '?')}: "
-                             f"new evidence after UNCONFIRMED")
-                # else: grace expired, no new evidence — excluded
+                # else: grace expired — excluded (reopen handled elsewhere)
                 continue
             # Non-terminal, non-UNCONFIRMED: standard contested logic
             challenges = [v for v in e["verdicts"] if v["verdict"] == "CHALLENGE"]
@@ -629,7 +610,35 @@ def _compute_rho(
 # Status transitions and convergence gate
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
+def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
+                             cfg: Optional[RunnerConfig] = None):
+    # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
+    # Derived fresh each call — not sticky. Requires review activity.
+    exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
+    for e in registry.entries.values():
+        if e["status"] in ("OPEN", "CONTESTED") and e["severity"] >= 0.7:
+            age = round_idx - e.get("last_status_change_round", 0)
+            has_reviews = len(e.get("verdicts", [])) > 0
+            if exhausted_threshold > 0 and age >= exhausted_threshold and has_reviews:
+                e["exhausted"] = True
+            else:
+                e["exhausted"] = False
+        else:
+            e.pop("exhausted", None)
+
+    # ── Pre-pass 2: Reopen UNCONFIRMED findings with new evidence ──
+    grace_period = 2
+    for cid, e in list(registry.entries.items()):
+        if e["status"] == "UNCONFIRMED":
+            rounds_in_status = round_idx - e.get("last_status_change_round", 0)
+            if rounds_in_status >= grace_period:
+                status_round = e.get("last_status_change_round", 0)
+                new_verdicts = [v for v in e["verdicts"] if v["round"] > status_round]
+                if new_verdicts:
+                    registry.resolve(cid, "OPEN", round_idx)
+                    _log(f"  REOPEN {cid}: new evidence after UNCONFIRMED")
+
+    # ── Main pass ──
     for canonical_id, entry in list(registry.entries.items()):
         # ── Terminal statuses: only CLOSED can be reopened ──
         if entry["status"] in ("MERGED", "CLOSED"):
@@ -663,27 +672,34 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
                      f"({', '.join(by_target.keys())})")
             else:
                 target_id = next(iter(by_target))
-                target_votes = by_target[target_id]
-                distinct_models = {v["model"] for v in target_votes}
-                available_external = {v["model"] for v in entry["verdicts"]} - {entry["source_model"]}
 
-                if len(distinct_models) >= 2:
-                    # Clear consensus — merge
-                    merged_into = target_id if target_id != "__unknown__" else None
-                    registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
-                    continue
-                elif len(available_external) < 2 and len(distinct_models) == 1:
-                    # Small panel: allow single vote + HIL flag + reversion gate
-                    merged_into = target_id if target_id != "__unknown__" else None
-                    registry.resolve(canonical_id, "MERGED", round_idx, merged_into=merged_into)
-                    entry["hil_escalated"] = True
-                    entry["hil_reason"] = (
-                        f"Single-model merge (small panel, {len(available_external)} "
-                        f"external models). Reversion available."
+                # R3-1 fix: block merge on unknown/unparseable targets
+                if target_id == "__unknown__":
+                    _log(f"  MERGE DEFERRED {canonical_id}: no parseable merge target")
+                else:
+                    target_votes = by_target[target_id]
+                    distinct_models = {v["model"] for v in target_votes}
+                    # R3-2 fix: panel size from config, not per-finding verdicts
+                    external_panel_size = (
+                        len(set(cfg.models) - {entry["source_model"]})
+                        if cfg else len({v["model"] for v in entry["verdicts"]} - {entry["source_model"]})
                     )
-                    _log(f"  MERGED {canonical_id} (small panel, HIL flagged)")
-                    continue
-                # else: insufficient quorum, do not merge this round
+
+                    if len(distinct_models) >= 2:
+                        # Clear consensus — merge
+                        registry.resolve(canonical_id, "MERGED", round_idx, merged_into=target_id)
+                        continue
+                    elif external_panel_size < 2 and len(distinct_models) == 1:
+                        # Small panel: allow single vote + HIL flag + reversion gate
+                        registry.resolve(canonical_id, "MERGED", round_idx, merged_into=target_id)
+                        entry["hil_escalated"] = True
+                        entry["hil_reason"] = (
+                            f"Single-model merge (small panel, {external_panel_size} "
+                            f"external models). Reversion available."
+                        )
+                        _log(f"  MERGED {canonical_id} (small panel, HIL flagged)")
+                        continue
+                    # else: insufficient quorum, do not merge this round
 
         # ── Collect verdict evidence ──
         confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
@@ -719,9 +735,14 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int):
             # F11 contextual: severity-based confirmation quorum.
             # Floor: at least 1 independent external confirmation (source excluded).
             # Critical/High: require 2. Medium/Low: require 1.
+            # R3-4 fix: cap by available external panel size to prevent stalls.
             independent_count = len(confirm_models - {entry["source_model"]})
             sev = entry.get("severity", 0.5)
-            required = 2 if sev >= 0.7 else 1  # 0.7 = Critical/High threshold
+            external_panel_size = (
+                len(set(cfg.models) - {entry["source_model"]})
+                if cfg else 99
+            )
+            required = min(2, external_panel_size) if sev >= 0.7 else 1
             if independent_count >= required and not unresolved_challenges:
                 registry.resolve(canonical_id, "CONFIRMED", round_idx)
 
@@ -742,11 +763,8 @@ def _evaluate_gate_conditions(
     if rho_churn:
         failures.append(f"rho_avg={rho_rolling_avg:.3f} < {cfg.rho_threshold} (churn)")
     # F7/F23 contextual gate (GE EXHAUSTED design): gate threshold stays fixed.
-    # Findings stalled >= exhausted_round_threshold are EXHAUSTED and excluded.
-    open_ch = registry.open_crit_high_count(
-        exhausted_round_threshold=cfg.exhausted_round_threshold,
-        current_round=round_idx,
-    )
+    # EXHAUSTED marking now done by _update_finding_statuses() pre-pass.
+    open_ch = registry.open_crit_high_count()
 
     # F12 fix: guard against duplicate entries if called multiple times per round.
     if open_ch_history is not None:
@@ -2639,7 +2657,7 @@ def run_experiment(
                     registry.add_verdict(canonical_id, model_id, verdict_type, round_idx, evidence)
 
         # Status transitions
-        _update_finding_statuses(registry, round_idx)
+        _update_finding_statuses(registry, round_idx, cfg=cfg)
         registry.auto_resolve_contested(round_idx)
 
         # A3: HIL escalation

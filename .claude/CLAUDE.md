@@ -46,14 +46,15 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat) |
 | `a` | Analyse dispassionately |
 | `e` | Extrapolate beyond immediate domain |
-| `f` | Find-Follow-Fix (FFF intra-model cycle) |
+| `f` | Find, Follow, Analyse (with available tools), Fix, P-pass (five-step cycle) |
 | `sy` | Use all available mathematical and STEM tools (SymPy, Wolfram, SciPy, NumPy, z3, uncertainties, mpmath) in analysis |
 | `t` | Send output to TTS file |
 | `c` | Confer with another model, mutual P-passes until convergence |
 | `sv` | Save state — run `python3 scripts/cdsfl_sv.py`, update recovery docs, commit |
 | `qc` | Quality control — run `python3 scripts/cdsfl_qc.py`, fix reported issues |
-| `rc`/`rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, rebuild context |
+| `rs` | Recover state — run `python3 scripts/cdsfl_recover.py --full`, rebuild context |
 | `re` | External research (web search, arXiv, Semantic Scholar) |
+| `ext` | External research (shorter alias for `re`) |
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest warnings |

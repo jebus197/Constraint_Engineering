@@ -371,12 +371,17 @@ class TestExhaustedBypass:
     """F7/F23 GE design: stalled findings bypass gate as EXHAUSTED."""
 
     def test_stalled_finding_excluded_from_open_ch(self):
-        """Finding stalled >= threshold rounds should be EXHAUSTED."""
+        """Finding stalled >= threshold rounds should be EXHAUSTED.
+        Requires at least 1 verdict (R3-3 fix: no unreviewed exhaustion).
+        """
         reg = FindingRegistry()
         cid = _register(reg, _make_finding(severity=0.9))
+        # Must have at least 1 verdict to be eligible for exhaustion
+        reg.add_verdict(cid, "Gemini", "CONFIRM", round_idx=1)
         # Finding opened at round 0, now at round 10 — stalled 10 rounds
-        count = reg.open_crit_high_count(
-            exhausted_round_threshold=8, current_round=10)
+        cfg = RunnerConfig(exhausted_round_threshold=8)
+        _update_finding_statuses(reg, round_idx=10, cfg=cfg)
+        count = reg.open_crit_high_count()
         assert count == 0
         assert reg.entries[cid].get("exhausted") is True
 
@@ -384,8 +389,10 @@ class TestExhaustedBypass:
         """Finding not yet at threshold should still count."""
         reg = FindingRegistry()
         cid = _register(reg, _make_finding(severity=0.9))
-        count = reg.open_crit_high_count(
-            exhausted_round_threshold=8, current_round=5)
+        reg.add_verdict(cid, "Gemini", "CONFIRM", round_idx=1)
+        cfg = RunnerConfig(exhausted_round_threshold=8)
+        _update_finding_statuses(reg, round_idx=5, cfg=cfg)
+        count = reg.open_crit_high_count()
         assert count == 1
         assert reg.entries[cid].get("exhausted") is not True
 
@@ -412,13 +419,15 @@ class TestUnconfirmedGracePeriod:
         assert reg.contested_count(current_round=10, grace_period=2) == 0
 
     def test_unconfirmed_reopened_on_new_evidence(self):
-        """UNCONFIRMED with new evidence after grace should reopen."""
+        """UNCONFIRMED with new evidence after grace should reopen.
+        Reopen now handled by _update_finding_statuses() pre-pass.
+        """
         reg = FindingRegistry()
         cid = _register(reg, _make_finding())
         reg.add_verdict(cid, "Gemini", "CHALLENGE", round_idx=1)
         reg.resolve(cid, "UNCONFIRMED", round_idx=5)
         # New evidence arrives at round 8
         reg.add_verdict(cid, "Codex", "CHALLENGE", round_idx=8)
-        # Round 10: past grace, but new evidence exists
-        count = reg.contested_count(current_round=10, grace_period=2)
+        # Round 10: _update_finding_statuses performs the reopen
+        _update_finding_statuses(reg, round_idx=10)
         assert reg.entries[cid]["status"] == "OPEN"  # Reopened
