@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 11 April 2026 00:35 BST
+Last updated: 11 April 2026 09:45 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,16 +25,24 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 38 FIX CYCLE COMPLETE — READY TO RESTART (10 April 2026 17:30 BST):**
+- **EXP 38 LIVE RUN IN PROGRESS (11 April 2026 09:45 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.
-  Target: `bench/reference_runner.py`, star topology, 5 models, burst mode (5 phases).
+  Target: `bench/reference_runner.py`, star topology, 5 models, adaptive rounds.
   Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
-  Config: `bench/exp38_config.json`
+  Config: `bench/exp38_config.json` (max 21 rounds, earliest stop R12, wall cap 8h)
+  Findings collation: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
+  TTS: `~/Desktop/CDSFL_tts/Exp38_Ouroboros_Findings_2026-04-11.txt`
 
-  **Round 0 results (prior to fix cycle):** 26 raw findings, all with proposed fixes.
-  HIL verification: 14 CONFIRMED, 2 PARTIAL, 4 REJECTED (70% true positive).
+  **Live run started 04:19 BST, PID 15636.** Currently in R7 immune pipeline.
+  R0–R6 completed. R7 registry: 9 novel / 31 raw, 99 total canonical, ρ=0.290, ρ_avg=0.131.
+  γ trajectory: 0.000→0.000→0.000→0.063→0.206→0.301→0.377 (R6). Moderate depletion.
+  7 findings closed with verified fixes: C0001, C0026, C0031, C0004, C0005, C0029, C0030.
+  5 persistently ADMISSIBLE: C0002, C0032, C0041, C0063, C0085.
+  2 z3-CONFIRMED: CC2_F004 (R1), DeepSeek_F006 (R3).
+  Gemini had R4 403 PERMISSION_DENIED (billing), recovered R5 with no code change.
+  6 parsing issues identified (see findings collation). P1 (SEARCH/REPLACE format) is HIGH.
 
-  **Fix cycle completed (10 April 2026 17:28 BST):**
+  **Fix cycle prior to this run (10 April 2026 17:28 BST):**
   All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
 
   **3 immune/endocrine fixes:**

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 April 2026 00:35 BST
+Last updated: 11 April 2026 09:45 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,55 +21,50 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (11 April 2026 00:35 BST)
+## Current Pending Work (11 April 2026 09:45 BST)
 
-Experiments 12–? ALL COMPLETE. 501/502 tests pass (1 known failure, see below).
+762 tests pass. Exp 38 live run in progress (PID 15636, started 04:19 BST).
 
-**3-Layer DC v2 Classification Fix (10–11 April 2026):**
-Exp 38 R0 revealed 17/26 code findings misrouted to MATHEMATICAL (operators in
-code descriptions) and 3/26 defaulted to UNCATEGORISED. Implemented 3-layer fix:
-- **Layer 1:** Domain-aware code-context regex (`_CODE_CONTEXT_PATTERN`) checked
-  BEFORE math pattern. Strong-math veto (`_STRONG_MATH_SIGNAL`) preserves genuine math.
-- **Layer 2:** Targeted LLM classifier for UNCATEGORISED residue only (15s timeout,
-  fail-open, confidence threshold 0.55).
-- **Layer 3:** Domain TOML loading + hard verification gate (nothing exits without
-  at least one tool-grounded verdict from CT, B-Cell, or NK).
-- **CX confer fixes (CX-F1/F2):** Removed bare-word branches from `_CODE_CONTEXT_PATTERN`
-  (matched math vocabulary). Added 6 terms to `_STRONG_MATH_SIGNAL`.
-- **24 new tests** in `bench/tests/test_immune_agents.py`.
+**Exp 38 Ouroboros — LIVE (R7 in progress):**
+- R0–R6 complete. R7 immune pipeline running. 99 total canonical findings.
+- γ=0.377 (R6), ρ_avg=0.131 (R7). ITC threshold 0.25 crossed at R4.
+- R6 was CC2-only dispatch. R7 resumed full 5-model. Novelty burst in R7 (9 novel).
+- 7 findings closed. 5 persistently ADMISSIBLE. 2 z3-CONFIRMED.
+- Findings collation: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
+- TTS version: `~/Desktop/CDSFL_tts/Exp38_Ouroboros_Findings_2026-04-11.txt`
+- 6 parsing issues documented (P1–P6). P1 (SEARCH/REPLACE format) is HIGH priority.
 
-**Known failure:** `test_cx_f1_math_with_function_word_not_misrouted` — strong-math
-signal ("bounded") is only checked inside code-context branch, not as independent
-promoter. Fix identified: add strong-math promotion gate before software fallback
-(step 5.5). NOT YET APPLIED — pending discussion.
+**Uncommitted changes in working tree (pre-experiment fixes):**
+  M bench/immune_agents.py — logger rename, WP3c/WP3d fixes
+  M bench/runner_core.py — chevron regex fix
+  M bench/logs/immune_shadow.log — log output
+  ?? bench/launch_exp38.sh — experiment launch script
+  ?? bench/logs/exp38_live_output.log — live output
+  ?? bench/logs/exp38_ouroboros_20260411T041938Z/ — checkpoint + responses
+  ?? bench/logs/immune_pipeline.log — pipeline log
+  ?? experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md — findings
 
-Uncommitted changes in working tree:
-  M bench/endocrine.py
-  M bench/immune_agents.py
-  M bench/insect_brain.py
-  M bench/logs/immune_shadow.log
-  M bench/reference_runner.py
-  M bench/tests/test_endocrine.py
-  M bench/tests/test_exp29_integration.py
-  M bench/tests/test_immune_agents.py
-  M docs/CURRENT_STATE.md
-  M resources/ONBOARDING.md
-  M resources/RECOVERY.md
-  ?? bench/logs/confer_dc_fix_cx_20260410T215131Z.txt
-  ?? bench/tests/test_runner_status_transitions.py
-  ?? experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md
-  ?? experimental_notes/Exp38_Fix_Cycle_2026-04-10.md
+Remote: ahead by 4.
 
-Remote: up to date.
+**Deferred fixes (do after experiment):**
+1. `pip3 uninstall google-generativeai` — deprecated package causing FutureWarning
+2. Cosmetic: "below threshold 0.70" log text when MATHEMATICAL guard is the real reason
+
+**Architectural gap identified by founder:**
+Runner lacks per-element convergence. Current ITC tracks one global ρ_avg.
+Founder wants per-element convergence (mathematical model, immune pipeline, registry,
+policy engine each converge independently). This would require:
+- Finding taxonomy layer (target component, not just flaw type)
+- Per-element ρ/γ computation
+- Per-element convergence gates
+This is a meaningful extension for Phase B, not a quick fix.
 
 NEXT:
-1. Apply strong-math promotion gate fix (Option 1 from analysis — 1 line in
-   `_classify_claim_v2`, step 5.5 before software fallback)
-2. Re-run tests — expect 502/502 pass
-3. Commit all changes (17 runner/endocrine/immune fixes + 3-layer classification
-   fix + CX-F1/F2 confer fixes + 24+ new tests + confer logs)
-4. Push to origin
-5. Restart Exp 38 from R0 with 3-layer classification active
+1. Let Exp 38 complete (or kill if not useful — ρ_avg oscillating, global convergence at R12+)
+2. Fix P1–P4 parsing issues before Bench Run 2
+3. Commit all pre-experiment fixes + experiment outputs
+4. Consider per-element convergence design for next runner iteration
+5. Uninstall deprecated google-generativeai
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)
