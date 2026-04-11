@@ -1,0 +1,412 @@
+CDSFL Confer Round 3: Contextual Implementation Review
+Timestamp: 20260411T022722Z
+Branch: exp38-experimental
+Subject: 4 contextual implementations (F8, F11, F7/F23, F14/F17/F22)
+Models: CX (GPT-5.4), GE (Gemini 3.1 Pro)
+========================================================================
+
+## Codex GPT-5.4 (CX)
+Elapsed: 74.4s
+Response length: 20488 chars
+
+Constraint classification:
+- Review 4 implementations under FFF: HARD
+- For each: assess correctness vs design intent: HARD
+- Trace consequences/interactions/convergence: HARD
+- State minimal correction if needed: HARD
+- Focus areas 1–5: HARD
+- Be direct / no filler: SOFT
+
+1. **Implementation 1 (F8) can merge with an unknown target, violating the stated floor.**  
+   **Severity: HIGH**
+
+   **FIND**  
+   Claim: The implementation does **not** fully enforce “never merge without target consensus.”  
+   - Premises:
+     - Targets are extracted from `evidence` via `merged_into=(C\d{4,})`.
+     - If parsing fails, target becomes `"__unknown__"`.
+     - If all merge verdicts fail parsing, `by_target` has one key: `"__unknown__"`.
+     - In that case:
+       - `len(by_target) == 1`, so no “target disagreement” defer.
+       - If `len(distinct_models) >= 2`, code resolves `MERGED` with `merged_into=None`.
+       - If small panel + one model, code also resolves `MERGED` with `merged_into=None`.
+   - Conclusion: a finding can be merged with no known target, i.e. targetless merge. That contradicts the floor as written.
+
+   Strongest falsifier: If elsewhere in the system `registry.resolve(..., "MERGED", ..., merged_into=None)` is rejected or impossible, then this is not a real bug.  
+   Attempt to falsify: The provided code explicitly computes `merged_into = None` and calls `registry.resolve(...)`; nothing shown blocks it. So the claim survives.
+
+   Provisionally accepted. Residual uncertainty: whether downstream registry code silently rejects `merged_into=None`; not evidenced here.
+
+   **FOLLOW**  
+   - Breaks floor safety directly: merge can be bypassed by malformed/missing `merged_into=` evidence.
+   - Interacts badly with Round 1 mechanical fixes around terminal statuses: once incorrectly `MERGED`, downstream logic likely treats it as irrecoverable/terminal, preventing proper reconsideration.
+   - Convergence impact: can cause premature convergence by removing an open finding through a targetless merge.
+   - HIL requirement is also undercut: a small-panel single-model unknown-target merge would still pass + HIL flag, but HIL is not an adequate substitute for target consensus if the floor says no merge without target consensus.
+
+   **FIX**  
+   Minimal correction: treat unknown target as insufficient evidence, not as a valid consensus bucket. E.g.:
+   ```python
+   known_target_votes = []
+   unknown_target_votes = []
+   for v in merge_verdicts:
+       m = re.search(r'merged_into=(C\d{4,})', v.get("evidence", ""))
+       if m:
+           known_target_votes.append((m.group(1), v))
+       else:
+           unknown_target_votes.append(v)
+
+   if not known_target_votes:
+       _log(f"  MERGE DEFERRED {canonical_id}: no parseable merge target")
+   else:
+       by_target = {}
+       for target, v in known_target_votes:
+           by_target.setdefault(target, []).append(v)
+       ...
+   ```
+   At minimum: block any merge when `target_id == "__unknown__"`.
+
+---
+
+2. **Implementation 1 (F8) small-panel detection is likely wrong: it counts voters, not available panel capacity.**  
+   **Severity: MEDIUM**
+
+   **FIND**  
+   Claim: `available_external = {v["model"] for v in entry["verdicts"]} - {entry["source_model"]}` does not reliably measure “small panel (<2 external).”  
+   - Premises:
+     - This set is built from models that have already emitted any verdict on this entry.
+     - That is participation-on-this-entry, not the number of external models available in the run/panel.
+     - A full panel where only one external model has voted so far yields `len(available_external) == 1`, triggering small-panel behavior incorrectly.
+   - Conclusion: the code conflates “few available external models exist” with “few external models have spoken on this finding.”
+
+   Strongest falsifier: If the design intended “small observed participation” rather than “small panel,” the implementation would be correct.  
+   Attempt to falsify: The spec repeatedly says “small panel” and founder directive says “single-model merge on small panel must be HIL-flagged,” which refers to panel size, not turnout. So the claim survives.
+
+   Provisionally accepted. Residual uncertainty: exact runner data structure for true panel membership is not shown.
+
+   **FOLLOW**  
+   - In a full panel with low turnout, a single external merge vote could prematurely merge + HIL flag.
+   - That weakens the intended distinction between “need more evidence” and “structurally impossible to get more evidence.”
+   - Convergence impact: premature merges reduce open findings and can accelerate convergence improperly.
+   - Interaction with mechanical fixes: if other fixes already ensure sparse voting in some rounds, this bug systematically biases toward merge on under-reviewed findings.
+
+   **FIX**  
+   Minimal correction: derive small-panel status from configured/actual eligible external models for the run, not from `entry["verdicts"]`. Example:
+   ```python
+   external_panel_size = len(set(all_models) - {entry["source_model"]})
+   ...
+   elif external_panel_size < 2 and len(distinct_models) == 1:
+   ```
+   If no such source exists, pass panel size/context into `_update_finding_statuses`.
+
+---
+
+3. **Implementation 1 (F8) otherwise matches intent once target parsing and panel-size issues are fixed.**  
+   **Severity: LOW**
+
+   **FIND**  
+   Claim: Aside from the two issues above, the remaining logic is sound relative to the stated design.  
+   - Premises:
+     - 0 merge votes cannot merge because all logic is guarded by `if merge_verdicts:`.
+     - Multiple distinct targets defer.
+     - Two distinct models on same target merge.
+     - Single-model small-panel case merges with HIL.
+     - Full-panel single vote waits.
+   - Conclusion: core quorum behavior aligns with intent.
+
+   Strongest falsifier: another path elsewhere could merge without passing this block.  
+   Attempt to falsify: not shown in provided code. No internal contradiction here.
+
+   Provisionally accepted. Residual uncertainty: broader control flow not shown.
+
+   **FOLLOW**  
+   No additional fix beyond Findings 1–2.
+
+   **FIX**  
+   None beyond above.
+
+---
+
+4. **Implementation 2 (F11) appears correct and aligned with the design intent.**  
+   **Severity: LOW**
+
+   **FIND**  
+   Claim: The severity-based confirmation quorum implements the stated rule correctly.  
+   - Premises:
+     - `independent_count = len(confirm_models - {entry["source_model"]})` excludes source model.
+     - `required = 2 if sev >= 0.7 else 1` matches critical/high vs medium/low.
+     - `and not unresolved_challenges` enforces challenge blocking.
+   - Conclusion: It enforces the floor and contextual threshold as described.
+
+   Strongest falsifier: if `confirm_models` can include duplicate/aliased model identities such that independence is overstated.  
+   Attempt to falsify: possible in theory [SPECULATIVE], but no evidence in provided code that model IDs are non-canonical. On the shown logic, it is correct.
+
+   Provisionally accepted. Residual uncertainty: identity normalization for `confirm_models` not shown.
+
+   **FOLLOW**  
+   - Convergence impact is conservative: high-severity findings need more evidence, so this may delay but should not prevent legitimate convergence if enough models exist.
+   - Interaction with F14/F17/F22 is healthy: unresolved challenges block confirmation, and reopened items can later become confirmed.
+   - Interaction with F8 is independent: confirmation quorum and merge quorum serve different resolution paths.
+
+   **FIX**  
+   None.
+
+---
+
+5. **Implementation 2 (F11) has one possible deployment risk: deadlock on high severity in undersized panels [VERIFY:current].**  
+   **Severity: MEDIUM**
+
+   **FIND**  
+   Claim: If the runner can operate with fewer than 2 independent external models, critical/high findings may become unconfirmable.  
+   - Premises:
+     - High severity requires `independent_count >= 2`.
+     - If only one external model exists, that threshold is unattainable.
+   - Conclusion: In small panels, the rule may prevent legitimate confirmation indefinitely.
+
+   Strongest falsifier: if runner configuration always guarantees at least 2 external models whenever high-severity confirmation is expected, or if another path exists (e.g. HIL/manual resolution).  
+   Attempt to falsify: not shown. The presence of small-panel logic in F8 suggests undersized panels are real. So this risk survives as a system-level concern.
+
+   Provisionally accepted. Residual uncertainty: whether this is intended policy or an actual operational problem.
+
+   **FOLLOW**  
+   - Could impede convergence by keeping severe findings open forever in small-panel runs.
+   - Interaction with F7/F23 EXHAUSTED is important: such findings may eventually be excluded from gate counts as “exhausted,” effectively shifting resolution burden to post-convergence HIL audit rather than confirming them. That may be acceptable, but it is a meaningful behavioral interaction.
+   - Not a correctness bug if intended; it is a design-policy tradeoff.
+
+   **FIX**  
+   No code change required unless small-panel high-severity confirmation should be possible. If so, add explicit escalation rather than weakening the floor, e.g. mark for HIL when required quorum is structurally unattainable.
+
+---
+
+6. **Implementation 3 (F7/F23) can permanently mark a finding exhausted even after new evidence/status changes, because exhaustion is stored as sticky state but never cleared.**  
+   **Severity: HIGH**
+
+   **FIND**  
+   Claim: `e["exhausted"] = True` is set opportunistically and may become stale.  
+   - Premises:
+     - `open_crit_high_count` mutates entries during counting.
+     - It sets `e["exhausted"] = True` when age exceeds threshold.
+     - There is no code shown that clears `exhausted` when status changes or new verdicts arrive.
+     - Comment/design says exhausted findings are “stalled” and “fully reviewed”; that is a dynamic condition, not necessarily permanent.
+   - Conclusion: the audit marker can become inaccurate, and if any downstream logic consults `e["exhausted"]`, a revived finding may still be treated as exhausted.
+
+   Strongest falsifier: if `e["exhausted"]` is used only as a write-once audit breadcrumb and never affects behavior.  
+   Attempt to falsify: The text says “marked ... for post-convergence HIL audit,” so some downstream use is expected. Since no clearing is shown, stale marking remains a real integrity issue even if not gate-critical.
+
+   Provisionally accepted. Residual uncertainty: all downstream consumers of `exhausted` are not shown.
+
+   **FOLLOW**  
+   - Can mislead HIL audit by labeling actively changing findings as exhausted.
+   - If any other Round 1 fixes check `exhausted`, stale state could exclude or deprioritize findings incorrectly.
+   - Convergence impact on gate count itself is limited because exclusion is recomputed from age/status, not the flag; the larger risk is audit/state inconsistency.
+
+   **FIX**  
+   Minimal correction: make exhaustion derived, not sticky; or clear it when no longer eligible. Example:
+   ```python
+   is_exhausted = (
+       exhausted_round_threshold > 0 and current_round > 0 and
+       age >= exhausted_round_threshold
+   )
+   e["exhausted"] = bool(is_exhausted)
+   if is_exhausted:
+       continue
+   ```
+   Better: avoid mutating registry state inside a count function and compute exhaustion elsewhere.
+
+---
+
+7. **Implementation 3 (F7/F23) may treat any long-stable OPEN/CONTESTED critical/high finding as exhausted, even if it has not been “fully reviewed.”**  
+   **Severity: MEDIUM**
+
+   **FIND**  
+   Claim: The implemented criterion is weaker than the design language.  
+   - Premises:
+     - Code checks only `status in ("OPEN", "CONTESTED")`, severity >= 0.7, and age since last status change.
+     - Comment/design says “stalled findings that have been fully reviewed.”
+     - “No status change for 8 rounds” does not prove full review; it may reflect neglect, voting starvation, or blocked ambiguity.
+   - Conclusion: the contextual rule may exclude unresolved important findings without sufficient evidence that they were truly exhausted by review.
+
+   Strongest falsifier: if “fully reviewed” was intentionally operationalized as “no status change for 8 rounds.”  
+   Attempt to falsify: The comment itself uses both concepts but only implements age. That mismatch remains.
+
+   Provisionally accepted. Residual uncertainty: whether this simplification was intended.
+
+   **FOLLOW**  
+   - Convergence impact: can allow premature convergence by removing neglected critical/high findings from the open count.
+   - Interaction with F11: a severe finding blocked from confirmation for lack of quorum could age into exhaustion and stop blocking convergence, which may be acceptable only if HIL audit is guaranteed.
+   - Interaction with F14 reopen: if a finding is UNCONFIRMED it is not counted here, but if reopened to OPEN and then ignored, it can later become exhausted regardless of evidence quality.
+
+   **FIX**  
+   Minimal correction: tighten exhaustion eligibility to actual review activity, not mere age. For example require recent verdict activity with no net progress, or a minimum number of distinct external reviews before exhaustion can apply. If minimalism is paramount:
+   ```python
+   if age >= exhausted_round_threshold and len(e.get("verdicts", [])) >= some_minimum:
+   ```
+   Best fix depends on available metadata.
+
+---
+
+8. **Implementation 4 (F14/F17/F22) misclassifies UNCONFIRMED findings as non-contested after grace expiry even when they still have unresolved challenges and no new evidence.**  
+   **Severity: MEDIUM**
+
+   **FIND**  
+   Claim: The grace logic may hide genuinely unresolved ambiguity.  
+   - Premises:
+     - For `status == "UNCONFIRMED"`:
+       - During grace: counted.
+       - After grace:
+         - if new verdicts since status round: reopen to OPEN and count.
+         - else: excluded unconditionally.
+     - That exclusion ignores whether the underlying reason for UNCONFIRMED remains an unresolved dispute/challenge.
+   - Conclusion: after 2 rounds, a still-ambiguous finding vanishes from contested count solely due to inactivity.
+
+   Strongest falsifier: if design intent explicitly says stale UNCONFIRMED findings should stop blocking convergence unless new evidence arrives.  
+   Attempt to falsify: The stated design does say “After grace period, excluded. Reopened if new evidence arrives.” So by that spec, this is intentional. However, the user asked for contextual soundness and convergence impact, not just code/spec matching. On soundness grounds, the behavior is debatable but not an implementation bug.
+
+   Provisionally accepted as a design-risk, not a code defect. Residual uncertainty: intended semantics of “contested” vs “recoverable but currently dormant.”
+
+   **FOLLOW**  
+   - Can allow convergence despite unresolved-but-stale uncertainty.
+   - Interacts with F7/F23 similarly: the system increasingly treats inactivity as non-blocking.
+   - If Round 1 mechanical fixes already reduce spurious challenge persistence, this may be acceptable; otherwise it can mask neglected review.
+
+   **FIX**  
+   No mandatory code fix if this policy is intended. Minimal policy-safe enhancement: when grace expires with no new evidence, set an explicit `hil_escalated` or `needs_review` marker so dormant ambiguity is not silently dropped from oversight.
+
+---
+
+9. **Implementation 4 (F14/F17/F22) otherwise matches its stated design and reopen mechanism is coherent.**  
+   **Severity: LOW**
+
+   **FIND**  
+   Claim: The recoverable UNCONFIRMED handling and reopen-on-new-evidence path are internally consistent.  
+   - Premises:
+     - Irrecoverable terminal statuses are excluded.
+     - UNCONFIRMED remains recoverable during a grace window.
+     - New post-UNCONFIRMED verdicts reopen it to OPEN.
+     - Once reopened, normal contested logic applies.
+   - Conclusion: This aligns with the intended “grace period + reopen” design.
+
+   Strongest falsifier: if verdict ingestion can add old/backfilled verdicts with `v["round"] <= status_round`, causing true new evidence to be missed.  
+   Attempt to falsify: possible [SPECULATIVE], but no evidence here. On the provided model of rounds, logic is coherent.
+
+   Provisionally accepted. Residual uncertainty: whether verdict rounds are strictly monotonic and trustworthy.
+
+   **FOLLOW**  
+   - Reopen path should preserve legitimate convergence while allowing recovery from premature UNCONFIRMED.
+   - Good interaction with F11: reopened items can become confirmed if challenge state clears and quorum arrives.
+   - No direct bad interaction with F8.
+
+   **FIX**  
+   None.
+
+---
+
+10. **Cross-mechanism interaction: F11 strict high-severity quorum + F7 exhaustion can convert “insufficient evidence to confirm” into “non-blocking for convergence” after 8 rounds.**  
+   **Severity: HIGH**
+
+   **FIND**  
+   Claim: The combination may permit convergence past unresolved critical/high findings.  
+   - Premises:
+     - F11 requires 2 independent external confirmations for severity >= 0.7.
+     - In some runs that may be unattainable or simply not achieved.
+     - F7 excludes OPEN/CONTESTED critical/high findings from gate count after 8 rounds of no status change.
+   - Conclusion: a severe finding can fail to reach confirm quorum, remain unresolved, then age out of the convergence gate.
+
+   Strongest falsifier: if this was the explicit intended safety valve, with mandatory post-convergence HIL audit ensuring no loss of protection.  
+   Attempt to falsify: The design text for F7 does say exhausted findings are for post-convergence HIL audit. So this may be intentional. But if HIL audit is not guaranteed-enforced in the runner, convergence safety depends on an external process [VERIFY:current].
+
+   Provisionally accepted as a significant interaction risk. Residual uncertainty: strength of the HIL enforcement path.
+
+   **FOLLOW**  
+   - This is the most important convergence interaction in the set.
+   - If HIL audit is advisory only, premature convergence is possible on unresolved severe findings.
+   - If HIL audit is mandatory before final acceptance, risk is mitigated.
+
+   **FIX**  
+   Minimal correction: ensure exhausted critical/high findings trigger a hard HIL gate before final convergence/termination, not merely an audit marker. If that already exists elsewhere, document it explicitly near F7.
+
+---
+
+11. **Cross-mechanism interaction: F8 targetless merge bug combined with F14 irrecoverable-terminal exclusion is especially dangerous.**  
+   **Severity: HIGH**
+
+   **FIND**  
+   Claim: A bad merge in F8 can become effectively irreversible in contested accounting.  
+   - Premises:
+     - F8 can mark `MERGED` with `merged_into=None` under Findings 1–2.
+     - F14 excludes `MERGED` from contested counts as irrecoverable terminal.
+   - Conclusion: an erroneous merge may disappear from both open and contested gate pressure.
+
+   Strongest falsifier: if there is a separate robust reversion/reopen mechanism for bad merges that automatically triggers on malformed target.  
+   Attempt to falsify: not shown. The small-panel HIL text mentions “Reversion available,” but availability is not enforcement.
+
+   Provisionally accepted. Residual uncertainty: external merge-reversion machinery not shown.
+
+   **FOLLOW**  
+   - High risk of premature convergence and loss of visibility.
+   - This is a systemic bug, not just a local merge issue.
+
+   **FIX**  
+   Fix F8 per Findings 1–2. No additional change needed if targetless merges become impossible.
+
+---
+
+12. **Overall judgment: 2 is sound; 3 and 4 are mostly policy-sound with caveats; 1 has real correctness bugs.**  
+   **Severity: LOW**
+
+   **FIND**  
+   Claim: Among the four, only F8 clearly fails floor safety as implemented.  
+   Strongest falsifier: a hidden code path elsewhere invalidates this prioritization.  
+   Attempt to falsify: based on provided snippets, F8 is the only one with a direct contradiction between floor and implementation. F3/F4 issues are more about stale state and policy interactions.
+
+   Provisionally accepted. Residual uncertainty: unseen surrounding code.
+
+   **FOLLOW**  
+   Priority order for fixes:
+   1. F8 unknown-target merge
+   2. F8 small-panel detection
+   3. F7 sticky exhausted flag / harden exhaustion semantics
+   4. Optional: explicit HIL enforcement for exhausted severe findings
+
+   **FIX**  
+   Apply the minimal fixes above.
+
+========================================================================
+
+## Gemini 3.1 Pro (GE)
+Elapsed: 78.2s
+Response length: 3874 chars
+
+Here is the review of the 4 contextual decision implementations under the Find-Follow-Fix framework. 
+
+### 1. F8 — Contextual Merge Quorum: Local Panel Size Bypass
+- **FIND:** `available_external` is calculated from `entry["verdicts"]` (models that have already voted on this specific finding), rather than the global number of models on the panel.
+- **FOLLOW:** Early in a round, the first external model to vote MERGE will make `len(available_external) == 1`. The logic will misidentify the run as a "small panel" and execute the merge immediately. This completely bypasses the quorum requirement on large panels, allowing premature convergence and violating FLOOR SAFETY.
+- **FIX:** Calculate `available_external` using the global configuration of the runner (e.g., total configured external models), not the finding's local verdict list.
+- **Severity:** CRITICAL
+
+### 2. F8 — Contextual Merge Quorum: Null Target Corruption
+- **FIND:** If all MERGE verdicts lack a regex-matched target, `target_id` evaluates to `"__unknown__"`. The logic proceeds into the consensus block and executes `registry.resolve(..., merged_into=None)`.
+- **FOLLOW:** This reintroduces the exact mechanical bug F8 was meant to fix. The finding is merged without a valid target, permanently dropping the finding into a corrupted state.
+- **FIX:** Treat `"__unknown__"` as an invalid target state. If consensus centers on `"__unknown__"`, do not merge. Defer the decision or escalate to HIL.
+- **Severity:** HIGH
+
+### 3. F11 — Severity Quorum: Small Panel Stalling
+- **FIND:** Critical/High findings (`sev >= 0.7`) strictly require 2 independent confirmations, with no awareness of the total available panel size.
+- **FOLLOW:** If the runner is operating a globally small panel with only 1 external model, critical findings will never reach the 2-confirmation threshold. They will stall indefinitely, permanently preventing legitimate convergence.
+- **FIX:** Cap the required quorum by the globally available external model count: `required = 2 if (sev >= 0.7 and global_external_models >= 2) else 1`.
+- **Severity:** HIGH
+
+### 4. F7/F23 — EXHAUSTED Bypass: Unreviewed Finding Evasion
+- **FIND:** The EXHAUSTED bypass only checks the finding's age (`current_round - last_status_change_round >= threshold`) without verifying if the finding has actually been reviewed by the panel.
+- **FOLLOW:** A critical finding that is simply backlogged or ignored by the models for 8 rounds will be silently flagged EXHAUSTED and excluded from the gate count. The runner will converge while bypassing entirely unreviewed critical issues, causing a massive Floor Safety failure.
+- **FIX:** Require at least one verdict to trigger the EXHAUSTED state: `if age >= exhausted_round_threshold and len(e.get("verdicts", [])) > 0:`.
+- **Severity:** CRITICAL
+
+### 5. F14/F17/F22 & F7/F23 — Getters Mutating State & Cross-Gate Contradiction
+- **FIND:** Both `contested_count` and `open_crit_high_count` mutate finding state (`e["status"] = "OPEN"` and `e["exhausted"] = True`) from inside counting getter functions. Furthermore, because `exhausted` is evaluated inside the `open_crit_high` getter, `contested_count` remains unaware of it. 
+- **FOLLOW:** Calling these metric functions for logging, dry-runs, or dashboard rendering will unpredictably trigger permanent state transitions outside the core `_update_finding_statuses` lifecycle loop. Additionally, if an EXHAUSTED finding has unresolved challenges, it bypasses the `open_crit_high` gate but still trips the `contested` gate, preventing the convergence the bypass was explicitly designed to allow.
+- **FIX:** Move the logic that transitions UNCONFIRMED to OPEN and sets the `exhausted` flag into the main `_update_finding_statuses` mutation loop. Update both getter functions to strictly read state (`if e.get("exhausted"): continue`).
+- **Severity:** CRITICAL
+
+========================================================================
+

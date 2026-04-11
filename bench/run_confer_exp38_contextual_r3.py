@@ -26,7 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CDSFL_PATH = REPO_ROOT / "bench" / "directives" / "universal" / "cdsfl_core.txt"
 LOGS_DIR = REPO_ROOT / "bench" / "logs"
 
-CONTEXTUAL_IMPLEMENTATIONS = r"""
+CONTEXTUAL_IMPLEMENTATIONS = """
 === IMPLEMENTATION 1: F8 — Contextual Merge Quorum ===
 
 Design origin: Composed from CX Round 2 (target consensus) + GE Round 2 (small-panel).
@@ -44,7 +44,7 @@ if merge_verdicts:
     # Extract per-vote targets
     by_target: dict[str, list] = {}
     for v in merge_verdicts:
-        m = re.search(r'merged_into=(C\d{4,})', v.get("evidence", ""))
+        m = re.search(r'merged_into=(C\\d{4,})', v.get("evidence", ""))
         target = m.group(1) if m else "__unknown__"
         by_target.setdefault(target, []).append(v)
 
@@ -113,12 +113,10 @@ Code (reference_runner.py, FindingRegistry.open_crit_high_count):
 ```python
 def open_crit_high_count(self, exhausted_round_threshold: int = 0,
                           current_round: int = 0) -> int:
-    """Count active non-terminal critical/high findings.
-
-    GE EXHAUSTED mechanism: findings stalled for >= exhausted_round_threshold
-    rounds are treated as fully processed and excluded from the count.
-    The gate threshold stays fixed; finding eligibility changes.
-    """
+    # Count active non-terminal critical/high findings.
+    # GE EXHAUSTED mechanism: findings stalled for >= exhausted_round_threshold
+    # rounds are treated as fully processed and excluded from the count.
+    # The gate threshold stays fixed; finding eligibility changes.
     _NON_TERMINAL = ("OPEN", "CONTESTED")
     count = 0
     for e in self.entries.values():
@@ -157,13 +155,11 @@ Code (reference_runner.py, FindingRegistry.contested_count):
 
 ```python
 def contested_count(self, current_round: int, grace_period: int = 2) -> int:
-    """Count actively contested non-terminal findings.
-
-    Composed CX + GE design:
-    - MERGED/CLOSED/REFUTED/DUPLICATE: irrecoverable terminal, always excluded.
-    - UNCONFIRMED: recoverable. Included during grace period (awaiting review).
-      After grace period, excluded. Reopened if new evidence arrives.
-    """
+    # Count actively contested non-terminal findings.
+    # Composed CX + GE design:
+    # - MERGED/CLOSED/REFUTED/DUPLICATE: irrecoverable terminal, always excluded.
+    # - UNCONFIRMED: recoverable. Included during grace period (awaiting review).
+    #   After grace period, excluded. Reopened if new evidence arrives.
     _IRRECOVERABLE = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
     count = 0
     for e in self.entries.values():
