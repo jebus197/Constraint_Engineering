@@ -77,19 +77,32 @@ def _format_experiment_summary(exp: dict, root: Path) -> str:
         f"{m} {c}" for m, c in sorted(per_model.items(), key=lambda x: -x[1])
     ) if per_model else "unavailable"
 
-    # Read report JSON for additional fields
-    canonical_count = findings  # default
+    # Canonical count: prefer pre-computed from latest_experiment(), fallback to report
+    canonical_count = exp.get("canonical_count", findings)
     gamma_history = []
     per_round = []
     elapsed_s = 0
     report_path = Path(log_dir) / f"exp{n}_report.json" if log_dir else None
+    # Also try the name-prefixed report path (e.g. exp38_ouroboros_report.json)
+    if report_path and not report_path.exists() and log_dir:
+        name = exp.get("name", f"exp{n}")
+        report_path = Path(log_dir) / f"{name}_report.json"
     if report_path and report_path.exists():
         try:
             rdata = json.loads(report_path.read_text())
-            canonical_count = rdata.get("registry_size", rdata.get("total_findings", findings))
             gamma_history = rdata.get("gamma_history", [])
-            per_round = rdata.get("per_round_counts",
-                                  rdata.get("completion_signal", {}).get("per_round_counts", []))
+            per_round = rdata.get("per_round_counts", [])
+            if not per_round:
+                # Try completion_signal (embedded or separate file)
+                comp = rdata.get("completion_signal", {})
+                if not comp:
+                    cs_path = Path(log_dir) / "completion_signal.json"
+                    if cs_path.exists():
+                        try:
+                            comp = json.loads(cs_path.read_text())
+                        except (json.JSONDecodeError, OSError):
+                            comp = {}
+                per_round = comp.get("per_round_counts", [])
             elapsed_s = rdata.get("total_elapsed_s", 0)
         except (json.JSONDecodeError, OSError):
             pass
@@ -128,19 +141,45 @@ def _format_experiment_summary(exp: dict, root: Path) -> str:
     return "\n".join(lines)
 
 
+_ONBOARDING_PLACEHOLDER = "add manually after sv"
+
+
+def _has_manual_content(text: str, start_marker: str, end_marker: str, placeholder: str) -> bool:
+    """Return True if the section between markers contains manual (non-auto) content.
+
+    Detection: auto-generated blocks contain a placeholder string (e.g.
+    'add manually after sv'). If that placeholder is absent, the content
+    was manually written and should be preserved.
+    """
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    if start == -1 or end == -1 or end <= start:
+        return False
+    section = text[start + len(start_marker):end]
+    # If placeholder is absent and there's substantial content, it's manual
+    return placeholder not in section and len(section.strip()) > 50
+
+
 def update_onboarding_experiment(
     onboarding_path: Path, exp: dict, root: Path, dry_run: bool = False,
 ) -> bool:
     """Insert or update the latest experiment summary in ONBOARDING.md.
 
     Uses marker comments to identify the auto-generated block. If markers
-    exist, replaces content between them. If not, inserts markers + content
-    at the top of the 'Current State' section.
+    exist and contain manual content (no placeholder text), the section is
+    preserved — only the timestamp is updated. If markers contain auto-
+    generated content or don't exist, replaces/inserts the full block.
     """
     if not onboarding_path.exists():
         return False
 
     text = onboarding_path.read_text(encoding="utf-8")
+
+    # Check for manual content — if present, skip regeneration
+    if _has_manual_content(text, _ONBOARDING_MARKER_START, _ONBOARDING_MARKER_END,
+                           _ONBOARDING_PLACEHOLDER):
+        return False  # Preserved — timestamp update handled separately
+
     summary = _format_experiment_summary(exp, root)
     block = f"{_ONBOARDING_MARKER_START}\n{summary}\n{_ONBOARDING_MARKER_END}"
 
@@ -237,6 +276,9 @@ def _format_pending_work(
     return "\n".join(lines)
 
 
+_RECOVERY_PLACEHOLDER = "Add next steps manually"
+
+
 def update_recovery_pending(
     recovery_path: Path,
     exp: dict | None,
@@ -247,14 +289,20 @@ def update_recovery_pending(
 ) -> bool:
     """Update the pending work section in RECOVERY.md.
 
-    Uses marker comments. If markers exist, replaces between them.
-    If not, replaces the '## Current Pending Work' section up to the
-    next '## ' heading.
+    Uses marker comments. If markers exist and contain manual content
+    (no placeholder text), the section is preserved. Otherwise replaces
+    between markers or inserts a new block.
     """
     if not recovery_path.exists():
         return False
 
     text = recovery_path.read_text(encoding="utf-8")
+
+    # Check for manual content — if present, skip regeneration
+    if _has_manual_content(text, _RECOVERY_MARKER_START, _RECOVERY_MARKER_END,
+                           _RECOVERY_PLACEHOLDER):
+        return False  # Preserved — timestamp update handled separately
+
     pending = _format_pending_work(exp, gs, tests, root)
     block = f"{_RECOVERY_MARKER_START}\n{pending}\n{_RECOVERY_MARKER_END}"
 
@@ -521,20 +569,37 @@ def main() -> None:
     if update_timestamp(recovery, dry_run=args.dry_run):
         print(f"Updated timestamp: {recovery}")
 
-    # 3. Update experiment summary in ONBOARDING.md
+    # 3. Update experiment summary in ONBOARDING.md (skips if manual content present)
     if exp:
         if update_onboarding_experiment(onboarding, exp, root, dry_run=args.dry_run):
             print(f"Updated experiment summary: {onboarding}")
         else:
-            print(f"Experiment summary unchanged: {onboarding}")
+            # Distinguish "unchanged" from "preserved manual content"
+            if onboarding.exists() and _ONBOARDING_MARKER_START in onboarding.read_text():
+                text = onboarding.read_text()
+                if _has_manual_content(text, _ONBOARDING_MARKER_START,
+                                       _ONBOARDING_MARKER_END, _ONBOARDING_PLACEHOLDER):
+                    print(f"Preserved manual content: {onboarding}")
+                else:
+                    print(f"Experiment summary unchanged: {onboarding}")
+            else:
+                print(f"Experiment summary unchanged: {onboarding}")
     else:
         print("No experiment data — skipping ONBOARDING.md experiment update")
 
-    # 4. Update pending work in RECOVERY.md
+    # 4. Update pending work in RECOVERY.md (skips if manual content present)
     if update_recovery_pending(recovery, exp, gs, tests, root, dry_run=args.dry_run):
         print(f"Updated pending work: {recovery}")
     else:
-        print(f"Pending work unchanged: {recovery}")
+        if recovery.exists() and _RECOVERY_MARKER_START in recovery.read_text():
+            text = recovery.read_text()
+            if _has_manual_content(text, _RECOVERY_MARKER_START,
+                                   _RECOVERY_MARKER_END, _RECOVERY_PLACEHOLDER):
+                print(f"Preserved manual content: {recovery}")
+            else:
+                print(f"Pending work unchanged: {recovery}")
+        else:
+            print(f"Pending work unchanged: {recovery}")
 
     # Summary
     print()

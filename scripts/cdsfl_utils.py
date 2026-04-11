@@ -141,14 +141,53 @@ def latest_experiment() -> Optional[dict[str, Any]]:
             continue
         try:
             data = json.loads(report_files[0].read_text())
-            comp = data.get("completion_signal", {})
-            # Fallback: if brain signal says INCOMPLETE but the runner
-            # recorded converged_at, the experiment DID converge (brain
-            # wiring bug fixed in Exp 37 session).
+
+            # completion_signal: may be embedded in report or a separate file
+            comp = data.get("completion_signal")
+            if comp is None:
+                cs_path = exp_dir / "completion_signal.json"
+                if cs_path.exists():
+                    try:
+                        comp = json.loads(cs_path.read_text())
+                    except (json.JSONDecodeError, OSError):
+                        comp = {}
+                else:
+                    comp = {}
+
+            # Status derivation
             status = comp.get("status", "UNKNOWN")
             if status == "INCOMPLETE" and data.get("converged_at") is not None:
                 status = "CONVERGED"
+            elif status == "INCOMPLETE":
+                # Check for wall clock cap or budget exhaustion
+                elapsed = data.get("total_elapsed_s", 0)
+                max_rounds = data.get("max_rounds", 0)
+                total_rounds = data.get("total_rounds", 0)
+                # Wall clock cap: elapsed exceeds 95% of 8h default or
+                # total_rounds exceeded max_rounds
+                if elapsed > 0 and total_rounds > max_rounds:
+                    status = "WALL_CLOCK_CAP"
+
             reason = comp.get("reason", "") or data.get("convergence_reason", "")
+
+            # Gamma: top-level or last entry in gamma_history
+            gamma = data.get("gamma")
+            if gamma is None:
+                gh = data.get("gamma_history", [])
+                gamma = gh[-1] if gh else 0.0
+
+            # Canonical count: len(registry.entries) or fallback
+            reg = data.get("registry", {})
+            if isinstance(reg, dict) and "entries" in reg:
+                canonical_count = len(reg["entries"])
+            else:
+                canonical_count = data.get("total_findings", 0)
+
+            # Per-model findings: from completion_signal, or per_model_totals
+            per_model = comp.get("per_model_findings", {})
+            if not per_model:
+                per_model = data.get("per_model_totals", {})
+
             return {
                 "number": max_n,
                 "name": data.get("experiment", f"exp{max_n}"),
@@ -156,12 +195,13 @@ def latest_experiment() -> Optional[dict[str, Any]]:
                 "reason": reason,
                 "total_rounds": data.get("total_rounds", 0),
                 "total_findings": data.get("total_findings", 0),
-                "gamma": data.get("gamma", 0.0),
+                "canonical_count": canonical_count,
+                "gamma": gamma,
                 "models": data.get("models", []),
                 "target": data.get("target_file", ""),
                 "topology": data.get("topology", ""),
                 "timestamp": comp.get("timestamp", ""),
-                "per_model": comp.get("per_model_findings", {}),
+                "per_model": per_model,
                 "log_dir": str(exp_dir),
             }
         except (json.JSONDecodeError, OSError):
