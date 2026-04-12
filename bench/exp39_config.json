@@ -1,0 +1,133 @@
+{
+    "_comment": "Exp 39 master config. Sub-experiment sequencer reads this.",
+    "sub_experiments": [
+        {
+            "id": "39-0",
+            "name": "Infrastructure Gate",
+            "type": "gate",
+            "config": "bench/exp39_configs/39_0_gate.json",
+            "required": true,
+            "description": "Verify 22+ Exp 38 fixes. Dispatch equivalence (Gemini OpenRouter)."
+        },
+        {
+            "id": "39-A",
+            "name": "Mathematics Specialist",
+            "type": "research",
+            "config": "bench/exp39_configs/39_A_mathematics.json",
+            "required": true,
+            "depends_on": ["39-0"],
+            "description": "R_k equation extensions, specialist cell with SymPy/z3/mpmath tool access."
+        },
+        {
+            "id": "39-B",
+            "name": "Expert Encodings S_k",
+            "type": "research",
+            "config": "bench/exp39_configs/39_B_expert_encodings.json",
+            "required": true,
+            "depends_on": ["39-0"],
+            "description": "S_k = A*E framework validation, admissibility gates, tristate logic."
+        },
+        {
+            "id": "39-C",
+            "name": "Macrophage Admissibility",
+            "type": "research",
+            "config": "bench/exp39_configs/39_C_macrophage.json",
+            "required": true,
+            "depends_on": ["39-0"],
+            "description": "External evidence retrieval design, trust scoring, blinded evaluation."
+        },
+        {
+            "id": "39-D",
+            "name": "Composition Test",
+            "type": "integration",
+            "config": "bench/exp39_configs/39_D_composition.json",
+            "required": true,
+            "depends_on": ["39-A", "39-B", "39-C"],
+            "description": "Interface compatibility of A+B+C outputs. Mechanical check."
+        },
+        {
+            "id": "39-E",
+            "name": "Statistics Specialist",
+            "type": "research",
+            "config": "bench/exp39_configs/39_E_statistics.json",
+            "required": false,
+            "depends_on": ["39-A"],
+            "description": "Statistics specialist cell with statsmodels/scipy.stats tool access."
+        },
+        {
+            "id": "39-F",
+            "name": "CS/Software Specialist",
+            "type": "research",
+            "config": "bench/exp39_configs/39_F_cs_software.json",
+            "required": false,
+            "depends_on": ["39-0"],
+            "description": "Enhanced CS specialist (AST, pytest, ruff, mypy, bandit)."
+        },
+        {
+            "id": "39-G",
+            "name": "Biology Specialist",
+            "type": "research",
+            "config": "bench/exp39_configs/39_G_biology.json",
+            "required": false,
+            "depends_on": ["39-C"],
+            "description": "Biology specialist for macrophage evaluation."
+        },
+        {
+            "id": "39-H",
+            "name": "Information Science Specialist",
+            "type": "research",
+            "config": "bench/exp39_configs/39_H_infosci.json",
+            "required": false,
+            "depends_on": ["39-C"],
+            "description": "Information Science specialist for retrieval quality."
+        },
+        {
+            "id": "39-I",
+            "name": "Cross-domain Synthesis",
+            "type": "integration",
+            "config": "bench/exp39_configs/39_I_cross_domain.json",
+            "required": false,
+            "depends_on": ["39-A", "39-E", "39-F"],
+            "description": "How findings from different specialist domains compose."
+        },
+        {
+            "id": "39-J",
+            "name": "Microglia",
+            "type": "research",
+            "config": "bench/exp39_configs/39_J_microglia.json",
+            "required": false,
+            "depends_on": ["39-C"],
+            "description": "Ouroboros/self-referential macrophage variant."
+        },
+        {
+            "id": "39-K",
+            "name": "Physics Shadow",
+            "type": "shadow",
+            "config": "bench/exp39_configs/39_K_physics.json",
+            "required": false,
+            "depends_on": ["39-0"],
+            "description": "Architecture test only. No pipeline effect."
+        },
+        {
+            "id": "39-L",
+            "name": "Chemistry Shadow",
+            "type": "shadow",
+            "config": "bench/exp39_configs/39_L_chemistry.json",
+            "required": false,
+            "depends_on": ["39-0"],
+            "description": "Architecture test only. No pipeline effect."
+        },
+        {
+            "id": "39-M",
+            "name": "Engineering Shadow",
+            "type": "shadow",
+            "config": "bench/exp39_configs/39_M_engineering.json",
+            "required": false,
+            "depends_on": ["39-0"],
+            "description": "Architecture test only. No pipeline effect."
+        }
+    ],
+    "execution_order": ["39-0", "39-A", "39-B", "39-C", "39-D", "39-E", "39-F", "39-G", "39-H", "39-I", "39-J", "39-K", "39-L", "39-M"],
+    "gate_policy": "fail_fast",
+    "artifact_dir": "bench/logs/exp39_artifacts"
+}

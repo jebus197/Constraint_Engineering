@@ -1,0 +1,53 @@
+{
+    "_comment": "39-D: Composition Test. Mechanical interface compatibility check of A+B+C outputs.",
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/runner_core.py",
+        "bench/immune_agents.py",
+        "bench/dm/_types.py",
+        "bench/evidence.py"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 6,
+    "extension_cap": 8,
+    "wall_clock_cap_s": 3600,
+    "earliest_stop_round": 3,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_D_composition",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": "python3 -m pytest bench/tests/ -q --tb=line",
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_composition_targets": {
+        "description": "Verify that outputs from 39-A, 39-B, 39-C compose cleanly.",
+        "checks": [
+            "R_k extensions (A) compatible with S_k gate logic (B)",
+            "S_k tristate outputs consumable by macrophage shadow (C)",
+            "Specialist cell findings propagate through immune pipeline",
+            "Finding schema (target_file, domain fields) consistent across sub-experiments"
+        ]
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: all interface checks pass, no schema mismatches.",
+        "primary": "0 interface incompatibilities for 2 consecutive rounds",
+        "secondary": "gamma >= 0.35 AND all composition checks green",
+        "fail_condition": "Any structural incompatibility persists after 4 rounds"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_D_composition_report.json",
+        "required_fields": [
+            "interface_compatibility_matrix",
+            "schema_consistency_check",
+            "data_flow_verification",
+            "composition_failures"
+        ]
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "_comment": "39-G: Biology Specialist. Evaluates macrophage/immune metaphor fidelity against biological ground truth.",
+    "test_article": "bench/immune_agents.py",
+    "context_files": [
+        "bench/reference_runner.py",
+        "bench/evidence.py",
+        "bench/verification_chain.py",
+        "docs/ARCHITECTURE.md"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 10,
+    "extension_cap": 12,
+    "wall_clock_cap_s": 7200,
+    "earliest_stop_round": 4,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_G_biology",
+    "domain": "biology",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": null,
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_specialist_cell": {
+        "type": "biology",
+        "tools": [],
+        "toml_config": "bench/cdsfl_registry/domains/biology.toml",
+        "immune_config": "bench/cdsfl_registry/domains/immune/biology.toml"
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: immune metaphor assessment stabilizes across models.",
+        "primary": "gamma >= 0.40 AND 2 consecutive rounds with 0 novel metaphor critiques",
+        "secondary": "3+ rounds with no new biological fidelity concern raised",
+        "fail_condition": "No convergence on metaphor assessment by wall clock cap"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_G_biology_report.json",
+        "required_fields": [
+            "metaphor_fidelity_assessment",
+            "biological_accuracy_findings",
+            "immune_pipeline_mapping_quality",
+            "recommended_terminology_changes"
+        ]
+    }
+}

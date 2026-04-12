@@ -1,0 +1,36 @@
+{
+    "_comment": "39-0: Infrastructure Gate. Verify 22+ Exp 38 fixes work. Dispatch equivalence (Gemini via OpenRouter).",
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/runner_core.py",
+        "bench/immune_agents.py"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 8,
+    "extension_cap": 10,
+    "wall_clock_cap_s": 3600,
+    "earliest_stop_round": 3,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_0_gate",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": "python3 -m pytest bench/tests/ -q --tb=line",
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_convergence_criteria": {
+        "description": "Gate passes if: (a) all 5 models produce parseable output, (b) no new CRITICAL bugs in first 3 rounds, (c) Gemini OpenRouter output matches expected format.",
+        "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings)",
+        "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_0_gate_report.json",
+        "required_fields": ["models_healthy", "dispatch_parity", "fix_verification", "gate_passed"],
+        "dispatch_parity_check": "Gemini OpenRouter vs historical Google API: format match rate"
+    }
+}

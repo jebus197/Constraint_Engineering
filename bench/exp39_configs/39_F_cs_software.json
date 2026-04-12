@@ -1,0 +1,51 @@
+{
+    "_comment": "39-F: CS/Software Specialist. Enhanced code analysis with AST, pytest, ruff, mypy, bandit.",
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/runner_core.py",
+        "bench/immune_agents.py",
+        "bench/dm/_types.py"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 12,
+    "extension_cap": 15,
+    "wall_clock_cap_s": 10800,
+    "earliest_stop_round": 4,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_F_cs_software",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": "python3 -m pytest bench/tests/ -q --tb=line",
+    "sk_s_floor": 0.0,
+    "burst_mode": "auto",
+
+    "_specialist_cell": {
+        "type": "cs_software",
+        "tools": ["ast", "pytest", "ruff", "mypy", "bandit", "dis", "inspect"],
+        "toml_config": "bench/cdsfl_registry/domains/cs_software.toml",
+        "immune_config": "bench/cdsfl_registry/domains/immune/cs_software.toml"
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: code analysis findings stabilize with tool-verified evidence.",
+        "primary": "gamma >= 0.45 AND 2 consecutive rounds with 0 novel tool-verified findings",
+        "secondary": "3+ consecutive rounds with no new AST/mypy/ruff findings",
+        "fail_condition": "Wall clock cap without any tool-verified code analysis"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_F_cs_software_report.json",
+        "required_fields": [
+            "ast_analysis_count",
+            "ruff_finding_count",
+            "mypy_finding_count",
+            "bandit_finding_count",
+            "tool_verified_vs_llm_only",
+            "specialist_cell_findings_vs_generic"
+        ]
+    }
+}

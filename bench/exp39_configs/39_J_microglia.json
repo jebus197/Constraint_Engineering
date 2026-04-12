@@ -1,0 +1,51 @@
+{
+    "_comment": "39-J: Microglia. Ouroboros/self-referential macrophage variant — bench examines itself.",
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/immune_agents.py",
+        "bench/evidence.py",
+        "bench/verification_chain.py",
+        "bench/runner_core.py"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 10,
+    "extension_cap": 12,
+    "wall_clock_cap_s": 7200,
+    "earliest_stop_round": 4,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_J_microglia",
+    "domain": "software",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": null,
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_microglia": {
+        "mode": "shadow",
+        "description": "Self-referential macrophage: bench infrastructure examines its own code for flaws.",
+        "self_reference_target": "bench/",
+        "evidence_capture": "verification_chain",
+        "audit_mechanism": "Merkle hash + sealed epochs"
+    },
+
+    "_convergence_criteria": {
+        "description": "Converges when: self-referential analysis stabilizes. Models agree on bench infrastructure quality.",
+        "primary": "gamma >= 0.40 AND 2 consecutive rounds with 0 novel self-referential findings",
+        "secondary": "3+ rounds with no new bench infrastructure flaw proposed",
+        "fail_condition": "No convergence on self-assessment by wall clock cap"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_J_microglia_report.json",
+        "required_fields": [
+            "self_referential_findings",
+            "bench_infrastructure_quality",
+            "ouroboros_paradox_assessment",
+            "shadow_replay_impact"
+        ]
+    }
+}

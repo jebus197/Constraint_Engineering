@@ -177,7 +177,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat until diminishing returns) |
 | `a` | Analyse dispassionately |
 | `e` | Extrapolate beyond immediate domain (what generalises, boundary conditions, new falsifiable questions) |
-| `f` | Find-Follow-Fix — trace consequences through the system before fixing (Find, Follow, Fix) |
+| `f` | Find, Follow, Analyse (with available tools), Fix, P-pass (FFAFP five-step cycle) |
 | `sy` | Use all available mathematical and STEM tools (SymPy, Wolfram, SciPy, NumPy, z3, uncertainties, mpmath) in analysis |
 | `t` | Send output to TTS plain-text file |
 | `c` | Confer with another model, run mutual P-passes until convergence |
@@ -188,6 +188,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest-period warnings |
+| `sth` | Synthesise — consolidate findings into a coherent whole |
 
 ### Model Confer Dispatch
 

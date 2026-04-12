@@ -58,6 +58,7 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `rt` | Read all recovery resources + continue |
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest warnings |
+| `sth` | Synthesise — consolidate findings into a coherent whole |
 
 ### Model Confer Dispatch (combinable)
 

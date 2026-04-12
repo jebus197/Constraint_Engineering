@@ -1,0 +1,48 @@
+{
+    "_comment": "39-L: Chemistry Shadow. Architecture test only — validates specialist cell wiring for chemistry domain.",
+    "test_article": "bench/reference_runner.py",
+    "context_files": [
+        "bench/runner_core.py",
+        "bench/immune_agents.py"
+    ],
+    "topology": "star",
+    "pattern": "fff",
+    "max_rounds": 6,
+    "extension_cap": 8,
+    "wall_clock_cap_s": 3600,
+    "earliest_stop_round": 3,
+    "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
+    "experiment_name": "exp39_L_chemistry",
+    "domain": "chemistry",
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3,
+    "consecutive_rounds_required": 2,
+    "sk_enabled": true,
+    "test_cmd": null,
+    "sk_s_floor": 0.0,
+    "burst_mode": "off",
+
+    "_specialist_cell": {
+        "type": "chemistry",
+        "tools": ["sympy", "scipy", "numpy"],
+        "toml_config": "bench/cdsfl_registry/domains/chemistry.toml",
+        "immune_config": "bench/cdsfl_registry/domains/immune/chemistry.toml"
+    },
+
+    "_shadow": {
+        "mode": "shadow",
+        "description": "Architecture validation only. Verifies domain config loads, specialist tools resolve, pipeline accepts chemistry findings. No pipeline effect.",
+        "validates": ["domain_config_loading", "tool_resolution", "finding_schema_acceptance"]
+    },
+
+    "_convergence_criteria": {
+        "description": "Shadow: passes if architecture wiring works. No convergence analysis.",
+        "pass_condition": "All models produce parseable output AND domain config loads without error",
+        "fail_condition": "Domain config fails to load OR finding schema rejected"
+    },
+
+    "_artifact_schema": {
+        "output_file": "exp39_L_chemistry_report.json",
+        "required_fields": ["config_loaded", "tools_resolved", "schema_accepted", "shadow_passed"]
+    }
+}
