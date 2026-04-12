@@ -284,17 +284,41 @@ class ConvergenceDetector:
                 novel.append(ec)
         return novel
 
+    def _weighted_novel_severity(
+        self, novel_classes: List[FindingEquivalenceClass]
+    ) -> float:
+        """Compute suppression-weighted severity for novel equivalence classes.
+
+        Phase 1 (current): identity weight (1.0) — no suppression yet.
+        Phase 3 (planned): w(f) = max(exp(-λ_s · Σ TopK sim), w_floor).
+
+        CRITICAL CONSTRAINT (Confer 12 April 2026 — Corroboration Collapse):
+        Suppression weights apply to kappa_set NUMERATOR ONLY. They must
+        NEVER enter q_eff in the Bayesian update (q = η·d·p, no w(f)).
+        The denominator uses raw (unweighted) aggregated_severity.
+        """
+        # Phase 1: identity weight. Phase 3 will override this with
+        # per-class suppression weights from _suppression_weight().
+        return sum(ec.aggregated_severity for ec in novel_classes)
+
     def kappa_set(self, round_idx: int) -> float:
         """Set-theoretic stability (severity-weighted novelty).
 
-        kappa_set(r) = 1 - sum(Sev_agg of novel classes) / (sum(Sev_agg of all cumulative) + eps)
+        kappa_set(r) = 1 - Σ(w·Sev_novel) / (Σ Sev_cumulative + ε)
+
+        Numerator: suppression-weighted severity of novel classes.
+        Denominator: raw (unweighted) severity of all cumulative classes.
+        This asymmetry prevents the kappa overflow bug (Error 3, 12 April 2026)
+        where weighting the denominator caused kappa to leave [0, 1].
 
         Returns value in [0, 1]. Higher = more converged.
         """
         novel = self._novel_classes(round_idx)
         cumulative = self.get_cumulative_classes(round_idx)
 
-        novel_sev = sum(ec.aggregated_severity for ec in novel)
+        # Numerator: weighted (Phase 3 will supply suppression weights)
+        novel_sev = self._weighted_novel_severity(novel)
+        # Denominator: raw, unweighted — never apply suppression here
         total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv
 
         return 1.0 - (novel_sev / total_sev)

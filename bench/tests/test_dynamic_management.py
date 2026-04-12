@@ -815,6 +815,55 @@ class TestConvergenceDetector:
     def test_validate_no_findings(self, config):
         assert ConvergenceDetector.validate_no_findings(config)
 
+    # --- Phase 1: kappa_set denominator invariants (12 April 2026) ---
+
+    def test_kappa_set_bounded_zero_one(self, config):
+        """kappa_set must stay in [0, 1] even with pathological severity values."""
+        cd = ConvergenceDetector(config)
+        # Round 0: very high severity
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 1.0, 0.5, "critical vuln A"),
+            make_finding("f2", "m2", 0, 2, 0.99, 0.5, "critical vuln B"),
+        ])
+        # Round 1: very low severity novel finding
+        cd.add_round_findings(1, [
+            make_finding("f3", "m1", 1, 3, 0.01, 0.5, "trivial note"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks}"
+
+    def test_kappa_set_all_novel_high_severity(self, config):
+        """When all round findings are novel with max severity, kappa_set >= 0."""
+        cd = ConvergenceDetector(config)
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.1, 0.5, "minor baseline"),
+        ])
+        cd.add_round_findings(1, [
+            make_finding("f2", "m1", 1, 2, 1.0, 0.5, "novel critical A"),
+            make_finding("f3", "m2", 1, 3, 1.0, 0.5, "novel critical B"),
+            make_finding("f4", "m3", 1, 4, 1.0, 0.5, "novel critical C"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks}"
+
+    def test_kappa_set_denominator_monotonic(self, config):
+        """Raw cumulative severity (denominator) must not decrease across rounds."""
+        cd = ConvergenceDetector(config)
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "finding A"),
+        ])
+        cum_0 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(0))
+        cd.add_round_findings(1, [
+            make_finding("f2", "m1", 1, 2, 0.3, 0.5, "finding B"),
+        ])
+        cum_1 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(1))
+        cd.add_round_findings(2, [
+            make_finding("f3", "m1", 2, 1, 0.4, 0.5, "finding A repeated"),
+        ])
+        cum_2 = sum(ec.aggregated_severity for ec in cd.get_cumulative_classes(2))
+        assert cum_1 >= cum_0, f"Cumulative severity decreased: {cum_1} < {cum_0}"
+        assert cum_2 >= cum_1, f"Cumulative severity decreased: {cum_2} < {cum_1}"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AREA 5: DIMINISHING RETURNS
