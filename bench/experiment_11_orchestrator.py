@@ -62,13 +62,14 @@ class ModelConfig:
     """Configuration for a single model participant."""
     label: str
     model_id: str
-    api: str  # "openrouter", "codex_exec", "google", "deepseek"
+    api: str  # "openrouter", "codex_exec", "deepseek"
     role: Role
     system_prompt_path: str | None  # None for collator
     max_tokens: int = 32768
     timeout: int = 300
     max_retries: int = 3
     backoff_base: float = 3.0
+    extra_body: dict | None = None  # Model-specific API params (e.g. reasoning.effort)
 
 
 @dataclass
@@ -139,14 +140,15 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="Gemini",
-            model_id="gemini-3.1-pro-preview",
-            api="google",
+            model_id="google/gemini-3.1-pro-preview",
+            api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),
             max_tokens=32768,
             timeout=300,
             max_retries=5,
             backoff_base=3.0,
+            extra_body={"reasoning": {"effort": "high"}},
         ),
         ModelConfig(
             label="DeepSeek",
@@ -197,6 +199,7 @@ def call_openrouter(
     timeout: int = 300,
     max_retries: int = 3,
     backoff_base: float = 3.0,
+    extra_body: dict | None = None,
 ) -> str:
     """Call a model via OpenRouter (bare-metal, CDSFL system prompt only)."""
     try:
@@ -238,13 +241,16 @@ def call_openrouter(
             _log(f"  [openrouter:{model_id}] retry {attempt}/{max_retries}")
         t0 = time.monotonic()
         try:
-            response = client.chat.completions.create(
+            create_kwargs = dict(
                 model=model_id,
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=0.0,
                 timeout=timeout,
             )
+            if extra_body:
+                create_kwargs["extra_body"] = extra_body
+            response = client.chat.completions.create(**create_kwargs)
             elapsed = time.monotonic() - t0
             if not response.choices:
                 raise CircuitBreakerTripped(
@@ -721,6 +727,7 @@ def dispatch(
             timeout=config.timeout,
             max_retries=config.max_retries,
             backoff_base=config.backoff_base,
+            extra_body=config.extra_body,
         )
     elif config.api == "codex_exec":
         return call_codex(

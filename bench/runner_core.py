@@ -283,6 +283,27 @@ def _parse_flaw_class(text: str) -> int:
     return (abs(hash(key)) % 8) + 1
 
 
+_TARGET_FILE_RE = re.compile(
+    r'(?:^|[\s`\'"])(\S+\.(?:py|js|ts|toml|yaml|json|rs|go|c|cpp|h|java))\b',
+)
+
+
+def _infer_target_file(description: str, proposed_fix: str,
+                       explicit: str = "") -> str:
+    """P4 fix: infer target file from finding text when not explicit.
+
+    Priority: explicit TARGET_FILE > chevron file hint > first .py reference
+    in description > first .py reference in proposed_fix.
+    """
+    if explicit:
+        return explicit.strip()
+    for text in (description, proposed_fix):
+        m = _TARGET_FILE_RE.search(text)
+        if m:
+            return m.group(1)
+    return ""
+
+
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Extract structured findings from model response.
 
@@ -369,6 +390,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     abstraction = max(0.0, min(1.0, abstraction))
                     description = str(norm.get("DESCRIPTION", ""))
                     proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                    target_file = _infer_target_file(
+                        description, proposed_fix,
+                        str(norm.get("TARGET_FILE", "")))
                     verified_raw = norm.get("VERIFIED", False)
                     if isinstance(verified_raw, str):
                         verified = verified_raw.upper() == "TRUE"
@@ -388,6 +412,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         abstraction_index=abstraction,
                         description=description,
                         proposed_fix=proposed_fix,
+                        target_file=target_file,
                         verified=verified,
                     ))
                 if findings:
@@ -444,6 +469,9 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 abstraction = max(0.0, min(1.0, abstraction))
                 description = str(norm.get("DESCRIPTION", ""))
                 proposed_fix = str(norm.get("PROPOSED_FIX", ""))
+                target_file = _infer_target_file(
+                    description, proposed_fix,
+                    str(norm.get("TARGET_FILE", "")))
                 verified_raw = norm.get("VERIFIED", False)
                 if isinstance(verified_raw, str):
                     verified = verified_raw.upper() == "TRUE"
@@ -462,6 +490,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     abstraction_index=abstraction,
                     description=description,
                     proposed_fix=proposed_fix,
+                    target_file=target_file,
                     verified=verified,
                 ))
             if findings:
@@ -502,6 +531,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction = max(0.0, min(1.0, float(m.group(4))))
             description = m.group(5).replace('\\"', '"')
             proposed_fix = m.group(6).replace('\\"', '"')
+            target_file = _infer_target_file(description, proposed_fix)
             verified = m.group(7).upper() == "TRUE"
             full_id = fid if fid.startswith(f"{model_id}_") else f"{model_id}_{fid}"
             findings.append(Finding(
@@ -513,6 +543,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 abstraction_index=abstraction,
                 description=description,
                 proposed_fix=proposed_fix,
+                target_file=target_file,
                 verified=verified,
             ))
         return findings
@@ -621,6 +652,13 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         # Chevron format preferred: captures old→new as structured diff
         # group(1) = file path hint (from <<<< SEARCH path or <<<< path)
         # group(2) = old code, group(3) = new code
+        # P4: extract TARGET_FILE from block (explicit field or chevron hint)
+        tf_match = re.search(
+            r'[Tt][Aa][Rr][Gg][Ee][Tt][\s_-]*[Ff][Ii][Ll][Ee]\s*[:=\-]\s*(\S+)',
+            block
+        )
+        explicit_tf = tf_match.group(1).strip() if tf_match else ""
+
         if chevron_match:
             file_hint = chevron_match.group(1).strip() if chevron_match.group(1) else ""
             old_code = chevron_match.group(2).strip()
@@ -629,10 +667,14 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 proposed_fix = f"<<<< SEARCH {file_hint}\n{old_code}\n==== REPLACE\n{new_code}\n>>>>"
             else:
                 proposed_fix = f"<<<< OLD\n{old_code}\n==== NEW\n{new_code}\n>>>>"
+            # Chevron file hint is target_file if no explicit field
+            if not explicit_tf and file_hint:
+                explicit_tf = file_hint
         elif fix_match:
             proposed_fix = fix_match.group(1).strip()
         else:
             proposed_fix = ""
+        target_file = _infer_target_file(description, proposed_fix, explicit_tf)
         verified = (
             ver_match.group(1).upper() == "TRUE" if ver_match else False
         )
@@ -662,6 +704,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction_index=abstraction,
             description=description,
             proposed_fix=proposed_fix,
+            target_file=target_file,
             verified=verified,
         ))
 

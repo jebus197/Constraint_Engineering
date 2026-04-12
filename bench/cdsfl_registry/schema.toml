@@ -103,6 +103,28 @@ constraint_class = "SOFT"
 min_layer = "domain"
 description = "Verify material properties used in calculations."
 
+[constraints.sample_size_stated]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must state sample size (N)."
+
+[constraints.alpha_level_stated]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must state significance threshold (alpha)."
+
+[constraints.multiple_comparison_correction]
+type = "string"
+default = "not_applicable"
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Multiple comparison correction policy."
+allowed_values = ["not_applicable", "when_applicable", "mandatory"]
+
 [constraints.shared_variable_consistency]
 type = "bool"
 default = false
@@ -298,6 +320,27 @@ default = false
 constraint_class = "SOFT"
 min_layer = "domain"
 description = "Engineering claims must address safety margins."
+
+[verification.hypothesis_test_required]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Statistical claims must include hypothesis test (p-value or CI)."
+
+[verification.effect_size_required]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Must report effect size, not just statistical significance."
+
+[verification.distribution_check]
+type = "bool"
+default = false
+constraint_class = "SOFT"
+min_layer = "domain"
+description = "Verify distributional assumptions before applying parametric tests."
 
 [verification.cross_domain_interface_check]
 type = "bool"

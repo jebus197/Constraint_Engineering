@@ -2733,15 +2733,13 @@ def typed_llm_classifier(
     regex_triaged: List[TriagedFinding],
     override_threshold: float = 0.70,
 ) -> List[Dict[str, Any]]:
-    """WP3c semi-active: classify findings via lightweight LLM call.
+    """WP3c: classify findings via lightweight LLM call.
 
-    Runs alongside the DC v2 regex classifier. Logs every case where
-    the LLM classifies differently from regex.
-
-    Promoted from shadow (Exp 38 fix cycle): when the LLM disagrees with
-    regex AND LLM confidence >= override_threshold (default 0.70), the LLM
-    classification overrides regex. Safety guardrail: never overrides
-    MATHEMATICAL regex classification (to avoid suppressing genuine math).
+    Exp 38 finding: regex classifier agrees with LLM only ~15% of the
+    time for code findings (any comparison operator triggers MATHEMATICAL).
+    In software domain, LLM is now PRIMARY — any valid classification
+    wins over regex. In non-software domains, LLM is override-only with
+    confidence threshold and MATHEMATICAL safety guard.
 
     Modifies regex_triaged in-place when overriding.
 
@@ -2766,9 +2764,12 @@ def typed_llm_classifier(
         "uncategorised": ClaimType.UNCATEGORISED,
     }
 
+    llm_primary = (domain == "software")
     _shadow_log.info(
-        "LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=%.2f). "
-        "%d findings to classify.", override_threshold, len(findings),
+        "LLM classifier: %s (CLI Haiku, override_threshold=%.2f). "
+        "%d findings to classify.",
+        "PRIMARY" if llm_primary else "SEMI-ACTIVE",
+        override_threshold, len(findings),
     )
 
     override_count = 0
@@ -2809,22 +2810,27 @@ def typed_llm_classifier(
                     llm_confidence = 0.5
 
             disagrees = regex_tf.claim_type != llm_type
-            # Override conditions: LLM disagrees, high confidence.
-            # Exp 38 fix: allow MATHEMATICAL override in software domain.
-            # The regex MATH pattern matches ~85% of code findings (any
-            # comparison operator triggers it). The LLM correctly identifies
-            # these as CODE_BEHAVIORAL. Guard retained for non-software
-            # domains where MATHEMATICAL routing is safety-critical.
+            # In software domain, LLM is primary (regex ~15% agreement).
+            # In non-software domains, LLM overrides only when confident
+            # and MATHEMATICAL guard is retained for safety.
             math_guard = (
                 regex_tf.claim_type == ClaimType.MATHEMATICAL
-                and domain != "software"
+                and not llm_primary
             )
-            should_override = (
-                disagrees
-                and llm_confidence >= override_threshold
-                and not math_guard
-                and llm_type != ClaimType.UNCATEGORISED
-            )
+            if llm_primary:
+                # Software domain: any valid LLM classification wins
+                should_override = (
+                    disagrees
+                    and llm_type != ClaimType.UNCATEGORISED
+                )
+            else:
+                # Non-software: confidence threshold + math guard
+                should_override = (
+                    disagrees
+                    and llm_confidence >= override_threshold
+                    and not math_guard
+                    and llm_type != ClaimType.UNCATEGORISED
+                )
 
             record = {
                 "finding_id": f.finding_id,

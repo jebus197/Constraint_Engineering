@@ -905,6 +905,7 @@ def _check_stall_convergence(
     gamma: float,
     stall_history: List[Dict[str, int]],
     cfg: RunnerConfig,
+    consecutive_churn_rounds: int = 0,
 ) -> Dict[str, Any]:
     open_ch = registry.open_crit_high_count()
     contested = registry.contested_count(round_idx)
@@ -920,6 +921,32 @@ def _check_stall_convergence(
     if len(stall_history) < cfg.stall_window:
         result["reason"] = f"insufficient history ({len(stall_history)} < {cfg.stall_window})"
         return result
+
+    # D1-B: churn-based stall detection.
+    # Persistent churn with high gamma is a stall signal even when
+    # open_ch/contested fluctuate — the system is producing re-derivations,
+    # not genuine novelty.
+    churn_stall_window = max(cfg.stall_window, 4)  # at least 4 rounds of churn
+    if (consecutive_churn_rounds >= churn_stall_window
+            and gamma >= cfg.stall_gamma_terminate):
+        result["stalled"] = True
+        result["tier"] = "terminate"
+        result["terminate"] = True
+        result["reason"] = (
+            f"STALL_CONVERGED (churn): {consecutive_churn_rounds} consecutive "
+            f"churn rounds, gamma={gamma:.3f} >= {cfg.stall_gamma_terminate}"
+        )
+        return result
+    if (consecutive_churn_rounds >= churn_stall_window
+            and gamma >= cfg.stall_gamma_advisory):
+        result["stalled"] = True
+        result["tier"] = "advisory"
+        result["reason"] = (
+            f"Stall advisory (churn): {consecutive_churn_rounds} consecutive "
+            f"churn rounds, gamma={gamma:.3f} >= {cfg.stall_gamma_advisory}"
+        )
+        return result
+
     window = stall_history[-cfg.stall_window:]
     open_values = [s["open_ch"] for s in window]
     contested_values = [s["contested"] for s in window]
@@ -3011,7 +3038,8 @@ def run_experiment(
 
         # Stall detector
         stall_result = _check_stall_convergence(
-            round_idx, registry, gamma, stall_history, cfg)
+            round_idx, registry, gamma, stall_history, cfg,
+            consecutive_churn_rounds=consecutive_churn_rounds)
 
         # Checkpoint
         ckpt_path = brain.logs_dir / "runner_state.json"

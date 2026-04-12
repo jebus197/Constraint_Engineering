@@ -1,21 +1,32 @@
 # CDSFL Current State
 
-Generated: 12 April 2026 03:25 BST (2026-04-12T03:25:32+01:00)
+Generated: 12 April 2026 13:05 BST (2026-04-12T13:05:22+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `c522468` sv: Exp 39 fixes built + scope refinement. 22+ fixes, 3 confer rounds, 762 tests pass. Dynamic budgets, adaptive ITC, DRY fix, ARCHITECTURE.md trade-offs. Scope: Expert Encodings, HIL gate, Gemini switch, Macrophage shadow.
-- **Committed:** 2026-04-12 02:03:56 +0100
-- **Remote:** ahead by 10
+- **Last commit:** `42779ad` sv: Exp 39 sub-experiment structure. 36 schema elements → 13 sub-experiments (0-M). 2 confer rounds (CX+GE). One variable at a time, maths first.
+- **Committed:** 2026-04-12 03:25:33 +0100
+- **Remote:** ahead by 11
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `A  experimental_notes/Exp39_Revised_Scope_2026-04-12.md`
+- `M bench/cdsfl_registry/schema.toml`
+- `M bench/dm/_types.py`
+- `M bench/experiment_11_orchestrator.py`
+- `M bench/immune_agents.py`
+- `M bench/logs/immune_pipeline.log`
+- `M bench/reference_runner.py`
+- `M bench/runner_core.py`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
+- `?? bench/cdsfl_registry/domains/immune/statistics.toml`
+- `?? bench/cdsfl_registry/domains/statistics.toml`
+- `?? bench/exp39_config.json`
+- `?? bench/exp39_configs/`
+- `?? bench/launch_exp39.py`
 
 ---
 
@@ -47,6 +58,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `42779ad sv: Exp 39 sub-experiment structure. 36 schema elements → 13 sub-experiments (0-M). 2 confer rounds (CX+GE). One variable at a time, maths first.`
 - `c522468 sv: Exp 39 fixes built + scope refinement. 22+ fixes, 3 confer rounds, 762 tests pass. Dynamic budgets, adaptive ITC, DRY fix, ARCHITECTURE.md trade-offs. Scope: Expert Encodings, HIL gate, Gemini switch, Macrophage shadow.`
 - `491b08d sv: sv script fix — correct report parsing + manual content preservation`
 - `d7fc4db Fix sv auto-generated sections: restore qualitative Exp 38 terminal state`
@@ -56,4 +68,3 @@ Uncommitted files:
 - `bcd1914 Fix 6 confer-verified bugs: getter purity, merge floor, panel size, exhaustion`
 - `96a1b1c Confer Round 3: CX+GE review of contextual implementations`
 - `83480b1 Exp 38 contextual decision logic: 4 evidence-based replacements for static rules`
-- `1703ed1 Exp 38 experimental: 17 fixes, 3-layer DC v2 classification, promotion gate`

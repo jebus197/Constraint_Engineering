@@ -383,6 +383,7 @@ class Finding:
     abstraction_index: float  # H(f) in [0, 1]
     description: str = ""
     proposed_fix: str = ""  # Model's proposed fix (CX: was parsed but discarded)
+    target_file: str = ""  # P4 fix: explicit file path for fix verification
     verified: bool = False  # Whether finding was independently verified (SymPy, etc.)
     escalated: bool = False  # Escalated to HIL — no programmatic fix possible
     falsification_present: bool = False  # Whether finding contains falsification evidence
