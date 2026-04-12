@@ -1238,6 +1238,306 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 
 ---
 
+## 1.3 Embedding-Based Similarity
+
+### Motivation
+
+The original CDSFL similarity function uses unigram/bigram Jaccard distance. This works for findings with substantial lexical overlap (same words, same phrasing) but fails for semantically equivalent findings expressed differently. "Buffer overflow in network parser" and "Memory corruption in packet handler" describe the same class of vulnerability but share almost no words. Jaccard scores them as dissimilar; a human reads them as the same finding.
+
+Convergence detection depends on correctly identifying when a finding is novel versus when it repeats what a previous round already found. If the similarity function cannot recognise semantic equivalence, kappa_set will undercount novelty (treating rephrased findings as new) and the system will fail to converge even when no genuinely new findings are being produced.
+
+### Formal Definition
+
+The similarity function s(f1, f2) computes a bounded similarity score between two findings using a convex combination of content similarity and flaw-class matching:
+
+> **s(f1, f2) = (1 - β) · content_sim(f1, f2) + β · b_class(f1, f2)**
+
+where:
+- **content_sim** is the content similarity backend (embedding or lexical)
+- **β = 0.2** is the class bonus weight
+- **b_class = CLASS_BONUS if f1.flaw_class == f2.flaw_class, else 0**
+- **CLASS_BONUS = 0.3**
+
+**Embedding backend** (primary, when sentence-transformers available):
+> content_sim = (cos(emb(f1), emb(f2)) + 1) / 2
+
+where emb(f) is the sentence embedding from all-MiniLM-L6-v2, and the cosine similarity is mapped from [-1, 1] to [0, 1].
+
+**Lexical backend** (fallback):
+> content_sim = 0.6 · J_unigram(f1, f2) + 0.4 · J_bigram(f1, f2)
+
+where J is the Jaccard index over tokenised, stopword-filtered descriptions.
+
+### Boundedness
+
+Both backends produce content_sim ∈ [0, 1]. The class bonus b_class ∈ {0, 0.3}. Since β = 0.2:
+
+> s ∈ [(1-0.2)·0 + 0.2·0, (1-0.2)·1 + 0.2·0.3] = [0, 0.86]
+
+The maximum possible similarity is 0.86 (perfect content match + class match). This is by design: no two findings should be scored as identical (1.0) since they may differ in severity, proposed fix, or context even when describing the same flaw.
+
+(SymPy verified: bounded convex combination stays in [0, 1] for all valid inputs. Implementation: `bench/dm/_similarity.py`. April 2026.)
+
+### Confound
+
+**Embedding bias.** Sentence-transformer models are trained on general English corpora, not security finding descriptions. The embedding space may not distinguish security-relevant differences (e.g., "race condition in authentication" vs "race condition in logging" may score as highly similar despite very different severity implications). Mitigation: the flaw-class bonus provides a domain-aware signal independent of embedding quality, and tau_sim thresholds are calibrated empirically per experiment.
+
+---
+
+## 1.4 Continuous Suppression
+
+### Motivation
+
+When a finding is highly similar to many prior findings, it contributes less new information. The naive approach is binary: above a similarity threshold, a finding is "duplicate" and ignored; below, it counts fully. This creates a cliff effect at the threshold boundary and makes kappa_set sensitive to small perturbations in similarity scores.
+
+Continuous suppression replaces the binary duplicate/novel decision with a smooth weight function that gradually reduces a finding's contribution as it becomes more similar to what has already been found.
+
+### Formal Definition
+
+For a finding f with prior cumulative findings G, the suppression weight is:
+
+> **w(f) = max(exp(-λ_s · Σ_{g ∈ TopK(f, G)} sim(f, g)), w_floor)**
+
+where:
+- **TopK(f, G)** is the set of k findings in G most similar to f
+- **λ_s = 1.5** is the suppression decay rate
+- **w_floor = 0.05** is the minimum weight (prevents total silencing)
+- **k = 3** (default suppression_k)
+
+The weight enters kappa_set via the numerator only:
+
+> **kappa_set(r) = 1 - Σ(w_c · Sev_novel_c) / (Σ Sev_cumulative + ε)**
+
+where w_c = max(w(m) for m in members_c) is the per-class weight (conservative: least suppressed member determines class weight). The denominator uses raw, unweighted severity.
+
+### Permutation Invariance
+
+The predecessor-product approach (w(f) = Π_{all priors} (1 - sim)) is order-dependent: processing findings in different orders produces different weights. This violates the expectation that the same set of findings should produce the same convergence assessment regardless of arrival order.
+
+Top-k selection is permutation-invariant by construction: sorting similarities and taking the top k does not depend on the order in which findings were processed. This was the critical fix for Error 2 (12 April 2026).
+
+### Corroboration Collapse Prevention
+
+**CRITICAL CONSTRAINT:** w(f) must NEVER enter q_eff in the Bayesian update. The effective detection probability q = η · d · p in the R_k(i) recursive equation must use raw, unsuppressed values.
+
+If suppression weights entered q_eff, they would reduce the effective detection probability for corroborated findings — the exact opposite of what corroboration should do. Findings confirmed by multiple sources should strengthen the Bayesian update, not weaken it. This was Error 1 (12 April 2026), which caused a 113x residual risk overestimate in testing.
+
+Suppression weights apply to: kappa_set numerator (convergence metric), report ordering (triage priority), finding weight in summary statistics. They do NOT apply to: q_eff, R_k(i) recursive update, Bayesian posterior computation, or the kappa_set denominator.
+
+(SymPy verified: w ∈ [w_floor, 1], kappa_set ∈ [0, 1] with weighted numerator. Permutation invariance verified by test. Implementation: `bench/dm/_convergence.py`. April 2026.)
+
+### Confound
+
+**Threshold sensitivity.** The suppression parameters (λ_s, w_floor, k) interact with tau_sim to determine effective novelty detection. If λ_s is too high, even mildly similar findings are fully suppressed, preventing genuine variants from being counted. If too low, repetitive findings inflate the novelty count. These parameters require empirical calibration per domain.
+
+---
+
+## 1.5 Persistent Memory and Blended Prior
+
+### Motivation
+
+Each CDSFL experiment starts with a uniform prior for flaw rates. But after running 30+ experiments, we have substantial empirical data about which flaw classes are common and which are rare. A buffer overflow in a well-tested parser module is much less likely than a boundary condition error in newly written configuration parsing. Ignoring this historical knowledge wastes the first rounds of each experiment rediscovering what prior experiments already established.
+
+Persistent memory allows the system to start with calibrated priors based on historical confirmation rates, while maintaining the ability to detect when the historical pattern no longer applies (drift detection).
+
+### Formal Definition
+
+**Per-flaw-class memory** stores decayed confirmation rates:
+
+> **π_mem(k) = (c_k + α_0) / (c_k + r_k + α_0 + β_0)**
+
+where c_k and r_k are the exponentially decayed confirmed and rejected counts for flaw class k, and α_0 = β_0 = 0.5 are Jeffreys prior pseudocounts (Beta-Binomial smoothing).
+
+**Exponential decay** ensures recent experiments weigh more:
+
+> After each new experiment, existing counts are multiplied by exp(-λ_decay) before adding new observations.
+
+**Blended prior:**
+
+> **π(k) = (1 - ρ) · π_base(k) + ρ · π_mem(k)**
+
+where ρ ∈ [0, 1] is the memory blending weight (default 0.2) and π_base is the domain-default prior.
+
+### Drift Detection
+
+Historical patterns may become stale if the codebase changes significantly. CUSUM (Cumulative Sum) drift detection monitors whether incoming flaw rates diverge from memory predictions:
+
+> **S_pos(t) = max(0, S_pos(t-1) + (observed_rate - π_mem))**
+> **S_neg(t) = min(0, S_neg(t-1) + (observed_rate - π_mem))**
+
+Drift is flagged when |S_pos| or |S_neg| exceeds the drift threshold (default 2.0). When drift is detected, the blended prior should be treated with reduced confidence.
+
+### Advisory-Only Constraint
+
+Memory is advisory: it informs the initial prior but cannot override pipeline verdicts. A finding confirmed by tool verification (SymPy, z3, test suite) is confirmed regardless of what memory says about its flaw class frequency. Memory can suggest "this flaw class is rare, so the prior should be low" — it cannot say "this finding is false because flaw class 3 is historically rare."
+
+### File-Hash Invalidation
+
+Memory is grounded to the source files it was built from. If the source code changes significantly (detected via SHA-256 hash of source files), the memory is invalidated and the system starts fresh. This prevents memory built on one codebase from being applied to a different one.
+
+(SymPy verified: π_blended ∈ [0, 1], decay preserves positivity, Beta-Binomial is a proper distribution. Implementation: `bench/dm/_memory.py`. April 2026.)
+
+### Confound
+
+**Memory poisoning.** If a prior experiment produced incorrect results (e.g., due to a pipeline bug), those results are now encoded in memory and will bias future experiments. Mitigation: exponential decay naturally reduces the influence of old experiments, and drift detection catches cases where memory predictions diverge from observed reality. Additionally, the advisory-only constraint ensures memory cannot force incorrect verdicts.
+
+**Single-operator validation.** All experiments to date have been conducted by one operator. Memory may encode operator-specific biases (e.g., systematically investigating certain flaw classes more thoroughly). This limitation will only be addressable when multiple independent operators run CDSFL experiments.
+
+---
+
+## 7.13 Convergence Metrics: kappa_set, kappa_rate, kappa_adopt
+
+### Motivation
+
+Convergence detection answers: "Have we found everything there is to find, or are new findings still emerging?" This is critical for round progression — continuing to run rounds after convergence wastes resources, while stopping too early misses genuine flaws.
+
+A single convergence metric is fragile. If it measures only novelty (are findings new?), it misses the case where findings are new but trivial. If it measures only rate (are findings slowing down?), it misses the case where a burst of high-severity findings arrives late. Three independent metrics, combined conservatively, provide robust convergence detection.
+
+### Formal Definitions
+
+**kappa_set — Set-theoretic stability (severity-weighted novelty):**
+
+> **κ_set(r) = 1 - Σ(w_c · Sev_novel_c) / (Σ Sev_cum_c + ε)**
+
+Measures how much of the current round's severity comes from genuinely novel findings (those not equivalent to any prior finding under the ≈ relation). Higher = more converged. When all new findings are duplicates of previous ones, κ_set = 1.
+
+**kappa_rate — Rate-based stability (Duane connection):**
+
+> **κ_rate(r) = 1 - λ_hat(r) / (λ_hat(1) + ε)**
+
+where λ_hat(r) = |F^(r)| / Δt_r is the instantaneous finding rate. Measures whether the rate of new finding discovery is decreasing relative to the initial rate. Connected to the Duane reliability growth model: if findings follow a power law, κ_rate estimates the growth parameter. Clamped to [-1, 1].
+
+**kappa_adopt — Adoption stabilisation:**
+
+> **κ_adopt(r) = clamp(1 - Δ_r, 0, 1)**
+
+where Δ_r is the adoption delta from the existing schema. Measures whether fixes are stabilising or still producing churn. Clamped to [0, 1].
+
+**Combined metric:**
+
+> **κ(r) = min(κ_set(r), max(0, κ_rate(r)), κ_adopt(r))**
+
+Conservative combination: convergence requires ALL three metrics to indicate stability. The max(0, ·) on κ_rate prevents negative rate metrics (divergence) from being the bottleneck — divergence is handled by the veto mechanism instead.
+
+**Convergence predicate:**
+
+> **converged(r) iff κ(r) ≥ τ_κ AND r ≥ r_min AND NOT veto(r)**
+
+where τ_κ = 0.95 (the convergence threshold, SEPARATE from γ the Duane parameter), r_min = 2 (minimum rounds), and veto(r) fires when any novel finding has aggregated severity ≥ η_veto = 0.9 (a single high-severity discovery blocks convergence regardless of the metrics).
+
+### Relationship to Duane Model
+
+The estimated gamma parameter:
+
+> **γ_hat = 1 - (log(|F^(≤r)|) - log(|F^(≤1)|)) / log(r)**
+
+is a DIAGNOSTIC, not the convergence threshold (founder decision §9.2). It estimates reliability growth rate but is not directly compared against τ_κ. This separation prevents the system from declaring convergence based on a statistical trend when individual metrics disagree.
+
+(Implementation: `bench/dm/_convergence.py`. SymPy + z3 verified: κ ∈ [0, 1], veto is a strict gate, τ_κ separation preserves reduction properties.)
+
+---
+
+## 8.7 Ouroboros Cell (O1)
+
+### Motivation
+
+The immune pipeline has six cell types that verify individual findings. But no cell watches the pipeline itself. Systemic issues — correlated false positives across cells, declining verification quality over rounds, emergent biases from tool monoculture — are invisible to cells that only see their own inputs and outputs.
+
+The ouroboros cell (O1) is a self-referential observer: it watches the pipeline's aggregate behaviour and flags patterns that no individual cell could detect.
+
+### Operating Modes
+
+**Macrophage mode** (active hunting): Scans pipeline output for anomalies.
+- Verdict clustering: >80% of verdicts are the same type → possible systemic bias
+- Severity concentration: variance in confidence scores < 0.01 → uniform over-confidence
+- Timing spikes: any stage >3× median duration → possible bottleneck or hang
+
+**Microglia mode** (self-referential): Monitors pipeline health assumptions.
+- Tool monoculture: all verdicts from single tool → verification diversity compromised
+- Persistent anomalies: same anomaly type in 3+ consecutive rounds → systemic issue not addressed
+- Tool-claim mismatch: mathematical claims present but no SymPy/z3 verdicts → verification not grounded
+
+### Shadow Mode Architecture
+
+For Exp 39, O1 operates exclusively in shadow mode. It observes and logs but NEVER modifies pipeline state or verdicts. This is not a soft guideline — it is a structural guarantee enforced by the `pipeline_modified = False` invariant on every OuroborosSummary.
+
+Promotion to active mode requires:
+1. Precision threshold: O1's anomaly flags must be confirmed by HIL at >70% rate
+2. Novelty yield: O1 must identify anomalies that no other cell flagged
+3. Explicit HIL approval: the founder must review shadow-mode data and approve promotion
+
+### Evidence Architecture (L1/L2/L3)
+
+O1 observations are signed into the VerificationChain:
+- **L1 (signing/provenance):** Each observation is recorded with timestamp, cell mode, and content hash. This proves the observation was made at a specific time. Cryptographic signing establishes provenance, not correctness.
+- **L2 (correctness/falsification):** Whether the observation is correct (the anomaly is real) is determined by independent verification — tool output, cross-round comparison, or manual inspection. L1 signing does not imply L2 correctness.
+- **L3 (HIL arbitration):** The human-in-the-loop reviews flagged anomalies and decides whether to act on them. L1 provenance and L2 evidence inform this decision; they do not replace it.
+
+This three-level separation addresses the category error identified by Gemini 3.1 Pro (12 April 2026): signing proves when and by whom an observation was made (provenance), not that the observation is true (correctness).
+
+### Audit Logging
+
+O1 uses exception-based audit logging: only anomalies are surfaced to HIL, not routine observations. This prevents cognitive overload at scale (>50 findings/round), which was identified as a genuine risk by the Gemini confer (12 April 2026).
+
+(Implementation: `bench/ouroboros_cell.py`. Shadow guarantee verified by test. April 2026.)
+
+---
+
+## 9. Confounds and Threats to Validity
+
+This section documents known limitations, errors caught during development, and potential failure modes. The purpose is not to undermine confidence in the model but to make its boundaries explicit so that other researchers can evaluate, reproduce, and extend the work.
+
+### 9.1 Critical Errors Caught During Development
+
+Three critical errors were identified and corrected during the 12 April 2026 development session. All were caught by confer rounds (multi-model peer review) before they entered production.
+
+**Error 1: Corroboration Collapse.** Suppression weights w(f) were initially fed into q_eff in the Bayesian update. This caused a 113x overestimate of residual risk for corroborated findings. The fix: w(f) applies to kappa_set numerator and report ordering ONLY, never to q_eff. Root cause: conflation of "finding weight in convergence metric" with "finding weight in Bayesian update" — these serve different purposes.
+
+**Error 2: Order Dependence.** The predecessor-product suppression formula w(f) = Π(1 - sim_i) produced different weights depending on the order findings were processed. The fix: top-k exponential suppression, which is permutation-invariant by construction. Root cause: sequential processing assumption embedded in the formula design.
+
+**Error 3: kappa Overflow.** Applying suppression weights to both numerator and denominator of kappa_set caused the metric to leave [0, 1]. The fix: numerator-only weighting, with the denominator always using raw unweighted severity. Root cause: insufficient SymPy verification of boundary conditions before implementation.
+
+### 9.2 Embedding Bias
+
+Sentence-transformer embeddings are trained on general English, not security finding descriptions. The model may:
+- Score semantically different security findings as similar (high false-duplicate rate)
+- Score genuinely similar findings as different when they use domain-specific terminology
+- Produce systematically different similarity distributions for different domains
+
+Mitigation: empirical calibration of tau_sim per experiment, flaw-class bonus as domain signal, Jaccard fallback when embedding quality is suspect.
+
+### 9.3 Memory Poisoning
+
+Persistent memory accumulates confirmation rates from prior experiments. If a prior experiment was conducted incorrectly (pipeline bug, misconfigured tools, contaminated prompts), those results are now encoded as "historical truth." Mitigation: exponential decay, drift detection, advisory-only constraint, file-hash invalidation.
+
+### 9.4 Single-Operator Validation
+
+All experiments to date have been conducted by one operator (the founder) on one codebase (the CDSFL implementation itself). This means:
+- All priors reflect one operator's domain expertise and biases
+- All tool configurations reflect one operator's choices
+- Memory is calibrated to one codebase's flaw distribution
+- The pipeline has never been independently replicated
+
+This is the most significant threat to external validity. The mathematical model is general; the empirical calibration is not. Independent replication by other operators on other codebases is required before the model's parameters can be considered validated.
+
+### 9.5 Statistical Power
+
+With K ≤ 5 models and R ≤ 15 rounds per experiment, the sample sizes for per-model statistics are small. This means:
+- Capability fingerprint estimates have wide confidence intervals
+- Convergence detection may be premature with aggressive thresholds
+- Per-flaw-class statistics are sparse for rare flaw classes
+
+The model is designed to be conservative (min-combination for kappa, severity veto, FFAFP constraints), which trades statistical power for safety: it is more likely to declare "not converged" than to miss a genuine flaw.
+
+### 9.6 Falsification Rate Without Structural Enforcement
+
+Without FFAFP, 0–13% of model-submitted findings survived independent falsification in Experiments 12–15. This means 87–100% of submitted findings were false or unverifiable. The improvement to 60–85% after FFAFP enforcement demonstrates that the constraint set works, but also that even with enforcement, 15–40% of findings still fail verification. The residual failure rate may reflect:
+- Genuine difficulty of the verification task (some claims are hard to verify mechanically)
+- Incomplete tool coverage (claims requiring tools not in the envelope)
+- Model hallucination that passes format checks but fails substance checks
+
+---
+
 ## Notation Summary
 
 | Symbol | Meaning | Introduced in |
@@ -1322,12 +1622,29 @@ None of the formulas in §7 or §8 reference the terms *model*, *machine*, or *A
 | σ | FFF scope expansion ratio | This appendix §7.12 |
 | n_{1/2} | FFF convergence half-life | This appendix §7.12 |
 | Y_composite | Composite system Total Cognitive Yield | This appendix §8.2 |
+| s(f1, f2) | Finding similarity (embedding or lexical) | This appendix §1.3 |
+| β | Class bonus weight (similarity) | This appendix §1.3 |
+| CLASS_BONUS | Flaw-class match bonus | This appendix §1.3 |
+| w(f) | Suppression weight | This appendix §1.4 |
+| λ_s | Suppression decay rate | This appendix §1.4 |
+| w_floor | Minimum suppression weight | This appendix §1.4 |
+| TopK(f, G) | k most similar prior findings | This appendix §1.4 |
+| π_mem | Memory-based prior (Beta-Binomial) | This appendix §1.5 |
+| ρ_memory | Memory blending weight | This appendix §1.5 |
+| S_pos, S_neg | CUSUM drift statistics | This appendix §1.5 |
+| κ_set | Set-theoretic convergence stability | This appendix §7.13 |
+| κ_rate | Rate-based convergence stability | This appendix §7.13 |
+| κ_adopt | Adoption convergence stability | This appendix §7.13 |
+| κ(r) | Combined convergence metric | This appendix §7.13 |
+| τ_κ | Convergence threshold | This appendix §7.13 |
+| η_veto | Severity veto threshold | This appendix §7.13 |
+| C_FFAFP | FFAFP admissibility constraint set | This appendix §1.2 |
 
 ---
 
 ## Attribution
 
-The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary. The unified self-assessment equation (§1.1, 8 April 2026) was derived during the Exp 37 build. The recursive form was verified by SymPy and Wolfram Alpha. The three-phase extension (η, σ, ν) was confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 — both falsified the original σ placement and corrected it (confer logs: `bench/logs/confer_unified_equation/`). A 25-check internal consistency audit (SymPy, Wolfram, z3) confirmed all 5 identified gaps and disputed two prior claims. The operational form is specified in the CDSFL operational directive §3 and first deployed in Experiment 37 (9 April 2026).
+The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary. The unified self-assessment equation (§1.1, 8 April 2026) was derived during the Exp 37 build. The recursive form was verified by SymPy and Wolfram Alpha. The three-phase extension (η, σ, ν) was confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 — both falsified the original σ placement and corrected it (confer logs: `bench/logs/confer_unified_equation/`). A 25-check internal consistency audit (SymPy, Wolfram, z3) confirmed all 5 identified gaps and disputed two prior claims. The operational form is specified in the CDSFL operational directive §3 and first deployed in Experiment 37 (9 April 2026). The FFAFP calibration protocol (§1.2), embedding similarity (§1.3), continuous suppression (§1.4), persistent memory (§1.5), convergence metrics (§7.13), ouroboros cell (§8.7), and confounds section (§9) were formalised on 12 April 2026 during the Exp 39 preparation session. Three critical errors (corroboration collapse, order dependence, kappa overflow) were caught and corrected through multi-model confer rounds. All extensions were SymPy-verified and are implemented in the `bench/dm/` module.
 
 ---
 
