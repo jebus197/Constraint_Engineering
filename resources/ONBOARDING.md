@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 April 2026 15:51 BST
+Last updated: 12 April 2026 20:28 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,18 +25,25 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **AIS LITERATURE ASSESSMENT + REVISED MODEL (12 April 2026 15:51 BST):**
-  Branch: `exp39-experimental`. 762 tests pass.
-  Holland/Kohonen/AIS assessed against CDSFL. 5 integration gaps identified.
-  Conferred with Gemini + Codex (2 rounds, FFAFP protocol).
-  **Revised mathematical model proposed:** 3 modifications to R_k(i) —
-  embedding similarity, continuous suppression, persistent memory.
-  SymPy + Wolfram verified. External confer caught 3 critical errors,
-  all programmatically confirmed. Corrected formulation ready for formalisation.
-  Shadow code built for deferred gaps (credit scorecard, steering predictor).
-  **Exp 39 infrastructure (earlier):** 14 sub-experiment configs, sequencer,
-  all Exp 38 fixes. Full details in RECOVERY.md.
+- **EXP 39 IMPLEMENTATION COMPLETE — 9 PHASES (12 April 2026 20:23 BST):**
+  Branch: `exp39-experimental`. 784 tests pass (+22 new). 9 commits (ad53693..401e475).
+  **All 9 phases committed:** Phase 0 (housekeeping + novelty_yield fix), Phase 1
+  (kappa_set denominator prep), Phase 2 (embedding similarity shared backend),
+  Phase 3 (continuous suppression, permutation-invariant top-k), Phase 4 (persistent
+  immune memory with blended prior + drift detection), Phase 5 (FFAFP §1.2 in appendix),
+  Phase 6 (specialist B-Cell dispatch, shadow), Phase 7 (O1 ouroboros cell, shadow),
+  Phase 8 (mathematical appendix +317 lines, 7 new sections).
+  **3 critical errors caught and corrected:** corroboration collapse (Error 1),
+  order dependence (Error 2), kappa overflow (Error 3). All SymPy verified.
+  **New modules:** `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`.
+  **Mathematical appendix:** 1334 → 1651 lines. New §§1.2–1.5, 7.13, 8.7, 9.
+  **Gemini confer (O1 + FFAFP):** advisory capacity falsified as mitigation.
+  Requires semantic clustering + circuit breaker before O1 promotion.
+  FFAFP PE enforcement needed (3-gate architecture proposed, not yet built).
+  **Open items:** O1 semantic clustering + circuit breaker, FFAFP PE gates,
+  Phase 9 (research write-up, deferred post-Exp 39).
   **Key experimental notes:**
+  `experimental_notes/Exp39_Implementation_2026-04-12.md`
   `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`
   `experimental_notes/AIS_Confer_Synthesis_2026-04-12.md`
   `experimental_notes/Revised_Model_Confer_2026-04-12.md`

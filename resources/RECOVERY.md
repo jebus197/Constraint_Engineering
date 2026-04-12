@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 15:51 BST
+Last updated: 12 April 2026 20:28 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,44 +21,30 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 15:51 BST)
+## Current Pending Work (12 April 2026 20:23 BST)
 
-762 tests pass. Branch: `exp39-experimental`. Last commit: b0f33d7.
+784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: 401e475.
 
-**AIS/Holland/Kohonen Literature Assessment — COMPLETE:**
-- Three research lineages assessed against CDSFL (Holland CAS, Kohonen SOMs, AIS)
-- 5 integration gaps identified, ranked, and reviewed by Gemini + Codex under FFAFP
-- Implementation order agreed: 3 (embeddings) → 2 (suppression) → 1 (memory) → 5 → 4
+**ALL 9 IMPLEMENTATION PHASES COMPLETE (Phases 0–8):**
+- 9 commits on `exp39-experimental` (ad53693..401e475)
+- New modules: `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`
+- Mathematical appendix expanded: 1334 → 1651 lines, 7 new sections, 17 notation entries
+- 3 critical errors caught/corrected: corroboration collapse, order dependence, kappa overflow
+- Phase-by-phase detail in `experimental_notes/Exp39_Implementation_2026-04-12.md`
 
-**Revised Mathematical Model — DERIVED AND CONFERRED:**
-- Three modifications to R_k(i) framework proposed (embedding similarity, continuous
-  suppression, persistent memory). SymPy + Wolfram verified.
-- Conferred with Gemini + Codex: 3 critical errors found and verified programmatically:
-  1. Suppression weight must NOT modulate q_eff (Bayesian corroboration collapse, 113x risk overestimate)
-  2. Predecessor-product suppression is order-dependent (12 distinct outcomes from 24 permutations)
-  3. Weighted kappa_set denominator overflows [0,1] (kappa=-2.0 under realistic conditions)
-- Corrected formulation: top-k exponential suppression (order-invariant), numerator-only kappa,
-  blended memory prior with drift detection. All fixes verified.
-- Shadow code built: `bench/dm/_shadow_extensions.py` (credit scorecard + steering predictor)
-- Bug found in shadow code: novelty_yield ignores is_novel parameter (confirmed via AST parse)
-
-**Confer Protocol Updated:**
-- All model confers now run under full CDSFL + FFAFP (revised 12 April 2026)
-- Model routing: cc2=Claude Opus 4.6, cx=Codex GPT-5.4, ge=Gemini 3.1 Pro,
-  cgpt=ChatGPT GPT-5.4, ds=DeepSeek Reasoner
-
-**Exp 39 Infrastructure — BUILT AND TESTED (earlier this session):**
-- All 14 sub-experiment configs, sequencer, Exp 38 fixes. 762 tests pass.
+**Gemini Confer Findings (O1 + FFAFP, 12 April 2026):**
+- "Advisory capacity" falsified as HIL overload mitigation — it's a risk vector
+- O1 requires semantic clustering + circuit breaker before promotion from shadow
+- FFAFP PE enforcement needed: 3-gate architecture (mechanical/heuristic/judgement)
+- Confer logs: `bench/logs/confer_o1_ffafp/`
 
 NEXT:
-1. Fix shadow credit novelty_yield bug
-2. Formalise corrected mathematical model in MATHEMATICAL_APPENDIX.md
-3. Build embedding similarity (Gap 3) — shared backend, bounded output, dual threshold
-4. Build Expert Encodings S_k integration (wire into immune pipeline, 150-200 LOC)
-5. Add HIL phase gate to burst mode transitions (30-50 LOC)
-6. Build Macrophage shadow-mode prototype (200-300 LOC, log only)
-7. Write tests for new sub-experiment infrastructure
-8. Run 39-0 (infrastructure gate), then 39-A
+1. Add O1 semantic clustering (group repeat anomalies by category across rounds)
+2. Add O1 circuit breaker (auto-suspend + systemic alert above threshold)
+3. Build FFAFP PE enforcement (3-gate architecture) — can parallel Exp 39
+4. Reclassify advisory capacity in documentation (neutral post-calibration, not mitigation)
+5. Run 39-0 (infrastructure gate), then 39-A
+6. Phase 9 (research write-up) — deferred post-Exp 39
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)
