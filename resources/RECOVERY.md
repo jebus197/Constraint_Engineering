@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 02:03 BST
+Last updated: 12 April 2026 03:25 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,42 +21,51 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 02:01 BST)
+## Current Pending Work (12 April 2026 03:24 BST)
 
-762 tests pass. Branch: `exp39-experimental`. All changes uncommitted.
+762 tests pass. Branch: `exp39-experimental`. Fixes committed (c522468).
 
-**Exp 39 Runner Fixes — BUILT, TESTED, CONFERRED (not yet committed):**
-- 22+ fixes from Exp 38 findings implemented in `reference_runner.py` (+280 lines),
+**Exp 39 Runner Fixes — COMMITTED:**
+- 22+ fixes from Exp 38 findings in `reference_runner.py` (+280 lines),
   `runner_core.py` (+86 lines), `immune_agents.py` (+28 lines).
 - z3 formal verification: 7/7 proofs pass.
-- 3 rounds of adversarial confer (Gemini + Codex). No actionable findings from Round 3.
-- Key architectural changes:
-  - Dynamic context budgets (measured performance, not vendor claims)
-  - Adaptive per-model ITC parse yield detection (rolling baseline, hard floor)
-  - Quality Collapse Spiral fix (quality gate on prompt_chars_history)
-  - Fingerprint semantic error fixed (response length mislabeled as context chars)
-  - DRY fix: threshold computed once in _itc_detect, read by fingerprint gate
-  - Documentation: Q1 trend-blindness, Q4 ordering invariant, Q5 anti-gaming in ARCHITECTURE.md
+- 3 rounds adversarial confer (Gemini + Codex). No actionable findings from Round 3.
 
-**Exp 39 Scope Refinement (12 April 2026):**
-- IN SCOPE: fix verification (done), Expert Encodings S_k integration (150-200 LOC),
-  HIL phase gate between burst phases (30-50 LOC), Gemini → OpenRouter switch (~10 LOC).
-- SHADOW: Macrophage cell prototype (200-300 LOC, log only, no pipeline effect).
-- DEFERRED: single system/distributed compute (post-BR2), math model extension (after data),
-  domain cell build-out (after domain encodings exist).
-- Analysis: `experimental_notes/Exp39_Scope_Refinement_2026-04-12.md`
+**Exp 39 Sub-Experiment Structure (agreed 12 April 2026):**
+36 CDSFL schema elements → 13 sub-experiments (0 + A through M).
+- Tier 1 (9 independent): 0-Infrastructure gate, A-Mathematics specialist,
+  B-Expert Encodings S_k, C-Macrophage admissibility, D-Composition test,
+  E-Statistics specialist, F-CS/Software specialist, G-Biology, H-InfoSci.
+- Tier 2 (2 dependent): I-Cross-domain synthesis, J-Microglia.
+- Tier 3 (3 shadow): K-Physics, L-Chemistry, M-Engineering.
+- Order: 0 → A → B → C → D → E → F → G,H → I → J → K,L,M.
+- Rationale: one variable at a time, isolate, gather baseline data for BR2.
+- D: CX recommended keep as mechanical composition test. GE recommended drop. User chose CX.
+- Each sub-experiment: mechanical convergence criteria, artifact schema, fail/skip logic.
+- Operational items (ITC, budgets, convergence, immune routing) measured within each run,
+  not separate sub-experiments.
+
+**Confer record:**
+- Round 1 (CX + GE): adversarial review of full Exp 39 plan.
+  CX: over-scoped, poorly isolated, under-instrumented. Split into sub-experiments.
+  GE: dependency inversion (Phase 2 before 3), missing circuit breakers, untestable P2.
+- Round 2 (CX + GE): reviewed sub-experiment split (A/B/C/D).
+  GE (FFAFP): A/B/C sound, drop D, mechanical convergence, sequential execution.
+  CX: A/B/C sound, keep D as composition test, deconfound 39A, predeclare metrics.
+  Both: one variable at a time, mechanical stopping rules, honest blinding limitations.
 
 **Open Brain fix:**
-- `pyproject.toml` build backend corrected (`setuptools.build_meta`). Package installs.
-  Change is in OpenBrain repo, needs separate commit there.
+- `pyproject.toml` build backend corrected in OpenBrain repo. Needs commit there.
 
 NEXT:
-1. Commit all Exp 39 fixes on exp39-experimental branch
-2. Build Expert Encodings S_k integration (wire Python encoding into immune pipeline)
-3. Add HIL phase gate to burst mode transitions
-4. Switch Gemini dispatch to OpenRouter (verify quality first)
-5. Macrophage shadow-mode prototype (web search cell, log only)
-6. Run Exp 39 on same target (bench/reference_runner.py)
+1. Write TOML routing configs for Mathematics and Statistics specialist cells
+2. Build mechanical convergence criteria for 39-A (Mathematics specialist)
+3. Define artifact schema for 39-A output
+4. Build Expert Encodings S_k integration (wire into immune pipeline, 150-200 LOC)
+5. Add HIL phase gate to burst mode transitions (30-50 LOC)
+6. Switch Gemini dispatch to OpenRouter (verify quality first, ~10 LOC)
+7. Macrophage shadow-mode prototype (200-300 LOC, log only)
+8. Run 39-0 (infrastructure gate), then 39-A
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

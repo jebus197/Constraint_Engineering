@@ -1,28 +1,21 @@
 # CDSFL Current State
 
-Generated: 12 April 2026 02:03 BST (2026-04-12T02:03:55+01:00)
+Generated: 12 April 2026 03:25 BST (2026-04-12T03:25:32+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `491b08d` sv: sv script fix — correct report parsing + manual content preservation
-- **Committed:** 2026-04-11 19:36:33 +0100
-- **Remote:** ahead by 9
+- **Last commit:** `c522468` sv: Exp 39 fixes built + scope refinement. 22+ fixes, 3 confer rounds, 762 tests pass. Dynamic budgets, adaptive ITC, DRY fix, ARCHITECTURE.md trade-offs. Scope: Expert Encodings, HIL gate, Gemini switch, Macrophage shadow.
+- **Committed:** 2026-04-12 02:03:56 +0100
+- **Remote:** ahead by 10
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/immune_agents.py`
-- `M bench/logs/immune_pipeline.log`
-- `M bench/reference_runner.py`
-- `M bench/runner_core.py`
-- `M docs/ARCHITECTURE.md`
-- `M docs/CURRENT_STATE.md`
+- `A  experimental_notes/Exp39_Revised_Scope_2026-04-12.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? experimental_notes/Exp38_Full_Analysis_2026-04-11.md`
-- `?? experimental_notes/Exp39_Scope_Refinement_2026-04-12.md`
 
 ---
 
@@ -54,6 +47,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `c522468 sv: Exp 39 fixes built + scope refinement. 22+ fixes, 3 confer rounds, 762 tests pass. Dynamic budgets, adaptive ITC, DRY fix, ARCHITECTURE.md trade-offs. Scope: Expert Encodings, HIL gate, Gemini switch, Macrophage shadow.`
 - `491b08d sv: sv script fix — correct report parsing + manual content preservation`
 - `d7fc4db Fix sv auto-generated sections: restore qualitative Exp 38 terminal state`
 - `a710306 sv: Exp 38 complete — 24 rounds, 169 canonical, gamma 0.510, wall clock cap. Findings + sv fix + Exp 39 plan`
@@ -63,4 +57,3 @@ Uncommitted files:
 - `96a1b1c Confer Round 3: CX+GE review of contextual implementations`
 - `83480b1 Exp 38 contextual decision logic: 4 evidence-based replacements for static rules`
 - `1703ed1 Exp 38 experimental: 17 fixes, 3-layer DC v2 classification, promotion gate`
-- `c2f9167 Add Perplexity Computer competitive analysis to experimental notes`
