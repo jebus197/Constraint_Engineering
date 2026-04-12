@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 13:05 BST
+Last updated: 12 April 2026 15:51 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,37 +21,44 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 13:04 BST)
+## Current Pending Work (12 April 2026 15:51 BST)
 
-762 tests pass. Branch: `exp39-experimental`. Last commit: 42779ad.
+762 tests pass. Branch: `exp39-experimental`. Last commit: b0f33d7.
 
-**Exp 38 Fixes — BUILT AND TESTED (this session):**
-- D1-B: Churn-based stall convergence in `reference_runner.py`
-- P4: TARGET_FILE field + inference in `dm/_types.py`, `runner_core.py` (all 4 parsers)
-- Classifier: LLM primary in software domain in `immune_agents.py`
-- Gemini dispatch switched to OpenRouter in `experiment_11_orchestrator.py`
-  (model: `google/gemini-3.1-pro-preview`, `reasoning.effort: "high"`)
-- Deprecated `google-generativeai` package uninstalled
-- Statistics domain TOML configs created + 6 schema parameters added
+**AIS/Holland/Kohonen Literature Assessment — COMPLETE:**
+- Three research lineages assessed against CDSFL (Holland CAS, Kohonen SOMs, AIS)
+- 5 integration gaps identified, ranked, and reviewed by Gemini + Codex under FFAFP
+- Implementation order agreed: 3 (embeddings) → 2 (suppression) → 1 (memory) → 5 → 4
 
-**Exp 39 Infrastructure — BUILT AND TESTED (this session):**
-- `bench/exp39_config.json` — master config, 14 sub-experiments with dependency DAG
-- `bench/exp39_configs/` — all 14 configs (39-0 through 39-M)
-- `bench/launch_exp39.py` — sequencer script with topological sort, gate fail-fast,
-  `--only`/`--skip`/`--dry-run`/`--preflight` support
-- Dry-run verified: all 14 resolve in correct dependency order
-- `--only 39-D` correctly pulls 4 transitive deps (0, A, B, C)
-- `--skip 39-K 39-L 39-M` correctly drops shadow experiments
+**Revised Mathematical Model — DERIVED AND CONFERRED:**
+- Three modifications to R_k(i) framework proposed (embedding similarity, continuous
+  suppression, persistent memory). SymPy + Wolfram verified.
+- Conferred with Gemini + Codex: 3 critical errors found and verified programmatically:
+  1. Suppression weight must NOT modulate q_eff (Bayesian corroboration collapse, 113x risk overestimate)
+  2. Predecessor-product suppression is order-dependent (12 distinct outcomes from 24 permutations)
+  3. Weighted kappa_set denominator overflows [0,1] (kappa=-2.0 under realistic conditions)
+- Corrected formulation: top-k exponential suppression (order-invariant), numerator-only kappa,
+  blended memory prior with drift detection. All fixes verified.
+- Shadow code built: `bench/dm/_shadow_extensions.py` (credit scorecard + steering predictor)
+- Bug found in shadow code: novelty_yield ignores is_novel parameter (confirmed via AST parse)
 
-**Open Brain fix:**
-- `pyproject.toml` build backend corrected in OpenBrain repo. Needs commit there.
+**Confer Protocol Updated:**
+- All model confers now run under full CDSFL + FFAFP (revised 12 April 2026)
+- Model routing: cc2=Claude Opus 4.6, cx=Codex GPT-5.4, ge=Gemini 3.1 Pro,
+  cgpt=ChatGPT GPT-5.4, ds=DeepSeek Reasoner
+
+**Exp 39 Infrastructure — BUILT AND TESTED (earlier this session):**
+- All 14 sub-experiment configs, sequencer, Exp 38 fixes. 762 tests pass.
 
 NEXT:
-1. Build Expert Encodings S_k integration (wire into immune pipeline, 150-200 LOC)
-2. Add HIL phase gate to burst mode transitions (30-50 LOC)
-3. Build Macrophage shadow-mode prototype (200-300 LOC, log only)
-4. Write tests for new sub-experiment infrastructure
-5. Run 39-0 (infrastructure gate), then 39-A
+1. Fix shadow credit novelty_yield bug
+2. Formalise corrected mathematical model in MATHEMATICAL_APPENDIX.md
+3. Build embedding similarity (Gap 3) — shared backend, bounded output, dual threshold
+4. Build Expert Encodings S_k integration (wire into immune pipeline, 150-200 LOC)
+5. Add HIL phase gate to burst mode transitions (30-50 LOC)
+6. Build Macrophage shadow-mode prototype (200-300 LOC, log only)
+7. Write tests for new sub-experiment infrastructure
+8. Run 39-0 (infrastructure gate), then 39-A
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

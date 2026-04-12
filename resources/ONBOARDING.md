@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 April 2026 13:05 BST
+Last updated: 12 April 2026 15:51 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,28 +25,22 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39 INFRASTRUCTURE BUILT (12 April 2026 13:04 BST):**
+- **AIS LITERATURE ASSESSMENT + REVISED MODEL (12 April 2026 15:51 BST):**
   Branch: `exp39-experimental`. 762 tests pass.
-  All Exp 38 outstanding fixes built and tested: D1-B churn stall convergence,
-  P4 TARGET_FILE inference (all 4 parsers), LLM-primary classifier (software domain),
-  Gemini switched to OpenRouter (`google/gemini-3.1-pro-preview`, reasoning.effort=high).
-  Statistics domain TOML configs + 6 PE schema parameters added.
-  **Sub-experiment infrastructure:**
-  `bench/exp39_config.json` — master config, 14 sub-experiments with dependency DAG.
-  `bench/exp39_configs/` — all 14 configs (39-0 gate through 39-M engineering shadow).
-  `bench/launch_exp39.py` — sequencer with topological sort, gate fail-fast,
-  `--only`/`--skip`/`--dry-run`/`--preflight`. Dry-run verified.
-  **Sub-experiment structure (agreed 12 April 2026):**
-  36 individual CDSFL schema elements → 13 sub-experiments (0 + A through M).
-  Tier 1 (independent, 9): Infrastructure gate (0), Mathematics specialist (A),
-  S_k Expert Encodings (B), Macrophage admissibility (C), Composition test (D),
-  Statistics specialist (E), CS/Software specialist (F), Biology (G), InfoSci (H).
-  Tier 2 (dependent, 2): Cross-domain synthesis (I), Microglia (J).
-  Tier 3 (shadow, 3): Physics (K), Chemistry (L), Engineering (M).
-  Order: 0 → A → B → C → D → E → F → G,H → I → J → K,L,M.
-  Rationale: one variable at a time, isolate, gather baseline data for BR2.
-  Scope docs: `experimental_notes/Exp39_Scope_Refinement_2026-04-12.md`,
-  `experimental_notes/Exp39_Revised_Scope_2026-04-12.md`.
+  Holland/Kohonen/AIS assessed against CDSFL. 5 integration gaps identified.
+  Conferred with Gemini + Codex (2 rounds, FFAFP protocol).
+  **Revised mathematical model proposed:** 3 modifications to R_k(i) —
+  embedding similarity, continuous suppression, persistent memory.
+  SymPy + Wolfram verified. External confer caught 3 critical errors,
+  all programmatically confirmed. Corrected formulation ready for formalisation.
+  Shadow code built for deferred gaps (credit scorecard, steering predictor).
+  **Exp 39 infrastructure (earlier):** 14 sub-experiment configs, sequencer,
+  all Exp 38 fixes. Full details in RECOVERY.md.
+  **Key experimental notes:**
+  `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`
+  `experimental_notes/AIS_Confer_Synthesis_2026-04-12.md`
+  `experimental_notes/Revised_Model_Confer_2026-04-12.md`
+  `experimental_notes/Exp39_Infrastructure_Build_2026-04-12.md`
 
 - **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.
