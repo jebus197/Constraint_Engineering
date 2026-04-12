@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 11 April 2026 19:36 BST
+Last updated: 12 April 2026 02:03 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,17 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 39 IN PREPARATION (12 April 2026 02:01 BST):**
+  Branch: `exp39-experimental`. All changes uncommitted. 762 tests pass.
+  22+ fixes from Exp 38 findings built into runner. 3 rounds adversarial confer
+  (Gemini + Codex) — no actionable findings from Round 3.
+  Key changes: dynamic context budgets (measured, not vendor-claimed), adaptive
+  per-model ITC parse yield, quality collapse spiral fix, DRY threshold computation.
+  z3 formal verification: 7/7 proofs pass.
+  Scope refinement: `experimental_notes/Exp39_Scope_Refinement_2026-04-12.md`
+  Next: commit fixes, Expert Encodings S_k integration, HIL phase gate,
+  Gemini → OpenRouter switch, Macrophage shadow prototype.
+
 - **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.
   Target: `bench/reference_runner.py`, star topology, 5 models, adaptive rounds.
@@ -41,7 +52,6 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   6 corroborated runner bugs + 6 design findings (D1-D6) from monitoring.
   γ crossed 0.5 at R20 (strong depletion). Sawtooth novelty pattern persisted
   throughout but broke strict alternation from R16 onward.
-  See RECOVERY.md for full Exp 39 fix plan (9 items).
 
   **Fix cycle prior to this run (10 April 2026 17:28 BST):**
   All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.

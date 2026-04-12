@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 11 April 2026 19:36 BST
+Last updated: 12 April 2026 02:03 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,60 +21,42 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (11 April 2026 19:02 BST)
+## Current Pending Work (12 April 2026 02:01 BST)
 
-762 tests pass. Exp 38 COMPLETE (wall clock cap, 24 rounds, 169 canonical).
+762 tests pass. Branch: `exp39-experimental`. All changes uncommitted.
 
-**Exp 38 Ouroboros — COMPLETE (14:33 BST):**
-- 24 rounds (R0-R23), 545 raw findings, 169 canonical. γ_final=0.510.
-- Never converged. Wall clock cap at 29,503s. Phase 0 consumed entire budget.
-- Closest to convergence: R21 (only blocker: contested=9).
-- 59 HIL flags: CC2 21, ChatGPT 13, Codex 13, DeepSeek 7, Gemini 5.
-- 6 corroborated runner bugs + 6 design findings (D1-D6) from monitoring.
-- Findings: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
-- Report: `bench/logs/exp38_ouroboros_20260411T041938Z/exp38_ouroboros_report.json`
+**Exp 39 Runner Fixes — BUILT, TESTED, CONFERRED (not yet committed):**
+- 22+ fixes from Exp 38 findings implemented in `reference_runner.py` (+280 lines),
+  `runner_core.py` (+86 lines), `immune_agents.py` (+28 lines).
+- z3 formal verification: 7/7 proofs pass.
+- 3 rounds of adversarial confer (Gemini + Codex). No actionable findings from Round 3.
+- Key architectural changes:
+  - Dynamic context budgets (measured performance, not vendor claims)
+  - Adaptive per-model ITC parse yield detection (rolling baseline, hard floor)
+  - Quality Collapse Spiral fix (quality gate on prompt_chars_history)
+  - Fingerprint semantic error fixed (response length mislabeled as context chars)
+  - DRY fix: threshold computed once in _itc_detect, read by fingerprint gate
+  - Documentation: Q1 trend-blindness, Q4 ordering invariant, Q5 anti-gaming in ARCHITECTURE.md
 
-**Bug: Phase 0 missing convergence overrides (CRITICAL):**
-Burst mode active (6 phases + integration) but `phase_convergence_overrides()`
-only applied at phase transitions (line 2831). Phase 0 runs with base config
-(`earliest_stop_round: 12`), not per-phase override (round 3).
-Phase 0 consumed entire 24-round budget. Phases 1-5 never reached.
+**Exp 39 Scope Refinement (12 April 2026):**
+- IN SCOPE: fix verification (done), Expert Encodings S_k integration (150-200 LOC),
+  HIL phase gate between burst phases (30-50 LOC), Gemini → OpenRouter switch (~10 LOC).
+- SHADOW: Macrophage cell prototype (200-300 LOC, log only, no pipeline effect).
+- DEFERRED: single system/distributed compute (post-BR2), math model extension (after data),
+  domain cell build-out (after domain encodings exist).
+- Analysis: `experimental_notes/Exp39_Scope_Refinement_2026-04-12.md`
 
-**Runner bugs found by model panel (6 corroborated):**
-1. `_compute_rho()` early return on zero raw (sev 0.95)
-2. `contested_count()` wrong unresolved-challenge logic (sev 0.93)
-3. `open_crit_high_count()` missing REOPENED status (sev 0.93)
-4. `_compute_rho()` off-by-one (sev 0.91)
-5. `RunnerConfig.__post_init__` silent override (sev 0.90)
-6. `contested_count()` hardcoded grace period (sev 0.85)
+**Open Brain fix:**
+- `pyproject.toml` build backend corrected (`setuptools.build_meta`). Package installs.
+  Change is in OpenBrain repo, needs separate commit there.
 
-**Design findings from monitoring (D1-D6):**
-- D1: Churn detection without adaptive response
-- D2: Contested timeout and HIL escalation needed
-- D3: z3 grounding works for config-space claims (R22 proof)
-- D4: MERGE deadlock accumulation (12+ findings permanently deferred)
-- D5: Gemini UNSTRUCTURED finding format degradation
-- D6: DeepSeek chunk delivery failures
-
-**Parser/pipeline bugs:**
-- P1: ~75% findings lack SEARCH/REPLACE blocks → S_k ESCALATE
-- P2/P3: Gemini V-prefix / no TARGET_FILE → UNEVALUABLE
-- Regex classifier ~15% agreement with LLM (fundamentally broken for code)
-
-**Phase B schema design (deferred):**
-Per-schema-element convergence. Distinct from code-structure burst decomposition.
-
-NEXT (Exp 39 fix list, ordered by impact):
-1. Fix Phase 0 convergence override bug (CRITICAL)
-2. Fix 6 corroborated runner bugs
-3. Implement D2: contested timeout + HIL escalation
-4. Implement D1: churn feedback mechanism
-5. Strengthen SEARCH/REPLACE parser (P1)
-6. Fix confirmation-finding parser (P2/P3)
-7. Address D4: MERGE deadlock arbitration
-8. Replace/calibrate regex classifier
-9. Uninstall deprecated google-generativeai
-10. Run Exp 39 with all fixes on same target
+NEXT:
+1. Commit all Exp 39 fixes on exp39-experimental branch
+2. Build Expert Encodings S_k integration (wire Python encoding into immune pipeline)
+3. Add HIL phase gate to burst mode transitions
+4. Switch Gemini dispatch to OpenRouter (verify quality first)
+5. Macrophage shadow-mode prototype (web search cell, log only)
+6. Run Exp 39 on same target (bench/reference_runner.py)
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

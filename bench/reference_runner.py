@@ -78,6 +78,7 @@ from runner_core import (
     MODEL_SPECS,
     CONVERGENCE_EXCLUDED_MODELS,
     CONTEXT_CHAR_BUDGET,
+    get_effective_context_budget,
 )
 from run_exp17_immune import (
     TASKS,
@@ -215,8 +216,9 @@ class RunnerConfig:
         if not self.experiment_name and self.test_article:
             stem = Path(self.test_article).stem
             self.experiment_name = f"ref_{stem}"
-        if self.rho_earliest_round != self.earliest_stop_round:
-            self.rho_earliest_round = self.earliest_stop_round
+        # Bug 5 fix: removed silent override of rho_earliest_round.
+        # These parameters serve different purposes and must be
+        # independently configurable.
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "RunnerConfig":
@@ -331,7 +333,7 @@ class FindingRegistry:
         _update_finding_statuses) are excluded from the count.
         Gate threshold stays fixed; finding eligibility changes.
         """
-        _NON_TERMINAL = ("OPEN", "CONTESTED")
+        _NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")
         count = 0
         for e in self.entries.values():
             if e["status"] not in _NON_TERMINAL or e["severity"] < 0.7:
@@ -350,7 +352,7 @@ class FindingRegistry:
         - MERGED/CLOSED/REFUTED/DUPLICATE: irrecoverable terminal, always excluded.
         - UNCONFIRMED: counted during grace period only.
         """
-        _IRRECOVERABLE = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE"}
+        _IRRECOVERABLE = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
         count = 0
         for e in self.entries.values():
             if e["status"] in _IRRECOVERABLE:
@@ -371,7 +373,7 @@ class FindingRegistry:
             unresolved = [v for v in challenges if v["round"] >= latest_confirm_round]
             if unresolved:
                 oldest = min(v["round"] for v in unresolved)
-                if current_round - oldest > 1:
+                if current_round - oldest >= grace_period:
                     count += 1
         return count
 
@@ -432,26 +434,57 @@ class FindingRegistry:
         lines.append("=== END REGISTRY ===")
         return "\n".join(lines)
 
-    def escalate_stale_contested(self, current_round: int, max_contested_rounds: int = 5) -> List[str]:
-        """A3 fix: escalate CONTESTED findings to HIL after threshold."""
+    def escalate_stale_contested(self, current_round: int, max_contested_rounds: int = 5,
+                                 grace_period: int = 2) -> List[str]:
+        """A3 fix: escalate stale contested findings to HIL after threshold.
+
+        D2 fix (Exp 38): also covers OPEN findings with old unresolved
+        challenges — matching what contested_count() actually reports.
+        Previously only checked explicit CONTESTED status, missing findings
+        that contested_count counted via verdict history.
+        """
+        _SKIP = {"MERGED", "CLOSED", "REFUTED", "DUPLICATE", "CONFIRMED"}
         escalated_ids = []
         for fid, entry in self.entries.items():
-            if entry.get("status") != "CONTESTED":
+            if entry["status"] in _SKIP:
                 continue
-            contested_since = entry.get("last_status_change_round", 0)
-            rounds_contested = current_round - contested_since
-            if rounds_contested >= max_contested_rounds:
-                # F6 fix: use resolve() instead of direct mutation —
-                # ensures last_status_change_round is updated consistently.
-                self.resolve(fid, "UNCONFIRMED", current_round)
-                entry["hil_escalated"] = True
-                entry["hil_reason"] = (
-                    f"Contested for {rounds_contested} rounds "
-                    f"(threshold: {max_contested_rounds})"
-                )
-                escalated_ids.append(fid)
-                _log(f"  A3 HIL escalation: {fid} contested for "
-                     f"{rounds_contested} rounds -> UNCONFIRMED + HIL flag")
+            # Path 1: explicit CONTESTED status (original logic)
+            if entry["status"] == "CONTESTED":
+                contested_since = entry.get("last_status_change_round", 0)
+                rounds_contested = current_round - contested_since
+                if rounds_contested >= max_contested_rounds:
+                    self.resolve(fid, "UNCONFIRMED", current_round)
+                    entry["hil_escalated"] = True
+                    entry["hil_reason"] = (
+                        f"Contested for {rounds_contested} rounds "
+                        f"(threshold: {max_contested_rounds})"
+                    )
+                    escalated_ids.append(fid)
+                    _log(f"  D2 HIL escalation: {fid} CONTESTED for "
+                         f"{rounds_contested}r -> UNCONFIRMED + HIL flag")
+                continue
+            # Path 2: OPEN/REOPENED with stale unresolved challenges
+            if entry["status"] in ("OPEN", "REOPENED"):
+                challenges = [v for v in entry["verdicts"] if v["verdict"] == "CHALLENGE"]
+                if not challenges:
+                    continue
+                confirms = [v for v in entry["verdicts"] if v["verdict"] == "CONFIRM"]
+                latest_confirm = max((v["round"] for v in confirms), default=-1)
+                unresolved = [v for v in challenges if v["round"] >= latest_confirm]
+                if not unresolved:
+                    continue
+                oldest = min(v["round"] for v in unresolved)
+                if current_round - oldest >= max_contested_rounds:
+                    self.resolve(fid, "UNCONFIRMED", current_round)
+                    entry["hil_escalated"] = True
+                    entry["hil_reason"] = (
+                        f"Unresolved challenge from R{oldest}, age "
+                        f"{current_round - oldest} rounds "
+                        f"(threshold: {max_contested_rounds})"
+                    )
+                    escalated_ids.append(fid)
+                    _log(f"  D2 HIL escalation: {fid} unresolved challenge "
+                         f"since R{oldest} -> UNCONFIRMED + HIL flag")
         return escalated_ids
 
     def auto_resolve_contested(self, current_round: int):
@@ -591,8 +624,10 @@ def _compute_rho(
     cfg: RunnerConfig,
 ) -> Tuple[float, float, bool]:
     """A2 fix: discovery efficiency rho with configurable threshold."""
-    if not raw_counts or raw_counts[-1] == 0:
+    if not raw_counts:
         return 0.0, 0.0, False
+    # Bug 1 fix: compute rolling average even when current round has zero raw.
+    # A zero-raw round should drive the average DOWN, not freeze it.
     rho_current = novelty_counts[-1] / raw_counts[-1] if raw_counts[-1] > 0 else 0.0
     rho_values = []
     for i in range(max(0, len(raw_counts) - cfg.rho_rolling_window), len(raw_counts)):
@@ -601,8 +636,10 @@ def _compute_rho(
         else:
             rho_values.append(0.0)
     rho_avg = sum(rho_values) / len(rho_values) if rho_values else 0.0
-    round_idx = len(raw_counts) - 1
-    churn = rho_avg < cfg.rho_threshold and round_idx >= cfg.rho_earliest_round
+    # Bug 4 fix: len(raw_counts) is 1-based (one entry per completed round).
+    # Using len-1 compared against a 1-based threshold delays churn by one round.
+    round_number = len(raw_counts)
+    churn = rho_avg < cfg.rho_threshold and round_number >= cfg.rho_earliest_round
     return rho_current, rho_avg, churn
 
 
@@ -667,9 +704,38 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                 by_target.setdefault(target, []).append(v)
 
             if len(by_target) > 1:
-                # Target disagreement — defer, do not merge
-                _log(f"  MERGE DEFERRED {canonical_id}: target disagreement "
-                     f"({', '.join(by_target.keys())})")
+                # D4 fix: quorum-based merge arbitration.
+                # If one target has strictly more votes, merge to it.
+                # On genuine tie, defer with HIL escalation after threshold.
+                sorted_targets = sorted(by_target.items(),
+                                        key=lambda kv: len(kv[1]), reverse=True)
+                top_target, top_votes = sorted_targets[0]
+                second_votes = len(sorted_targets[1][1]) if len(sorted_targets) > 1 else 0
+                if (len(top_votes) > second_votes
+                        and top_target != "__unknown__"):
+                    distinct = {v["model"] for v in top_votes}
+                    if len(distinct) >= 2:
+                        registry.resolve(canonical_id, "MERGED", round_idx,
+                                         merged_into=top_target)
+                        _log(f"  D4 MERGE QUORUM {canonical_id} -> {top_target}: "
+                             f"{len(top_votes)} votes vs {second_votes}")
+                        continue
+                # Genuine tie or insufficient quorum — defer
+                defer_count = entry.get("merge_defer_count", 0) + 1
+                entry["merge_defer_count"] = defer_count
+                max_defer = cfg.max_contested_rounds if cfg else 5
+                if defer_count >= max_defer:
+                    # Deadlock: escalate to HIL, remove from active merge
+                    entry["hil_escalated"] = True
+                    entry["hil_reason"] = (
+                        f"MERGE deadlock for {defer_count} rounds, "
+                        f"targets: {', '.join(by_target.keys())}"
+                    )
+                    _log(f"  D4 MERGE DEADLOCK {canonical_id}: "
+                         f"escalated to HIL after {defer_count} rounds")
+                else:
+                    _log(f"  MERGE DEFERRED {canonical_id}: target disagreement "
+                         f"({', '.join(by_target.keys())}) [{defer_count}/{max_defer}]")
             else:
                 target_id = next(iter(by_target))
 
@@ -915,11 +981,18 @@ _itc_model_state: Dict[str, Dict[str, Any]] = {}
 _itc_hil_flags: List[Dict[str, Any]] = []
 
 
+_FINDING_DECL_RE = re.compile(
+    r'(?:FINDING.ID\s*[:=]|<<<\s*FINDING\b|\(F\d{2,4}[,)])',
+    re.IGNORECASE
+)
+
+
 def _itc_detect(
     model_label: str, round_idx: int,
     findings_count: int, response_text: str,
     prior_finding_ids: Set[str], current_finding_ids: Set[str],
     dispatch_error: Optional[str] = None,
+    raw_finding_markers: int = 0,
 ) -> Optional[str]:
     if dispatch_error and ("context length" in dispatch_error.lower()
                            or "token" in dispatch_error.lower()):
@@ -932,6 +1005,71 @@ def _itc_detect(
         if recent_empty >= 1:
             return ITC_CAPABILITY_MISMATCH
         return ITC_TRANSIENT_FAILURE
+    # D5 fix: output quality signal — adaptive, per-model.
+    # Parse yield = findings_count / raw_finding_markers.
+    # Each model's baseline yield is computed from its own history.
+    # Degradation = yield drops significantly below the model's own
+    # baseline, OR falls below a hard floor (0.5) regardless of baseline.
+    # "Significantly" = more than 0.25 below the rolling average.
+    #
+    # Cold start (< 3 history entries): use hard floor only.
+    # This avoids penalising models during the first rounds before
+    # a baseline exists, while still catching severe degradation.
+    if raw_finding_markers >= 2:
+        parse_yield = findings_count / raw_finding_markers
+        # Record yield in ITC state for baseline computation.
+        state = _itc_model_state.setdefault(model_label, {
+            "history": [], "adaptation": None, "retry_count": 0,
+            "escalation_level": 0,
+        })
+        yield_history = state.setdefault("parse_yield_history", [])
+        yield_history.append(parse_yield)
+        if len(yield_history) > 20:
+            state["parse_yield_history"] = yield_history[-20:]
+            yield_history = state["parse_yield_history"]
+
+        # Hard floor: any model below 0.5 is degraded, no exceptions.
+        _HARD_FLOOR = 0.5
+        # Adaptive threshold: baseline minus deviation margin.
+        _DEVIATION_MARGIN = 0.25
+
+        if len(yield_history) >= 4:
+            # Baseline = mean of the best 3 of last 5 yields (excludes
+            # worst outliers while tracking recent performance).
+            #
+            # KNOWN TRADE-OFF: "best 3 of 5" is robust against single
+            # bad rounds but blind to sustained gradual degradation.
+            # At degradation rates below ~9% per round, the adaptive
+            # threshold never fires before the hard floor — the filter
+            # absorbs the decline by discarding the worst values, which
+            # ARE the signal. At 9%+ per round, the adaptive threshold
+            # catches the model 2-3 rounds before the floor would.
+            #
+            # The adaptive threshold detects sharp drops. The hard
+            # floor (0.5) is the safety net for gradual decline.
+            # Context overload — models fed more context than they
+            # can handle — causes gradual decline, so the floor is
+            # load-bearing in that scenario.
+            #
+            # Verified numerically, Exp 39 R3 confer (2026-04-11).
+            recent = yield_history[-5:] if len(yield_history) >= 5 else yield_history[:]
+            baseline = sum(sorted(recent, reverse=True)[:3]) / 3
+            adaptive_threshold = max(_HARD_FLOOR, baseline - _DEVIATION_MARGIN)
+        else:
+            # Cold start: hard floor only.
+            baseline = None
+            adaptive_threshold = _HARD_FLOOR
+
+        # Store threshold for the fingerprint quality gate (DRY:
+        # avoids recomputing the same baseline/threshold there).
+        state["last_adaptive_threshold"] = adaptive_threshold
+
+        if parse_yield < adaptive_threshold:
+            baseline_str = f"baseline={baseline:.2f}, " if baseline is not None else ""
+            _log(f"  ITC [{model_label}]: parse yield {parse_yield:.2f} "
+                 f"({findings_count}/{raw_finding_markers} markers, "
+                 f"{baseline_str}threshold={adaptive_threshold:.2f}) — DEGRADATION")
+            return ITC_DEGRADATION
     if prior_finding_ids and current_finding_ids:
         overlap = len(current_finding_ids & prior_finding_ids)
         if len(current_finding_ids) > 0:
@@ -1063,7 +1201,13 @@ def _itc_build_recovery_prompt(
     observed_fingerprints: Dict[str, Dict[str, Any]], round_idx: int,
 ) -> str:
     fp = observed_fingerprints.get(model_label, {})
-    max_ok_chars = fp.get("max_successful_context_chars", 0)
+    # Fix C: use measured prompt size, not response size.
+    # max_successful_context_chars was misnamed — it stored response length.
+    # max_successful_prompt_chars stores actual prompt size sent to the model.
+    # Fall back to the old field if prompt data hasn't accumulated yet.
+    max_ok_chars = fp.get("max_successful_prompt_chars", 0)
+    if max_ok_chars == 0:
+        max_ok_chars = fp.get("max_successful_context_chars", 0)
     if max_ok_chars > 0 and len(base_prompt) > max_ok_chars:
         artifact_start = base_prompt.find("=== ARTIFACT:")
         if artifact_start > 0:
@@ -1111,10 +1255,14 @@ def _save_fingerprints(observed: Dict[str, Dict[str, Any]], experiment_name: str
 def _update_observed_fingerprint(
     observed: Dict[str, Dict[str, Any]], model_label: str, round_idx: int,
     findings_count: int, response_chars: int,
+    prompt_chars: int = 0,
+    raw_finding_markers: int = 0,
     dispatch_error: Optional[str] = None,
 ):
     fp = observed.setdefault(model_label, {
         "max_successful_context_chars": 0, "max_failed_context_chars": 0,
+        "max_successful_prompt_chars": 0, "max_failed_prompt_chars": 0,
+        "prompt_chars_history": [],
         "failure_modes": [], "total_findings": 0,
         "rounds_participated": 0, "avg_findings_per_round": 0.0,
     })
@@ -1128,11 +1276,38 @@ def _update_observed_fingerprint(
         if "context length" in str(dispatch_error).lower():
             fp["max_failed_context_chars"] = max(
                 fp.get("max_failed_context_chars", 0), response_chars)
+            if prompt_chars > 0:
+                fp["max_failed_prompt_chars"] = max(
+                    fp.get("max_failed_prompt_chars", 0), prompt_chars)
             if "context_overflow" not in fp.get("failure_modes", []):
                 fp.setdefault("failure_modes", []).append("context_overflow")
     elif response_chars > 0:
         fp["max_successful_context_chars"] = max(
             fp.get("max_successful_context_chars", 0), response_chars)
+        if prompt_chars > 0:
+            fp["max_successful_prompt_chars"] = max(
+                fp.get("max_successful_prompt_chars", 0), prompt_chars)
+            # Quality gate: only add to budget history if output quality
+            # is acceptable. "Did not crash" != "was successful."
+            # Gemini confer finding: without this gate, degraded outputs
+            # at high context inflate the history, keeping budgets high
+            # and accelerating quality collapse.
+            # Reads the adaptive threshold computed by _itc_detect
+            # (stored in _itc_model_state["last_adaptive_threshold"]).
+            # Falls back to hard floor (0.5) during cold start.
+            quality_ok = True
+            if raw_finding_markers >= 2:
+                _py = findings_count / raw_finding_markers
+                _state = _itc_model_state.get(model_label, {})
+                _thresh = _state.get("last_adaptive_threshold", 0.5)
+                if _py < _thresh:
+                    quality_ok = False
+            if quality_ok:
+                history = fp.setdefault("prompt_chars_history", [])
+                history.append(prompt_chars)
+            # Cap history at 50 entries to bound memory.
+            if len(history) > 50:
+                fp["prompt_chars_history"] = history[-50:]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1310,13 +1485,16 @@ def _dispatch_round_star(
         return f"{base_prompt}\n\n{combined}"
 
     logs_dir = brain.logs_dir
+    prompt_lengths: Dict[str, int] = {}
     with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
         future_to_label = {}
         start_times: Dict[str, float] = {}
         for mc in eligible:
+            prompt = _make_prompt(mc.label)
+            prompt_lengths[mc.label] = len(prompt) + len(cdsfl_text)
             start_times[mc.label] = time.monotonic()
             future_to_label[pool.submit(
-                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),
+                _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
             )] = mc.label
 
@@ -1390,13 +1568,16 @@ def _dispatch_round_relay(
         return f"{combined}{base_prompt}"
 
     logs_dir = brain.logs_dir
+    prompt_lengths: Dict[str, int] = {}
     with ThreadPoolExecutor(max_workers=len(eligible)) as pool:
         future_to_label = {}
         start_times: Dict[str, float] = {}
         for mc in eligible:
+            prompt = _make_prompt(mc.label)
+            prompt_lengths[mc.label] = len(prompt) + len(cdsfl_text)
             start_times[mc.label] = time.monotonic()
             future_to_label[pool.submit(
-                _dispatch_single_model, mc, mgr, _make_prompt(mc.label),
+                _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
             )] = mc.label
 
@@ -1627,6 +1808,10 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
     like content inside payloads (e.g. literal '====' lines) does not
     break parsing.
 
+    P1 fix (Exp 38): falls back to markdown code block extraction when
+    no <<<< SEARCH blocks found but ```python blocks with before/after
+    structure are present.
+
     Returns list of FixBlock. Empty list if no valid blocks found.
     """
     blocks: List[FixBlock] = []
@@ -1673,6 +1858,42 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
                 ))
         else:
             i += 1
+
+    # P1 fallback: extract from markdown code blocks with file path comments.
+    # Models sometimes use ```python\n# file: path/to/file.py\n... instead of
+    # <<<< SEARCH blocks. Look for paired "before"/"after" or "current"/"fixed"
+    # code blocks.
+    #
+    # SHADOW MODE (Exp 39): log what the fallback would extract but do not
+    # return the blocks. This gives empirical data on firing rate and
+    # precision without confounding the Exp 39 fix validation.
+    if not blocks:
+        _MD_BLOCK_RE = re.compile(
+            r'```\w*\n(?:#\s*(?:file|path|target):\s*([^\n]+)\n)?'
+            r'(.*?)\n```',
+            re.DOTALL
+        )
+        md_blocks = list(_MD_BLOCK_RE.finditer(text))
+        if len(md_blocks) >= 2:
+            shadow_blocks: List[FixBlock] = []
+            for j in range(len(md_blocks) - 1):
+                b1, b2 = md_blocks[j], md_blocks[j + 1]
+                between = text[b1.end():b2.start()].lower()
+                if any(kw in between for kw in ("after", "replace", "fixed", "corrected", "new")):
+                    fp = b1.group(1) or b2.group(1) or ""
+                    search = b1.group(2).strip()
+                    replace_text = b2.group(2).strip()
+                    if fp and search:
+                        shadow_blocks.append(FixBlock(
+                            file_path=fp.strip(),
+                            search=search,
+                            replace=replace_text,
+                        ))
+            if shadow_blocks:
+                _log(f"  P1 SHADOW: fallback parser found {len(shadow_blocks)} "
+                     f"block(s) from markdown — NOT applied. "
+                     f"Files: {[b.file_path for b in shadow_blocks]}, "
+                     f"search_lens: {[len(b.search) for b in shadow_blocks]}")
     return blocks
 
 
@@ -2440,6 +2661,14 @@ def run_experiment(
                 phase, str(target_rel), burst_plan.signatures)
             _log(f"\n  Starting Phase 0: {phase.name}")
 
+            # Apply Phase 0 convergence overrides at initialisation —
+            # without this, Phase 0 runs with base config thresholds
+            # and can consume the entire round budget.
+            overrides = phase_convergence_overrides(0)
+            cfg = replace(cfg, **overrides)
+            _log(f"  Phase 0 overrides: earliest_stop={overrides['earliest_stop_round']}, "
+                 f"rho_earliest={overrides['rho_earliest_round']}")
+
     # Build DynamicManager
     dm_config = DynamicManagementConfig(
         pre_decompose_models={"Codex", "DeepSeek"},
@@ -2473,6 +2702,7 @@ def run_experiment(
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
     stall_history: List[Dict[str, int]] = []
+    consecutive_churn_rounds: int = 0  # D1: tracks sustained churn for phase transition
 
     if cfg.resume and brain.load_checkpoint():
         start_round = brain.state.current_round + 1
@@ -2549,11 +2779,13 @@ def run_experiment(
             f"  ABSTRACTION_INDEX: 0.0 to 1.0\n"
             f"  DESCRIPTION: FIND — what is wrong, where, evidence\n"
             f"  FOLLOW: trace downstream consequences before proposing a fix\n"
-            f"  PROPOSED_FIX: Express as SEARCH/REPLACE blocks:\n"
+            f"  PROPOSED_FIX: REQUIRED — express as SEARCH/REPLACE blocks.\n"
+            f"    Without these blocks, the fix cannot be verified by the S_k pipeline.\n"
+            f"    Format:\n"
             f"    <<<< SEARCH file_path\n"
-            f"    [exact current content]\n"
+            f"    [exact current content to replace — copy verbatim from source]\n"
             f"    ====\n"
-            f"    [exact replacement]\n"
+            f"    [exact replacement content]\n"
             f"    >>>> REPLACE\n"
             f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
             f"Produce ALL findings. Do not hold back.\n\n"
@@ -2602,6 +2834,13 @@ def run_experiment(
         _log(f"Round {round_idx}/{effective_max - 1} ({round_type})")
         _log(f"{'---' * 20}")
 
+        # Update relay budgets from fingerprint data before dispatch.
+        # Each model's budget adapts to its measured prompt performance.
+        for _bl in cfg.models:
+            brain.config.context_budget_overrides[_bl] = (
+                get_effective_context_budget(_bl, observed_fingerprints)
+            )
+
         # Dispatch — topology-dependent
         if cfg.topology == "relay":
             findings, responses, per_model_durations = _dispatch_round_relay(
@@ -2638,10 +2877,16 @@ def run_experiment(
         # A2: Rho
         rho_current, rho_avg, rho_churn = _compute_rho(novelty_counts, raw_counts, cfg)
         rho_history.append(rho_current)
+        # D1: track consecutive churn rounds for phase transition
+        if rho_churn:
+            consecutive_churn_rounds += 1
+        else:
+            consecutive_churn_rounds = 0
         _log(f"  Registry: {novel_this_round} novel / {len(findings)} raw, "
              f"{len(registry.entries)} total, "
              f"rho={rho_current:.3f}, rho_avg={rho_avg:.3f}"
-             f"{' [CHURN]' if rho_churn else ''}")
+             f"{' [CHURN]' if rho_churn else ''}"
+             f"{f' (churn x{consecutive_churn_rounds})' if consecutive_churn_rounds > 1 else ''}")
 
         # Parse verdicts
         for model_id, raw_text in responses.items():
@@ -2716,9 +2961,17 @@ def run_experiment(
                     if f.model_id == model_label
                 }
             dispatch_err = "no_response" if model_label not in responses else None
+            raw_markers = len(_FINDING_DECL_RE.findall(model_text))
+            # ORDERING INVARIANT: _itc_detect MUST run before
+            # _update_observed_fingerprint. ITC detect populates
+            # parse_yield_history in _itc_model_state; the fingerprint
+            # quality gate reads it to decide whether to record prompt
+            # size in budget history. Reversing the order would cause
+            # stale/missing yield data in the quality gate.
             classification = _itc_detect(
                 model_label, round_idx, len(model_findings), model_text,
                 prior_ids, current_ids, dispatch_error=dispatch_err,
+                raw_finding_markers=raw_markers,
             )
             if classification:
                 _itc_adapt(model_label, classification, round_idx,
@@ -2727,7 +2980,10 @@ def run_experiment(
                 _itc_clear_adaptation(model_label)
             _update_observed_fingerprint(
                 observed_fingerprints, model_label, round_idx,
-                len(model_findings), len(model_text), dispatch_error=dispatch_err,
+                len(model_findings), len(model_text),
+                prompt_chars=prompt_lengths.get(model_label, 0),
+                raw_finding_markers=raw_markers,
+                dispatch_error=dispatch_err,
             )
 
         # Directed messages (relay only)
@@ -2791,9 +3047,25 @@ def run_experiment(
         # ── Phase transition or final convergence ──
         phase_transition = False
 
-        if converged or stall_result.get("terminate"):
+        # D1: churn-based phase transition in burst mode.
+        # Sustained churn (3+ consecutive rounds) with gamma >= 0.45 signals
+        # topic exhaustion — trigger phase transition without waiting for
+        # convergence gate or stall detector.
+        churn_transition = False
+        if (burst_plan and burst_state and not burst_state["integration_done"]
+                and consecutive_churn_rounds >= 3 and gamma >= 0.45
+                and not converged and not stall_result.get("terminate")):
+            churn_transition = True
+            _log(f"  D1 churn transition: {consecutive_churn_rounds} consecutive "
+                 f"churn rounds, gamma={gamma:.3f} — phase exhausted")
+
+        if converged or stall_result.get("terminate") or churn_transition:
             reason_str = conv_reason if converged else stall_result.get("reason", "stall")
-            reason_type = "CONVERGED" if converged else "STALL_CONVERGED"
+            if churn_transition:
+                reason_str = (f"churn x{consecutive_churn_rounds}, gamma={gamma:.3f}")
+            reason_type = ("CONVERGED" if converged
+                           else "CHURN_EXHAUSTED" if churn_transition
+                           else "STALL_CONVERGED")
 
             if burst_plan and burst_state and not burst_state["integration_done"]:
                 # Burst mode: transition to next phase or integration
@@ -2839,6 +3111,7 @@ def run_experiment(
                     rho_history.clear()
                     gamma_history.clear()
                     open_ch_history.clear()
+                    consecutive_churn_rounds = 0
                     extended = False
 
                     phase_transition = True

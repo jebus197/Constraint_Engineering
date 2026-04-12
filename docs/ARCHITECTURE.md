@@ -100,6 +100,14 @@ Adaptive recovery for model failures and degradation. Classifies failure type an
 
 Never benches models. Models are always restarted, never removed from the panel.
 
+**Adaptive parse yield detection** (Exp 39): Each model builds its own parse yield history (rolling window of 20 rounds). Once 4+ entries exist, baseline = mean of best 3 of last 5 yields. Adaptive threshold = max(0.5 hard floor, baseline - 0.25). Models are judged against their own performance, not a static constant.
+
+Design trade-offs (verified numerically, Exp 39 Round 3 confer, 2026-04-11):
+- **Outlier resistance vs trend detection**: The "best 3 of 5" filter discards the worst two recent values, making it robust against single bad rounds but blind to sustained gradual degradation. At degradation rates below ~9% per round, the adaptive threshold never fires before the 0.5 hard floor — the filter absorbs the decline. At 9%+ per round, the adaptive threshold catches 2-3 rounds earlier than the floor. In short: the adaptive threshold detects sharp drops; the hard floor is the safety net for gradual decline. Context overload (models fed more context than they can handle) causes gradual decline, so the floor is load-bearing in that scenario.
+- **Anti-gaming**: Front-loading high-quality rounds to establish a generous baseline backfires — but only when the gap between front-loaded and true performance exceeds the deviation margin (0.25). A model at true 70% must front-load above 95% to trigger detection. Below that gap, front-loading has no effect. The mechanism is: high baseline produces a high threshold, making the detector more sensitive to subsequent drops, but the margin absorbs small gaps.
+- **Phase persistence**: `_itc_model_state` (including yield history) persists across burst mode phase transitions. Parse yield is a model characteristic, not a phase characteristic. Only `restart_fresh` resets it.
+- **Ordering invariant**: `_itc_detect` must run before `_update_observed_fingerprint` in the per-model loop. ITC detect computes and stores the adaptive threshold in `_itc_model_state`; the fingerprint quality gate reads the stored value.
+
 ### Endocrine Layer (`bench/endocrine.py`)
 
 Health monitoring subsystem. Runs periodic health cycles computing diagnostics. Provides pacing signals (slow down / speed up based on system state) and a fix evaluation sandbox (pyright, ruff, bandit, pytest in isolation).

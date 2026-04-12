@@ -95,19 +95,66 @@ DECOMPOSITION_CONTEXT_THRESHOLD = {
     "CC2": 120000,
 }
 
-# WP4b: Per-model context character budgets for findings relay.
-# When accumulated findings exceed this, the insect brain switches to
-# summary-only mode (finding IDs + one-line descriptions). This prevents
-# prompt bloat while preserving cross-pollination awareness.
-# Mirrors DynamicManagementConfig.context_budget_overrides but available
-# at the runner level for non-DM dispatch paths.
-CONTEXT_CHAR_BUDGET = {
-    "CC2": 30_000,        # WP4c: matches DeepSeek's proven limit
-    "ChatGPT": 80_000,
-    "Gemini": 200_000,    # 1M context window — generous budget
-    "DeepSeek": 30_000,   # Reasoner CoT scales with input
+# WP4b: Per-model context character budget CEILINGS for findings relay.
+# These are maximum allowed budgets — the actual operating budget is
+# computed dynamically by get_effective_context_budget() using fingerprint
+# data when available. No model operates above its ceiling regardless of
+# fingerprint data. Values are conservative starting points, NOT derived
+# from vendor context window claims.
+CONTEXT_CHAR_BUDGET_CEILING = {
+    "CC2": 30_000,
+    "ChatGPT": 60_000,
+    "Gemini": 60_000,
+    "DeepSeek": 30_000,
     "Codex": 60_000,
 }
+# Conservative default for models not in the ceiling table.
+_DEFAULT_BUDGET_CEILING = 40_000
+
+
+def get_effective_context_budget(
+    model_label: str,
+    fingerprints: Optional[Dict[str, Dict]] = None,
+) -> int:
+    """Compute relay budget from measured fingerprint data.
+
+    Priority:
+    1. If fingerprint has prompt_chars_history with >= 3 entries,
+       use the 80th percentile of successful prompt sizes as the budget
+       (capped at the static ceiling). This adapts to measured performance.
+    2. Otherwise, use the static ceiling as a starting point until
+       enough data accumulates.
+
+    No model gets a budget above its ceiling. No model gets a budget
+    based on vendor claims — only measured data or conservative defaults.
+    """
+    ceiling = CONTEXT_CHAR_BUDGET_CEILING.get(model_label, _DEFAULT_BUDGET_CEILING)
+
+    if not fingerprints:
+        return ceiling
+
+    fp = fingerprints.get(model_label, {})
+    history = fp.get("prompt_chars_history", [])
+
+    if len(history) < 3:
+        # Not enough data — use ceiling as starting point.
+        return ceiling
+
+    # 80th percentile of observed successful prompt sizes.
+    sorted_h = sorted(history)
+    p80_idx = int(len(sorted_h) * 0.8)
+    p80 = sorted_h[min(p80_idx, len(sorted_h) - 1)]
+
+    # Budget = p80 * 0.9 (10% below 80th percentile for safety margin),
+    # but never above the ceiling and never below 10K (floor to prevent
+    # the degradation ladder from collapsing to summary-only too early).
+    effective = max(10_000, int(p80 * 0.9))
+    return min(effective, ceiling)
+
+
+# Backward-compatible alias — code that reads CONTEXT_CHAR_BUDGET directly
+# gets the ceiling values. New code should call get_effective_context_budget().
+CONTEXT_CHAR_BUDGET = CONTEXT_CHAR_BUDGET_CEILING
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -560,7 +607,11 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         )
 
         if fid_match:
-            finding_id = fid_match.group(1).strip().strip("*")
+            raw_fid = fid_match.group(1).strip().strip("*")
+            # P2 fix (Exp 38): tighten ID extraction — only keep the
+            # F-prefix ID, not trailing description text that leaked in.
+            fid_only = re.match(r'([A-Z0-9_]*F\d{2,4})', raw_fid)
+            finding_id = fid_only.group(1) if fid_only else raw_fid
         else:
             finding_id = f"F{len(findings)+1:03d}"
         severity = float(sev_match.group(1)) if sev_match else 0.5
@@ -589,6 +640,17 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         severity = max(0.0, min(1.0, severity))
         abstraction = max(0.0, min(1.0, abstraction))
         flaw_class = max(1, min(8, flaw_class))
+
+        # P3 fix (Exp 38): skip findings whose description is actually a
+        # verdict declaration (Gemini produces "CONFIRM C0042 — ..." as a
+        # finding). Check if description starts with a verdict keyword +
+        # canonical ID — that's a verdict, not a new finding.
+        _VERDICT_AS_FINDING = re.match(
+            r'\s*(?:CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+C\d{4}',
+            description
+        )
+        if _VERDICT_AS_FINDING:
+            continue
 
         full_id = finding_id if finding_id.startswith(f"{model_id}_") else f"{model_id}_{finding_id}"
         findings.append(Finding(

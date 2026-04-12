@@ -2809,12 +2809,20 @@ def typed_llm_classifier(
                     llm_confidence = 0.5
 
             disagrees = regex_tf.claim_type != llm_type
-            # Override conditions: LLM disagrees, high confidence, regex is
-            # not MATHEMATICAL (safety guardrail), LLM is not UNCATEGORISED
+            # Override conditions: LLM disagrees, high confidence.
+            # Exp 38 fix: allow MATHEMATICAL override in software domain.
+            # The regex MATH pattern matches ~85% of code findings (any
+            # comparison operator triggers it). The LLM correctly identifies
+            # these as CODE_BEHAVIORAL. Guard retained for non-software
+            # domains where MATHEMATICAL routing is safety-critical.
+            math_guard = (
+                regex_tf.claim_type == ClaimType.MATHEMATICAL
+                and domain != "software"
+            )
             should_override = (
                 disagrees
                 and llm_confidence >= override_threshold
-                and regex_tf.claim_type != ClaimType.MATHEMATICAL
+                and not math_guard
                 and llm_type != ClaimType.UNCATEGORISED
             )
 
@@ -2844,6 +2852,16 @@ def typed_llm_classifier(
                     extracted_claim=regex_tf.extracted_claim,
                 )
                 override_count += 1
+            elif disagrees and math_guard:
+                # P5 fix: distinguish guard-blocked from threshold-blocked.
+                # Old code reported "below threshold" even when the real
+                # reason was math_guard — misleading in non-software domains.
+                _shadow_log.info(
+                    "LLM classifier: %s — regex=%s llm=%s "
+                    "(conf=%.2f, BLOCKED by MATHEMATICAL guard, %.1fs)",
+                    f.finding_id, regex_tf.claim_type.value,
+                    llm_type.value, llm_confidence, elapsed,
+                )
             elif disagrees:
                 _shadow_log.info(
                     "LLM classifier: %s — regex=%s llm=%s "
@@ -3409,8 +3427,8 @@ def run_immune_pipeline(
 
     # ── Stage 1.5: Typed LLM Classifier SEMI-ACTIVE (WP3c promoted) ───
     # Runs on ALL findings. Overrides regex when LLM disagrees with high
-    # confidence (>= 0.70). Never overrides MATHEMATICAL regex (safety).
-    # Still logs all comparisons for analysis.
+    # confidence (>= 0.70). Exp 38 fix: MATHEMATICAL override now allowed
+    # in software domain (regex had ~15% agreement with LLM on code findings).
     t0_llm_cls = time.monotonic()
     try:
         llm_classifier_results = typed_llm_classifier(new_findings, triaged)
