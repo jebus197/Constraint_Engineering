@@ -82,9 +82,11 @@ class DynamicManagementConfig:
     blind_first: bool = True  # HARD: always start with blind round
 
     # --- Area 4: Convergence Detection ---
-    tau_sim: float = 0.33  # finding similarity threshold for equivalence
+    tau_sim: float = 0.33  # finding similarity threshold for equivalence (Jaccard)
     # Run 8 calibration: max pairwise sim was 0.553, old 0.8 was unreachable.
     # At 0.33 (centroid-based): 67 clusters from 339 findings (80% churn detected).
+    tau_sim_embed: float = 0.55  # embedding similarity threshold (higher than Jaccard
+    # because cosine on embeddings produces denser scores — calibrate against Exp 38 data)
     tau_kappa: float = 0.95  # convergence threshold (SEPARATE from gamma)
     eta_veto: float = 0.9  # severity veto threshold (ChatGPT contribution)
     epsilon_conv: float = 1e-8  # zero-denominator regulariser

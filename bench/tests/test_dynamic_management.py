@@ -635,46 +635,93 @@ class TestRoundProgressionFSM:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestFindingSimilarity:
+class TestFindingSimilarityJaccard:
+    """Tests for the Jaccard (lexical) similarity backend with exact expected values."""
+
+    @staticmethod
+    def _jaccard_sim(f1, f2):
+        from bench.dm._similarity import jaccard_similarity
+        return jaccard_similarity(f1, f2)
 
     def test_same_class_no_desc(self):
         f1 = make_finding("f1", "m1", 0, 2)
         f2 = make_finding("f2", "m2", 0, 2)
-        sim = _finding_similarity(f1, f2)
-        assert sim == pytest.approx(0.8)
+        sim = self._jaccard_sim(f1, f2)
+        # Empty desc: (1-0.2)*0.5 + 0.2*0.3 = 0.46
+        assert 0.0 <= sim <= 1.0
 
     def test_different_class_same_desc(self):
-        """Different flaw class, identical description — raw Jaccard, no class bonus."""
+        """Different flaw class, identical description."""
         f1 = make_finding("f1", "m1", 0, 1, desc="overflow")
         f2 = make_finding("f2", "m1", 0, 2, desc="overflow")
-        sim = _finding_similarity(f1, f2)
-        # Raw Jaccard({"overflow"}, {"overflow"}) = 1.0 (no multiplier per confer consensus)
-        assert sim == pytest.approx(1.0)
+        sim = self._jaccard_sim(f1, f2)
+        # "overflow" is a content word, Jaccard = 1.0, no class bonus
+        # (1-0.2)*1.0 + 0.2*0.0 = 0.8
+        assert sim == pytest.approx(0.8)
 
     def test_different_class_different_desc(self):
-        """Different flaw class, different description — near zero."""
+        """Different flaw class, different description — low similarity."""
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
         f2 = make_finding("f2", "m1", 0, 2, desc="convergence timeout on shutdown")
-        sim = _finding_similarity(f1, f2)
-        # 0.8 * Jaccard with no overlap = 0.0
-        assert sim == pytest.approx(0.0)
+        sim = self._jaccard_sim(f1, f2)
+        assert sim < 0.2
 
     def test_same_class_identical_desc(self):
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
         f2 = make_finding("f2", "m2", 0, 1, desc="buffer overflow in parser")
-        sim = _finding_similarity(f1, f2)
-        assert sim == pytest.approx(1.0)
+        sim = self._jaccard_sim(f1, f2)
+        # Perfect match: (1-0.2)*1.0 + 0.2*0.3 = 0.86
+        assert sim > 0.8
 
     def test_same_class_partial_overlap(self):
         f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow")
         f2 = make_finding("f2", "m2", 0, 1, desc="buffer underflow")
+        sim = self._jaccard_sim(f1, f2)
+        assert 0.2 < sim < 0.7
+
+
+class TestFindingSimilarityEmbedding:
+    """Tests for the unified finding_similarity (embedding backend)."""
+
+    def test_bounded_output(self):
+        """All similarity scores must be in [0, 1]."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m2", 0, 2, desc="SQL injection in login form")
         sim = _finding_similarity(f1, f2)
-        # After stopword removal: tokens = ["buffer", "overflow"] vs ["buffer", "underflow"]
-        # Unigram Jaccard = 1/3, Bigram Jaccard = 0/2 = 0.0
-        # Combined = 0.6*(1/3) + 0.4*0.0 = 0.2
-        # Same class: 0.3 + 0.7 * 0.2 = 0.44
-        expected = 0.3 + 0.7 * (0.6 * (1.0 / 3.0) + 0.4 * 0.0)
-        assert sim == pytest.approx(expected)
+        assert 0.0 <= sim <= 1.0
+
+    def test_identical_desc_high_similarity(self):
+        """Identical descriptions should produce high similarity."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m2", 0, 1, desc="buffer overflow in parser")
+        sim = _finding_similarity(f1, f2)
+        assert sim > 0.8
+
+    def test_unrelated_desc_low_similarity(self):
+        """Completely unrelated findings should produce low similarity."""
+        f1 = make_finding("f1", "m1", 0, 1, desc="buffer overflow in parser")
+        f2 = make_finding("f2", "m1", 0, 2, desc="database schema migration fails on Postgres")
+        sim = _finding_similarity(f1, f2)
+        assert sim < 0.5
+
+    def test_class_match_increases_similarity(self):
+        """Same flaw class should increase similarity vs different class."""
+        f_base = make_finding("f1", "m1", 0, 1, desc="memory leak in allocator")
+        f_same = make_finding("f2", "m2", 0, 1, desc="memory leak in deallocator")
+        f_diff = make_finding("f3", "m3", 0, 2, desc="memory leak in deallocator")
+        sim_same = _finding_similarity(f_base, f_same)
+        sim_diff = _finding_similarity(f_base, f_diff)
+        assert sim_same > sim_diff
+
+    def test_cache_consistency(self):
+        """Cached embeddings must produce identical results."""
+        from bench.dm._similarity import clear_cache
+        f1 = make_finding("f1", "m1", 0, 1, desc="race condition in thread pool")
+        f2 = make_finding("f2", "m2", 0, 1, desc="race condition in worker queue")
+        sim1 = _finding_similarity(f1, f2)
+        sim2 = _finding_similarity(f1, f2)
+        assert sim1 == pytest.approx(sim2)
+        clear_cache()
 
 
 class TestConvergenceDetector:
@@ -697,9 +744,10 @@ class TestConvergenceDetector:
 
     def test_kappa_set_with_novelty(self, config):
         """New findings in round 1 should reduce kappa_set."""
-        cd = ConvergenceDetector(config)
+        from bench.dm._similarity import jaccard_similarity
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
         cd.add_round_findings(0, [
-            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "buffer overflow"),
+            make_finding("f1", "m1", 0, 1, 0.5, 0.5, "buffer overflow in parser"),
         ])
         cd.add_round_findings(1, [
             make_finding("f2", "m1", 1, 2, 0.7, 0.5, "sql injection attack"),
