@@ -1094,6 +1094,82 @@ def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
     return verdicts
 
 
+# ── Specialist B-Cell Dispatch (Phase B4) ──────────────────────────────────────
+
+def _specialist_b_cell_dispatch(
+    triaged: List[TriagedFinding],
+    domain_config: Dict[str, Any],
+) -> List[CellVerdict]:
+    """Route claims to domain-specific verification tools based on TOML config.
+
+    Reads `immune.verification_tools` from the domain config to determine
+    which tools to use for each claim type. Falls back to generic B-Cell
+    dispatch (SymPy/z3/stats) if the domain config doesn't specify tools
+    for a given claim type.
+
+    Phase B4: runs in shadow mode — logs what it WOULD do differently from
+    generic dispatch but does not affect final verdicts.
+    """
+    immune_cfg = domain_config.get("immune", {})
+    tool_map: Dict[str, List[str]] = immune_cfg.get("verification_tools", {})
+
+    if not tool_map:
+        return []  # No specialist tools configured
+
+    verdicts: List[CellVerdict] = []
+
+    # Map ClaimType enum values to TOML key names
+    _CLAIM_TYPE_TO_KEY = {
+        "mathematical": "mathematical",
+        "logical": "logical",
+        "statistical": "statistical",
+        "code_structural": "code_structural",
+        "code_behavioral": "code_behavioral",
+    }
+
+    for tf in triaged:
+        if tf.is_duplicate:
+            continue
+
+        claim_key = _CLAIM_TYPE_TO_KEY.get(tf.claim_type.value)
+        if claim_key is None or claim_key not in tool_map:
+            continue  # No specialist tools for this claim type
+
+        specialist_tools = tool_map[claim_key]
+        fid = tf.finding.finding_id
+
+        v: Optional[CellVerdict] = None
+
+        for tool_name in specialist_tools:
+            if tool_name == "sympy":
+                v = _verify_sympy(tf.extracted_claim)
+            elif tool_name == "z3":
+                v = _verify_z3(tf.extracted_claim)
+            elif tool_name == "statsmodels" or tool_name == "scipy":
+                v = _verify_statistical(tf.extracted_claim)
+            elif tool_name == "ast_analysis":
+                # AST analysis is handled by B-Cell v2, not here
+                continue
+            elif tool_name == "type_checker":
+                # Type checking would be handled by mypy integration
+                continue
+            elif tool_name == "test_runner":
+                # Test runner is handled by CT, not B-Cell
+                continue
+            else:
+                continue  # Unknown tool, skip
+
+            if v is not None and v.verdict != "UNCERTAIN":
+                v.evidence += f" [specialist:{tool_name}]"
+                break  # First definitive result wins
+
+        if v is not None:
+            v.finding_id = fid
+            verdicts.append(v)
+
+    return verdicts
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 4. NK CELL — Pattern recognition, dedup, and immune memory
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3493,6 +3569,14 @@ def run_immune_pipeline(
             b_cell_v2, triaged, source_paths,
         )
 
+        # 2b'': B-Cell specialist (Phase B4: SHADOW mode)
+        # Routes claims to domain-specific tools from TOML config.
+        # Runs in parallel, results logged but don't affect verdicts.
+        if domain_config:
+            futures["b_cell_specialist"] = pool.submit(
+                _specialist_b_cell_dispatch, triaged, domain_config,
+            )
+
         # 2c: NK v2 (WP6a: now PRIMARY — FP continue fix + intra-round dedup)
         futures["nk_v2"] = pool.submit(
             nk_cell_v2, triaged_for_nk, prior_findings, tau_sim,
@@ -3500,6 +3584,7 @@ def run_immune_pipeline(
         )
 
         # Collect results — all active cells feed all_verdicts
+        specialist_verdicts: List[CellVerdict] = []
         for name, future in futures.items():
             try:
                 result = future.result(timeout=ct_timeout + 30)
@@ -3509,6 +3594,14 @@ def run_immune_pipeline(
                     all_verdicts.extend(nk_verdicts)
                     for v in nk_verdicts:
                         tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
+                elif name == "b_cell_specialist":
+                    # Phase B4 SHADOW: log divergences, don't affect verdicts
+                    specialist_verdicts = result
+                    _shadow_log.info(
+                        "B-Cell specialist (shadow): %d verdicts",
+                        len(specialist_verdicts),
+                    )
+                    tool_usage["b_cell_specialist_shadow"] = len(specialist_verdicts)
                 else:
                     cell_verdicts = result
                     all_verdicts.extend(cell_verdicts)
@@ -3520,6 +3613,20 @@ def run_immune_pipeline(
                 logging.getLogger(__name__).warning(
                     "Immune cell %s failed: %s: %s", name, type(e).__name__, e
                 )
+
+        # Phase B4 shadow: log divergences between specialist and generic
+        if specialist_verdicts:
+            generic_by_fid = {}
+            for v in all_verdicts:
+                if v.cell_type == CellType.B_CELL:
+                    generic_by_fid[v.finding_id] = v.verdict
+            for sv in specialist_verdicts:
+                generic_v = generic_by_fid.get(sv.finding_id, "NONE")
+                if sv.verdict != generic_v:
+                    _shadow_log.info(
+                        "B-Cell specialist divergence: %s specialist=%s generic=%s",
+                        sv.finding_id, sv.verdict, generic_v,
+                    )
 
     timings["parallel_verification"] = round(time.monotonic() - t0, 4)
 

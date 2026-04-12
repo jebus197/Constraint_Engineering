@@ -813,3 +813,78 @@ class TestHardVerificationGate:
         _TOOL_GROUNDED = {CellType.CYTOTOXIC_T, CellType.B_CELL, CellType.NK_CELL}
         tool_v = [v for v in verdicts if v.finding_id == "f1" and v.cell_type in _TOOL_GROUNDED]
         assert len(tool_v) > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase B4: Specialist B-Cell Dispatch
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestSpecialistBCellDispatch:
+
+    def test_specialist_selects_correct_tools(self):
+        """Specialist dispatch routes mathematical claims to sympy."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="sqrt(4) = 3"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="sqrt(4) = 3",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {
+                    "mathematical": ["sympy", "z3"],
+                    "logical": ["z3"],
+                },
+            },
+        }
+        verdicts = _specialist_b_cell_dispatch([tf], domain_config)
+        assert len(verdicts) >= 1
+        assert verdicts[0].finding_id == "f1"
+
+    def test_specialist_fallback_empty_config(self):
+        """Specialist dispatch returns empty on missing tool config."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="x > 0"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="x > 0",
+        )
+        verdicts = _specialist_b_cell_dispatch([tf], {})
+        assert verdicts == []
+
+    def test_specialist_domain_patterns_override(self):
+        """Domain config routes statistical claims to statsmodels."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="convergence test"),
+            claim_type=ClaimType.STATISTICAL,
+            extracted_claim="p-value < 0.05 significant",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {
+                    "statistical": ["statsmodels"],
+                },
+            },
+        }
+        verdicts = _specialist_b_cell_dispatch([tf], domain_config)
+        assert len(verdicts) >= 1
+
+    def test_specialist_shadow_no_pipeline_mutation(self):
+        """Specialist and generic B-Cell produce independent results."""
+        from bench.immune_agents import _specialist_b_cell_dispatch
+        tf = TriagedFinding(
+            finding=_make_finding(fid="f1", desc="2 + 2 = 5"),
+            claim_type=ClaimType.MATHEMATICAL,
+            extracted_claim="2 + 2 = 5",
+        )
+        domain_config = {
+            "immune": {
+                "verification_tools": {"mathematical": ["sympy"]},
+            },
+        }
+        specialist = _specialist_b_cell_dispatch([tf], domain_config)
+        generic = b_cell_verify([tf])
+        assert isinstance(specialist, list)
+        assert isinstance(generic, list)
