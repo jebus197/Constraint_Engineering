@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 April 2026 21:33 BST
+Last updated: 12 April 2026 23:59 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,31 +25,40 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39 IMPLEMENTATION + GAP ANALYSIS (12 April 2026 21:31 BST):**
-  Branch: `exp39-experimental`. 784 tests pass (+22 new). 11 commits (ad53693..89b6a05).
+- **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
+  Branch: `exp39-experimental`. 793 tests pass. 12+ commits.
+  **Macrophage/Ouroboros cell type split implemented:**
+  - `bench/macrophage_cell.py` (NEW): Internal pipeline monitor. PATROL + SELF_CHECK modes.
+    Domain-agnostic categories. Expanded observe() with provenance, gate stats, O1 metrics.
+  - `bench/ouroboros_cell.py` (REWRITTEN): External research + self-improvement. Between-round.
+    ProvenancePacket, shadow mode, hard-capped. 3 queries/round, 2 claims max.
+  - Finding schema: 6 provenance fields added (origin_type, source_ref, etc.).
+  - Runner: shadow_cell_config on RunnerConfig, _run_shadow_cells() in main loop.
+  - Naming: **Macrophage** = internal monitor, **Ouroboros (O1)** = external research.
   **All 9 implementation phases committed (0-8).** 3 critical errors caught/corrected.
-  **New modules:** `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`.
+  **New modules:** `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/macrophage_cell.py`.
   **Mathematical appendix:** 1334 → 1651 lines. New §§1.2–1.5, 7.13, 8.7, 9.
-  **3 Gemini confers (12 April 2026):**
+  **4 Gemini + Codex confers (12 April 2026):**
   Round 1: advisory capacity falsified as mitigation. O1 needs clustering + breaker.
   Round 2: PE gates sequential 1→2→3. Sensitivity dial [0,1]/1-11 UX. Dual-fuse breaker.
   Round 3 (gap analysis): CODE-CORRECTNESS BIAS identified — all gates/docs assumed code
   artifacts. Gates redesigned: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial
   Consistency. IFalsificationGate protocol interface. Missing domain configs BLOCKING
-  Exp 39-G/H/M/F. O1 must NOT have external research (ResearchB_Cell instead). §7
-  partitioned: churn (BLOCKING), sycophancy + severity fusion (LOAD-BEARING), rest Phase 9.
-  Convergence gate insufficient without churn detection as C6.
-  **Execution order agreed:** gate interface → churn C6 → domain configs → B-Cell dispatch
+  Exp 39-G/H/M/F. §7 partitioned: churn (BLOCKING), sycophancy + severity fusion
+  (LOAD-BEARING), rest Phase 9.
+  Round 4 (cell split): Both models agree split architecturally mandatory. Disjoint evidence
+  paths. Shadow-first. Provenance schema with 6 mandatory fields.
+  **Remaining execution order:** gate interface → churn C6 → domain configs → B-Cell dispatch
   → severity fusion → sycophancy → O1 calibration → run 39-0 → Phase 9.
   **Confer logs:** `bench/logs/confer_o1_ffafp/`, `bench/logs/confer_pe_o1_design/`,
-  `bench/logs/confer_gap_analysis/`
+  `bench/logs/confer_gap_analysis/`, `bench/logs/confer_cell_split/`
   **Key experimental notes:**
   `experimental_notes/Exp39_Implementation_2026-04-12.md`
   `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`
   `experimental_notes/AIS_Confer_Synthesis_2026-04-12.md`
   `experimental_notes/Revised_Model_Confer_2026-04-12.md`
   `experimental_notes/Exp39_Infrastructure_Build_2026-04-12.md`
-  **Confer logs:** `bench/logs/confer_o1_ffafp/`, `bench/logs/confer_pe_o1_design/`
+  `experimental_notes/Macrophage_Ouroboros_Split_2026-04-12.md`
 
 - **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.

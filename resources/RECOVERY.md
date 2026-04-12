@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 21:33 BST
+Last updated: 12 April 2026 23:59 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,17 +21,28 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 21:31 BST)
+## Current Pending Work (12 April 2026 23:56 BST)
 
-784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: 89b6a05.
+793 tests pass (+9 net new from cell split). Branch: `exp39-experimental`. Last commit: 996ec52.
 
-**ALL 9 IMPLEMENTATION PHASES COMPLETE (Phases 0–8):**
-- 11 commits on `exp39-experimental` (ad53693..89b6a05)
-- New modules: `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`
-- Mathematical appendix expanded: 1334 → 1651 lines, 7 new sections, 17 notation entries
-- 3 critical errors caught/corrected: corroboration collapse, order dependence, kappa overflow
+**MACROPHAGE / OUROBOROS CELL TYPE SPLIT COMPLETE:**
+- `bench/macrophage_cell.py` (NEW, ~370 LOC): Internal pipeline monitor. Modes: PATROL (anomaly hunting) + SELF_CHECK (self-referential health). Domain-agnostic categories. Expanded observe() accepts provenance, gate_stats, ouroboros_metrics. Detects: verdict_cluster, severity_concentration, timing_spike, source_monoculture, persistent_anomaly, method_claim_mismatch, immune_deficiency, provenance_incomplete.
+- `bench/ouroboros_cell.py` (REWRITTEN, ~310 LOC): External research + self-improvement cell. Between-round placement. ProvenancePacket, OuroborosCandidateClaim, OuroborosShadowLog. Hard caps: 3 queries/round, 2 claims max. Shadow mode for Exp 39.
+- `bench/dm/_types.py`: Finding schema extended with 6 provenance fields (origin_type, source_ref, retrieval_query, retrieved_at, source_hash, source_diversity).
+- `bench/reference_runner.py`: shadow_cell_config on RunnerConfig. _run_shadow_cells() wired into main loop after immune pipeline. Shadow cell data in round reports.
+- Configs updated: 39-C (Macrophage monitor), 39-J (Ouroboros O1).
+- Tests: 6 Macrophage + 4 Ouroboros = 10 new tests. All 793 pass.
+- Confer round 4: `bench/logs/confer_cell_split/` (Gemini 43.6s + Codex 398.6s)
+- Experimental notes: `experimental_notes/Macrophage_Ouroboros_Split_2026-04-12.md`
+- TTS: `~/Desktop/CDSFL_tts/Macrophage_Ouroboros_Split_2026-04-12.txt`
 
-**Gemini Confer Findings (3 rounds, 12 April 2026):**
+**NAMING CONVENTION (corrected):**
+- **Macrophage** = internal pipeline monitor (biology: patrol cell inside body). Advisory only, no external API access.
+- **Ouroboros (O1)** = external research + self-improvement (mythology: cyclical self-improvement). Between-round. Structured academic fetch.
+
+**ALL 9 IMPLEMENTATION PHASES REMAIN COMPLETE (Phases 0–8).**
+
+**Gemini + Codex Confer Findings (4 rounds, 12 April 2026):**
 
 Round 1 (O1 + FFAFP): advisory capacity falsified as mitigation. Confer: `bench/logs/confer_o1_ffafp/`
 Round 2 (PE 3-Gate + O1 Calibration): sensitivity dial, dual-fuse breaker, two-tier clustering. Confer: `bench/logs/confer_pe_o1_design/`
@@ -39,18 +50,12 @@ Round 3 (Gap Analysis + Domain-Agnostic Redesign, Codex timed out):
 - **Code-correctness bias identified**: all gates, docs, confers framed around code artifacts. CDSFL is domain-agnostic.
 - **Gates redesigned**: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial Consistency. `IFalsificationGate` protocol interface. Domain configs supply concrete checks.
 - **Missing domain configs**: biology, information_science, immune/engineering, cs_software — BLOCKING Exp 39-G/H/M/F.
-- **O1 must NOT have external research**: monitor, not actor. External research → ResearchB_Cell.
 - **§7 partitioned**: §7.1a churn (BLOCKING), §7.5 sycophancy (LOAD-BEARING), §7.7 severity fusion (LOAD-BEARING). Rest → Phase 9.
 - **Convergence gate insufficient**: current γ+ρ cannot distinguish refinement from oscillation without churn (C6).
 - Confer: `bench/logs/confer_gap_analysis/`
+Round 4 (Cell Split): Both models agree split is architecturally mandatory. Disjoint evidence paths. Provenance schema. Shadow-first. Confer: `bench/logs/confer_cell_split/`
 
-**Priority ordering (Gemini):**
-BLOCKING: domain-agnostic gate interface, convergence churn (C6), missing domain configs
-LOAD-BEARING: specialist B-Cell dispatch, sycophancy detection, severity fusion
-ENHANCEMENT: Ising/Boltzmann Branch 2, O1 external research (ResearchB_Cell)
-PHASE 9: §7.2-7.4, §7.6 (Abstraction Index, Cognitive Yield, Value Estimator, Adoption Delta)
-
-**Agreed execution order:**
+**Remaining execution order:**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
 2. Convergence gate: add churn detection (§7.1a) as C6
 3. Missing domain configs (biology, info science, engineering immune, cs_software)

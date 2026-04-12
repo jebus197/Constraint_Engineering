@@ -25,7 +25,10 @@
 
     "_macrophage": {
         "mode": "shadow",
-        "description": "Models study macrophage design. Macrophage itself runs in shadow mode only.",
+        "description": "Macrophage cell (internal pipeline monitor). Advisory only, no external API access. Runs in shadow mode.",
+        "cell_type": "macrophage",
+        "capabilities": ["pipeline_monitoring", "pe_gate_meta_monitoring", "systemic_pathology_detection"],
+        "api_access": "none",
         "evidence_capture": "verification_chain",
         "audit_mechanism": "Merkle hash + sealed epochs"
     },

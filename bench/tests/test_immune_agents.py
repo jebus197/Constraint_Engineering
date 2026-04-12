@@ -895,13 +895,13 @@ class TestSpecialistBCellDispatch:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-class TestOuroborosCell:
+class TestMacrophageCell:
+    """Tests for the Macrophage cell (internal pipeline monitor)."""
 
     def test_shadow_mode_no_pipeline_mutation(self):
-        """O1 shadow mode must never modify pipeline state."""
-        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
-        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE, shadow=True)
-        # Create mock verdicts
+        """Macrophage shadow mode must never modify pipeline state."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL, shadow=True)
         verdicts = [
             CellVerdict(
                 cell_type=CellType.B_CELL, finding_id=f"f{i}",
@@ -910,13 +910,13 @@ class TestOuroborosCell:
             )
             for i in range(5)
         ]
-        summary = o1.observe(verdicts)
+        summary = macro.observe(verdicts)
         assert summary.pipeline_modified is False
 
-    def test_macrophage_detects_verdict_cluster(self):
-        """Macrophage mode flags when >80% verdicts are the same."""
-        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
-        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE)
+    def test_patrol_detects_verdict_cluster(self):
+        """Patrol mode flags when >80% verdicts are the same."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
         # 9/10 REJECTED = 90% cluster
         verdicts = [
             CellVerdict(
@@ -932,15 +932,15 @@ class TestOuroborosCell:
                 evidence="test", tool_used="sympy",
             )
         ]
-        summary = o1.observe(verdicts)
+        summary = macro.observe(verdicts)
         anomalies = [o for o in summary.observations if o.category == "verdict_cluster"]
         assert len(anomalies) >= 1
 
-    def test_microglia_detects_tool_monoculture(self):
-        """Microglia mode flags when all verdicts come from one tool."""
-        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
-        o1 = OuroborosCell(mode=OuroborosMode.MICROGLIA)
-        # All verdicts from same tool
+    def test_self_check_detects_source_monoculture(self):
+        """Self-check mode flags when all verdicts come from one source."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.SELF_CHECK)
+        # All verdicts from same tool/source
         verdicts = [
             CellVerdict(
                 cell_type=CellType.B_CELL, finding_id=f"f{i}",
@@ -949,25 +949,119 @@ class TestOuroborosCell:
             )
             for i in range(6)
         ]
-        summary = o1.observe(verdicts)
-        monoculture = [o for o in summary.observations if o.category == "tool_monoculture"]
+        summary = macro.observe(verdicts)
+        monoculture = [o for o in summary.observations if o.category == "source_monoculture"]
         assert len(monoculture) >= 1
 
     def test_signed_chain_verifiable(self):
-        """O1 observations can be signed into verification chain."""
-        from bench.ouroboros_cell import OuroborosCell, OuroborosMode, OuroborosObservation
+        """Macrophage observations can be signed into verification chain."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode, MacrophageObservation
         from bench.verification_chain import VerificationChain
-        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE)
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
         chain = VerificationChain()
-        obs = OuroborosObservation(
-            observation_id="o1_test",
-            mode=OuroborosMode.MACROPHAGE,
+        obs = MacrophageObservation(
+            observation_id="macro_test",
+            mode=MacrophageMode.PATROL,
             category="test",
             description="Test observation",
             severity=0.5,
             is_anomaly=True,
         )
-        record = o1.sign_observation(obs, chain)
+        record = macro.sign_observation(obs, chain)
         assert record is not None
-        assert record["sealed_body"]["artifact_type"] == "ouroboros_observation"
+        assert record["sealed_body"]["artifact_type"] == "macrophage_observation"
         assert len(chain._records) == 1
+
+    def test_immune_deficiency_detection(self):
+        """Macrophage flags 0% gate rejection as immune deficiency."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        gate_stats = {"total_passed": 10, "total_failed": 0}
+        summary = macro.observe(verdicts, gate_stats=gate_stats)
+        deficiency = [o for o in summary.observations if o.category == "immune_deficiency"]
+        assert len(deficiency) >= 1
+
+    def test_provenance_monoculture_detection(self):
+        """Macrophage flags low source diversity in provenance."""
+        from bench.macrophage_cell import MacrophageCell, MacrophageMode
+        macro = MacrophageCell(mode=MacrophageMode.PATROL)
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        # Same source repeated 5 times
+        provenance = [
+            {"origin_type": "external_ouroboros", "source_ref": "same_paper", "source_hash": "abc"}
+            for _ in range(5)
+        ]
+        summary = macro.observe(verdicts, provenance=provenance)
+        monoculture = [o for o in summary.observations if o.category == "source_monoculture"]
+        assert len(monoculture) >= 1
+
+
+class TestOuroborosCell:
+    """Tests for the Ouroboros cell (external research + self-improvement)."""
+
+    def test_shadow_mode_no_injection(self):
+        """Ouroboros shadow mode logs but does not inject claims."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=["verdict_cluster detected"],
+        )
+        # Shadow mode: may produce candidates but never injects
+        assert shadow_log.round_idx == 1
+        # All metadata should be shadow_mock
+        for meta in shadow_log.metadata_retrieved:
+            assert meta.get("status") == "shadow_mock"
+
+    def test_hard_caps_enforced(self):
+        """Ouroboros respects max queries and max claims caps."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        # Give it many anomalies
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=[f"anomaly_{i}" for i in range(10)],
+        )
+        assert len(shadow_log.queries_issued) <= o1.MAX_QUERIES_PER_ROUND
+        assert len(shadow_log.candidate_claims) <= o1.MAX_CANDIDATE_CLAIMS
+
+    def test_activity_metrics(self):
+        """Ouroboros provides activity metrics for Macrophage monitoring."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        # Before any rounds
+        metrics = o1.get_activity_metrics()
+        assert metrics["rounds_active"] == 0
+
+        # After a round
+        o1.run_between_rounds(round_idx=0, anomalies=["test_anomaly"])
+        metrics = o1.get_activity_metrics()
+        assert metrics["rounds_active"] == 1
+        assert metrics["queries_total"] >= 0
+
+    def test_provenance_on_candidates(self):
+        """All Ouroboros candidate claims carry provenance packets."""
+        from bench.ouroboros_cell import OuroborosCell
+        o1 = OuroborosCell(shadow=True)
+        shadow_log = o1.run_between_rounds(
+            round_idx=1,
+            anomalies=["convergence_dispute"],
+        )
+        for candidate in shadow_log.candidate_claims:
+            assert candidate.provenance.origin_type == "external_ouroboros"
+            assert candidate.falsification_debt == "high"

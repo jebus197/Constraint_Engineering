@@ -406,6 +406,13 @@ class Finding:
     falsification_present: bool = False  # Whether finding contains falsification evidence
     pm_verdict: str = ""  # PM's verdict on this finding (Category 2)
     dedup_of: str = ""  # finding_id this is a duplicate of, if any (Category 2)
+    # Provenance fields for external-origin claims (Ouroboros cell split, 12 April 2026)
+    origin_type: str = ""  # e.g. "model", "external_ouroboros"
+    source_ref: str = ""  # Paper DOI, URL, or identifier
+    retrieval_query: str = ""  # Search query that found this source
+    retrieved_at: str = ""  # ISO 8601 timestamp of retrieval
+    source_hash: str = ""  # SHA-256 of source content
+    source_diversity: float = 0.0  # Source diversity metric (0-1)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

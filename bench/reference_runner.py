@@ -212,6 +212,9 @@ class RunnerConfig:
     # "on" (always decompose), "off" (monolithic)
     burst_mode: str = "auto"
 
+    # Shadow cell configuration (Macrophage + Ouroboros, cell type split 12 April 2026)
+    shadow_cell_config: Dict[str, Any] = field(default_factory=dict)
+
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
             stem = Path(self.test_article).stem
@@ -224,7 +227,16 @@ class RunnerConfig:
     def from_dict(cls, d: Dict[str, Any]) -> "RunnerConfig":
         """Build config from a JSON-compatible dict (ignores unknown keys)."""
         valid = {f.name for f in cls.__dataclass_fields__.values()}
-        return cls(**{k: v for k, v in d.items() if k in valid})
+        kwargs = {k: v for k, v in d.items() if k in valid}
+        # Capture shadow cell config from underscore-prefixed sections
+        shadow = {}
+        if "_macrophage" in d:
+            shadow["_macrophage"] = d["_macrophage"]
+        if "_ouroboros" in d:
+            shadow["_ouroboros"] = d["_ouroboros"]
+        if shadow:
+            kwargs["shadow_cell_config"] = shadow
+        return cls(**kwargs)
 
     @classmethod
     def from_json(cls, path: str) -> "RunnerConfig":
@@ -1673,6 +1685,144 @@ def _summarise_fix_evaluations(evals: List[FixEvaluation]) -> Dict[str, Any]:
     return {"total_evaluated": len(evals), "verdicts": verdict_counts}
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Shadow cell runner (Macrophage + Ouroboros) — Exp 39
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Persistent shadow cell instances (survive across rounds)
+_shadow_macrophage = None
+_shadow_ouroboros = None
+
+
+def _run_shadow_cells(
+    round_idx: int,
+    immune_result: Any,
+    findings: List[Finding],
+    exp_config: Any,
+    logs_dir: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Run Macrophage and Ouroboros shadow cells after a round.
+
+    SHADOW MODE ONLY: zero effect on the load-bearing verdict path.
+    Both cells observe and log but never modify pipeline state.
+
+    Args:
+        round_idx: Current round index.
+        immune_result: ImmuneResponse from run_immune_pipeline.
+        findings: Findings from the current round.
+        exp_config: Experiment config (checked for _macrophage/_ouroboros sections).
+        logs_dir: Directory for shadow cell logs.
+
+    Returns:
+        Dict with shadow cell metrics for round reporting.
+    """
+    global _shadow_macrophage, _shadow_ouroboros
+
+    config = exp_config if isinstance(exp_config, dict) else {}
+
+    has_macrophage = "_macrophage" in config
+    has_ouroboros = "_ouroboros" in config
+
+    if not has_macrophage and not has_ouroboros:
+        return {}
+
+    shadow_data: Dict[str, Any] = {}
+
+    # ── Macrophage: internal pipeline monitor ──
+    if has_macrophage:
+        try:
+            from bench.macrophage_cell import MacrophageCell, MacrophageMode
+
+            if _shadow_macrophage is None:
+                _shadow_macrophage = MacrophageCell(
+                    mode=MacrophageMode.PATROL, shadow=True,
+                )
+
+            # Extract verdicts from immune result
+            all_verdicts = []
+            if hasattr(immune_result, "cell_verdicts"):
+                for vid_list in immune_result.cell_verdicts.values():
+                    all_verdicts.extend(vid_list)
+
+            triaged = getattr(immune_result, "triaged", None)
+            timings = getattr(immune_result, "stage_timings", None)
+
+            macro_summary = _shadow_macrophage.observe(
+                verdicts=all_verdicts,
+                triaged=triaged,
+                timings=timings,
+            )
+
+            shadow_data["macrophage"] = {
+                "observations": len(macro_summary.observations),
+                "anomalies": macro_summary.anomaly_count,
+                "pipeline_modified": macro_summary.pipeline_modified,
+                "mode": macro_summary.mode.value,
+            }
+
+        except Exception as exc:
+            import logging
+            logging.getLogger("cdsfl.shadow_cells").warning(
+                "Macrophage shadow cell failed (non-fatal): %s", exc,
+            )
+            shadow_data["macrophage"] = {"error": str(exc)}
+
+    # ── Ouroboros: external research (between-round) ──
+    if has_ouroboros:
+        try:
+            from bench.ouroboros_cell import OuroborosCell
+
+            if _shadow_ouroboros is None:
+                ouroboros_config = config.get("_ouroboros", {})
+                allowed = ouroboros_config.get("api_access", ["arxiv", "semantic_scholar"])
+                _shadow_ouroboros = OuroborosCell(
+                    shadow=True,
+                    allowed_sources=allowed if isinstance(allowed, list) else [allowed],
+                )
+
+            # Collect Macrophage anomalies as research targets
+            anomaly_descriptions = []
+            if "macrophage" in shadow_data and _shadow_macrophage is not None:
+                macro_summary_ref = _shadow_macrophage._round_history
+                if macro_summary_ref:
+                    last = macro_summary_ref[-1]
+                    if last.get("anomaly_count", 0) > 0:
+                        anomaly_descriptions.append(
+                            f"round_{round_idx}_anomalies:{last['anomaly_count']}"
+                        )
+
+            shadow_log = _shadow_ouroboros.run_between_rounds(
+                round_idx=round_idx,
+                anomalies=anomaly_descriptions,
+                immune_response=immune_result,
+                round_findings=findings,
+            )
+
+            shadow_data["ouroboros"] = {
+                "anomalies_observed": len(shadow_log.anomalies_observed),
+                "queries_issued": len(shadow_log.queries_issued),
+                "candidate_claims": len(shadow_log.candidate_claims),
+                "would_have_injected": shadow_log.would_have_injected,
+            }
+
+            # Write shadow replay log to disk
+            if logs_dir:
+                shadow_log_path = logs_dir / f"ouroboros_shadow_r{round_idx:02d}.json"
+                shadow_log_path.write_text(
+                    json.dumps(shadow_log.to_dict(), indent=2, default=str) + "\n",
+                    encoding="utf-8",
+                )
+
+        except Exception as exc:
+            import logging
+            logging.getLogger("cdsfl.shadow_cells").warning(
+                "Ouroboros shadow cell failed (non-fatal): %s", exc,
+            )
+            shadow_data["ouroboros"] = {"error": str(exc)}
+
+    return shadow_data
+
+
 def _summarise_pacing_signals(signals: List[PacingSignal]) -> List[Dict[str, Any]]:
     return [
         {"type": s.signal_type, "detail": s.detail, "model_id": s.model_id,
@@ -2961,6 +3111,15 @@ def run_experiment(
                 if canonical:
                     registry.mark_verified(canonical)
 
+        # Shadow cells (Macrophage + Ouroboros) — run after main pipeline, zero verdict effect
+        shadow_cell_data = _run_shadow_cells(
+            round_idx=round_idx,
+            immune_result=immune_result,
+            findings=findings,
+            exp_config=cfg.shadow_cell_config,
+            logs_dir=brain.logs_dir,
+        )
+
         # CC2v verification (A5)
         verification_stats = _verification_step(
             registry, round_idx, full_code, exp_config.models, cfg)
@@ -3069,6 +3228,7 @@ def run_experiment(
             "verification": verification_stats,
             "sk_pipeline": sk_stats,
             "stall_detector": stall_result,
+            "shadow_cells": shadow_cell_data,
         }
         result["rounds"].append(round_data)
 

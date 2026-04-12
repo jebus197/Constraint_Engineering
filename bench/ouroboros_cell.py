@@ -1,385 +1,414 @@
-"""CDSFL Ouroboros Cell (O1) — Self-referential pipeline observer.
+"""CDSFL Ouroboros Cell (O1) — External research and self-improvement.
 
-The ouroboros cell is a new immune cell type that observes the pipeline's
-own behaviour, looking for patterns that individual cells cannot detect:
-systemic bias, correlated false positives, declining verification quality,
-and emergent pathologies.
+In mythology, the ouroboros is the snake consuming its own tail, representing
+cyclical self-reference and self-improvement. In CDSFL, the Ouroboros gathers
+external research from sources like arXiv and Semantic Scholar, and can gather
+data from other CDSFL-linked network systems. It processes what it finds and
+presents candidate claims back to the pipeline for verification by other cells.
 
-Two modes (from biological analogy):
+Key design decisions (confer 12 April 2026, Gemini 3.1 Pro + Codex 5.3):
 
-- **Macrophage mode**: Active hunting. Scans pipeline output for anomalies
-  (verdict clusters, severity distribution shifts, tool-output correlations).
-  Would eventually propose interventions (future: active mode).
+1. **Between-round placement**: Ouroboros runs AFTER each round completes,
+   not during verification. Stage 2 assumes the batch already exists.
+   Inserting a cell that creates new claims during verification is
+   architecturally confused. One-round lag is acceptable because the
+   Macrophage monitors in real time for emergencies.
 
-- **Microglia mode**: Self-referential. Monitors whether the pipeline's own
-  assumptions still hold (e.g., are findings truly independent across models?
-  Is the similarity function producing sensible clusters?).
+2. **Disjoint evidence paths**: If the Ouroboros proposes a finding based
+   on a paper, the B-Cell must verify it through a completely different
+   method (computation, execution, or a strictly different data source).
 
-CRITICAL: O1 runs in SHADOW mode for Exp 39. It observes and logs but
-NEVER modifies pipeline state or verdicts. Promotion to active mode
-requires: precision threshold + novelty yield threshold + explicit HIL
-approval.
+3. **Provenance**: All external-origin claims carry explicit provenance
+   tags: origin_type, source_ref, retrieval_query, retrieved_at,
+   source_hash, source_diversity. Mandatory falsification_debt: high.
 
-Evidence capture uses VerificationChain: every observation is signed as
-{content, R_k_score, pass_count, falsification_debt} per the L1/L2/L3
-architecture (L1 = signing/provenance, L2 = correctness/falsification,
-L3 = HIL arbitration).
+CRITICAL: O1 runs in SHADOW mode for Exp 39. It logs what it WOULD have
+injected into the pipeline but does NOT actually inject claims. Promotion
+to active mode requires explicit HIL approval.
 
-Audit logging is exception-based: only anomalies are highlighted for HIL
-review, not routine observations (prevents cognitive overload, per Gemini
-confer finding 12 April 2026).
+Hard caps for Exp 39: max 3 queries per round, max 2 candidate claims.
 
-Created: 12 April 2026 (Phase 7 — O1 Shadow Prototype).
+Refactored from ouroboros_cell.py: 12 April 2026 (cell type split).
+The original ouroboros_cell.py was renamed to macrophage_cell.py (internal
+monitor). This file is the NEW external research cell.
 """
 
 from __future__ import annotations
 
-import enum
 import hashlib
 import json
 import logging
-import math
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("cdsfl.ouroboros")
 
 
-class OuroborosMode(enum.Enum):
-    """Operating mode for the ouroboros cell."""
-    MACROPHAGE = "macrophage"  # Active hunting for pipeline anomalies
-    MICROGLIA = "microglia"    # Self-referential pipeline health checks
+@dataclass
+class ProvenancePacket:
+    """Provenance metadata for an external-origin claim.
+
+    Every claim the Ouroboros produces must carry a complete provenance
+    packet. The Macrophage monitors these for source monoculture and
+    missing fields.
+    """
+    origin_type: str = "external_ouroboros"  # Always external for O1
+    source_ref: str = ""       # Paper DOI, URL, or identifier
+    retrieval_query: str = ""  # The search query that found this source
+    retrieved_at: str = ""     # ISO 8601 timestamp of retrieval
+    source_hash: str = ""      # SHA-256 of source content
+    source_diversity: float = 0.0  # Diversity metric (0-1)
+
+    def to_dict(self) -> dict:
+        return {
+            "origin_type": self.origin_type,
+            "source_ref": self.source_ref,
+            "retrieval_query": self.retrieval_query,
+            "retrieved_at": self.retrieved_at,
+            "source_hash": self.source_hash,
+            "source_diversity": str(self.source_diversity),
+        }
 
 
 @dataclass
-class OuroborosObservation:
-    """A single observation from the ouroboros cell.
+class OuroborosCandidateClaim:
+    """A candidate claim produced by the Ouroboros for pipeline injection.
 
-    Observations are always advisory — they flag potential issues
-    but never override pipeline decisions.
+    In shadow mode, these are logged but NOT injected. In active mode,
+    they enter the normal intake and go through standard triage and
+    verification gates like any other finding.
     """
-    observation_id: str
-    mode: OuroborosMode
-    category: str  # e.g. "verdict_cluster", "severity_shift", "correlation"
+    claim_id: str
     description: str
-    severity: float  # 0-1, how concerning this observation is
-    evidence: Dict[str, Any] = field(default_factory=dict)
-    is_anomaly: bool = False  # Only anomalies are surfaced to HIL
+    provenance: ProvenancePacket
+    relevance_score: float = 0.0   # How relevant to observed anomalies (0-1)
+    falsification_debt: str = "high"  # External claims always start high
+    round_observed: int = 0        # Which round triggered this research
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict:
-        """Serialise to dict. Floats are stringified for VerificationChain
-        cross-platform determinism (canonical_json requirement)."""
         return {
-            "observation_id": self.observation_id,
-            "mode": self.mode.value,
-            "category": self.category,
+            "claim_id": self.claim_id,
             "description": self.description,
-            "severity": str(self.severity),
-            "evidence": {
-                k: str(v) if isinstance(v, float) else v
-                for k, v in self.evidence.items()
-            },
-            "is_anomaly": self.is_anomaly,
+            "provenance": self.provenance.to_dict(),
+            "relevance_score": str(self.relevance_score),
+            "falsification_debt": self.falsification_debt,
+            "round_observed": self.round_observed,
             "timestamp": str(self.timestamp),
         }
 
 
 @dataclass
-class OuroborosSummary:
-    """Summary of O1 cell observations for a pipeline invocation."""
-    observations: List[OuroborosObservation] = field(default_factory=list)
-    anomaly_count: int = 0
-    mode: OuroborosMode = OuroborosMode.MACROPHAGE
-    pipeline_modified: bool = False  # MUST always be False in shadow mode
+class OuroborosShadowLog:
+    """Shadow replay log: records what the Ouroboros WOULD have done.
 
-    @property
-    def anomalies(self) -> List[OuroborosObservation]:
-        return [o for o in self.observations if o.is_anomaly]
+    For Exp 39, the Ouroboros does not inject claims. Instead, it logs
+    what it noticed, what it queried, what came back, and what claims
+    it would have created. This allows evaluation without pipeline risk.
+    """
+    round_idx: int
+    anomalies_observed: List[str] = field(default_factory=list)
+    queries_issued: List[Dict[str, str]] = field(default_factory=list)
+    metadata_retrieved: List[Dict[str, Any]] = field(default_factory=list)
+    candidate_claims: List[OuroborosCandidateClaim] = field(default_factory=list)
+    would_have_injected: bool = False
+    timestamp: float = field(default_factory=time.time)
+
+    def to_dict(self) -> dict:
+        return {
+            "round_idx": self.round_idx,
+            "anomalies_observed": self.anomalies_observed,
+            "queries_issued": self.queries_issued,
+            "metadata_retrieved": self.metadata_retrieved,
+            "candidate_claims": [c.to_dict() for c in self.candidate_claims],
+            "would_have_injected": self.would_have_injected,
+            "timestamp": str(self.timestamp),
+        }
 
 
 class OuroborosCell:
-    """O1 cell: self-referential pipeline observer.
+    """O1 cell: external research and self-improvement engine.
 
-    Shadow mode only for Exp 39. Observes pipeline output and logs
-    anomalies without modifying pipeline state.
+    Runs between rounds. Observes what happened in the completed round,
+    queries external sources based on anomalies, and produces candidate
+    claims for the next round's normal intake.
+
+    Shadow mode (Exp 39): logs only, no pipeline injection.
 
     Example::
 
-        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE)
-        summary = o1.observe(verdicts, triaged, timings)
-        for anomaly in summary.anomalies:
-            print(f"ANOMALY: {anomaly.description}")
+        o1 = OuroborosCell(shadow=True)
+        shadow_log = o1.run_between_rounds(
+            round_idx=3,
+            anomalies=["verdict_cluster detected"],
+            immune_response=response,
+        )
+        # In shadow mode, shadow_log records what O1 would have done
     """
 
-    # Anomaly thresholds
-    VERDICT_CLUSTER_THRESHOLD: float = 0.8  # >80% same verdict = cluster
-    SEVERITY_SHIFT_THRESHOLD: float = 0.3   # >0.3 shift between rounds
-    TIMING_SPIKE_FACTOR: float = 3.0        # >3x median = spike
-    MIN_FINDINGS_FOR_ANALYSIS: int = 3      # Need at least 3 findings
+    # Hard caps for Exp 39
+    MAX_QUERIES_PER_ROUND: int = 3
+    MAX_CANDIDATE_CLAIMS: int = 2
 
     def __init__(
         self,
-        mode: OuroborosMode = OuroborosMode.MACROPHAGE,
         shadow: bool = True,
+        allowed_sources: Optional[List[str]] = None,
     ) -> None:
-        self.mode = mode
         self.shadow = shadow  # MUST be True for Exp 39
-        self._observation_counter = 0
-        self._round_history: List[Dict[str, Any]] = []
+        self.allowed_sources = allowed_sources or ["arxiv", "semantic_scholar"]
+        self._claim_counter = 0
+        self._round_logs: List[OuroborosShadowLog] = []
 
-    def _next_id(self) -> str:
-        self._observation_counter += 1
-        return f"o1_{self._observation_counter:04d}"
+    def _next_claim_id(self) -> str:
+        self._claim_counter += 1
+        return f"o1_claim_{self._claim_counter:04d}"
 
-    def observe(
+    def run_between_rounds(
         self,
-        verdicts: List[Any],
-        triaged: Optional[List[Any]] = None,
-        timings: Optional[Dict[str, float]] = None,
-        prior_observations: Optional[List[OuroborosObservation]] = None,
-    ) -> OuroborosSummary:
-        """Run O1 observation on pipeline output.
+        round_idx: int,
+        anomalies: Optional[List[str]] = None,
+        immune_response: Optional[Any] = None,
+        round_findings: Optional[List[Any]] = None,
+    ) -> OuroborosShadowLog:
+        """Execute Ouroboros between-round research cycle.
 
-        SHADOW MODE: observes and logs only, never modifies pipeline state.
+        This is the main entry point. Called AFTER a round completes.
 
         Args:
-            verdicts: CellVerdict objects from pipeline Stage 2.
-            triaged: TriagedFinding objects from Stage 1 (optional).
-            timings: Pipeline stage timings (optional).
-            prior_observations: Observations from prior rounds (optional).
+            round_idx: Index of the just-completed round.
+            anomalies: Anomaly descriptions from Macrophage observations.
+            immune_response: The ImmuneResponse from the completed round.
+            round_findings: Findings from the completed round.
 
         Returns:
-            OuroborosSummary with all observations.
+            OuroborosShadowLog recording what O1 did (or would have done).
         """
-        summary = OuroborosSummary(mode=self.mode)
+        shadow_log = OuroborosShadowLog(round_idx=round_idx)
 
-        if self.mode == OuroborosMode.MACROPHAGE:
-            self._macrophage_observe(verdicts, triaged, timings, summary)
+        # Step 1: Target selection — identify what to research based on anomalies
+        targets = self._select_targets(
+            anomalies or [],
+            immune_response,
+            round_findings,
+        )
+        shadow_log.anomalies_observed = targets
+
+        if not targets:
+            self._round_logs.append(shadow_log)
+            return shadow_log
+
+        # Step 2: Structured metadata fetch (mocked in shadow/Exp 39)
+        queries = self._build_queries(targets)
+        shadow_log.queries_issued = queries[:self.MAX_QUERIES_PER_ROUND]
+
+        metadata = self._fetch_metadata(
+            shadow_log.queries_issued,
+        )
+        shadow_log.metadata_retrieved = metadata
+
+        # Step 3: Candidate claim generation
+        candidates = self._generate_candidates(
+            targets, metadata, round_idx,
+        )
+        shadow_log.candidate_claims = candidates[:self.MAX_CANDIDATE_CLAIMS]
+        shadow_log.would_have_injected = len(candidates) > 0
+
+        # In shadow mode, log only — no pipeline injection
+        if shadow_log.would_have_injected:
+            logger.info(
+                "Ouroboros [shadow] round %d: would inject %d candidate claims "
+                "(capped at %d). Queries: %d. Targets: %s",
+                round_idx, len(candidates),
+                self.MAX_CANDIDATE_CLAIMS,
+                len(shadow_log.queries_issued),
+                targets[:3],
+            )
+
+        self._round_logs.append(shadow_log)
+        return shadow_log
+
+    def _select_targets(
+        self,
+        anomalies: List[str],
+        immune_response: Optional[Any],
+        round_findings: Optional[List[Any]],
+    ) -> List[str]:
+        """Select research targets based on round anomalies and findings.
+
+        Prioritises:
+        1. Macrophage-flagged anomalies (direct signal)
+        2. Recurring disputed findings (convergence failures)
+        3. High-severity unresolved claims
+        """
+        targets = []
+
+        # Macrophage anomalies are direct research triggers
+        for anomaly in anomalies:
+            targets.append(anomaly)
+
+        # Check for disputed/uncertain findings
+        if immune_response:
+            final_verdicts = getattr(immune_response, "final_verdicts", {})
+            for fid, verdict in final_verdicts.items():
+                if verdict == "UNCERTAIN":
+                    targets.append(f"uncertain_finding:{fid}")
+
+        return targets[:5]  # Cap targets
+
+    def _build_queries(
+        self,
+        targets: List[str],
+    ) -> List[Dict[str, str]]:
+        """Build structured search queries from targets."""
+        queries = []
+        for target in targets[:self.MAX_QUERIES_PER_ROUND]:
+            # Extract search terms from the target description
+            query = {
+                "target": target,
+                "source": self.allowed_sources[0] if self.allowed_sources else "arxiv",
+                "query": self._target_to_query(target),
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            queries.append(query)
+        return queries
+
+    def _target_to_query(self, target: str) -> str:
+        """Convert a target description to a search query.
+
+        For Exp 39 shadow mode, this produces the query string that
+        WOULD be sent to the API. No actual API call is made.
+        """
+        # Strip prefixes
+        if ":" in target:
+            target = target.split(":", 1)[1]
+        # Basic keyword extraction (sufficient for shadow mode logging)
+        return target.strip()
+
+    def _fetch_metadata(
+        self,
+        queries: List[Dict[str, str]],
+    ) -> List[Dict[str, Any]]:
+        """Fetch structured metadata from external sources.
+
+        For Exp 39: MOCKED. Returns empty results with provenance stubs.
+        Real implementation will use arXiv and Semantic Scholar APIs.
+        """
+        results = []
+        for query in queries:
+            # Shadow mode: log the query, return mock metadata
+            result = {
+                "query": query["query"],
+                "source": query["source"],
+                "status": "shadow_mock",
+                "results_count": 0,
+                "papers": [],
+                "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            results.append(result)
+        return results
+
+    def _generate_candidates(
+        self,
+        targets: List[str],
+        metadata: List[Dict[str, Any]],
+        round_idx: int,
+    ) -> List[OuroborosCandidateClaim]:
+        """Generate candidate claims from retrieved metadata.
+
+        For Exp 39: generates shadow candidates based on targets.
+        Real implementation will parse paper metadata and extract claims.
+        """
+        candidates = []
+
+        for target in targets[:self.MAX_CANDIDATE_CLAIMS]:
+            provenance = ProvenancePacket(
+                origin_type="external_ouroboros",
+                retrieval_query=self._target_to_query(target),
+                retrieved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                source_diversity=0.0,  # No real sources in shadow mode
+            )
+
+            candidate = OuroborosCandidateClaim(
+                claim_id=self._next_claim_id(),
+                description=f"Shadow candidate for target: {target}",
+                provenance=provenance,
+                relevance_score=0.5,
+                falsification_debt="high",
+                round_observed=round_idx,
+            )
+            candidates.append(candidate)
+
+        return candidates
+
+    def get_activity_metrics(self) -> Dict[str, Any]:
+        """Return activity metrics for Macrophage monitoring.
+
+        The Macrophage monitors these metrics to detect Ouroboros
+        pathologies (source monoculture, excessive querying, etc.).
+        """
+        if not self._round_logs:
+            return {
+                "queries_total": 0,
+                "claims_proposed_total": 0,
+                "rounds_active": 0,
+                "diversity_score": 1.0,
+            }
+
+        total_queries = sum(len(log.queries_issued) for log in self._round_logs)
+        total_claims = sum(len(log.candidate_claims) for log in self._round_logs)
+
+        # Compute source diversity across all queries
+        all_sources = []
+        for log in self._round_logs:
+            for q in log.queries_issued:
+                all_sources.append(q.get("source", "unknown"))
+
+        if all_sources:
+            unique = len(set(all_sources))
+            diversity = unique / len(all_sources)
         else:
-            self._microglia_observe(verdicts, triaged, timings, summary)
+            diversity = 1.0
 
-        summary.anomaly_count = len(summary.anomalies)
+        return {
+            "queries_total": total_queries,
+            "claims_proposed_total": total_claims,
+            "rounds_active": len(self._round_logs),
+            "diversity_score": diversity,
+            "queries_this_round": (
+                len(self._round_logs[-1].queries_issued) if self._round_logs else 0
+            ),
+            "claims_this_round": (
+                len(self._round_logs[-1].candidate_claims) if self._round_logs else 0
+            ),
+        }
 
-        # Exception-based audit: only log anomalies (prevents HIL overload)
-        if summary.anomaly_count > 0:
-            logger.warning(
-                "O1 [%s] detected %d anomalies (shadow mode — advisory only)",
-                self.mode.value, summary.anomaly_count,
-            )
-            for anomaly in summary.anomalies:
-                logger.warning(
-                    "  ANOMALY %s [%s]: %s (sev=%.2f)",
-                    anomaly.observation_id, anomaly.category,
-                    anomaly.description, anomaly.severity,
-                )
-
-        # Store round history for cross-round analysis
-        self._round_history.append({
-            "observation_count": len(summary.observations),
-            "anomaly_count": summary.anomaly_count,
-            "verdict_count": len(verdicts),
-            "timestamp": time.time(),
-        })
-
-        # CRITICAL: shadow mode guarantee
-        summary.pipeline_modified = False
-        return summary
-
-    def _macrophage_observe(
+    def sign_shadow_log(
         self,
-        verdicts: List[Any],
-        triaged: Optional[List[Any]],
-        timings: Optional[Dict[str, float]],
-        summary: OuroborosSummary,
-    ) -> None:
-        """Macrophage mode: hunt for pipeline anomalies."""
-
-        if len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:
-            return
-
-        # 1. Verdict clustering: are too many verdicts the same?
-        verdict_counts: Dict[str, int] = {}
-        for v in verdicts:
-            vstr = getattr(v, "verdict", str(v))
-            verdict_counts[vstr] = verdict_counts.get(vstr, 0) + 1
-
-        total = len(verdicts)
-        for verdict_type, count in verdict_counts.items():
-            ratio = count / total
-            if ratio > self.VERDICT_CLUSTER_THRESHOLD:
-                obs = OuroborosObservation(
-                    observation_id=self._next_id(),
-                    mode=self.mode,
-                    category="verdict_cluster",
-                    description=(
-                        f"{ratio:.0%} of verdicts are {verdict_type} "
-                        f"({count}/{total}) — possible systemic bias"
-                    ),
-                    severity=min(1.0, ratio),
-                    evidence={"verdict_type": verdict_type, "count": count, "total": total},
-                    is_anomaly=True,
-                )
-                summary.observations.append(obs)
-
-        # 2. Severity distribution: is severity concentrated?
-        severities = []
-        for v in verdicts:
-            sev = getattr(v, "confidence", None)
-            if sev is not None:
-                severities.append(sev)
-
-        if len(severities) >= self.MIN_FINDINGS_FOR_ANALYSIS:
-            mean_sev = sum(severities) / len(severities)
-            variance = sum((s - mean_sev) ** 2 for s in severities) / len(severities)
-            if variance < 0.01 and mean_sev > 0.5:
-                obs = OuroborosObservation(
-                    observation_id=self._next_id(),
-                    mode=self.mode,
-                    category="severity_concentration",
-                    description=(
-                        f"Confidence variance very low ({variance:.4f}) with mean "
-                        f"{mean_sev:.2f} — models may be over-confident uniformly"
-                    ),
-                    severity=0.6,
-                    evidence={"mean": mean_sev, "variance": variance, "n": len(severities)},
-                    is_anomaly=variance < 0.005,
-                )
-                summary.observations.append(obs)
-
-        # 3. Timing spikes: is any stage disproportionately slow?
-        if timings and len(timings) >= 2:
-            values = [v for v in timings.values() if v > 0]
-            if values:
-                median_t = sorted(values)[len(values) // 2]
-                for stage, t in timings.items():
-                    if t > median_t * self.TIMING_SPIKE_FACTOR and median_t > 0.1:
-                        obs = OuroborosObservation(
-                            observation_id=self._next_id(),
-                            mode=self.mode,
-                            category="timing_spike",
-                            description=(
-                                f"Stage '{stage}' took {t:.2f}s "
-                                f"({t/median_t:.1f}x median {median_t:.2f}s)"
-                            ),
-                            severity=min(1.0, t / (median_t * 10)),
-                            evidence={"stage": stage, "time": t, "median": median_t},
-                            is_anomaly=t > median_t * self.TIMING_SPIKE_FACTOR * 2,
-                        )
-                        summary.observations.append(obs)
-
-    def _microglia_observe(
-        self,
-        verdicts: List[Any],
-        triaged: Optional[List[Any]],
-        timings: Optional[Dict[str, float]],
-        summary: OuroborosSummary,
-    ) -> None:
-        """Microglia mode: self-referential pipeline health checks."""
-
-        if len(verdicts) < self.MIN_FINDINGS_FOR_ANALYSIS:
-            return
-
-        # 1. Tool diversity: are verdicts all coming from one tool?
-        tools_used: Dict[str, int] = {}
-        for v in verdicts:
-            tool = getattr(v, "tool_used", "unknown")
-            tools_used[tool] = tools_used.get(tool, 0) + 1
-
-        if len(tools_used) == 1 and len(verdicts) > 5:
-            tool_name = list(tools_used.keys())[0]
-            obs = OuroborosObservation(
-                observation_id=self._next_id(),
-                mode=self.mode,
-                category="tool_monoculture",
-                description=(
-                    f"All {len(verdicts)} verdicts from single tool '{tool_name}' "
-                    f"— verification diversity compromised"
-                ),
-                severity=0.7,
-                evidence={"tool": tool_name, "count": len(verdicts)},
-                is_anomaly=True,
-            )
-            summary.observations.append(obs)
-
-        # 2. Round-over-round stability: is O1 finding the same anomalies?
-        if len(self._round_history) >= 3:
-            recent = self._round_history[-3:]
-            all_had_anomalies = all(r["anomaly_count"] > 0 for r in recent)
-            if all_had_anomalies:
-                obs = OuroborosObservation(
-                    observation_id=self._next_id(),
-                    mode=self.mode,
-                    category="persistent_anomaly",
-                    description=(
-                        "Anomalies detected in 3+ consecutive rounds — "
-                        "possible systemic issue not being addressed"
-                    ),
-                    severity=0.8,
-                    evidence={
-                        "rounds_with_anomalies": len(recent),
-                        "anomaly_counts": [r["anomaly_count"] for r in recent],
-                    },
-                    is_anomaly=True,
-                )
-                summary.observations.append(obs)
-
-        # 3. Verdict-to-triage consistency: do verdicts match claim types?
-        if triaged:
-            claim_types = set()
-            for tf in triaged:
-                ct = getattr(tf, "claim_type", None)
-                if ct is not None:
-                    claim_types.add(getattr(ct, "value", str(ct)))
-
-            tool_types = set(tools_used.keys())
-            # Flag if mathematical claims exist but no sympy/z3 used
-            math_claims = any("math" in ct.lower() for ct in claim_types)
-            math_tools = any(t in tool_types for t in ("sympy", "z3"))
-            if math_claims and not math_tools and len(verdicts) > 0:
-                obs = OuroborosObservation(
-                    observation_id=self._next_id(),
-                    mode=self.mode,
-                    category="tool_claim_mismatch",
-                    description=(
-                        "Mathematical claims present but no SymPy/z3 verdicts — "
-                        "verification may not be grounded"
-                    ),
-                    severity=0.6,
-                    evidence={
-                        "claim_types": list(claim_types),
-                        "tools_used": list(tool_types),
-                    },
-                    is_anomaly=True,
-                )
-                summary.observations.append(obs)
-
-    def sign_observation(
-        self,
-        observation: OuroborosObservation,
+        shadow_log: OuroborosShadowLog,
         chain: Any,  # VerificationChain
     ) -> Optional[dict]:
-        """Sign an observation into the verification chain.
+        """Sign a shadow log entry into the verification chain.
 
-        L1 (provenance): the signed record proves this observation was made
-        at this time by this cell. L2 (correctness) and L3 (HIL) operate
-        on the signed records downstream.
+        L1 (provenance): proves this research cycle was executed at this
+        time by the Ouroboros. L2/L3 operate downstream.
 
         Returns the chain record, or None if signing fails.
         """
         try:
             record = chain.append_record(
-                artifact_type="ouroboros_observation",
-                payload=observation.to_dict(),
-                recorded_by=f"o1_{self.mode.value}",
+                artifact_type="ouroboros_shadow_log",
+                payload=shadow_log.to_dict(),
+                recorded_by="ouroboros_o1",
                 metadata={
                     "shadow": self.shadow,
-                    "is_anomaly": observation.is_anomaly,
+                    "round_idx": shadow_log.round_idx,
+                    "would_have_injected": shadow_log.would_have_injected,
                 },
             )
             return record
         except Exception as exc:
-            logger.warning("Failed to sign observation %s: %s",
-                          observation.observation_id, exc)
+            logger.warning("Failed to sign shadow log for round %d: %s",
+                          shadow_log.round_idx, exc)
             return None

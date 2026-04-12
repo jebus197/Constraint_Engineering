@@ -1,5 +1,5 @@
 {
-    "_comment": "39-J: Microglia. Ouroboros/self-referential macrophage variant — bench examines itself.",
+    "_comment": "39-J: Ouroboros (O1). External research + self-improvement cell — between-round evidence gathering.",
     "test_article": "bench/reference_runner.py",
     "context_files": [
         "bench/immune_agents.py",
@@ -14,7 +14,7 @@
     "wall_clock_cap_s": 7200,
     "earliest_stop_round": 4,
     "models": ["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"],
-    "experiment_name": "exp39_J_microglia",
+    "experiment_name": "exp39_J_ouroboros",
     "domain": "software",
     "rho_threshold": 0.25,
     "rho_rolling_window": 3,
@@ -24,28 +24,33 @@
     "sk_s_floor": 0.0,
     "burst_mode": "off",
 
-    "_microglia": {
+    "_ouroboros": {
         "mode": "shadow",
-        "description": "Self-referential macrophage: bench infrastructure examines its own code for flaws.",
-        "self_reference_target": "bench/",
+        "description": "Ouroboros cell (O1): external research + self-improvement. Between-round evidence gathering from arXiv, Semantic Scholar.",
+        "cell_type": "ouroboros",
+        "capabilities": ["external_research", "cdsfl_network_data", "anomaly_targeted_evidence"],
+        "api_access": ["arxiv", "semantic_scholar"],
+        "max_queries_per_round": 3,
+        "max_candidate_claims": 2,
         "evidence_capture": "verification_chain",
         "audit_mechanism": "Merkle hash + sealed epochs"
     },
 
     "_convergence_criteria": {
-        "description": "Converges when: self-referential analysis stabilizes. Models agree on bench infrastructure quality.",
-        "primary": "gamma >= 0.40 AND 2 consecutive rounds with 0 novel self-referential findings",
-        "secondary": "3+ rounds with no new bench infrastructure flaw proposed",
-        "fail_condition": "No convergence on self-assessment by wall clock cap"
+        "description": "Converges when: external research cycle design stabilizes. Models agree on Ouroboros architecture.",
+        "primary": "gamma >= 0.40 AND 2 consecutive rounds with 0 novel research-cycle proposals",
+        "secondary": "3+ rounds with no new provenance or evidence-path mechanism proposed",
+        "fail_condition": "No convergence on Ouroboros design by wall clock cap"
     },
 
     "_artifact_schema": {
-        "output_file": "exp39_J_microglia_report.json",
+        "output_file": "exp39_J_ouroboros_report.json",
         "required_fields": [
-            "self_referential_findings",
-            "bench_infrastructure_quality",
-            "ouroboros_paradox_assessment",
-            "shadow_replay_impact"
+            "ouroboros_research_cycle_design",
+            "provenance_schema_proposals",
+            "disjoint_evidence_path_assessment",
+            "shadow_replay_impact",
+            "self_improvement_cycle_assessment"
         ]
     }
 }
