@@ -888,3 +888,86 @@ class TestSpecialistBCellDispatch:
         generic = b_cell_verify([tf])
         assert isinstance(specialist, list)
         assert isinstance(generic, list)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 7: Ouroboros Cell (O1)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestOuroborosCell:
+
+    def test_shadow_mode_no_pipeline_mutation(self):
+        """O1 shadow mode must never modify pipeline state."""
+        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
+        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE, shadow=True)
+        # Create mock verdicts
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(5)
+        ]
+        summary = o1.observe(verdicts)
+        assert summary.pipeline_modified is False
+
+    def test_macrophage_detects_verdict_cluster(self):
+        """Macrophage mode flags when >80% verdicts are the same."""
+        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
+        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE)
+        # 9/10 REJECTED = 90% cluster
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="REJECTED", confidence=0.7,
+                evidence="test", tool_used="z3",
+            )
+            for i in range(9)
+        ] + [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id="f9",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+        ]
+        summary = o1.observe(verdicts)
+        anomalies = [o for o in summary.observations if o.category == "verdict_cluster"]
+        assert len(anomalies) >= 1
+
+    def test_microglia_detects_tool_monoculture(self):
+        """Microglia mode flags when all verdicts come from one tool."""
+        from bench.ouroboros_cell import OuroborosCell, OuroborosMode
+        o1 = OuroborosCell(mode=OuroborosMode.MICROGLIA)
+        # All verdicts from same tool
+        verdicts = [
+            CellVerdict(
+                cell_type=CellType.B_CELL, finding_id=f"f{i}",
+                verdict="CONFIRMED", confidence=0.8,
+                evidence="test", tool_used="sympy",
+            )
+            for i in range(6)
+        ]
+        summary = o1.observe(verdicts)
+        monoculture = [o for o in summary.observations if o.category == "tool_monoculture"]
+        assert len(monoculture) >= 1
+
+    def test_signed_chain_verifiable(self):
+        """O1 observations can be signed into verification chain."""
+        from bench.ouroboros_cell import OuroborosCell, OuroborosMode, OuroborosObservation
+        from bench.verification_chain import VerificationChain
+        o1 = OuroborosCell(mode=OuroborosMode.MACROPHAGE)
+        chain = VerificationChain()
+        obs = OuroborosObservation(
+            observation_id="o1_test",
+            mode=OuroborosMode.MACROPHAGE,
+            category="test",
+            description="Test observation",
+            severity=0.5,
+            is_anomaly=True,
+        )
+        record = o1.sign_observation(obs, chain)
+        assert record is not None
+        assert record["sealed_body"]["artifact_type"] == "ouroboros_observation"
+        assert len(chain._records) == 1
