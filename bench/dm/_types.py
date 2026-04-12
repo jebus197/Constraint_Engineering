@@ -196,6 +196,11 @@ class DynamicManagementConfig:
     # dimensions, switch to round-robin allocation.
     fingerprint_min_signal: float = 0.05
 
+    # --- Persistent memory (Phase 4, 12 April 2026) ---
+    rho_memory: float = 0.2  # blending weight for memory prior (0 = ignore memory)
+    memory_decay_rate: float = 0.1  # exponential decay per experiment (higher = faster forget)
+    memory_drift_threshold: float = 2.0  # CUSUM threshold for drift detection
+
     # --- Role-specific baseline coefficients for expected performance ---
     # b_rho vectors for expected(m, r) = b_rho . q_m
     b_pm: NDArray[np.float64] = field(
@@ -259,6 +264,12 @@ class DynamicManagementConfig:
         for label, budget in self.context_budget_overrides.items():
             if budget < 1000:
                 raise ValueError(f"context_budget_overrides[{label}] must be >= 1000, got {budget}")
+        if not (0.0 <= self.rho_memory <= 1.0):
+            raise ValueError(f"rho_memory must be in [0, 1], got {self.rho_memory}")
+        if self.memory_decay_rate < 0:
+            raise ValueError(f"memory_decay_rate must be >= 0, got {self.memory_decay_rate}")
+        if self.memory_drift_threshold <= 0:
+            raise ValueError(f"memory_drift_threshold must be > 0, got {self.memory_drift_threshold}")
 
     def get_alpha(self, role: Role) -> NDArray[np.float64]:
         """Return the capability weight vector for a given role."""

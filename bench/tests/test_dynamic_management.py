@@ -987,6 +987,84 @@ class TestConvergenceDetector:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# PERSISTENT IMMUNE MEMORY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestImmuneMemory:
+
+    def test_record_and_recall(self):
+        """Memory records experiments and recalls pi_mem correctly."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(decay_rate=0.1)
+        mem.record_experiment("exp1", {0: (10, 2), 1: (3, 7)})
+        # flaw_class 0: pi_mem = (10 + 0.5) / (10 + 2 + 0.5 + 0.5) = 10.5/13 ≈ 0.808
+        pi_0 = mem.pi_mem(0)
+        assert 0.7 < pi_0 < 0.9, f"pi_mem(0) = {pi_0}"
+        # flaw_class 1: pi_mem = (3 + 0.5) / (3 + 7 + 0.5 + 0.5) = 3.5/11 ≈ 0.318
+        pi_1 = mem.pi_mem(1)
+        assert 0.2 < pi_1 < 0.4, f"pi_mem(1) = {pi_1}"
+        # Unknown flaw class: uninformative prior
+        pi_99 = mem.pi_mem(99)
+        assert pi_99 == pytest.approx(0.5), f"pi_mem(99) = {pi_99}"
+
+    def test_decay_reduces_counts(self):
+        """Exponential decay reduces older observations."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(decay_rate=0.5)  # aggressive decay
+        mem.record_experiment("exp1", {0: (10, 0)})
+        pi_before = mem.pi_mem(0)
+        # Record another experiment — decay is applied to prior counts
+        mem.record_experiment("exp2", {0: (0, 0)})
+        pi_after = mem.pi_mem(0)
+        # After decay, confirmed count is lower, so pi_mem decreases
+        assert pi_after < pi_before, f"Decay failed: {pi_after} >= {pi_before}"
+
+    def test_blended_prior_bounded(self):
+        """Blended prior stays in [0, 1] for all valid inputs."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory()
+        mem.record_experiment("exp1", {0: (100, 0), 1: (0, 100)})
+        for rho in [0.0, 0.1, 0.5, 0.9, 1.0]:
+            for pi_base in [0.0, 0.1, 0.5, 0.9, 1.0]:
+                for fc in [0, 1, 99]:
+                    pi = mem.blended_prior(fc, pi_base, rho)
+                    assert 0.0 <= pi <= 1.0, f"Blended prior out of bounds: {pi} (rho={rho}, pi_base={pi_base}, fc={fc})"
+
+    def test_drift_detection(self):
+        """CUSUM detects sustained divergence from memory predictions."""
+        from bench.dm._memory import ImmuneMemory
+        mem = ImmuneMemory(drift_threshold=1.0)
+        mem.record_experiment("exp1", {0: (5, 5)})  # pi_mem ≈ 0.5
+        # Feed consistently high observed rates — should trigger drift
+        drifted = False
+        for _ in range(20):
+            drifted = mem.update_drift(0, 0.95)
+            if drifted:
+                break
+        assert drifted, "Drift not detected after sustained divergence"
+        assert mem.is_drifting(0)
+        mem.reset_drift(0)
+        assert not mem.is_drifting(0)
+
+    def test_save_load_and_hash_invalidation(self, tmp_path):
+        """Memory persists to JSON and invalidates on source hash mismatch."""
+        from bench.dm._memory import ImmuneMemory
+        path = str(tmp_path / "memory.json")
+        mem = ImmuneMemory(decay_rate=0.1, source_hash="abc123")
+        mem.record_experiment("exp1", {0: (8, 2)})
+        mem.save(path)
+
+        # Load with matching hash — data preserved
+        loaded = ImmuneMemory.load(path, expected_hash="abc123")
+        assert loaded.pi_mem(0) == pytest.approx(mem.pi_mem(0))
+
+        # Load with mismatched hash — memory invalidated (fresh start)
+        fresh = ImmuneMemory.load(path, expected_hash="different_hash")
+        assert fresh.pi_mem(0) == pytest.approx(0.5)  # uninformative prior
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # AREA 5: DIMINISHING RETURNS
 # ═══════════════════════════════════════════════════════════════════════════════
 
