@@ -91,6 +91,10 @@ class DynamicManagementConfig:
     eta_veto: float = 0.9  # severity veto threshold (ChatGPT contribution)
     epsilon_conv: float = 1e-8  # zero-denominator regulariser
     min_rounds_for_convergence: int = 2  # r >= this to allow convergence
+    # Continuous suppression (Phase 3, 12 April 2026)
+    lambda_s: float = 1.5  # suppression decay rate (higher = faster suppression)
+    w_floor: float = 0.05  # minimum suppression weight (prevents total silencing)
+    suppression_k: int = 3  # top-k similar findings to aggregate for suppression
 
     # --- Area 5: Diminishing Returns ---
     tau_mu: float = 0.05  # minimum acceptable VCR

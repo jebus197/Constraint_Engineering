@@ -196,22 +196,64 @@ class ConvergenceDetector:
                 novel.append(ec)
         return novel
 
+    def _suppression_weight(
+        self, finding: Finding, prior_findings: Sequence[Finding]
+    ) -> float:
+        """Compute suppression weight for a single finding.
+
+        w(f) = max(exp(-λ_s · Σ_{g ∈ TopK(f)} sim(f, g)), w_floor)
+
+        TopK(f) selects the k most similar prior findings regardless of
+        arrival order, making this permutation-invariant by construction.
+        This fixes the order-dependence bug from predecessor-product
+        suppression (Error 2, 12 April 2026).
+
+        Returns weight in [w_floor, 1.0].
+        """
+        if not prior_findings:
+            return 1.0  # No priors → no suppression
+
+        # Compute similarity to all prior findings
+        sims = sorted(
+            (self.similarity_fn(finding, g) for g in prior_findings),
+            reverse=True,
+        )
+
+        # Sum top-k similarities
+        k = self.config.suppression_k
+        top_k_sum = sum(sims[:k])
+
+        # Exponential decay, floored
+        w = math.exp(-self.config.lambda_s * top_k_sum)
+        return max(w, self.config.w_floor)
+
     def _weighted_novel_severity(
-        self, novel_classes: List[FindingEquivalenceClass]
+        self, novel_classes: List[FindingEquivalenceClass],
+        prior_findings: Optional[Sequence[Finding]] = None,
     ) -> float:
         """Compute suppression-weighted severity for novel equivalence classes.
 
-        Phase 1 (current): identity weight (1.0) — no suppression yet.
-        Phase 3 (planned): w(f) = max(exp(-λ_s · Σ TopK sim), w_floor).
+        w(f) = max(exp(-λ_s · Σ TopK sim), w_floor) per finding, then
+        class weight = max member weight (conservative: least suppressed).
 
         CRITICAL CONSTRAINT (Confer 12 April 2026 — Corroboration Collapse):
         Suppression weights apply to kappa_set NUMERATOR ONLY. They must
         NEVER enter q_eff in the Bayesian update (q = η·d·p, no w(f)).
         The denominator uses raw (unweighted) aggregated_severity.
         """
-        # Phase 1: identity weight. Phase 3 will override this with
-        # per-class suppression weights from _suppression_weight().
-        return sum(ec.aggregated_severity for ec in novel_classes)
+        if prior_findings is None or not prior_findings:
+            # No priors → identity weight (1.0)
+            return sum(ec.aggregated_severity for ec in novel_classes)
+
+        total = 0.0
+        for ec in novel_classes:
+            # Per-class weight: max of member weights (least suppressed)
+            class_weight = max(
+                self._suppression_weight(member, prior_findings)
+                for member in ec.members
+            ) if ec.members else 1.0
+            total += class_weight * ec.aggregated_severity
+        return total
 
     def kappa_set(self, round_idx: int) -> float:
         """Set-theoretic stability (severity-weighted novelty).
@@ -228,9 +270,15 @@ class ConvergenceDetector:
         novel = self._novel_classes(round_idx)
         cumulative = self.get_cumulative_classes(round_idx)
 
-        # Numerator: weighted (Phase 3 will supply suppression weights)
-        novel_sev = self._weighted_novel_severity(novel)
-        # Denominator: raw, unweighted — never apply suppression here
+        # Collect prior findings for suppression weighting
+        prior_findings: List[Finding] = []
+        if round_idx > 0:
+            for ec in self.get_cumulative_classes(round_idx - 1):
+                prior_findings.extend(ec.members)
+
+        # Numerator: suppression-weighted (w(f) applied here)
+        novel_sev = self._weighted_novel_severity(novel, prior_findings)
+        # Denominator: raw, unweighted — w(f) EXCLUDED (Corroboration Collapse fix)
         total_sev = sum(ec.aggregated_severity for ec in cumulative) + self.config.epsilon_conv
 
         return 1.0 - (novel_sev / total_sev)

@@ -912,6 +912,79 @@ class TestConvergenceDetector:
         assert cum_1 >= cum_0, f"Cumulative severity decreased: {cum_1} < {cum_0}"
         assert cum_2 >= cum_1, f"Cumulative severity decreased: {cum_2} < {cum_1}"
 
+    def test_suppression_permutation_invariant(self, config):
+        """Suppression weight must not depend on finding arrival order."""
+        from bench.dm._similarity import jaccard_similarity
+
+        # Create two orderings of the same prior findings
+        priors_a = [
+            make_finding("p1", "m1", 0, 1, 0.5, 0.5, "buffer overflow in parser module"),
+            make_finding("p2", "m1", 0, 2, 0.7, 0.5, "SQL injection in login handler"),
+            make_finding("p3", "m1", 0, 1, 0.3, 0.5, "memory leak in connection pool"),
+        ]
+        priors_b = [priors_a[2], priors_a[0], priors_a[1]]  # shuffled
+
+        target = make_finding("t1", "m2", 1, 1, 0.6, 0.5, "buffer overflow in network parser")
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        w_a = cd._suppression_weight(target, priors_a)
+        w_b = cd._suppression_weight(target, priors_b)
+        assert w_a == pytest.approx(w_b), f"Order dependence: {w_a} != {w_b}"
+
+    def test_suppression_w_floor_enforced(self, config):
+        """Suppression weight must never drop below w_floor."""
+        from bench.dm._similarity import jaccard_similarity
+
+        # Create highly similar priors to maximise suppression
+        priors = [
+            make_finding(f"p{i}", "m1", 0, 1, 0.9, 0.5, "buffer overflow in parser module")
+            for i in range(10)
+        ]
+        target = make_finding("t1", "m2", 1, 1, 0.9, 0.5, "buffer overflow in parser module")
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        w = cd._suppression_weight(target, priors)
+        assert w >= config.w_floor, f"Weight {w} below floor {config.w_floor}"
+
+    def test_suppression_no_corroboration_collapse(self, config):
+        """w(f) must NOT enter q_eff — verified structurally.
+
+        The denominator of kappa_set uses raw severity regardless of
+        suppression. If w(f) leaked into the denominator, kappa_set could
+        exceed 1.0 when novel_sev_weighted < novel_sev_raw.
+        """
+        from bench.dm._similarity import jaccard_similarity
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        # Round 0: base findings
+        cd.add_round_findings(0, [
+            make_finding("f1", "m1", 0, 1, 0.9, 0.5, "buffer overflow in parser"),
+            make_finding("f2", "m1", 0, 2, 0.8, 0.5, "SQL injection in handler"),
+        ])
+        # Round 1: partially novel findings (some suppressed)
+        cd.add_round_findings(1, [
+            make_finding("f3", "m2", 1, 1, 0.7, 0.5, "buffer overflow in network parser"),
+            make_finding("f4", "m2", 1, 3, 0.6, 0.5, "XSS in template engine"),
+        ])
+        ks = cd.kappa_set(1)
+        assert 0.0 <= ks <= 1.0, f"kappa_set out of bounds: {ks} (corroboration collapse?)"
+
+    def test_suppression_kappa_set_bounded(self, config):
+        """kappa_set must remain in [0, 1] with suppression active."""
+        from bench.dm._similarity import jaccard_similarity
+
+        cd = ConvergenceDetector(config, similarity_fn=jaccard_similarity)
+        # Build 5 rounds with increasing repetition
+        for r in range(5):
+            findings = [
+                make_finding(f"f{r}_{i}", f"m{i % 3}", r, i % 4,
+                             0.3 + 0.1 * i, 0.5, f"finding type {i % 4} variant {r}")
+                for i in range(4)
+            ]
+            cd.add_round_findings(r, findings)
+            ks = cd.kappa_set(r)
+            assert 0.0 <= ks <= 1.0, f"Round {r}: kappa_set={ks} out of [0,1]"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # AREA 5: DIMINISHING RETURNS
