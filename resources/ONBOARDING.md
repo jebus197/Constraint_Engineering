@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 April 2026 21:05 BST
+Last updated: 12 April 2026 21:33 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,29 +25,24 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39 IMPLEMENTATION COMPLETE — 9 PHASES (12 April 2026 21:04 BST):**
-  Branch: `exp39-experimental`. 784 tests pass (+22 new). 10 commits (ad53693..e59dedd).
-  **All 9 phases committed:** Phase 0 (housekeeping + novelty_yield fix), Phase 1
-  (kappa_set denominator prep), Phase 2 (embedding similarity shared backend),
-  Phase 3 (continuous suppression, permutation-invariant top-k), Phase 4 (persistent
-  immune memory with blended prior + drift detection), Phase 5 (FFAFP §1.2 in appendix),
-  Phase 6 (specialist B-Cell dispatch, shadow), Phase 7 (O1 ouroboros cell, shadow),
-  Phase 8 (mathematical appendix +317 lines, 7 new sections).
-  **3 critical errors caught and corrected:** corroboration collapse (Error 1),
-  order dependence (Error 2), kappa overflow (Error 3). All SymPy verified.
+- **EXP 39 IMPLEMENTATION + GAP ANALYSIS (12 April 2026 21:31 BST):**
+  Branch: `exp39-experimental`. 784 tests pass (+22 new). 11 commits (ad53693..89b6a05).
+  **All 9 implementation phases committed (0-8).** 3 critical errors caught/corrected.
   **New modules:** `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`.
   **Mathematical appendix:** 1334 → 1651 lines. New §§1.2–1.5, 7.13, 8.7, 9.
-  **Gemini confer round 1 (O1 + FFAFP):** advisory capacity falsified as mitigation.
-  Requires semantic clustering + circuit breaker before O1 promotion.
-  FFAFP PE enforcement needed (3-gate architecture proposed, not yet built).
-  **Gemini confer round 2 (PE 3-Gate + O1 Calibration Design):**
-  PE gates sequential 1→2→3. Gate 3 must be tool-driven first, LLM residual second.
-  Gate 3 escalations bypass O1 sensitivity dial (separate information flows).
-  O1 sensitivity dial: [0,1] internal, 1-11 UX, non-linear (1-s)^3 threshold.
-  O1 circuit breaker: dual-fuse (pre/post-clustering), graduated, PE-configurable.
-  O1 semantic clustering: two-tier fast/slow, LRU-bounded, log importance boost.
-  **Open items:** FFAFP PE gates, O1 clustering + breaker + dial, MC command sync,
-  Phase 9 (research write-up, deferred post-Exp 39).
+  **3 Gemini confers (12 April 2026):**
+  Round 1: advisory capacity falsified as mitigation. O1 needs clustering + breaker.
+  Round 2: PE gates sequential 1→2→3. Sensitivity dial [0,1]/1-11 UX. Dual-fuse breaker.
+  Round 3 (gap analysis): CODE-CORRECTNESS BIAS identified — all gates/docs assumed code
+  artifacts. Gates redesigned: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial
+  Consistency. IFalsificationGate protocol interface. Missing domain configs BLOCKING
+  Exp 39-G/H/M/F. O1 must NOT have external research (ResearchB_Cell instead). §7
+  partitioned: churn (BLOCKING), sycophancy + severity fusion (LOAD-BEARING), rest Phase 9.
+  Convergence gate insufficient without churn detection as C6.
+  **Execution order agreed:** gate interface → churn C6 → domain configs → B-Cell dispatch
+  → severity fusion → sycophancy → O1 calibration → run 39-0 → Phase 9.
+  **Confer logs:** `bench/logs/confer_o1_ffafp/`, `bench/logs/confer_pe_o1_design/`,
+  `bench/logs/confer_gap_analysis/`
   **Key experimental notes:**
   `experimental_notes/Exp39_Implementation_2026-04-12.md`
   `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 21:05 BST
+Last updated: 12 April 2026 21:33 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,45 +21,48 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 21:04 BST)
+## Current Pending Work (12 April 2026 21:31 BST)
 
-784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: e59dedd.
+784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: 89b6a05.
 
 **ALL 9 IMPLEMENTATION PHASES COMPLETE (Phases 0–8):**
-- 10 commits on `exp39-experimental` (ad53693..e59dedd)
+- 11 commits on `exp39-experimental` (ad53693..89b6a05)
 - New modules: `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`
 - Mathematical appendix expanded: 1334 → 1651 lines, 7 new sections, 17 notation entries
 - 3 critical errors caught/corrected: corroboration collapse, order dependence, kappa overflow
-- Phase-by-phase detail in `experimental_notes/Exp39_Implementation_2026-04-12.md`
 
-**Gemini Confer Findings (2 rounds, 12 April 2026):**
+**Gemini Confer Findings (3 rounds, 12 April 2026):**
 
-Round 1 (O1 + FFAFP):
-- "Advisory capacity" falsified as HIL overload mitigation — it's a risk vector
-- O1 requires semantic clustering + circuit breaker before promotion from shadow
-- FFAFP PE enforcement needed: 3-gate architecture (mechanical/heuristic/judgement)
-- Confer logs: `bench/logs/confer_o1_ffafp/`
+Round 1 (O1 + FFAFP): advisory capacity falsified as mitigation. Confer: `bench/logs/confer_o1_ffafp/`
+Round 2 (PE 3-Gate + O1 Calibration): sensitivity dial, dual-fuse breaker, two-tier clustering. Confer: `bench/logs/confer_pe_o1_design/`
+Round 3 (Gap Analysis + Domain-Agnostic Redesign, Codex timed out):
+- **Code-correctness bias identified**: all gates, docs, confers framed around code artifacts. CDSFL is domain-agnostic.
+- **Gates redesigned**: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial Consistency. `IFalsificationGate` protocol interface. Domain configs supply concrete checks.
+- **Missing domain configs**: biology, information_science, immune/engineering, cs_software — BLOCKING Exp 39-G/H/M/F.
+- **O1 must NOT have external research**: monitor, not actor. External research → ResearchB_Cell.
+- **§7 partitioned**: §7.1a churn (BLOCKING), §7.5 sycophancy (LOAD-BEARING), §7.7 severity fusion (LOAD-BEARING). Rest → Phase 9.
+- **Convergence gate insufficient**: current γ+ρ cannot distinguish refinement from oscillation without churn (C6).
+- Confer: `bench/logs/confer_gap_analysis/`
 
-Round 2 (PE 3-Gate + O1 Calibration Design):
-- PE gates: sequential 1→2→3 with short-circuit rejection. Post-Stage 2, pre-convergence.
-- Gate 3 (judgement): must be tool-driven first, LLM residual second. Fail-open to HIL.
-- Gate 3 escalations MUST bypass O1 sensitivity dial — separate information flows.
-- O1 sensitivity dial: internal [0,1], UX 1-11. Non-linear threshold (1-s)^3.
-- O1 circuit breaker: dual-fuse (pre-clustering raw rate + post-clustering cluster rate), graduated response, PE-configurable. SEPARATE from sensitivity dial.
-- O1 semantic clustering: two-tier (fast Jaccard + slow embeddings), LRU-bounded cross-round, log importance boost.
-- Confer logs: `bench/logs/confer_pe_o1_design/`
+**Priority ordering (Gemini):**
+BLOCKING: domain-agnostic gate interface, convergence churn (C6), missing domain configs
+LOAD-BEARING: specialist B-Cell dispatch, sycophancy detection, severity fusion
+ENHANCEMENT: Ising/Boltzmann Branch 2, O1 external research (ResearchB_Cell)
+PHASE 9: §7.2-7.4, §7.6 (Abstraction Index, Cognitive Yield, Value Estimator, Adoption Delta)
 
-**MC command sync needed:** `f` definition outdated in global CLAUDE.md (FFF→FFAFP), `sth`/`t`/`rc` missing from keyboard_shortcuts.txt, `re`/`ext` inconsistency.
+**Agreed execution order:**
+1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
+2. Convergence gate: add churn detection (§7.1a) as C6
+3. Missing domain configs (biology, info science, engineering immune, cs_software)
+4. B-Cell dispatch: route to domain-specific tools from new TOML configs
+5. Severity fusion (§7.7) for gate output synthesis
+6. Sycophancy detection (§7.5) — can shadow alongside 39-0
+7. O1 calibration: sensitivity dial, circuit breaker, semantic clustering
+8. Run 39-0 (infrastructure gate), then 39-A
+9. MC command sync across all reference locations
+10. Phase 9 (research write-up) — deferred post-Exp 39
 
-NEXT:
-1. Build FFAFP PE enforcement (3-gate architecture, tool-driven Gate 3)
-2. Build O1 semantic clustering (two-tier fast/slow, LRU-bounded)
-3. Build O1 circuit breaker (dual-fuse, graduated, PE-configurable)
-4. Build O1 sensitivity dial (importance scoring + non-linear threshold)
-5. Reclassify advisory capacity in documentation
-6. Sync MC commands across all 4 reference locations
-7. Run 39-0 (infrastructure gate), then 39-A
-8. Phase 9 (research write-up) — deferred post-Exp 39
+**Also pending:** Onboarding script redesign (merge semantic context + automation into single executable Python file).
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)
