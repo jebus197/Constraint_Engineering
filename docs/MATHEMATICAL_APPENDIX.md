@@ -250,6 +250,80 @@ The complete lineage from C(n) to the three-phase operational form is a chain of
 
 ---
 
+## 1.2 FFAFP Calibration Protocol
+
+### Motivation
+
+The unified self-assessment equation R_k(i) is only as trustworthy as its inputs. If the prior flaw rate π is poorly estimated, if detection probability d is inflated by a model that claims to find flaws it did not actually investigate, or if a "fix" is declared effective without re-testing, then R_k(i) will produce a confident but wrong residual risk estimate. The equation itself cannot prevent garbage inputs from producing garbage outputs.
+
+FFAFP — Full Falsification of All Falsification Passes — is the calibration protocol that ensures R_k(i) inputs are valid before they enter the recursive update. It is not a separate equation or an alternative to the self-assessment model. It is the operational procedure that makes the model's assumptions hold in practice.
+
+Without structural enforcement of input quality, empirical evidence from Experiments 12–37 shows that 0–13% of model-submitted findings survive independent falsification. This means models, left unconstrained, routinely submit findings that fail their own claimed standards. FFAFP closes this gap by requiring that every input to R_k(i) passes through a defined constraint set before it is accepted.
+
+### The Constraint Set
+
+FFAFP defines an admissibility constraint set C_FFAFP. A finding or parameter update is admissible (may enter R_k(i)) if and only if it satisfies all constraints in this set simultaneously.
+
+**C_FFAFP = { S_min, G-completeness, d_tool, σ_measured, q_retest }**
+
+Each constraint is defined below with its plain-English meaning and formal expression.
+
+**S_min — Minimum evidence standard.**
+
+A finding must include concrete evidence: a specific location in the code (file, function, line), a description of the flaw mechanism, and either a proof-of-concept or a falsification argument for why the flaw exists. Findings that consist only of general warnings ("this code may have race conditions") without specific evidence are inadmissible.
+
+> Formally: for finding f to be admissible, f must contain (location, mechanism, evidence) where evidence ∈ {proof-of-concept, formal argument, tool output}. Findings with evidence = ∅ are rejected.
+
+**G-completeness — The finding must be complete enough to verify.**
+
+A finding cannot be independently verified if it omits critical information. G-completeness requires that another agent (human or machine), given only the finding text, could reproduce the investigation and reach a verdict. If verification requires information not present in the finding, the finding is incomplete and inadmissible.
+
+> Formally: f is G-complete iff an independent verifier V, given only f, can execute a verification procedure and produce a verdict v ∈ {CONFIRMED, REJECTED, INCONCLUSIVE} without requesting additional information from the finder.
+
+**d_tool — Detection probability must be grounded in tool output.**
+
+The detection probability d entering q = η · d · p must come from actual tool execution (static analysis, test runner, SymPy verification, AST parse), not from the model's self-assessed confidence. A model claiming d = 0.9 based on its own certainty is not admissible. A model that ran a test suite and observed 9/10 relevant tests catching the flaw class is admissible.
+
+> Formally: d_i must be supported by tool output T_i where T_i is the result of executing a defined verification tool on the artifact under test. d_i = f(T_i) for some defined mapping f, not d_i = model_confidence.
+
+**σ_measured — Fix efficacy must be measured, not assumed.**
+
+When the three-phase extension uses fix efficacy σ, this parameter must come from re-running the verification tools after the fix is applied. A model declaring σ = 1.0 ("my fix definitely works") without re-testing is not admissible.
+
+> Formally: σ is admissible iff post-fix verification V_post was executed and σ = g(V_pre, V_post) for some defined mapping g that compares pre-fix and post-fix tool outputs.
+
+**q_retest — Effective detection probability must be retestable.**
+
+The effective detection probability q = η · d · p used in the Bayesian update must be decomposable into its factors, and each factor must be independently verifiable. If q is a single opaque number produced by the model, it cannot be audited and is inadmissible.
+
+> Formally: q_eff = η · d · p where each factor has an independent evidence trail. η (novelty) comes from similarity computation against prior findings. d (detection) comes from tool output (see d_tool). p (prior) comes from domain configuration or memory (see §1.2 above). None of these factors may be model self-assessments.
+
+### What FFAFP is NOT
+
+FFAFP is not a separate mathematical model. It does not add equations to the R_k(i) framework. It is the operational guarantee that the *assumptions* underlying R_k(i) hold in practice.
+
+FFAFP is not `sth` (synthesis). The `sth` metacognitive command consolidates findings into a coherent whole. FFAFP validates individual findings before they enter the model. These are independent operations.
+
+### Empirical justification
+
+Without FFAFP structural enforcement:
+- Experiments 12–15: 0–13% of submitted findings survived independent falsification
+- Experiments 29–37: after FFAFP enforcement, survival rates rose to 60–85%
+
+The difference is not model capability improving — it is the constraint set preventing inadmissible inputs from entering the model in the first place.
+
+### Confounds
+
+**Self-fulfilling calibration.** If the tools used to verify d_tool are themselves unreliable, FFAFP may create false confidence. Mitigation: tool diversity (multiple verification methods) and periodic tool-output audits by HIL.
+
+**Constraint completeness.** C_FFAFP contains five constraints. There may be failure modes not covered by these five. The set should be treated as extensible, not closed.
+
+**Human bottleneck.** FFAFP increases the verification burden. In practice, many verifications are automated (SymPy, test suites, AST checks), but some require HIL judgement. At scale (>50 findings per round), HIL cognitive overload becomes a genuine risk (identified by Gemini 3.1 Pro confer, 12 April 2026).
+
+(FFAFP calibration protocol formalised 12 April 2026. Constraint set confer-verified by Codex GPT-5.4, ChatGPT GPT-5.4, and Gemini 3.1 Pro. Empirical data from Experiments 12–37.)
+
+---
+
 ## 2. Class-Specific Diversity Discount (d_ik)
 
 ### The Gap
