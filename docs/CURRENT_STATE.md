@@ -1,24 +1,24 @@
 # CDSFL Current State
 
-Generated: 12 April 2026 20:28 BST (2026-04-12T20:28:18+01:00)
+Generated: 12 April 2026 21:05 BST (2026-04-12T21:05:26+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `401e475` Phase 8: Mathematical appendix expansion — 7 new sections
-- **Committed:** 2026-04-12 19:57:58 +0100
-- **Remote:** ahead by 22
+- **Last commit:** `e59dedd` sv: Exp 39 phases 0-8 complete, 784 tests, Gemini confer O1+FFAFP, appendix expanded
+- **Committed:** 2026-04-12 20:28:19 +0100
+- **Remote:** ahead by 23
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/logs/immune_pipeline.log`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 - `?? bench/confer_o1_ffafp.py`
+- `?? bench/confer_pe_o1_design.py`
 - `?? bench/logs/confer_o1_ffafp/`
-- `?? experimental_notes/Exp39_Implementation_2026-04-12.md`
+- `?? bench/logs/confer_pe_o1_design/`
 
 ---
 
@@ -50,6 +50,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `e59dedd sv: Exp 39 phases 0-8 complete, 784 tests, Gemini confer O1+FFAFP, appendix expanded`
 - `401e475 Phase 8: Mathematical appendix expansion — 7 new sections`
 - `8355215 Phase 7: O1 ouroboros cell shadow prototype`
 - `23bff05 Phase 6: Specialist B-Cell dispatch wiring (shadow mode)`
@@ -59,4 +60,3 @@ Uncommitted files:
 - `0dc6ab7 Phase 2: Embedding similarity shared backend`
 - `c98720c Phase 1: kappa_set denominator prep — numerator-only weighting`
 - `ad53693 Phase 0: sth command, FFAFP update, shadow extensions, crypto signing confer, Exp 39 configs`
-- `56a3e6e sv: AIS literature assessment, revised mathematical model (3 mods to R_k(i)), 2 confer rounds (Gemini+Codex), 3 critical errors found and verified (corroboration collapse, order dependence, kappa overflow), shadow extensions built, 4 experimental notes`

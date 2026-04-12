@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 20:28 BST
+Last updated: 12 April 2026 21:05 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,30 +21,45 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 20:23 BST)
+## Current Pending Work (12 April 2026 21:04 BST)
 
-784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: 401e475.
+784 tests pass (+22 new). Branch: `exp39-experimental`. Last commit: e59dedd.
 
 **ALL 9 IMPLEMENTATION PHASES COMPLETE (Phases 0–8):**
-- 9 commits on `exp39-experimental` (ad53693..401e475)
+- 10 commits on `exp39-experimental` (ad53693..e59dedd)
 - New modules: `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/ouroboros_cell.py`
 - Mathematical appendix expanded: 1334 → 1651 lines, 7 new sections, 17 notation entries
 - 3 critical errors caught/corrected: corroboration collapse, order dependence, kappa overflow
 - Phase-by-phase detail in `experimental_notes/Exp39_Implementation_2026-04-12.md`
 
-**Gemini Confer Findings (O1 + FFAFP, 12 April 2026):**
+**Gemini Confer Findings (2 rounds, 12 April 2026):**
+
+Round 1 (O1 + FFAFP):
 - "Advisory capacity" falsified as HIL overload mitigation — it's a risk vector
 - O1 requires semantic clustering + circuit breaker before promotion from shadow
 - FFAFP PE enforcement needed: 3-gate architecture (mechanical/heuristic/judgement)
 - Confer logs: `bench/logs/confer_o1_ffafp/`
 
+Round 2 (PE 3-Gate + O1 Calibration Design):
+- PE gates: sequential 1→2→3 with short-circuit rejection. Post-Stage 2, pre-convergence.
+- Gate 3 (judgement): must be tool-driven first, LLM residual second. Fail-open to HIL.
+- Gate 3 escalations MUST bypass O1 sensitivity dial — separate information flows.
+- O1 sensitivity dial: internal [0,1], UX 1-11. Non-linear threshold (1-s)^3.
+- O1 circuit breaker: dual-fuse (pre-clustering raw rate + post-clustering cluster rate), graduated response, PE-configurable. SEPARATE from sensitivity dial.
+- O1 semantic clustering: two-tier (fast Jaccard + slow embeddings), LRU-bounded cross-round, log importance boost.
+- Confer logs: `bench/logs/confer_pe_o1_design/`
+
+**MC command sync needed:** `f` definition outdated in global CLAUDE.md (FFF→FFAFP), `sth`/`t`/`rc` missing from keyboard_shortcuts.txt, `re`/`ext` inconsistency.
+
 NEXT:
-1. Add O1 semantic clustering (group repeat anomalies by category across rounds)
-2. Add O1 circuit breaker (auto-suspend + systemic alert above threshold)
-3. Build FFAFP PE enforcement (3-gate architecture) — can parallel Exp 39
-4. Reclassify advisory capacity in documentation (neutral post-calibration, not mitigation)
-5. Run 39-0 (infrastructure gate), then 39-A
-6. Phase 9 (research write-up) — deferred post-Exp 39
+1. Build FFAFP PE enforcement (3-gate architecture, tool-driven Gate 3)
+2. Build O1 semantic clustering (two-tier fast/slow, LRU-bounded)
+3. Build O1 circuit breaker (dual-fuse, graduated, PE-configurable)
+4. Build O1 sensitivity dial (importance scoring + non-linear threshold)
+5. Reclassify advisory capacity in documentation
+6. Sync MC commands across all 4 reference locations
+7. Run 39-0 (infrastructure gate), then 39-A
+8. Phase 9 (research write-up) — deferred post-Exp 39
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)
