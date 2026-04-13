@@ -1,0 +1,117 @@
+
+Exp 39 Sequencer — 1 sub-experiments queued
+Gate policy: fail_fast
+
+Execution order:
+   1. 39-0 — Infrastructure Gate [REQUIRED]
+
+Starting sequence at 2026-04-13T06:49:11.581589+00:00
+
+========================================================================
+  SUB-EXPERIMENT: 39-0 — Infrastructure Gate
+  Type: gate | Required: True
+  Config: bench/exp39_configs/39_0_gate.json
+  Command: /usr/local/bin/python3 /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py run --config /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp39_configs/39_0_gate.json --resume
+========================================================================
+[07:49:11] 
+RESUME mode — skipping preflight
+[07:49:11] ============================================================
+[07:49:11] EXPERIMENT: exp39_0_gate
+[07:49:11]   Topology: star/blackboard
+[07:49:11]   Pattern: four_layer
+[07:49:11]   Max rounds: 8 (extension to 10)
+[07:49:11]   Convergence: state-based, earliest R3
+[07:49:11]   Target: bench/reference_runner.py
+[07:49:11]   Context: ['bench/runner_core.py', 'bench/immune_agents.py']
+[07:49:11]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[07:49:11]   Domain: software
+[07:49:11]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z
+[07:49:11] ============================================================
+[07:49:11]   Target: 156,838 chars
+[07:49:11]   Context: 2 files
+[07:49:11]   Total: 354,151 chars with headers
+[07:49:11]   RESUMED from round 1
+[07:49:11]   Registry restored: 28 entries
+[07:49:11]   S_k pipeline: capturing baseline gate scores...
+[07:49:12]   S_k baseline: ruff=45, bandit={'high': 0, 'medium': 0}
+[07:49:12] 
+------------------------------------------------------------
+[07:49:12] Round 1/7 (adaptive)
+[07:49:12] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1430: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0221, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[07:49:12]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~354,123 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1430: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0221, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[07:49:12]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~354,123 chars
+[07:49:12]   ChatGPT: ValueError — ChatGPT: estimated 129,281 tokens exceeds context budget L=96,000 tokens (prompt=426,887 chars, system=25,597 chars, total≈452,484 chars). Burst decomposition required.
+[07:49:12]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~354,123 chars
+[07:49:12] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[07:49:12] Dispatching to CC2 (opus) via claude_cli...
+[07:49:13]   [deepseek:deepseek-reasoner] independent session 1/3 (156,915 chars, target_0)
+[07:49:13]   [openrouter:openai/gpt-5.4] independent session 1/3 (156,915 chars, target_0)
+[07:49:13]   [openrouter:openai/gpt-5.4] independent session 1/3 (156,915 chars, target_0)
+[07:49:46]   [openrouter:openai/gpt-5.4] section 1 analysis complete (8,513 chars)
+[07:49:46]   [openrouter:openai/gpt-5.4] independent session 2/3 (36,284 chars, target_1)
+[07:49:49]   [openrouter:openai/gpt-5.4] section 1 analysis complete (8,652 chars)
+[07:49:49]   [openrouter:openai/gpt-5.4] independent session 2/3 (36,284 chars, target_1)
+[07:50:23]   [openrouter:openai/gpt-5.4] section 2 analysis complete (8,623 chars)
+[07:50:23]   [openrouter:openai/gpt-5.4] independent session 3/3 (160,924 chars, target_2)
+[07:50:48]   [openrouter:openai/gpt-5.4] section 2 analysis complete (12,399 chars)
+[07:50:48]   [openrouter:openai/gpt-5.4] independent session 3/3 (160,924 chars, target_2)
+[07:51:17]   [openrouter:openai/gpt-5.4] section 3 analysis complete (6,609 chars)
+[07:51:17]   [openrouter:openai/gpt-5.4] delivering synthesis instruction (chunk 4/4)
+[07:51:31]   [openrouter:openai/gpt-5.4] section 3 analysis complete (15,017 chars)
+[07:51:31]   [openrouter:openai/gpt-5.4] delivering synthesis instruction (chunk 4/4)
+[07:51:33]   [openrouter:openai/gpt-5.4] synthesis complete (140.8s, 0 chars)
+[07:51:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/round1_chatgpt_20260413T065133Z.json
+[07:51:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/r1_chatgpt_20260413T065133Z.json
+[07:51:34]   [deepseek:deepseek-reasoner] section 1 analysis complete (0 chars)
+[07:51:34]   [deepseek:deepseek-reasoner] independent session 2/3 (36,284 chars, target_1)
+[07:52:33]   [openrouter:openai/gpt-5.4] synthesis complete (200.6s, 22,704 chars)
+[07:52:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/round1_codex_20260413T065233Z.json
+[07:52:33]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/r1_codex_20260413T065233Z.json
+[07:52:38]   [openrouter:google/gemini-3.1-pro-preview] done (205.0s, 3615 chars)
+[07:52:38]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/r1_gemini_20260413T065238Z.json
+[07:53:51]   [deepseek:deepseek-reasoner] section 2 analysis complete (0 chars)
+[07:53:51]   [deepseek:deepseek-reasoner] independent session 3/3 (160,924 chars, target_2)
+[07:56:08]   [deepseek:deepseek-reasoner] section 3 analysis complete (0 chars)
+[07:56:08]   [deepseek:deepseek-reasoner] delivering synthesis instruction (chunk 4/4)
+[07:56:09]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 136317 tokens (119933 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[07:56:09]   DeepSeek: ValueError — DeepSeek: estimated 128,407 tokens exceeds context budget L=99,000 tokens (prompt=426,887 chars, system=22,537 chars, total≈449,424 chars). Burst decomposition required.
+[07:56:09]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~354,123 chars
+[07:56:09]   [deepseek:deepseek-reasoner] independent session 1/3 (156,915 chars, target_0)
+[07:57:42]   [claude-cli:opus] done (509.9s, 18934 chars)
+[07:57:42]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T054642Z/r1_cc2_20260413T065742Z.json
+[07:58:22]   [deepseek:deepseek-reasoner] section 1 analysis complete (12,518 chars)
+[07:58:22]   [deepseek:deepseek-reasoner] independent session 2/3 (36,284 chars, target_1)
+[08:00:34]   [deepseek:deepseek-reasoner] section 2 analysis complete (0 chars)
+[08:00:34]   [deepseek:deepseek-reasoner] independent session 3/3 (160,924 chars, target_2)
+[08:03:30]   [deepseek:deepseek-reasoner] section 3 analysis complete (13,329 chars)
+[08:03:30]   [deepseek:deepseek-reasoner] delivering synthesis instruction (chunk 4/4)
+[08:03:32]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 142981 tokens (126597 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[08:03:32]   Registry: 30 novel / 37 raw, 58 total, rho=0.811, rho_avg=0.905
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 37 passed, 0 failed out of 37 findings
+INFO:immune.pipeline:DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F004 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F005 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F006 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F007 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_CC1_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: CC2_CC1_F002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 (v2): 7/37 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 37 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F001 — regex=statistical → llm=code_behavioral (conf=0.90, threshold=0.70, 15.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F002 — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 12.6s)
+
+*** GATE FAILED: 39-0 — halting sequence ***
+
+========================================================================
+  SEQUENCE COMPLETE
+========================================================================
+  39-0: FAIL (959s)
+
+Sequence report: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_artifacts/exp39_sequence_20260413T070510Z.json
+
+*** 1 required sub-experiment(s) failed ***

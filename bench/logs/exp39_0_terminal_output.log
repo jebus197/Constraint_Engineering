@@ -1,0 +1,242 @@
+
+Exp 39 Sequencer — 1 sub-experiments queued
+Gate policy: fail_fast
+
+Execution order:
+   1. 39-0 — Infrastructure Gate [REQUIRED]
+
+Starting sequence at 2026-04-13T05:13:23.950249+00:00
+
+========================================================================
+  SUB-EXPERIMENT: 39-0 — Infrastructure Gate
+  Type: gate | Required: True
+  Config: bench/exp39_configs/39_0_gate.json
+  Command: /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py run --config /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp39_configs/39_0_gate.json
+========================================================================
+[06:13:24] ============================================================
+[06:13:24] PREFLIGHT: Testing model connectivity
+[06:13:24] ============================================================
+[06:13:24]   Testing CC2...
+[06:13:24] Dispatching to CC2 (opus) via claude_cli...
+[06:13:30]   [claude-cli:opus] done (5.9s, 35 chars)
+[06:13:30]   CC2: OK (6.1s)
+[06:13:30]   Testing Codex...
+[06:13:30] Dispatching to Codex (openai/gpt-5.4) via openrouter...
+[06:13:32]   [openrouter:openai/gpt-5.4] done (1.7s, 23 chars)
+[06:13:32]   Codex: OK (2.4s)
+[06:13:32]   Testing ChatGPT...
+[06:13:32] Dispatching to ChatGPT (openai/gpt-5.4) via openrouter...
+[06:13:34]   [openrouter:openai/gpt-5.4] done (1.2s, 23 chars)
+[06:13:34]   ChatGPT: OK (2.0s)
+[06:13:34]   Testing Gemini...
+[06:13:34] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[06:13:40]   [openrouter:google/gemini-3.1-pro-preview] done (4.8s, 24 chars)
+[06:13:40]   Gemini: OK (5.8s)
+[06:13:40]   Testing DeepSeek...
+[06:13:40] Dispatching to DeepSeek (deepseek-reasoner) via deepseek...
+[06:13:53]   [deepseek:deepseek-reasoner] done (12.3s, 29 chars content, 1436 chars reasoning)
+[06:13:53]   DeepSeek: OK (13.6s)
+[06:13:53] 
+Preflight passed. Starting in 5s...
+[06:13:58] ============================================================
+[06:13:58] EXPERIMENT: exp39_0_gate
+[06:13:58]   Topology: star/blackboard
+[06:13:58]   Pattern: four_layer
+[06:13:58]   Max rounds: 8 (extension to 10)
+[06:13:58]   Convergence: state-based, earliest R3
+[06:13:58]   Target: bench/reference_runner.py
+[06:13:58]   Context: ['bench/runner_core.py', 'bench/immune_agents.py']
+[06:13:58]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[06:13:58]   Domain: software
+[06:13:58]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z
+[06:13:58] ============================================================
+[06:13:58]   Target: 152,725 chars
+[06:13:58]   Context: 2 files
+[06:13:58]   Total: 350,038 chars with headers
+[06:13:59]   S_k pipeline: capturing baseline gate scores...
+[06:14:00]   S_k baseline: ruff=45, bandit={'high': 0, 'medium': 0}
+[06:14:00] 
+------------------------------------------------------------
+[06:14:00] Round 0/7 (blind)
+[06:14:00] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1418: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0221, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[06:14:00]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~350,010 chars
+[06:14:00]   ChatGPT: ValueError — ChatGPT: estimated 102,683 tokens exceeds context budget L=96,000 tokens (prompt=352,529 chars, system=6,861 chars, total≈359,390 chars). Burst decomposition required.
+[06:14:00]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~350,010 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1418: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0221, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[06:14:00]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~350,010 chars
+[06:14:00] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[06:14:00] Dispatching to CC2 (opus) via claude_cli...
+[06:14:00]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (152,802 chars, target_0)
+[06:14:00]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (152,802 chars, target_0)
+[06:14:00]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (152,802 chars, target_0)
+[06:14:02]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (36,284 chars, target_1)
+[06:14:03]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (36,284 chars, target_1)
+[06:14:04]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (160,924 chars, target_2)
+[06:14:07]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[06:14:08]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (160,924 chars, target_2)
+[06:14:08]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (36,284 chars, target_1)
+[06:14:10]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[06:14:19]   [deepseek:deepseek-reasoner] WARNING: chunk 2 got non-WAITING response (0 chars): ...
+[06:14:19]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (160,924 chars, target_2)
+[06:14:32]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[06:14:32]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[06:14:33]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 201469 tokens (185085 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[06:14:33]   DeepSeek: ValueError — DeepSeek: estimated 101,809 tokens exceeds context budget L=99,000 tokens (prompt=352,529 chars, system=3,801 chars, total≈356,330 chars). Burst decomposition required.
+[06:14:33]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~350,010 chars
+[06:14:33]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (152,802 chars, target_0)
+[06:14:37]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (36,284 chars, target_1)
+[06:14:47]   [deepseek:deepseek-reasoner] WARNING: chunk 2 got non-WAITING response (0 chars): ...
+[06:14:47]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (160,924 chars, target_2)
+[06:14:53]   [openrouter:openai/gpt-5.4] synthesis complete (53.1s, 16,293 chars)
+[06:14:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/round0_chatgpt_20260413T051453Z.json
+[06:14:53]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/r0_chatgpt_20260413T051453Z.json
+[06:14:57]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[06:14:57]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[06:14:58]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 201469 tokens (185085 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[06:15:04]   [openrouter:openai/gpt-5.4] synthesis complete (63.8s, 17,878 chars)
+[06:15:04]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/round0_codex_20260413T051504Z.json
+[06:15:04]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/r0_codex_20260413T051504Z.json
+[06:17:35]   [openrouter:google/gemini-3.1-pro-preview] done (214.8s, 4734 chars)
+[06:17:35]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/r0_gemini_20260413T051735Z.json
+[06:21:11]   [claude-cli:opus] done (431.6s, 13910 chars)
+[06:21:12]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/r0_cc2_20260413T052112Z.json
+[06:21:12]   Registry: 18 novel / 18 raw, 18 total, rho=1.000, rho_avg=1.000
+INFO:immune.pipeline:Domain config loaded: software (1 sections)
+INFO:immune.pipeline:Skin barrier (v2): 18 passed, 0 failed out of 18 findings
+INFO:immune.pipeline:DC v2 reclassification: ChatGPT_F005 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.40)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F002 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.pipeline:DC v2 reclassification: Codex_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F003 — v1=logical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F005 — v1=logical → v2=code_behavioral (conf=0.65)
+INFO:immune.pipeline:DC v2 reclassification: CC2_F006 — v1=logical → v2=mathematical (conf=0.70)
+INFO:immune.pipeline:DC v2 (v2): 8/18 findings reclassified
+INFO:immune.pipeline:LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 18 findings to classify.
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F001 — regex=logical → llm=code_behavioral (conf=0.85, threshold=0.70, 14.0s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F002 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 11.0s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F003 — regex=mathematical → llm=code_behavioral (conf=0.92, threshold=0.70, 13.8s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F004 — regex=mathematical → llm=logical (conf=0.80, threshold=0.70, 20.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: ChatGPT_F005 — regex=code_behavioral → llm=code_structural (conf=0.82, threshold=0.70, 28.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_"CC2_F001", verified=False, proposed_fix="...")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expected: registry entry for `CC2_F001` becomes verified/closed-capable. Actual here: if `brain.run_immune_pipeline()` works on copies or returns the authoritative filtered list, this runner ignores that authoritative list and only inspects original `findings`; the registry can remain unverified while the immune layer has already verified the fix. Formal conclusion: the runner has a broken interface between immune verification and registry state, causing silently stale registry status and downstream convergence/HIL decisions based on outdated data. — regex=mathematical → llm=code_behavioral (conf=0.85, threshold=0.70, 11.7s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F002 — regex=mathematical → llm=logical (conf=0.75, threshold=0.70, 19.3s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F003 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 13.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: Codex_F005 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 15.5s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F001 — regex=mathematical → llm=code_behavioral (conf=0.95, threshold=0.70, 12.2s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F002 — regex=mathematical → llm=code_behavioral (conf=0.80, threshold=0.70, 18.1s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F003 — regex=code_behavioral → llm=logical (conf=0.80, threshold=0.70, 17.6s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F004 — regex=code_behavioral → llm=code_structural (conf=0.88, threshold=0.70, 15.9s)
+INFO:immune.pipeline:LLM classifier OVERRIDE: CC2_F006 — regex=mathematical → llm=logical (conf=0.85, threshold=0.70, 14.9s)
+INFO:immune.pipeline:LLM classifier: 4/18 agree with regex (22.2%), 14 overrides applied
+INFO:immune.pipeline:B Cell v2 (v2): 4 claims checked, 1 grounded proofs
+INFO:immune.pipeline:  ChatGPT_F004: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  Codex_F002: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:  CC2_F003: REJECTED (0.85) — [B_v2] z3 SMT-LIB grounded counterexample. Grounded vars: ['open_ch_stability_window', 'max_open_cri
+INFO:immune.pipeline:  CC2_F006: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+INFO:immune.pipeline:NK v2 (v2): 16 verdicts (16 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+INFO:immune.pipeline:CT v2 (v2): 0 verdicts in 121.7s — none
+INFO:immune.pipeline:B-Cell specialist (shadow): 4 verdicts
+INFO:immune.pipeline:B-Cell specialist divergence: CC2_F003 specialist=UNCERTAIN generic=REJECTED
+INFO:immune.pipeline:Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+INFO:immune.pipeline:Helper T v2 (v2): 18 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 16 DUPLICATE
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F006 — both pipelines REJECTED (v1=0.57, v2=0.57, max=0.57 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F001 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.66, v2=0.66, max=0.66 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F005 — both pipelines REJECTED (v1=0.51, v2=0.51, max=0.51 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F005 — both pipelines REJECTED (v1=0.70, v2=0.70, max=0.70 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F004 — both pipelines REJECTED (v1=0.53, v2=0.53, max=0.53 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.59, v2=0.59, max=0.59 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F003 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F002 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.67, v2=0.67, max=0.67 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: CC2_F005 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: Gemini_UNSTRUCTURED — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+INFO:immune.pipeline:Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+INFO:immune.pipeline:Reconciliation locked 16 finding(s): CC2_F001, CC2_F002, CC2_F003, CC2_F004, CC2_F005, CC2_F006, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, ChatGPT_F005, Codex_F001, Codex_F002, Codex_F003, Codex_F004, Codex_F005, Gemini_UNSTRUCTURED
+INFO:immune.pipeline:RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 16/18 (88.9%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 6/6 (100%) findings from CC2 removed — possible systematic bias
+INFO:immune.pipeline:RT v1 vs v2: flag differs — v1=False v2=True ([RT_v2] Removal rate 16/18 (88.9%) exceeds threshold (65%) [rejected=0, duplicated=16]; [RT_v2] 6/6 (100%) findings from CC2 removed — possible systematic bias)
+INFO:immune.pipeline:Autoimmune override: resurrected 2 findings, kept 16 locked rejections
+INFO:immune.pipeline:Fix NOT verified: ChatGPT_F001 — verdict=HARMFUL (issues introduced)
+INFO:immune.pipeline:Fix NOT verified: Codex_"CC2_F001", verified=False, proposed_fix="...")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expected: registry entry for `CC2_F001` becomes verified/closed-capable. Actual here: if `brain.run_immune_pipeline()` works on copies or returns the authoritative filtered list, this runner ignores that authoritative list and only inspects original `findings`; the registry can remain unverified while the immune layer has already verified the fix. Formal conclusion: the runner has a broken interface between immune verification and registry state, causing silently stale registry status and downstream convergence/HIL decisions based on outdated data. — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+[06:30:37]   S_k [C0001]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:32:39]   S_k [C0002]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:34:41]   S_k [C0003]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:34:41]   S_k [C0004]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:34:41]   S_k [C0005]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:34:41]   S_k [C0007]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:34:41]   S_k [C0008]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:36:43]   S_k [C0009]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:36:43]   S_k [C0010]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k [C0011]: ADMISSIBLE sk=1.000 (S*=0.000) R: 0.500 -> 0.367
+[06:38:45]   S_k [C0013]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k [C0014]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k [C0015]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k [C0016]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k [C0017]: ESCALATE — {'error': 'no SEARCH/REPLACE blocks found'}
+[06:38:45]   S_k pipeline: 15 evaluated, 5 ADMISSIBLE, 0 REJECTED, 10 ESCALATE
+[06:38:45]   gamma: 0.000 (telemetry, passed) — Gamma disagrees with state closure — recommend HIL audit
+[06:38:45]   Round 0: 18 findings, 432.0s
+[06:38:45]   Convergence: Too early (round 0 < 3)
+[06:38:45] 
+------------------------------------------------------------
+[06:38:45] Round 1/7 (adaptive)
+[06:38:45] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1418: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0221, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[06:38:45]   ChatGPT: ValueError — ChatGPT: estimated 114,753 tokens exceeds context budget L=96,000 tokens (prompt=394,775 chars, system=6,861 chars, total≈401,636 chars). Burst decomposition required.
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1418: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0221, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[06:38:45]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~350,010 chars
+[06:38:45]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~350,010 chars
+[06:38:45]   Decomposed dispatch: openrouter/openai/gpt-5.4, 3 chunks, ~350,010 chars
+[06:38:45]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (152,802 chars, target_0)
+[06:38:45]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (152,802 chars, target_0)
+[06:38:45]   [openrouter:openai/gpt-5.4] delivering chunk 1/4 (152,802 chars, target_0)
+[06:38:45] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[06:38:45] Dispatching to CC2 (opus) via claude_cli...
+[06:38:47]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (36,284 chars, target_1)
+[06:38:49]   [openrouter:openai/gpt-5.4] delivering chunk 2/4 (36,284 chars, target_1)
+[06:38:49]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (36,284 chars, target_1)
+[06:38:49]   [openrouter:openai/gpt-5.4] WARNING: chunk 2 got non-WAITING response (49 chars): I'm sorry, but I cannot assist with that request....
+[06:38:49]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (160,924 chars, target_2)
+[06:38:50]   [openrouter:openai/gpt-5.4] delivering chunk 3/4 (160,924 chars, target_2)
+[06:38:51]   [openrouter:openai/gpt-5.4] WARNING: chunk 3 got non-WAITING response (49 chars): I'm sorry, but I cannot assist with that request....
+[06:38:51]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[06:38:52]   [openrouter:openai/gpt-5.4] delivering final instruction (chunk 4/4)
+[06:38:59]   [deepseek:deepseek-reasoner] WARNING: chunk 2 got non-WAITING response (0 chars): ...
+[06:38:59]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (160,924 chars, target_2)
+[06:39:10]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[06:39:10]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[06:39:11]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 214195 tokens (197811 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+[06:39:11]   DeepSeek: ValueError — DeepSeek: estimated 113,879 tokens exceeds context budget L=99,000 tokens (prompt=394,775 chars, system=3,801 chars, total≈398,576 chars). Burst decomposition required.
+[06:39:11]   Decomposed dispatch: deepseek/deepseek-reasoner, 3 chunks, ~350,010 chars
+[06:39:11]   [deepseek:deepseek-reasoner] delivering chunk 1/4 (152,802 chars, target_0)
+[06:39:19]   [deepseek:deepseek-reasoner] delivering chunk 2/4 (36,284 chars, target_1)
+[06:39:23]   [openrouter:openai/gpt-5.4] synthesis complete (37.6s, 4,353 chars)
+[06:39:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/round1_codex_20260413T053923Z.json
+[06:39:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T051358Z/r1_codex_20260413T053923Z.json
+[06:39:26]   [deepseek:deepseek-reasoner] delivering chunk 3/4 (160,924 chars, target_2)
+[06:39:44]   [deepseek:deepseek-reasoner] WARNING: chunk 3 got non-WAITING response (0 chars): ...
+[06:39:44]   [deepseek:deepseek-reasoner] delivering final instruction (chunk 4/4)
+[06:39:45]   DeepSeek: multi-turn FAILED — BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 131072 tokens. However, you requested 214197 tokens (197813 in the messages, 16384 in the completion). Please reduce the length of the messages or completion.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}
+
+*** GATE FAILED: 39-0 — halting sequence ***
+
+========================================================================
+  SEQUENCE COMPLETE
+========================================================================
+  39-0: FAIL (1637s)
+
+Sequence report: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_artifacts/exp39_sequence_20260413T054040Z.json
+
+*** 1 required sub-experiment(s) failed ***
+[06:41:49]   [openrouter:google/gemini-3.1-pro-preview] done (183.4s, 4646 chars)
+[06:42:08]   [claude-cli:opus] done (202.2s, 12974 chars)
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:301: UserWarning: resource_tracker: There appear to be 7 leaked semaphore objects to clean up at shutdown: {'/loky-54917-h8s_2p5t', '/loky-54917-5i0wby_k', '/loky-54917-15i_sij3', '/loky-54917-d8z3cpoj', '/loky-54917-fncul28b', '/loky-54917-vkadl6y3', '/loky-54917-fwd2hlq3'}
+  warnings.warn(

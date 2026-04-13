@@ -139,6 +139,18 @@ MODEL_ROSTER = {
     "ChatGPT": "GPT-5.4 (OpenAI)",
 }
 
+# Operational directive — R_k(i) self-assessment equation and working protocol.
+# Appended AFTER composer phenotype transforms to bypass char caps. Models MUST
+# compute R_k on their own output (§3, §6). Without this directive, models
+# produce qualitative findings, not metacognitive self-assessment. Exp 37:
+# 88-100% R_k adoption with directive, 0% without. (Exp37 line 185-194, 2195-2196)
+_OPERATIONAL_DIRECTIVE_PATH = (
+    REPO_ROOT / "bench" / "directives" / "universal" / "cdsfl_operational.md"
+)
+_OPERATIONAL_DIRECTIVE_TEXT = ""
+if _OPERATIONAL_DIRECTIVE_PATH.exists():
+    _OPERATIONAL_DIRECTIVE_TEXT = _OPERATIONAL_DIRECTIVE_PATH.read_text(encoding="utf-8")
+
 FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 
 
@@ -1456,6 +1468,12 @@ def _dispatch_single_model(
         model_cdsfl = composed.rendered_text
     except Exception:
         model_cdsfl = cdsfl_text
+    # Append operational directive AFTER composer phenotype transforms.
+    # The operational directive (R_k self-assessment, MUST-compute instruction)
+    # is not subject to phenotype char caps — all models receive it in full.
+    # (Mirrors run_exp37_evidence.py lines 2195-2196)
+    if _OPERATIONAL_DIRECTIVE_TEXT:
+        model_cdsfl += "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
 
     pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
 
@@ -3082,6 +3100,47 @@ def run_experiment(
             )
         else:
             registry_summary = registry.build_summary(round_idx) if round_idx > 0 else ""
+            # Per-round metrics injection — models use γ, ρ, registry state to
+            # calibrate effort (cdsfl_operational.md §8, §13). Mirrors Exp 37
+            # run_exp37_evidence.py lines 2310-2359.
+            if round_idx > 0 and registry is not None:
+                _rho_val = rho_history[-1] if rho_history else 0.0
+                _rho_bar3 = (sum(rho_history[-3:]) / min(3, len(rho_history))
+                             if rho_history else 0.0)
+                _gamma_val = gamma_history[-1] if gamma_history else 0.0
+                _n_open = sum(1 for e in registry.entries.values()
+                              if e.get("status") in ("OPEN", "CONTESTED"))
+                _n_confirmed = sum(1 for e in registry.entries.values()
+                                   if e.get("status") == "CONFIRMED")
+                _n_closed = sum(1 for e in registry.entries.values()
+                                if e.get("status") in ("CLOSED", "MERGED"))
+                _metrics = (
+                    f"\n=== PANEL METRICS (Round {round_idx}) ===\n"
+                    f"ρ (discovery efficiency / semantic novelty rate) = "
+                    f"{_rho_val:.3f}\n"
+                    f"ρ̄₃ (3-round rolling average) = {_rho_bar3:.3f}\n"
+                    f"γ (Duane reliability growth) = {_gamma_val:.3f}\n"
+                    f"Registry: {_n_open} OPEN, {_n_confirmed} CONFIRMED, "
+                    f"{_n_closed} CLOSED/MERGED\n"
+                    f"\nInterpretation: "
+                )
+                if _gamma_val >= 0.45:
+                    _metrics += (
+                        "Strong depletion — novel discoveries are rare. If you "
+                        "cannot find genuinely new issues, report that honestly. "
+                        "Redundant re-descriptions waste compute.\n"
+                    )
+                elif _gamma_val >= 0.30:
+                    _metrics += (
+                        "Moderate depletion — novel discoveries are slowing. "
+                        "Focus on areas not yet covered by existing findings. "
+                        "Check the registry before submitting.\n"
+                    )
+                else:
+                    _metrics += (
+                        "Productive phase — continue finding and falsifying.\n"
+                    )
+                registry_summary = registry_summary + _metrics
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_star(
                 exp_config, mgr, brain, base_prompt, registry_summary,
                 cdsfl_text, full_code, round_idx, cfg, registry=registry,
@@ -3609,6 +3668,15 @@ def main():
     exp_config = load_default_config()
     cdsfl_path = REPO_ROOT / "bench" / "directives" / "universal" / "cdsfl_core_formal.md"
     cdsfl_text = cdsfl_path.read_text(encoding="utf-8")
+    # Operational directive — R_k(i) self-assessment equation and working protocol.
+    # Models MUST compute R_k on their own output (§3, §6). Without this, models
+    # produce qualitative findings — not metacognitive self-assessment. Exp 37
+    # demonstrated 88-100% R_k adoption across all 5 models with this directive;
+    # zero adoption without it. The equation inside the models' reasoning is the
+    # contribution — external scoring alone is just calculation.
+    _operational_path = REPO_ROOT / "bench" / "directives" / "universal" / "cdsfl_operational.md"
+    if _operational_path.exists():
+        cdsfl_text += "\n\n" + _operational_path.read_text(encoding="utf-8")
 
     if args.command == "preflight":
         cfg = RunnerConfig(models=["CC2", "Codex", "Gemini", "DeepSeek", "ChatGPT"])

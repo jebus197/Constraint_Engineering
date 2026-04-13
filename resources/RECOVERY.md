@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 April 2026 02:10 BST
+Last updated: 13 April 2026 17:36 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,45 +21,54 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (13 April 2026 02:09 BST)
+## Current Pending Work (13 April 2026 17:35 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: 2488fa1.
+793 tests pass. Branch: `exp39-experimental`. Last commit: 2f8f8bc.
 
-**39-0 IS READY TO RUN.** All valid observations from Gemini 3.1 Pro and Codex 5.3 confers have been fixed. Full readiness assessment: `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`. TTS: `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`.
+**EXP 39-0 COMPLETE.** 4 rounds, 78 findings, 35 canonical, γ=0.798. Status INCOMPLETE
+(convergence gate never fired). Logs: `bench/logs/exp39_0_gate_20260413T054642Z/`.
 
-**FIXES APPLIED THIS SESSION (13 April 2026) — 3 COMMITS + PENDING:**
-- Commit f57d6ce: `origin_type="model"` on all 5 Finding() sites in runner_core.py. 6 provenance fields in FindingRegistry.register(). macrophage_cell.py committed.
-- Commit a8fb729: Launch path blocker fixed (--test-article optional). Confer script + readiness assessment.
-- Commit 2488fa1: sv state snapshot.
-- Pending commit (7 confer-driven fixes):
-  1. Domain plumbing: `domain` field added to `DynamicManagementConfig`, `dm_config.domain = cfg.domain` propagated in reference_runner.py. Without this, `if domain == "software"` in immune pipeline silently failed.
-  2. Enum serialization: `_enum_safe_default()` in insect_brain.py replaces `default=str`. Produces `"cytotoxic_t"` not `"CellType.CYTOTOXIC_T"`.
-  3. Round report detail: `round_data["findings"]` now carries per-finding summaries with description, severity, provenance. HIL can review intermediate rounds.
-  4. Per-round JSON provenance: `_save_round_json()` now serialises all 16 Finding fields including 6 provenance fields.
-  5. ImmuneResponse restore: `load_checkpoint()` passes `immune_response` dict back into `RoundRecord` on resume.
-  6. Macrophage shadow parity: full observation details in `shadow_data` + per-round `macrophage_shadow_rNN.json` log file (matches Ouroboros).
-  7. Regulatory T structured output: `RegulatoryResult` dataclass with thresholds, counts, per-model breakdown, checks fired; stored on `ImmuneResponse.regulatory_detail`.
+**UNCOMMITTED CHANGES (working tree dirty):**
+- `bench/decomposed_dispatch.py` — full FFAFP+R_k per-chunk/synthesis instructions
+  for OpenRouter and DeepSeek decomposed dispatch paths. 6 mandatory sections:
+  FIND, FOLLOW, ANALYSE, FIX, FALSIFICATION (FALSIFIER/ATTEMPT/RESULT),
+  CORROBORATION (numerical R_k). Meta SRP included.
+- `bench/reference_runner.py` — operational directive loading at module level,
+  appended to composer phenotype in _dispatch_single_model. Per-round metrics
+  injection (γ, ρ, ρ̄₃, registry counts) before each round dispatch.
+- `bench/run_benchmark.py` — `claude-code` and `claude-code-thinking` providers
+  using `claude -p` subprocess (Max subscription auth, no API key needed).
+  See `bench/CLAUDE_CODE_PROVIDER_FIX.md`.
+- Fingerprints (all 5 models), experiment logs, immune pipeline log, exp39 config.
 
-**CONFER ROUND 5 (Exp 39 Readiness, 13 April 2026):**
-- Gemini 3.1 Pro: 8,245 chars. Codex 5.3: 10,339 chars.
-- All valid observations from both models now fixed. Confer: `bench/logs/confer_exp39_readiness/`
+**KEY FINDING — OSCILLATING R_k COMPLIANCE:**
+R_k adoption is stochastic across rounds. No model sustained CORROBORATION across
+all post-fix rounds. CC2: 5→3→0. Codex: 0→1→8. ChatGPT: 0→3→0. Gemini: 0→0→3.
+Instruction-level enforcement is necessary but insufficient. Structural enforcement
+(PE-level gate, runner-side validation) needed to reach Exp 37's 88-100% baseline.
+This is the 0-13% falsification compliance problem demonstrated empirically.
 
-**NO OUTSTANDING CONFER ITEMS.** All Codex and Gemini observations either fixed or correctly discarded (IFalsificationGate, C6, cs_software.toml, B-Cell dispatch, severity fusion — genuinely not load-bearing for 39-0).
+**IMMEDIATE NEXT STEPS:**
+1. Commit working tree (this sv)
+2. Analyse oscillating R_k — determine structural enforcement mechanism
+3. Consider adding Gemini to `pre_decompose_models` for large test articles
+4. DeepSeek reasoning budget investigation (0 chars per chunk, synthesis overflow)
 
-**DEFERRED UNTIL AFTER 39-0 (architecture items for 39-A onwards):**
+**DEFERRED (architecture items for 39-A onwards):**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
 2. Convergence gate: add churn detection (§7.1a) as C6
 3. Missing domain configs (biology, info science, engineering immune, cs_software)
 4. B-Cell dispatch: route to domain-specific tools from new TOML configs
 5. Severity fusion (§7.7) for gate output synthesis
-6. Sycophancy detection (§7.5) — can shadow alongside 39-0
+6. Sycophancy detection (§7.5) — can shadow alongside future experiments
 7. O1 calibration: sensitivity dial, circuit breaker, semantic clustering
 8. MC command sync across all reference locations
 9. Phase 9 (research write-up) — deferred post-Exp 39
+10. Comprehensive implementation plan: `~/.claude/plans/effervescent-watching-platypus.md`
+    (Phases 0-9: kappa fix, embeddings, suppression, memory, FFAFP docs, B4 wiring,
+    O1 shadow, appendix expansion, research write-up)
 
-**LAUNCH COMMAND:** `python3 bench/launch_exp39.py --only 39-0`
-
-**Also pending:** Onboarding script redesign (merge semantic context + automation into single executable Python file).
+**Also pending:** Onboarding script redesign (merge semantic context + automation).
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

@@ -221,7 +221,16 @@ def _decomposed_openrouter(
     max_tokens: int,
     timeout: int,
 ) -> DecomposedResult:
-    """Multi-turn decomposed delivery via OpenRouter (CC2, ChatGPT)."""
+    """Independent-session decomposed delivery via OpenRouter.
+
+    Same independent-session pattern as DeepSeek: each chunk gets its own
+    conversation to prevent context accumulation from exceeding model limits.
+    GPT-5.4 via OpenRouter has a 128K-token hard limit; with 350K+ char
+    payloads, multi-turn accumulation consistently exceeded this by R1
+    (Exp 39 Round 1: ChatGPT refused on chunk 3 of accumulated context).
+
+    Fix (13 April 2026): independent sessions per chunk + synthesis.
+    """
     import openai
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -245,27 +254,59 @@ def _decomposed_openrouter(
     total = len(chunks) + 1
     total_chars = sum(c.chars for c in chunks) + len(final_instruction)
 
-    messages: list[dict[str, str]] = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-
     wait_responses: list[str] = []
     turns: list[dict[str, str]] = []
+    per_chunk_analyses: list[dict[str, str]] = []
     t0 = time.monotonic()
 
-    # Deliver chunks
+    # Phase 1: Independent per-chunk analysis sessions
     for i, chunk in enumerate(chunks):
         n = i + 1
-        user_msg = _format_wait(n, total, chunk.label) + chunk.content
-        messages.append({"role": "user", "content": user_msg})
+        chunk_messages: list[dict[str, str]] = []
+        if system_prompt:
+            chunk_messages.append({"role": "system", "content": system_prompt})
 
-        _log(f"  [openrouter:{model_id}] delivering chunk {n}/{total}"
+        chunk_prompt = (
+            f"=== CODE REVIEW — SECTION {n} OF {len(chunks)} ===\n"
+            f"Section: {chunk.label or f'chunk_{n}'} "
+            f"({chunk.chars:,} chars)\n"
+            f"You are reviewing section {n} of {len(chunks)} code sections. "
+            f"Analyse this section thoroughly for bugs, logic errors, "
+            f"race conditions, security issues, and correctness problems.\n\n"
+            f"Follow the complete 4-Layer Review Protocol and operational "
+            f"directive from your system instructions. For each finding, "
+            f"include ALL six mandatory sections:\n"
+            f"  FIND — the issue, location, and evidence.\n"
+            f"  FOLLOW — trace consequences before fixing. What depends on "
+            f"this? What breaks downstream?\n"
+            f"  ANALYSE — classify constraint as HARD or SOFT. State premises "
+            f"explicitly, derive conclusion through concrete evidence "
+            f"(Meta Structured Reasoning Protocol).\n"
+            f"  FIX — simplest sufficient correction addressing root cause "
+            f"and FOLLOW consequences. Express as SEARCH/REPLACE blocks.\n"
+            f"  FALSIFICATION — mandatory. State: FALSIFIER (what would "
+            f"disprove your FIND), ATTEMPT (what you tested), RESULT "
+            f"(did the claim hold?). Then try to break your FIX.\n"
+            f"  CORROBORATION — compute R_k(i) numerically using the "
+            f"self-assessment equation. Show your working: R_old (default "
+            f"0.5), η (novelty, 0-1), d (independence, 0-1), p (capability, "
+            f"0-1), q=η·d·p, R_det=R_old·(1-q)/(1-q·R_old), S_k (fix "
+            f"quality, 0-1), ν_b, ν_f, ν_eff, final R_k. Qualitative "
+            f"labels alone are insufficient — show the numbers.\n\n"
+            f"Findings missing any section will be rejected. "
+            f"Do NOT synthesise across sections yet — "
+            f"a synthesis step follows.\n"
+            f"=== CONTENT ===\n\n{chunk.content}"
+        )
+        chunk_messages.append({"role": "user", "content": chunk_prompt})
+
+        _log(f"  [openrouter:{model_id}] independent session {n}/{len(chunks)}"
              f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
 
         response = client.chat.completions.create(
             model=model_id,
-            messages=messages,
-            max_tokens=256,  # only need "WAITING"
+            messages=chunk_messages,
+            max_tokens=4096,
             temperature=0.0,
             timeout=timeout,
         )
@@ -277,23 +318,52 @@ def _decomposed_openrouter(
             )
         resp_text = (response.choices[0].message.content or "").strip()
         wait_responses.append(resp_text)
-        turns.append({"role": "user", "content": user_msg})
+        turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})
-        messages.append({"role": "assistant", "content": resp_text})
+        per_chunk_analyses.append({
+            "label": chunk.label or f"chunk_{n}",
+            "analysis": resp_text,
+        })
 
-        if not _is_waiting(resp_text):
-            _log(f"  [openrouter:{model_id}] WARNING: chunk {n} got non-WAITING "
-                 f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+        _log(f"  [openrouter:{model_id}] section {n} analysis complete "
+             f"({len(resp_text):,} chars)")
 
-    # Final instruction
-    final_msg = _format_final(total, total, total_chars, "Synthesis instruction") + final_instruction
-    messages.append({"role": "user", "content": final_msg})
+    # Phase 2: Synthesis from per-chunk analyses
+    synthesis_messages: list[dict[str, str]] = []
+    if system_prompt:
+        synthesis_messages.append({"role": "system", "content": system_prompt})
 
-    _log(f"  [openrouter:{model_id}] delivering final instruction (chunk {total}/{total})")
+    analyses_text = "\n\n".join(
+        f"=== YOUR ANALYSIS OF {a['label']} ===\n{a['analysis']}"
+        for a in per_chunk_analyses
+    )
+
+    synthesis_prompt = (
+        f"You have just reviewed {len(chunks)} code sections independently. "
+        f"Below are your per-section analyses.\n\n"
+        f"{analyses_text}\n\n"
+        f"=== SYNTHESIS INSTRUCTION ===\n"
+        f"Now combine your findings into a single comprehensive review. "
+        f"Include cross-section issues that span multiple files. "
+        f"Deduplicate findings that appear in multiple sections. "
+        f"Preserve ALL six sections for every finding: FIND, FOLLOW, "
+        f"ANALYSE, FIX, FALSIFICATION (FALSIFIER/ATTEMPT/RESULT), and "
+        f"CORROBORATION (numerical R_k). For cross-section findings, "
+        f"compute a new R_k reflecting the broader context. "
+        f"Run a global P-pass across your complete output — look for "
+        f"cross-finding contradictions and missed interactions. "
+        f"Every finding MUST retain numerical R_k and structured "
+        f"FALSIFICATION — do not reduce to qualitative labels.\n\n"
+        f"{final_instruction}"
+    )
+    synthesis_messages.append({"role": "user", "content": synthesis_prompt})
+
+    _log(f"  [openrouter:{model_id}] delivering synthesis instruction "
+         f"(chunk {total}/{total})")
 
     response = client.chat.completions.create(
         model=model_id,
-        messages=messages,
+        messages=synthesis_messages,
         max_tokens=max_tokens,
         temperature=0.0,
         timeout=timeout,
@@ -307,7 +377,7 @@ def _decomposed_openrouter(
         )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
-    turns.append({"role": "user", "content": final_msg})
+    turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
 
     _log(f"  [openrouter:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
@@ -332,7 +402,18 @@ def _decomposed_deepseek(
     max_tokens: int,
     timeout: int,
 ) -> DecomposedResult:
-    """Multi-turn decomposed delivery via DeepSeek API."""
+    """Independent-session decomposed delivery via DeepSeek API.
+
+    DeepSeek Reasoner has a 131K token hard limit. The original multi-turn
+    accumulation approach sends ALL prior chunks in every API call, which
+    exceeds this limit when the total payload is >350K chars (Exp 39 hit
+    201K tokens on the final turn, causing 100% failure rate).
+
+    Fix (13 April 2026): independent sessions per chunk + synthesis.
+    Each chunk gets its own conversation (no history accumulation), then
+    a final synthesis call combines the per-chunk analyses. Token budget
+    per call never exceeds ~55K tokens even for the largest chunks.
+    """
     import openai
 
     api_key = os.environ.get("DEEPSEEK_API_KEY")
@@ -348,26 +429,59 @@ def _decomposed_deepseek(
     total = len(chunks) + 1
     total_chars = sum(c.chars for c in chunks) + len(final_instruction)
 
-    messages: list[dict[str, str]] = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-
     wait_responses: list[str] = []
     turns: list[dict[str, str]] = []
+    per_chunk_analyses: list[dict[str, str]] = []
     t0 = time.monotonic()
 
+    # Phase 1: Independent per-chunk analysis sessions
     for i, chunk in enumerate(chunks):
         n = i + 1
-        user_msg = _format_wait(n, total, chunk.label) + chunk.content
-        messages.append({"role": "user", "content": user_msg})
+        chunk_messages: list[dict[str, str]] = []
+        if system_prompt:
+            chunk_messages.append({"role": "system", "content": system_prompt})
 
-        _log(f"  [deepseek:{model_id}] delivering chunk {n}/{total}"
+        chunk_prompt = (
+            f"=== CODE REVIEW — SECTION {n} OF {len(chunks)} ===\n"
+            f"Section: {chunk.label or f'chunk_{n}'} "
+            f"({chunk.chars:,} chars)\n"
+            f"You are reviewing section {n} of {len(chunks)} code sections. "
+            f"Analyse this section thoroughly for bugs, logic errors, "
+            f"race conditions, security issues, and correctness problems.\n\n"
+            f"Follow the complete 4-Layer Review Protocol and operational "
+            f"directive from your system instructions. For each finding, "
+            f"include ALL six mandatory sections:\n"
+            f"  FIND — the issue, location, and evidence.\n"
+            f"  FOLLOW — trace consequences before fixing. What depends on "
+            f"this? What breaks downstream?\n"
+            f"  ANALYSE — classify constraint as HARD or SOFT. State premises "
+            f"explicitly, derive conclusion through concrete evidence "
+            f"(Meta Structured Reasoning Protocol).\n"
+            f"  FIX — simplest sufficient correction addressing root cause "
+            f"and FOLLOW consequences. Express as SEARCH/REPLACE blocks.\n"
+            f"  FALSIFICATION — mandatory. State: FALSIFIER (what would "
+            f"disprove your FIND), ATTEMPT (what you tested), RESULT "
+            f"(did the claim hold?). Then try to break your FIX.\n"
+            f"  CORROBORATION — compute R_k(i) numerically using the "
+            f"self-assessment equation. Show your working: R_old (default "
+            f"0.5), η (novelty, 0-1), d (independence, 0-1), p (capability, "
+            f"0-1), q=η·d·p, R_det=R_old·(1-q)/(1-q·R_old), S_k (fix "
+            f"quality, 0-1), ν_b, ν_f, ν_eff, final R_k. Qualitative "
+            f"labels alone are insufficient — show the numbers.\n\n"
+            f"Findings missing any section will be rejected. "
+            f"Do NOT synthesise across sections yet — "
+            f"a synthesis step follows.\n"
+            f"=== CONTENT ===\n\n{chunk.content}"
+        )
+        chunk_messages.append({"role": "user", "content": chunk_prompt})
+
+        _log(f"  [deepseek:{model_id}] independent session {n}/{len(chunks)}"
              f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
 
         response = client.chat.completions.create(
             model=model_id,
-            messages=messages,
-            max_tokens=256,
+            messages=chunk_messages,
+            max_tokens=4096,
             timeout=timeout,
         )
         if not response.choices:
@@ -378,23 +492,52 @@ def _decomposed_deepseek(
             )
         resp_text = (response.choices[0].message.content or "").strip()
         wait_responses.append(resp_text)
-        turns.append({"role": "user", "content": user_msg})
+        turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})
-        messages.append({"role": "assistant", "content": resp_text})
+        per_chunk_analyses.append({
+            "label": chunk.label or f"chunk_{n}",
+            "analysis": resp_text,
+        })
 
-        if not _is_waiting(resp_text):
-            _log(f"  [deepseek:{model_id}] WARNING: chunk {n} got non-WAITING "
-                 f"response ({len(resp_text)} chars): {resp_text[:80]}...")
+        _log(f"  [deepseek:{model_id}] section {n} analysis complete "
+             f"({len(resp_text):,} chars)")
 
-    # Final instruction
-    final_msg = _format_final(total, total, total_chars, "Synthesis instruction") + final_instruction
-    messages.append({"role": "user", "content": final_msg})
+    # Phase 2: Synthesis from per-chunk analyses
+    synthesis_messages: list[dict[str, str]] = []
+    if system_prompt:
+        synthesis_messages.append({"role": "system", "content": system_prompt})
 
-    _log(f"  [deepseek:{model_id}] delivering final instruction (chunk {total}/{total})")
+    analyses_text = "\n\n".join(
+        f"=== YOUR ANALYSIS OF {a['label']} ===\n{a['analysis']}"
+        for a in per_chunk_analyses
+    )
+
+    synthesis_prompt = (
+        f"You have just reviewed {len(chunks)} code sections independently. "
+        f"Below are your per-section analyses.\n\n"
+        f"{analyses_text}\n\n"
+        f"=== SYNTHESIS INSTRUCTION ===\n"
+        f"Now combine your findings into a single comprehensive review. "
+        f"Include cross-section issues that span multiple files. "
+        f"Deduplicate findings that appear in multiple sections. "
+        f"Preserve ALL six sections for every finding: FIND, FOLLOW, "
+        f"ANALYSE, FIX, FALSIFICATION (FALSIFIER/ATTEMPT/RESULT), and "
+        f"CORROBORATION (numerical R_k). For cross-section findings, "
+        f"compute a new R_k reflecting the broader context. "
+        f"Run a global P-pass across your complete output — look for "
+        f"cross-finding contradictions and missed interactions. "
+        f"Every finding MUST retain numerical R_k and structured "
+        f"FALSIFICATION — do not reduce to qualitative labels.\n\n"
+        f"{final_instruction}"
+    )
+    synthesis_messages.append({"role": "user", "content": synthesis_prompt})
+
+    _log(f"  [deepseek:{model_id}] delivering synthesis instruction "
+         f"(chunk {total}/{total})")
 
     response = client.chat.completions.create(
         model=model_id,
-        messages=messages,
+        messages=synthesis_messages,
         max_tokens=max_tokens,
         timeout=timeout,
     )
@@ -407,7 +550,7 @@ def _decomposed_deepseek(
         )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
-    turns.append({"role": "user", "content": final_msg})
+    turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
 
     _log(f"  [deepseek:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")

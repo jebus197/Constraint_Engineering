@@ -1,0 +1,818 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.96,
+        "description": "FIND \u2014 resume mode cannot reliably resume the latest run because `_find_or_create_logs_dir()` looks for `checkpoint.json`, while this runner persists its own state to `runner_state.json` and later resume logic reads `runner_state.json` plus `brain.load_checkpoint()`. Premises: (1) `_find_or_create_logs_dir()` under `if cfg.resume:` returns the first log dir where `(c / \"checkpoint.json\").exists()`. (2) This file writes runner state to `runner_state.json` every round. (3) HIL pause path calls `br",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n====\ndef _find_or_create_logs_dir(cfg: RunnerConfig) -> Path:\n    if cfg.resume:\n        logs_root = REPO_ROOT / \"bench\" / \"logs\"\n        candidates = sorted(\n            logs_root.glob(f\"{cfg.experiment_name}_*\"),\n            key=lambda p: p.name, reverse=True,\n        )\n        for c in candidates:\n            if (c / \"runner_state.json\").exists() or (c / \"checkpoint.json\").exists():\n                return c\n    ts = datetime.now(timezone.utc).strftime(\"%Y%m%dT%H%M%SZ\")\n    return REPO_ROOT / \"bench\" / \"logs\" / f\"{cfg.experiment_name}_{ts}\"\n>>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.94,
+        "description": "FIND \u2014 in burst mode, transition to the integration round fails to reset `consecutive_churn_rounds`, so integration can inherit phase-local churn and terminate or transition spuriously. Premises: (1) `consecutive_churn_rounds` increments whenever `_compute_rho(...).churn` is true. (2) At phase-to-phase transition the code clears `gate_history`, `stall_history`, `novelty_counts`, `raw_counts`, `rho_history`, `gamma_history`, `open_ch_history`, and explicitly sets `consecutive_churn_rounds = 0`. (",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n                    gate_history.clear()\n                    stall_history.clear()\n                    novelty_counts.clear()\n                    raw_counts.clear()\n                    rho_history.clear()\n                    gamma_history.clear()\n                    open_ch_history.clear()\n                    extended = False\n\n                    phase_transition = True\n                    _log(f\"  Integration starts at round {round_idx + 1}\")\n====\n                    gate_history.clear()\n                    stall_history.clear()\n                    novelty_counts.clear()\n                    raw_counts.clear()\n                    rho_history.clear()\n                    gamma_history.clear()\n                    open_ch_history.clear()\n                    consecutive_churn_rounds = 0\n                    extended = False\n\n                    phase_transition = True\n                    _log(f\"  Integration starts at round {round_idx + 1}\")\n>>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.91,
+        "description": "FIND \u2014 `run_experiment()` computes cumulative context telemetry from response lengths instead of prompt/context lengths, so endocrine context-budget monitoring is measuring output volume, not actual context pressure. Premises: (1) The code comment says \u201cEach model's budget adapts to its measured prompt performance.\u201d (2) `prompt_lengths` is already computed in `_dispatch_round_star/_dispatch_round_relay` as `len(prompt) + len(cdsfl_text)`. (3) Yet after dispatch, the loop does `for label, text in",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        round_timings = _build_round_timings(responses, per_model_durations, findings, round_idx)\n        for label, text in responses.items():\n            per_model_context[label] = per_model_context.get(label, 0) + len(text)\n            cumulative_context_chars += len(text)\n====\n        round_timings = _build_round_timings(responses, per_model_durations, findings, round_idx)\n        for label in responses.keys():\n            prompt_len = prompt_lengths.get(label, 0)\n            per_model_context[label] = per_model_context.get(label, 0) + prompt_len\n            cumulative_context_chars += prompt_len\n>>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.88,
+        "description": "FIND \u2014 HIL review in burst mode can re-pause forever at the same phase boundary because the pause path exits before marking any \u201calready paused/reviewed\u201d progress in `burst_state`, and the resume path restores `burst_state` unchanged. Premises: (1) In burst convergence handling, when `cfg.hil_review` is true, the code writes a partial report and `sys.exit(42)` before advancing `phase_idx`, `integration_started`, `phase_round_offset`, or resetting convergence state. (2) `runner_state.json` persis",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n                if cfg.hil_review:\n                    _log(f\"\\n  \u2550\u2550\u2550 HIL REVIEW GATE \u2014 Phase '{current_phase_name}' \"\n                         f\"converged ({reason_type}) \u2550\u2550\u2550\")\n                    _log(f\"  Findings summary:\\n{burst_state['phase_findings'][current_phase_name]}\")\n                    _log(f\"  Registry total: {len(registry.entries)}\")\n                    remaining = len(burst_plan.phases) - phase_idx - 1\n                    _log(f\"  Phases remaining: {remaining} + integration\")\n                    _log(f\"  Checkpoint saved. Resume with --resume --hil-review\")\n                    _log(f\"  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\\n\")\n                    result[\"hil_paused_at_round\"] = round_idx\n                    result[\"hil_paused_at_phase\"] = current_phase_name\n                    result[\"hil_status\"] = \"paused_for_review\"\n                    partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                    partial_report.write_text(\n                        json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                        encoding=\"utf-8\",\n                    )\n                    sys.exit(42)\n====\n                if cfg.hil_review:\n                    pause_key = f\"{current_phase_name}:{round_idx}\"\n                    if burst_state.get(\"hil_last_pause_key\") != pause_key:\n                        burst_state[\"hil_last_pause_key\"] = pause_key\n                        _log(f\"\\n  \u2550\u2550\u2550 HIL REVIEW GATE \u2014 Phase '{current_phase_name}' \"\n                             f\"converged ({reason_type}) \u2550\u2550\u2550\")\n                        _log(f\"  Findings summary:\\n{burst_state['phase_findings'][current_phase_name]}\")\n                        _log(f\"  Registry total: {len(registry.entries)}\")\n                        remaining = len(burst_plan.phases) - phase_idx - 1\n                        _log(f\"  Phases remaining: {remaining} + integration\")\n                        _log(f\"  Checkpoint saved. Resume with --resume --hil-review\")\n                        _log(f\"  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\\n\")\n                        result[\"hil_paused_at_round\"] = round_idx\n                        result[\"hil_paused_at_phase\"] = current_phase_name\n                        result[\"hil_status\"] = \"paused_for_review\"\n                        partial_report = logs_dir / f\"{cfg.experiment_name}_hil_phase_{phase_idx}.json\"\n                        partial_report.write_text(\n                            json.dumps(result, indent=2, ensure_ascii=False, default=str),\n                            encoding=\"utf-8\",\n                        )\n                        _ckpt_data = json.dumps({\n                            \"registry\": registry.to_dict(),\n                            \"novelty_counts\": novelty_counts,\n                            \"raw_counts\": raw_counts,\n                            \"rho_history\": [round(r, 6) for r in rho_history],\n                            \"gamma_history\": [round(g, 6) for g in gamma_history],\n                            \"gate_history\": gate_history,\n                            \"open_ch_history\": open_ch_history,\n                            \"stall_history\": stall_history,\n                            \"cumulative_context_chars\": cumulative_context_chars,\n                            \"consecutive_churn_rounds\": consecutive_churn_rounds,\n                            \"itc_model_state\": _itc_model_state,\n                            \"itc_hil_flags\": _itc_hil_flags,\n                            \"burst_state\": burst_state if burst_state else None,\n                        }, indent=2, default=str)\n                        _ckpt_tmp = ckpt_path.with_suffix(\".json.tmp\")\n                        _ckpt_tmp.write_text(_ckpt_data, encoding=\"utf-8\")\n                        _ckpt_tmp.replace(ckpt_path)\n                        sys.exit(42)\n====",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.86,
+        "description": "FIND \u2014 `_dispatch_round_star()` and `_dispatch_round_relay()` advertise a 3-tuple return type but actually return 4 values, creating a wrong interface contract that can cause unpacking failures or unsafe reuse. Premises: (1) Both function signatures annotate `-> Tuple[List[Finding], Dict[str, str], Dict[str, float]]`. (2) Both return `findings, responses, per_model_durations, prompt_lengths`. (3) `run_experiment()` unpacks 4 values, so current local use works only because callers ignore the type",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== REPLACE\ndef _dispatch_round_relay(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.94,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.94\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.83\nDESCRIPTION: FIND \u2014 `run_experiment()` records verification status from the raw model findings, not from the immune-filtered findi",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_\"CC2_F001\", verified=False, proposed_fix=\"...\")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expected: registry entry for `CC2_F001` becomes verified/closed-capable. Actual here: if `brain.run_immune_pipeline()` works on copies or returns the authoritative filtered list, this runner ignores that authoritative list and only inspects original `findings`; the registry can remain unverified while the immune layer has already verified the fix. Formal conclusion: the runner has a broken interface between immune verification and registry state, causing silently stale registry status and downstream convergence/HIL decisions based on outdated data."
+        ],
+        "severity": 0.5,
+        "description": "finding_id=\"CC2_F001\", verified=False, proposed_fix=\"...\")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expec",
+        "proposed_fix": "\"...\")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expected: registry entry for `CC2_F001` becomes verified/closed-capable. Actual here: if `brain.run_immune_pipeline()` works on copies or returns the authoritative filtered list, this runner ignores that authoritative list and only inspects original `findings`; the registry can remain unverified while the immune layer has already verified the fix. Formal conclusion: the runner has a broken interface between immune verification and registry state, causing silently stale registry status and downstream convergence/HIL decisions based on outdated data.\nFOLLOW: Downstream consequences cross several interfaces. (a) `FindingRegistry.mark_verified()` is the only path in this file that propagates verification into registry state, and `_update_finding_statuses()` only closes a finding when `entry[\"status\"] == \"CONFIRMED\" and entry.get(\"verified\")`; stale `verified=False` prevents `CLOSED`. (b) `open_crit_high_count()` includes OPEN/CONTESTED/REOPENED findings unless exhausted, so a should-have-closed high-severity issue keeps blocking convergence and budget logic. (c) `build_summary()` keeps showing the finding as active, encouraging redundant re-review. (d) `_evaluate_sk_for_findings()` and CC2v operate on registry entries, so stale registry metadata contaminates later rounds. (e) The immune pipeline\u2019s bug-closed semantics in context rely on verified fixes propagating forward; this runner can sever that propagation.\nPROPOSED_FIX: <<<< SEARCH bench/reference_runner.py\n        # Immune pipeline\n        immune_result = brain.run_immune_pipeline(findings)\n        for f in findings:\n            if f.verified:\n                canonical = registry.lookup_alias(f.model_id, f.finding_id)\n                if canonical:\n                    registry.mark_verified(canonical)\n\n        # Shadow cells (Macrophage + Ouroboros) \u2014 run after main pipeline, zero verdict effect\n        shadow_cell_data = _run_shadow_cells(\n            round_idx=round_idx,\n            immune_result=immune_result,",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.89,
+        "description": "FIND \u2014 burst-mode phase transitions clear the global novelty/raw/gamma/rho histories in place, but final reporting uses those same lists as experiment-wide histories. Premises: (1) on each phase transition in `run_experiment()`, the code executes `gate_history.clear(); stall_history.clear(); novelty_counts.clear(); raw_counts.clear(); rho_history.clear(); gamma_history.clear(); open_ch_history.clear()`; (2) at finalisation it emits `result[\"gamma_history\"] = [round(g, 4) for g in gamma_history]`",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nnovelty_counts.append(novel_this_round)\n        raw_counts.append(len(findings))\n==== REPLACE\nnovelty_counts.append(novel_this_round)\n        raw_counts.append(len(findings))\n        novelty_counts_global.append(novel_this_round)\n        raw_counts_global.append(len(findings))\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.86,
+        "description": "FIND \u2014 CLI validation checks `args.pattern` even when configuration is loaded from JSON, so `--config` cannot supply a non-default pattern unless the caller redundantly passes the same CLI flag. Premises: (1) when `--config` is provided, `cfg = RunnerConfig.from_json(args.config)` may set `cfg.pattern`; (2) later validation is `if args.pattern not in INTERACTION_PATTERN_PRESETS:` rather than `cfg.pattern`; (3) argparse gives `args.pattern` its default `\"fff\"` unless explicitly passed. Concrete t",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n    if args.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {args.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n====\n    if cfg.pattern not in INTERACTION_PATTERN_PRESETS:\n        available = \", \".join(sorted(INTERACTION_PATTERN_PRESETS))\n        print(f\"Unknown pattern: {cfg.pattern!r}. Available: {available}\",\n              file=sys.stderr)\n        sys.exit(1)\n>>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.81,
+        "description": "FIND \u2014 `_verification_step()` bypasses the registry\u2019s confirmation quorum and challenge resolution logic by directly resolving findings to `CONFIRMED`/`UNCONFIRMED`/`MERGED`. Premises: (1) `_verification_step()` sets `registry.resolve(finding_id, \"CONFIRMED\", round_idx)` on a single CC2v confirmation above threshold; (2) `_update_finding_statuses()` elsewhere encodes the intended status machine: external confirmations, severity-based quorum, unresolved challenge precedence, and reopen/contested ",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n        if action == \"CONFIRM\":\n            entry = registry.entries.get(finding_id)\n            if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                registry.resolve(finding_id, \"CONFIRMED\", round_idx)\n                confirmed += 1\n        elif action == \"REJECT\":\n            entry = registry.entries.get(finding_id)\n            if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                registry.resolve(finding_id, \"UNCONFIRMED\", round_idx)\n                rejected += 1\n        elif action == \"DUPLICATE\" and merge_target:\n            merge_target = merge_target.upper()\n            if merge_target in registry.entries:\n                entry = registry.entries.get(finding_id)\n                if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                    registry.resolve(finding_id, \"MERGED\", round_idx)\n                    entry[\"merged_into\"] = merge_target\n                    duplicates += 1\n====\n        if action == \"CONFIRM\":\n            entry = registry.entries.get(finding_id)\n            if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                registry.add_verdict(finding_id, \"CC2v\", \"CONFIRM\", round_idx, evidence)\n                confirmed += 1\n        elif action == \"REJECT\":\n            entry = registry.entries.get(finding_id)\n            if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                registry.add_verdict(finding_id, \"CC2v\", \"CHALLENGE\", round_idx, evidence)\n                rejected += 1\n        elif action == \"DUPLICATE\" and merge_target:\n            merge_target = merge_target.upper()\n            if merge_target in registry.entries:\n                entry = registry.entries.get(finding_id)\n                if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                    registry.add_verdict(",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.77,
+        "description": "FIND \u2014 resume logic restores burst metadata from `runner_state.json` but does not reconstruct the corresponding burst plan or phase-specific payload when resuming from a run started with `--config`. Premises: (1) burst planning happens before resume handling, using current `cfg`; (2) if `cfg.resume and brain.load_checkpoint()` succeeds, it restores `burst_state`; (3) but `burst_plan` is only computed in the earlier planning block and depends on the current invocation\u2019s `cfg.burst_mode`, file siz",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n            _restored_burst = ckpt_data.get(\"burst_state\")\n            if _restored_burst and isinstance(_restored_burst, dict):\n                burst_state = _restored_burst\n                _log(f\"  Burst state restored: phase_idx={burst_state.get('phase_idx', 0)}\")\n            _log(f\"  Registry restored: {len(registry.entries)} entries\")\n====\n            _restored_burst = ckpt_data.get(\"burst_state\")\n            if _restored_burst and isinstance(_restored_burst, dict):\n                if burst_plan is None:\n                    raise RuntimeError(\n                        \"Checkpoint contains burst_state but no burst_plan was \"\n                        \"reconstructed for this resume invocation. Resume with \"\n                        \"the same burst configuration or rebuild the burst plan first.\"\n                    )\n                burst_state = _restored_burst\n                _log(f\"  Burst state restored: phase_idx={burst_state.get('phase_idx', 0)}\")\n            _log(f\"  Registry restored: {len(registry.entries)} entries\")\n>>>> REPLACE",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": null,
+              "detail": "test execution failed: Command '['python3', '-m', 'pytest', 'bench/tests/', '-q', '--tb=line']' timed out after 120 seconds"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "45 total, 0 new (baseline: 45)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            },
+            "_unavailable": [
+              "e2_regression"
+            ]
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.8,\n    \"FLAW_CLASS\": 5,\n    \"ABSTRACTION_INDEX\": 0.4,\n    \"DESCRIPTION\": \"FIND \u2014 In `_run_shadow_cells`, the Ouroboros cell attempts to read Macrophage anomalies by accessing the private member `_shadow_macrophage._round_history` and calling `.get(\\\"anomaly_count\\\", 0)` on the last element. If the history stores objects (like `MacrophageSummary`) rather than dicts, `.get()` will raise an `AttributeError`, crashing the shadow cell execution.\\nFOLL",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.8,
+        "description": "FIND \u2014 `_itc_adapt()` hardcodes `\"findings\": 0` in every history entry (line ~in the `state[\"history\"].append(...)` call), regardless of the actual findings count produced by the model. This corrupts the ITC escalation logic in `_itc_detect()`, which reads `h.get(\"findings\") == 0` from recent history to decide between TRANSIENT_FAILURE and CAPABILITY_MISMATCH. Scenario: a model produces 5 findings but triggers DEGRADATION (low parse yield) \u2192 history records `\"findings\": 0`. Next round, model pro",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _itc_adapt(\n    model_label: str, classification: str, round_idx: int,\n    rho_rolling_avg: float = 1.0,\n    rho_threshold: float = 0.25,\n):\n    \"\"\"A4 fix: suppress DEGRADATION restart when rho is healthy.\"\"\"\n    state = _itc_model_state.setdefault(model_label, {\n        \"history\": [], \"adaptation\": None, \"retry_count\": 0,\n        \"escalation_level\": 0,\n    })\n    state[\"history\"].append({\n        \"round\": round_idx, \"classification\": classification, \"findings\": 0,\n    })\n==== REPLACE\ndef _itc_adapt(\n    model_label: str, classification: str, round_idx: int,\n    rho_rolling_avg: float = 1.0,\n    rho_threshold: float = 0.25,\n    findings_count: int = 0,\n):\n    \"\"\"A4 fix: suppress DEGRADATION restart when rho is healthy.\"\"\"\n    state = _itc_model_state.setdefault(model_label, {\n        \"history\": [], \"adaptation\": None, \"retry_count\": 0,\n        \"escalation_level\": 0,\n    })\n    state[\"history\"].append({\n        \"round\": round_idx, \"classification\": classification,\n        \"findings\": findings_count,\n    })\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.75,
+        "description": "FIND \u2014 `_resolve_merge_source()` fails to resolve F-prefix finding IDs from MERGE verdicts. The alias map stores entries as `\"{source_model}:{model_id}_{fid}\"` (e.g., `\"Gemini:Gemini_F003\"`), but the resolver looks up `\"{issuing_model}:{bare_fid}\"` (e.g., `\"Gemini:F003\"`). These never match. All MERGE verdicts that use F-prefix source references (the common case per the protocol instruction \"MERGE C0001 <- [your_finding_id]\") silently degrade to CONFIRM verdicts. Evidence: trace `_resolve_merge_",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _resolve_merge_source(\n    evidence: str, model_id: str, registry: FindingRegistry,\n) -> Optional[str]:\n    m = re.search(r'(?:F|C)(\\d+)', evidence)\n    if not m:\n        return None\n    local_id = m.group(0)\n    canonical = registry.lookup_alias(model_id, local_id)\n    if canonical:\n        return canonical\n    if local_id in registry.entries:\n        return local_id\n    return None\n==== REPLACE\ndef _resolve_merge_source(\n    evidence: str, model_id: str, registry: FindingRegistry,\n) -> Optional[str]:\n    m = re.search(r'(?:F|C)(\\d+)', evidence)\n    if not m:\n        return None\n    local_id = m.group(0)\n    # Try bare ID first (e.g., \"Gemini:F003\")\n    canonical = registry.lookup_alias(model_id, local_id)\n    if canonical:\n        return canonical\n    # Try prefixed ID (e.g., \"Gemini:Gemini_F003\") \u2014 alias map stores\n    # finding IDs with model prefix from parse_findings\n    canonical = registry.lookup_alias(model_id, f\"{model_id}_{local_id}\")\n    if canonical:\n        return canonical\n    # Try direct canonical ID lookup (e.g., \"C0002\" in entries)\n    if local_id in registry.entries:\n        return local_id\n    return None\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.55,
+        "description": "FIND \u2014 In `_evaluate_gate_conditions()`, the `open_ch_history` dedup guard (F12 fix) uses `open_ch_history[-1] != open_ch` to prevent duplicate entries. This prevents ANY consecutive identical values from being recorded, not just duplicates from multiple calls within the same round (which was the stated intent). When `max_open_crit_high > 0` (non-default), the stability window check requires `cfg.open_ch_stability_window` consecutive entries. If open_ch stays at 2 for 5 rounds, only one entry of",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\n# F12 fix: guard against duplicate entries if called multiple times per round.\n    if open_ch_history is not None:\n        if not open_ch_history or open_ch_history[-1] != open_ch:\n            open_ch_history.append(open_ch)\n==== REPLACE\n# F12 fix: guard against duplicate entries if called multiple times per round.\n    # Record one entry per round: append if history is empty, or if the last\n    # entry was from a prior round (length grows by at most 1 per round_idx).\n    if open_ch_history is not None:\n        expected_len = round_idx + 1  # one entry per round 0..N\n        if len(open_ch_history) < expected_len:\n            open_ch_history.append(open_ch)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.5,
+        "description": "FIND \u2014 `_dispatch_round_star()` and `_dispatch_round_relay()` both return 4-tuples (`findings, responses, per_model_durations, prompt_lengths`) but their type hints declare 3-tuple return types `Tuple[List[Finding], Dict[str, str], Dict[str, float]]`. The callers correctly unpack 4 values. This fails static type checking (mypy) but works at runtime.",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:\n==== REPLACE\ndef _dispatch_round_star(\n    exp_config: ExperimentConfig, mgr: DynamicManager, brain: InsectBrain,\n    base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,\n    round_idx: int, cfg: RunnerConfig,\n    registry: Optional[FindingRegistry] = None,\n) -> Tuple[List[Finding], Dict[str, str], Dict[str, float], Dict[str, int]]:\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.6,
+        "description": "FIND \u2014 In `_verification_step()` (CC2v), the verdict regex uses `C\\d+` (one or more digits) instead of the canonical `C\\d{4,}` used elsewhere. More critically, the `DUPLICATE` action performs `registry.resolve(finding_id, \"MERGED\", round_idx)` and sets `entry[\"merged_into\"] = merge_target` \u2014 but it does so by direct mutation of the entry dict AFTER calling `resolve()`. The `resolve()` method only sets `status` and `last_status_change_round`. The `merged_into` field is set by direct dict mutation",
+        "proposed_fix": "<<<< SEARCH bench/reference_runner.py\nelif action == \"DUPLICATE\" and merge_target:\n            merge_target = merge_target.upper()\n            if merge_target in registry.entries:\n                entry = registry.entries.get(finding_id)\n                if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                    registry.resolve(finding_id, \"MERGED\", round_idx)\n                    entry[\"merged_into\"] = merge_target\n                    duplicates += 1\n==== REPLACE\nelif action == \"DUPLICATE\" and merge_target:\n            merge_target = merge_target.upper()\n            if merge_target in registry.entries:\n                entry = registry.entries.get(finding_id)\n                if entry and entry[\"status\"] in (\"OPEN\", \"CONTESTED\"):\n                    registry.resolve(finding_id, \"MERGED\", round_idx,\n                                     merged_into=merge_target)\n                    duplicates += 1\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.45,
+        "description": "FIND \u2014 In `_evaluate_gate_conditions()`, the function signature does not include `round_idx`, so the `open_ch_history` length-based dedup (F003) cannot distinguish which round it's being called from. The fix proposed in F003 references `round_idx` but `_evaluate_gate_conditions` receives it indirectly \u2014 it IS actually available as a parameter. However, looking at the `rho_churn` gate: `if rho_churn: failures.append(...)`. The rho churn flag is computed outside and passed in. If both `rho_churn` ",
+        "proposed_fix": "This is diagnostic-only and below the PoC threshold. No fix required. Filed for completeness.",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      }
+    },
+    "next_id": 19,
+    "alias_map": {
+      "ChatGPT:ChatGPT_F001": "C0001",
+      "ChatGPT:ChatGPT_F002": "C0002",
+      "ChatGPT:ChatGPT_F003": "C0003",
+      "ChatGPT:ChatGPT_F004": "C0004",
+      "ChatGPT:ChatGPT_F005": "C0005",
+      "Codex:Codex_F001": "C0006",
+      "Codex:Codex_\"CC2_F001\", verified=False, proposed_fix=\"...\")`. Immune pipeline evaluates the fix as SAFE and sets `verified=True` on the corresponding finding in `immune_result.filtered_findings`. Expected: registry entry for `CC2_F001` becomes verified/closed-capable. Actual here: if `brain.run_immune_pipeline()` works on copies or returns the authoritative filtered list, this runner ignores that authoritative list and only inspects original `findings`; the registry can remain unverified while the immune layer has already verified the fix. Formal conclusion: the runner has a broken interface between immune verification and registry state, causing silently stale registry status and downstream convergence/HIL decisions based on outdated data.": "C0007",
+      "Codex:Codex_F002": "C0008",
+      "Codex:Codex_F003": "C0009",
+      "Codex:Codex_F004": "C0010",
+      "Codex:Codex_F005": "C0011",
+      "Gemini:Gemini_UNSTRUCTURED": "C0012",
+      "CC2:CC2_F001": "C0013",
+      "CC2:CC2_F002": "C0014",
+      "CC2:CC2_F003": "C0015",
+      "CC2:CC2_F004": "C0016",
+      "CC2:CC2_F005": "C0017",
+      "CC2:CC2_F006": "C0018"
+    }
+  },
+  "novelty_counts": [
+    18
+  ],
+  "raw_counts": [
+    18
+  ],
+  "rho_history": [
+    1.0
+  ],
+  "gamma_history": [
+    0.0
+  ],
+  "gate_history": [
+    false
+  ],
+  "open_ch_history": [],
+  "stall_history": [
+    {
+      "open_ch": 12,
+      "contested": 0
+    }
+  ],
+  "cumulative_context_chars": 52815,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "ChatGPT": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 0,
+          "classification": "TRANSIENT_FAILURE",
+          "findings": 0
+        }
+      ],
+      "adaptation": "retry",
+      "retry_count": 1,
+      "escalation_level": 0
+    },
+    "CC2": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.8571428571428571
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

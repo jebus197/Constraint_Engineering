@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 13 April 2026 02:10 BST
+Last updated: 13 April 2026 17:36 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,29 +25,42 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39 READINESS ASSESSMENT COMPLETE (13 April 2026 01:22 BST):**
-  Branch: `exp39-experimental`. 793 tests pass. Last commit: `a8fb729`.
-  **39-0 IS READY TO RUN.** Full readiness assessment with Gemini + Codex confer,
-  2 explore agents, and independent FFF analysis. All 7 execution order items
-  assessed as DEFERRABLE for 39-0. One genuine blocker found by Codex (launch
-  path `--test-article required=True`) — FIXED.
-  **Provenance pipeline fixed:**
-  - `origin_type="model"` set on all 5 Finding() sites in runner_core.py
-  - FindingRegistry.register() now captures all 6 provenance fields
-  - macrophage_cell.py (546 LOC) committed (was missing from prior sv)
-  - O1 query extraction improved (strips noise, 10-keyword cap)
-  - Launch path fixed: `--config` now works without `--test-article`
-  **Readiness confer (Gemini + Codex, 13 April 2026):**
-  - Gemini: conservative (wants 5 steps). FFF-falsified: 3 of 5 claims refuted.
-    Valid point: HIL visibility (round reports counts-only).
-  - Codex: found genuine launch path blocker. Also confirmed enum serialization
-    issue. Second claim (domain not reaching immune) refuted by design.
-  - Explore agents: enum serialization (CellType repr), checkpoint IS implemented,
-    domain graceful fallback, `software→code` alias works.
-  **Preflight:** All 5 models healthy (CC2, Codex, ChatGPT, Gemini, DeepSeek).
-  **Confer logs:** `bench/logs/confer_exp39_readiness/`
-  **Assessment:** `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`
-  **TTS:** `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`
+- **EXP 39-0 COMPLETE (13 April 2026 16:36 BST):**
+  Branch: `exp39-experimental`. 793 tests pass. Last commit: `2f8f8bc`.
+  Type: Gate experiment — reference_runner.py (163K chars), star topology, 5 models.
+  Config: `bench/exp39_configs/39_0_gate.json`
+  Report: `bench/logs/exp39_0_gate_20260413T054642Z/exp39_0_gate_report.json`
+  **4 rounds (R0-R3), 78 raw findings, 35 canonical. γ=0.798 (strong depletion).**
+  Status: INCOMPLETE — convergence gate never fired (κ_final=0.050). 83.6 min wall time.
+  Per model: Gemini 36, Codex 16, ChatGPT 13, CC2 10, DeepSeek 3.
+  Per round: R0=28, R1=37, R2=7, R3=6.
+
+  **Decomposed dispatch fix applied mid-experiment (R0→R1 boundary):**
+  `decomposed_dispatch.py` per-chunk and synthesis instructions now include full
+  FFAFP protocol (FIND, FOLLOW, ANALYSE, FIX, FALSIFICATION, CORROBORATION) with
+  numerical R_k mandate and Meta Structured Reasoning Protocol. Both OpenRouter
+  and DeepSeek paths updated.
+
+  **R_k adoption — oscillating, not stable:**
+  R0 (pre-fix): 0% all models. R1: CC2 5 CORR, others 0. R2: CC2 3, ChatGPT 3,
+  Codex 1, Gemini 0. R3: CC2 0, Codex 8, Gemini 3, ChatGPT 0.
+  No model sustained R_k across all post-fix rounds. Instruction-level enforcement
+  produces stochastic adoption (0-13% falsification compliance problem in action).
+  Contrast: Exp 37 achieved 88-100% R_k on smaller test article (23K vs 163K chars).
+
+  **Provider fix (separate session, 13 April 2026):**
+  `run_benchmark.py`: added `claude-code` and `claude-code-thinking` providers using
+  `claude -p` subprocess (Max subscription auth). Replaces broken `--provider anthropic`
+  SDK path. See `bench/CLAUDE_CODE_PROVIDER_FIX.md`.
+
+  **Key finding:** Test article size (7x larger) degrades compliance. Gemini compressed
+  to JSON verdicts (4K chars) in R1 when given 163K monolithically, self-corrected in
+  R3 (12K chars, full FFAFP). DeepSeek reasoning budget exhaustion persists (0 chars
+  per chunk, 131K synthesis overflow). Codex produced 50K prompt-injection artefact in R3.
+
+  **Outstanding:** Oscillating R_k compliance needs structural enforcement (PE-level
+  gate or runner-side validation). DeepSeek token budget needs investigation.
+  Gemini should be added to `pre_decompose_models` for large test articles.
 
 - **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
   Cell type split, 4 confer rounds, gap analysis. See experimental notes.
@@ -55,22 +68,8 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 - **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.
   Target: `bench/reference_runner.py`, star topology, 5 models, adaptive rounds.
-  Plan: `experimental_notes/Exp38_Plan_2026-04-09.md`
-  Config: `bench/exp38_config.json` (max 21 rounds, earliest stop R12, wall cap 8h)
-  Findings: `experimental_notes/Exp38_Ouroboros_Findings_2026-04-11.md`
-  Report: `bench/logs/exp38_ouroboros_20260411T041938Z/exp38_ouroboros_report.json`
-
-  **24 rounds (R0-R23), 545 raw findings, 169 canonical. γ_final=0.510.**
+  24 rounds (R0-R23), 545 raw findings, 169 canonical. γ_final=0.510.
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
-  All 24 rounds stuck in Phase 0 due to convergence override bug.
-  Phases 1-5 + integration NEVER REACHED. Closest to convergence: R21 (contested=9 only).
-  59 HIL flags: CC2 21, ChatGPT 13, Codex 13, DeepSeek 7, Gemini 5.
-  6 corroborated runner bugs + 6 design findings (D1-D6) from monitoring.
-  γ crossed 0.5 at R20 (strong depletion). Sawtooth novelty pattern persisted
-  throughout but broke strict alternation from R16 onward.
-
-  **Fix cycle prior to this run (10 April 2026 17:28 BST):**
-  All 3 immune/endocrine gaps fixed + all 14 confirmed runner bugs fixed. 714 tests pass.
 <!-- SV:LATEST_EXP_END -->
 
 
