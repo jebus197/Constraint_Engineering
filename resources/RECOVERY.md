@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 April 2026 17:36 BST
+Last updated: 13 April 2026 18:51 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,38 +21,47 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (13 April 2026 17:35 BST)
+## Current Pending Work (13 April 2026 18:50 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: 2f8f8bc.
+793 tests pass. Branch: `exp39-experimental`. Last commit: d54a8e6.
 
-**EXP 39-0 COMPLETE.** 4 rounds, 78 findings, 35 canonical, γ=0.798. Status INCOMPLETE
-(convergence gate never fired). Logs: `bench/logs/exp39_0_gate_20260413T054642Z/`.
+**EXP 39-0 COMPLETE — CONFOUNDED.** R_k adoption data invalid. Three confounds:
+(C1) User prompt missing R_k mandate, (C2) payload 4.6× decomposition threshold,
+(C3) monolithic dispatch to 3/5 models. Bug findings may be valid.
+Full analysis: `experimental_notes/Exp39_Confound_Analysis_2026-04-13.md`
 
-**UNCOMMITTED CHANGES (working tree dirty):**
-- `bench/decomposed_dispatch.py` — full FFAFP+R_k per-chunk/synthesis instructions
-  for OpenRouter and DeepSeek decomposed dispatch paths. 6 mandatory sections:
-  FIND, FOLLOW, ANALYSE, FIX, FALSIFICATION (FALSIFIER/ATTEMPT/RESULT),
-  CORROBORATION (numerical R_k). Meta SRP included.
-- `bench/reference_runner.py` — operational directive loading at module level,
-  appended to composer phenotype in _dispatch_single_model. Per-round metrics
-  injection (γ, ρ, ρ̄₃, registry counts) before each round dispatch.
-- `bench/run_benchmark.py` — `claude-code` and `claude-code-thinking` providers
-  using `claude -p` subprocess (Max subscription auth, no API key needed).
-  See `bench/CLAUDE_CODE_PROVIDER_FIX.md`.
-- Fingerprints (all 5 models), experiment logs, immune pipeline log, exp39 config.
+**FIXES APPLIED THIS SESSION (13 April 2026):**
+- `_build_prompt()` in reference_runner.py: added ANALYSE, FALSIFICATION (MANDATORY),
+  CORROBORATION (MANDATORY) — matching Exp 37's 10-field schema. This was the primary
+  confound (user prompt didn't ask for R_k despite system prompt mandating it).
+- Exp 39-0 marked as confounded in ONBOARDING.md and experimental notes.
+- Prior session fixes still in place: operational directive loading, per-round metrics
+  injection, decomposed dispatch FFAFP+R_k, provider fix.
 
-**KEY FINDING — OSCILLATING R_k COMPLIANCE:**
-R_k adoption is stochastic across rounds. No model sustained CORROBORATION across
-all post-fix rounds. CC2: 5→3→0. Codex: 0→1→8. ChatGPT: 0→3→0. Gemini: 0→0→3.
-Instruction-level enforcement is necessary but insufficient. Structural enforcement
-(PE-level gate, runner-side validation) needed to reach Exp 37's 88-100% baseline.
-This is the 0-13% falsification compliance problem demonstrated empirically.
+**LESSONS-FORWARD AUDIT — 7 STILL MISSING:**
+4. Semantic novelty feedback (3 graduated signals from Exp 37)
+6. Prior fix summary context (`_build_prior_fix_summary()` from Exp 37)
+7. Consolidation phase for final 3 rounds (Exp 36 Ground Truth, HIGH)
+8. Per-model ρ tracking with targeted ITC (Exp 36 Ground Truth, HIGH)
+9. Context windowing for long runs (Exp 36 Ground Truth, HIGH)
+10. S_k format pre-check with reformat request (Exp 38)
+11. Parser fixes P2/P3 — CC2 finding leak, Gemini verdict extraction (Exp 38)
+
+**FINGERPRINT GAP:** Attention metrics (measured_attention_span, compression_threshold,
+quality_at_capacity) all null. Data exists in checkpoint logs (parse_yield per model
+per round). Extraction pipeline not built. `burst_planner.py` D_decay condition exists
+but never fires because D_decay is never populated.
+
+**TEST ARTICLE DESIGN ERROR:** 10/14 Exp 39 sub-experiments target reference_runner.py
+(163K chars). Only 39-H uses evidence.py (23K). Domain decomposition happened; article
+size decomposition did not. Sub-experiment configs need redesign.
 
 **IMMEDIATE NEXT STEPS:**
-1. Commit working tree (this sv)
-2. Analyse oscillating R_k — determine structural enforcement mechanism
-3. Consider adding Gemini to `pre_decompose_models` for large test articles
-4. DeepSeek reasoning budget investigation (0 chars per chunk, synthesis overflow)
+1. Dynamic decomposition: payload > LENGTH_THRESHOLD (80K) → decompose all models
+2. Redesign Exp 39 sub-experiment test articles for appropriate sizes
+3. Wire fingerprint attention metrics from checkpoint data
+4. Carry forward remaining 7 lessons
+5. Re-run gate test with fixes in place (evidence.py or appropriately-sized target)
 
 **DEFERRED (architecture items for 39-A onwards):**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
@@ -60,15 +69,14 @@ This is the 0-13% falsification compliance problem demonstrated empirically.
 3. Missing domain configs (biology, info science, engineering immune, cs_software)
 4. B-Cell dispatch: route to domain-specific tools from new TOML configs
 5. Severity fusion (§7.7) for gate output synthesis
-6. Sycophancy detection (§7.5) — can shadow alongside future experiments
+6. Sycophancy detection (§7.5)
 7. O1 calibration: sensitivity dial, circuit breaker, semantic clustering
 8. MC command sync across all reference locations
 9. Phase 9 (research write-up) — deferred post-Exp 39
-10. Comprehensive implementation plan: `~/.claude/plans/effervescent-watching-platypus.md`
-    (Phases 0-9: kappa fix, embeddings, suppression, memory, FFAFP docs, B4 wiring,
-    O1 shadow, appendix expansion, research write-up)
+10. Implementation plan: `~/.claude/plans/effervescent-watching-platypus.md`
+11. Prompt schema as first-class tested artefact (not string literal in 3700-line file)
 
-**Also pending:** Onboarding script redesign (merge semantic context + automation).
+**Also pending:** Onboarding script redesign.
 <!-- SV:PENDING_END -->
 
 ## Standard Recovery (5 minutes)

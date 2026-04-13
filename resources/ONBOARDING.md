@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 13 April 2026 17:36 BST
+Last updated: 13 April 2026 18:51 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,42 +25,32 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39-0 COMPLETE (13 April 2026 16:36 BST):**
-  Branch: `exp39-experimental`. 793 tests pass. Last commit: `2f8f8bc`.
+- **EXP 39-0 COMPLETE — CONFOUNDED (13 April 2026 16:36 BST):**
+  Branch: `exp39-experimental`. 793 tests pass.
   Type: Gate experiment — reference_runner.py (163K chars), star topology, 5 models.
-  Config: `bench/exp39_configs/39_0_gate.json`
-  Report: `bench/logs/exp39_0_gate_20260413T054642Z/exp39_0_gate_report.json`
   **4 rounds (R0-R3), 78 raw findings, 35 canonical. γ=0.798 (strong depletion).**
   Status: INCOMPLETE — convergence gate never fired (κ_final=0.050). 83.6 min wall time.
-  Per model: Gemini 36, Codex 16, ChatGPT 13, CC2 10, DeepSeek 3.
-  Per round: R0=28, R1=37, R2=7, R3=6.
 
-  **Decomposed dispatch fix applied mid-experiment (R0→R1 boundary):**
-  `decomposed_dispatch.py` per-chunk and synthesis instructions now include full
-  FFAFP protocol (FIND, FOLLOW, ANALYSE, FIX, FALSIFICATION, CORROBORATION) with
-  numerical R_k mandate and Meta Structured Reasoning Protocol. Both OpenRouter
-  and DeepSeek paths updated.
+  **⚠ CONFOUNDED — R_k adoption data invalid.** Three independent confounds:
+  (C1) User prompt missing CORROBORATION/FALSIFICATION/ANALYSE — reference_runner
+  had 7-field schema vs Exp 37's 10-field schema with mandatory R_k and rejection threat.
+  (C2) Total payload 369K chars (test article 163K + context files 205K) = 4.6× system's
+  own 80K decomposition threshold. Models compressed output under context pressure.
+  (C3) Monolithic dispatch to CC2/ChatGPT/Gemini despite payload > threshold. Only
+  Codex/DeepSeek received decomposed dispatch.
+  Bug findings may be valid. R_k adoption data measures prompt construction quality,
+  not metacognitive capability. Full analysis:
+  `experimental_notes/Exp39_Confound_Analysis_2026-04-13.md`
 
-  **R_k adoption — oscillating, not stable:**
-  R0 (pre-fix): 0% all models. R1: CC2 5 CORR, others 0. R2: CC2 3, ChatGPT 3,
-  Codex 1, Gemini 0. R3: CC2 0, Codex 8, Gemini 3, ChatGPT 0.
-  No model sustained R_k across all post-fix rounds. Instruction-level enforcement
-  produces stochastic adoption (0-13% falsification compliance problem in action).
-  Contrast: Exp 37 achieved 88-100% R_k on smaller test article (23K vs 163K chars).
+  **Lessons-forward audit:** 11 documented lessons from Exp 36-38 lost in transition
+  to generic runner. 3 fixed pre-launch, 1 fixed this session (user prompt R_k mandate),
+  7 still missing (semantic novelty feedback, prior fix summary, consolidation phase,
+  per-model ρ tracking, context windowing, S_k format check, parser P2/P3).
 
-  **Provider fix (separate session, 13 April 2026):**
-  `run_benchmark.py`: added `claude-code` and `claude-code-thinking` providers using
-  `claude -p` subprocess (Max subscription auth). Replaces broken `--provider anthropic`
-  SDK path. See `bench/CLAUDE_CODE_PROVIDER_FIX.md`.
-
-  **Key finding:** Test article size (7x larger) degrades compliance. Gemini compressed
-  to JSON verdicts (4K chars) in R1 when given 163K monolithically, self-corrected in
-  R3 (12K chars, full FFAFP). DeepSeek reasoning budget exhaustion persists (0 chars
-  per chunk, 131K synthesis overflow). Codex produced 50K prompt-injection artefact in R3.
-
-  **Outstanding:** Oscillating R_k compliance needs structural enforcement (PE-level
-  gate or runner-side validation). DeepSeek token budget needs investigation.
-  Gemini should be added to `pre_decompose_models` for large test articles.
+  **Fingerprint gap:** Attention metrics (measured_attention_span, compression_threshold,
+  quality_at_capacity) all null — never populated. Data exists in checkpoint logs but
+  extraction pipeline not built. Infrastructure for fingerprint-driven decomposition
+  was built (`burst_planner.py` D_decay condition) but never wired.
 
 - **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
   Cell type split, 4 confer rounds, gap analysis. See experimental notes.
