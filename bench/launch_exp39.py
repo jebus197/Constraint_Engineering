@@ -157,7 +157,12 @@ def resolve_execution_order(
 # Runner invocation
 # ---------------------------------------------------------------------------
 
-def run_sub_experiment(exp: SubExperiment, dry_run: bool = False) -> RunResult:
+def run_sub_experiment(
+    exp: SubExperiment,
+    dry_run: bool = False,
+    hil_review: bool = False,
+    resume: bool = False,
+) -> RunResult:
     """Launch a single sub-experiment via reference_runner.py."""
     config_path = REPO_ROOT / exp.config
     if not config_path.exists():
@@ -177,6 +182,11 @@ def run_sub_experiment(exp: SubExperiment, dry_run: bool = False) -> RunResult:
         "run",
         "--config", str(config_path),
     ]
+    # Pre-launch review fix: forward HIL flags to child runner
+    if hil_review:
+        cmd.append("--hil-review")
+    if resume:
+        cmd.append("--resume")
 
     _log(f"\n{'='*72}")
     _log(f"  SUB-EXPERIMENT: {exp.id} — {exp.name}")
@@ -241,6 +251,8 @@ def run_sequence(
     experiments: list[SubExperiment],
     gate_policy: str = "fail_fast",
     dry_run: bool = False,
+    hil_review: bool = False,
+    resume: bool = False,
 ) -> list[RunResult]:
     """Run sub-experiments in order, respecting gate policy."""
     results: list[RunResult] = []
@@ -254,7 +266,8 @@ def run_sequence(
             dep_result = results_by_id.get(dep_id)
             if dep_result is None:
                 continue  # dependency was skipped/filtered
-            if not dep_result.passed and not dep_result.skipped:
+            # Pre-launch review fix: HIL paused is not a dependency failure
+            if not dep_result.passed and not dep_result.skipped and not dep_result.hil_paused:
                 unmet.append(dep_id)
 
         if unmet:
@@ -289,8 +302,8 @@ def run_sequence(
                 results_by_id[exp.id] = r
                 continue
 
-        # Run it
-        r = run_sub_experiment(exp, dry_run=dry_run)
+        # Run it — forward HIL flags to child runner
+        r = run_sub_experiment(exp, dry_run=dry_run, hil_review=hil_review, resume=resume)
         results.append(r)
         results_by_id[exp.id] = r
 
@@ -380,6 +393,10 @@ def main():
                         help="Show execution plan without running")
     parser.add_argument("--preflight", action="store_true",
                         help="Run preflight connectivity check only")
+    parser.add_argument("--hil-review", action="store_true",
+                        help="Forward --hil-review to each sub-experiment runner")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume a previously HIL-paused sub-experiment")
     args = parser.parse_args()
 
     # Load master config
@@ -418,7 +435,10 @@ def main():
 
     # Run
     _log(f"\nStarting sequence at {_now()}")
-    results = run_sequence(ordered, gate_policy=gate_policy)
+    results = run_sequence(
+        ordered, gate_policy=gate_policy,
+        hil_review=args.hil_review, resume=args.resume,
+    )
 
     # Report
     _log(f"\n{'='*72}")
@@ -429,10 +449,18 @@ def main():
 
     report_path = write_sequence_report(results)
 
+    # Pre-launch review fix: HIL paused is NOT a failure — propagate exit 42
+    hil_paused = [r for r in results if r.hil_paused]
+    if hil_paused:
+        _log(f"\n*** Sequence paused for HIL review at {hil_paused[-1].sub_id} ***")
+        _log(f"    Resume with: python3 bench/launch_exp39.py --resume --hil-review")
+        sys.exit(42)
+
     # Exit code: 0 if all required passed, 1 otherwise
+    # (hil_paused already handled above, so exclude from failures)
     required_failures = [
         r for r in results
-        if not r.passed and not r.skipped
+        if not r.passed and not r.skipped and not r.hil_paused
         and any(e.required for e in experiments if e.id == r.sub_id)
     ]
     if required_failures:

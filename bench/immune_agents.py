@@ -2810,6 +2810,17 @@ def regulatory_t_v2(
         )
         checks_fired.append("removal_rate_exceeded")
 
+    # Check 2 (MF-36 parity, pre-launch review fix): High UNCERTAIN rate
+    # indicates fail-open illusion — verification tools may be non-functional.
+    # Ported from v1 Check 1b.
+    uncertain_rate = uncertain / total
+    if uncertain_rate > 0.30:
+        reasons.append(
+            f"[RT_v2] UNCERTAIN rate {uncertain}/{total} ({uncertain_rate:.1%}) "
+            f"exceeds 30% — verification tools may be non-functional (fail-open)"
+        )
+        checks_fired.append("uncertain_rate_exceeded")
+
     # Check 3: Per-model removal — proportional, intersection-based
     model_counts: Dict[str, int] = {}
     model_removed: Dict[str, int] = {}
@@ -2899,6 +2910,7 @@ def typed_llm_classifier(
     findings: List[Finding],
     regex_triaged: List[TriagedFinding],
     override_threshold: float = 0.70,
+    domain: str = "",
 ) -> List[Dict[str, Any]]:
     """WP3c: classify findings via lightweight LLM call.
 
@@ -3604,7 +3616,7 @@ def run_immune_pipeline(
     # in software domain (regex had ~15% agreement with LLM on code findings).
     t0_llm_cls = time.monotonic()
     try:
-        llm_classifier_results = typed_llm_classifier(new_findings, triaged)
+        llm_classifier_results = typed_llm_classifier(new_findings, triaged, domain=domain)
     except Exception as e:
         _shadow_log.warning("LLM classifier failed: %s", e)
         llm_classifier_results = []
@@ -3672,9 +3684,25 @@ def run_immune_pipeline(
             )
 
         # 2c: NK v2 (WP6a: now PRIMARY — FP continue fix + intra-round dedup)
+        # Pre-launch review fix: merge domain-specific FP patterns from TOML
+        merged_fp_db = false_positive_db
+        if domain_config:
+            domain_fp_entries = domain_config.get("immune", {}).get("false_positive_patterns", [])
+            if domain_fp_entries:
+                import re as _re
+                domain_fps = []
+                for fp_entry in domain_fp_entries:
+                    pat = fp_entry.get("pattern", "")
+                    if pat:
+                        domain_fps.append({
+                            "pattern": _re.compile(pat, _re.IGNORECASE | _re.DOTALL),
+                            "source": fp_entry.get("source", ""),
+                            "expected_model": fp_entry.get("expected_model", ""),
+                        })
+                merged_fp_db = (false_positive_db or _KNOWN_FALSE_POSITIVES) + domain_fps
         futures["nk_v2"] = pool.submit(
             nk_cell_v2, triaged_for_nk, prior_findings, tau_sim,
-            false_positive_db,
+            merged_fp_db,
         )
 
         # Collect results — all active cells feed all_verdicts
@@ -3826,7 +3854,9 @@ def run_immune_pipeline(
         if observation_only:
             # Observation mode: everything passes through
             filtered.append(tf.finding)
-        elif verdict in ("CONFIRMED", "UNCERTAIN"):
+        elif verdict in ("CONFIRMED", "UNCERTAIN", "UNSCORED"):
+            # Pre-launch review fix: UNSCORED = absence of evidence, not
+            # evidence of absence. Pass through for downstream handling.
             filtered.append(tf.finding)
         else:
             rejected.append(tf.finding)

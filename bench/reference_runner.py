@@ -3298,6 +3298,10 @@ def run_experiment(
             _log(f"  γ={gamma:.4f}, ρ={rho_current:.4f}, ρ_avg={rho_avg:.4f}")
             _log(f"  Checkpoint saved. Resume with --resume --hil-review")
             _log(f"  ═══════════════════════════════════════════════════\n")
+            # Pre-launch review fix: save checkpoint AGAIN here to capture
+            # immune pipeline results and convergence stats that occurred
+            # after the initial persist() call (which only has raw findings).
+            brain._save_checkpoint()
             # Write partial report for review
             result["hil_paused_at_round"] = round_idx
             result["hil_status"] = "paused_for_review"

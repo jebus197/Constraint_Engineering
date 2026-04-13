@@ -966,7 +966,7 @@ class InsectBrain:
                 if len(text) > 10000
             },
         }
-        filepath.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self._atomic_write_json(filepath, data)
 
     def _save_checkpoint(self) -> None:
         """Save full state checkpoint for recovery."""
@@ -983,7 +983,19 @@ class InsectBrain:
                     "abstraction_index": f.abstraction_index,
                     "description": f.description,
                     "proposed_fix": f.proposed_fix,
+                    "target_file": f.target_file,
                     "verified": f.verified,
+                    "escalated": f.escalated,
+                    "falsification_present": f.falsification_present,
+                    "pm_verdict": f.pm_verdict,
+                    "dedup_of": f.dedup_of,
+                    # Provenance fields (pre-launch review fix, 13 April 2026)
+                    "origin_type": f.origin_type,
+                    "source_ref": f.source_ref,
+                    "retrieval_query": f.retrieval_query,
+                    "retrieved_at": f.retrieved_at,
+                    "source_hash": f.source_hash,
+                    "source_diversity": f.source_diversity,
                 }
                 for f in rnd
             ])
@@ -1037,7 +1049,10 @@ class InsectBrain:
             "failed": self.state.failed,
             "failure_reason": self.state.failure_reason,
         }
-        filepath.write_text(json.dumps(checkpoint, indent=2), encoding="utf-8")
+        # Pre-launch review fix: use atomic write to prevent checkpoint
+        # corruption on interruption (Bug#62 pattern, already used in
+        # signal_complete but was missing here).
+        self._atomic_write_json(filepath, checkpoint)
 
     # ───────────────────────────────────────────────────────────────────────
     # Core function 3: read_context()
@@ -1392,8 +1407,19 @@ class InsectBrain:
                     abstraction_index=fd.get("abstraction_index", 0.5),
                     description=fd.get("description", ""),
                     proposed_fix=fd.get("proposed_fix", ""),
+                    target_file=fd.get("target_file", ""),
                     verified=fd.get("verified", False),
                     escalated=fd.get("escalated", False),
+                    falsification_present=fd.get("falsification_present", False),
+                    pm_verdict=fd.get("pm_verdict", ""),
+                    dedup_of=fd.get("dedup_of", ""),
+                    # Provenance fields (pre-launch review fix, 13 April 2026)
+                    origin_type=fd.get("origin_type", ""),
+                    source_ref=fd.get("source_ref", ""),
+                    retrieval_query=fd.get("retrieval_query", ""),
+                    retrieved_at=fd.get("retrieved_at", ""),
+                    source_hash=fd.get("source_hash", ""),
+                    source_diversity=fd.get("source_diversity", 0.0),
                 ))
             self.state.all_findings.append(findings)
 
