@@ -2922,7 +2922,12 @@ def run_experiment(
         _log(f"  RESUMED from round {start_round}")
         runner_ckpt = brain.logs_dir / "runner_state.json"
         if runner_ckpt.exists():
-            ckpt_data = json.loads(runner_ckpt.read_text(encoding="utf-8"))
+            try:
+                ckpt_data = json.loads(runner_ckpt.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError) as _ckpt_err:
+                _log(f"  WARNING: runner_state.json corrupted ({_ckpt_err}), "
+                     f"falling back to brain checkpoint only")
+                ckpt_data = {}
             registry = FindingRegistry.from_dict(ckpt_data.get("registry", {}))
             novelty_counts = ckpt_data.get("novelty_counts", [])
             raw_counts = ckpt_data.get("raw_counts", [])
@@ -3251,9 +3256,9 @@ def run_experiment(
             round_idx, registry, gamma, stall_history, cfg,
             consecutive_churn_rounds=consecutive_churn_rounds)
 
-        # Checkpoint
+        # Checkpoint — atomic write to prevent corruption on interrupt
         ckpt_path = brain.logs_dir / "runner_state.json"
-        ckpt_path.write_text(json.dumps({
+        _ckpt_data = json.dumps({
             "registry": registry.to_dict(),
             "novelty_counts": novelty_counts,
             "raw_counts": raw_counts,
@@ -3267,7 +3272,10 @@ def run_experiment(
             "itc_model_state": _itc_model_state,
             "itc_hil_flags": _itc_hil_flags,
             "burst_state": burst_state if burst_state else None,
-        }, indent=2, default=str), encoding="utf-8")
+        }, indent=2, default=str)
+        _ckpt_tmp = ckpt_path.with_suffix(".json.tmp")
+        _ckpt_tmp.write_text(_ckpt_data, encoding="utf-8")
+        _ckpt_tmp.replace(ckpt_path)
 
         # Round data for report
         # Gemini 3.1 Pro + Codex 5.3 confer (13 April 2026): round report was
@@ -3578,7 +3586,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--rho-rolling-window", type=int, default=3)
     run_p.add_argument("--consecutive-rounds", type=int, default=2)
     run_p.add_argument("--config", help="JSON config file (overrides CLI args)")
-    run_p.add_argument("--burst-mode", default="auto",
+    run_p.add_argument("--burst-mode", default=None,
                        choices=["auto", "on", "off"],
                        help="Burst decomposition: auto (fingerprint-driven), "
                             "on (always), off (monolithic)")
@@ -3615,7 +3623,7 @@ def main():
             cfg.test_article = args.test_article
         if args.resume:
             cfg.resume = True
-        if hasattr(args, "burst_mode"):
+        if getattr(args, "burst_mode", None) is not None:
             cfg.burst_mode = args.burst_mode
         if getattr(args, "hil_review", False):
             cfg.hil_review = True
@@ -3639,7 +3647,7 @@ def main():
             rho_threshold=args.rho_threshold,
             rho_rolling_window=args.rho_rolling_window,
             consecutive_rounds_required=args.consecutive_rounds,
-            burst_mode=args.burst_mode,
+            burst_mode=args.burst_mode or "auto",
             hil_review=getattr(args, "hil_review", False),
         )
 
