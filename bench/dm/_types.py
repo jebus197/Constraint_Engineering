@@ -149,6 +149,12 @@ class DynamicManagementConfig:
     # ABORT is a recoverable action, not a state-machine-ending event.
     no_exclusion_mode: bool = False
 
+    # --- Domain routing (Exp 39 plumbing fix, 13 April 2026) ---
+    # Experiment domain passed through to InsectBrain → immune pipeline.
+    # Without this, getattr(config, "domain", "") returns "" and all
+    # domain-aware classification in _classify_claim_v2() silently fails.
+    domain: str = ""
+
     # --- Resolution hysteresis (Run 6 bug 4) ---
     # Require this many consecutive non-pathological rounds before resolving
     # a detected pathology. Prevents flip-flopping when metrics hover near

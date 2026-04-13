@@ -28,6 +28,7 @@ context assembly in run_baseline_confer.py.
 
 from __future__ import annotations
 
+import enum
 import json
 import logging
 import os
@@ -41,6 +42,18 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from bench.dm._types import DynamicManagementConfig, Finding
 from bench.dm._convergence import ConvergenceDetector
+
+
+def _enum_safe_default(obj: Any) -> Any:
+    """JSON serialization default that extracts .value from Enums.
+
+    Without this, ``json.dumps(default=str)`` converts ``CellType.CYTOTOXIC_T``
+    to the repr string ``"CellType.CYTOTOXIC_T"`` instead of the clean value
+    ``"cytotoxic_t"``.  Codex 5.3 confer, 13 April 2026.
+    """
+    if isinstance(obj, enum.Enum):
+        return obj.value
+    return str(obj)
 
 logger = logging.getLogger("insect_brain")
 
@@ -913,6 +926,8 @@ class InsectBrain:
             "finding_count": record.finding_count,
             "duration_s": record.duration_s,
             "failures": record.failures,
+            # Codex 5.3 confer fix (13 April 2026): provenance fields were
+            # defined on Finding but never serialised to per-round JSON.
             "findings": [
                 {
                     "finding_id": f.finding_id,
@@ -923,8 +938,18 @@ class InsectBrain:
                     "abstraction_index": f.abstraction_index,
                     "description": f.description,
                     "proposed_fix": f.proposed_fix,
+                    "target_file": f.target_file,
                     "verified": f.verified,
                     "escalated": f.escalated,
+                    "falsification_present": f.falsification_present,
+                    "pm_verdict": f.pm_verdict,
+                    "dedup_of": f.dedup_of,
+                    "origin_type": f.origin_type,
+                    "source_ref": f.source_ref,
+                    "retrieval_query": f.retrieval_query,
+                    "retrieved_at": f.retrieved_at,
+                    "source_hash": f.source_hash,
+                    "source_diversity": f.source_diversity,
                 }
                 for f in record.findings
             ],
@@ -979,9 +1004,11 @@ class InsectBrain:
                 try:
                     from dataclasses import asdict
                     ir_dict = asdict(rr.immune_response)
-                    # Round-trip through JSON with default=str to handle enums etc.
+                    # Round-trip through JSON with _enum_safe_default to get
+                    # clean enum values ("cytotoxic_t") not repr strings
+                    # ("CellType.CYTOTOXIC_T").  Codex 5.3 confer fix.
                     rr_data["immune_response"] = json.loads(
-                        json.dumps(ir_dict, default=str)
+                        json.dumps(ir_dict, default=_enum_safe_default)
                     )
                 except Exception:
                     rr_data["immune_response"] = str(rr.immune_response)
@@ -1412,12 +1439,19 @@ class InsectBrain:
                 except (json.JSONDecodeError, OSError) as e:
                     logger.warning("Failed to load round %d responses: %s", round_idx, e)
 
+            # Codex 5.3 confer fix (13 April 2026): immune_response was
+            # serialised to checkpoint.json but never restored into
+            # RoundRecord on resume.  Pass the dict back so post-hoc
+            # analysis can access immune verdicts and cell decisions.
+            ir_data = rr.get("immune_response", None)
+
             self.state.round_records.append(RoundRecord(
                 round_idx=round_idx,
                 timestamp=rr.get("timestamp", ""),
                 model_responses=model_responses,
                 findings=findings,
                 finding_count=len(findings),
+                immune_response=ir_data,
                 metrics=rr.get("metrics", {}),
                 failures=rr.get("failures", {}),
                 duration_s=duration,

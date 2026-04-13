@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 April 2026 01:26 BST
+Last updated: 13 April 2026 02:10 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,29 +21,32 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (13 April 2026 01:24 BST)
+## Current Pending Work (13 April 2026 02:09 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: a8fb729.
+793 tests pass. Branch: `exp39-experimental`. Last commit: 2488fa1.
 
-**39-0 IS READY TO RUN.** Full readiness assessment completed with 4 sources (own FFF, Gemini 3.1 Pro confer, Codex 5.3 confer, 2 explore agents). None of the 10 execution order items block the infrastructure gate test. Assessment: `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`. TTS: `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`.
+**39-0 IS READY TO RUN.** All valid observations from Gemini 3.1 Pro and Codex 5.3 confers have been fixed. Full readiness assessment: `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`. TTS: `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`.
 
-**FIXES APPLIED THIS SESSION (13 April 2026):**
-- Fix 1: `origin_type="model"` set on all 5 Finding() instantiation sites in `bench/runner_core.py` (JSON array L417, JSON object L496, pipe-delimited L549, marker L710, fallback L734).
-- Fix 2: 6 provenance fields added to `FindingRegistry.register()` in `bench/reference_runner.py` (origin_type, source_ref, retrieval_query, retrieved_at, source_hash, source_diversity).
-- Fix 3: Launch path blocker fixed — `--test-article` changed from `required=True` to optional with post-parse validation, so `launch_exp39.py`'s `run --config <path>` no longer fails at argparse.
-- Fix 4: `bench/macrophage_cell.py` (546 LOC) committed — missed from prior sv commit.
+**FIXES APPLIED THIS SESSION (13 April 2026) — 3 COMMITS + PENDING:**
+- Commit f57d6ce: `origin_type="model"` on all 5 Finding() sites in runner_core.py. 6 provenance fields in FindingRegistry.register(). macrophage_cell.py committed.
+- Commit a8fb729: Launch path blocker fixed (--test-article optional). Confer script + readiness assessment.
+- Commit 2488fa1: sv state snapshot.
+- Pending commit (7 confer-driven fixes):
+  1. Domain plumbing: `domain` field added to `DynamicManagementConfig`, `dm_config.domain = cfg.domain` propagated in reference_runner.py. Without this, `if domain == "software"` in immune pipeline silently failed.
+  2. Enum serialization: `_enum_safe_default()` in insect_brain.py replaces `default=str`. Produces `"cytotoxic_t"` not `"CellType.CYTOTOXIC_T"`.
+  3. Round report detail: `round_data["findings"]` now carries per-finding summaries with description, severity, provenance. HIL can review intermediate rounds.
+  4. Per-round JSON provenance: `_save_round_json()` now serialises all 16 Finding fields including 6 provenance fields.
+  5. ImmuneResponse restore: `load_checkpoint()` passes `immune_response` dict back into `RoundRecord` on resume.
+  6. Macrophage shadow parity: full observation details in `shadow_data` + per-round `macrophage_shadow_rNN.json` log file (matches Ouroboros).
+  7. Regulatory T structured output: `RegulatoryResult` dataclass with thresholds, counts, per-model breakdown, checks fired; stored on `ImmuneResponse.regulatory_detail`.
 
 **CONFER ROUND 5 (Exp 39 Readiness, 13 April 2026):**
-- Gemini 3.1 Pro: 8,245 chars. More conservative — recommended 5 sequential steps before 39-0. FFF falsification partially refuted most claims.
-- Codex 5.3: 10,339 chars. Found launch path blocker (fixed). Confirmed enum serialization issue. Agreed 39-0 can run with small fixes.
-- Confer: `bench/logs/confer_exp39_readiness/`
+- Gemini 3.1 Pro: 8,245 chars. Codex 5.3: 10,339 chars.
+- All valid observations from both models now fixed. Confer: `bench/logs/confer_exp39_readiness/`
 
-**IDENTIFIED BUT NOT YET FIXED (recommended before 39-0):**
-1. Round report detail enhancement — counts-only to finding descriptions + provenance (~30-50 LOC in reference_runner.py). Most important for HIL review.
-2. Enum serialization — CellType/ClaimType repr strings in ImmuneResponse checkpoints (~5 LOC in insect_brain.py).
-3. Optional: minimal `cs_software.toml` for domain awareness (~30-50 lines TOML).
+**NO OUTSTANDING CONFER ITEMS.** All Codex and Gemini observations either fixed or correctly discarded (IFalsificationGate, C6, cs_software.toml, B-Cell dispatch, severity fusion — genuinely not load-bearing for 39-0).
 
-**DEFERRED UNTIL AFTER 39-0 (confirmed by readiness assessment):**
+**DEFERRED UNTIL AFTER 39-0 (architecture items for 39-A onwards):**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
 2. Convergence gate: add churn detection (§7.1a) as C6
 3. Missing domain configs (biology, info science, engineering immune, cs_software)

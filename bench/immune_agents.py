@@ -176,6 +176,40 @@ class TriagedFinding:
 
 
 @dataclass
+class RegulatoryResult:
+    """Structured output from the Regulatory T Cell.
+
+    Replaces the bare (bool, str) return so the HIL can inspect thresholds,
+    per-model breakdown, and the specific checks that fired.
+    Codex 5.3 confer, 13 April 2026.
+    """
+    autoimmune_flag: bool
+    reason: str
+    total_findings: int
+    rejected_count: int
+    duplicated_count: int
+    uncertain_count: int
+    removal_rate: float
+    max_rejection_rate: float       # threshold used
+    per_model_removal: Dict[str, Dict[str, int]]  # model → {total, removed}
+    checks_fired: List[str]         # list of check names that triggered
+
+    def to_dict(self) -> dict:
+        return {
+            "autoimmune_flag": self.autoimmune_flag,
+            "reason": self.reason,
+            "total_findings": self.total_findings,
+            "rejected_count": self.rejected_count,
+            "duplicated_count": self.duplicated_count,
+            "uncertain_count": self.uncertain_count,
+            "removal_rate": round(self.removal_rate, 4),
+            "max_rejection_rate": self.max_rejection_rate,
+            "per_model_removal": self.per_model_removal,
+            "checks_fired": self.checks_fired,
+        }
+
+
+@dataclass
 class ImmuneResponse:
     """Complete immune response for a batch of findings."""
     triaged: List[TriagedFinding]
@@ -191,6 +225,7 @@ class ImmuneResponse:
     observation_only: bool          # if True, filtered_findings == all findings
     barrier_results: List[Any] = field(default_factory=list)  # SkinBarrierResult list
     domain: str = ""                # experiment domain (Layer 3 routing context)
+    regulatory_detail: Optional[RegulatoryResult] = None  # structured Regulatory T output
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2711,24 +2746,40 @@ def regulatory_t_v2(
     triaged: List[TriagedFinding],
     max_rejection_rate: float = 0.65,
     min_findings_for_check: int = 5,
-) -> Tuple[bool, str]:
-    """Regulatory T Cell v2: fixed math.
+) -> Tuple[bool, str, "RegulatoryResult"]:
+    """Regulatory T Cell v2: fixed math + structured output.
 
     Changes from v1:
     1. Check 1 uses combined removal rate (rejected + duplicated) / total
     2. Check 3 only counts findings present in final_verdicts (intersection)
     3. Check 3 uses proportional threshold (>= 0.85) instead of exact match
+
+    Returns:
+        (autoimmune_flag, reason_string, RegulatoryResult)
+        Third element added 13 April 2026 (Codex 5.3 confer): structured
+        record with thresholds, counts, per-model breakdown, and which
+        checks fired — so the HIL can inspect the decision, not just the flag.
     """
     total = len(final_verdicts)
     if total < min_findings_for_check:
-        return False, f"[RT_v2] Too few findings ({total}) for meta-check"
+        reason = f"[RT_v2] Too few findings ({total}) for meta-check"
+        detail = RegulatoryResult(
+            autoimmune_flag=False, reason=reason,
+            total_findings=total, rejected_count=0, duplicated_count=0,
+            uncertain_count=0, removal_rate=0.0,
+            max_rejection_rate=max_rejection_rate,
+            per_model_removal={}, checks_fired=[],
+        )
+        return False, reason, detail
 
     rejected = sum(1 for v in final_verdicts.values() if v == "REJECTED")
     duplicated = sum(1 for v in final_verdicts.values() if v == "DUPLICATE")
+    uncertain = sum(1 for v in final_verdicts.values() if v == "UNCERTAIN")
     removed = rejected + duplicated
     removal_rate = removed / total
 
     reasons: List[str] = []
+    checks_fired: List[str] = []
 
     # Check 1: Combined removal rate (v2: includes duplicates)
     if removal_rate > max_rejection_rate:
@@ -2737,6 +2788,7 @@ def regulatory_t_v2(
             f"exceeds threshold ({max_rejection_rate:.0%}) "
             f"[rejected={rejected}, duplicated={duplicated}]"
         )
+        checks_fired.append("removal_rate_exceeded")
 
     # Check 3: Per-model removal — proportional, intersection-based
     model_counts: Dict[str, int] = {}
@@ -2758,17 +2810,36 @@ def regulatory_t_v2(
                 f"[RT_v2] {rem_m}/{total_m} ({rem_m / total_m:.0%}) findings "
                 f"from {mid} removed — possible systematic bias"
             )
+            checks_fired.append(f"per_model_bias:{mid}")
 
-    if reasons:
-        _shadow_log.info(
-            "RT v2 (v2): AUTOIMMUNE flagged — %s", "; ".join(reasons),
-        )
-        return True, "; ".join(reasons)
+    # Build per-model breakdown for structured output
+    per_model = {
+        mid: {"total": model_counts[mid], "removed": model_removed.get(mid, 0)}
+        for mid in model_counts
+    }
 
-    _shadow_log.info(
-        "RT v2 (v2): healthy — %.1f%% removal rate", removal_rate * 100,
+    flag = bool(reasons)
+    if flag:
+        reason_str = "; ".join(reasons)
+        _shadow_log.info("RT v2 (v2): AUTOIMMUNE flagged — %s", reason_str)
+    else:
+        reason_str = f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
+        _shadow_log.info("RT v2 (v2): healthy — %.1f%% removal rate", removal_rate * 100)
+
+    detail = RegulatoryResult(
+        autoimmune_flag=flag,
+        reason=reason_str,
+        total_findings=total,
+        rejected_count=rejected,
+        duplicated_count=duplicated,
+        uncertain_count=uncertain,
+        removal_rate=round(removal_rate, 4),
+        max_rejection_rate=max_rejection_rate,
+        per_model_removal=per_model,
+        checks_fired=checks_fired,
     )
-    return False, f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
+
+    return flag, reason_str, detail
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3707,7 +3778,7 @@ def run_immune_pipeline(
     v1_autoimmune, v1_reg_reason = regulatory_t_cell_check(
         final_verdicts, triaged, max_rejection_rate,
     )
-    v2_autoimmune, v2_reg_reason = regulatory_t_v2(
+    v2_autoimmune, v2_reg_reason, v2_reg_detail = regulatory_t_v2(
         final_verdicts, triaged, max_rejection_rate,
     )
     # WP6a: v2 is primary, v1 for comparison logging
@@ -3918,4 +3989,5 @@ def run_immune_pipeline(
         observation_only=observation_only,
         barrier_results=barrier_results,
         domain=domain,
+        regulatory_detail=v2_reg_detail,
     )

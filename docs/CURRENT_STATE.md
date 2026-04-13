@@ -1,20 +1,23 @@
 # CDSFL Current State
 
-Generated: 13 April 2026 01:26 BST (2026-04-13T01:26:10+01:00)
+Generated: 13 April 2026 02:10 BST (2026-04-13T02:10:27+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `a8fb729` Fix launch path: --test-article no longer blocks --config-only invocation
-- **Committed:** 2026-04-13 01:19:11 +0100
-- **Remote:** ahead by 28
+- **Last commit:** `2488fa1` sv: Exp 39 readiness assessment — 39-0 ready to run, provenance + launch fixes
+- **Committed:** 2026-04-13 01:26:11 +0100
+- **Remote:** ahead by 29
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
+- `M bench/dm/_types.py`
+- `M bench/immune_agents.py`
+- `M bench/insect_brain.py`
 - `M bench/logs/immune_pipeline.log`
-- `M resources/ONBOARDING.md`
+- `M bench/reference_runner.py`
 - `M resources/RECOVERY.md`
 
 ---
@@ -47,6 +50,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `2488fa1 sv: Exp 39 readiness assessment — 39-0 ready to run, provenance + launch fixes`
 - `a8fb729 Fix launch path: --test-article no longer blocks --config-only invocation`
 - `f57d6ce Fix provenance pipeline: origin_type on all findings, registry capture, macrophage_cell.py committed`
 - `bd09f88 sv: Macrophage/Ouroboros cell type split — 793 tests, 4 confer rounds, provenance schema`
@@ -56,4 +60,3 @@ Uncommitted files:
 - `401e475 Phase 8: Mathematical appendix expansion — 7 new sections`
 - `8355215 Phase 7: O1 ouroboros cell shadow prototype`
 - `23bff05 Phase 6: Specialist B-Cell dispatch wiring (shadow mode)`
-- `a52162a Phase 5: FFAFP calibration protocol formalised in mathematical appendix`

@@ -1759,12 +1759,34 @@ def _run_shadow_cells(
                 timings=timings,
             )
 
+            # Codex 5.3 confer fix (13 April 2026): Macrophage was counts-only
+            # while Ouroboros wrote full per-round replay logs.  Now both
+            # shadow cells produce equally inspectable output.
             shadow_data["macrophage"] = {
                 "observations": len(macro_summary.observations),
                 "anomalies": macro_summary.anomaly_count,
                 "pipeline_modified": macro_summary.pipeline_modified,
                 "mode": macro_summary.mode.value,
+                "observation_details": [
+                    obs.to_dict() for obs in macro_summary.observations
+                ],
             }
+
+            # Write Macrophage shadow replay log to disk (parity with Ouroboros)
+            if logs_dir:
+                macro_log_path = logs_dir / f"macrophage_shadow_r{round_idx:02d}.json"
+                macro_log_path.write_text(
+                    json.dumps({
+                        "round_idx": round_idx,
+                        "mode": macro_summary.mode.value,
+                        "anomaly_count": macro_summary.anomaly_count,
+                        "pipeline_modified": macro_summary.pipeline_modified,
+                        "observations": [
+                            obs.to_dict() for obs in macro_summary.observations
+                        ],
+                    }, indent=2, default=str) + "\n",
+                    encoding="utf-8",
+                )
 
         except Exception as exc:
             import logging
@@ -2858,6 +2880,7 @@ def run_experiment(
         no_exclusion_mode=True,
     )
     dm_config.max_rounds = cfg.max_rounds
+    dm_config.domain = cfg.domain  # Exp 39 plumbing fix: propagate domain to InsectBrain → immune pipeline
     model_specs = build_model_specs(exp_config)
     mgr = DynamicManager(model_specs, dm_config)
 
@@ -3221,9 +3244,28 @@ def run_experiment(
         }, indent=2, default=str), encoding="utf-8")
 
         # Round data for report
+        # Gemini 3.1 Pro + Codex 5.3 confer (13 April 2026): round report was
+        # counts-only, making HIL review of intermediate rounds impossible.
+        # Now includes per-finding summaries with provenance.
+        round_findings_detail = [
+            {
+                "finding_id": f.finding_id,
+                "model_id": f.model_id,
+                "flaw_class": f.flaw_class,
+                "severity": f.severity,
+                "description": f.description[:500],
+                "verified": f.verified,
+                "escalated": f.escalated,
+                "origin_type": getattr(f, "origin_type", ""),
+                "source_ref": getattr(f, "source_ref", ""),
+                "target_file": getattr(f, "target_file", ""),
+            }
+            for f in findings
+        ]
         round_data: Dict[str, Any] = {
             "round": round_idx, "type": round_type,
             "findings_count": len(findings),
+            "findings": round_findings_detail,
             "novel_this_round": novel_this_round,
             "registry_total": len(registry.entries),
             "models_responded": list(responses.keys()),
