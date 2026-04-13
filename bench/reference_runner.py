@@ -1354,8 +1354,8 @@ def _update_observed_fingerprint(
                 _thresh = _state.get("last_adaptive_threshold", 0.5)
                 if _py < _thresh:
                     quality_ok = False
+            history = fp.setdefault("prompt_chars_history", [])
             if quality_ok:
-                history = fp.setdefault("prompt_chars_history", [])
                 history.append(prompt_chars)
             # Cap history at 50 entries to bound memory.
             if len(history) > 50:
@@ -1562,7 +1562,7 @@ def _dispatch_round_star(
             except Exception as e:
                 _log(f"  {label}: thread error — {type(e).__name__}: {e}")
 
-    return findings, responses, per_model_durations
+    return findings, responses, per_model_durations, prompt_lengths
 
 
 def _dispatch_round_relay(
@@ -1645,7 +1645,7 @@ def _dispatch_round_relay(
             except Exception as e:
                 _log(f"  {label}: thread error — {type(e).__name__}: {e}")
 
-    return findings, responses, per_model_durations
+    return findings, responses, per_model_durations, prompt_lengths
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3056,13 +3056,13 @@ def run_experiment(
 
         # Dispatch — topology-dependent
         if cfg.topology == "relay":
-            findings, responses, per_model_durations = _dispatch_round_relay(
+            findings, responses, per_model_durations, prompt_lengths = _dispatch_round_relay(
                 exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,
                 round_idx, cfg, registry=registry,
             )
         else:
             registry_summary = registry.build_summary(round_idx) if round_idx > 0 else ""
-            findings, responses, per_model_durations = _dispatch_round_star(
+            findings, responses, per_model_durations, prompt_lengths = _dispatch_round_star(
                 exp_config, mgr, brain, base_prompt, registry_summary,
                 cdsfl_text, full_code, round_idx, cfg, registry=registry,
             )

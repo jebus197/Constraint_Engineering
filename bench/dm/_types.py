@@ -276,6 +276,13 @@ class DynamicManagementConfig:
             raise ValueError(f"memory_decay_rate must be >= 0, got {self.memory_decay_rate}")
         if self.memory_drift_threshold <= 0:
             raise ValueError(f"memory_drift_threshold must be > 0, got {self.memory_drift_threshold}")
+        # Phase 3 suppression parameters (DM convergence review, 13 April 2026)
+        if self.lambda_s < 0:
+            raise ValueError(f"lambda_s must be >= 0, got {self.lambda_s}")
+        if not (0.0 < self.w_floor <= 1.0):
+            raise ValueError(f"w_floor must be in (0, 1], got {self.w_floor}")
+        if self.suppression_k < 1:
+            raise ValueError(f"suppression_k must be >= 1, got {self.suppression_k}")
 
     def get_alpha(self, role: Role) -> NDArray[np.float64]:
         """Return the capability weight vector for a given role."""
