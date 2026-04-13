@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 April 2026 23:59 BST
+Last updated: 13 April 2026 01:26 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,40 +25,32 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 39 READINESS ASSESSMENT COMPLETE (13 April 2026 01:22 BST):**
+  Branch: `exp39-experimental`. 793 tests pass. Last commit: `a8fb729`.
+  **39-0 IS READY TO RUN.** Full readiness assessment with Gemini + Codex confer,
+  2 explore agents, and independent FFF analysis. All 7 execution order items
+  assessed as DEFERRABLE for 39-0. One genuine blocker found by Codex (launch
+  path `--test-article required=True`) — FIXED.
+  **Provenance pipeline fixed:**
+  - `origin_type="model"` set on all 5 Finding() sites in runner_core.py
+  - FindingRegistry.register() now captures all 6 provenance fields
+  - macrophage_cell.py (546 LOC) committed (was missing from prior sv)
+  - O1 query extraction improved (strips noise, 10-keyword cap)
+  - Launch path fixed: `--config` now works without `--test-article`
+  **Readiness confer (Gemini + Codex, 13 April 2026):**
+  - Gemini: conservative (wants 5 steps). FFF-falsified: 3 of 5 claims refuted.
+    Valid point: HIL visibility (round reports counts-only).
+  - Codex: found genuine launch path blocker. Also confirmed enum serialization
+    issue. Second claim (domain not reaching immune) refuted by design.
+  - Explore agents: enum serialization (CellType repr), checkpoint IS implemented,
+    domain graceful fallback, `software→code` alias works.
+  **Preflight:** All 5 models healthy (CC2, Codex, ChatGPT, Gemini, DeepSeek).
+  **Confer logs:** `bench/logs/confer_exp39_readiness/`
+  **Assessment:** `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`
+  **TTS:** `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`
+
 - **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
-  Branch: `exp39-experimental`. 793 tests pass. 12+ commits.
-  **Macrophage/Ouroboros cell type split implemented:**
-  - `bench/macrophage_cell.py` (NEW): Internal pipeline monitor. PATROL + SELF_CHECK modes.
-    Domain-agnostic categories. Expanded observe() with provenance, gate stats, O1 metrics.
-  - `bench/ouroboros_cell.py` (REWRITTEN): External research + self-improvement. Between-round.
-    ProvenancePacket, shadow mode, hard-capped. 3 queries/round, 2 claims max.
-  - Finding schema: 6 provenance fields added (origin_type, source_ref, etc.).
-  - Runner: shadow_cell_config on RunnerConfig, _run_shadow_cells() in main loop.
-  - Naming: **Macrophage** = internal monitor, **Ouroboros (O1)** = external research.
-  **All 9 implementation phases committed (0-8).** 3 critical errors caught/corrected.
-  **New modules:** `bench/dm/_similarity.py`, `bench/dm/_memory.py`, `bench/macrophage_cell.py`.
-  **Mathematical appendix:** 1334 → 1651 lines. New §§1.2–1.5, 7.13, 8.7, 9.
-  **4 Gemini + Codex confers (12 April 2026):**
-  Round 1: advisory capacity falsified as mitigation. O1 needs clustering + breaker.
-  Round 2: PE gates sequential 1→2→3. Sensitivity dial [0,1]/1-11 UX. Dual-fuse breaker.
-  Round 3 (gap analysis): CODE-CORRECTNESS BIAS identified — all gates/docs assumed code
-  artifacts. Gates redesigned: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial
-  Consistency. IFalsificationGate protocol interface. Missing domain configs BLOCKING
-  Exp 39-G/H/M/F. §7 partitioned: churn (BLOCKING), sycophancy + severity fusion
-  (LOAD-BEARING), rest Phase 9.
-  Round 4 (cell split): Both models agree split architecturally mandatory. Disjoint evidence
-  paths. Shadow-first. Provenance schema with 6 mandatory fields.
-  **Remaining execution order:** gate interface → churn C6 → domain configs → B-Cell dispatch
-  → severity fusion → sycophancy → O1 calibration → run 39-0 → Phase 9.
-  **Confer logs:** `bench/logs/confer_o1_ffafp/`, `bench/logs/confer_pe_o1_design/`,
-  `bench/logs/confer_gap_analysis/`, `bench/logs/confer_cell_split/`
-  **Key experimental notes:**
-  `experimental_notes/Exp39_Implementation_2026-04-12.md`
-  `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`
-  `experimental_notes/AIS_Confer_Synthesis_2026-04-12.md`
-  `experimental_notes/Revised_Model_Confer_2026-04-12.md`
-  `experimental_notes/Exp39_Infrastructure_Build_2026-04-12.md`
-  `experimental_notes/Macrophage_Ouroboros_Split_2026-04-12.md`
+  Cell type split, 4 confer rounds, gap analysis. See experimental notes.
 
 - **EXP 38 COMPLETE (11 April 2026 14:33 BST):**
   Type: Ouroboros — system reviews and improves itself under structured falsification.

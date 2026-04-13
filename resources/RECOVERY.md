@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 12 April 2026 23:59 BST
+Last updated: 13 April 2026 01:26 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,41 +21,29 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (12 April 2026 23:56 BST)
+## Current Pending Work (13 April 2026 01:24 BST)
 
-793 tests pass (+9 net new from cell split). Branch: `exp39-experimental`. Last commit: 996ec52.
+793 tests pass. Branch: `exp39-experimental`. Last commit: a8fb729.
 
-**MACROPHAGE / OUROBOROS CELL TYPE SPLIT COMPLETE:**
-- `bench/macrophage_cell.py` (NEW, ~370 LOC): Internal pipeline monitor. Modes: PATROL (anomaly hunting) + SELF_CHECK (self-referential health). Domain-agnostic categories. Expanded observe() accepts provenance, gate_stats, ouroboros_metrics. Detects: verdict_cluster, severity_concentration, timing_spike, source_monoculture, persistent_anomaly, method_claim_mismatch, immune_deficiency, provenance_incomplete.
-- `bench/ouroboros_cell.py` (REWRITTEN, ~310 LOC): External research + self-improvement cell. Between-round placement. ProvenancePacket, OuroborosCandidateClaim, OuroborosShadowLog. Hard caps: 3 queries/round, 2 claims max. Shadow mode for Exp 39.
-- `bench/dm/_types.py`: Finding schema extended with 6 provenance fields (origin_type, source_ref, retrieval_query, retrieved_at, source_hash, source_diversity).
-- `bench/reference_runner.py`: shadow_cell_config on RunnerConfig. _run_shadow_cells() wired into main loop after immune pipeline. Shadow cell data in round reports.
-- Configs updated: 39-C (Macrophage monitor), 39-J (Ouroboros O1).
-- Tests: 6 Macrophage + 4 Ouroboros = 10 new tests. All 793 pass.
-- Confer round 4: `bench/logs/confer_cell_split/` (Gemini 43.6s + Codex 398.6s)
-- Experimental notes: `experimental_notes/Macrophage_Ouroboros_Split_2026-04-12.md`
-- TTS: `~/Desktop/CDSFL_tts/Macrophage_Ouroboros_Split_2026-04-12.txt`
+**39-0 IS READY TO RUN.** Full readiness assessment completed with 4 sources (own FFF, Gemini 3.1 Pro confer, Codex 5.3 confer, 2 explore agents). None of the 10 execution order items block the infrastructure gate test. Assessment: `experimental_notes/Exp39_Readiness_Assessment_2026-04-13.md`. TTS: `~/Desktop/CDSFL_tts/Exp39_Readiness_Assessment_2026-04-13.txt`.
 
-**NAMING CONVENTION (corrected):**
-- **Macrophage** = internal pipeline monitor (biology: patrol cell inside body). Advisory only, no external API access.
-- **Ouroboros (O1)** = external research + self-improvement (mythology: cyclical self-improvement). Between-round. Structured academic fetch.
+**FIXES APPLIED THIS SESSION (13 April 2026):**
+- Fix 1: `origin_type="model"` set on all 5 Finding() instantiation sites in `bench/runner_core.py` (JSON array L417, JSON object L496, pipe-delimited L549, marker L710, fallback L734).
+- Fix 2: 6 provenance fields added to `FindingRegistry.register()` in `bench/reference_runner.py` (origin_type, source_ref, retrieval_query, retrieved_at, source_hash, source_diversity).
+- Fix 3: Launch path blocker fixed — `--test-article` changed from `required=True` to optional with post-parse validation, so `launch_exp39.py`'s `run --config <path>` no longer fails at argparse.
+- Fix 4: `bench/macrophage_cell.py` (546 LOC) committed — missed from prior sv commit.
 
-**ALL 9 IMPLEMENTATION PHASES REMAIN COMPLETE (Phases 0–8).**
+**CONFER ROUND 5 (Exp 39 Readiness, 13 April 2026):**
+- Gemini 3.1 Pro: 8,245 chars. More conservative — recommended 5 sequential steps before 39-0. FFF falsification partially refuted most claims.
+- Codex 5.3: 10,339 chars. Found launch path blocker (fixed). Confirmed enum serialization issue. Agreed 39-0 can run with small fixes.
+- Confer: `bench/logs/confer_exp39_readiness/`
 
-**Gemini + Codex Confer Findings (4 rounds, 12 April 2026):**
+**IDENTIFIED BUT NOT YET FIXED (recommended before 39-0):**
+1. Round report detail enhancement — counts-only to finding descriptions + provenance (~30-50 LOC in reference_runner.py). Most important for HIL review.
+2. Enum serialization — CellType/ClaimType repr strings in ImmuneResponse checkpoints (~5 LOC in insect_brain.py).
+3. Optional: minimal `cs_software.toml` for domain awareness (~30-50 lines TOML).
 
-Round 1 (O1 + FFAFP): advisory capacity falsified as mitigation. Confer: `bench/logs/confer_o1_ffafp/`
-Round 2 (PE 3-Gate + O1 Calibration): sensitivity dial, dual-fuse breaker, two-tier clustering. Confer: `bench/logs/confer_pe_o1_design/`
-Round 3 (Gap Analysis + Domain-Agnostic Redesign, Codex timed out):
-- **Code-correctness bias identified**: all gates, docs, confers framed around code artifacts. CDSFL is domain-agnostic.
-- **Gates redesigned**: G1=Mechanical Validity, G2=Semantic Delta, G3=Adversarial Consistency. `IFalsificationGate` protocol interface. Domain configs supply concrete checks.
-- **Missing domain configs**: biology, information_science, immune/engineering, cs_software — BLOCKING Exp 39-G/H/M/F.
-- **§7 partitioned**: §7.1a churn (BLOCKING), §7.5 sycophancy (LOAD-BEARING), §7.7 severity fusion (LOAD-BEARING). Rest → Phase 9.
-- **Convergence gate insufficient**: current γ+ρ cannot distinguish refinement from oscillation without churn (C6).
-- Confer: `bench/logs/confer_gap_analysis/`
-Round 4 (Cell Split): Both models agree split is architecturally mandatory. Disjoint evidence paths. Provenance schema. Shadow-first. Confer: `bench/logs/confer_cell_split/`
-
-**Remaining execution order:**
+**DEFERRED UNTIL AFTER 39-0 (confirmed by readiness assessment):**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
 2. Convergence gate: add churn detection (§7.1a) as C6
 3. Missing domain configs (biology, info science, engineering immune, cs_software)
@@ -63,9 +51,10 @@ Round 4 (Cell Split): Both models agree split is architecturally mandatory. Disj
 5. Severity fusion (§7.7) for gate output synthesis
 6. Sycophancy detection (§7.5) — can shadow alongside 39-0
 7. O1 calibration: sensitivity dial, circuit breaker, semantic clustering
-8. Run 39-0 (infrastructure gate), then 39-A
-9. MC command sync across all reference locations
-10. Phase 9 (research write-up) — deferred post-Exp 39
+8. MC command sync across all reference locations
+9. Phase 9 (research write-up) — deferred post-Exp 39
+
+**LAUNCH COMMAND:** `python3 bench/launch_exp39.py --only 39-0`
 
 **Also pending:** Onboarding script redesign (merge semantic context + automation into single executable Python file).
 <!-- SV:PENDING_END -->

@@ -1,33 +1,21 @@
 # CDSFL Current State
 
-Generated: 12 April 2026 23:59 BST (2026-04-12T23:59:15+01:00)
+Generated: 13 April 2026 01:26 BST (2026-04-13T01:26:10+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `996ec52` sv: Gap analysis confer (3 rounds), domain-agnostic gate redesign, execution order agreed
-- **Committed:** 2026-04-12 21:33:09 +0100
-- **Remote:** ahead by 25
+- **Last commit:** `a8fb729` Fix launch path: --test-article no longer blocks --config-only invocation
+- **Committed:** 2026-04-13 01:19:11 +0100
+- **Remote:** ahead by 28
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/dm/_types.py`
-- `M bench/exp39_configs/39_C_macrophage.json`
-- `M bench/exp39_configs/39_J_microglia.json`
 - `M bench/logs/immune_pipeline.log`
-- `M bench/ouroboros_cell.py`
-- `M bench/reference_runner.py`
-- `M bench/tests/test_immune_agents.py`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/confer_cell_split.py`
-- `?? bench/confer_gap_analysis.py`
-- `?? bench/confer_o1_ffafp.py`
-- `?? bench/confer_pe_o1_design.py`
-- `?? bench/logs/confer_cell_split/`
-- `?? bench/logs/confer_gap_analysis/`
 
 ---
 
@@ -59,6 +47,9 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `a8fb729 Fix launch path: --test-article no longer blocks --config-only invocation`
+- `f57d6ce Fix provenance pipeline: origin_type on all findings, registry capture, macrophage_cell.py committed`
+- `bd09f88 sv: Macrophage/Ouroboros cell type split — 793 tests, 4 confer rounds, provenance schema`
 - `996ec52 sv: Gap analysis confer (3 rounds), domain-agnostic gate redesign, execution order agreed`
 - `89b6a05 sv: Gemini confer round 2 (PE 3-gate + O1 calibration design), recovery docs updated`
 - `e59dedd sv: Exp 39 phases 0-8 complete, 784 tests, Gemini confer O1+FFAFP, appendix expanded`
@@ -66,6 +57,3 @@ Uncommitted files:
 - `8355215 Phase 7: O1 ouroboros cell shadow prototype`
 - `23bff05 Phase 6: Specialist B-Cell dispatch wiring (shadow mode)`
 - `a52162a Phase 5: FFAFP calibration protocol formalised in mathematical appendix`
-- `d7d87bb Phase 4: Persistent immune memory with blended prior and drift detection`
-- `1a30e34 Phase 3: Continuous suppression with permutation-invariant top-k weighting`
-- `0dc6ab7 Phase 2: Embedding similarity shared backend`
