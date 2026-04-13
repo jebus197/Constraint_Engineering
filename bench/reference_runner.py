@@ -3442,8 +3442,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # run
     run_p = sub.add_parser("run", help="Run an experiment")
-    run_p.add_argument("--test-article", required=True,
-                       help="Path to the file under review")
+    run_p.add_argument("--test-article",
+                       help="Path to the file under review (required unless --config provides it)")
     run_p.add_argument("--context", nargs="*", default=[],
                        help="Paths to read-only context files")
     run_p.add_argument("--topology", default="star", choices=["star", "relay"])
@@ -3501,6 +3501,8 @@ def main():
         if hasattr(args, "burst_mode"):
             cfg.burst_mode = args.burst_mode
     else:
+        if not args.test_article:
+            parser.error("--test-article is required when --config is not provided")
         cfg = RunnerConfig(
             test_article=args.test_article,
             context_files=args.context or [],
