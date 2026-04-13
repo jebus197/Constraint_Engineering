@@ -54,6 +54,20 @@ constraint_class = "HARD"
 min_layer = "universal"
 description = "Verifiable mathematical claims are auto-checked via SymPy."
 
+[constraints.ffafp_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All findings must be processed through FIND-FOLLOW-ANALYSE-FIX before presentation."
+
+[constraints.structured_reasoning_required]
+type = "bool"
+default = true
+constraint_class = "HARD"
+min_layer = "universal"
+description = "All findings must include explicit premises, concrete derivation, and formal conclusion (Meta Structured Reasoning Protocol)."
+
 [constraints.deterministic_output]
 type = "bool"
 default = false
@@ -394,6 +408,14 @@ default = false
 constraint_class = "SOFT"
 min_layer = "model"
 description = "Include explicit formatting instructions in prompts."
+
+[protocol.reasoning_protocol]
+type = "string"
+default = "combined_4_layer"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Reasoning protocol applied to model interactions. All protocols remain subject to CDSFL falsification/verification regardless of style."
+allowed_values = ["combined_4_layer", "meta_structured", "ffafp", "p_pass", "conversational"]
 
 [protocol.structured_output_native]
 type = "bool"

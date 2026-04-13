@@ -89,13 +89,13 @@ Health monitoring subsystem (`bench/endocrine.py`). Runs periodic health cycles 
 
 Parameter modelling the probability that a model can successfully deliver findings given its current context state. Degrades with context size but currently modelled as a constant (Gap 4 in the model audit).
 
-### FFAF (Find-Follow-Analyse-Fix)
+### FFAFP (Find-Follow-Analyse-Fix-P-pass)
 
-Intra-model reasoning cycle. Find the issue. Follow consequences through the system before fixing. Analyse dispassionately (CONFIRMED, UNCERTAIN, or REJECTED). Fix with the simplest sufficient correction. Evolution of FFF with the Analyse step added pre-Experiment 36.
+Five-step intra-model reasoning cycle. (1) Find the issue, its location, and the evidence. (2) Follow consequences through the entire system before touching anything — trace dependencies, interfaces, downstream effects. (3) Analyse dispassionately with available tools (CONFIRMED, UNCERTAIN, or REJECTED). (4) Fix with the simplest sufficient correction addressing root cause and downstream consequences. (5) P-pass: actively try to disprove the fix. Triggered by the `f` metacognitive command. Supersedes the original 3-step FFF (Find-Follow-Fix) and the 4-step FFAF (Find-Follow-Analyse-Fix).
 
-### FFF (Find-Follow-Fix)
+### FFF (Find-Follow-Fix) [DEPRECATED]
 
-Original intra-model reasoning cycle before the Analyse step was added. See FFAF.
+Original 3-step intra-model reasoning cycle. Superseded by FFAFP. Historical references in experiment logs reflect the protocol used at the time of those experiments.
 
 ### FindingRegistry
 

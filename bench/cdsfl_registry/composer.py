@@ -765,10 +765,11 @@ _PRESET_THREE_LAYER_SCHEMA = (
     "Start natural, escalate only when needed.\n"
 )
 
-# Combined 4-layer schema: Meta Structured + CDSFL + FFAFP + Conversational.
+# Combined 4-layer schema: Meta Structured + FFAFP + Extended Falsification + Conversational.
 # First deployment: novelty extension confer (9 April 2026). Combines the
-# structured certificate rigour of C4/C5 with FFAF analysis gate and iterated
-# P-pass falsification. Conversational fallback where structure adds no rigour.
+# structured certificate rigour of Meta SRP with FFAFP (5-step: Find-Follow-
+# Analyse-Fix-P-pass) and global multi-pass falsification. Conversational
+# fallback where structure adds no rigour.
 _PRESET_FOUR_LAYER = (
     "## Combined 4-Layer Review Protocol (MANDATORY for this round)\n\n"
     "Apply ALL four layers simultaneously. They are complementary, not alternatives.\n\n"
@@ -777,8 +778,8 @@ _PRESET_FOUR_LAYER = (
     "through concrete examples (with specific inputs and expected outputs). "
     "Derive a formal conclusion. Do not assert conclusions without the "
     "derivation that supports them.\n\n"
-    "### Layer 2 — FIND-FOLLOW-ANALYSE-FIX\n\n"
-    "For EVERY finding:\n"
+    "### Layer 2 — FFAFP (Find-Follow-Analyse-Fix-P-pass)\n\n"
+    "For EVERY finding, apply all five steps:\n"
     "   FIND: State the bug, its location, and your evidence.\n"
     "   FOLLOW: Before proposing any fix, trace consequences through the "
     "entire system. What depends on this? What interfaces does it cross? "
@@ -786,10 +787,14 @@ _PRESET_FOUR_LAYER = (
     "   ANALYSE: State dispassionately whether this is CONFIRMED, UNCERTAIN, "
     "or REJECTED based on what the code does, not what it might do.\n"
     "   FIX: For CONFIRMED findings only, apply the simplest sufficient "
-    "correction that addresses root cause AND downstream consequences.\n\n"
-    "### Layer 3 — Iterated Falsification (P-Pass)\n\n"
-    "After completing your analysis, P-pass your own results. Actively try "
-    "to disprove your own conclusions. Retract claims you can disprove. "
+    "correction that addresses root cause AND downstream consequences.\n"
+    "   P-PASS: Actively try to disprove your own fix. Does it introduce "
+    "new problems? Does it address the root cause or just the symptom? "
+    "Retract claims you can disprove.\n\n"
+    "### Layer 3 — Extended Falsification (Multi-Pass)\n\n"
+    "After completing FFAFP on all findings, run a global P-pass across "
+    "your entire output. Look for cross-finding contradictions, missed "
+    "interactions, and assumptions that don't survive scrutiny. "
     "Continue for up to 5 passes or until two consecutive passes produce "
     "no new findings above consequence threshold. Only present claims that "
     "survive all passes.\n\n"

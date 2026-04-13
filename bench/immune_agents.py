@@ -401,7 +401,11 @@ def dendritic_cell_triage(findings: List[Finding]) -> List[TriagedFinding]:
 _CT_SCHEMA_PATH = Path(__file__).parent / "ct_verdict_schema.json"
 
 
-def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) -> str:
+def _build_ct_prompt(
+    findings: List[TriagedFinding],
+    source_paths: List[str],
+    domain_config: Optional[Dict[str, Any]] = None,
+) -> str:
     """Build the CT investigation prompt.
 
     The prompt instructs the agent to INVESTIGATE, not JUDGE. It must
@@ -409,6 +413,9 @@ def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) ->
 
     C5-03 fix: finding descriptions are wrapped in XML boundary tags
     to prevent prompt injection from adversarial finding content.
+
+    13 April 2026: loads domain-specific CT prompt template from TOML
+    config when available (Gemini 3.1 Pro confer observation).
     """
     files_list = "\n".join(f"  - {p}" for p in source_paths)
     # C5-03: wrap each finding description in XML boundary tags
@@ -419,9 +426,20 @@ def _build_ct_prompt(findings: List[TriagedFinding], source_paths: List[str]) ->
         for tf in findings
     )
 
+    # Domain-specific preamble from TOML ct_prompt_template, or generic fallback
+    domain_preamble = ""
+    if domain_config:
+        ct_section = domain_config.get("immune", {}).get("ct_prompt_template", {})
+        domain_preamble = ct_section.get("template", "")
+
+    if not domain_preamble:
+        domain_preamble = (
+            "You are an investigator. Your output will be mechanically verified.\n"
+            "Do NOT state opinions or verdicts. Report ONLY what you observe."
+        )
+
     return (
-        "You are an investigator. Your output will be mechanically verified.\n"
-        "Do NOT state opinions or verdicts. Report ONLY what you observe.\n\n"
+        f"{domain_preamble}\n\n"
         "For each finding below:\n"
         "1. Read the source file(s) to locate the code the finding describes.\n"
         "2. For each piece of evidence, record:\n"
@@ -635,6 +653,7 @@ def cytotoxic_t_cell(
     triaged: List[TriagedFinding],
     source_paths: List[str],
     timeout: int = 180,
+    domain_config: Optional[Dict[str, Any]] = None,
 ) -> List[CellVerdict]:
     """Stage 2a: Structurally-enforced code investigation via claude CLI.
 
@@ -669,7 +688,7 @@ def cytotoxic_t_cell(
             for tf in code_findings
         ]
 
-    prompt = _build_ct_prompt(code_findings, source_paths)
+    prompt = _build_ct_prompt(code_findings, source_paths, domain_config=domain_config)
     t0 = time.monotonic()
 
     try:
@@ -1838,6 +1857,7 @@ def cytotoxic_t_cell_v2(
     triaged: List[TriagedFinding],
     source_paths: List[str],
     timeout: int = 180,
+    domain_config: Optional[Dict[str, Any]] = None,
 ) -> List[CellVerdict]:
     """Cytotoxic T Cell v2: falsifier architecture.
 
@@ -3621,15 +3641,18 @@ def run_immune_pipeline(
         futures = {}
 
         # 2a: CT v1 (code FFF investigation)
+        # 13 April 2026: pass domain_config for specialist CT prompts
         if ct_enabled:
             futures["cytotoxic_t"] = pool.submit(
                 cytotoxic_t_cell, triaged, source_paths, ct_timeout,
+                domain_config,
             )
 
         # 2a': CT v2 falsifier (WP6a: now ACTIVE, verdicts feed pipeline)
         if ct_enabled:
             futures["ct_v2"] = pool.submit(
                 cytotoxic_t_cell_v2, triaged, source_paths, ct_timeout,
+                domain_config,
             )
 
         # 2b: B-Cell v1 (SymPy + z3 + stats — still primary for non-AST claims)

@@ -81,9 +81,16 @@ class RunResult:
     def terminated(self) -> bool:
         return self.exit_code == 2
 
+    @property
+    def hil_paused(self) -> bool:
+        """HIL review gate: runner paused for operator review (exit 42)."""
+        return self.exit_code == 42
+
     def summary_line(self) -> str:
         if self.skipped:
             return f"  {self.sub_id}: SKIPPED ({self.skip_reason})"
+        if self.hil_paused:
+            return f"  {self.sub_id}: HIL_PAUSED ({self.duration_s:.0f}s) — resume with --resume"
         status = "PASS" if self.passed else ("TERMINATED" if self.terminated else "FAIL")
         return f"  {self.sub_id}: {status} ({self.duration_s:.0f}s)"
 
@@ -286,6 +293,11 @@ def run_sequence(
         r = run_sub_experiment(exp, dry_run=dry_run)
         results.append(r)
         results_by_id[exp.id] = r
+
+        if r.hil_paused:
+            _log(f"\n*** HIL REVIEW GATE: {exp.id} paused for operator review ***")
+            _log(f"    Review findings, fix issues, then resume with --resume")
+            break
 
         if not r.passed and not r.skipped:
             if exp.required:

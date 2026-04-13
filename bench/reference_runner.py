@@ -215,6 +215,13 @@ class RunnerConfig:
     # Shadow cell configuration (Macrophage + Ouroboros, cell type split 12 April 2026)
     shadow_cell_config: Dict[str, Any] = field(default_factory=dict)
 
+    # HIL review gate (13 April 2026, agreed scope refinement).
+    # When True, the runner saves checkpoint and exits with code 42 after
+    # each round (monolithic mode) or phase transition (burst mode).
+    # Resume with --resume to continue.  This enables the collaborative
+    # test-discover-analyse-fix-fold cycle between the operator and CC.
+    hil_review: bool = False
+
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
             stem = Path(self.test_article).stem
@@ -3280,6 +3287,27 @@ def run_experiment(
         }
         result["rounds"].append(round_data)
 
+        # ── HIL review gate (13 April 2026, agreed scope refinement) ──
+        # In monolithic mode: pause after every round.
+        # In burst mode: pause only at phase transitions (handled below).
+        # The operator reviews findings with CC, fixes issues, and resumes.
+        if cfg.hil_review and not (burst_plan and burst_state):
+            _log(f"\n  ═══ HIL REVIEW GATE — Round {round_idx} complete ═══")
+            _log(f"  Findings this round: {len(findings)}, novel: {novel_this_round}")
+            _log(f"  Registry total: {len(registry.entries)}")
+            _log(f"  γ={gamma:.4f}, ρ={rho_current:.4f}, ρ_avg={rho_avg:.4f}")
+            _log(f"  Checkpoint saved. Resume with --resume --hil-review")
+            _log(f"  ═══════════════════════════════════════════════════\n")
+            # Write partial report for review
+            result["hil_paused_at_round"] = round_idx
+            result["hil_status"] = "paused_for_review"
+            partial_report = logs_dir / f"{cfg.experiment_name}_hil_r{round_idx:02d}.json"
+            partial_report.write_text(
+                json.dumps(result, indent=2, ensure_ascii=False, default=str),
+                encoding="utf-8",
+            )
+            sys.exit(42)
+
         # ── Phase transition or final convergence ──
         phase_transition = False
 
@@ -3312,6 +3340,26 @@ def run_experiment(
                 burst_state["phase_findings"][current_phase_name] = (
                     build_findings_summary(registry.to_dict(), current_phase_name)
                 )
+
+                # ── HIL review gate at burst-mode phase boundary ──
+                if cfg.hil_review:
+                    _log(f"\n  ═══ HIL REVIEW GATE — Phase '{current_phase_name}' "
+                         f"converged ({reason_type}) ═══")
+                    _log(f"  Findings summary:\n{burst_state['phase_findings'][current_phase_name]}")
+                    _log(f"  Registry total: {len(registry.entries)}")
+                    remaining = len(burst_plan.phases) - phase_idx - 1
+                    _log(f"  Phases remaining: {remaining} + integration")
+                    _log(f"  Checkpoint saved. Resume with --resume --hil-review")
+                    _log(f"  ═══════════════════════════════════════════════════\n")
+                    result["hil_paused_at_round"] = round_idx
+                    result["hil_paused_at_phase"] = current_phase_name
+                    result["hil_status"] = "paused_for_review"
+                    partial_report = logs_dir / f"{cfg.experiment_name}_hil_phase_{phase_idx}.json"
+                    partial_report.write_text(
+                        json.dumps(result, indent=2, ensure_ascii=False, default=str),
+                        encoding="utf-8",
+                    )
+                    sys.exit(42)
 
                 if phase_idx + 1 < len(burst_plan.phases):
                     # Transition to next phase
@@ -3510,6 +3558,9 @@ def build_parser() -> argparse.ArgumentParser:
                        choices=["auto", "on", "off"],
                        help="Burst decomposition: auto (fingerprint-driven), "
                             "on (always), off (monolithic)")
+    run_p.add_argument("--hil-review", action="store_true",
+                       help="HIL review gate: pause after each round/phase, "
+                            "save checkpoint, exit 42. Resume with --resume.")
 
     return p
 
@@ -3542,6 +3593,8 @@ def main():
             cfg.resume = True
         if hasattr(args, "burst_mode"):
             cfg.burst_mode = args.burst_mode
+        if getattr(args, "hil_review", False):
+            cfg.hil_review = True
     else:
         if not args.test_article:
             parser.error("--test-article is required when --config is not provided")
@@ -3563,6 +3616,7 @@ def main():
             rho_rolling_window=args.rho_rolling_window,
             consecutive_rounds_required=args.consecutive_rounds,
             burst_mode=args.burst_mode,
+            hil_review=getattr(args, "hil_review", False),
         )
 
     if args.pattern not in INTERACTION_PATTERN_PRESETS:

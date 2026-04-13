@@ -49,6 +49,8 @@ HARD_CONSTRAINTS: dict[str, bool] = {
     "constraints.fail_closed_unassessed": True,
     "constraints.json_schema_required": True,
     "constraints.sympy_auto_verify": True,
+    "constraints.ffafp_required": True,
+    "constraints.structured_reasoning_required": True,
     "convergence.hard_veto": True,
     "anti_deference.null_find_requires_scoped_justification": True,
     "anti_deference.agreement_requires_evidence": True,

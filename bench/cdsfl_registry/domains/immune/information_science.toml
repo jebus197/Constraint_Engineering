@@ -1,0 +1,61 @@
+# Immune pipeline parameterisation — Information Science Domain (Phase B4)
+# Extracted from domains/information_science.toml to avoid PolicyEngine schema validation.
+
+[immune.claim_patterns]
+
+mathematical = [
+    "(?:[=<>!]=?|[+\\-*/^]|\\bsqrt\\b|\\blog\\b|\\bexp\\b)",
+    "(?:\\bprecision\\b|\\brecall\\b|\\bF1\\b|\\baccuracy\\b)\\s*[=<>]",
+    "(?:\\bTF-IDF\\b|\\bBM25\\b|\\bcosine\\s*similarity\\b)",
+    "(?:\\bentropy\\b|\\bmutual\\s*information\\b|\\bKL\\s*divergence\\b)",
+    "(?:\\bperplexity\\b|\\bBLEU\\b|\\bROUGE\\b|\\bMRR\\b|\\bMAP\\b|\\bnDCG\\b)",
+]
+
+logical = [
+    "(?:\\bif\\b.*\\bthen\\b|\\bimplies\\b|\\bcontradiction\\b)",
+    "(?:\\bnecessary\\b.*\\bsufficient\\b|\\bcausal\\b.*\\bcorrelat)",
+    "(?:\\breproducib|\\breplicab|\\bgeneralis)",
+    "(?:\\bevidence\\b.*\\bsupport|\\brefute|\\bcontradict)",
+    "(?:\\bcitation\\b.*\\bnot\\s*found|\\breference\\b.*\\bmissing)",
+]
+
+statistical = [
+    "(?:\\bsignificant\\b|\\bp-value\\b|\\bp\\s*[<=]\\s*0?\\.\\d)",
+    "(?:\\bbaseline\\b|\\bablation\\b|\\bcontrol\\s*group\\b)",
+    "(?:\\bconfidence\\s*interval\\b|\\bbootstrap\\b|\\bcross.validation\\b)",
+    "(?:\\beffect\\s*size\\b|\\bCohen)",
+    "(?:\\binter.rater\\b|\\bkappa\\b|\\bICC\\b|\\bFleiss\\b)",
+]
+
+[immune.verification_tools]
+
+# Information science verification uses statistical tools for metric
+# claims and z3 for logical consistency of retrieval/classification claims.
+mathematical = ["sympy"]
+logical = ["z3"]
+statistical = ["statsmodels", "scipy"]
+
+[immune.ct_prompt_template]
+template = """You are investigating information science claims. Your output will be mechanically verified.
+
+For retrieval quality claims: identify the metric, the dataset, the baseline, and whether the comparison is fair (same splits, same preprocessing).
+For citation claims: verify the cited source exists and supports the claim as stated.
+For methodology claims: identify whether the experimental design includes appropriate controls, baselines, and statistical tests.
+For classification claims: identify the taxonomy, the decision boundary, and whether edge cases are handled.
+
+Report ONLY what you observe. Do NOT state opinions or verdicts."""
+
+[immune]
+citation_format = "(?:(?:section|sec\\.?|chapter|ch\\.?|table|tab\\.?|figure|fig\\.?)\\s*(?:#|:)?\\s*(\\d+(?:\\.\\d+)*))"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:no\\s*baseline|missing\\s*comparison).*(?:exploratory|descriptive|qualitative))"
+source = "Missing baseline FP: exploratory and descriptive studies do not require baselines"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:small\\s*sample|limited\\s*data).*(?:case\\s*study|pilot|preliminary))"
+source = "Small sample FP: case studies and pilots are valid at stated scope"
+
+[[immune.false_positive_patterns]]
+pattern = "(?:(?:not\\s*reproducible|cannot\\s*replicate).*(?:proprietary|closed.source|commercial))"
+source = "Reproducibility FP: proprietary system evaluations are valid within stated access constraints"

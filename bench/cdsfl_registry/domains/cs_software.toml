@@ -1,0 +1,14 @@
+# CDSFL Registry — Layer 2: Computer Science / Software Domain
+# Applied when task domain is "cs_software".
+# Extends "code" with stricter verification requirements.
+
+[verification]
+static_analysis = true              # lint, security, and structural analysis
+test_execution = "mandatory"        # behavioural claims MUST be verified via test execution
+type_check = true                   # static type analysis required
+
+[constraints]
+deterministic_output = true         # code solutions must produce deterministic output
+edge_case_coverage = true           # findings must address boundary conditions
+
+# Immune pipeline parameterisation lives in domains/immune/cs_software.toml
