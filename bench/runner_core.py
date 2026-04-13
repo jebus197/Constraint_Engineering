@@ -414,6 +414,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         proposed_fix=proposed_fix,
                         target_file=target_file,
                         verified=verified,
+                        origin_type="model",
                     ))
                 if findings:
                     return findings
@@ -492,6 +493,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     proposed_fix=proposed_fix,
                     target_file=target_file,
                     verified=verified,
+                    origin_type="model",
                 ))
             if findings:
                 return findings
@@ -545,6 +547,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 proposed_fix=proposed_fix,
                 target_file=target_file,
                 verified=verified,
+                origin_type="model",
             ))
         return findings
 
@@ -706,6 +709,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             proposed_fix=proposed_fix,
             target_file=target_file,
             verified=verified,
+            origin_type="model",
         ))
 
     # ── 5. Fallback ──────────────────────────────────────────────────
@@ -726,6 +730,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             abstraction_index=0.3,
             description=response[:500],
             verified=False,
+            origin_type="model",
         ))
 
     # ── Falsification gate ───────────────────────────────────────────

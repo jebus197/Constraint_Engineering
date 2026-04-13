@@ -304,6 +304,12 @@ class FindingRegistry:
             "verified": finding.verified,
             "escalated": finding.escalated,
             "flaw_class": getattr(finding, "flaw_class", 0),
+            "origin_type": getattr(finding, "origin_type", ""),
+            "source_ref": getattr(finding, "source_ref", ""),
+            "retrieval_query": getattr(finding, "retrieval_query", ""),
+            "retrieved_at": getattr(finding, "retrieved_at", ""),
+            "source_hash": getattr(finding, "source_hash", ""),
+            "source_diversity": getattr(finding, "source_diversity", 0.0),
         }
         return canonical_id
 

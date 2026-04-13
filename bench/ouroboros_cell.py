@@ -277,14 +277,60 @@ class OuroborosCell:
     def _target_to_query(self, target: str) -> str:
         """Convert a target description to a search query.
 
-        For Exp 39 shadow mode, this produces the query string that
-        WOULD be sent to the API. No actual API call is made.
+        Strips statistical noise (percentages, counts, decimals, parenthetical
+        details) and extracts the conceptual core suitable for an academic
+        search API. Returns a query of at most 10 keywords.
+
+        Examples:
+            "92% of verdicts are REJECTED (11/12) — possible systemic bias"
+            → "verdicts REJECTED possible systemic bias"
+
+            "Confidence variance very low (0.0002) with mean 0.85 — models over-confident"
+            → "Confidence variance very low models over-confident uniformly"
         """
-        # Strip prefixes
+        import re
+
+        # Expand prefixed labels into searchable terms
+        # "uncertain_finding:f3" → "uncertain finding"
+        # "round_4_anomalies:3" → "round anomalies"
+        prefix = ""
         if ":" in target:
-            target = target.split(":", 1)[1]
-        # Basic keyword extraction (sufficient for shadow mode logging)
-        return target.strip()
+            prefix, target = target.split(":", 1)
+            # Convert underscored prefix to words, strip trailing digits
+            prefix = re.sub(r'_\d+$', '', prefix)
+            prefix = prefix.replace("_", " ").strip()
+
+        # Extract quoted names before removing them (e.g. 'b_cell' → b_cell)
+        quoted_names = re.findall(r"'([^']*)'", target)
+        quoted_terms = ' '.join(n.replace('_', ' ') for n in quoted_names)
+
+        # Remove parenthetical noise: (11/12), (0.0002), (21.7x median 0.40s)
+        target = re.sub(r'\([^)]*\)', '', target)
+
+        # Remove numbers with optional units/suffixes: 92%, 8.70s, 3x, 0.85
+        target = re.sub(r'\b\d+\.?\d*[%sx]?\s*', '', target)
+
+        # Remove em-dashes/hyphens used as separators
+        target = re.sub(r'\s*[\u2014\u2013—]+\s*', ' ', target)
+
+        # Remove quoted stage names (already extracted above)
+        target = re.sub(r"'[^']*'", '', target)
+
+        # Combine: prefix + cleaned target + quoted names
+        combined = f"{prefix} {target} {quoted_terms}"
+
+        # Collapse whitespace
+        combined = re.sub(r'\s+', ' ', combined).strip()
+
+        # Remove common noise words that don't help search
+        noise = {'of', 'are', 'is', 'the', 'a', 'an', 'with', 'may', 'be',
+                 'from', 'for', 'in', 'to', 'and', 'or', 'took', 'than',
+                 'mean', 'median'}
+        words = [w for w in combined.split() if w.lower() not in noise]
+
+        # Cap at 10 keywords; fallback if empty
+        result = ' '.join(words[:10])
+        return result if result else "pipeline anomaly detection"
 
     def _fetch_metadata(
         self,

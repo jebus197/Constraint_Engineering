@@ -1,0 +1,144 @@
+CONFER: Macrophage / Ouroboros Cell Split
+Timestamp: 20260412T205248Z
+Model: gemini-3.1-pro-preview
+Protocol: CDSFL + FFAFP
+Response time: 43.6s
+Response length: 9912 chars
+========================================================================
+
+## Constraint Classification
+
+Before analysis, all constraints are partitioned into HARD ($C_H$) and SOFT ($C_S$) classes.
+
+**HARD Constraints ($C_H$):**
+1. **O1 Isolation:** O1 must NOT have external API access (architectural & epistemic isolation).
+2. **O1 Mutability:** O1 is strictly advisory; it NEVER modifies pipeline state.
+3. **Claim Routing:** Macrophage findings must pass through standard PE (Proportionality/Epistemic) gates.
+4. **Exp 39 Scope Matrix:** Math/CS/Stats are load-bearing; Bio/InfoSci are secondary; Physics/Chem/Eng/Macro/O1 are shadow-only.
+5. **Macro Capability Bound:** Macrophage external fetching is limited to structured academic fetch only for Exp 39.
+
+**SOFT Constraints ($C_S$):**
+1. **Nomenclature:** The biological analogues (Macrophage, Ouroboros/Microglia).
+2. **Implementation Timing:** Whether the refactor occurs before or after Exp 39 (evaluated for risk vs. architectural purity).
+3. **Adaptation of Heuristics:** Translating O1's code-centric heuristics to domain-agnostic ones.
+
+---
+
+## QUESTION 1 — Is the Macrophage / Ouroboros Split Sound?
+
+**a) Architectural Cleanliness**
+*Claim*: Splitting `ouroboros_cell.py` into two distinct types produces a cleaner architecture.
+*P-Pass (Falsifier)*: Splitting introduces circular dependencies or breaks state observation continuity that the combined cell handled elegantly.
+*Evaluation*: The combined cell violates a HARD constraint: one mode requires API access (Macrophage) and one mode strictly forbids it (O1). A single module with mixed API permissions is a critical security and epistemic risk. Splitting them enforces isolation at the module and network level. The claim survives.
+
+**b) Separation of Concerns**
+*Claim*: Macrophage acts; O1 watches.
+*Dependency Trace*: Macrophage -> External Boundary (arXiv) -> Pipeline PE Gate -> Internal State. O1 -> Internal State (read-only) -> Log/HIL.
+*Evaluation*: This maps perfectly to the architectural requirement that a monitor must not be an actor. If O1 acts on its own monitoring, it creates an unresolvable infinite feedback loop.
+
+**c) Failure Modes**
+*Claim*: O1 can detect if the Macrophage produces bad findings.
+*P-Pass (Falsifier)*: The Macrophage overwhelms the pipeline with plausible but false claims that O1 cannot distinguish from valid processing.
+*Evaluation*: If the Macrophage imports garbage, the primary defence is NOT O1; it is the PE gates. O1 detects *systemic* failure (e.g., the PE gates passing 100% of Macrophage claims, or Macrophage claims causing thrashing in B-Cells). If O1 flags this, the resolution path terminates at the Human-in-the-Loop (HIL). O1 cannot act.
+
+**d) Redundancy and Gaps**
+*Evaluation*: The split removes a dangerous overlap (API access in a monitor) and leaves no gap, provided O1 is explicitly configured to monitor the Macrophage's inputs to the pipeline as part of the total system state.
+
+**Definitive Stance 1:** The split is architecturally mandatory. A combined cell violates the core isolation constraint of the monitoring system. Proceed with the split.
+
+---
+
+## QUESTION 2 — Macrophage as Active Pipeline Cell
+
+**a) Relationship to Existing Cells**
+*Dependency Trace*: Macrophage does not replace B-Cell (which verifies existing claims) or NK (which checks cross-domain consistency). It is an *initiator* cell. It runs asynchronously alongside Stage 1 (Find/Follow) or actively injects into Stage 2 (Analyse). It is strictly additive.
+
+**b) External Research Integration**
+*Claim*: External-origin claims can be routed like normal claims.
+*P-Pass (Falsifier)*: Model-generated claims carry implicit deterministic context; external claims carry undefined epistemic risk. Treating them identically poisons the pipeline state.
+*Revision*: External claims must be wrapped in a strict schema. They must carry a mandatory `origin: external_macro` tag and an initial `falsification_debt: high` flag. This forces PE gates to apply the full coupled verification loop before acceptance.
+
+**c) TOML Configuration**
+The TOML must define structural boundaries:
+```toml
+[cell.macrophage]
+type = "active_scout"
+shadow_mode = true
+api_access = ["arxiv", "semantic_scholar"]
+rate_limit_per_run = 5
+allowed_claim_schemas = ["hypothesis", "refutation_evidence"]
+```
+
+**d) Exp 39 Shadow Mode Behaviour**
+It observes pipeline anomalies and runs its structured fetch against external APIs. **Crucially:** it must dump its gathered claims to a dedicated `macrophage_shadow.log` and NEVER push them to the active PE gates or main pipeline state in Exp 39.
+
+**Definitive Stance 2:** The Macrophage is a distinct, additive scout cell. For Exp 39, its external integrations must be completely isolated from the load-bearing logic, restricted to writing structured outputs to shadow logs.
+
+---
+
+## QUESTION 3 — Ouroboros (O1) as Advisory Monitor
+
+**a) Escalation Path and Advisory Limits**
+*Claim*: Advisory-only is sufficient, even if Macrophage floods the pipeline.
+*P-Pass (Falsifier)*: An advisory O1 flags a catastrophic loop, but HIL is asleep, and the pipeline OOMs or corrupts its state entirely.
+*Revision*: O1 cannot block, but the *pipeline router* must have a passive circuit breaker. O1 calculates an "epistemic stress score" and writes it to a state file. The pipeline router reads this file. If `stress > threshold`, the router halts operations. O1 remains advisory (it just calculates a metric); the router executes the halt.
+
+**b) Translation of Detection Capabilities**
+* Translation applies natively: Verdict clustering, timing spikes, persistent anomalies.
+* Needs redesign: "Tool monoculture" becomes "Source monoculture" (e.g., Macrophage only citing one author). "Tool-claim mismatch" becomes "Domain-claim mismatch" (e.g., using a Physics paper to resolve a CS constraint). `[SPECULATIVE]` Semantic clustering of domain anomalies will require heavy tuning to avoid false positives.
+
+**c) Meta-monitoring (PE Gates)**
+O1 *must* monitor the PE gates. The gates are the system's boundary defences. If PE gates show 0% rejection rate for Macrophage claims, O1 must flag a systemic pathology (immune deficiency).
+
+**d) Microglia Scope**
+It must monitor the pipeline as a whole. Monitoring the Macrophage specifically is redundant if the Macrophage is treated as just another cell feeding the pipeline.
+
+**Definitive Stance 3:** O1 remains strictly advisory, but the pipeline router must implement an automated circuit-breaker that reads O1's passive outputs. O1 must heavily prioritize meta-monitoring the PE gates.
+
+---
+
+## QUESTION 4 — Self-Healing / Self-Improving Cycle
+
+**a) Self-Healing Cycle**
+*Definition*: A pathology is a structural failure (e.g., unresolvable cyclic dependency between cells, PE gate failure, or sustained constraint violation).
+*Cycle*:
+1. O1 detects systemic statistical anomaly.
+2. O1 emits structured diagnostic flag to HIL.
+3. HIL evaluates and updates pipeline logic/routing.
+*Boundary*: Healing (altering pipeline rules/code) is strictly HIL.
+
+**b) Self-Improving Cycle**
+*Definition*: The system adds valid knowledge or heuristics without altering its core execution logic.
+*Cycle*: Macrophage observes a recurring unresolved constraint -> queries Semantic Scholar -> extracts algorithm -> submits to B-Cell -> B-Cell verifies mathematically -> Pipeline accepts new heuristic.
+
+**c) Preventing Self-Corruption**
+*Claim*: PE gates prevent self-corruption.
+*P-Pass (Falsifier)*: Macrophage imports a flawed paper. B-Cell uses the *same* flawed paper via its own search to "verify" it. Epistemic closure occurs.
+*Revision*: The dependency chain to system boundaries must demand *disjoint* evidence paths. If Macrophage provides a paper, B-Cell verification must rely on execution, code tests, or a strictly distinct data source. Epistemic marking `[VERIFY:current]` must be applied to external data validity.
+
+**d) Autonomy vs HIL**
+Self-improvement (data/knowledge accumulation) is autonomous, bounded by PE gates. Self-healing (structural logic modification) strictly requires HIL.
+
+**Definitive Stance 4:** Self-improvement is an autonomous data-gathering loop gated by independent verification. Self-healing is a diagnostic loop that terminates at the HIL. They must not be conflated.
+
+---
+
+## QUESTION 5 — Exp 39 Scope: Cell Types and Practicality
+
+**a) Refactor Timing**
+The refactor must happen *before* Exp 39. Running a combined cell with mixed API states violates the O1 Isolation HARD constraint. Because both cells will run in shadow mode, the risk to the 13-sub-experiment design is near zero, provided their outputs are strictly decoupled from the main pipeline.
+
+**b) Minimum Viable Macrophage (Exp 39)**
+Anomaly detection + `fetch_paper_metadata` (structured fetch) + log to disk. It should *not* attempt to parse full PDFs or inject claims into the pipeline. `[VERIFY:current]` Ensure arXiv/Semantic Scholar API keys and rate limits are configured in the environment before run.
+
+**c) Overcomplication Risk**
+*P-Pass (Falsifier)*: The shadow cells consume token budgets or API limits required by the load-bearing Math/CS cells.
+*Revision*: The shadow cells must be executed asynchronously or strictly at the end of the pipeline run, with hard-capped pass budgets (e.g., `max_passes = 1`) to ensure they do not steal resources from the primary experiment.
+
+**d) Proof of Practicality**
+I am convinced this is practical *only if*:
+1. Both cells have `shadow_mode = true` hardcoded.
+2. Macrophage has a mocked/dry-run API capability to prevent network hangs.
+3. The diff is purely additive (creating `macrophage_cell.py`, stripping active code from `ouroboros_cell.py`, and adding to the router with a strict pass-through).
+
+**Definitive Stance 5:** Split the cells before Exp 39. Implement the Macrophage as a read-only metadata fetcher and O1 as a passive metric generator. Ensure hard decoupling from the load-bearing cells to protect the core experiment scope.
