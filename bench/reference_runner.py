@@ -2932,6 +2932,21 @@ def run_experiment(
             open_ch_history = ckpt_data.get("open_ch_history", [])
             stall_history = ckpt_data.get("stall_history", [])
             cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
+            consecutive_churn_rounds = ckpt_data.get("consecutive_churn_rounds", 0)
+            # R39-06: Restore ITC module state for quality tracking continuity
+            _restored_itc = ckpt_data.get("itc_model_state")
+            if _restored_itc and isinstance(_restored_itc, dict):
+                _itc_model_state.clear()
+                _itc_model_state.update(_restored_itc)
+            _restored_hil = ckpt_data.get("itc_hil_flags")
+            if _restored_hil and isinstance(_restored_hil, list):
+                _itc_hil_flags.clear()
+                _itc_hil_flags.extend(_restored_hil)
+            # R39-04: Restore burst_state if it was persisted
+            _restored_burst = ckpt_data.get("burst_state")
+            if _restored_burst and isinstance(_restored_burst, dict):
+                burst_state = _restored_burst
+                _log(f"  Burst state restored: phase_idx={burst_state.get('phase_idx', 0)}")
             _log(f"  Registry restored: {len(registry.entries)} entries")
 
     experiment_start = time.monotonic()
@@ -3248,6 +3263,10 @@ def run_experiment(
             "open_ch_history": open_ch_history,
             "stall_history": stall_history,
             "cumulative_context_chars": cumulative_context_chars,
+            "consecutive_churn_rounds": consecutive_churn_rounds,
+            "itc_model_state": _itc_model_state,
+            "itc_hil_flags": _itc_hil_flags,
+            "burst_state": burst_state if burst_state else None,
         }, indent=2, default=str), encoding="utf-8")
 
         # Round data for report
@@ -3275,6 +3294,7 @@ def run_experiment(
             "findings": round_findings_detail,
             "novel_this_round": novel_this_round,
             "registry_total": len(registry.entries),
+            "open_crit_high": registry.open_crit_high_count(),
             "models_responded": list(responses.keys()),
             "elapsed_s": round(round_elapsed, 1),
             "gamma": round(gamma, 4),
@@ -3475,8 +3495,8 @@ def run_experiment(
                     len(result["rounds"]) >= 2):
                 prev = result["rounds"][-2]
                 if (round_data.get("rho_avg", 1) <= prev.get("rho_avg", 0)
-                        and registry.open_crit_high_count() >=
-                        prev.get("findings_count", 0)):
+                        and round_data.get("open_crit_high", 0) >=
+                        prev.get("open_crit_high", 0)):
                     _log("  Extension not improving. Terminating.")
                     result["converged_at"] = round_idx
                     result["convergence_reason"] = "EXTENSION_STALLED"
