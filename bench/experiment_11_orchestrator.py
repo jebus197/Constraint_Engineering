@@ -152,15 +152,17 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="DeepSeek",
-            model_id="deepseek-reasoner",
-            api="deepseek",
+            model_id="deepseek/deepseek-r1-0528",
+            api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),
-            max_tokens=16384,  # Exp15b: halved from 32768 — Reasoner exhausts
-                               # output budget on CoT with 32K. 16K forces shorter
-                               # reasoning, leaves budget for visible response.
-            timeout=900,  # Exp15b: raised from 600 — CoT can take 700s+
+            max_tokens=16384,
+            timeout=300,  # R1-0528 via OpenRouter: 25s smoke test (vs 121s direct)
             max_retries=3,
+            # Routing change 13 April 2026: switched from direct API
+            # (deepseek-reasoner) to OpenRouter (deepseek-r1-0528).
+            # Smoke test showed: 2x+ output, 5x faster, R_k adoption intact.
+            # Direct API reserved for specialist deep-verification role.
         ),
     ]
 
@@ -308,7 +310,7 @@ def call_claude_cli(
         "--model", model_id,
         "--output-format", "text",
         "--no-session-persistence",
-        "--disallowed-tools", "Bash", "Edit", "Write",  # analysis only
+        "--disallowed-tools", "Edit", "Write",  # analysis + tool verification; Bash enabled for SymPy/z3/numpy execution (Exp 39-0 fix)
     ]
     if system_prompt:
         cmd.extend(["--system-prompt", system_prompt])

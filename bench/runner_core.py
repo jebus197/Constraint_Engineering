@@ -304,6 +304,32 @@ def _infer_target_file(description: str, proposed_fix: str,
     return ""
 
 
+# Regex for detecting unevaluated f-string templates in finding IDs.
+# Models echo source code like f"{model_id}_UNSTRUCTURED" as literal JSON
+# values. This pattern matches the f-string envelope so we can extract and
+# evaluate the intended value.
+_FSTRING_TEMPLATE_RE = re.compile(
+    r'^f["\']'           # f-string prefix: f" or f'
+    r'\{model_id\}'      # literal {model_id} placeholder
+    r'(.+?)'             # the suffix (e.g. _UNSTRUCTURED)
+    r'["\'],?$'          # closing quote and optional trailing comma
+)
+
+
+def _sanitize_fstring_id(fid: str, model_id: str) -> str:
+    """Resolve unevaluated f-string templates in finding IDs.
+
+    When a model echoes parser source code as a finding, the FINDING_ID
+    field may contain the literal text 'f"{model_id}_UNSTRUCTURED"' instead
+    of the evaluated value 'DeepSeek_UNSTRUCTURED'. Detect this pattern
+    and substitute the actual model_id.
+    """
+    m = _FSTRING_TEMPLATE_RE.match(fid.strip())
+    if m:
+        return f"{model_id}{m.group(1)}"
+    return fid
+
+
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Extract structured findings from model response.
 
@@ -373,6 +399,11 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                         continue
                     norm = {k.upper().replace(" ", "_"): v for k, v in obj.items()}
                     fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                    # Exp 39 fix: models sometimes echo the parser's own
+                    # f-string template as a literal FINDING_ID value (e.g.
+                    # 'f"{model_id}_UNSTRUCTURED"'). Detect and resolve these
+                    # to the intended evaluated form.
+                    fid = _sanitize_fstring_id(fid, model_id)
                     # Skip _FOLLOW companion entries — supplementary
                     if "_FOLLOW" in fid.upper():
                         continue
@@ -454,6 +485,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             for entry in nested_dicts:
                 norm = {k.upper().replace(" ", "_"): v for k, v in entry.items()}
                 fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
+                fid = _sanitize_fstring_id(fid, model_id)
                 if "_FOLLOW" in fid.upper():
                     continue
                 severity = float(norm.get("SEVERITY", 0.5))
@@ -648,6 +680,27 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             finding_id = fid_only.group(1) if fid_only else raw_fid
         else:
             finding_id = f"F{len(findings)+1:03d}"
+
+        # Exp 39 fix: guard against source code leaking as finding IDs.
+        # When models output code snippets containing parser source (e.g.
+        # `findings.append(Finding(finding_id=full_id, ...))`) the regex
+        # extracts Python variable names like `full_id,` or `description,`
+        # as literal finding IDs, creating phantom findings (CC2_full_id,).
+        _CODE_LEAK_VARNAMES = {
+            "full_id", "finding_id", "description", "target_file",
+            "proposed_fix", "model_id", "round_idx", "severity",
+            "flaw_class", "abstraction", "verified", "fid", "raw_fid",
+        }
+        _stripped_fid = finding_id.rstrip(",;)]} ")
+        if (
+            finding_id.endswith(",")
+            or _stripped_fid.lower() in _CODE_LEAK_VARNAMES
+            or "(" in finding_id
+            or ")" in finding_id
+            or finding_id.startswith("f\"")
+            or finding_id.startswith("f'")
+        ):
+            continue
         severity = float(sev_match.group(1)) if sev_match else 0.5
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1
         abstraction = float(ai_match.group(1)) if ai_match else 0.5
@@ -738,7 +791,7 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     # flagged. The FALSIFICATION section must contain a concrete attempt
     # to disprove the claim — not just "VERIFIED: TRUE".
     _FALSIF_MARKERS = re.compile(
-        r'(?:FALSIF(?:ICATION|IER|IED)|CORROBORATION\s*:'
+        r'(?:FALSIF(?:ICATION|IER|IED)'
         r'|ATTEMPT(?:ED)?[\s_-]*TO[\s_-]*(?:BREAK|DISPROVE[DN]?|REFUTE[DN]?)'
         r'|DISPROVE[DN]?\s+by|REFUTE[DN]?\s+by'
         r'|COUNTER[\s_-]*EXAMPLE|WOULD[\s_-]*(?:BREAK|FAIL|DISPROVE)'
@@ -746,15 +799,28 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
         r'|BOUNDARY[\s_-]*(?:CONDITION|CHECK|TEST))',
         re.IGNORECASE
     )
+    # ── Corroboration gate (independent of falsification) ─────────
+    # R_k numerical computation markers. The CORROBORATION section must
+    # contain quantitative self-assessment, not qualitative-only claims.
+    _CORROB_MARKERS = re.compile(
+        r'(?:CORROBORATION\s*:'
+        r'|R_k\s*[=≈≤≥<>]'
+        r'|R_old\s*[=≈]'
+        r'|R_(?:det|base)\s*[=≈]'
+        r'|[ηη]\s*[·*×]\s*d\s*[·*×]\s*p'
+        r'|q\s*=\s*[ηη]'
+        r'|residual\s+risk)',
+        re.IGNORECASE
+    )
     for f in findings:
-        desc = f.description + (f.proposed_fix or "")
-        if _FALSIF_MARKERS.search(desc):
-            object.__setattr__(f, 'falsification_present', True)
-        else:
-            object.__setattr__(f, 'falsification_present', False)
-            # Downgrade confidence — unfalsified findings get lower priority
-            if f.verified:
-                object.__setattr__(f, 'verified', False)  # Self-certification without falsification
+        combined_text = f.description + (f.proposed_fix or "")
+        has_falsif = bool(_FALSIF_MARKERS.search(combined_text))
+        has_corrob = bool(_CORROB_MARKERS.search(combined_text))
+        object.__setattr__(f, 'falsification_present', has_falsif)
+        object.__setattr__(f, 'corroboration_present', has_corrob)
+        # Downgrade confidence — unfalsified findings get lower priority
+        if f.verified and not has_falsif:
+            object.__setattr__(f, 'verified', False)  # Self-certification without falsification
 
     return findings
 

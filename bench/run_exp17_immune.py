@@ -387,27 +387,99 @@ def _extract_task_area(code: str, task_key: str) -> Optional[str]:
     return _extract_code_area(code, markers, task_key)
 
 
-def _should_decompose(model_label: str, mgr: DynamicManager) -> bool:
-    """Check if a model should receive decomposed (smaller) prompts.
+# ── Fingerprint cache for decomposition decisions ──────────────────────────
+_fp_cache: Optional[Dict[str, Dict[str, Any]]] = None
 
-    DeepSeek is always decomposed (Exp 16 unanimous).
-    Codex is pre-seeded: observed R0A latencies (370-556s) at full prompt
-    size are consistently 3-10x slower than other models due to CLI overhead.
-    Decomposition reduces this to manageable levels.
-    CC2 is NEVER decomposed: 200K context window handles full prompt fine.
-    Run 10 R3-R6 showed that multi-turn sequential delivery is
-    counterproductive for CC2 — 13 chunks accumulate ~330K chars of
-    context + CLI round-trip overhead, causing chunk 13 to timeout
-    consistently. The original timeout was wall-clock, not context-size.
-    Other models are decomposed if the immune layer added them to
-    pre_decompose_models (via model_failure remediation chain).
+
+def _load_fingerprint_cache() -> Dict[str, Dict[str, Any]]:
+    """Load fingerprint observation data from bench/fingerprints/.
+
+    Cached after first call. Call _invalidate_fingerprint_cache() to force
+    reload (e.g. after a new experiment writes updated fingerprints).
+
+    Thread-safety: builds into a local dict before assigning to module-level
+    cache. _dispatch_round_star uses ThreadPoolExecutor — assigning {} to
+    _fp_cache before loading caused concurrent threads to see an empty cache
+    and fall through to the static 80K threshold, producing spurious
+    decomposition for models with valid fingerprint data (Exp 39-0 R2 bug).
     """
-    # CC2 has sufficient context window — decomposition hurts, not helps
-    if model_label == "CC2":
-        return False
-    if model_label == "DeepSeek":
+    global _fp_cache
+    if _fp_cache is not None:
+        return _fp_cache
+    # Build locally, then assign atomically to avoid race condition.
+    local_cache: Dict[str, Dict[str, Any]] = {}
+    fp_dir = Path(__file__).parent / "fingerprints"
+    if fp_dir.is_dir():
+        for fp_file in fp_dir.glob("*.json"):
+            try:
+                data = json.loads(fp_file.read_text(encoding="utf-8"))
+                model_id = data.get("model_id", fp_file.stem)
+                local_cache[model_id] = data.get("observed", {})
+            except (json.JSONDecodeError, OSError):
+                pass
+    _fp_cache = local_cache
+    return _fp_cache
+
+
+def _invalidate_fingerprint_cache():
+    """Force reload of fingerprint data on next decomposition check."""
+    global _fp_cache
+    _fp_cache = None
+
+
+def _should_decompose(model_label: str, mgr: DynamicManager,
+                      payload_chars: int = 0) -> bool:
+    """Fingerprint-aware decomposition decision.
+
+    Uses per-model observed prompt limits from fingerprint data when available.
+    Falls back to LENGTH_THRESHOLD only when no observation data exists for
+    the model. Replaces all hardcoded model-specific rules.
+
+    Decision hierarchy (fingerprint-aware, 13 April 2026):
+    1. Explicit override (pre_decompose_models from config/immune escalation).
+    2. Observed prompt success limit (max_successful_prompt_chars × 0.9).
+       The model has PROVEN it can handle at least that much input —
+       decomposing below the observed limit wastes compute and degrades
+       models like DeepSeek that burn CoT budget per chunk.
+    3. Observed prompt failure ceiling (max_failed_prompt_chars).
+       If the model has failed at a known prompt size, do not exceed it.
+    4. Static threshold (LENGTH_THRESHOLD = 80K) when no prompt observation
+       data exists. Models accumulate data on first monolithic dispatch;
+       subsequent rounds use observation-driven limits.
+
+    Replaces: DeepSeek always-decompose (Exp 16), CC2 200K threshold.
+    Rationale: Exp 39-0 R0-R1 showed 100% R_k adoption with all 5 models
+    receiving monolithic dispatch for payloads within observed limits.
+    DeepSeek produced 0-char chunk outputs but 20K+ synthesis — chunking
+    was counterproductive. Data-driven > hardcoded.
+    """
+    # 1. Explicit override set (immune escalation, manual config)
+    if model_label in mgr.config.pre_decompose_models:
         return True
-    return model_label in mgr.config.pre_decompose_models
+
+    if payload_chars <= 0:
+        return False  # No payload info — cannot make data-driven decision
+
+    LENGTH_THRESHOLD = 80_000
+    SAFETY_MARGIN = 0.9  # 90% of observed max — headroom for registry growth
+
+    # Load fingerprint data (cached from prior experiments)
+    fps = _load_fingerprint_cache()
+    fp = fps.get(model_label, {})
+
+    # 2. Observed prompt success limit — strongest signal
+    observed_prompt_limit = fp.get("max_successful_prompt_chars", 0)
+    if observed_prompt_limit > 0:
+        effective_limit = int(observed_prompt_limit * SAFETY_MARGIN)
+        return payload_chars > effective_limit
+
+    # 3. Observed prompt failure — model has FAILED at a known size
+    observed_failure = fp.get("max_failed_prompt_chars", 0)
+    if observed_failure > 0 and payload_chars >= observed_failure:
+        return True  # Payload at or above known failure point
+
+    # 4. No prompt-specific observation data — static threshold
+    return payload_chars > LENGTH_THRESHOLD
 
 
 # ─────────────────────────────────────────────────────────────────────────────

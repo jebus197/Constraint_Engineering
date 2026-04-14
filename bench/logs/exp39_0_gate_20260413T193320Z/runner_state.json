@@ -1,0 +1,2353 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.82,
+        "description": "`source_env()` in `bench/runner_core.py` performs naive `KEY=VALUE` splitting and stores raw text into `os.environ`, which misparses common `.env` syntax such as quoted values and inline comments.\n\nPremises:\n1. Current implementation:\nfor line in env_path.read_text().splitlines():\n    line = line.strip()\n    if line and not line.startswith(\"#\") and \"=\" in line:\n        if line.startswith(\"export \"):\n            line = line[7:]\n        key, _, val = line.partition(\"=\")\n        os.environ[key.stri",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\ndef source_env() -> None:\n    \"\"\"Load .env file from repo root into os.environ.\"\"\"\n    env_path = REPO_ROOT / \".env\"\n    if env_path.exists():\n        for line in env_path.read_text().splitlines():\n            line = line.strip()\n            if line and not line.startswith(\"#\") and \"=\" in line:\n                if line.startswith(\"export \"):\n                    line = line[7:]\n                key, _, val = line.partition(\"=\")\n                os.environ[key.strip()] = val.strip()\n==== REPLACE\ndef source_env() -> None:\n    \"\"\"Load .env file from repo root into os.environ.\"\"\"\n    import shlex\n\n    env_path = REPO_ROOT / \".env\"\n    if env_path.exists():\n        for line in env_path.read_text().splitlines():\n            line = line.strip()\n            if not line or line.startswith(\"#\") or \"=\" not in line:\n                continue\n            if line.startswith(\"export \"):\n                line = line[7:].lstrip()\n            key, _, val = line.partition(\"=\")\n            key = key.strip()\n            if not key:\n                continue\n            try:\n                parsed = shlex.split(val, comments=True, posix=True)\n                os.environ[key] = parsed[0] if parsed else \"\"\n            except ValueError:\n                os.environ[key] = val.strip()\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`source_env()` naive split is a confirmed bug."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Naive `partition(\"=\")` without quote stripping is a genuine env-loading bug. Fix is straightforward."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.71,
+        "description": "`_parse_flaw_class()` claims deterministic mapping for unknown flaw-class text but uses Python\u2019s built-in `hash()`, which is process-randomized by default. That makes the mapping non-deterministic across runs.\n\nLocation: `bench/runner_core.py`, function `_parse_flaw_class`\n\nPremises:\n1. Current code:\n# Deterministic hash for unknown classes (Gemini recommendation)\nreturn (abs(hash(key)) % 8) + 1\n2. In CPython, string hashing is salted per process unless `PYTHONHASHSEED` is fixed.\n3. Therefore th",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n# Deterministic hash for unknown classes (Gemini recommendation)\n    return (abs(hash(key)) % 8) + 1\n==== REPLACE\n# Deterministic hash for unknown classes across processes/runs.\n    import hashlib\n    digest = hashlib.sha256(key.encode(\"utf-8\")).digest()\n    return (int.from_bytes(digest[:4], \"big\") % 8) + 1\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`hash()` is PYTHONHASHSEED-randomised by default since 3.3. Non-deterministic flaw class mapping across runs is correct."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.79,
+        "description": "`dispatch_to_model()` is not exception-safe after starting the subprocess. If an exception occurs after `proc.start()` but before normal return, the child process and queue may be left running or unclosed.\n\nLocation: `bench/runner_core.py`, function `dispatch_to_model`\n\nPremises:\n1. Current code starts a process and queue:\nresult_queue = mp.Queue()\nproc = mp.Process(...)\nproc.start()\nproc.join(timeout=wall_clock_limit)\n...\nif proc.is_alive():\n    proc.terminate()\n    ...\n    raise TimeoutError(.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nt0 = time.monotonic()\n    result_queue = mp.Queue()\n    proc = mp.Process(\n        target=_dispatch_worker,\n        args=(model_config, prompt, cdsfl_text, result_queue),\n        daemon=True,\n    )\n    proc.start()\n    proc.join(timeout=wall_clock_limit)\n    elapsed = time.monotonic() - t0\n\n    if proc.is_alive():\n        _log(\n            f\"  {model_config.label}: WATCHDOG \u2014 process exceeded \"\n            f\"{wall_clock_limit:.0f}s wall clock, terminating\"\n        )\n        proc.terminate()\n        proc.join(timeout=5)\n        if proc.is_alive():\n            proc.kill()\n            proc.join(timeout=2)\n        raise TimeoutError(\n            f\"{model_config.label} dispatch exceeded wall-clock limit \"\n            f\"({wall_clock_limit:.0f}s). Process forcibly terminated.\"\n        )\n\n    if result_queue.empty():\n        raise RuntimeError(\n            f\"{model_config.label} dispatch process exited without result \"\n            f\"(exit code {proc.exitcode})\"\n        )\n\n    status, payload = result_queue.get_nowait()\n    if status == \"error\":\n        raise payload\n    return payload, elapsed\n==== REPLACE\nt0 = time.monotonic()\n    result_queue = mp.Queue()\n    proc = mp.Process(\n        target=_dispatch_worker,\n        args=(model_config, prompt, cdsfl_text, result_queue),\n        daemon=True,\n    )\n    try:\n        proc.start()\n        proc.join(timeout=wall_clock_limit)\n        elapsed = time.monotonic() - t0\n\n        if proc.is_alive():\n            _log(\n                f\"  {model_config.label}: WATCHDOG \u2014 process exceeded \"\n                f\"{wall_clock_limit:.0f}s wall clock, terminating\"\n            )\n            proc.terminate()\n            proc.join(timeout=5)\n            if proc.is_alive():\n                proc.kill()\n                proc.join(timeout=2)\n            raise TimeoutError(\n                f\"{model_config.label} dispatch exceeded wall-clock limit \"\n                f\"({wall_clock_limit:.0f}s). Process forcibly terminated.\"\n            )\n\n        if result_queue.empty():\n            raise RuntimeError(\n                f\"{model_config.label} dispatch process exited without result \"\n                f\"(exit code {proc.exitcode})\"\n            )\n\n        status, payload = result_queue.get_nowait()\n        if status == \"error\":\n            raise payload\n        return payload, elapsed\n    finally:\n        if proc.is_alive():\n            proc.terminate()\n            proc.join(timeout=5)\n            if proc.is_alive():\n                proc.kill()\n                proc.join(timeout=2)\n        result_queue.close()\n        result_queue.join_thread()\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Process leak on exception between `proc.start()` and `proc.join()` is real. The fix wrapping in try/finally is correct."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.75,
+        "description": "Both JSON parsers (array \u00a71 and object \u00a71b) handle string `FLAW_CLASS` values with a bare `int()` cast plus fallback to 1, ignoring the dedicated `_parse_flaw_class()` function that handles \"5 (correctness)\" and text labels like \"correctness\". When a model emits `\"FLAW_CLASS\": \"5 (correctness)\"` or `\"FLAW_CLASS\": \"correctness\"` in JSON, `int(...)` raises `ValueError` and the finding is silently assigned `flaw_class=1`. The marker parser (\u00a73/4) correctly calls `_parse_flaw_class`. This asymmetry ",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nflaw_raw = norm.get(\"FLAW_CLASS\", 1)\n                    if isinstance(flaw_raw, str):\n                        try:\n                            flaw_class = max(1, min(8, int(flaw_raw)))\n                        except ValueError:\n                            flaw_class = 1\n                    else:\n                        flaw_class = max(1, min(8, int(flaw_raw)))\n                    abstraction = float(norm.get(\"ABSTRACTION_INDEX\", 0.5))\n                    abstraction = max(0.0, min(1.0, abstraction))\n                    description = str(norm.get(\"DESCRIPTION\", \"\"))\n                    proposed_fix = str(norm.get(\"PROPOSED_FIX\", \"\"))\n                    target_file = _infer_target_file(\n                        description, proposed_fix,\n                        str(norm.get(\"TARGET_FILE\", \"\")))\n                    verified_raw = norm.get(\"VERIFIED\", False)\n                    if isinstance(verified_raw, str):\n                        verified = verified_raw.upper() == \"TRUE\"\n                    else:\n                        verified = bool(verified_raw)\n                    # Avoid double-prefixing if model already prefixed its IDs\n                    if fid.startswith(f\"{model_id}_\"):\n                        full_id = fid\n                    else:\n                        full_id = f\"{model_id}_{fid}\"\n                    findings.append(Finding(\n==== REPLACE\nflaw_raw = norm.get(\"FLAW_CLASS\", 1)\n                    flaw_class = _parse_flaw_class(str(flaw_raw))\n                    abstraction = float(norm.get(\"ABSTRACTION_INDEX\", 0.5))\n                    abstraction = max(0.0, min(1.0, abstraction))\n                    description = str(norm.get(\"DESCRIPTION\", \"\"))\n                    proposed_fix = str(norm.get(\"PROPOSED_FIX\", \"\"))\n                    target_file = _infer_target_file(\n                        description, proposed_fix,\n                        str(norm.get(\"TARGET_FILE\", \"\")))\n                    verified_raw = norm.get(\"VERIFIED\", False)\n                    if isinstance(verified_raw, str):\n                        verified = verified_raw.upper() == \"TRUE\"\n                    else:\n                        verified = bool(verified_raw)\n                    # Avoid double-prefixing if model already prefixed its IDs\n                    if fid.startswith(f\"{model_id}_\"):\n                        full_id = fid\n                    else:\n                        full_id = f\"{model_id}_{fid}\"\n                    findings.append(Finding(\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "String FLAW_CLASS falling through to hardcoded `1` instead of using `_parse_flaw_class` is an inconsistency. The `_parse_flaw_class` function exists precisely for this purpose."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The `FLAW_CLASS` string\u2011to\u2011int mapping is indeed inconsistent between JSON array and object parsers. The fix standardizing the mapping is correct."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.7,
+        "description": "`_parse_flaw_class` uses `hash(key) % 8 + 1` as the fallback for unknown text labels. Python 3.3+ randomises `hash()` per process via `PYTHONHASHSEED`. The same unknown flaw class string maps to different integers across experiment runs (different Python processes). The comment says \"deterministic hash (Gemini recommendation)\" \u2014 this is incorrect.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n# Deterministic hash for unknown classes (Gemini recommendation)\n    return (abs(hash(key)) % 8) + 1\n==== REPLACE\n# Deterministic hash for unknown classes \u2014 hashlib, not hash(),\n    # because hash() is randomised per-process (PYTHONHASHSEED).\n    import hashlib\n    return (int(hashlib.md5(key.encode()).hexdigest(), 16) % 8) + 1\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Same root cause as C0002. MERGE C0005 <- C0002."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`hash()` randomisation breaks deterministic mapping."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`hash()` non-determinism across Python processes is a real correctness hazard. Fix with deterministic fallback is correct."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The `hash()` function is randomized per process in Python 3.3+, making it non-deterministic across runs. The proposed fix to use a deterministic hash is correct."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`hash()` randomisation across processes produces non-deterministic flaw class mapping. Deterministic fallback (e.g. `sum(ord(c) for c in key) % 8 + 1`) is the right fix."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "`hash()` randomisation per-process in Python 3.3+ makes the fallback non-deterministic across runs. Deterministic hash replacement is the correct fix."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.65,
+        "description": "`source_env()` does not strip surrounding quotes from `.env` values. `line.partition(\"=\")` followed by `val.strip()` preserves `\"` and `'` characters. An `.env` entry like `OPENAI_API_KEY=\"sk-abc123\"` sets `os.environ[\"OPENAI_API_KEY\"]` to `\"sk-abc123\"` (with literal quotes), causing silent authentication failures in every API dispatch.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nkey, _, val = line.partition(\"=\")\n                os.environ[key.strip()] = val.strip()\n==== REPLACE\nkey, _, val = line.partition(\"=\")\n                val = val.strip()\n                # Strip matching surrounding quotes (single or double)\n                if len(val) >= 2 and val[0] == val[-1] and val[0] in ('\"', \"'\"):\n                    val = val[1:-1]\n                os.environ[key.strip()] = val\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Quote stripping gap in `source_env()` is real. Standard `.env` files use `VAR=\"value\"` or `VAR='value'`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.6,
+        "description": "`dispatch_to_model` estimates token count as `estimated_chars / 3.5` and compares against `MODEL_SPECS[label][\"L\"]`. But `L` is defined as \"input context window minus 32K reserved for output\" in *tokens*, while `estimated_chars` is in *characters*. The comparison `estimated_tokens > model_L` uses a fixed 3.5 chars/token ratio, but the check only accounts for `len(prompt) + len(cdsfl_text)` \u2014 it omits any system prompt overhead, tool definitions, or other content injected by the API client layer ",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nestimated_tokens = estimated_chars / 3.5  # conservative chars-per-token\n==== REPLACE\nestimated_tokens = estimated_chars / 3.0  # conservative for code-heavy prompts\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Evidence:** The token estimation `estimated_tokens = estimated_chars / 3.5` is labeled \u201cconservative chars\u2011per\u2011token\u201d, but for code, the average chars per token is closer to 4.0\u20114.5. Using 3.5 overest"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Token budget comparison uses prompt budget `L` instead of total context window."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.88,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.82,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.71,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.79,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.9,
+        "description": "The JSON array and object parsers in `parse_findings` use naive bracket counting (`bracket_depth += 1` for `[` and `-= 1` for `]`) to extract JSON strings. This fails catastrophically if brackets appear inside string literals (e.g., `{\"description\": \"array [1, 2]\"}`). When this happens, the extracted substring is truncated or extended, causing `json.loads()` to raise a `JSONDecodeError`, which is silently caught, resulting in the complete loss of all findings in that JSON block.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n_FINDINGS_KEYS = {\"FINDING_ID\", \"SEVERITY\"}\n    for json_match in re.finditer(r'\\[[\\s\\n]*\\{', response):\n        start = json_match.start()\n        bracket_depth = 0\n        end = start\n        for i, ch in enumerate(response[start:], start):\n            if ch == '[':\n                bracket_depth += 1\n            elif ch == ']':\n                bracket_depth -= 1\n                if bracket_depth == 0:\n                    end = i + 1\n                    break\n        json_text = response[start:end]\n        try:\n            arr = json.loads(json_text)\n==== REPLACE\n_FINDINGS_KEYS = {\"FINDING_ID\", \"SEVERITY\"}\n    decoder = json.JSONDecoder()\n    for json_match in re.finditer(r'\\[[\\s\\n]*\\{', response):\n        start = json_match.start()\n        try:\n            arr, _ = decoder.raw_decode(response[start:])\n>>>>",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Naive bracket counting breaks on string literals containing `[`, `]`, `{`, `}`. JSON.loads would still catch the malformed extraction, but the extracted substring is wrong, leading to silent data loss"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "F005"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The JSON array/object parsers\u2019 naive bracket counting is indeed flawed; the fix proposed in the registry (though incomplete) addresses the root cause. The issue is critical (sev 0.90) and corroborated"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "Additional consequence:** The bracket\u2011counting bug also affects nested arrays/objects inside strings (e.g., `\"description\": \"foo [bar]\"`). The parser would incorrectly treat the bracket inside the str"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0024"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0024"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        },
+        "merged_into": "C0024"
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.6,
+        "description": "In both JSON array and JSON object parsers, if `FLAW_CLASS` is provided as a string (e.g., `\"performance\"`), the code attempts `int(flaw_raw)`. This raises a `ValueError`, which is caught, and `flaw_class` is silently defaulted to `1` (Logic). The `_parse_flaw_class` helper, which correctly maps text labels to integers, is used in the marker parser but forgotten in the JSON parsers.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nflaw_raw = norm.get(\"FLAW_CLASS\", 1)\n                    if isinstance(flaw_raw, str):\n                        try:\n                            flaw_class = max(1, min(8, int(flaw_raw)))\n                        except ValueError:\n                            flaw_class = 1\n                    else:\n                        flaw_class = max(1, min(8, int(flaw_raw)))\n==== REPLACE\nflaw_raw = norm.get(\"FLAW_CLASS\", 1)\n                    if isinstance(flaw_raw, str):\n                        flaw_class = _parse_flaw_class(flaw_raw)\n                    else:\n                        try:\n                            flaw_class = max(1, min(8, int(flaw_raw)))\n                        except (ValueError, TypeError):\n                            flaw_class = 1\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "String `FLAW_CLASS` handling is incomplete."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "String FLAW_CLASS in JSON parsers falls back to `1` instead of routing through `_parse_flaw_class()`. The proposed fix is the right approach."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.4,
+        "description": "`_TARGET_FILE_RE` uses `\\S+` to match the filename prefix: `r'(?:^|[\\s`\\'\"])(\\S+\\.(?:py|...))\\b'`. Because `\\S+` matches any non-whitespace character, if a filename is enclosed in parentheses or brackets (e.g., `(bench/runner_core.py)`), the extracted filename will include the leading punctuation: `(bench/runner_core.py`.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n_TARGET_FILE_RE = re.compile(\n    r'(?:^|[\\s`\\'\"])(\\S+\\.(?:py|js|ts|toml|yaml|json|rs|go|c|cpp|h|java))\\b',\n)\n==== REPLACE\n_TARGET_FILE_RE = re.compile(\n    r'(?:^|[\\s`\\'\"\\[\\(<={])([a-zA-Z0-9_/\\-\\.~+]+\\.(?:py|js|ts|toml|yaml|json|rs|go|c|cpp|h|java))\\b',\n)\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`\\S+` matches too aggressively in `_TARGET_FILE_RE`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`\\S+` matches until whitespace, which includes trailing punctuation or quotes if not carefully bounded."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`\\S+` in `_TARGET_FILE_RE` matches leading punctuation (backticks, quotes). Narrowing the character class is correct."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.3,
+        "description": "In the JSON parsers, `str(norm.get(\"TARGET_FILE\", \"\"))` is used to extract the explicit target file. If a model explicitly outputs `\"TARGET_FILE\": null` in its JSON, `norm.get` returns `None`, and `str(None)` evaluates to the string `\"None\"`.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\ntarget_file = _infer_target_file(\n                    description, proposed_fix,\n                    str(norm.get(\"TARGET_FILE\", \"\")))\n==== REPLACE\ntf_val = norm.get(\"TARGET_FILE\")\n                target_file = _infer_target_file(\n                    description, proposed_fix,\n                    str(tf_val) if tf_val is not None else \"\")\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`str(None)` evaluates to `\"None\"`, causing the patcher to look for a file literally named `None`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`norm.get(\"TARGET_FILE\", \"\")` returns `\"\"` if missing, and `str(\"\")` is `\"\"`, which is correct fallback behavior."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Explicit `TARGET_FILE` from JSON should take priority over regex inference. The fix correctly reorders the priority chain."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F1"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "example: [1,2,3]",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.81,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.74,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F007"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F009"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_full_id,"
+        ],
+        "severity": 0.5,
+        "description": "description,",
+        "proposed_fix": "proposed_fix,\n            target_file=target_file,",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 0.9,
+        "description": "The JSON array and object parsers use naive bracket counting which fails on brackets inside strings. (Same root cause as C0012, providing robust fix).",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n_FINDINGS_KEYS = {\"FINDING_ID\", \"SEVERITY\"}\n    for json_match in re.finditer(r'\\[[\\s\\n]*\\{', response):\n        start = json_match.start()\n        bracket_depth = 0\n        end = start\n        for i, ch in enumerate(response[start:], start):\n            if ch == '[':\n                bracket_depth += 1\n            elif ch == ']':\n                bracket_depth -= 1\n                if bracket_depth == 0:\n                    end = i + 1\n                    break\n        json_text = response[start:end]\n        try:\n            arr = json.loads(json_text)\n==== REPLACE\n_FINDINGS_KEYS = {\"FINDING_ID\", \"SEVERITY\"}\n    decoder = json.JSONDecoder()\n    for json_match in re.finditer(r'\\[[\\s\\n]*\\{', response):\n        start = json_match.start()\n        try:\n            arr, _ = decoder.raw_decode(response[start:])\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Naive bracket counting fails on brackets inside strings, breaking JSON parsing."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Naive bracket counting in JSON parsers fails on brackets inside string values. Root cause is real; the fix (proper string-aware parsing) is the correct approach."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Naive bracket counting breaks on brackets inside JSON string values."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "Bracket counting in both JSON parsers ignores string context. `\"array: [1,2,3]\"` in a JSON value premature-terminates the outer array extraction. The root cause and fix direction are correct."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.9,
+        "description": "description with line break",
+        "proposed_fix": "fix with newline",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "Below is the combined review, deduplicated against the registry and constrained to in-scope, novel findings only.\n\nI am not re-reporting `source_env()` quote/comment parsing as a new finding because it is already in the registry (`C0001`, `C0006`). I am also not fabricating findings for `bench/dm/_types.py`, because it is explicitly out of scope. The honest synthesis is:\n\n- 1 new confirmed discovery in `bench/runner_core.py`\n- 1 registry extension/verdict on an existing open finding\n- no valid s",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F1"
+        ],
+        "severity": 0.5,
+        "description": "CONFIRM C0042",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.88,
+        "description": "Issue: `default_vulnerability=0.0` assumes no correlated failures, violating fail-safe principles.  \n- Location: `DynamicManagementConfig.default_vulnerability` declaration  \n- Evidence:  \n  - Field: `default_vulnerability: float = 0.0`  \n  - Used in correlated failure models without validation  \n  - Risk: Underestimates system vulnerability during critical failures",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\ndefault_vulnerability: float = 0.0  # v_ij default (no correlation)\n==== REPLACE\ndefault_vulnerability: float = 0.05  # v_ij default (conservative minimum correlation)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Our analysis of `default_vulnerability=0.0` (target_1 Finding 3) corroborates C0028."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.75,
+        "description": "Issue: `per_model_directives` may exceed `max_per_model_directive_chars` due to missing validation.  \n- Location: `DynamicManagementConfig.per_model_directives` handling  \n- Evidence:  \n  - `max_per_model_directive_chars=500` declared but not enforced  \n  - Risk: Context injection overflow during prompt construction",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nif self.immune_damping_rounds < 0:\n            raise ValueError(f\"immune_damping_rounds must be >= 0, got {self.immune_damping_rounds}\")\n        if self.max_per_model_directive_chars < 0:\n            raise ValueError(f\"max_per_model_directive_chars must be >= 0, got {self.max_per_model_directive_chars}\")\n==== REPLACE\nif self.immune_damping_rounds < 0:\n            raise ValueError(f\"immune_damping_rounds must be >= 0, got {self.immune_damping_rounds}\")\n        if self.max_per_model_directive_chars < 0:\n            raise ValueError(f\"max_per_model_directive_chars must be >= 0, got {self.max_per_model_directive_chars}\")\n        # Validate per_model_directives length\n        for model_id, directive in self.per_model_directives.items():\n            if len(directive) > self.max_per_model_directive_chars:\n                raise ValueError(\n                    f\"Directive for {model_id} exceeds {self.max_per_model_directive_chars} chars: {len(directive)}\"\n                )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_V001"
+        ],
+        "severity": 0.0,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V001"
+        ],
+        "severity": 0.0,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F001"
+        ],
+        "severity": 0.95,
+        "description": "`dispatch_to_model` deadlocks if the worker process returns a large payload. The parent process calls `proc.join()` before consuming from `result_queue`. If the payload exceeds the OS pipe buffer size (typically 64KB), the worker's background thread blocks trying to flush the queue, preventing the worker from exiting. The parent blocks in `join()` waiting for the worker to exit.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nproc.start()\n    proc.join(timeout=wall_clock_limit)\n    elapsed = time.monotonic() - t0\n\n    if proc.is_alive():\n        _log(\n            f\"  {model_config.label}: WATCHDOG \u2014 process exceeded \"\n            f\"{wall_clock_limit:.0f}s wall clock, terminating\"\n        )\n        proc.terminate()\n        proc.join(timeout=5)\n        if proc.is_alive():\n            proc.kill()\n            proc.join(timeout=2)\n        raise TimeoutError(\n            f\"{model_config.label} dispatch exceeded wall-clock limit \"\n            f\"({wall_clock_limit:.0f}s). Process forcibly terminated.\"\n        )\n\n    if result_queue.empty():\n        raise RuntimeError(\n            f\"{model_config.label} dispatch process exited without result \"\n            f\"(exit code {proc.exitcode})\"\n        )\n\n    status, payload = result_queue.get_nowait()\n==== REPLACE\nimport queue\n    proc.start()\n    \n    try:\n        status, payload = result_queue.get(timeout=wall_clock_limit)\n        got_result = True\n    except (queue.Empty, EOFError, OSError):\n        got_result = False\n\n    elapsed = time.monotonic() - t0\n\n    if proc.is_alive():\n        _log(\n            f\"  {model_config.label}: WATCHDOG \u2014 process exceeded \"\n            f\"{wall_clock_limit:.0f}s wall clock, terminating\"\n        )\n        proc.terminate()\n        proc.join(timeout=5)\n        if proc.is_alive():\n            proc.kill()\n            proc.join(timeout=2)\n        raise TimeoutError(\n            f\"{model_config.label} dispatch exceeded wall-clock limit \"\n            f\"({wall_clock_limit:.0f}s). Process forcibly terminated.\"\n        )\n\n    proc.join(timeout=1)\n\n    if not got_result:\n        raise RuntimeError(\n            f\"{model_config.label} dispatch process exited without result \"\n            f\"(exit code {proc.exitcode})\"\n        )\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Classic pipe-buffer deadlock. `proc.join()` before `result_queue.get()` will block if the child's payload exceeds OS pipe buffer (~64KB Linux, ~8KB macOS). The fix must drain the queue before joining."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F002"
+        ],
+        "severity": 0.85,
+        "description": "Global regex replacements in `parse_findings` corrupt code and markdown. `re.sub(r'\\*{2,}', '', response)` removes all `` globally, turning `x  2` into `x  2`. `re.sub(r'^\\s*```\\w*\\s*\\n?', '', response, flags=re.MULTILINE)` removes all code fences globally, destroying markdown code blocks inside descriptions and proposed fixes.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n# Strip markdown bold markers \u2014 CC2 uses SEVERITY: format\n    response = re.sub(r'\\*{2,}', '', response)\n\n    # Strip triple-backtick code fences \u2014 Gemini wraps in ```text...```\n    response = re.sub(r'^\\s*```\\w*\\s*\\n?', '', response, flags=re.MULTILINE)\n    response = re.sub(r'^\\s*```\\s*$', '', response, flags=re.MULTILINE)\n\n    # \u2500\u2500 1. JSON array parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n==== REPLACE\n# Strip global wrapping code fences (but preserve internal code blocks)\n    response = response.strip()\n    if response.startswith(\"```\"):\n        response = re.sub(r'^```\\w*\\s*\\n', '', response)\n    if response.endswith(\"```\"):\n        response = re.sub(r'\\n\\s*```$', '', response)\n\n    # \u2500\u2500 1. JSON array parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Global `re.sub(r'\\*{2,}', '', response)` destroys `**kwargs`, pointer dereferences, and any code in PROPOSED_FIX / FIX blocks. Stripping must be field-label-scoped, not response-wide."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "`re.sub(r'\\*{2,}', '', response)` runs before all parsers, destroying literal `**` in code (Python exponentiation, glob patterns, regex quantifiers) embedded in DESCRIPTION and PROPOSED_FIX fields. Co"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F003"
+        ],
+        "severity": 0.9,
+        "description": "`build_task_prompt` omits instructions for `FALSIFICATION` and `CORROBORATION` fields. The prompt explicitly lists the required fields (FINDING_ID, SEVERITY, FLAW_CLASS, ABSTRACTION_INDEX, DESCRIPTION, PROPOSED_FIX, VERIFIED) but misses the two mandatory gates.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\n\"  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\\n\"\n        \"  DESCRIPTION: what is wrong and why it matters\\n\"\n        \"  PROPOSED_FIX: how to fix it\\n\"\n        \"  VERIFIED: TRUE if you have a proof/test, FALSE if this is an assertion\\n\\n\"\n        \"Produce ALL findings you can identify. Do not hold back for subsequent \"\n==== REPLACE\n\"  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\\n\"\n        \"  DESCRIPTION: what is wrong and why it matters\\n\"\n        \"  PROPOSED_FIX: how to fix it\\n\"\n        \"  FALSIFICATION: state the falsifier, your attempt to break it, and the result\\n\"\n        \"  CORROBORATION: compute your residual risk R_k with numerical estimates\\n\"\n        \"  VERIFIED: TRUE if you have a proof/test, FALSE if this is an assertion\\n\\n\"\n        \"Produce ALL findings you can identify. Do not hold back for subsequent \"\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 3,
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`build_task_prompt` lists DESCRIPTION/PROPOSED_FIX but omits FALSIFICATION, CORROBORATION, FIND, FOLLOW, ANALYSE, and FIX. This compounds F001 and F002 below."
+          },
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 4,
+            "evidence": "The prompt/parser mismatch is deeper than missing instructions \u2014 the JSON parser silently drops data when models use the prompted field names. See F002 below."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F004"
+        ],
+        "severity": 0.85,
+        "description": "`build_model_specs` explicitly excludes the collator model (`if mc.role == \"collator\": continue`). This prevents the dynamic manager from receiving a `ModelSpec` for the collator.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nfor mc in exp_config.models:\n        if mc.role == \"collator\":\n            continue\n        fp = INITIAL_FINGERPRINTS.get(\n==== REPLACE\nfor mc in exp_config.models:\n        fp = INITIAL_FINGERPRINTS.get(\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "Collator exclusion from `build_model_specs` prevents fingerprint updates for that model. If the collator is later reassigned to PAR role, its fingerprint data is stale. The fix to include collator mod"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F005"
+        ],
+        "severity": 0.88,
+        "description": "The marker parser uses `re.search` to extract the `PROPOSED_FIX` chevron block, which only captures the first match. If a model proposes a multi-block fix (e.g., changing two different functions), subsequent blocks are silently discarded.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nchevron_match = re.search(\n            r'(?m)^<{4,}\\s*(?:SEARCH\\s+)?([^\\n]*?)\\s*$\\n(.*?)\\n^={4,}[^\\n]*$\\n(.*?)\\n^>{4,}[^\\n]*$',\n            block, re.DOTALL | re.MULTILINE\n        )\n        # PROPOSED_FIX or FIX (CC2 uses FIX: instead of PROPOSED_FIX:)\n        fix_match = re.search(\n            r'\\*{0,2}(?:[Pp][Rr][Oo][Pp][Oo][Ss][Ee][Dd][\\s_-]*)?'\n            r'[Ff][Ii][Xx]\\*{0,2}\\s*[:=\\-]\\s*(.+?)'\n            r'(?=\\n\\s*(?:\\*{0,2}(?:[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd]|'\n            r'[Ff][Aa][Ll][Ss][Ii]|[Cc][Oo][Rr][Rr][Oo])|$))',\n            block, re.DOTALL\n        )\n\n        if chevron_match:\n            file_hint = chevron_match.group(1).strip() if chevron_match.group(1) else \"\"\n            old_code = chevron_match.group(2).strip()\n            new_code = chevron_match.group(3).strip()\n            if file_hint:\n                proposed_fix = f\"<<<< SEARCH {file_hint}\\n{old_code}\\n==== REPLACE\\n{new_code}\\n>>>>\"\n            else:\n                proposed_fix = f\"<<<< OLD\\n{old_code}\\n==== NEW\\n{new_code}\\n>>>>\"\n            # Chevron file hint is target_file if no explicit field\n            if not explicit_tf and file_hint:\n                explicit_tf = file_hint\n        elif fix_match:\n            proposed_fix = fix_match.group(1).strip()\n        else:\n            proposed_fix = \"\"\n==== REPLACE\nchevron_matches = list(re.finditer(\n            r'(?m)^\\s*<{4,}\\s*(?:SEARCH\\s+)?([^\\n]*?)\\s*$\\n(.*?)\\n^\\s*={4,}[^\\n]*$\\n(.*?)\\n^\\s*>{4,}[^\\n]*$',\n            block, re.DOTALL | re.MULTILINE\n        ))\n        # PROPOSED_FIX or FIX (CC2 uses FIX: instead of PROPOSED_FIX:)\n        fix_match = re.search(\n            r'\\*{0,2}(?:[Pp][Rr][Oo][Pp][Oo][Ss][Ee][Dd][\\s_-]*)?'\n            r'[Ff][Ii][Xx]\\*{0,2}\\s*[:=\\-]\\s*(.+?)'\n            r'(?=\\n\\s*(?:\\*{0,2}(?:[Vv][Ee][Rr][Ii]|[Ff][Ii][Nn][Dd]|'\n            r'[Ff][Aa][Ll][Ss][Ii]|[Cc][Oo][Rr][Rr][Oo])|$))',\n            block, re.DOTALL\n        )\n\n        if chevron_matches:\n            blocks_out = []\n            for m in chevron_matches:\n                file_hint = m.group(1).strip() if m.group(1) else \"\"\n                old_code = m.group(2).strip()\n                new_code = m.group(3).strip()\n                if file_hint:\n                    blocks_out.append(f\"<<<< SEARCH {file_hint}\\n{old_code}\\n==== REPLACE\\n{new_code}\\n>>>>\")\n                else:\n                    blocks_out.append(f\"<<<< OLD\\n{old_code}\\n==== NEW\\n{new_code}\\n>>>>\")\n                if not explicit_tf and file_hint:\n                    explicit_tf = file_hint\n            proposed_fix = \"\\n\\n\".join(blocks_out)\n        elif fix_match:\n            proposed_fix = fix_match.group(1).strip()\n        else:\n            proposed_fix = \"\"\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`re.search` captures only the first chevron block per finding block."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_DeepSeek_F006"
+        ],
+        "severity": 0.6,
+        "description": "`format_findings_for_context` fails to enforce `max_findings` if the number of recent findings exceeds the limit. `remaining_slots` is clamped to 0, but `selected` is initialized with all `recent` findings, resulting in `len(selected) > max_findings`.",
+        "proposed_fix": "<<<< SEARCH bench/runner_core.py\nremaining_slots = max(0, max_findings - len(recent))\n        older_sorted = sorted(older, key=lambda f: f.severity, reverse=True)\n        selected = recent + older_sorted[:remaining_slots]\n==== REPLACE\nremaining_slots = max(0, max_findings - len(recent))\n        older_sorted = sorted(older, key=lambda f: f.severity, reverse=True)\n        selected = recent + older_sorted[:remaining_slots]\n        \n        if len(selected) > max_findings:\n            selected = sorted(selected, key=lambda f: f.severity, reverse=True)[:max_findings]\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_f\"{model_id}_UNSTRUCTURED\","
+        ],
+        "severity": 0.3,
+        "description": "response[:500],",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_Gemini_C0032 (CONFIRM registry entry)"
+        ],
+        "severity": 0.95,
+        "description": "Confirm deadlock risk in `dispatch_to_model` when worker returns large payloads (registry C0032). Parent blocks on `join()` while child blocks on full OS pipe.",
+        "proposed_fix": "Same as F001 fix (merged resolution)",
+        "status": "OPEN",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 5,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "### Combined Review Synthesis\n\nAfter reviewing both `bench/runner_core.py` and `bench/dm/_types.py`, I've consolidated findings, deduplicated against the registry, and performed a global P-pass. Below are the novel findings with cross-section analysis where applicable. All findings include full FFAFP documentation and falsification evidence.\n\n---\n\nF001: Type Safety Violation in Fingerprint Handling  \n- SEVERITY: 0.95  \n- FLAW_CLASS: 2 (interface)  \n- ABSTRACTION_INDEX: 0.4 (surface)  \n- FIND:  \n",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 5,
+        "last_status_change_round": 5,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      }
+    },
+    "next_id": 42,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "Codex:Codex_F002": "C0002",
+      "Codex:Codex_F003": "C0003",
+      "CC2:CC2_F001": "C0004",
+      "CC2:CC2_F002": "C0005",
+      "CC2:CC2_F003": "C0006",
+      "CC2:CC2_F004": "C0007",
+      "ChatGPT:ChatGPT_F001": "C0008",
+      "ChatGPT:ChatGPT_F002": "C0009",
+      "ChatGPT:ChatGPT_F003": "C0010",
+      "ChatGPT:ChatGPT_F004": "C0011",
+      "Gemini:Gemini_F001": "C0012",
+      "Gemini:Gemini_F002": "C0013",
+      "Gemini:Gemini_F003": "C0014",
+      "Gemini:Gemini_F004": "C0015",
+      "DeepSeek:DeepSeek_F1": "C0016",
+      "Codex:Codex_F004": "C0017",
+      "Codex:Codex_F005": "C0018",
+      "Codex:Codex_F006": "C0019",
+      "ChatGPT:ChatGPT_F006": "C0020",
+      "ChatGPT:ChatGPT_F007": "C0021",
+      "ChatGPT:ChatGPT_F009": "C0022",
+      "CC2:CC2_full_id,": "C0023",
+      "Gemini:Gemini_F005": "C0024",
+      "DeepSeek:DeepSeek_F001": "C0025",
+      "ChatGPT:ChatGPT_UNSTRUCTURED": "C0026",
+      "Gemini:Gemini_F1": "C0027",
+      "DeepSeek:DeepSeek_F002": "C0028",
+      "DeepSeek:DeepSeek_F003": "C0029",
+      "Codex:Codex_V001": "C0030",
+      "ChatGPT:ChatGPT_V001": "C0031",
+      "Gemini:Gemini_DeepSeek_F001": "C0032",
+      "Gemini:Gemini_DeepSeek_F002": "C0033",
+      "Gemini:Gemini_DeepSeek_F003": "C0034",
+      "Gemini:Gemini_DeepSeek_F004": "C0035",
+      "Gemini:Gemini_DeepSeek_F005": "C0036",
+      "Gemini:Gemini_DeepSeek_F006": "C0037",
+      "DeepSeek:DeepSeek_f\"{model_id}_UNSTRUCTURED\",": "C0038",
+      "DeepSeek:DeepSeek_Gemini_C0032 (CONFIRM registry entry)": "C0039",
+      "ChatGPT:ChatGPT_F005": "C0040",
+      "DeepSeek:DeepSeek_UNSTRUCTURED": "C0041"
+    }
+  },
+  "novelty_counts": [
+    16,
+    9,
+    4,
+    9,
+    1,
+    2
+  ],
+  "raw_counts": [
+    16,
+    27,
+    14,
+    23,
+    15,
+    16
+  ],
+  "rho_history": [
+    1.0,
+    0.333333,
+    0.285714,
+    0.391304,
+    0.066667,
+    0.125
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.447634,
+    0.402789,
+    0.431929,
+    0.461166
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [
+    16,
+    14,
+    13
+  ],
+  "stall_history": [
+    {
+      "open_ch": 10,
+      "contested": 0
+    },
+    {
+      "open_ch": 10,
+      "contested": 0
+    },
+    {
+      "open_ch": 11,
+      "contested": 0
+    },
+    {
+      "open_ch": 16,
+      "contested": 0
+    },
+    {
+      "open_ch": 14,
+      "contested": 0
+    },
+    {
+      "open_ch": 13,
+      "contested": 0
+    }
+  ],
+  "cumulative_context_chars": 448961,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "ChatGPT": {
+      "history": [
+        {
+          "round": 1,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 4,
+          "classification": "CAPABILITY_MISMATCH",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        2.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 0,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.3333333333333333,
+        0.6666666666666666,
+        0.2222222222222222,
+        1.5
+      ],
+      "last_adaptive_threshold": 0.5833333333333334
+    },
+    "CC2": {
+      "history": [
+        {
+          "round": 1,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 4,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 5,
+          "classification": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": "restart_fresh",
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.75
+    },
+    "Codex": {
+      "history": [
+        {
+          "round": 1,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 4,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 5,
+          "classification": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": "restart_fresh",
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        3.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Gemini": {
+      "history": [
+        {
+          "round": 1,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 4,
+          "classification": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        0.2,
+        1.1666666666666667,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.8055555555555556
+    }
+  },
+  "itc_hil_flags": [
+    {
+      "model": "Codex",
+      "round": 3,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 3,
+      "message": "Codex has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "CC2",
+      "round": 3,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 3,
+      "message": "CC2 has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "Gemini",
+      "round": 4,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 3,
+      "message": "Gemini has 3 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "Codex",
+      "round": 4,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 4,
+      "message": "Codex has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "CC2",
+      "round": 4,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 4,
+      "message": "CC2 has 4 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "Codex",
+      "round": 5,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 5,
+      "message": "Codex has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    },
+    {
+      "model": "CC2",
+      "round": 5,
+      "classification": "DEGRADATION",
+      "consecutive_failures": 5,
+      "message": "CC2 has 5 consecutive ITC interventions (latest: DEGRADATION). Flagged for HIL review."
+    }
+  ],
+  "burst_state": null
+}

@@ -1024,9 +1024,12 @@ class TestOuroborosCell:
         )
         # Shadow mode: may produce candidates but never injects
         assert shadow_log.round_idx == 1
-        # All metadata should be shadow_mock
+        # Metadata status: "live" or "live_empty" (real API), or
+        # "shadow_mock" (API fallback on network/package error).
+        # All are valid — shadow mode controls injection, not querying.
+        valid_statuses = {"shadow_mock", "live", "live_empty"}
         for meta in shadow_log.metadata_retrieved:
-            assert meta.get("status") == "shadow_mock"
+            assert meta.get("status") in valid_statuses
 
     def test_hard_caps_enforced(self):
         """Ouroboros respects max queries and max claims caps."""

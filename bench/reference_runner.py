@@ -88,6 +88,7 @@ from run_exp17_immune import (
     RoundTelemetry,
     run_layer1_preflight,
     _should_decompose,
+    _invalidate_fingerprint_cache,
     _build_verified_facts,
     _build_explicit_unknowns,
     _find_model_spec,
@@ -197,7 +198,7 @@ class RunnerConfig:
     # Derived constants (set from the above or left at defaults)
     max_novel_findings: int = 2
     open_ch_stability_window: int = 3
-    max_open_crit_high: int = 0
+    max_open_crit_high: int = 5  # Was 0 (unreachable). Exp 39-0 fix.
     rho_earliest_round: int = 12
     stall_window: int = 3
     stall_earliest_round: int = 15
@@ -414,8 +415,13 @@ class FindingRegistry:
                     count += 1
         return count
 
+    # Cap full-detail active entries to bound context growth.
+    # Overflow entries get compact one-line treatment.
+    # (Ported from run_exp37_evidence.py line 227 + 444-478)
+    MAX_FULL_DETAIL_OPEN = 20
+
     def build_summary(self, round_idx: int) -> str:
-        """A1 fix: windowed registry summary."""
+        """A1 fix: windowed registry summary with overflow cap."""
         if not self.entries:
             return "(No findings registered yet.)"
         full_detail_statuses = ("OPEN", "CONTESTED", "REOPENED")
@@ -432,8 +438,12 @@ class FindingRegistry:
             f"Open CRIT/HIGH: {self.open_crit_high_count()}",
             "",
         ]
+        # Cap full-detail entries by severity to bound context growth.
+        all_active_sorted = sorted(full_detail, key=lambda x: -x["severity"])
+        full_detail_shown = all_active_sorted[:self.MAX_FULL_DETAIL_OPEN]
+        full_detail_overflow = all_active_sorted[self.MAX_FULL_DETAIL_OPEN:]
         for status in full_detail_statuses:
-            group = [e for e in full_detail if e["status"] == status]
+            group = [e for e in full_detail_shown if e["status"] == status]
             if not group:
                 continue
             lines.append(f"--- {status} ({len(group)}) ---")
@@ -449,6 +459,18 @@ class FindingRegistry:
                     lines.append(f"    Verdicts: {verdict_summary}")
                 if e.get("proposed_fix"):
                     lines.append(f"    Fix: {e['proposed_fix'][:100]}")
+            lines.append("")
+        # Overflow active findings: compact one-line (lower severity)
+        if full_detail_overflow:
+            lines.append(
+                f"--- ACTIVE OVERFLOW ({len(full_detail_overflow)}) "
+                f"(lower severity, compact) ---"
+            )
+            for e in full_detail_overflow:
+                lines.append(
+                    f"  {e['canonical_id']} (sev {e['severity']:.2f}) "
+                    f"[{e['status']}] {e['description'][:80]}"
+                )
             lines.append("")
         if compact:
             lines.append(f"--- SETTLED ({len(compact)}) (do not re-describe) ---")
@@ -1057,6 +1079,7 @@ def _itc_detect(
     prior_finding_ids: Set[str], current_finding_ids: Set[str],
     dispatch_error: Optional[str] = None,
     raw_finding_markers: int = 0,
+    verdict_count: int = 0,
 ) -> Optional[str]:
     if dispatch_error and ("context length" in dispatch_error.lower()
                            or "token" in dispatch_error.lower()):
@@ -1070,7 +1093,13 @@ def _itc_detect(
             return ITC_CAPABILITY_MISMATCH
         return ITC_TRANSIENT_FAILURE
     # D5 fix: output quality signal — adaptive, per-model.
-    # Parse yield = findings_count / raw_finding_markers.
+    # Parse yield = (findings_count + verdict_count) / raw_finding_markers.
+    # In late rounds, models shift from producing new findings to issuing
+    # verdicts (CONFIRM/CHALLENGE) on existing findings.  Verdicts are
+    # valid structured output that the parser captures, so they count
+    # towards productive yield.  Without this, verdict-heavy rounds
+    # deflate parse_yield and cause false DEGRADATION flags.
+    #
     # Each model's baseline yield is computed from its own history.
     # Degradation = yield drops significantly below the model's own
     # baseline, OR falls below a hard floor (0.5) regardless of baseline.
@@ -1080,7 +1109,7 @@ def _itc_detect(
     # This avoids penalising models during the first rounds before
     # a baseline exists, while still catching severe degradation.
     if raw_finding_markers >= 2:
-        parse_yield = findings_count / raw_finding_markers
+        parse_yield = (findings_count + verdict_count) / raw_finding_markers
         # Record yield in ITC state for baseline computation.
         state = _itc_model_state.setdefault(model_label, {
             "history": [], "adaptation": None, "retry_count": 0,
@@ -1130,8 +1159,9 @@ def _itc_detect(
 
         if parse_yield < adaptive_threshold:
             baseline_str = f"baseline={baseline:.2f}, " if baseline is not None else ""
+            verdict_str = f", verdicts={verdict_count}" if verdict_count else ""
             _log(f"  ITC [{model_label}]: parse yield {parse_yield:.2f} "
-                 f"({findings_count}/{raw_finding_markers} markers, "
+                 f"({findings_count}+{verdict_count}/{raw_finding_markers} markers{verdict_str}, "
                  f"{baseline_str}threshold={adaptive_threshold:.2f}) — DEGRADATION")
             return ITC_DEGRADATION
     if prior_finding_ids and current_finding_ids:
@@ -1314,6 +1344,9 @@ def _save_fingerprints(observed: Dict[str, Dict[str, Any]], experiment_name: str
         fp_path = FINGERPRINT_DIR / f"{model_id}.json"
         fp_path.write_text(json.dumps(fp_data, indent=2), encoding="utf-8")
     _log(f"  Fingerprints saved: {len(observed)} models -> {FINGERPRINT_DIR}")
+    # Invalidate decomposition cache so next _should_decompose() call
+    # sees the updated fingerprint data.
+    _invalidate_fingerprint_cache()
 
 
 def _update_observed_fingerprint(
@@ -1477,7 +1510,11 @@ def _dispatch_single_model(
 
     pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
 
-    if _should_decompose(mc.label, mgr):
+    # Payload-aware decomposition (Exp 39 confound fix, 13 April 2026):
+    # total payload = system prompt + user prompt (which already embeds full_code
+    # via _build_prompt). Do NOT add full_code again — that double-counts ~64K.
+    _total_payload_chars = len(model_cdsfl) + len(prompt)
+    if _should_decompose(mc.label, mgr, payload_chars=_total_payload_chars):
         fallback = _multiturn_fallback(
             mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)
         if fallback is not None:
@@ -1775,13 +1812,61 @@ def _run_shadow_cells(
                 for vid_list in immune_result.cell_verdicts.values():
                     all_verdicts.extend(vid_list)
 
+            if not all_verdicts:
+                cv_attr = "present" if hasattr(immune_result, "cell_verdicts") else "missing"
+                cv_keys = len(immune_result.cell_verdicts) if hasattr(immune_result, "cell_verdicts") else 0
+                _log(f"  Macrophage: 0 verdicts received (cell_verdicts={cv_attr}, keys={cv_keys})")
+
             triaged = getattr(immune_result, "triaged", None)
             timings = getattr(immune_result, "stage_timings", None)
+
+            # Extract provenance metadata from external-origin findings
+            provenance = []
+            for f in findings:
+                if getattr(f, "origin_type", "") and f.origin_type != "model":
+                    provenance.append({
+                        "origin_type": f.origin_type,
+                        "source_ref": getattr(f, "source_ref", ""),
+                        "retrieval_query": getattr(f, "retrieval_query", ""),
+                        "retrieved_at": getattr(f, "retrieved_at", ""),
+                        "source_hash": getattr(f, "source_hash", ""),
+                        "source_diversity": getattr(f, "source_diversity", 0.0),
+                    })
+
+            # Derive PE gate pass/fail statistics from immune verdicts
+            gate_stats = None
+            final_v = getattr(immune_result, "final_verdicts", None)
+            if final_v:
+                passed = sum(1 for v in final_v.values() if v in ("CONFIRMED", "UNCERTAIN", "UNSCORED"))
+                failed = sum(1 for v in final_v.values() if v in ("REJECTED", "DUPLICATE"))
+                by_origin: Dict[str, Dict[str, int]] = {}
+                for f in findings:
+                    ot = getattr(f, "origin_type", "model") or "model"
+                    fid = f.finding_id
+                    bucket = by_origin.setdefault(ot, {"passed": 0, "failed": 0})
+                    v = final_v.get(fid, "UNCERTAIN")
+                    if v in ("REJECTED", "DUPLICATE"):
+                        bucket["failed"] += 1
+                    else:
+                        bucket["passed"] += 1
+                gate_stats = {
+                    "total_passed": passed,
+                    "total_failed": failed,
+                    "by_origin": by_origin,
+                }
+
+            # Ouroboros activity metrics from prior rounds (if available)
+            ouroboros_metrics = None
+            if _shadow_ouroboros is not None and hasattr(_shadow_ouroboros, "get_activity_metrics"):
+                ouroboros_metrics = _shadow_ouroboros.get_activity_metrics()
 
             macro_summary = _shadow_macrophage.observe(
                 verdicts=all_verdicts,
                 triaged=triaged,
                 timings=timings,
+                provenance=provenance or None,
+                gate_stats=gate_stats,
+                ouroboros_metrics=ouroboros_metrics,
             )
 
             # Codex 5.3 confer fix (13 April 2026): Macrophage was counts-only
@@ -1792,6 +1877,7 @@ def _run_shadow_cells(
                 "anomalies": macro_summary.anomaly_count,
                 "pipeline_modified": macro_summary.pipeline_modified,
                 "mode": macro_summary.mode.value,
+                "verdicts_received": len(all_verdicts),
                 "observation_details": [
                     obs.to_dict() for obs in macro_summary.observations
                 ],
@@ -1806,6 +1892,7 @@ def _run_shadow_cells(
                         "mode": macro_summary.mode.value,
                         "anomaly_count": macro_summary.anomaly_count,
                         "pipeline_modified": macro_summary.pipeline_modified,
+                        "verdicts_received": len(all_verdicts),
                         "observations": [
                             obs.to_dict() for obs in macro_summary.observations
                         ],
@@ -2059,10 +2146,13 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
                     break
             file_path = rest
             i += 1
-            # Collect search lines until bare ==== separator
+            # Collect search lines until ==== separator (with or without trailing text).
+            # The parser in runner_core stores "==== REPLACE" while the prompt
+            # specifies bare "====".  Accept both.  (Exp 39-0 confound fix.)
             search_lines: List[str] = []
             while i < len(lines):
-                if lines[i].rstrip() == "====":
+                stripped = lines[i].rstrip()
+                if stripped == "====" or stripped.startswith("==== "):
                     i += 1
                     break
                 search_lines.append(lines[i])
@@ -2070,10 +2160,11 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
             else:
                 # Reached end without finding separator — skip this block
                 continue
-            # Collect replace lines until >>>> REPLACE
+            # Collect replace lines until >>>> closer (with or without REPLACE).
+            # Accept bare ">>>>" AND ">>>> REPLACE".  (Exp 39-0 confound fix.)
             replace_lines: List[str] = []
             while i < len(lines):
-                if lines[i].strip().startswith(">>>>") and "REPLACE" in lines[i].upper():
+                if lines[i].strip().startswith(">>>>"):
                     i += 1
                     break
                 replace_lines.append(lines[i])
@@ -2579,6 +2670,194 @@ def compute_rk(
     return max(0.0, min(1.0, R_k))
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Deterministic R_k recomputation validation (14 April 2026)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Regex patterns for extracting R_k parameters from model corroboration text.
+# Models use varied notation (η vs eta, ν_eff vs nu_eff, × vs * vs ·).
+_RK_RE_R_OLD = re.compile(
+    r'R_?(?:old|prev|prior)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+_RK_RE_ETA = re.compile(
+    r'(?:[ηη]|eta)\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+_RK_RE_D = re.compile(
+    r'\bd\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)')
+_RK_RE_P = re.compile(
+    r'\bp\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)')
+_RK_RE_Q_LINE = re.compile(
+    r'^\s*q\s*[=:].*$', re.MULTILINE)
+_RK_RE_SK = re.compile(
+    r'S_?k\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+_RK_RE_NU_EFF = re.compile(
+    r'(?:[νν]_?eff|nu_?eff)\s*(?:\([^)]*\)\s*)?[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+_RK_RE_R_DET = re.compile(
+    r'R_?(?:det|base)\s*[=:]\s*([0-9]+\.?[0-9]*)', re.IGNORECASE)
+# For R_k final value: match lines starting with R_k and extract the last
+# number.  Models write "R_k = 0.272 × (1 - 0.05) + 0.05 = 0.308" —
+# the final value is always the last float on the R_k line.
+_RK_RE_R_FINAL_LINE = re.compile(
+    r'^[^\n]*R_?k\s*[=≈:].*$', re.IGNORECASE | re.MULTILINE)
+_RK_RE_TRAILING_FLOAT = re.compile(r'([0-9]+\.?[0-9]*)\s*$')
+
+
+def _validate_rk_computation(corroboration_text: str) -> Tuple[str, Optional[float], Optional[float]]:
+    """Recompute R_k from stated parameters and compare with model's result.
+
+    Returns (status, model_rk, recomputed_rk) where status is one of:
+      PASS  — within tolerance 0.01
+      WARN  — within tolerance 0.05 but outside 0.01
+      FAIL  — beyond tolerance 0.05
+      SKIP  — couldn't extract sufficient parameters
+
+    Advisory only — logs discrepancies, never rejects findings.
+    """
+    if not corroboration_text:
+        return "SKIP", None, None
+
+    def _first_float(pattern: re.Pattern, text: str) -> Optional[float]:
+        m = pattern.search(text)
+        if m:
+            try:
+                return float(m.group(1))
+            except (ValueError, IndexError):
+                pass
+        return None
+
+    # Extract the model's stated final R_k.
+    # Models write "R_k = 0.272 × (1 - 0.05) + 0.05 = 0.308" — the final
+    # value is the last float on the last line containing "R_k =".
+    model_rk = None
+    for line_match in _RK_RE_R_FINAL_LINE.finditer(corroboration_text):
+        line = line_match.group()
+        trail = _RK_RE_TRAILING_FLOAT.search(line)
+        if trail:
+            try:
+                model_rk = float(trail.group(1))
+            except ValueError:
+                pass
+    if model_rk is None:
+        return "SKIP", None, None
+
+    # Extract R_old — required
+    R_old = _first_float(_RK_RE_R_OLD, corroboration_text)
+    if R_old is None:
+        return "SKIP", model_rk, None
+
+    # Extract q directly (trailing float on "q = ..." line), or compute
+    # from eta * d * p.  Models write "q = 0.90 × 0.80 × 0.90 = 0.648"
+    # where the final value is the trailing float, not the first number.
+    q = None
+    q_line = _RK_RE_Q_LINE.search(corroboration_text)
+    if q_line:
+        trail = _RK_RE_TRAILING_FLOAT.search(q_line.group())
+        if trail:
+            try:
+                q = float(trail.group(1))
+            except ValueError:
+                pass
+    if q is None:
+        eta = _first_float(_RK_RE_ETA, corroboration_text)
+        d = _first_float(_RK_RE_D, corroboration_text)
+        p = _first_float(_RK_RE_P, corroboration_text)
+        if eta is not None and d is not None and p is not None:
+            q = eta * d * p
+        else:
+            return "SKIP", model_rk, None
+
+    # Phase 1: Detection — R_det = R_old * (1-q) / (1 - q*R_old)
+    denom = 1.0 - q * R_old
+    if abs(denom) < 1e-12:
+        R_det = R_old
+    else:
+        R_det = R_old * (1.0 - q) / denom
+
+    # Extract S_k and nu_eff for full three-phase computation
+    sk = _first_float(_RK_RE_SK, corroboration_text)
+    nu_eff = _first_float(_RK_RE_NU_EFF, corroboration_text)
+
+    if sk is not None and nu_eff is not None:
+        # Full three-phase: detection -> resolution -> re-injection
+        R_base = sk * R_det + (1.0 - sk) * R_old
+        recomputed = R_base * (1.0 - nu_eff) + nu_eff
+    elif sk is not None:
+        # Two-phase only (no re-injection term)
+        recomputed = sk * R_det + (1.0 - sk) * R_old
+    else:
+        # Detection phase only — R_k = R_det
+        recomputed = R_det
+
+    recomputed = max(0.0, min(1.0, recomputed))
+    delta = abs(model_rk - recomputed)
+
+    if delta <= 0.01:
+        return "PASS", model_rk, recomputed
+    elif delta <= 0.05:
+        return "WARN", model_rk, recomputed
+    else:
+        return "FAIL", model_rk, recomputed
+
+
+def _extract_corroboration_sections(response_text: str) -> List[str]:
+    """Extract CORROBORATION sections from a model's raw response text.
+
+    Each section runs from 'CORROBORATION' until the next finding boundary
+    (FINDING_ID, VERIFIED, ---) or end of text.
+    """
+    sections: List[str] = []
+    # Split on CORROBORATION header
+    parts = re.split(r'CORROBORATION\s*[:\-]?\s*', response_text, flags=re.IGNORECASE)
+    for part in parts[1:]:  # skip everything before first CORROBORATION
+        # Truncate at next finding boundary
+        end_match = re.search(
+            r'\n\s*(?:FINDING_ID|VERIFIED|---|\n\s*\n\s*FINDING_ID'
+            r'|SEVERITY|FIND\s*:|FOLLOW\s*:|\[\s*\{)',
+            part, re.IGNORECASE)
+        if end_match:
+            sections.append(part[:end_match.start()])
+        else:
+            sections.append(part)
+    return sections
+
+
+def validate_round_rk(
+    findings: List[Finding],
+    responses: Dict[str, str],
+) -> Dict[str, List[Tuple[str, str, Optional[float], Optional[float]]]]:
+    """Validate R_k computations for all findings in a round.
+
+    Returns dict keyed by model_id, each value a list of
+    (finding_id, status, model_rk, recomputed_rk) tuples.
+
+    Advisory only — logs WARN/FAIL but never rejects findings.
+    """
+    results: Dict[str, List[Tuple[str, str, Optional[float], Optional[float]]]] = {}
+
+    for model_id, text in responses.items():
+        sections = _extract_corroboration_sections(text)
+        model_findings = [f for f in findings if f.model_id == model_id]
+        model_results: List[Tuple[str, str, Optional[float], Optional[float]]] = []
+
+        # Match sections to findings by position (both are in document order)
+        for i, f in enumerate(model_findings):
+            if i < len(sections):
+                status, model_rk, recomputed = _validate_rk_computation(sections[i])
+            else:
+                status, model_rk, recomputed = "SKIP", None, None
+            model_results.append((f.finding_id, status, model_rk, recomputed))
+
+            if status == "WARN":
+                _log(f"  R_k WARN: {f.finding_id} — model={model_rk:.3f}, "
+                     f"recomputed={recomputed:.3f}, delta={abs(model_rk - recomputed):.3f}")
+            elif status == "FAIL":
+                _log(f"  R_k FAIL: {f.finding_id} — model={model_rk:.3f}, "
+                     f"recomputed={recomputed:.3f}, delta={abs(model_rk - recomputed):.3f}")
+
+        if model_results:
+            results[model_id] = model_results
+
+    return results
+
+
 def check_sk_threshold(
     sk: float, nu_b: float, nu_f: float,
     q: float, R: float, s_floor: float = 0.0,
@@ -2901,7 +3180,11 @@ def run_experiment(
 
     # Build DynamicManager
     dm_config = DynamicManagementConfig(
-        pre_decompose_models={"Codex", "DeepSeek"},
+        # Decomposition is now fingerprint-aware (13 April 2026):
+        # _should_decompose() uses per-model observed prompt limits from
+        # fingerprints, falling back to LENGTH_THRESHOLD (80K) when no
+        # observation data exists. This set is for immune escalation only.
+        pre_decompose_models=set(),
         no_exclusion_mode=True,
     )
     dm_config.max_rounds = cfg.max_rounds
@@ -3022,23 +3305,23 @@ def run_experiment(
             f"YOUR TASK:\n"
             f"Review {target_rel} under full CDSFL + FFF constraints.\n\n"
             f"For each finding, provide (keys in this exact order):\n"
-            f"  FINDING_ID: unique identifier (e.g., F001). STABLE across rounds.\n"
-            f"  SEVERITY: 0.0 to 1.0\n"
-            f"  FLAW_CLASS: integer (1=logic, 2=interface, 3=notation, "
+            f"  FINDING_ID: unique identifier (e.g., F001). IMPORTANT: your "
+            f"finding IDs must be STABLE across rounds. If you filed F001 in "
+            f"Round 3, F001 in Round 4 must refer to the same bug.\n"
+            f"  SEVERITY: 0.0 to 1.0 (1.0 = critical)\n"
+            f"  FLAW_CLASS: integer category (1=logic, 2=interface, 3=notation, "
             f"4=completeness, 5=correctness, 6=edge-case, 7=performance, "
             f"8=documentation)\n"
-            f"  ABSTRACTION_INDEX: 0.0 to 1.0\n"
-            f"  DESCRIPTION: FIND — what is wrong, where, evidence\n"
-            f"  FOLLOW: trace downstream consequences before proposing a fix\n"
+            f"  ABSTRACTION_INDEX: 0.0 to 1.0 (0=surface, 1=architectural)\n"
+            f"  FIND: what is wrong, where, and what is the evidence\n"
+            f"  FOLLOW: trace downstream consequences BEFORE proposing a fix\n"
             f"  ANALYSE: classify constraint as HARD or SOFT. State premises "
             f"explicitly, derive conclusion through concrete evidence "
             f"(Meta Structured Reasoning Protocol). "
             f"State CONFIRMED/UNCERTAIN/REJECTED.\n"
-            f"  PROPOSED_FIX: REQUIRED — the simplest sufficient correction "
-            f"addressing root cause AND FOLLOW consequences. Express as "
-            f"SEARCH/REPLACE blocks.\n"
-            f"    Without these blocks, the fix cannot be verified by the S_k pipeline.\n"
-            f"    Format:\n"
+            f"  FIX: the simplest sufficient correction addressing root cause "
+            f"AND FOLLOW consequences (for CONFIRMED findings only). Express "
+            f"as SEARCH/REPLACE blocks so S_k can verify:\n"
             f"    <<<< SEARCH file_path\n"
             f"    [exact current content to replace — copy verbatim from source]\n"
             f"    ====\n"
@@ -3050,9 +3333,15 @@ def run_experiment(
             f"will be rejected.\n"
             f"  CORROBORATION: (MANDATORY) compute your residual risk R_k "
             f"using the self-assessment equation in the operational directive. "
-            f"Show R_old, your numerical estimates for η, d, p, σ, ν, and "
-            f"the resulting R_k. Qualitative-only assessment will be flagged.\n"
+            f"Show R_old, your numerical estimates for η, d, p, S_k, ν_eff, "
+            f"and the resulting R_k. Qualitative-only assessment will be "
+            f"flagged. Example format:\n"
+            f"    R_old=0.50, η=0.80, d=0.70, p=0.60, S_k=0.75, ν_eff=0.15\n"
+            f"    R_k = 0.50 × (1 - 0.80×0.70×0.60) × 0.75 + 0.15 = 0.32\n"
             f"  VERIFIED: TRUE if proven, FALSE if assertion\n\n"
+            f"PRIOR REVIEW CONTEXT: Do not re-report issues already present "
+            f"in the registry summary. Duplicate findings waste compute. "
+            f"Focus on genuinely new issues and regressions.\n\n"
             f"Produce ALL findings. Do not hold back.\n\n"
             f"=== ARTIFACT: {label} ({len(code_payload):,} chars) ===\n\n"
             f"{code_payload}\n\n"
@@ -3154,7 +3443,29 @@ def run_experiment(
                     _metrics += (
                         "Productive phase — continue finding and falsifying.\n"
                     )
-                registry_summary = registry_summary + _metrics
+                # Semantic novelty feedback — 3 graduated signals
+                # (Ported from run_exp37_evidence.py lines 2354-2371)
+                if _rho_val >= 0.5:
+                    _metrics += (
+                        f"High semantic novelty (ρ={_rho_val:.3f}). Your recent "
+                        f"findings are genuinely new. Continue this trajectory.\n"
+                    )
+                elif _rho_val > 0.0 and _gamma_val >= 0.30:
+                    _metrics += (
+                        f"Moderate novelty (ρ={_rho_val:.3f}) with depletion "
+                        f"(γ={_gamma_val:.3f}). Concentrate on unexplored areas "
+                        f"and deeper structural issues.\n"
+                    )
+                # ρ̄₃ redundancy warning
+                if _rho_bar3 < 0.25 and round_idx >= 3:
+                    _metrics += (
+                        f"⚠ HIGH REDUNDANCY (ρ̄₃={_rho_bar3:.3f}). Your last 3 "
+                        f"rounds averaged <25% novelty. Most findings are "
+                        f"duplicating existing registry entries. Check the "
+                        f"registry carefully before submitting.\n"
+                    )
+                _metrics += "=== END METRICS ===\n\n"
+                registry_summary = _metrics + registry_summary
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_star(
                 exp_config, mgr, brain, base_prompt, registry_summary,
                 cdsfl_text, full_code, round_idx, cfg, registry=registry,
@@ -3166,6 +3477,21 @@ def run_experiment(
             _log(f"\n*** ALL MODELS FAILED: {problem} ***")
             result["terminated"] = problem
             break
+
+        # R_k recomputation validation (advisory)
+        rk_validation = validate_round_rk(findings, responses)
+        rk_summary = {
+            model: {s: sum(1 for _, st, _, _ in res if st == s)
+                    for s in ("PASS", "WARN", "FAIL", "SKIP")}
+            for model, res in rk_validation.items()
+        }
+        for model, counts in rk_summary.items():
+            parts = []
+            for s in ("PASS", "WARN", "FAIL", "SKIP"):
+                if counts.get(s, 0):
+                    parts.append(f"{s}={counts[s]}")
+            if parts:
+                _log(f"  R_k validation [{model}]: {', '.join(parts)}")
 
         # Register findings
         novel_this_round = 0
@@ -3277,6 +3603,9 @@ def run_experiment(
                 }
             dispatch_err = "no_response" if model_label not in responses else None
             raw_markers = len(_FINDING_DECL_RE.findall(model_text))
+            # Count verdicts for this model — verdicts are valid structured
+            # output that should count towards parse yield (P2 fix).
+            model_verdicts = len(_parse_verdicts(model_text, model_label, round_idx))
             # ORDERING INVARIANT: _itc_detect MUST run before
             # _update_observed_fingerprint. ITC detect populates
             # parse_yield_history in _itc_model_state; the fingerprint
@@ -3287,6 +3616,7 @@ def run_experiment(
                 model_label, round_idx, len(model_findings), model_text,
                 prior_ids, current_ids, dispatch_error=dispatch_err,
                 raw_finding_markers=raw_markers,
+                verdict_count=model_verdicts,
             )
             if classification:
                 _itc_adapt(model_label, classification, round_idx,

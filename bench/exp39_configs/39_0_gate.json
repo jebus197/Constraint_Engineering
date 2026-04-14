@@ -1,9 +1,8 @@
 {
-    "_comment": "39-0: Infrastructure Gate. Verify 22+ Exp 38 fixes work. Dispatch equivalence (Gemini via OpenRouter).",
-    "test_article": "bench/reference_runner.py",
+    "_comment": "39-0: Infrastructure Gate. Fresh target (runner_core.py, 38K). Verifies dispatch, parser, immune, convergence, R_k adoption. NOT reference_runner.py — that was Exp 38/39-0-confounded.",
+    "test_article": "bench/runner_core.py",
     "context_files": [
-        "bench/runner_core.py",
-        "bench/immune_agents.py"
+        "bench/dm/_types.py"
     ],
     "topology": "star",
     "pattern": "four_layer",
@@ -26,14 +25,10 @@
     "_ouroboros": {"api_access": ["arxiv", "semantic_scholar"]},
 
     "_convergence_criteria": {
-        "description": "Gate passes if: (a) all 5 models produce parseable output, (b) no new CRITICAL bugs in first 3 rounds, (c) Gemini OpenRouter output matches expected format.",
+        "description": "Gate passes if: (a) all 5 models produce parseable output with R_k, (b) no new CRITICAL bugs in first 3 rounds, (c) R_k adoption >= 80% across models.",
         "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings)",
         "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds"
     },
 
-    "_artifact_schema": {
-        "output_file": "exp39_0_gate_report.json",
-        "required_fields": ["models_healthy", "dispatch_parity", "fix_verification", "gate_passed"],
-        "dispatch_parity_check": "Gemini OpenRouter vs historical Google API: format match rate"
-    }
+    "_payload_note": "runner_core.py=38K + dm/_types.py=30K = 68K total. Under 80K threshold. All models receive monolithic dispatch."
 }

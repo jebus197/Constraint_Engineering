@@ -2802,13 +2802,28 @@ def regulatory_t_v2(
     checks_fired: List[str] = []
 
     # Check 1: Combined removal rate (v2: includes duplicates)
+    # P2 fix: when ALL removals are duplicates (rejected==0), this is normal
+    # depletion — the pipeline is correctly removing duplicate findings, not
+    # falsely rejecting novel ones.  Log as DEPLETION for visibility but do
+    # NOT set the autoimmune flag.
     if removal_rate > max_rejection_rate:
-        reasons.append(
-            f"[RT_v2] Removal rate {removed}/{total} ({removal_rate:.1%}) "
-            f"exceeds threshold ({max_rejection_rate:.0%}) "
-            f"[rejected={rejected}, duplicated={duplicated}]"
-        )
-        checks_fired.append("removal_rate_exceeded")
+        if rejected == 0:
+            # All removals are duplicates — depletion, not autoimmune.
+            checks_fired.append("depletion_high_duplicate_rate")
+            _shadow_log.info(
+                "RT v2: depletion (not autoimmune) — removal rate %d/%d (%.1f%%), "
+                "all duplicates, rejected=0",
+                removed, total, removal_rate * 100,
+            )
+            # NOTE: intentionally NOT appending to `reasons` — this check
+            # does not contribute to the autoimmune flag when rejected==0.
+        else:
+            reasons.append(
+                f"[RT_v2] Removal rate {removed}/{total} ({removal_rate:.1%}) "
+                f"exceeds threshold ({max_rejection_rate:.0%}) "
+                f"[rejected={rejected}, duplicated={duplicated}]"
+            )
+            checks_fired.append("removal_rate_exceeded")
 
     # Check 2 (MF-36 parity, pre-launch review fix): High UNCERTAIN rate
     # indicates fail-open illusion — verification tools may be non-functional.
@@ -2853,6 +2868,13 @@ def regulatory_t_v2(
     if flag:
         reason_str = "; ".join(reasons)
         _shadow_log.info("RT v2 (v2): AUTOIMMUNE flagged — %s", reason_str)
+    elif "depletion_high_duplicate_rate" in checks_fired:
+        reason_str = (
+            f"[RT_v2] Depletion: removal rate {removed}/{total} "
+            f"({removal_rate:.1%}) — all duplicates, no rejections"
+        )
+        _shadow_log.info("RT v2 (v2): depletion — %.1f%% removal rate (all duplicates)",
+                         removal_rate * 100)
     else:
         reason_str = f"[RT_v2] Pipeline healthy: {removal_rate:.1%} removal rate"
         _shadow_log.info("RT v2 (v2): healthy — %.1f%% removal rate", removal_rate * 100)

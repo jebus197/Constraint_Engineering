@@ -1,0 +1,26 @@
+Premises: 39-0 is supposed to run with `burst_mode: "off"`, HIL pause/resume must be reliable, and a GO only stands if the shipped `launch_exp39.py -> reference_runner.py --config 39_0_gate.json` path matches that contract.
+
+1. `burst_mode: "off"` is ignored on the actual 39-0 launch path.
+FIND: [39_0_gate.json](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp39_configs/39_0_gate.json:23) sets `"burst_mode": "off"`. But [reference_runner.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:3611) reloads the JSON and then unconditionally overwrites it with the parser default at lines 3618-3619. The experiment then enters burst planning whenever `cfg.burst_mode != "off"` at line 2819.
+FOLLOW: 39-0’s shipped payload is huge: `reference_runner.py` 157,986 chars + `runner_core.py` 38,278 + `immune_agents.py` 166,857 = 363,121 chars before prompt overhead. [burst_planner.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/burst_planner.py:268) converts that to about 108k input tokens and compares it against the model budgets in [runner_core.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/runner_core.py:76). That exceeds ChatGPT/Codex 96k and DeepSeek 99k, so auto-burst is triggered. The gate therefore does not run in the configured monolithic mode.
+ANALYSE: CONFIRMED.
+FIX: Only override JSON fields when the CLI flag was explicitly supplied; otherwise preserve the JSON `burst_mode`.
+P-PASS: This would be harmless if `launch_exp39.py` passed `--burst-mode off`, but it does not. The shipped 39-0 invocation hits this bug exactly.
+
+2. Burst-mode HIL pause/resume does not restore the next phase cleanly.
+FIND: In [reference_runner.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:3255), `runner_state.json` is written before phase-boundary mutation. The phase summary is added later at lines 3364-3365, and the HIL exit happens immediately after at lines 3369-3386. On resume, stale `burst_state` is restored at lines 2946-2949, but there is no code that rebuilds `full_code`, `base_prompt`, or phase-specific convergence overrides from that restored phase state; `base_prompt` was already built once at line 3026 from the pre-resume `full_code`.
+FOLLOW: If 39-0 enters burst mode, a phase-boundary HIL pause resumes with the wrong prompt/config state. In practice that means re-reviewing the old phase or looping at the same boundary instead of advancing cleanly.
+ANALYSE: CONFIRMED.
+FIX: Persist the updated burst phase state before `sys.exit(42)`, and on resume rebuild prompt text and phase-specific config from restored `phase_idx` / `integration_started`.
+P-PASS: If burst were truly off, this path would stay dormant. Because blocker 1 makes burst reachable on 39-0, this becomes a real launch blocker.
+
+3. Resume is not robust to `runner_state.json` corruption or partial writes.
+FIND: [reference_runner.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:3255) writes `runner_state.json` with plain `write_text`, not atomically. Resume then does an unguarded `json.loads(...)` at lines 2923-2925.
+FOLLOW: A truncated write, disk error, or interrupted save leaves the brain checkpoint intact but makes resume crash before it can recover registry/history/burst state. That directly violates the HIL/crash-path requirement for checkpoint integrity.
+ANALYSE: CONFIRMED.
+FIX: Save `runner_state.json` atomically and catch `JSONDecodeError`/`OSError` on load, with a fail-safe fallback to the brain checkpoint plus a clear warning.
+P-PASS: If the file is merely missing, resume degrades awkwardly but continues. If the file exists and is malformed, it crashes outright, so the corruption case is not covered.
+
+Other focus areas checked: exit-code `42` propagation in `launch_exp39.py` looks correct; the domain chain does reach the immune pipeline; current dependency ordering/cycle detection is fine for `exp39_config.json`; enum/provenance round-tripping looks okay. I also confirmed one non-blocking gap: the new PolicyEngine HARD flags and `protocol.reasoning_protocol` are schema/merge metadata, not runtime prompt controls yet, because the runner still drives composition from `cfg.pattern` via [reference_runner.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner.py:1413) and [composer.py](/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/composer.py:1366).
+
+**VERDICT: NO-GO** — blockers above must be fixed before 39-0 launch.

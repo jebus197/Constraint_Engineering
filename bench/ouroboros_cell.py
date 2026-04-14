@@ -38,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -336,24 +337,105 @@ class OuroborosCell:
         self,
         queries: List[Dict[str, str]],
     ) -> List[Dict[str, Any]]:
-        """Fetch structured metadata from external sources.
+        """Fetch structured metadata from arXiv and Semantic Scholar.
 
-        For Exp 39: MOCKED. Returns empty results with provenance stubs.
-        Real implementation will use arXiv and Semantic Scholar APIs.
+        Real API calls (wired 13 April 2026). Results are logged even in
+        shadow mode — the ouroboros still does not inject claims into the
+        pipeline, but now gathers genuine external evidence for calibration.
+
+        Graceful degradation: if an API call fails (network, rate limit,
+        package missing), falls back to shadow_mock for that query.
         """
         results = []
         for query in queries:
-            # Shadow mode: log the query, return mock metadata
-            result = {
-                "query": query["query"],
-                "source": query["source"],
-                "status": "shadow_mock",
-                "results_count": 0,
-                "papers": [],
-                "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            }
+            source = query.get("source", "arxiv")
+            query_text = query.get("query", "")
+            fetched_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+            try:
+                if source == "arxiv":
+                    papers = self._query_arxiv(query_text, max_results=3)
+                elif source == "semantic_scholar":
+                    papers = self._query_semantic_scholar(query_text, max_results=3)
+                else:
+                    papers = []
+
+                result = {
+                    "query": query_text,
+                    "source": source,
+                    "status": "live" if papers else "live_empty",
+                    "results_count": len(papers),
+                    "papers": papers,
+                    "fetched_at": fetched_at,
+                }
+            except Exception as e:
+                logger.warning(
+                    "O1 _fetch_metadata failed for %s query %r: %s",
+                    source, query_text[:60], e,
+                )
+                result = {
+                    "query": query_text,
+                    "source": source,
+                    "status": "shadow_mock",
+                    "results_count": 0,
+                    "papers": [],
+                    "fetched_at": fetched_at,
+                    "error": f"{type(e).__name__}: {str(e)[:120]}",
+                }
             results.append(result)
         return results
+
+    @staticmethod
+    def _query_arxiv(query_text: str, max_results: int = 3) -> List[Dict[str, str]]:
+        """Query arXiv API. Returns list of {title, authors, abstract, url, published}."""
+        import arxiv
+
+        client = arxiv.Client(num_retries=1, page_size=max_results)
+        search = arxiv.Search(
+            query=query_text,
+            max_results=max_results,
+            sort_by=arxiv.SortCriterion.Relevance,
+        )
+        papers = []
+        for r in client.results(search):
+            papers.append({
+                "title": r.title,
+                "authors": ", ".join(a.name for a in r.authors[:3]),
+                "abstract": r.summary[:500] if r.summary else "",
+                "url": r.entry_id,
+                "published": r.published.isoformat() if r.published else "",
+            })
+        return papers
+
+    @staticmethod
+    def _query_semantic_scholar(
+        query_text: str, max_results: int = 3,
+    ) -> List[Dict[str, str]]:
+        """Query Semantic Scholar API. Returns list of paper metadata."""
+        from semanticscholar import SemanticScholar
+
+        sch = SemanticScholar(timeout=15)
+        results = sch.search_paper(
+            query_text,
+            limit=max_results,
+            fields=["title", "authors", "abstract", "url", "year",
+                     "citationCount"],
+        )
+        papers = []
+        for p in results[:max_results]:
+            authors = ", ".join(
+                a.get("name", "") if isinstance(a, dict) else str(a)
+                for a in (p.authors or [])[:3]
+            )
+            papers.append({
+                "title": p.title or "",
+                "authors": authors,
+                "abstract": (p.abstract or "")[:500],
+                "url": p.url or "",
+                "year": str(p.year) if p.year else "",
+                "citations": str(p.citationCount) if p.citationCount else "0",
+            })
+        return papers
 
     def _generate_candidates(
         self,

@@ -1,0 +1,613 @@
+Below is a focused runner review against the Exp 37 gold standard, with FFAFP applied to each significant finding and R_k computed where the finding is material to renewed R_k-adoption failure.
+
+## Executive assessment
+
+**Not fully ready for Exp 39 re-launch yet.**  
+The major confounds C1–C3 were fixed, but there are still **2 remaining material risks** that can directly cause renewed failure of **R_k adoption / capture**:
+
+1. **Prompt/parser field-name drift**: prompt now asks for `DESCRIPTION` and `PROPOSED_FIX`, while Exp 37 used `FIND` and `FIX`; if the parser/normalizer still expects Exp 37 names, findings may parse partially or degrade downstream registry/novelty handling.
+2. **Parser does not independently enforce CORROBORATION**: this is the most direct residual adoption failure path. A model can omit R_k and still “pass”.
+
+Everything else is either moderate-quality prompt regression or mostly noise/technical debt.
+
+---
+
+# Short answers to the 7 review questions
+
+## 1. Remaining field-name mismatches?
+**Yes, likely.** The important ones are:
+
+- `FIND` (Exp 37) vs `DESCRIPTION` (reference_runner)
+- `FIX` (Exp 37) vs `PROPOSED_FIX` (reference_runner)
+- Possibly `VERIFIED` newly added in prompt but not parser-supported
+
+**If parser still keys on Exp 37 labels, this is a real compatibility risk.**  
+You asked “Which key names does the parser use?” — that cannot be proven from the snippets provided. **[VERIFY:current]** You need to inspect the parser/regex extraction code in `reference_runner.py` or shared parsing utilities. Until confirmed, assume **parser expects legacy labels unless explicitly normalized**.
+
+## 2. Metrics injection order / missing delimiter matter?
+- **Order change**: probably **minor-to-moderate**, not a blocker by itself.
+- **Missing `=== END METRICS ===` delimiter**: **minor**, unless prompt assembly causes ambiguity between metrics and registry text.
+
+I do **not** think this is a primary R_k adoption risk.
+
+## 3. `PROPOSED_FIX` + SEARCH/REPLACE vs bare `FIX`?
+For **operational usefulness**, `PROPOSED_FIX` with SEARCH/REPLACE is better.  
+For **parser compatibility with Exp 37 behavior**, `FIX` is safer **unless parser accepts both**.
+
+Best solution: **ask for `FIX:` and inside it require SEARCH/REPLACE blocks**, or make parser accept both `FIX` and `PROPOSED_FIX`.
+
+## 4. Should there be prior-fix-summary equivalent?
+**Yes, probably.** Not as a hard blocker for R_k adoption, but as a **real anti-attrition lesson** and anti-duplication aid.
+
+Generic version should summarize:
+- prior reviewed artifacts/modules
+- known fixed issue classes
+- what is in-scope vs read-only context
+- what has already been addressed in prior rounds/experiments
+- instruction to focus on novel issues, not previously fixed ones
+
+## 5. Other missing lessons from Exp 37?
+Yes:
+- likely **exact parser/prompt vocabulary alignment** was not preserved
+- likely **hard validation/rejection of missing mandatory sections** was not preserved
+- likely **explicit “stable IDs across rounds” wording was weakened**
+- likely **scope/focus-area scaffolding** was lost when generalizing
+
+## 6. `sigma` and `nu` vs `S_k`, `nu_b`, `nu_f` mismatch matter?
+**Yes, but moderate rather than critical.**  
+It can reduce numerical compliance quality or create inconsistent R_k calculations. It is less severe than not enforcing CORROBORATION, but still worth fixing.
+
+## 7. Additional issues not covered by subagents?
+Yes:
+- possible **mandatory-section contradiction**: prompt says CORROBORATION is mandatory, parser allegedly does not enforce it
+- possible **prompt bloat from SEARCH/REPLACE exact-copy instructions** could still consume budget if findings are many
+- possible **awareness_preamble / operational directive accessibility gap**: if R_k equation is referenced but not actually in accessible context, models may hallucinate or skip it
+- possible **registry-summary concatenation formatting ambiguity** if metrics are appended without strong separators
+
+---
+
+# Detailed findings with FFAFP
+
+I’ll use FFAFP as:
+- **F**inding
+- **F**alsifier
+- **A**ttempt
+- **F**ollow-on consequences
+- **P**osition
+
+For significant findings I also compute a practical **R_k** estimate. Since the exact operational formula is not provided here, I am using the requested parameter set qualitatively but giving explicit numerical estimates for comparative risk, not claiming canonical equation fidelity.
+
+---
+
+## F001 — Parser does not independently enforce CORROBORATION
+**Severity:** 0.95  
+**Class:** correctness / completeness  
+**Abstraction:** 0.85
+
+### Finding
+Subagent 5 reports that if a model includes `FALSIFICATION` but omits `CORROBORATION`, the finding still passes parse validation.
+
+This is a **direct residual failure path** for R_k adoption. In Exp 39-0, the central issue was that the runner never effectively required R_k. If the parser still accepts outputs with no R_k section, the system remains vulnerable to the same outcome in softer form: prompt asks for R_k, but acceptance logic does not require it.
+
+### Falsifier
+The finding would be false if:
+1. parser explicitly rejects any finding lacking `CORROBORATION`, or
+2. a post-parse validation stage marks such findings invalid/excluded from metrics/registry ingestion.
+
+### Attempt
+From the evidence given, subagent says parser does **not** enforce it independently. No contradictory code excerpt was supplied. There is no shown safety check for mandatory `CORROBORATION`; only a comment `# Safety check` appears after dispatch.
+
+So the falsifier is **not satisfied** from available evidence.
+
+### Follow
+Consequences if true:
+- models can omit R_k and still be counted as valid findings
+- adoption metrics can again understate failure because outputs are accepted
+- prompt improvements won’t reliably translate into measured compliance
+- any claimed “re-launch success” remains epistemically weak
+
+### Position
+**CONFIRMED pending code inspection, high confidence.** This is a **blocker** for a clean re-launch.
+
+### Recommended fix
+At parse/validation layer:
+- make `CORROBORATION` independently mandatory
+- require presence of:
+  - `R_old`
+  - `η`
+  - `d`
+  - `p`
+  - `σ`/`S_k`
+  - `ν` or `ν_b`,`ν_f`
+  - computed `R_k`
+- findings missing these should be:
+  - rejected, or
+  - accepted only as malformed with explicit noncompliance counters excluded from adoption success
+
+Prefer explicit validation over soft warning.
+
+### R_k
+Using practical risk scoring:
+- `R_old = 0.85`
+- `η = 0.90` (strong evidence of issue)
+- `d = 0.85` (high downstream damage if unfixed)
+- `p = 0.80` (likely to recur)
+- `σ = 0.85` (subagent claim plausible, no contradictory snippet)
+- `ν = 0.80` (novel enough in current fixed runner review)
+
+**Estimated residual risk: `R_k ≈ 0.81`**  
+Interpretation: high residual operational risk until fixed.
+
+---
+
+## F002 — Prompt/parser key-name drift (`DESCRIPTION`/`PROPOSED_FIX` vs `FIND`/`FIX`)
+**Severity:** 0.88  
+**Class:** interface  
+**Abstraction:** 0.88
+
+### Finding
+Exp 37 prompt used:
+- `FIND`
+- `FIX`
+
+Current reference_runner prompt uses:
+- `DESCRIPTION: FIND — ...`
+- `PROPOSED_FIX: REQUIRED — ...`
+
+If parser and registry logic were built around Exp 37 labels, this can cause:
+- partial parsing
+- dropped fields
+- malformed findings
+- poorer cross-round stability/novelty tracking
+- lower effective compliance despite models trying to follow instructions
+
+This is especially dangerous because Exp 37’s success came from **tight prompt-parser coupling**. Generalization often breaks exactly here.
+
+### Falsifier
+This finding is false if parser explicitly accepts aliases:
+- `DESCRIPTION` mapped to `FIND`
+- `PROPOSED_FIX` mapped to `FIX`
+
+and downstream consumers use normalized canonical names.
+
+### Attempt
+No parser snippet was shown. Subagent 1 flagged this as a possible parser mismatch. Because parser behavior is unknown, the mismatch remains unresolved.
+
+Under CDSFL ambiguity defaults to HARD. So until proven otherwise, treat as material.
+
+### Follow
+If true:
+- findings may lose the descriptive body or fix body
+- malformed parse can contaminate registry, semantic novelty scoring, merge decisions
+- models may appear noncompliant despite following prompt exactly
+- rerun risks “false low adoption” due to infrastructure mismatch rather than model behavior
+
+### Position
+**UNCERTAIN but high-risk.** This is a **pre-launch verification blocker** unless parser alias support is confirmed.
+
+### Recommended fix
+Best path:
+1. **Parser accepts both old and new labels**
+   - `FIND|DESCRIPTION`
+   - `FIX|PROPOSED_FIX`
+2. Normalize internally to canonical names.
+3. Prefer prompt text that preserves Exp 37 labels:
+   - `FIND: ...`
+   - `FIX: REQUIRED — provide as SEARCH/REPLACE blocks`
+   
+That gives you both backward compatibility and stronger fix formatting.
+
+### R_k
+- `R_old = 0.78`
+- `η = 0.72`
+- `d = 0.80`
+- `p = 0.75`
+- `σ = 0.65` (because parser not shown)
+- `ν = 0.70`
+
+**Estimated residual risk: `R_k ≈ 0.71`**  
+Interpretation: substantial unresolved risk until parser compatibility is confirmed.
+
+---
+
+## F003 — `sigma` / `nu` parameter names do not match operational directive notation
+**Severity:** 0.58  
+**Class:** notation / interface  
+**Abstraction:** 0.62
+
+### Finding
+Prompt asks for numerical estimates for `η, d, p, σ, ν`.  
+You note the operational directive uses `S_k`, `ν_b`, `ν_f`.
+
+This mismatch can cause:
+- inconsistent interpretation
+- shallow compliance (“here are some guessed numbers”)
+- incorrect or non-comparable R_k calculations across models
+
+### Falsifier
+False if operational directive explicitly states acceptable shorthand aliases:
+- `σ ≡ S_k`
+- `ν ≡ aggregate novelty term from ν_b/ν_f`
+
+### Attempt
+No such aliasing text is shown. Therefore unresolved.
+
+### Follow
+Consequences:
+- weaker standardization of R_k values
+- adoption may occur in form but not in mathematically comparable substance
+- some models may comply better than others simply because naming is clearer to them
+
+### Position
+**CONFIRMED as a quality issue, not a primary blocker.**
+
+### Recommended fix
+Either:
+- prompt with exact directive notation: `η, d, p, S_k, ν_b, ν_f`
+- or explicitly define aliases in prompt:
+  - `σ (use as S_k if your directive notation uses S_k)`
+  - `ν (or split into ν_b and ν_f if defined that way in your directive)`
+
+Best is exact notation from the governing equation.
+
+### R_k
+- `R_old = 0.55`
+- `η = 0.70`
+- `d = 0.55`
+- `p = 0.65`
+- `σ = 0.60`
+- `ν = 0.50`
+
+**Estimated residual risk: `R_k ≈ 0.54`**  
+Moderate; fix before launch if easy.
+
+---
+
+## F004 — Missing prior-fix / prior-review summary in generic runner
+**Severity:** 0.46  
+**Class:** completeness  
+**Abstraction:** 0.74
+
+### Finding
+Exp 37 included `prior_fix_summary`; reference_runner does not.
+
+This is not article-specific fluff. It encoded a real lesson: **tell models what’s already been reviewed/fixed so they target novel defects.**
+
+For Exp 39, where lesson attrition was the root cause, omitting a generic equivalent reintroduces some duplication risk.
+
+### Falsifier
+False if registry summary already fully communicates:
+- prior-reviewed artifacts
+- fixed issue classes
+- current scope boundaries
+- novelty target
+
+### Attempt
+The shown `registry_summary` may summarize entries by round, but not necessarily pre-experiment fix history or reviewed scope. Not enough evidence it fully replaces prior-fix-summary.
+
+### Follow
+Consequences:
+- more duplicate findings
+- more time wasted rediscovering known/fixed issues
+- lower semantic novelty
+- weaker panel efficiency, though not directly lower R_k adoption
+
+### Position
+**CONFIRMED as beneficial but non-blocking.**
+
+### Recommended generic version
+Add a short preamble like:
+
+- “PRIOR REVIEW CONTEXT — focus on novel issues.”
+- reviewed artifacts/modules in earlier experiments
+- known fixed classes/issues
+- read-only supporting context vs active target
+- instruction to avoid re-reporting already fixed or out-of-scope issues unless regression is evidenced
+
+### R_k
+Not necessary; this is optimization, not a relaunch blocker.
+
+---
+
+## F005 — Metrics section order changed and closing delimiter removed
+**Severity:** 0.31  
+**Class:** documentation / interface  
+**Abstraction:** 0.40
+
+### Finding
+Exp 37:
+- metrics before registry summary
+- explicit `=== END METRICS ===`
+
+reference_runner:
+- appends metrics after registry summary
+- no end delimiter
+
+### Falsifier
+False if composed prompt remains clearly segmented and models show no degradation from order.
+
+### Attempt
+Given the strength of the metrics labels and low semantic ambiguity, this is unlikely to strongly affect behavior. The missing end delimiter is cosmetically untidy but usually not fatal.
+
+### Follow
+Potential effects:
+- slight reduction in salience of metrics
+- weaker calibration if registry text is long and metrics come later
+- small parsing/attention ambiguity
+
+### Position
+**Mostly noise.** Worth cleaning, not blocking.
+
+### Recommended fix
+Restore exact Exp 37 formatting if cheap:
+- metrics first
+- registry after
+- close metrics block explicitly
+
+No need to delay launch solely for this.
+
+---
+
+## F006 — FINDING_ID wording was weakened
+**Severity:** 0.34  
+**Class:** documentation / interface  
+**Abstraction:** 0.46
+
+### Finding
+Exp 37 used a stronger stability instruction with concrete example; reference_runner says only “STABLE across rounds.”
+
+### Falsifier
+False if models already maintain stable IDs well from concise instruction alone.
+
+### Attempt
+The weaker wording is real. But whether it materially harms behavior is uncertain.
+
+### Follow
+Consequences:
+- possible increase in ID churn across rounds
+- harder merge/dedup
+- lower registry quality
+
+### Position
+**Real but secondary.** Cheap to fix; not a blocker.
+
+### Recommended fix
+Restore the explicit example sentence from Exp 37 verbatim.
+
+---
+
+## F007 — Severity anchor `(1.0 = critical)` removed
+**Severity:** 0.18  
+**Class:** notation  
+**Abstraction:** 0.20
+
+### Finding
+Scale anchor was removed.
+
+### Falsifier
+False if severity distribution remains usable without anchor.
+
+### Attempt
+Likely minor.
+
+### Position
+**Noise / minor prompt regression.** Restore for consistency, but not important to R_k adoption.
+
+---
+
+## F008 — Legacy `_should_decompose()` stale call sites
+**Severity:** 0.10 for Exp 39  
+**Class:** technical debt  
+**Abstraction:** 0.55
+
+### Finding
+Legacy runners still call old signature.
+
+### Position
+**Not blocking for Exp 39.** Real debt, wrong venue.
+
+---
+
+## F009 — Missing file existence handling / stale docstring
+**Severity:** 0.12  
+**Class:** robustness / documentation  
+**Abstraction:** 0.22
+
+### Finding
+No graceful handling for nonexistent test article; stale docstring mentions evidence.py.
+
+### Position
+**Real but not related to R_k adoption failure**, unless configs are unstable. Not a relaunch blocker if test articles have already been verified.
+
+---
+
+# Answers to subagent findings: genuine risks vs noise
+
+## Agent 1 — Prompt schema differences
+**Mixed.**
+- `FIND` vs `DESCRIPTION`: **genuine risk**
+- `FIX` vs `PROPOSED_FIX`: **genuine risk**
+- weakened stable-ID wording: **minor genuine risk**
+- missing severity anchor: **mostly noise**
+- ABSTRACTION_INDEX claim: **stale/noise**
+
+## Agent 2 — Stale call sites
+**Noise for Exp 39**, genuine technical debt overall.
+
+## Agent 3 — Metrics injection differences
+**Mostly noise**, low-to-moderate quality issue, not primary risk.
+
+## Agent 4 — Missing file check / stale docstring
+**Operational hygiene**, not central to this relaunch.
+
+## Agent 5 — Parser gap + parameter naming mismatch
+**Strongest subagent.**
+- no independent CORROBORATION enforcement: **genuine blocker**
+- parameter naming mismatch: **real moderate issue**
+
+---
+
+# Review question 1 in more depth: what key names should parser use?
+
+Since the parser code is not shown, the correct answer is:
+
+**Required immediate verification target:** inspect parser for accepted labels.  
+It should ideally accept this alias set:
+
+- `FINDING_ID`
+- `SEVERITY`
+- `FLAW_CLASS`
+- `ABSTRACTION_INDEX`
+- `FIND` or `DESCRIPTION`
+- `FOLLOW`
+- `ANALYSE`
+- `FIX` or `PROPOSED_FIX`
+- `FALSIFICATION`
+- `CORROBORATION`
+- optional `VERIFIED`
+
+Internally normalize to canonical names, e.g.:
+- `description`
+- `fix`
+
+If parser is strict and only accepts one label set, align the prompt to that exact set.
+
+**Definitive stance:** do not launch until this is verified.
+
+---
+
+# Review question 3 in more depth: which is better, `PROPOSED_FIX` or `FIX`?
+
+Best answer is **both**:
+- prompt label: **`FIX:`**
+- content requirement: **must be expressed as SEARCH/REPLACE blocks**
+
+Why:
+- preserves Exp 37 parser compatibility
+- preserves S_k pipeline verifiability
+- avoids introducing a new top-level key name unless parser knows it
+
+Suggested wording:
+```text
+FIX: REQUIRED — the simplest sufficient correction addressing root cause and FOLLOW consequences.
+Express FIX as SEARCH/REPLACE blocks:
+<<<< SEARCH file_path
+...
+====
+...
+>>>> REPLACE
+```
+
+That is the safest hybrid.
+
+---
+
+# Review question 4: generic prior-fix-summary template
+
+Yes, add one. Example:
+
+```text
+PRIOR REVIEW CONTEXT:
+Earlier experiments reviewed related modules and already surfaced/fixed some issue classes.
+Treat supporting files as context unless explicitly named as the review target.
+Focus on NEW, target-local issues and regressions, not re-reporting previously fixed problems.
+If you suspect a prior fix regressed, cite concrete evidence of the regression.
+```
+
+Better version also includes:
+- prior reviewed artifacts list
+- active target artifact
+- read-only context artifacts
+- known fixed issue summaries
+- current experiment purpose
+
+---
+
+# Other missing lessons from Exp 37 likely still absent
+
+1. **Exact prompt-parser contract preservation**
+2. **Hard fail on missing mandatory sections**
+3. **Scope-specific scaffolding / focus areas**
+4. **Explicit novelty steering from prior review context**
+5. **Canonical formatting examples for mandatory quantitative sections**
+
+That last one matters for R_k. If you want stronger adoption, add a tiny example:
+
+```text
+CORROBORATION:
+  R_old=0.42
+  η=0.80, d=0.30, p=0.60, S_k=0.75, ν_b=0.20, ν_f=0.10
+  R_k=0.31
+```
+
+Models often comply better with a shape example.
+
+---
+
+# Additional issue not explicitly raised: equation accessibility risk
+
+The prompt says:
+> compute your residual risk R_k using the self-assessment equation in the operational directive
+
+If the operational directive is not actually visible in the effective model context for every dispatch path, then some models will fabricate, approximate, or omit.
+
+This would be a real residual risk if:
+- `cdsfl_text` is not always included
+- some decomposed paths omit the operational directive
+- some providers get a shortened context missing the equation
+
+**This should be checked.** It is a plausible hidden failure mode.
+
+### FFAFP
+- **Finding:** R_k instruction may reference an equation not accessible in all dispatch contexts.
+- **Falsifier:** every model path includes the operational directive with the equation.
+- **Attempt:** not provable from snippets.
+- **Follow:** noncomparable or missing R_k sections.
+- **Position:** **UNCERTAIN; verify before launch.**
+
+I would treat this as a **preflight verification item**, not yet a blocker from current evidence.
+
+---
+
+# Recommended pre-launch patch list
+
+## Blockers
+1. **Enforce CORROBORATION in parser/validator**
+   - reject or explicitly mark invalid if absent
+2. **Verify and fix prompt/parser key alignment**
+   - parser accepts aliases or prompt reverts to Exp 37 canonical labels
+
+## Strongly recommended before launch
+3. Use exact operational parameter names for R_k
+   - `S_k`, `ν_b`, `ν_f`, or explicit alias mapping
+4. Change prompt top-level key names back to Exp 37 style:
+   - `FIND`
+   - `FIX`
+   while preserving SEARCH/REPLACE requirement inside `FIX`
+5. Restore stronger stable-ID wording example
+6. Add generic prior-review / prior-fix context block
+7. Add a tiny CORROBORATION formatting example
+
+## Nice to have
+8. Restore `=== END METRICS ===`
+9. Put metrics before registry summary if you want closer Exp 37 parity
+10. Fix stale docstrings / file checks / legacy call sites later
+
+---
+
+# Final readiness assessment
+
+## Current status
+**Major confounds fixed, but not yet safe to relaunch as “clean.”**
+
+## Remaining blockers
+Two real blockers remain:
+
+- **B1: parser does not independently require CORROBORATION**
+- **B2: unresolved parser/prompt field-name mismatch (`FIND`/`FIX` vs `DESCRIPTION`/`PROPOSED_FIX`)**
+
+If those are fixed or conclusively falsified by code inspection, then the runner becomes **ready for Exp 39 re-launch**.
+
+## Bottom line
+**Do not relaunch yet.**  
+Perform one short preflight patch/inspection cycle to close the parser-enforcement and field-alignment gaps. After that, the runner is likely ready.

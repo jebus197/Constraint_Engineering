@@ -1,10 +1,8 @@
 {
-    "_comment": "39-A: Mathematics Specialist. R_k equation extensions, gamma/rho behavior, specialist tool access.",
-    "test_article": "docs/MATHEMATICAL_APPENDIX.md",
+    "_comment": "39-A: Mathematics Specialist. Target: convergence detector (17K) — the mathematical heart of the system. Context: types (30K). SymPy/z3 verification.",
+    "test_article": "bench/dm/_convergence.py",
     "context_files": [
-        "bench/reference_runner.py",
-        "bench/runner_core.py",
-        "bench/immune_agents.py"
+        "bench/dm/_types.py"
     ],
     "topology": "star",
     "pattern": "four_layer",
@@ -31,27 +29,10 @@
     },
 
     "_convergence_criteria": {
-        "description": "Converges when: R_k extension proposals stabilize. Models produce verified (SymPy/z3) proposals.",
+        "description": "Converges when: R_k equation proposals stabilize. Models produce verified (SymPy/z3) proposals.",
         "primary": "gamma >= 0.45 AND 2 consecutive rounds with 0 novel findings",
-        "secondary": "3+ consecutive churn rounds with gamma >= 0.35",
-        "fail_condition": "Wall clock cap without any SymPy-verified R_k proposal"
+        "secondary": "3+ consecutive churn rounds with gamma >= 0.35"
     },
 
-    "_artifact_schema": {
-        "output_file": "exp39_A_mathematics_report.json",
-        "required_fields": [
-            "rk_extension_proposals",
-            "sympy_verification_count",
-            "z3_proof_count",
-            "gamma_trajectory",
-            "rho_trajectory",
-            "specialist_cell_findings_vs_generic"
-        ],
-        "key_measures": [
-            "eta_change: detection probability with vs without specialist tools",
-            "d_change: difficulty modifier with vs without domain tools",
-            "p_change: presentation quality specialist vs generic",
-            "convergence_rate: rounds to gamma 0.45 vs Exp 38 baseline"
-        ]
-    }
+    "_payload_note": "dm/_convergence.py=17K + dm/_types.py=30K = 47K total. Well under 80K. All monolithic."
 }

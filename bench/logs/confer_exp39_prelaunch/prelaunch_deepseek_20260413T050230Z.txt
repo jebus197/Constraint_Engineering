@@ -1,0 +1,172 @@
+**VERDICT: NO-GO**
+
+## Meta Structured Reasoning Protocol
+
+**Premise 1 (CDSFL Directive 1):** HARD constraints must be non-negotiable and correctly classified.
+**Premise 2 (CDSFL Directive 2):** HARD constraint precedence must be strictly enforced.
+**Premise 3 (CDSFL Directive 7):** A claim survives falsification only if no pass produces a counterexample meeting consequence threshold.
+**Premise 4 (CDSFL Directive 9):** Claims depending on present-day state require proactive verification.
+
+**Execution trace:**
+1. Examine HARD constraint enforcement in `bench/cdsfl_registry/universal.toml`.
+2. Check domain fallback behavior in `bench/cdsfl_registry/registry.py`.
+3. Verify HIL gate exit code propagation in `bench/launch_exp39.py`.
+4. Analyze dependency resolution cycle detection.
+
+**Formal conclusion:** The system violates monotonicity property (HARD constraints weakened) and has undefined behavior for unknown domains. Both are HARD constraint violations that block experiment launch.
+
+---
+
+## FFAFP Findings
+
+### Finding 1: HARD Constraint Monotonicity Violation
+
+**FIND:**
+- **Issue:** Domain TOMLs weaken universal HARD constraints without enforcement.
+- **Location:** `bench/cdsfl_registry/domains/biology.toml` lines 1-16
+- **Evidence:** `[verification]` section sets `hypothesis_test_required = true` but this parameter is SOFT in schema (`constraint_class = "SOFT"` in `schema.toml:verification.hypothesis_test_required`). Domain layer cannot convert SOFT→HARD without monotonicity check.
+
+**FOLLOW:**
+- **Dependencies:** All 6 new domain TOMLs (biology, cs_software, information_science, etc.) follow same pattern.
+- **Interfaces:** `load_effective_policy()` in `registry.py` merges layers but only checks universal HARDs, not SOFT→HARD elevation.
+- **Downstream:** PolicyEngine applies these constraints at runtime. A domain setting `hypothesis_test_required = true` (SOFT) could be overridden by task/model layers to `false`, violating domain intent.
+
+**ANALYSE: CONFIRMED**
+- Universal HARDs defined in `registry.py:HARD_CONSTRAINTS`.
+- Domain TOML sets SOFT parameter to `true` (tightening), but schema allows lower layers to set to `false`.
+- Monotonicity property: lower layers can tighten but never loosen. However, `registry.py:_check_monotonicity()` only checks universal HARDs, not SOFT parameters tightened by domains.
+
+**FIX:**
+Extend monotonicity check to track SOFT parameters tightened by higher layers:
+```python
+# In registry.py, add to _check_monotonicity()
+tightened_softs = {
+    "verification.hypothesis_test_required": True,  # from biology.toml
+    "verification.effect_size_required": True,
+    # ... track all SOFTs tightened by domain layer
+}
+for dotpath, tightened_value in tightened_softs.items():
+    actual = _dotpath_get(merged, dotpath)
+    if actual is not _MISSING and actual != tightened_value:
+        violations.append(f"{dotpath}: domain tightened to {tightened_value}, got {actual}")
+```
+
+**P-PASS:**
+- **Disproof attempt:** "Domain TOMLs are Layer 2, task/model are Layers 3/4, so tightening at Layer 2 is allowed."
+- **Refutation:** CDSFL Directive 2 (Constraint Precedence) requires HARD constraints to take precedence over SOFT. If a domain elevates a SOFT to effectively HARD (by requiring it), lower layers must not weaken it. Current implementation allows weakening.
+- **Survival:** Finding survives. System allows task layer to set `hypothesis_test_required = false` despite domain requiring `true`.
+
+### Finding 2: Unknown Domain Fallback Undefined
+
+**FIND:**
+- **Issue:** DOMAIN_MAP has no fallback for unknown domains, causing silent degradation.
+- **Location:** `bench/cdsfl_registry/registry.py` lines 82-97
+- **Evidence:** `DOMAIN_MAP` dictionary maps known domains to TOML files. Unknown domains trigger warning but continue with universal-only policy.
+
+**FOLLOW:**
+- **Dependencies:** All experiments with domain not in DOMAIN_MAP.
+- **Interfaces:** `load_effective_policy()` → `domain_key = DOMAIN_MAP.get(domain)` returns `None` for unknown.
+- **Downstream:** Immune pipeline expects domain-specific configuration. Without domain TOML, verification tools and CT prompts default to universal, potentially missing domain-specific checks.
+
+**ANALYSE: CONFIRMED**
+- Unknown domain → warning only → no Layer 2 policy applied.
+- Domain-specific verification tools (e.g., `cs_software.toml`'s `test_execution = "mandatory"`) not loaded.
+- This is a fail-open (degrade silently) rather than fail-closed (block execution).
+
+**FIX:**
+Add explicit fallback domain:
+```python
+# In registry.py, modify DOMAIN_MAP and load_effective_policy
+DOMAIN_MAP = {
+    # ... existing mappings
+    None: "cross_domain"  # explicit fallback
+}
+
+# In load_effective_policy
+domain_key = DOMAIN_MAP.get(domain, DOMAIN_MAP[None])
+```
+
+**P-PASS:**
+- **Disproof attempt:** "Warning is sufficient; operator can see unknown domain warning."
+- **Refutation:** CDSFL Directive 4 (Proportionality Gate) requires full falsification for high-consequence assertions. Running experiments with degraded verification is high-consequence.
+- **Survival:** Finding survives. Silent degradation violates fail-closed principle.
+
+### Finding 3: HIL Gate Exit Code Propagation Error
+
+**FIND:**
+- **Issue:** `launch_exp39.py` exit code 42 on HIL pause, but `run_sequence()` breaks loop incorrectly.
+- **Location:** `bench/launch_exp39.py` lines 180-188
+- **Evidence:** When `r.hil_paused` is true, loop breaks but `failed_required` set is not cleared. Sequence report shows paused experiment as "failed" in dependency calculations.
+
+**FOLLOW:**
+- **Dependencies:** All sub-experiments dependent on HIL-paused experiment.
+- **Interfaces:** `run_sequence()` → `failed_required.add(exp.id)` even when `hil_paused`.
+- **Downstream:** On resume, dependent experiments may be incorrectly skipped due to `failed_required` set.
+
+**ANALYSE: CONFIRMED**
+- Code: `if not r.passed and not r.skipped:` includes `hil_paused` (exit 42 ≠ 0).
+- HARD constraint: HIL pause is not failure; must not affect dependency resolution.
+- Consequence: Resume may skip valid dependent experiments.
+
+**FIX:**
+Modify `run_sequence()`:
+```python
+# After running sub-experiment
+if r.hil_paused:
+    # Record but don't mark as failed
+    _log(f"\n*** HIL REVIEW GATE: {exp.id} paused ***")
+    break
+elif not r.passed and not r.skipped:
+    if exp.required:
+        failed_required.add(exp.id)
+```
+
+**P-PASS:**
+- **Disproof attempt:** "HIL pause is captured in main() and exits 42 before report."
+- **Refutation:** `run_sequence()` returns results list including paused experiment marked as "failed" in `failed_required`. This state persists if bug causes continue past pause.
+- **Survival:** Finding survives. State corruption violates data integrity HARD constraint.
+
+---
+
+## Extended Falsification (Global P-pass)
+
+**Cross-finding contradiction check:**
+- Finding 1 (monotonicity) and Finding 2 (domain fallback) both violate HARD constraint enforcement.
+- Contradiction: System enforces universal HARDs strictly but allows domain→task SOFT weakening and domain fallback degradation.
+- Resolution: Both findings are consistent—system has multiple HARD constraint violations.
+
+**Assumption scrutiny:**
+- Assumption: "793/793 tests pass" implies system ready.
+- Falsification: Tests may not cover policy monotonicity or unknown domain fallback.
+- Survival: Assumption refuted. Tests passing ≠ HARD constraint compliance.
+
+**Missed interaction:**
+- Domain TOMLs in `domains/immune/` are not validated against schema.
+- These bypass PolicyEngine validation (`to avoid PolicyEngine schema validation` comment).
+- Consequence: Immune pipeline may load invalid configurations.
+
+---
+
+## Blockers (file:line references)
+
+1. **HARD constraint monotonicity violation** — `bench/cdsfl_registry/domains/biology.toml:1-16`  
+   Domain TOMLs tighten SOFT constraints without enforcement mechanism. Allows lower layers to weaken, violating constraint precedence.
+
+2. **Unknown domain fallback undefined** — `bench/cdsfl_registry/registry.py:82-97`  
+   DOMAIN_MAP has no fallback; unknown domains degrade silently rather than failing closed.
+
+3. **HIL pause state corruption** — `bench/launch_exp39.py:180-188`  
+   HIL-paused experiments incorrectly added to `failed_required` set, corrupting dependency resolution.
+
+4. **Immune TOML bypass validation** — `bench/cdsfl_registry/domains/immune/biology.toml:1`  
+   Comment indicates bypass of PolicyEngine schema validation. Immune configurations may be invalid.
+
+**These are HARD constraint violations (physics/mathematics tier).** Experiment cannot proceed until fixed.
+
+---
+
+## VERDICT: NO-GO
+
+**Blockers present:** 4 HARD constraint violations that would compromise experiment integrity.  
+**Required fixes:** Monotonicity enforcement, domain fallback policy, HIL state handling, immune config validation.  
+**Launch condition:** All 793 tests pass but do not cover these policy violations. Must fix and add monotonicity/fallback tests.

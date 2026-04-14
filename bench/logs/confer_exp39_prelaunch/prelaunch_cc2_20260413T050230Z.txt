@@ -1,0 +1,108 @@
+Looking at Experiment 39 pre-launch for GO/NO-GO assessment. Applying full CDSFL + Meta Structured Reasoning Protocol + FFAFP.
+
+## Meta Structured Reasoning Protocol
+
+**Premise 1**: Experiment 39-0 is an infrastructure gate test (8 rounds, star topology, 1h wall clock) targeting bench code itself  
+**Premise 2**: Recent changes include HIL review gates, domain plumbing, PE HARD constraints, and enum serialization fixes  
+**Premise 3**: 793/793 tests pass on branch exp39-experimental, commit 83dd7ab  
+**Premise 4**: System must handle exit code 42 for HIL pauses and resume cleanly via --resume flag  
+
+**Concrete Example Trace**: When 39-0 encounters a CRITICAL finding, the runner should exit with code 42, sequencer should detect this via `r.exit_code == 42`, break the sequence, and exit with code 42 to signal HIL pause.
+
+## FFAFP Analysis
+
+### Finding 1: HIL Gate Implementation
+
+**FIND**: HIL review gate implementation in `launch_exp39.py`  
+**FOLLOW**: 
+- Lines 193-195: Flags forwarded to child (`--hil-review`, `--resume`)
+- Lines 35-38: `hil_paused` property detects exit code 42
+- Lines 306-310: Sequence breaks on HIL pause  
+- Lines 381-385: Exit code 42 propagated to parent process
+- Lines 276-280: Dependency logic excludes HIL paused states from failures
+
+**ANALYSE**: CONFIRMED - HIL gate propagates correctly through sequencer  
+**FIX**: N/A  
+**P-PASS**: Could fail if `reference_runner.py` doesn't actually implement `--hil-review`/`--resume` flags. The sequencer forwards them but I cannot verify the child process handles them.
+
+### Finding 2: PE HARD Constraint Enforcement  
+
+**FIND**: New HARD constraints `ffafp_required` and `structured_reasoning_required`  
+**FOLLOW**:
+- `schema.toml` lines 60-75: Defined as HARD constraints  
+- `registry.py` lines 52-54: Added to HARD_CONSTRAINTS enforcement dict
+- `universal.toml` lines 8-9: Set to true at universal layer
+- `_check_monotonicity()`: Prevents lower layers from weakening
+
+**ANALYSE**: CONFIRMED - Monotonicity enforcement prevents weakening at config merge time  
+**FIX**: N/A  
+**P-PASS**: This only checks config-time enforcement. Are these constraints actually enforced at runtime during experiment execution? The monotonicity prevents config violations, but what ensures runtime compliance?
+
+### Finding 3: Domain Plumbing Chain
+
+**FIND**: Domain field added to configs and mapped in registry  
+**FOLLOW**: 
+- `39_0_gate.json` line 13: `"domain": "software"`
+- `registry.py` lines 92-102: DOMAIN_MAP includes new Exp 39 domains
+- New domain TOMLs exist for biology, information_science, cs_software
+
+**ANALYSE**: UNCERTAIN - Can see config mapping but not end-to-end propagation  
+**FIX**: Need to verify cfg.domain → dm_config.domain → InsectBrain → immune pipeline chain  
+**P-PASS**: The domain mapping exists in registry, but I have no evidence the immune pipeline actually consumes this. Could be a dead configuration path.
+
+### Finding 4: Missing Implementation Visibility
+
+**FIND**: Critical implementations not visible in provided source excerpts  
+**FOLLOW**: Cannot verify:
+- Whether `reference_runner.py` handles `--hil-review`/`--resume` flags
+- End-to-end domain propagation to immune pipeline  
+- Enum serialization fixes (`_enum_safe_default()`)
+- Round report detail implementation with provenance
+- RegulatoryResult dataclass structure
+- Runtime enforcement of new HARD constraints
+
+**ANALYSE**: CONFIRMED - Insufficient implementation visibility for GO/NO-GO decision  
+**FIX**: Would need to examine reference_runner.py, immune pipeline code, and enum serialization implementations  
+**P-PASS**: This finding cannot be disproven - the source excerpts genuinely do not include these critical components.
+
+### Finding 5: Sequencer Dependency Resolution
+
+**FIND**: Topological sort implementation with cycle detection  
+**FOLLOW**: 
+- Lines 73-114: Kahn's algorithm implementation
+- Lines 112-114: Cycle detection with descriptive error
+- Lines 81-87: Transitive dependency inclusion for `--only`
+- HIL paused states correctly excluded from dependency failures
+
+**ANALYSE**: CONFIRMED - Standard topological sort with proper error handling  
+**FIX**: N/A  
+**P-PASS**: Implementation appears correct. Could fail on malformed dependency graphs, but cycle detection should catch this.
+
+## Extended Falsification - Global P-Pass
+
+**Cross-finding analysis**: The most critical issue is Finding 4 - insufficient implementation visibility. For a GO/NO-GO decision on a large multi-day experiment, I need to verify:
+
+1. **HIL flag handling**: Does `reference_runner.py` actually support the forwarded flags?
+2. **Domain propagation**: Is the cfg.domain → immune pipeline chain complete?  
+3. **Runtime constraint enforcement**: Are the new HARD constraints enforced during execution?
+4. **Data integrity**: Do the enum serialization fixes maintain JSON round-trip fidelity?
+
+**Contradiction check**: No logical contradictions found. The pattern change from "fff" to "four_layer" is consistent across all configs, matching the composer.py rename of Layer 2 to FFAFP.
+
+**Risk assessment**: The visible components (sequencer logic, config hierarchy, monotonicity enforcement) appear well-implemented. However, the lack of visibility into critical runtime components creates unacceptable risk for experiment launch.
+
+## Verdict
+
+**VERDICT: NO-GO**
+
+**Specific blockers requiring fixes:**
+
+1. **bench/reference_runner.py:?** - Cannot verify `--hil-review` and `--resume` flag handling. The sequencer forwards these flags but without seeing the runner implementation, HIL gates may fail silently.
+
+2. **Missing immune pipeline integration** - Cannot verify that cfg.domain propagates through dm_config.domain → InsectBrain → immune pipeline. The domain TOMLs exist but may not be consumed.
+
+3. **Missing runtime HARD constraint enforcement verification** - The PE schema defines new HARD constraints but cannot verify they're enforced during experiment execution (only at config merge time).
+
+4. **Missing enum serialization implementation** - The `_enum_safe_default()` replacement is described but not visible, creating risk of JSON serialization failures.
+
+These components must be reviewed and verified functional before 39-0 launch. The infrastructure gate test cannot validate the system if core runtime mechanisms are unverified.
