@@ -25,6 +25,33 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **POST EXP 39-0: TOOL PERMISSIONS + ν_k NOVELTY METRIC DESIGN (14 April 2026 09:07 BST):**
+  Branch: `exp39-experimental`. Commit: pending. 793 tests pass.
+  
+  **Tool permissions resolved:**
+  CC1 (interactive): `.claude/settings.json` auto-approves all native + MCP tools.
+  CC2 (sub-agent): `--allowedTools Bash Read Write Edit Grep Glob WebFetch WebSearch`.
+  Both instances now have full STEM tool access without interactive prompts.
+  
+  **ν_k (nu-k) novelty metric designed (Phase 7):**
+  Per-finding literature novelty score ∈ [0,1]. Computed by O1 (Ouroboros) cell
+  against pluggable research sources (arXiv, Semantic Scholar, Unpaywall, CORE, OpenAlex).
+  Composes with existing η coefficient: `η_combined = η_int · (1 − c_ext · (1 − ν_k))`.
+  Abstraction Index H from neurodiversity work solves boundary problem.
+  All boundary conditions verified SymPy + Wolfram. Monotonicity confirmed.
+  
+  **CDSFL self-assessed at ν_k = 0.807 (genuinely novel).**
+  8 components scored against literature. Nearest competitor: Stanford POPPER (Feb 2025).
+  Full analysis: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
+  TTS: `~/Desktop/CDSFL_tts/Novelty_Scoring_nu_k_Design_2026-04-14.txt`
+  
+  **Still outstanding for Exp 39-1:**
+  - DeepSeek specialist role (Phase 6) — smoke tested (75s, caught R_k error), not wired
+  - OpenRouter tool-use mode for Codex/ChatGPT/Gemini/DeepSeek (CC2 now has Bash)
+  - 7 lessons-forward items from Exp 36-38 still pending
+  - Fingerprint attention metrics gap still open
+  - ν_k implementation (Phase 7) — designed, not yet coded
+
 - **EXP 39-0 GATE — 10 BUGS FOUND AND FIXED (14 April 2026 02:19 BST):**
   Branch: `exp39-experimental`. Commit: 5814760. 793 tests pass.
   Type: Gate experiment — runner_core.py (38K), star topology, 5 models.
@@ -45,12 +72,6 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   
   Full post-mortem: `experimental_notes/Exp39_0_Gate_PostMortem_2026-04-14.md`
   5 detailed analyses: `bench/logs/exp39_0_gate_20260413T193320Z/analysis_*.md`
-  
-  **Still outstanding for Exp 39-1:**
-  - DeepSeek specialist role (Phase 6) — smoke tested (75s, caught R_k error), not wired
-  - OpenRouter tool-use mode for Codex/ChatGPT/Gemini/DeepSeek (CC2 now has Bash)
-  - 7 lessons-forward items from Exp 36-38 still pending
-  - Fingerprint attention metrics gap still open
 
 - **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
   Cell type split, 4 confer rounds, gap analysis. See experimental notes.

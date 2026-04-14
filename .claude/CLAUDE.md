@@ -107,8 +107,10 @@ If the tools cannot verify a claim, the claim is UNVERIFIABLE — escalate, do n
 
 ### Claude Code Native Tools
 
-Read, Grep, Glob, Edit, Write, Bash — for source inspection, search, and modification.
-These are available to CC1 directly and should be wired to CC2 sub-agents that need source access.
+Bash, Read, Write, Edit, Grep, Glob, WebFetch, WebSearch — full STEM tool access.
+CC1 permissions: `.claude/settings.json` auto-approves all native + MCP tools.
+CC2 permissions: `--allowedTools Bash Read Write Edit Grep Glob WebFetch WebSearch` in CLI dispatch.
+Both instances have unrestricted access to all tools for STEM research, source inspection, and modification.
 
 ### When to Use What
 

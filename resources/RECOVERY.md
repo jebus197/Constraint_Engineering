@@ -21,34 +21,26 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (14 April 2026 02:19 BST)
+## Current Pending Work (14 April 2026 09:07 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: 5814760.
+793 tests pass. Branch: `exp39-experimental`. Last commit: f5e73ab.
 
-**EXP 39-0 GATE COMPLETE — 10 BUGS FOUND AND FIXED.**
-6 rounds (R0-R5), 111 findings, 41 canonical, γ=0.461. Wall-clock terminated.
-R_k adoption 5/5 (100%). All 10 bugs fixed, committed, pushed.
-Post-mortem: `experimental_notes/Exp39_0_Gate_PostMortem_2026-04-14.md`
-TTS report: `~/Desktop/CDSFL_tts/Exp39_0_PostMortem_2026-04-14.txt`
-
-**FIXES APPLIED THIS SESSION (14 April 2026):**
-- S_k format mismatch: parser and evaluator now accept both SEARCH/REPLACE formats
-- Convergence gate: max_open_crit_high 0→5 (was structurally unreachable)
-- CC2 tool access: Bash no longer disallowed (can execute SymPy/z3/numpy)
-- Parser finding ID leaks: guards for code variable names + f-string sanitizer
-- Macrophage: diagnostic logging + 3 monitoring modes wired (provenance, gate_stats, ouroboros)
-- Post-parse R_k validation: deterministic recomputation, advisory logging
-- Autoimmune: DEPLETION vs AUTOIMMUNE distinction (no false alarm on duplicates)
-- ITC parse_yield: verdicts counted as valid output (no false DEGRADATION)
-- Fingerprint cache race condition: local-build-then-atomic-assign
-- Payload double-counting: len(model_cdsfl) + len(prompt) only
+**SESSION 14 APRIL MORNING — TOOL PERMISSIONS + ν_k DESIGN:**
+- CC1 tool permissions: `.claude/settings.json` created, all native + MCP tools auto-approved
+- CC2 tool access: `--allowedTools Bash Read Write Edit Grep Glob WebFetch WebSearch`
+- ν_k (nu-k) novelty metric designed, SymPy + Wolfram verified, all boundary conditions pass
+- CDSFL self-assessed at ν_k = 0.807 (genuinely novel) against literature
+- Nearest competitor: Stanford POPPER (Feb 2025) — different mechanism, narrower scope
+- Analysis: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
+- TTS: `~/Desktop/CDSFL_tts/Novelty_Scoring_nu_k_Design_2026-04-14.txt`
 
 **IMMEDIATE NEXT STEPS (consult HIL before proceeding):**
-1. Review morning report and analysis files
-2. Decide on DeepSeek role: specialist (Phase 6, smoke-tested) vs panel member
-3. Decide on OpenRouter tool-use mode for remaining 4 models
-4. Re-run Exp 39-0 gate test with all fixes in place
-5. Carry forward remaining 7 lessons from Exp 36-38
+1. Wire OpenRouter tool-use (add `tools` parameter to `call_openrouter()`)
+2. Wire DeepSeek specialist role (Phase 6) into pipeline
+3. Implement ν_k metric in O1 (Phase 7) — design complete, code pending
+4. Add Unpaywall + CORE + OpenAlex source adapters to O1
+5. Re-run Exp 39-0 gate test with all fixes in place
+6. Carry forward remaining 7 lessons from Exp 36-38
 
 **LESSONS-FORWARD AUDIT — 7 STILL MISSING:**
 4. Semantic novelty feedback (3 graduated signals from Exp 37)

@@ -310,7 +310,7 @@ def call_claude_cli(
         "--model", model_id,
         "--output-format", "text",
         "--no-session-persistence",
-        "--disallowed-tools", "Edit", "Write",  # analysis + tool verification; Bash enabled for SymPy/z3/numpy execution (Exp 39-0 fix)
+        "--allowedTools", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch",  # CC2 full STEM tool access: SymPy/z3/numpy/scipy via Bash, source via Read/Grep/Glob, research via WebFetch/WebSearch, modification via Edit/Write.
     ]
     if system_prompt:
         cmd.extend(["--system-prompt", system_prompt])
