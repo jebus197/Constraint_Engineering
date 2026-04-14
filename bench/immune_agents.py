@@ -129,6 +129,81 @@ _CLAUDE_CLI_CACHE = CLAUDE_CLI
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Tool manifest (Tranche C)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Central registry of B-Cell verification tools. The manifest TOML lives at
+# bench/cdsfl_registry/tool_manifest.toml and is the single source of truth
+# for what tools the specialist dispatch can invoke, their verifier function
+# names, arity (claim-only vs claim+file), claim types, and install checks.
+#
+# Adding a new tool requires only two changes:
+#   1. Write _verify_<name>(claim[, file_path]) below.
+#   2. Append a [tools.<name>] block to tool_manifest.toml.
+# No edit to _specialist_b_cell_dispatch() is required.
+
+_TOOL_MANIFEST_CACHE: Optional[Dict[str, Dict[str, Any]]] = None
+
+
+def _load_tool_manifest() -> Dict[str, Dict[str, Any]]:
+    """Load and cache the B-Cell tool manifest.
+
+    Returns the ``tools`` sub-dict of tool_manifest.toml, keyed by tool name.
+    Each value is a dict with fields described in the manifest header:
+    description, verifier, needs_file, claim_types, domain_hints, cost_class,
+    install_check, package_hint, delegate (optional).
+
+    Entries whose ``verifier`` name does not resolve to a module-level
+    function in this file are dropped with a stderr warning on first load.
+    Delegated entries (``delegate`` set) are kept as-is — the dispatch skips
+    them at call time.
+    """
+    global _TOOL_MANIFEST_CACHE
+    if _TOOL_MANIFEST_CACHE is not None:
+        return _TOOL_MANIFEST_CACHE
+
+    import tomllib  # stdlib Python 3.11+
+
+    manifest_path = (
+        Path(__file__).parent / "cdsfl_registry" / "tool_manifest.toml"
+    )
+    try:
+        with open(manifest_path, "rb") as f:
+            data = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as e:
+        print(
+            f"[tool_manifest] failed to load {manifest_path}: {e}",
+            file=sys.stderr,
+        )
+        _TOOL_MANIFEST_CACHE = {}
+        return _TOOL_MANIFEST_CACHE
+
+    tools: Dict[str, Dict[str, Any]] = dict(data.get("tools", {}))
+
+    # Validate: every non-delegated entry must reference an existing verifier.
+    # Drop bad entries so the dispatch never attempts getattr on a stale name.
+    module = sys.modules[__name__]
+    bad_entries: List[str] = []
+    for name, entry in tools.items():
+        if entry.get("delegate"):
+            continue
+        verifier_name = entry.get("verifier")
+        if not verifier_name or not hasattr(module, verifier_name):
+            bad_entries.append(name)
+
+    for name in bad_entries:
+        print(
+            f"[tool_manifest] dropping '{name}': verifier "
+            f"{tools[name].get('verifier')!r} not found in {__name__}",
+            file=sys.stderr,
+        )
+        tools.pop(name, None)
+
+    _TOOL_MANIFEST_CACHE = tools
+    return tools
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Data types
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -2527,13 +2602,21 @@ def _specialist_b_cell_dispatch(
 ) -> List[CellVerdict]:
     """Route claims to domain-specific verification tools based on TOML config.
 
-    Reads `immune.verification_tools` from the domain config to determine
-    which tools to use for each claim type. Falls back to generic B-Cell
-    dispatch (SymPy/z3/stats) if the domain config doesn't specify tools
-    for a given claim type.
+    Reads ``immune.verification_tools`` from the domain config to determine
+    which tools to use for each claim type, then looks up each tool name in
+    the manifest at ``bench/cdsfl_registry/tool_manifest.toml`` to resolve
+    the verifier function and its arity. Delegated tools (``ast_analysis``,
+    ``test_runner``) are skipped here because other cells handle them.
 
-    Phase B4: runs in shadow mode — logs what it WOULD do differently from
-    generic dispatch but does not affect final verdicts.
+    Semantics:
+      * first definitive verdict wins (break on non-UNCERTAIN)
+      * UNCERTAIN verdicts fall through to the next tool
+      * unknown / delegated / missing-verifier tools are skipped silently
+      * if all tools return UNCERTAIN, the last UNCERTAIN verdict is kept
+
+    Phase B4: runs in shadow mode — specialist verdicts are returned to the
+    caller but the reference runner does not fold them into ``all_verdicts``.
+    Promotion is a single-line flip in reference_runner.py.
     """
     immune_cfg = domain_config.get("immune", {})
     tool_map: Dict[str, List[str]] = immune_cfg.get("verification_tools", {})
@@ -2541,9 +2624,15 @@ def _specialist_b_cell_dispatch(
     if not tool_map:
         return []  # No specialist tools configured
 
-    verdicts: List[CellVerdict] = []
+    manifest = _load_tool_manifest()
+    if not manifest:
+        return []  # Manifest failed to load — treat as no specialist tools
 
-    # Map ClaimType enum values to TOML key names
+    verdicts: List[CellVerdict] = []
+    module = sys.modules[__name__]
+
+    # Map ClaimType enum values to TOML key names. Identity for now; kept
+    # as an explicit map so renaming either side does not silently break.
     _CLAIM_TYPE_TO_KEY = {
         "mathematical": "mathematical",
         "logical": "logical",
@@ -2565,55 +2654,25 @@ def _specialist_b_cell_dispatch(
 
         v: Optional[CellVerdict] = None
 
-        # Code domain tools need the target file path
+        # File-based verifiers need the target file path.
         target_file = getattr(tf.finding, "target_file", "") or ""
 
         for tool_name in specialist_tools:
-            # ── STEM domain tools (claim-based) ──
-            if tool_name == "sympy":
-                v = _verify_sympy(tf.extracted_claim)
-            elif tool_name == "z3":
-                v = _verify_z3(tf.extracted_claim)
-            elif tool_name == "statsmodels" or tool_name == "scipy":
-                v = _verify_statistical(tf.extracted_claim)
-            elif tool_name == "dimensional_analysis":
-                v = _verify_dimensional_analysis(tf.extracted_claim)
-            elif tool_name == "uncertainty_propagation":
-                v = _verify_uncertainty_propagation(tf.extracted_claim)
-            elif tool_name == "stoichiometric_balance":
-                v = _verify_stoichiometric_balance(tf.extracted_claim)
-            elif tool_name == "linear_programming":
-                v = _verify_linear_programming(tf.extracted_claim)
-            elif tool_name == "astronomical":
-                v = _verify_astronomical(tf.extracted_claim)
-            # ── Code domain tools (file-based) ──
-            elif tool_name == "type_checker":
-                v = _verify_type_check(tf.extracted_claim, target_file)
-            elif tool_name == "lint_check":
-                v = _verify_lint_check(tf.extracted_claim, target_file)
-            elif tool_name == "security_scan":
-                v = _verify_security_scan(tf.extracted_claim, target_file)
-            elif tool_name == "bytecode_analysis":
-                v = _verify_bytecode_analysis(tf.extracted_claim, target_file)
-            # ── Tranche B: behavioural + domain-specific tools ──
-            elif tool_name == "symbolic_execution":
-                v = _verify_symbolic_execution(tf.extracted_claim, target_file)
-            elif tool_name == "chemistry_structure":
-                v = _verify_chemistry_structure(tf.extracted_claim)
-            elif tool_name == "biological_sequence":
-                v = _verify_biological_sequence(tf.extracted_claim)
-            elif tool_name == "ml_claim":
-                v = _verify_ml_claim(tf.extracted_claim)
-            elif tool_name == "graph_property":
-                v = _verify_graph_property(tf.extracted_claim)
-            elif tool_name == "ast_analysis":
-                # AST analysis is handled by B-Cell v2 (structural AST walker)
+            entry = manifest.get(tool_name)
+            if entry is None or entry.get("delegate"):
+                # Unknown tool, or delegated to another cell (ast_analysis →
+                # B-Cell v2, test_runner → CT cell). Skip silently.
                 continue
-            elif tool_name == "test_runner":
-                # Test runner is handled by CT cell, not B-Cell specialist
+            verifier_fn = getattr(module, entry["verifier"], None)
+            if verifier_fn is None:
+                # Validator should have dropped this at load time; belt and
+                # braces in case the manifest is hot-reloaded in future.
                 continue
+
+            if entry.get("needs_file"):
+                v = verifier_fn(tf.extracted_claim, target_file)
             else:
-                continue  # Unknown tool, skip
+                v = verifier_fn(tf.extracted_claim)
 
             if v is not None and v.verdict != "UNCERTAIN":
                 v.evidence += f" [specialist:{tool_name}]"
