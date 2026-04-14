@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 April 2026 18:51 BST
+Last updated: 14 April 2026 07:21 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,22 +21,34 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (13 April 2026 18:50 BST)
+## Current Pending Work (14 April 2026 02:19 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: d54a8e6.
+793 tests pass. Branch: `exp39-experimental`. Last commit: 5814760.
 
-**EXP 39-0 COMPLETE — CONFOUNDED.** R_k adoption data invalid. Three confounds:
-(C1) User prompt missing R_k mandate, (C2) payload 4.6× decomposition threshold,
-(C3) monolithic dispatch to 3/5 models. Bug findings may be valid.
-Full analysis: `experimental_notes/Exp39_Confound_Analysis_2026-04-13.md`
+**EXP 39-0 GATE COMPLETE — 10 BUGS FOUND AND FIXED.**
+6 rounds (R0-R5), 111 findings, 41 canonical, γ=0.461. Wall-clock terminated.
+R_k adoption 5/5 (100%). All 10 bugs fixed, committed, pushed.
+Post-mortem: `experimental_notes/Exp39_0_Gate_PostMortem_2026-04-14.md`
+TTS report: `~/Desktop/CDSFL_tts/Exp39_0_PostMortem_2026-04-14.txt`
 
-**FIXES APPLIED THIS SESSION (13 April 2026):**
-- `_build_prompt()` in reference_runner.py: added ANALYSE, FALSIFICATION (MANDATORY),
-  CORROBORATION (MANDATORY) — matching Exp 37's 10-field schema. This was the primary
-  confound (user prompt didn't ask for R_k despite system prompt mandating it).
-- Exp 39-0 marked as confounded in ONBOARDING.md and experimental notes.
-- Prior session fixes still in place: operational directive loading, per-round metrics
-  injection, decomposed dispatch FFAFP+R_k, provider fix.
+**FIXES APPLIED THIS SESSION (14 April 2026):**
+- S_k format mismatch: parser and evaluator now accept both SEARCH/REPLACE formats
+- Convergence gate: max_open_crit_high 0→5 (was structurally unreachable)
+- CC2 tool access: Bash no longer disallowed (can execute SymPy/z3/numpy)
+- Parser finding ID leaks: guards for code variable names + f-string sanitizer
+- Macrophage: diagnostic logging + 3 monitoring modes wired (provenance, gate_stats, ouroboros)
+- Post-parse R_k validation: deterministic recomputation, advisory logging
+- Autoimmune: DEPLETION vs AUTOIMMUNE distinction (no false alarm on duplicates)
+- ITC parse_yield: verdicts counted as valid output (no false DEGRADATION)
+- Fingerprint cache race condition: local-build-then-atomic-assign
+- Payload double-counting: len(model_cdsfl) + len(prompt) only
+
+**IMMEDIATE NEXT STEPS (consult HIL before proceeding):**
+1. Review morning report and analysis files
+2. Decide on DeepSeek role: specialist (Phase 6, smoke-tested) vs panel member
+3. Decide on OpenRouter tool-use mode for remaining 4 models
+4. Re-run Exp 39-0 gate test with all fixes in place
+5. Carry forward remaining 7 lessons from Exp 36-38
 
 **LESSONS-FORWARD AUDIT — 7 STILL MISSING:**
 4. Semantic novelty feedback (3 graduated signals from Exp 37)
@@ -44,24 +56,12 @@ Full analysis: `experimental_notes/Exp39_Confound_Analysis_2026-04-13.md`
 7. Consolidation phase for final 3 rounds (Exp 36 Ground Truth, HIGH)
 8. Per-model ρ tracking with targeted ITC (Exp 36 Ground Truth, HIGH)
 9. Context windowing for long runs (Exp 36 Ground Truth, HIGH)
-10. S_k format pre-check with reformat request (Exp 38)
-11. Parser fixes P2/P3 — CC2 finding leak, Gemini verdict extraction (Exp 38)
+10. S_k format pre-check with reformat request (Exp 38) — PARTIALLY ADDRESSED (format now accepted)
+11. Parser fixes P2/P3 — CC2 finding leak FIXED, Gemini verdict extraction still pending
 
-**FINGERPRINT GAP:** Attention metrics (measured_attention_span, compression_threshold,
-quality_at_capacity) all null. Data exists in checkpoint logs (parse_yield per model
-per round). Extraction pipeline not built. `burst_planner.py` D_decay condition exists
-but never fires because D_decay is never populated.
-
-**TEST ARTICLE DESIGN ERROR:** 10/14 Exp 39 sub-experiments target reference_runner.py
-(163K chars). Only 39-H uses evidence.py (23K). Domain decomposition happened; article
-size decomposition did not. Sub-experiment configs need redesign.
-
-**IMMEDIATE NEXT STEPS:**
-1. Dynamic decomposition: payload > LENGTH_THRESHOLD (80K) → decompose all models
-2. Redesign Exp 39 sub-experiment test articles for appropriate sizes
-3. Wire fingerprint attention metrics from checkpoint data
-4. Carry forward remaining 7 lessons
-5. Re-run gate test with fixes in place (evidence.py or appropriately-sized target)
+**FINGERPRINT GAP:** Attention metrics still null. DeepSeek fingerprint now has
+max_successful_prompt_chars (102,942) from decomposed chunks but still decomposes
+on monolithic payload (~104K). Bootstrapping trap until specialist role or override.
 
 **DEFERRED (architecture items for 39-A onwards):**
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
@@ -75,6 +75,7 @@ size decomposition did not. Sub-experiment configs need redesign.
 9. Phase 9 (research write-up) — deferred post-Exp 39
 10. Implementation plan: `~/.claude/plans/effervescent-watching-platypus.md`
 11. Prompt schema as first-class tested artefact (not string literal in 3700-line file)
+12. OpenRouter tool-use mode for panel models (CC2 has Bash, others need function calling)
 
 **Also pending:** Onboarding script redesign.
 <!-- SV:PENDING_END -->

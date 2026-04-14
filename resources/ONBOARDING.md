@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 13 April 2026 18:51 BST
+Last updated: 14 April 2026 07:21 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,32 +25,32 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **EXP 39-0 COMPLETE — CONFOUNDED (13 April 2026 16:36 BST):**
-  Branch: `exp39-experimental`. 793 tests pass.
-  Type: Gate experiment — reference_runner.py (163K chars), star topology, 5 models.
-  **4 rounds (R0-R3), 78 raw findings, 35 canonical. γ=0.798 (strong depletion).**
-  Status: INCOMPLETE — convergence gate never fired (κ_final=0.050). 83.6 min wall time.
-
-  **⚠ CONFOUNDED — R_k adoption data invalid.** Three independent confounds:
-  (C1) User prompt missing CORROBORATION/FALSIFICATION/ANALYSE — reference_runner
-  had 7-field schema vs Exp 37's 10-field schema with mandatory R_k and rejection threat.
-  (C2) Total payload 369K chars (test article 163K + context files 205K) = 4.6× system's
-  own 80K decomposition threshold. Models compressed output under context pressure.
-  (C3) Monolithic dispatch to CC2/ChatGPT/Gemini despite payload > threshold. Only
-  Codex/DeepSeek received decomposed dispatch.
-  Bug findings may be valid. R_k adoption data measures prompt construction quality,
-  not metacognitive capability. Full analysis:
-  `experimental_notes/Exp39_Confound_Analysis_2026-04-13.md`
-
-  **Lessons-forward audit:** 11 documented lessons from Exp 36-38 lost in transition
-  to generic runner. 3 fixed pre-launch, 1 fixed this session (user prompt R_k mandate),
-  7 still missing (semantic novelty feedback, prior fix summary, consolidation phase,
-  per-model ρ tracking, context windowing, S_k format check, parser P2/P3).
-
-  **Fingerprint gap:** Attention metrics (measured_attention_span, compression_threshold,
-  quality_at_capacity) all null — never populated. Data exists in checkpoint logs but
-  extraction pipeline not built. Infrastructure for fingerprint-driven decomposition
-  was built (`burst_planner.py` D_decay condition) but never wired.
+- **EXP 39-0 GATE — 10 BUGS FOUND AND FIXED (14 April 2026 02:19 BST):**
+  Branch: `exp39-experimental`. Commit: 5814760. 793 tests pass.
+  Type: Gate experiment — runner_core.py (38K), star topology, 5 models.
+  **6 rounds (R0-R5), 111 raw findings, 41 canonical (39 real + 2 phantom). γ=0.461.**
+  Terminated by wall clock cap (4388s / 73 min). Convergence gate never passed
+  (max_open_crit_high=0 was structurally unreachable — now fixed to 5).
+  R_k adoption: **5/5 (100%)** — all models computing self-assessment equation.
+  
+  **10 bugs found by 5 parallel analysis agents, all fixed:**
+  P0: S_k format mismatch (0% admissible → both formats now parse), convergence
+  gate unreachable (0→5), CC2 Bash access enabled (can now execute SymPy/z3),
+  parser finding ID leaks (source code variables + f-string templates filtered).
+  P1: Macrophage monitoring modes wired (provenance/gate_stats/ouroboros_metrics),
+  post-parse R_k validation (deterministic recomputation, advisory), fingerprint
+  cache race condition fixed, payload double-counting fixed.
+  P2: Autoimmune false alarm split (DEPLETION vs AUTOIMMUNE), ITC parse_yield
+  now counts verdicts (no false DEGRADATION on verdict-heavy output).
+  
+  Full post-mortem: `experimental_notes/Exp39_0_Gate_PostMortem_2026-04-14.md`
+  5 detailed analyses: `bench/logs/exp39_0_gate_20260413T193320Z/analysis_*.md`
+  
+  **Still outstanding for Exp 39-1:**
+  - DeepSeek specialist role (Phase 6) — smoke tested (75s, caught R_k error), not wired
+  - OpenRouter tool-use mode for Codex/ChatGPT/Gemini/DeepSeek (CC2 now has Bash)
+  - 7 lessons-forward items from Exp 36-38 still pending
+  - Fingerprint attention metrics gap still open
 
 - **EXP 39 CELL TYPE SPLIT + GAP ANALYSIS (12 April 2026 23:56 BST):**
   Cell type split, 4 confer rounds, gap analysis. See experimental notes.
