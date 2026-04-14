@@ -228,6 +228,7 @@ class OuroborosCell:
             )
 
         self._round_logs.append(shadow_log)
+        self._last_shadow_log = shadow_log
         return shadow_log
 
     def _select_targets(

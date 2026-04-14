@@ -1,6 +1,6 @@
 # Mathematical Appendix: Extensions to the CDSFL Formal Model
 
-*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XIII of the white paper. This appendix contains extensions in three groups: §0.1 establishes the corroboration branching foundation (independent vs correlated passes); §1–6 extend the detection and coverage models; §7–8 introduce the cognitive measurement framework and formalise the emergence of second-order cognitive properties in composite analytical systems. All formulas were computationally verified using SymPy and Wolfram Alpha (March 2026). An 8-round coherence audit (6 models, 39 SymPy checks, all passing) declared the model mathematically coherent and complete on 31 March 2026.*
+*Technical supplement to the [White Paper](../PAPER.md). For the core models (simple corroboration C(n), structured operational F_n, anchor states A0–A3), see Part II §2.1–2.2 and Part XIII of the white paper. This appendix contains extensions in three groups: §0.1 establishes the corroboration branching foundation (independent vs correlated passes); §1–6 extend the detection and coverage models; §7–8 introduce the cognitive measurement framework and formalise the emergence of second-order cognitive properties in composite analytical systems. All formulas were computationally verified using SymPy and Wolfram Alpha (March–April 2026). An 8-round coherence audit (6 models, 39 SymPy checks, all passing) declared the model mathematically coherent and complete on 31 March 2026. The Stage 6 literature-calibrated extension (§1.1, §1.6–§1.8, 14 April 2026) adds literature novelty scoring, source diversity corroboration, and e-value verification gates, drawing on Holland CAS, Jerne idiotypic networks, and the Stanford POPPER framework.*
 
 ---
 
@@ -163,6 +163,7 @@ The mathematical model evolved through five stages. Each is a strict generalisat
 | 3 | R_n = Σ_k w_k · (π_k · m_k) / ((1−π_k) + π_k · m_k) | Bayesian posterior, prior | This appendix §1 |
 | 4 | R_k(i) = R_k(i-1) · (1−q) / (1−q·R_k(i-1)), q = d·p | Recursive collapse, π vanishes | This section |
 | 5 | Three-phase: R_det → R_base → R_k with q = η·d·p, σ, ν | Novelty, fix efficacy, re-injection | Operational directive §3 |
+| 6 | η = η_int · (1 − c_ext · (1 − ν_k)), c_ext = 1 − Π_s(1 − c_s) | Literature novelty, source diversity + auxiliary mechanisms | This appendix §1.6–§1.8 |
 
 ### From R_n to the Recursive Form (Stage 3 → 4)
 
@@ -246,7 +247,75 @@ This is consistent with §1's substrate ceiling result but more precise — the 
 
 The complete lineage from C(n) to the three-phase operational form is a chain of strict generalisations, each adding one mechanistic dimension that the previous stage assumed away.
 
-(Unified equation derived 8 April 2026. Three-phase extension derived 8–9 April 2026. Confer-verified by Gemini 3.1 Pro and Codex GPT-5.4. SymPy + Wolfram Alpha verified. Full derivation logs: `bench/logs/confer_unified_equation/`. Operational specification: `bench/directives/universal/cdsfl_operational.md` §3.)
+### Literature-Calibrated Extension (Stage 5 → 6)
+
+Stage 5 treats η as a single scalar capturing novelty within the current session. But "novel within this session" and "novel against the published literature" are different claims. A finding can be genuinely new in the conversation (high η_int) while being a well-known result in the literature (low ν_k). Stage 5 cannot distinguish these cases — it implicitly assumes that internal novelty is a sufficient proxy for real novelty.
+
+Hossenfelder (2026) demonstrated this failure mode concretely: OpenAI's claimed solutions to Erdős problems were algorithmically novel (the model had not seen them before) but were rediscoveries of published work. A pipeline that cannot detect rediscovery will overweight known results, producing artificially optimistic risk estimates.
+
+Stage 6 decomposes η into two distinct components and adds external calibration from literature search. Critically, these two components — literature novelty (ν_k) and search corroboration (c_ext) — are maintained as independent reporting dimensions, never collapsed into a single score. A finding can be highly novel but poorly corroborated, or well-known but thoroughly verified. Both states are meaningful and must be preserved. (Note: ν_k and c_ext are conceptually distinct but not fully statistically independent — ν_k is only epistemically meaningful conditional on the search process summarised by c_ext. "Independent dimensions" refers to reporting, not statistical orthogonality.)
+
+**η decomposition:**
+
+> **η_combined = η_int · (1 − c_ext · (1 − ν_k))**
+
+where:
+- **η_int** ∈ [0, 1]: internal novelty — is this finding new within the current session? (Existing `_finding_similarity()` computation, unchanged from Stage 5.)
+- **ν_k** ∈ [0, 1]: literature novelty — is this finding new against published work? (Computed by O1 cell via literature search. See §1.6. Reported raw, never collapsed with c_ext.)
+- **c_ext** ∈ [0, 1]: search corroboration — how thoroughly did the literature search cover the relevant space? (Corroboration product over sources. See §1.7. Reported independently.)
+
+**Two-dimensional novelty assessment: (ν_k, c_ext).** These are distinct reporting dimensions, analogous to (F_n, R_n) in the detection framework. Neither is derived from the other. Neither is collapsed into the other before reporting. The η_combined formula projects them into a scalar for the state equation — this projection intentionally compresses information, which is why the full (ν_k, c_ext, H/H_max) triple is retained for interpretation.
+
+| ν_k | c_ext | Quadrant | Interpretation |
+|---|---|---|---|
+| High | High | Verified novel | Genuinely new, well-evidenced — strongest novelty claim |
+| High | Low | Unverified novel | Appears new, search was weak — novelty unconfirmed |
+| Low | High | Verified known | Confirmed rediscovery — well-searched, found precedent |
+| Low | Low | Weakly assessed | Appears known, search was weak — least informative |
+
+The abstraction level H/H_max (§7.2) is reported alongside as context — it explains *why* c_ext might be low (high-abstraction findings have fewer searchable matches) but does not inflate either score. Abstraction is not evidence. A finding with (ν_k = 0.9, c_ext = 0.1, H/H_max = 0.95) reads: "appears highly novel, barely searched, operates at theory level — the low search confidence is expected given the abstraction, but the novelty claim is unconfirmed." The human or pipeline decides how to weight this; the system does not decide for them by collapsing the dimensions.
+
+**Per-finding novelty report:** (ν_k, c_ext, H/H_max) — three independent views. This parallels the system-level (F_n, R_n, A) reporting format.
+
+**Boundary conditions (SymPy + Wolfram verified, 14 April 2026):**
+
+| Condition | η_combined | Interpretation |
+|---|---|---|
+| ν_k = 1 (genuinely novel) | η_int | External search confirms novelty — no penalty |
+| ν_k = 0, c_ext = 1 (known, full coverage) | 0 | Known result, high confidence — contributes nothing |
+| ν_k = 0, c_ext = 0 (known, no search) | η_int | No evidence to penalise — degrades to Stage 5 |
+| c_ext = 0 (no search performed) | η_int | Graceful degradation — Stage 6 reduces to Stage 5 |
+
+**Monotonicity (Wolfram confirmed):**
+- ∂η/∂ν_k = c_ext · η_int > 0 — more novelty increases effective contribution
+- ∂η/∂c_ext = η_int · (ν_k − 1) < 0 when ν_k < 1 — more coverage penalises non-novel findings harder
+
+**Integration test (numerical, SymPy + Wolfram cross-validated):**
+
+With R = 0.3, d = 0.9, p = 0.85, η_int = 0.9, ν_k = 0.85, c_ext = 0.679:
+
+| Configuration | η_eff | R_new | Interpretation |
+|---|---|---|---|
+| Stage 5 (η_int only) | 0.900 | 0.1178 | Internal novelty, no external calibration |
+| Stage 6 (ν_k = 1, novel) | 0.900 | 0.1178 | Confirmed novel — equals Stage 5 |
+| Stage 6 (ν_k = 0.85, partial) | 0.808 | 0.1406 | Partially novel — more conservative |
+| Stage 6 (ν_k = 0, known) | 0.289 | 0.2503 | Known result — heavily penalised |
+
+The ordering R_known > R_partial > R_novel = R_Stage5 is correct: Stage 6 provides a more calibrated risk estimate, not necessarily more reduction. Known findings produce appropriately conservative (higher) residual risk.
+
+**Reduction property.** When c_ext = 0 (no literature search performed) or ν_k = 1 (finding is fully novel), Stage 6 reduces exactly to Stage 5. Stage 5 is a special case of Stage 6.
+
+**Orthogonality with R_k.** ν_k measures novelty; c_ext measures search quality; R_k measures validity. These three are independent dimensions. A finding can be novel but wrong (high ν_k, high R_k), or known but newly relevant (low ν_k, context-dependent η_int), or novel but unverified (high ν_k, low c_ext). High ν_k does not bypass the immune pipeline — the full FFAFP constraint set (§1.2) applies regardless of novelty score. This is structurally enforced by the equation: ν_k modulates η within q, but q still passes through the same Bayesian update and three-phase mechanics.
+
+**Additional Stage 6 components.** Two auxiliary mechanisms complement the η-extension. These are not embedded in the R_k(i) state equation itself but operate on its inputs and admissibility gates:
+- **Source diversity corroboration** (§1.7): c_ext is not a single estimate but a corroboration product across multiple independent sources, isomorphic with Stage 1's C(n). This feeds into η_combined.
+- **E-value verification gate** (§1.8, proposed): The S_k verification gate in the immune pipeline would be strengthened by e-value sequential testing (Vos et al., 2025), replacing binary pass/fail with a continuously accumulating evidence measure. Contingent on validated per-tool e-value mappings.
+
+(Stage 6 derived 14 April 2026. Prompted by Hossenfelder, "The AI Maths Revolution Has Begun" (2026). SymPy + Wolfram Alpha verified: all boundary conditions, monotonicity, integration test, reduction property. Holland CAS and AIS literature inform the continuous suppression (§1.4) and frequency-scaled confidence (§1.5) components. Stanford POPPER framework (arXiv:2502.09858) informs the e-value gate (§1.8). Design notes: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`.)
+
+The complete lineage from C(n) to the literature-calibrated form is a chain of strict generalisations, each adding one mechanistic dimension that the previous stage assumed away.
+
+(Unified equation derived 8 April 2026. Three-phase extension derived 8–9 April 2026. Literature-calibrated extension derived 14 April 2026. Confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 (Stages 4–5), pending confer for Stage 6. SymPy + Wolfram Alpha verified. Full derivation logs: `bench/logs/confer_unified_equation/`. Operational specification: `bench/directives/universal/cdsfl_operational.md` §3.)
 
 ---
 
@@ -1292,6 +1361,8 @@ When a finding is highly similar to many prior findings, it contributes less new
 
 Continuous suppression replaces the binary duplicate/novel decision with a smooth weight function that gradually reduces a finding's contribution as it becomes more similar to what has already been found.
 
+This mechanism draws on two theoretical foundations: Jerne's idiotypic network theory (1974), where antibodies suppress each other through mutual recognition, and Holland's CAS framework (1992), where schema fitness is modulated by environmental frequency. In the immune system, abundant antibodies targeting the same antigen are suppressed so that rarer antibodies retain resources. The analogy is precise: abundant (repetitive) findings should be suppressed so that rarer (novel) findings retain weight in convergence assessment.
+
 ### Formal Definition
 
 For a finding f with prior cumulative findings G, the suppression weight is:
@@ -1324,7 +1395,7 @@ If suppression weights entered q_eff, they would reduce the effective detection 
 
 Suppression weights apply to: kappa_set numerator (convergence metric), report ordering (triage priority), finding weight in summary statistics. They do NOT apply to: q_eff, R_k(i) recursive update, Bayesian posterior computation, or the kappa_set denominator.
 
-(SymPy verified: w ∈ [w_floor, 1], kappa_set ∈ [0, 1] with weighted numerator. Permutation invariance verified by test. Implementation: `bench/dm/_convergence.py`. April 2026.)
+(SymPy verified: w ∈ [w_floor, 1], kappa_set ∈ [0, 1] with weighted numerator. Permutation invariance verified by test. Holland CAS and Jerne idiotypic network theory inform the continuous suppression design. Implementation: `bench/dm/_convergence.py`. April 2026.)
 
 ### Confound
 
@@ -1367,6 +1438,34 @@ Historical patterns may become stale if the codebase changes significantly. CUSU
 
 Drift is flagged when |S_pos| or |S_neg| exceeds the drift threshold (default 2.0). When drift is detected, the blended prior should be treated with reduced confidence.
 
+### Frequency-Scaled Confidence
+
+Historical encounter data provides a second signal beyond the blended prior. Flaw classes that have been confirmed many times across prior experiments deserve higher detection confidence than flaw classes encountered only once. This follows Holland's CAS principle (1992): schemas encountered more frequently develop stronger internal representations — the system "knows what it is looking for."
+
+The base detection confidence for flaw class k scales logarithmically with encounter count:
+
+> **c_freq(k) = c_base(k) · (1 + α_freq · log(1 + N_k))**
+
+where:
+- **c_base(k)** is the domain-default detection confidence for class k
+- **α_freq** ∈ (0, 1] is the frequency scaling coefficient (default 0.3)
+- **N_k** is the decayed encounter count for class k from persistent memory
+
+**Properties (SymPy + Wolfram verified):**
+- N_k = 0 (never seen): c_freq = c_base. No boost without evidence.
+- dc/dN > 0 (positive): more encounters increase confidence.
+- d²c/dN² < 0 (concave): diminishing returns. The hundredth encounter adds less than the second.
+
+The logarithmic scaling prevents runaway confidence: even after many encounters, c_freq grows slowly. An upper bound c_max (default 0.95) is applied to prevent any flaw class from reaching certainty.
+
+c_freq informs the d parameter in q = η · d · p — it does not replace tool-grounded d_tool from FFAFP (§1.2). The precedence rule is strict:
+
+- If direct tool verification exists: d = d_tool. c_freq is ignored.
+- If tool verification is partial: d = min(d_partial, c_freq, c_max). Memory cannot inflate detection confidence beyond what tools support.
+- If no tool verification exists: d = min(c_freq, c_max). Memory-derived fallback with upper bound.
+
+**Double-counting guard.** Persistent memory already enters the model through the blended prior π(k) (§1.5). If c_freq also uses the same historical encounter count N_k, the same data influences both prior and detection confidence, potentially making the system overconfident about common flaw classes. To prevent this, c_freq should ideally be derived from detection success rates (confirmed findings / attempts) rather than raw encounter counts. The current formulation uses raw N_k as a conservative approximation pending sufficient per-flaw detection history.
+
 ### Advisory-Only Constraint
 
 Memory is advisory: it informs the initial prior but cannot override pipeline verdicts. A finding confirmed by tool verification (SymPy, z3, test suite) is confirmed regardless of what memory says about its flaw class frequency. Memory can suggest "this flaw class is rare, so the prior should be low" — it cannot say "this finding is false because flaw class 3 is historically rare."
@@ -1382,6 +1481,207 @@ Memory is grounded to the source files it was built from. If the source code cha
 **Memory poisoning.** If a prior experiment produced incorrect results (e.g., due to a pipeline bug), those results are now encoded in memory and will bias future experiments. Mitigation: exponential decay naturally reduces the influence of old experiments, and drift detection catches cases where memory predictions diverge from observed reality. Additionally, the advisory-only constraint ensures memory cannot force incorrect verdicts.
 
 **Single-operator validation.** All experiments to date have been conducted by one operator. Memory may encode operator-specific biases (e.g., systematically investigating certain flaw classes more thoroughly). This limitation will only be addressable when multiple independent operators run CDSFL experiments.
+
+---
+
+## 1.6 Literature Novelty Score (ν_k)
+
+### Motivation
+
+The η parameter in Stage 5 captures whether a finding is novel within the current session. It does not capture whether the finding is novel against the broader literature. A model can produce a finding that is genuinely new in the conversation (high η_int) but well-established in published work (ν_k ≈ 0). Without literature calibration, the pipeline cannot distinguish genuine discovery from rediscovery.
+
+This is not a hypothetical failure mode. Hossenfelder (2026) documented specific cases where AI systems claimed novel mathematical results that were published decades earlier. The same risk applies to any finding the pipeline produces: a "novel" security vulnerability may already have a CVE, a "new" architectural pattern may be standard practice in a field the models were not trained on.
+
+### Formal Definition
+
+For each finding f_k, the literature novelty score is:
+
+> **ν_k ∈ [0, 1]**
+
+| Range | Interpretation |
+|---|---|
+| 0.0–0.2 | Known result — direct restatement of published work |
+| 0.2–0.4 | Known synthesis — combines documented techniques in a documented way |
+| 0.4–0.6 | Novel application — known technique applied to a new context |
+| 0.6–0.8 | Novel synthesis — undocumented combination of known elements |
+| 0.8–1.0 | Genuinely novel — no published precedent found |
+
+ν_k is computed by the O1 (Ouroboros) cell (§8.7) via structured literature search across multiple sources (arXiv, Semantic Scholar, Unpaywall, CORE, OpenAlex — source list is user-configurable). Each source returns a per-source confidence c_s and a similarity assessment. ν_k is the aggregate novelty after accounting for source diversity (§1.7) and abstraction level (§1.1, Stage 6 derivation).
+
+### Composition with η
+
+ν_k enters the model through the Stage 6 η decomposition (§1.1):
+
+> η_combined = η_int · (1 − c_ext · (1 − ν_k))
+
+This is the only entry point. ν_k does not appear in q_eff, R_k(i), or any other equation independently. It modulates the novelty component of the effective detection probability, which then flows through the standard three-phase update.
+
+### Abstraction as Context, Not Adjustment
+
+Prior designs collapsed ν_k and c_ext into a single score via an abstraction-adjustment multiplier. This was rejected (14 April 2026, founder review) because it allowed high abstraction to inflate novelty scores without evidence — a finding using abstract vocabulary would receive credit that should come from actual search.
+
+ν_k is reported raw. c_ext is reported raw. H/H_max is reported alongside as a third contextual dimension. The abstraction level explains why c_ext might be low (theory-level findings have fewer direct lexical matches in indexed literature) but does not modify either score. Abstraction is not evidence of novelty; it is evidence of search difficulty.
+
+The per-finding novelty report is the triple (ν_k, c_ext, H/H_max). The human or pipeline interprets the triple. The system does not collapse it.
+
+### Citation Requirement
+
+Every ν_k assessment must include referenceable citations for any prior work found. Citations follow standard academic format (author, title, year, DOI/arXiv ID where available). This is not merely good practice — it is an FFAFP admissibility requirement (§1.2, S_min). A novelty claim without the literature evidence that supports it is inadmissible.
+
+### Confound
+
+**Search coverage gap.** ν_k is bounded by the quality of the literature search. If the relevant prior work is in a database the pipeline does not query (e.g., a paywalled journal not in Unpaywall, a conference proceeding not indexed by Semantic Scholar), ν_k will be inflated. Since abstraction is treated as context only (not adjustment), high-abstraction findings receive no automatic mitigation — the low c_ext is reported honestly. Source diversity (§1.7) reduces single-source dependence, but for low-abstraction, domain-specific claims, the metric is only as good as the sources it can access.
+
+(SymPy + Wolfram verified: all boundary conditions for abstraction adjustment. Design: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`. April 2026.)
+
+---
+
+## 1.7 Source Diversity and Corroboration Confidence (c_ext)
+
+### Motivation
+
+A single literature source provides weak evidence for or against novelty. If the pipeline queries only arXiv and finds no matches, that might mean the finding is novel — or it might mean the finding belongs to a field that does not use arXiv (biology, social sciences, engineering practice). Multiple independent sources compound the evidence, exactly as multiple independent reviewers compound detection probability in Stage 1.
+
+### Formal Definition
+
+Given S independent literature sources, each returning a per-source confidence c_s ∈ [0, 1]:
+
+> **c_ext = 1 − Π_{s=1}^{S} (1 − c_s)**
+
+This is the complement of the joint failure probability — the probability that at least one source provides meaningful coverage. It is isomorphic with the Stage 1 corroboration formula C(n) = 1 − (1 − p)^n.
+
+### Isomorphism with C(n)
+
+The structural parallel is deliberate. In Stage 1, multiple reviewers with independent miss probabilities compound to reduce the chance that all miss the same flaw. In §1.7, multiple literature sources with independent coverage gaps compound to reduce the chance that all miss the same prior work. The mathematics is identical because the mechanism is identical: independent binary events compounding under the complement product.
+
+When all c_s = p (uniform source quality), c_ext = 1 − (1 − p)^S = C(S). The source diversity formula is a strict generalisation of C(n) to non-uniform source qualities.
+
+### Boundary Conditions (SymPy + Wolfram verified)
+
+| Condition | c_ext | Meaning |
+|---|---|---|
+| All c_s = 0 (no source has coverage) | 0 | No evidence — graceful degradation |
+| Any c_s = 1 (one perfect source) | 1 | Full coverage from one source |
+| S = 1 | c_1 | Single source — no compounding |
+| S → ∞, all c_s > 0 | → 1 | Diminishing marginal gains per source |
+
+### Monotonicity
+
+Adding a source with c_s > 0 strictly increases c_ext. Removing a source strictly decreases it. This follows directly from the product structure: each (1 − c_s) < 1 factor makes the product smaller, making c_ext larger.
+
+### Default Source Configuration
+
+The default source set for O1 is: arXiv (preprints, broad STEM), Semantic Scholar (citation graph, abstract matching), Unpaywall (OA full text), CORE (institutional repositories), OpenAlex (bibliometric metadata). The source list is user-configurable via the O1 adapter interface.
+
+OSF was evaluated and rejected as a default source: metadata is unreliable, generalist submissions were suspended in August 2025, and confidence estimates from OSF would dilute c_ext rather than strengthen it. Users may add it if their domain requires it.
+
+### Operational Definition of c_s
+
+Each per-source confidence c_s is the product of three components:
+
+> **c_s = r_s · q_s · a_s**
+
+where:
+- **r_s** ∈ [0, 1]: estimated source recall over the target domain (what fraction of relevant literature does this source index?)
+- **q_s** ∈ [0, 1]: query quality — how well did the search query match the finding's semantic content?
+- **a_s** ∈ [0, 1]: access completeness — what fraction of matched results were actually retrievable (not paywalled, not rate-limited)?
+
+This decomposition makes c_ext interpretable and auditable across operators and domains.
+
+### Source Correlation Discount
+
+The corroboration formula assumes source independence. In practice, literature sources share indexed content: Semantic Scholar ingests arXiv, OpenAlex includes Unpaywall metadata, CORE overlaps with institutional repositories. Correlated sources overestimate c_ext.
+
+A conservative correction applies a global correlation discount:
+
+> **c_ext_adj = γ_src · c_ext**
+
+where γ_src ∈ (0, 1] is the source independence factor (default 0.7, reflecting the known overlap among the default five sources). This is a first-order approximation; per-pair correlation weights (analogous to the Ising model in §0.1) could be applied if empirical evidence shows the approximation is materially wrong.
+
+### Confound
+
+**Source correlation.** Even with the γ_src discount, the correlation structure among sources is not modelled precisely. The discount prevents the worst overestimates but does not capture asymmetric dependencies (e.g., OpenAlex depends on Unpaywall more than the reverse). This limitation is acceptable at current scale but would need revisiting if the source set grows substantially.
+
+(SymPy + Wolfram verified: boundary conditions, monotonicity, reduction to C(n). April 2026.)
+
+---
+
+## 1.8 E-value Verification Gate
+
+### Motivation
+
+The S_k verification gate in the immune pipeline currently operates as a binary decision: a finding either passes or fails verification. This discards information. A finding verified by one tool with marginal evidence and a finding verified by five tools with overwhelming evidence both receive the same PASS verdict. The gate cannot distinguish "barely survived" from "solidly confirmed."
+
+E-values (Vos et al., 2025; Grünwald et al., 2024) provide a continuously accumulating evidence measure that preserves this distinction. Unlike p-values, e-values compose multiplicatively across independent tests and allow optional stopping — you can add more evidence at any time without invalidating prior evidence. This makes them naturally suited to the iterative, multi-round structure of CDSFL.
+
+### Formal Definition
+
+An e-value is a non-negative random variable with expectation at most 1 under the null hypothesis. For the verification gate, the null hypothesis is "the finding is invalid" (H_0: finding is false or unverifiable).
+
+Each verification test i produces an e-value e_i ≥ 0:
+- e_i = 1: inconclusive (test provides no evidence either way)
+- e_i > 1: evidence against H_0 (finding appears valid)
+- e_i < 1: evidence for H_0 (finding appears invalid)
+
+**Mapping from tool outputs.** For a binary verification tool with known false positive rate FPR_tool (the probability the tool reports "pass" when the finding is actually invalid):
+
+> Pass → e_i = 1 / FPR_tool
+> Fail → e_i = 0
+> Inconclusive → e_i = 1
+
+This mapping guarantees the fundamental e-value property E_{H_0}[e_i] ≤ 1: under H_0, P(pass) = FPR_tool, so E[e] = FPR_tool · (1/FPR_tool) + (1 − FPR_tool) · 0 = 1. A tool with 20% FPR produces e = 5 on pass; reaching the rejection threshold requires corroboration from multiple tools.
+
+For tools with continuous outputs (severity scores, confidence levels), the mapping requires a calibrated e-process or test martingale construction specific to that tool's statistical properties. This calibration is pending for each tool family (theorem provers, SMT solvers, static analysers, test suites) and is required before the e-value gate can be considered operationally valid.
+
+E-values compose multiplicatively across independent tests:
+
+> **E_combined = Π_{i=1}^{T} e_i**
+
+The rejection criterion at significance level α:
+
+> **Reject H_0 (accept finding) iff E_combined ≥ 1/α**
+
+### Proposed Integration with S_k Gate
+
+The existing S_k gate runs T verification tests per finding. Currently, the gate uses a binary threshold: PASS if a majority of tests pass. The proposed e-value integration replaces the binary count with a continuous admissibility measure. This is contingent on validated e-value mappings being specified for each tool family — until then, the existing binary gate remains operational:
+
+1. Each verification tool produces an e-value (mapped from its native output: test pass/fail, SymPy proof/disproof, static analysis severity).
+2. E-values are multiplied across tools: E_combined = Π e_i.
+3. The finding's verification strength is E_combined.
+4. Rejection threshold: E_combined ≥ 1/α (default α = 0.05, so threshold = 20).
+
+This preserves backward compatibility: a finding that passes all T binary tests produces E_combined ≫ 20 and passes. A finding that barely passes one test produces E_combined near 1 and does not.
+
+### Properties (SymPy + Wolfram verified)
+
+**Multiplicative composition.** Adding more evidence never decreases E_combined (assuming e_i ≥ 1 for supportive tests). One strong test (e = 100) can outweigh several weak tests.
+
+**Optional stopping.** Unlike p-values, e-values remain valid under optional stopping. The pipeline can stop verification when E_combined exceeds the threshold, or continue adding tests if evidence is borderline. This aligns with CDSFL's iterative round structure.
+
+**Inconclusive preservation.** A test that provides no evidence (e = 1) does not affect E_combined. This prevents inconclusive tests from diluting strong evidence.
+
+**Anytime validity.** At any point during sequential testing, E_combined is a valid test statistic. There is no requirement to pre-specify the number of tests.
+
+### Edge Cases
+
+| Condition | E_combined | Behaviour |
+|---|---|---|
+| T = 0 (no tests run) | 1 (empty product) | Inconclusive — finding is not admitted |
+| All tests inconclusive | 1^T = 1 | Inconclusive — threshold not reached |
+| One strong pass (e = 50), rest inconclusive | 50 | Admitted (50 ≥ 20 at α = 0.05) |
+| All tests fail (e = 0) | 0 | Rejected — zero evidence |
+
+### Relationship to R_k(i)
+
+E-values inform the verification gate but do not directly enter the R_k(i) recursive update. The gate determines which findings are admissible (FFAFP compliance, §1.2). Once admitted, the finding's impact on R_k(i) is governed by q = η · d · p as before. E_combined could inform d (detection confidence) in future work, but this coupling is deferred pending empirical calibration.
+
+### Confound
+
+**E-value mapping.** Converting native tool outputs to e-values requires a calibrated mapping function. A binary test result (pass/fail) maps via e = 1/FPR_tool for pass, e = 0 for fail (see formal definition above), but continuous outputs (severity scores, confidence levels) require domain-specific calibration. Miscalibrated mappings — including using 1/α instead of 1/FPR_tool — will produce misleading E_combined values.
+
+**Test independence.** The multiplicative composition assumes test independence. If two verification tools share underlying logic (e.g., both call the same static analyser), their e-values are correlated and the product overestimates evidence. The §0.1 Ising model approach could address this, but is deferred.
+
+(Stanford POPPER framework (Vos et al., arXiv:2502.09858, Feb 2025) provides the theoretical foundation and demonstrated e-value sequential testing for scientific hypothesis validation. CDSFL adapts this specifically for the S_k verification gate. SymPy + Wolfram verified: composition properties, boundary conditions. April 2026.)
 
 ---
 
@@ -1639,12 +1939,52 @@ Without FFAFP, 0–13% of model-submitted findings survived independent falsific
 | τ_κ | Convergence threshold | This appendix §7.13 |
 | η_veto | Severity veto threshold | This appendix §7.13 |
 | C_FFAFP | FFAFP admissibility constraint set | This appendix §1.2 |
+| ν_k | Literature novelty score (per-finding) | This appendix §1.6 |
+| η_int | Internal novelty (within-session) | This appendix §1.1 (Stage 6) |
+| η_combined | Literature-calibrated novelty | This appendix §1.1 (Stage 6) |
+| c_ext | Source diversity corroboration confidence | This appendix §1.7 |
+| c_s | Per-source literature coverage confidence | This appendix §1.7 |
+| c_freq | Frequency-scaled detection confidence | This appendix §1.5 |
+| α_freq | Frequency scaling coefficient | This appendix §1.5 |
+| N_k | Decayed encounter count for flaw class k | This appendix §1.5 |
+| (ν_k, c_ext, H/H_max) | Per-finding novelty report triple | This appendix §1.1, §1.6 |
+| γ_src | Source independence discount (default 0.7) | This appendix §1.7 |
+| r_s, q_s, a_s | Source recall, query quality, access completeness | This appendix §1.7 |
+| FPR_tool | Tool false positive rate (for e-value mapping) | This appendix §1.8 |
+| e_i | E-value from verification test i | This appendix §1.8 |
+| E_combined | Multiplicative e-value composite | This appendix §1.8 |
+
+---
+
+## Intellectual Lineage
+
+The mathematical model draws on several distinct theoretical traditions. This section makes the lineage explicit so that readers can trace each component to its source and evaluate the degree of novel extension.
+
+**Bayesian epistemology.** The recursive R_k(i) update (§1.1) is a direct application of Bayes' theorem to sequential evidence accumulation. The π-vanishing property and the three-phase extension are novel applications of this standard framework to AI-assisted code review.
+
+**Popperian falsification.** The entire pipeline is structured around Popper's criterion: findings must be falsifiable, and unfalsified findings earn provisional corroboration rather than confirmation. The FFAFP constraint set (§1.2) operationalises this as an admissibility gate. The 0–13% survival rate without structural enforcement (Experiments 12–15) provides the empirical case for why Popperian discipline must be mechanically enforced rather than hoped for. Meyer (2017, arXiv:1704.08111) proposed a Popperian framework for AI evaluation; CDSFL extends this with multi-vendor falsification, recursive self-assessment, and an immune-inspired verification pipeline.
+
+**Artificial Immune Systems (AIS).** The immune pipeline's cell-type architecture draws on Forrest et al. (1994, negative selection), de Castro and Timmis (2002, clonal selection), Matzinger's danger theory (2002, signal-based triage), and Greensmith et al. (2005, dendritic cell algorithm). CDSFL diverges from published AIS in several respects: it uses the immune metaphor for a verification pipeline rather than anomaly detection, it operates on structured findings rather than binary feature vectors, and its "self" is defined by tool-verified ground truth rather than training-time exposure. The multi-cell architecture (B-Cell, T-Cell, NK-Cell, Dendritic, Macrophage, O1) appears structurally distinct from published AIS implementations [VERIFY:current — broader AIS survey may reveal closer precedents].
+
+**Holland's Complex Adaptive Systems.** Holland (1992) identifies seven fundamentals of CAS: aggregation, tagging, nonlinearity, flows, diversity, internal models, and building blocks. Five are embodied in CDSFL (aggregation via kappa metrics, tagging via flaw classification, nonlinearity via the Bayesian update, flows via round-to-round information propagation, diversity via multi-vendor panels). Two gaps remain: internal models (anticipatory dispatch based on predicted flaw distribution) and credit assignment (per-model contribution tracking beyond capability fingerprints). The continuous suppression function (§1.4) is a direct formalisation of Holland's frequency-dependent fitness modulation.
+
+**Jerne's idiotypic network theory.** Jerne (1974) proposed that antibodies regulate each other through mutual recognition, creating a self-organising network. The continuous suppression mechanism (§1.4) adapts this: findings suppress each other based on similarity, preventing redundant findings from dominating convergence metrics while preserving a minimum weight (w_floor) to avoid total silencing. The exponential decay form w(f) = exp(-λ_s · Σ sim) is the continuous analogue of Jerne's discrete idiotypic suppression.
+
+**Kohonen's Self-Organising Maps.** Kohonen (1982) SOMs were evaluated and rejected as a direct tool for CDSFL (12 April 2026 assessment). The competitive learning mechanism does not suit the structured, heterogeneous finding space of code review. However, the assessment led to the embedding-based similarity improvement (§1.3): the insight that topological neighbourhood preservation in embedding space is more appropriate than SOM grid topology for finding similarity.
+
+**Duane's reliability growth model.** The NHPP intensity function (§7.1) applies Duane's (1964) model — originally developed for hardware reliability — to AI finding generation. The novel application is using Duane's power law to model the depletion of discoverable findings over rounds, providing the γ convergence parameter that drives round progression decisions.
+
+**Heaps' law.** The input complexity routing (§7.2, Abstraction Index) draws on Heaps' (1978) empirical law relating vocabulary growth to text length. Lai (2023, arXiv:2311.06377) demonstrated Heaps' law in LLM output; CDSFL applies it to input complexity estimation for routing decisions.
+
+**Stanford POPPER framework.** Vos et al. (2025, arXiv:2502.09858) introduced e-value sequential testing for scientific hypothesis validation. CDSFL adapts e-values specifically for the S_k verification gate (§1.8), replacing binary pass/fail with continuously accumulating evidence. The frameworks are complementary: POPPER uses e-values for hypothesis testing in experimental science; CDSFL uses them for verification strength in code review. The Bayesian R_k and the frequentist e-value operate on different aspects of the same problem.
+
+**Hossenfelder's novelty critique.** Hossenfelder (2017, 2019, 2026) argues that unfalsifiable novelty is scientifically worthless and that AI "discoveries" are often rediscoveries. The ν_k metric (§1.6) and its orthogonality with R_k are a direct response: novelty is measured independently of validity, both are required, and high novelty does not bypass the falsification pipeline.
 
 ---
 
 ## Attribution
 
-The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary. The unified self-assessment equation (§1.1, 8 April 2026) was derived during the Exp 37 build. The recursive form was verified by SymPy and Wolfram Alpha. The three-phase extension (η, σ, ν) was confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 — both falsified the original σ placement and corrected it (confer logs: `bench/logs/confer_unified_equation/`). A 25-check internal consistency audit (SymPy, Wolfram, z3) confirmed all 5 identified gaps and disputed two prior claims. The operational form is specified in the CDSFL operational directive §3 and first deployed in Experiment 37 (9 April 2026). The FFAFP calibration protocol (§1.2), embedding similarity (§1.3), continuous suppression (§1.4), persistent memory (§1.5), convergence metrics (§7.13), ouroboros cell (§8.7), and confounds section (§9) were formalised on 12 April 2026 during the Exp 39 preparation session. Three critical errors (corroboration collapse, order dependence, kappa overflow) were caught and corrected through multi-model confer rounds. All extensions were SymPy-verified and are implemented in the `bench/dm/` module.
+The extensions in §1–6 were developed during the multi-architecture collaborative review process described in the white paper (Part XI). The cognitive measurement framework (§7) and emergence formalisations (§8) were developed through confer rounds between Claude Opus 4.6 and Gemini 3.1 Pro (27 March 2026), with all formulas computationally verified using SymPy and Wolfram Alpha. The core models were validated as mathematically sound within their stated assumptions; these extensions were identified as the most direct upgrade path for the next empirical phase. A subsequent 3-model confer (Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, 27 March 2026) resolved 5 deferred design decisions, added the manager selection function (§7.11) and mutual suppression metric, and rejected 2 proposed additions (anti-parroting and contribution discount) as premature for formal inclusion. An 8-round mathematical coherence audit (31 March 2026) involving 6 models (Claude Opus 4.6, CC2, Codex GPT-5.4, ChatGPT 5.4, DeepSeek V3.2, Gemini 3.1 Pro) with 39 independent SymPy checks (all passing) produced: §0.1 corroboration branching with normalised Ising/Boltzmann model, full namespace refactor (17 collisions resolved), synthesis deferral operator τ_defer, null-vector guards, separability axioms, ρ domain constraint, seeded defect injection, NMI diversity estimator, empirically-anchored sycophancy trigger, error re-injection rate, HIL framing penalty, and substrate ceiling boundary. The unified self-assessment equation (§1.1, 8 April 2026) was derived during the Exp 37 build. The recursive form was verified by SymPy and Wolfram Alpha. The three-phase extension (η, σ, ν) was confer-verified by Gemini 3.1 Pro and Codex GPT-5.4 — both falsified the original σ placement and corrected it (confer logs: `bench/logs/confer_unified_equation/`). A 25-check internal consistency audit (SymPy, Wolfram, z3) confirmed all 5 identified gaps and disputed two prior claims. The operational form is specified in the CDSFL operational directive §3 and first deployed in Experiment 37 (9 April 2026). The FFAFP calibration protocol (§1.2), embedding similarity (§1.3), continuous suppression (§1.4), persistent memory (§1.5), convergence metrics (§7.13), ouroboros cell (§8.7), and confounds section (§9) were formalised on 12 April 2026 during the Exp 39 preparation session. Three critical errors (corroboration collapse, order dependence, kappa overflow) were caught and corrected through multi-model confer rounds. All extensions were SymPy-verified and are implemented in the `bench/dm/` module. The literature novelty score (§1.6), source diversity corroboration (§1.7), e-value verification gate (§1.8), frequency-scaled confidence (§1.5), and intellectual lineage section were added 14 April 2026, prompted by Hossenfelder's demonstration that AI novelty claims require independent verification. The Stage 6 model evolution (§1.1) integrates ν_k, c_ext, and e-values into the existing recursive framework. Holland CAS, Jerne idiotypic networks, and the Stanford POPPER framework (arXiv:2502.09858) provide the theoretical foundations. All new formulations were SymPy + Wolfram Alpha cross-validated (14 April 2026). Design notes: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`, `experimental_notes/Holland_Kohonen_AIS_Assessment_2026-04-12.md`.
 
 ---
 

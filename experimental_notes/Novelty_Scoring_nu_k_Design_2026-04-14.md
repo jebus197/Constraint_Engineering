@@ -115,6 +115,17 @@ At high abstraction (H → H_max), absence of literature matches is expected —
 
 The framework passes the meta-test: it subjects itself to its own falsification methodology. If a direct precedent is found, ν_k drops. The metric does not protect itself.
 
+## Post-Confer Corrections (14 April 2026, Gemini + Codex review)
+
+1. **Abstraction adjustment capped** with β_abs = 0.5. Original formula allowed H → H_max to fully erase search uncertainty. Capped formula: `confidence = c_ext + β_abs * (1 - c_ext) * (H / H_max)`. At max abstraction, no search: confidence = 0.5, not 1.
+2. **E-value mapping corrected** to use 1/FPR_tool (not 1/α). Guarantees E[e|H₀] ≤ 1 for all tool FPR values. Rejection criterion changed from > to ≥.
+3. **Source correlation discount** γ_src = 0.7 added. c_ext_adj = γ_src · c_ext.
+4. **c_s operationally defined** as c_s = r_s · q_s · a_s (recall, query quality, access completeness).
+5. **Frequency-scaled confidence** double-counting guard added. Strict precedence: d_tool > min(d_partial, c_freq) > c_freq.
+6. **E-value gate downgraded** to "proposed" pending per-tool e-process calibration.
+7. **"Strict generalisation"** softened to "integrated novelty-calibration branch plus auxiliary mechanisms."
+8. All corrections SymPy verified.
+
 ## Implementation Path (Phase 7)
 
 1. Add Unpaywall + CORE + OpenAlex source adapters to O1

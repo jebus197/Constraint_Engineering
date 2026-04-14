@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 14 April 2026 07:21 BST
+Last updated: 14 April 2026 11:30 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -25,12 +25,42 @@ This is enough to resume most tasks.
 
 793 tests pass. Branch: `exp39-experimental`. Last commit: f5e73ab.
 
-**SESSION 14 APRIL MORNING — TOOL PERMISSIONS + ν_k DESIGN:**
+**SESSION 14 APRIL — TOOL PERMISSIONS + ν_k DESIGN + STAGE 6 APPENDIX:**
 - CC1 tool permissions: `.claude/settings.json` created, all native + MCP tools auto-approved
 - CC2 tool access: `--allowedTools Bash Read Write Edit Grep Glob WebFetch WebSearch`
 - ν_k (nu-k) novelty metric designed, SymPy + Wolfram verified, all boundary conditions pass
 - CDSFL self-assessed at ν_k = 0.807 (genuinely novel) against literature
 - Nearest competitor: Stanford POPPER (Feb 2025) — different mechanism, narrower scope
+- **Stage 6 added to MATHEMATICAL_APPENDIX.md** (2005 lines, +354 from 1651):
+  - §1.1: Stage 6 in model evolution table + full derivation
+  - §1.6: Literature Novelty Score (ν_k)
+  - §1.7: Source Diversity and Corroboration Confidence (c_ext)
+  - §1.8: E-value Verification Gate (proposed, POPPER attribution)
+  - §1.4: Holland/Jerne idiotypic lineage added
+  - §1.5: Frequency-scaled confidence added
+  - Intellectual Lineage section added
+  - Notation Summary expanded
+- **Confer Round 1:** Gemini 3.1 Pro + Codex GPT-5.4 FFAFP review
+  - 7 corrections applied (3 HARD, 4 SOFT)
+  - Critical fix: β_abs cap on abstraction adjustment (both models flagged)
+  - Critical fix: E-value mapping changed to 1/FPR_tool
+  - All corrections SymPy verified
+  - Synthesis: `experimental_notes/Stage6_Confer_Synthesis_2026-04-14.md`
+- **Founder pivot:** Two-dimensional (ν_k, c_ext) reporting — never collapse into single score
+  - OSF analogy: "highly novel content with low corroboration" is a meaningful state
+  - Abstraction is context only, not adjustment — removed β_abs entirely
+  - Shadow calibration hooks added to Exp 39 runner
+- **Confer Round 2:** Codex + Gemini review of revised 2D design
+  - 5 HARD corrections applied: fpr_estimate→fail_fraction, stale §1.6 confound, §1.8 e-value text, q_s for live_empty, openalex typo
+  - 3 SOFT corrections: "Unverified known"→"Weakly assessed", "orthogonal"→"distinct", scalar projection note
+  - Both models confirm 2D architecture is correct direction
+  - Gemini novel finding: abstraction laundering via bad queries → q_s is critical calibration target
+  - Synthesis: `experimental_notes/Stage6_R2_Confer_Synthesis_2026-04-14.md`
+  - TTS: `~/Desktop/CDSFL_tts/Stage6_R2_Confer_Synthesis_2026-04-14.txt`
+- Shadow Stage 6 calibrator: `bench/dm/_shadow_stage6.py` hooked into `reference_runner.py`
+  - Per-finding (ν_k_proxy, c_ext, H_ratio) triples, per-tool fail fraction, shadow η deltas
+  - Writes per-round JSON + cumulative summary to disk
+  - 793 tests pass
 - Analysis: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
 - TTS: `~/Desktop/CDSFL_tts/Novelty_Scoring_nu_k_Design_2026-04-14.txt`
 

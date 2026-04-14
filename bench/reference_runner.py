@@ -1760,6 +1760,7 @@ def _summarise_fix_evaluations(evals: List[FixEvaluation]) -> Dict[str, Any]:
 # Persistent shadow cell instances (survive across rounds)
 _shadow_macrophage = None
 _shadow_ouroboros = None
+_shadow_stage6_calibrator = None
 
 
 def _run_shadow_cells(
@@ -1784,7 +1785,7 @@ def _run_shadow_cells(
     Returns:
         Dict with shadow cell metrics for round reporting.
     """
-    global _shadow_macrophage, _shadow_ouroboros
+    global _shadow_macrophage, _shadow_ouroboros, _shadow_stage6_calibrator
 
     config = exp_config if isinstance(exp_config, dict) else {}
 
@@ -1959,6 +1960,64 @@ def _run_shadow_cells(
                 "Ouroboros shadow cell failed (non-fatal): %s", exc,
             )
             shadow_data["ouroboros"] = {"error": str(exc)}
+
+    # ── Stage 6 calibrator: shadow (ν_k, c_ext) data collection ──
+    # Runs whenever any shadow cell is active. Collects per-finding
+    # novelty triples and per-tool FPR tracking for post-experiment
+    # calibration. Zero pipeline effect.
+    try:
+        from bench.dm._shadow_stage6 import ShadowStage6Calibrator
+
+        if _shadow_stage6_calibrator is None:
+            _shadow_stage6_calibrator = ShadowStage6Calibrator()
+
+        # Collect ouroboros data if available (for c_ext and nu_k estimation)
+        ouroboros_shadow_data = None
+        if "ouroboros" in shadow_data and _shadow_ouroboros is not None:
+            # Get the full shadow log from the last run
+            if hasattr(_shadow_ouroboros, "_last_shadow_log"):
+                last_log = _shadow_ouroboros._last_shadow_log
+                if last_log is not None:
+                    ouroboros_shadow_data = last_log.to_dict()
+
+        round_log = _shadow_stage6_calibrator.observe_round(
+            round_idx=round_idx,
+            findings=findings,
+            immune_response=immune_result,
+            ouroboros_data=ouroboros_shadow_data,
+        )
+
+        shadow_data["stage6_calibration"] = {
+            "findings_assessed": len(round_log.findings),
+            "mean_nu_k_proxy": round_log.mean_nu_k_proxy,
+            "mean_c_ext": round_log.mean_c_ext,
+            "mean_delta": round_log.mean_delta,
+        }
+
+        # Write calibration log to disk
+        if logs_dir:
+            cal_path = logs_dir / f"stage6_calibration_r{round_idx:02d}.json"
+            cal_path.write_text(
+                json.dumps(round_log.to_dict(), indent=2, default=str) + "\n",
+                encoding="utf-8",
+            )
+
+            # Also write cumulative summary
+            summary_path = logs_dir / "stage6_calibration_summary.json"
+            summary_path.write_text(
+                json.dumps(
+                    _shadow_stage6_calibrator.get_calibration_summary(),
+                    indent=2, default=str,
+                ) + "\n",
+                encoding="utf-8",
+            )
+
+    except Exception as exc:
+        import logging
+        logging.getLogger("cdsfl.shadow_cells").warning(
+            "Stage 6 calibrator failed (non-fatal): %s", exc,
+        )
+        shadow_data["stage6_calibration"] = {"error": str(exc)}
 
     return shadow_data
 

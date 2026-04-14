@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 14 April 2026 07:21 BST
+Last updated: 14 April 2026 11:30 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,32 +25,31 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
-- **POST EXP 39-0: TOOL PERMISSIONS + ν_k NOVELTY METRIC DESIGN (14 April 2026 09:07 BST):**
-  Branch: `exp39-experimental`. Commit: pending. 793 tests pass.
+- **POST EXP 39-0: TOOL PERMISSIONS + ν_k DESIGN + STAGE 6 CONFER (14 April 2026 11:30 BST):**
+  Branch: `exp39-experimental`. 793 tests pass.
   
   **Tool permissions resolved:**
   CC1 (interactive): `.claude/settings.json` auto-approves all native + MCP tools.
   CC2 (sub-agent): `--allowedTools Bash Read Write Edit Grep Glob WebFetch WebSearch`.
-  Both instances now have full STEM tool access without interactive prompts.
   
-  **ν_k (nu-k) novelty metric designed (Phase 7):**
-  Per-finding literature novelty score ∈ [0,1]. Computed by O1 (Ouroboros) cell
-  against pluggable research sources (arXiv, Semantic Scholar, Unpaywall, CORE, OpenAlex).
-  Composes with existing η coefficient: `η_combined = η_int · (1 − c_ext · (1 − ν_k))`.
-  Abstraction Index H from neurodiversity work solves boundary problem.
-  All boundary conditions verified SymPy + Wolfram. Monotonicity confirmed.
-  
-  **CDSFL self-assessed at ν_k = 0.807 (genuinely novel).**
-  8 components scored against literature. Nearest competitor: Stanford POPPER (Feb 2025).
-  Full analysis: `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
-  TTS: `~/Desktop/CDSFL_tts/Novelty_Scoring_nu_k_Design_2026-04-14.txt`
+  **ν_k (nu-k) novelty metric — two-dimensional design, confer-verified:**
+  Per-finding literature novelty score ∈ [0,1]. Computed by O1 (Ouroboros) cell.
+  Two-dimensional reporting: (ν_k, c_ext, H/H_max) triple per finding, never collapsed.
+  Composes with existing η: `η_combined = η_int · (1 − c_ext · (1 − ν_k))`.
+  Abstraction is context only — does not modify scores (founder pivot, 14 April).
+  Stage 6 added to MATHEMATICAL_APPENDIX.md (§1.1, §1.6, §1.7, §1.8).
+  Confer Round 1 (Gemini + Codex): 7 corrections (3 HARD, 4 SOFT).
+  Confer Round 2 (Codex + Gemini): 5 HARD + 3 SOFT corrections.
+  Both models confirm two-dimensional architecture is correct direction.
+  Shadow calibrator (`bench/dm/_shadow_stage6.py`) hooked into runner.
+  Synthesis: `experimental_notes/Stage6_R2_Confer_Synthesis_2026-04-14.md`
   
   **Still outstanding for Exp 39-1:**
-  - DeepSeek specialist role (Phase 6) — smoke tested (75s, caught R_k error), not wired
-  - OpenRouter tool-use mode for Codex/ChatGPT/Gemini/DeepSeek (CC2 now has Bash)
+  - DeepSeek specialist role (Phase 6) — smoke tested, not wired
+  - OpenRouter tool-use mode for panel models
   - 7 lessons-forward items from Exp 36-38 still pending
   - Fingerprint attention metrics gap still open
-  - ν_k implementation (Phase 7) — designed, not yet coded
+  - ν_k production implementation (Phase 7) — designed + shadow calibrator, not live
 
 - **EXP 39-0 GATE — 10 BUGS FOUND AND FIXED (14 April 2026 02:19 BST):**
   Branch: `exp39-experimental`. Commit: 5814760. 793 tests pass.
