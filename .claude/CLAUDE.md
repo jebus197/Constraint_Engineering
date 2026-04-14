@@ -6,6 +6,8 @@ Python: 3.13+ | Tests: `python3 -m pytest bench/tests/ -v`
 ## Command Scripts
 
 On `sv` (save state): make qualitative updates to ONBOARDING.md and RECOVERY.md, update memory files, then run `python3 scripts/cdsfl_sv.py --commit --push -m "sv: <description>"` as the final step. The script generates state files, stages all sv-related changes, and atomically commits + pushes in a single subprocess (compaction-safe).
+
+**sv sequential-reading protocol.** ONBOARDING.md, RECOVERY.md, MATHEMATICAL_APPENDIX.md, PAPER.md, CURRENT_STATE.md and project memory files have all grown large enough that a single parallel read inflates context without improving understanding. During sv preparation, read these documents sequentially — top to bottom, one section/chunk at a time — absorb each chunk, decide if it needs updating, then move on. Do NOT fetch several large documents in parallel just to "have them all loaded". The goal is carefully considered updates, not maximum file-awareness. This also reduces API overload risk during the sv window.
 On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues.
 On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and rebuild context from output.
 
@@ -107,6 +109,7 @@ If the tools cannot verify a claim, the claim is UNVERIFIABLE — escalate, do n
 | dis (stdlib) | `import dis` | Bytecode disassembly — verify control flow, optimisation claims, dead branches. |
 | inspect (stdlib) | `import inspect` | Live object introspection — verify signatures, source locations, inheritance. |
 | difflib (stdlib) | `import difflib` | Structural diff — verify claimed code changes, detect semantic duplicates. |
+| crosshair 0.0.102 | `import crosshair` / `crosshair check` | Symbolic execution via z3 — counterexamples for type/contract/assert violations in Python functions. **Default for behavioural code claims** (function contract or invariant verification). |
 
 ### Claude Code Native Tools
 
@@ -121,6 +124,7 @@ Both instances have unrestricted access to all tools for STEM research, source i
 - **Statistical claim** → scipy.stats or statsmodels, NumPy for computation, pandas for data
 - **Code correctness claim** → AST parse + Read source + pytest run
 - **Code quality claim** → ruff + mypy + bandit
+- **Behavioural code claim** (function invariant / contract) → crosshair (symbolic execution via z3)
 - **Logical/constraint claim** → z3
 - **Measurement/uncertainty claim** → uncertainties + mpmath for precision
 - **Dimensional/unit claim** → pint (default) or astropy.units for astronomy
@@ -130,8 +134,11 @@ Both instances have unrestricted access to all tools for STEM research, source i
 
 ### What Is NOT Installed (do not attempt)
 
-matplotlib, scikit-learn, networkx, rdkit, biopython, pylint, radon, vulture, pyflakes, crosshair.
+matplotlib, rdkit, biopython, scikit-learn, networkx, pylint, radon, vulture, pyflakes.
 If a domain needs these, flag it and request installation.
+(Note: several of these may be installed by Tranche B of the domain tool wiring work —
+this line is the source of truth at sv time. Always verify with `pip show <pkg>` before
+assuming one way or the other.)
 
 ## Identity
 

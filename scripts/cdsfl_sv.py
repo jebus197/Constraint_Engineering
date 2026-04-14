@@ -12,6 +12,24 @@ entry in ONBOARDING.md and the pending work section in RECOVERY.md.
 
 The goal: anyone cloning this repo can read ONBOARDING.md and pick up
 the project from its exact last state without any further context.
+
+---
+
+Protocol note for Claude operators preparing sv input:
+
+This script does NOT read ONBOARDING.md, RECOVERY.md, MATHEMATICAL_APPENDIX.md,
+PAPER.md or memory files itself — the OPERATOR's qualitative updates must be
+prepared before the script runs. Those canonical documents are now large
+enough that a single parallel read across them inflates context without
+improving understanding and raises the risk of API overload.
+
+Read them sequentially — top to bottom, one section or chunk at a time.
+Absorb each chunk, decide if it needs a qualitative update, then move on to
+the next. Do NOT fetch several large documents in parallel just to "have
+them all loaded". Carefully considered section-by-section updates produce
+better recovery docs than bulk ingestion of everything at once.
+
+This protocol is mirrored in .claude/CLAUDE.md and ~/.claude/CLAUDE.md.
 """
 
 from __future__ import annotations
