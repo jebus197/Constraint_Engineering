@@ -4,9 +4,16 @@
 [immune.verification_tools]
 
 # Cross-domain defaults: use the broadest tool set.
-mathematical = ["sympy", "z3", "dimensional_analysis"]
+# Domain-specific specialists (chemistry_structure, biological_sequence,
+# graph_property, ml_claim) run after general tools return UNCERTAIN and
+# only fire when their own claim extractors succeed.
+mathematical = [
+    "sympy", "z3", "dimensional_analysis",
+    "chemistry_structure", "biological_sequence",
+    "graph_property", "ml_claim",
+]
 logical = ["z3", "sympy"]
-statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
+statistical = ["statsmodels", "scipy", "uncertainty_propagation", "ml_claim"]
 
 [immune.ct_prompt_template]
 template = """You are investigating claims that may span multiple domains. Your output will be mechanically verified.

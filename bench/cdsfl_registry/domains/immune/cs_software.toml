@@ -50,9 +50,12 @@ mathematical = [
 # lint_check: code quality (ruff)
 # security_scan: vulnerability detection (bandit)
 # bytecode_analysis: control flow verification (dis module)
+# symbolic_execution: z3-backed contract verification (crosshair)
+# graph_property: NetworkX graph claims (node/edge count, connectivity,
+#                 cycle, tree, diameter)
 code_structural = ["ast_analysis", "type_checker", "lint_check"]
-code_behavioral = ["ast_analysis", "test_runner", "security_scan"]
-mathematical = ["sympy", "z3"]
+code_behavioral = ["ast_analysis", "symbolic_execution", "test_runner", "security_scan"]
+mathematical = ["sympy", "z3", "graph_property"]
 logical = ["z3", "bytecode_analysis"]
 
 [immune.ct_prompt_template]

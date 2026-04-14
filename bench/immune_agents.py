@@ -1813,6 +1813,672 @@ except Exception as e:
         )
 
 
+def _verify_symbolic_execution(claim: str, file_path: str = "") -> CellVerdict:
+    """Verify behavioural / contract claims using Crosshair (z3-backed).
+
+    Runs ``crosshair check`` on a target Python file that carries
+    ICONTRACT-style ``pre:`` / ``post:`` docstring conditions. If Crosshair
+    finds a counterexample, the claim that a contract is violated is
+    CONFIRMED; if all contracts pass, the claim is REJECTED.
+
+    If the file has no contracts, Crosshair exits cleanly with no output —
+    that case is surfaced as UNCERTAIN, not REJECTED, since a clean run
+    without contracts proves nothing.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence="crosshair: no valid file_path for symbolic execution",
+            tool_used="crosshair", elapsed_s=0.0,
+        )
+
+    code = f"""
+import subprocess, sys
+
+result = subprocess.run(
+    [sys.executable, '-m', 'crosshair', 'check',
+     '--report_all', '--per_condition_timeout=3', {repr(file_path)}],
+    capture_output=True, text=True, timeout=25,
+)
+
+out = (result.stdout or '').strip()
+err = (result.stderr or '').strip()
+
+# With --report_all, clean contracts emit "info: Confirmed over all paths".
+# rc=0 + "info: Confirmed" → clean verification
+# rc=0 + empty → no contracts to check
+# rc=1 + "error:" → counterexample found
+# rc!=0,1 → tool error
+
+if result.returncode == 1 and "error:" in out.lower():
+    print("CROSSHAIR_COUNTEREXAMPLE: contract violation found")
+    for l in out.splitlines()[:5]:
+        print(f"  {{l}}")
+elif result.returncode == 0 and "info: confirmed" in out.lower():
+    print("CROSSHAIR_CLEAN: contracts verified")
+    for l in out.splitlines()[:3]:
+        print(f"  {{l}}")
+elif result.returncode == 0 and not out:
+    print("CROSSHAIR_NO_CONTRACTS: no pre/post conditions detected")
+else:
+    print(f"CROSSHAIR_ERROR: rc={{result.returncode}}")
+    if out:
+        print(f"  stdout: {{out[:200]}}")
+    if err:
+        print(f"  stderr: {{err[:200]}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=30)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("CROSSHAIR_COUNTEREXAMPLE"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"crosshair: {output}",
+            tool_used="crosshair", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("CROSSHAIR_CLEAN"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.75, evidence=f"crosshair: {output}",
+            tool_used="crosshair", elapsed_s=elapsed,
+        )
+    else:
+        # CROSSHAIR_NO_CONTRACTS, CROSSHAIR_ERROR, TIMEOUT, SUBPROCESS_ERROR
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"crosshair: {output}",
+            tool_used="crosshair", elapsed_s=elapsed,
+        )
+
+
+def _verify_chemistry_structure(claim: str) -> CellVerdict:
+    """Verify chemistry claims using RDKit.
+
+    Supports three claim types:
+      1. SMILES validity: claim contains a SMILES string (e.g. ``'CCO'``) —
+         RDKit parses it; valid → CONFIRMED, invalid → REJECTED.
+      2. Molecular formula: claim contains both a SMILES and a formula
+         (e.g. ``C2H6O``); match → CONFIRMED, mismatch → REJECTED.
+      3. Molecular weight: claim contains both a SMILES and a numeric MW
+         (g/mol); match within 0.5 g/mol → CONFIRMED, otherwise REJECTED.
+
+    Complements ``_verify_stoichiometric_balance`` (which handles reaction
+    conservation); this wrapper handles structure and property claims.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+# Quoted SMILES are treated as explicit claims (failure → REJECTED).
+# Unquoted fallback tokens are only loose hints (failure → UNCERTAIN).
+quoted = re.findall(r\"['\\\"`]([^'\\\"`\\s]{{1,80}})['\\\"`]\", claim)
+smiles_candidates = list(quoted)
+explicit = bool(quoted)
+if not smiles_candidates:
+    smiles_candidates = [
+        tok for tok in re.findall(r'\\S+', claim)
+        if re.fullmatch(r'[A-Za-z0-9()\\[\\]=#@+\\-/\\\\.%]{{2,80}}', tok)
+        and any(c.isalpha() for c in tok)
+    ]
+
+try:
+    from rdkit import Chem
+    from rdkit.Chem import rdMolDescriptors, Descriptors
+    from rdkit import RDLogger
+    RDLogger.DisableLog('rdApp.*')
+except Exception as e:
+    print(f"CHEM_IMPORT_ERROR: {{e}}")
+    raise SystemExit(0)
+
+# Try each candidate until one parses as a SMILES.
+mol = None
+smiles_used = None
+for cand in smiles_candidates:
+    m = Chem.MolFromSmiles(cand)
+    if m is not None and m.GetNumAtoms() > 0:
+        mol = m
+        smiles_used = cand
+        break
+
+if mol is None:
+    # Quoted SMILES that fail → REJECTED (explicit claim refuted).
+    # Unquoted fallback tokens that fail → UNCERTAIN (no SMILES claim asserted).
+    if explicit:
+        print(f"CHEM_INVALID_SMILES: none of {{smiles_candidates[:3]}} parsed")
+    else:
+        print("CHEM_NO_SMILES: no parseable SMILES found in claim")
+    raise SystemExit(0)
+
+# We have a valid SMILES. Compute properties.
+formula = rdMolDescriptors.CalcMolFormula(mol)
+mw = Descriptors.MolWt(mol)
+num_atoms = mol.GetNumAtoms()
+num_rings = rdMolDescriptors.CalcNumRings(mol)
+
+# Match against claimed formula. Formula heuristic: uppercase letter
+# optionally followed by lowercase, then digits, repeated.
+formula_claimed = None
+for m in re.finditer(r'\\b([A-Z][a-z]?\\d*){{2,}}\\b', claim):
+    cand = m.group(0)
+    if cand != smiles_used and any(c.isdigit() for c in cand):
+        formula_claimed = cand
+        break
+
+# Match against claimed MW (number near 'mw' / 'weight' / 'g/mol').
+mw_claimed = None
+mw_match = re.search(r'(?:MW|molecular\\s+weight|mass)\\D{{0,20}}(\\d+\\.?\\d*)', claim, re.I)
+if not mw_match:
+    mw_match = re.search(r'(\\d+\\.?\\d*)\\s*g\\s*/\\s*mol', claim, re.I)
+if mw_match:
+    try:
+        mw_claimed = float(mw_match.group(1))
+    except ValueError:
+        pass
+
+# Decide verdict based on strongest constraint present.
+if formula_claimed is not None:
+    # Normalise both: RDKit output may have different element order than claim.
+    def _elem_counts(f):
+        return dict(re.findall(r'([A-Z][a-z]?)(\\d*)', f))
+    a = {{k: (int(v) if v else 1) for k, v in _elem_counts(formula).items() if k}}
+    b = {{k: (int(v) if v else 1) for k, v in _elem_counts(formula_claimed).items() if k}}
+    if a == b:
+        print(f"CHEM_VALID: SMILES={{smiles_used}} formula={{formula}} matches claim")
+    else:
+        print(f"CHEM_INVALID: SMILES={{smiles_used}} computed={{formula}} claimed={{formula_claimed}}")
+elif mw_claimed is not None:
+    if abs(mw - mw_claimed) < 0.5:
+        print(f"CHEM_VALID: SMILES={{smiles_used}} MW={{mw:.2f}} matches claim {{mw_claimed}}")
+    else:
+        print(f"CHEM_INVALID: SMILES={{smiles_used}} computed_MW={{mw:.2f}} claimed_MW={{mw_claimed}}")
+else:
+    # Just a SMILES validity check
+    print(f"CHEM_VALID: SMILES={{smiles_used}} parsed ({{num_atoms}} atoms, {{num_rings}} rings, formula={{formula}}, MW={{mw:.2f}})")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=15)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("CHEM_VALID"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"rdkit: {output}",
+            tool_used="rdkit", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("CHEM_INVALID_SMILES") or stripped.startswith("CHEM_INVALID"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.85, evidence=f"rdkit: {output}",
+            tool_used="rdkit", elapsed_s=elapsed,
+        )
+    else:
+        # CHEM_NO_SMILES, CHEM_IMPORT_ERROR, TIMEOUT, SUBPROCESS_ERROR
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"rdkit: {output}",
+            tool_used="rdkit", elapsed_s=elapsed,
+        )
+
+
+def _verify_biological_sequence(claim: str) -> CellVerdict:
+    """Verify biology sequence claims using Biopython.
+
+    Supports:
+      1. Length: ``sequence 'ACGT' has length 4`` / ``4 bp`` / ``4 nt``.
+      2. GC content: ``GC content 50%`` / ``50% GC``.
+      3. Translation: ``ATGGCC translates to MA``.
+      4. Reverse complement: ``RC of ACGT is ACGT``.
+      5. Pure validity: quoted sequence is valid DNA/RNA/protein.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+quoted = re.findall(r\"['\\\"`]([A-Za-z0-9*]{{2,500}})['\\\"`]\", claim)
+seq_candidates = list(quoted)
+explicit = bool(quoted)
+if not seq_candidates:
+    # Unquoted DNA/RNA: require at least 4 contiguous nucleotide letters.
+    seq_candidates = [
+        tok for tok in re.findall(r'\\b[ACGTUNacgtun]{{4,}}\\b', claim)
+    ]
+
+try:
+    from Bio.Seq import Seq
+except Exception as e:
+    print(f"BIO_IMPORT_ERROR: {{e}}")
+    raise SystemExit(0)
+
+DNA = set('ACGTNacgtn')
+RNA = set('ACGUNacgun')
+PROT = set('ACDEFGHIKLMNPQRSTVWY*acdefghiklmnpqrstvwy')
+
+def classify(s):
+    chars = set(s)
+    if chars <= DNA: return 'DNA'
+    if chars <= RNA: return 'RNA'
+    if chars <= PROT: return 'PROT'
+    return None
+
+primary = None
+primary_kind = None
+for cand in seq_candidates:
+    k = classify(cand)
+    if k is not None:
+        primary = cand
+        primary_kind = k
+        break
+
+if primary is None:
+    if explicit:
+        print(f"BIO_INVALID_SEQUENCE: none of {{seq_candidates[:3]}} valid DNA/RNA/protein")
+    else:
+        print("BIO_NO_SEQUENCE: no parseable sequence in claim")
+    raise SystemExit(0)
+
+s = Seq(primary)
+length = len(s)
+gc = None
+if primary_kind in ('DNA', 'RNA') and length > 0:
+    gc = 100.0 * (primary.upper().count('G') + primary.upper().count('C')) / length
+
+length_claim = None
+m_len = re.search(r'(?:length|len\\.?)\\s*(?:of|=|is|:)?\\s*(\\d+)', claim, re.I)
+if not m_len:
+    m_len = re.search(r'(\\d+)\\s*(?:bp|nt|nucleotides?|residues?|aa|amino\\s+acids?)', claim, re.I)
+if m_len:
+    length_claim = int(m_len.group(1))
+
+gc_claim = None
+m_gc = re.search(r'(?:GC\\s*(?:content|fraction|percent|%)?\\D{{0,10}})(\\d+\\.?\\d*)\\s*%?', claim, re.I)
+if not m_gc:
+    m_gc = re.search(r'(\\d+\\.?\\d*)\\s*%\\s*GC', claim, re.I)
+if m_gc:
+    gc_claim = float(m_gc.group(1))
+
+# Translation claim: look for 'translate(s) to X' where X is protein-like
+trans_claim = None
+m_tr = re.search(r'translates?\\s+(?:to|into)\\s+[\\'\\\"]?([A-Za-z*]{{1,200}})[\\'\\\"]?', claim, re.I)
+if m_tr:
+    trans_claim = m_tr.group(1)
+
+# Reverse complement claim
+rc_claim = None
+m_rc = re.search(r'(?:reverse\\s*complement|RC)\\s+(?:is|=|of\\s+\\S+\\s+is)\\s+[\\'\\\"]?([ACGTUacgtu]{{2,500}})[\\'\\\"]?', claim, re.I)
+if m_rc:
+    rc_claim = m_rc.group(1).upper()
+
+# Decide verdict. Most specific claim wins.
+if trans_claim is not None and primary_kind == 'DNA':
+    try:
+        actual = str(s.translate())
+        if actual == trans_claim.upper() or actual.rstrip('*') == trans_claim.upper().rstrip('*'):
+            print(f"BIO_VALID: {{primary}} translates to {{actual}} matches claim")
+        else:
+            print(f"BIO_INVALID: {{primary}} translates to {{actual}}, claimed {{trans_claim}}")
+    except Exception as e:
+        print(f"BIO_ERROR: translate failed: {{e}}")
+elif rc_claim is not None and primary_kind == 'DNA':
+    actual = str(s.reverse_complement()).upper()
+    if actual == rc_claim:
+        print(f"BIO_VALID: RC({{primary}})={{actual}} matches claim")
+    else:
+        print(f"BIO_INVALID: RC({{primary}})={{actual}}, claimed {{rc_claim}}")
+elif length_claim is not None:
+    if length == length_claim:
+        print(f"BIO_VALID: length({{primary}})={{length}} matches claim")
+    else:
+        print(f"BIO_INVALID: length({{primary}})={{length}}, claimed {{length_claim}}")
+elif gc_claim is not None and gc is not None:
+    if abs(gc - gc_claim) < 0.5:
+        print(f"BIO_VALID: GC({{primary}})={{gc:.2f}}% matches claim {{gc_claim}}%")
+    else:
+        print(f"BIO_INVALID: GC({{primary}})={{gc:.2f}}%, claimed {{gc_claim}}%")
+else:
+    gc_str = f"{{gc:.1f}}%" if gc is not None else "n/a"
+    print(f"BIO_VALID: {{primary_kind}} sequence '{{primary[:40]}}{{'...' if len(primary) > 40 else ''}}' (len={{length}}, GC={{gc_str}})")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=15)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("BIO_VALID"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"biopython: {output}",
+            tool_used="biopython", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("BIO_INVALID"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.85, evidence=f"biopython: {output}",
+            tool_used="biopython", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"biopython: {output}",
+            tool_used="biopython", elapsed_s=elapsed,
+        )
+
+
+def _verify_ml_claim(claim: str) -> CellVerdict:
+    """Verify machine-learning claims using scikit-learn sanity checks.
+
+    This wrapper is deliberately narrow: it checks structural/numerical
+    claims that can be decided from the claim string alone, without access
+    to experimental data. Three check classes:
+
+      1. Metric bounds. Accuracy, precision, recall, F1 ∈ [0, 1]; AUC ∈
+         [0, 1]; MSE, MAE ≥ 0; Gini for k classes ≤ 1 − 1/k. Violations
+         are flagged as CONFIRMED flaws.
+      2. Algorithm existence. A claim that names an sklearn estimator is
+         checked against the installed namespace; an unknown name is
+         CONFIRMED (typo / non-existent).
+      3. Dimension claims. "Confusion matrix for k classes is k×k" —
+         verified against the stated k.
+
+    Claims that require live data to adjudicate are returned UNCERTAIN.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+claim_l = claim.lower()
+
+try:
+    import sklearn
+    from sklearn.utils import all_estimators
+except Exception as e:
+    print(f"ML_IMPORT_ERROR: {{e}}")
+    raise SystemExit(0)
+
+findings = []
+
+# (1) Metric bound checks.
+bound_metrics = {{
+    'accuracy': (0.0, 1.0),
+    'precision': (0.0, 1.0),
+    'recall': (0.0, 1.0),
+    'f1': (0.0, 1.0),
+    'f1-score': (0.0, 1.0),
+    'f1 score': (0.0, 1.0),
+    'auc': (0.0, 1.0),
+    'auroc': (0.0, 1.0),
+    'roc auc': (0.0, 1.0),
+    'roc-auc': (0.0, 1.0),
+    'r2': (None, 1.0),        # R² can be negative, upper bound 1
+    'r²': (None, 1.0),
+    'sensitivity': (0.0, 1.0),
+    'specificity': (0.0, 1.0),
+    'mse': (0.0, None),       # MSE ≥ 0
+    'mae': (0.0, None),
+    'rmse': (0.0, None),
+}}
+
+for metric, (lo, hi) in bound_metrics.items():
+    # Accept forms: "accuracy = 1.5", "accuracy of 1.5", "accuracy is 1.5",
+    # "accuracy 150%", "1.5 accuracy".
+    patterns = [
+        rf'{{re.escape(metric)}}\\s*(?:=|:|of|is|was)?\\s*(-?\\d+\\.?\\d*)\\s*(%?)',
+        rf'(-?\\d+\\.?\\d*)\\s*(%?)\\s+{{re.escape(metric)}}',
+    ]
+    for pat in patterns:
+        for m in re.finditer(pat, claim_l):
+            try:
+                val = float(m.group(1))
+                if m.group(2) == '%':
+                    val /= 100.0
+            except ValueError:
+                continue
+            if lo is not None and val < lo:
+                findings.append(f"{{metric}}={{val}} below lower bound {{lo}}")
+            if hi is not None and val > hi:
+                findings.append(f"{{metric}}={{val}} above upper bound {{hi}}")
+
+# Gini bound: for k classes, max Gini = 1 - 1/k.
+m_gini = re.search(r'gini\\s*(?:impurity)?\\s*(?:=|:|of|is)?\\s*(\\d+\\.?\\d*)', claim_l)
+m_k = re.search(r'(\\d+)[ -]?class', claim_l)
+if m_gini and m_k:
+    try:
+        gini = float(m_gini.group(1))
+        k = int(m_k.group(1))
+        if k >= 2:
+            max_gini = 1.0 - 1.0 / k
+            if gini > max_gini + 1e-9:
+                findings.append(f"gini={{gini}} exceeds max {{max_gini:.3f}} for {{k}}-class")
+    except (ValueError, ZeroDivisionError):
+        pass
+
+# (2) Algorithm existence check (only when a "sklearn X" style claim appears).
+# Build the name set once.
+est_names = {{n.lower() for n, _ in all_estimators()}}
+m_alg = re.search(r"sklearn[.\\s]([A-Za-z_][A-Za-z_0-9]*)", claim)
+if m_alg:
+    name = m_alg.group(1)
+    if name.lower() not in est_names:
+        findings.append(f"sklearn.{{name}} not found in installed estimators")
+
+# (3) Confusion matrix dimension.
+m_cm = re.search(r'confusion\\s+matrix\\s+(?:is|of|for)?\\s*(\\d+)\\s*(?:x|×|by)\\s*(\\d+)', claim_l)
+m_cmk = re.search(r'(\\d+)[ -]?class', claim_l)
+if m_cm and m_cmk:
+    try:
+        r = int(m_cm.group(1))
+        c = int(m_cm.group(2))
+        k = int(m_cmk.group(1))
+        if r != k or c != k:
+            findings.append(f"confusion matrix {{r}}x{{c}} mismatches {{k}}-class problem")
+    except ValueError:
+        pass
+
+if findings:
+    print(f"ML_INCONSISTENT: {{len(findings)}} issue(s)")
+    for f in findings[:5]:
+        print(f"  {{f}}")
+elif any(t in claim_l for t in list(bound_metrics.keys()) + ['gini', 'sklearn', 'confusion matrix']):
+    print(f"ML_CONSISTENT: sklearn sanity checks pass on claim")
+else:
+    print("ML_NO_CHECKABLE_CLAIM: no recognised ML metric or algorithm reference")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=15)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("ML_INCONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.80, evidence=f"sklearn: {output}",
+            tool_used="sklearn", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("ML_CONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.50, evidence=f"sklearn: {output}",
+            tool_used="sklearn", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"sklearn: {output}",
+            tool_used="sklearn", elapsed_s=elapsed,
+        )
+
+
+def _verify_graph_property(claim: str) -> CellVerdict:
+    """Verify graph-theoretic claims using NetworkX.
+
+    Extracts edges from the claim as ``(u,v)``/``u-v``/``u->v`` tokens,
+    builds a graph (directed if ``->`` appears, otherwise undirected),
+    and verifies claimed properties:
+
+      * Node count / edge count.
+      * Connected (undirected) / weakly/strongly connected (directed).
+      * Tree (acyclic, connected, |E| = |V| − 1).
+      * Has-cycle.
+      * Diameter (integer).
+
+    Verdict:
+      * Graph property holds and claim asserts it → CONFIRMED.
+      * Claim asserts property that fails → REJECTED.
+      * No extractable edges or no checkable property → UNCERTAIN.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+claim_l = claim.lower()
+
+try:
+    import networkx as nx
+except Exception as e:
+    print(f"GRAPH_IMPORT_ERROR: {{e}}")
+    raise SystemExit(0)
+
+# Extract edges: (u,v), u->v, or u-v with word-like endpoints.
+directed_edges = re.findall(r'(\\w+)\\s*(?:->|→)\\s*(\\w+)', claim)
+undirected_edges_paren = re.findall(r'\\(\\s*(\\w+)\\s*,\\s*(\\w+)\\s*\\)', claim)
+undirected_edges_dash = re.findall(r'\\b(\\w+)\\s*-\\s*(\\w+)\\b', claim)
+
+directed_mode = bool(directed_edges)
+if directed_mode:
+    edges = directed_edges
+else:
+    # Prefer parenthesised edges; fall back to dashed only if no parens present
+    # and dashed edges look edge-like (endpoints aren't long phrases).
+    edges = undirected_edges_paren or [
+        (u, v) for (u, v) in undirected_edges_dash
+        if len(u) <= 20 and len(v) <= 20 and u.isalnum() and v.isalnum()
+    ]
+
+if not edges:
+    print("GRAPH_NO_EDGES: no edges extracted from claim")
+    raise SystemExit(0)
+
+G = nx.DiGraph() if directed_mode else nx.Graph()
+G.add_edges_from(edges)
+
+findings = []
+checked = []
+
+# Node count claim
+m_nodes = re.search(r'(\\d+)\\s*(?:nodes?|vertices?|vertex)', claim_l)
+if m_nodes:
+    n_claimed = int(m_nodes.group(1))
+    n_actual = G.number_of_nodes()
+    checked.append('nodes')
+    if n_actual != n_claimed:
+        findings.append(f"node count: actual {{n_actual}}, claimed {{n_claimed}}")
+
+# Edge count claim
+m_edges = re.search(r'(\\d+)\\s*edges?', claim_l)
+if m_edges:
+    e_claimed = int(m_edges.group(1))
+    e_actual = G.number_of_edges()
+    checked.append('edges')
+    if e_actual != e_claimed:
+        findings.append(f"edge count: actual {{e_actual}}, claimed {{e_claimed}}")
+
+# Connectivity
+if 'connected' in claim_l:
+    checked.append('connected')
+    if directed_mode:
+        is_conn = nx.is_weakly_connected(G)
+        kind = 'weakly connected'
+    else:
+        is_conn = nx.is_connected(G) if G.number_of_nodes() > 0 else False
+        kind = 'connected'
+    asserts_connected = 'not connected' not in claim_l and 'disconnected' not in claim_l
+    if asserts_connected and not is_conn:
+        findings.append(f"{{kind}}: claim asserts connected, graph is not")
+    elif not asserts_connected and is_conn:
+        findings.append(f"{{kind}}: claim asserts disconnected, graph is connected")
+
+# Tree
+if 'tree' in claim_l:
+    checked.append('tree')
+    is_tree = nx.is_tree(G) if not directed_mode else nx.is_arborescence(G)
+    asserts_tree = 'not a tree' not in claim_l and 'not tree' not in claim_l
+    if asserts_tree and not is_tree:
+        findings.append(f"tree: claim asserts tree, graph is not")
+    elif not asserts_tree and is_tree:
+        findings.append(f"tree: claim asserts non-tree, graph is a tree")
+
+# Cycle
+if 'cycle' in claim_l or 'acyclic' in claim_l:
+    checked.append('cycle')
+    try:
+        if directed_mode:
+            has_cycle = not nx.is_directed_acyclic_graph(G)
+        else:
+            has_cycle = any(True for _ in nx.simple_cycles(G)) if G.number_of_nodes() > 0 else False
+    except Exception:
+        has_cycle = False
+    asserts_cycle = 'cycle' in claim_l and 'no cycle' not in claim_l and 'acyclic' not in claim_l
+    asserts_acyclic = 'acyclic' in claim_l or 'no cycle' in claim_l
+    if asserts_cycle and not has_cycle:
+        findings.append("cycle: claim asserts cycle, graph is acyclic")
+    elif asserts_acyclic and has_cycle:
+        findings.append("acyclic: claim asserts acyclic, graph has cycle")
+
+# Diameter
+m_diam = re.search(r'diameter\\s*(?:is|=|:|of)?\\s*(\\d+)', claim_l)
+if m_diam:
+    try:
+        if directed_mode:
+            d_actual = nx.diameter(G.to_undirected()) if G.number_of_nodes() > 0 else None
+        else:
+            d_actual = nx.diameter(G) if nx.is_connected(G) else None
+    except Exception:
+        d_actual = None
+    if d_actual is not None:
+        d_claimed = int(m_diam.group(1))
+        checked.append('diameter')
+        if d_actual != d_claimed:
+            findings.append(f"diameter: actual {{d_actual}}, claimed {{d_claimed}}")
+
+if not checked:
+    print("GRAPH_NO_CHECKABLE_PROPERTY: edges extracted but no recognised property claim")
+elif findings:
+    print(f"GRAPH_MISMATCH: {{len(findings)}} property mismatch(es)")
+    for f in findings[:5]:
+        print(f"  {{f}}")
+else:
+    print(f"GRAPH_VERIFIED: all {{len(checked)}} claimed properties hold ({{','.join(checked)}})")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=15)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("GRAPH_VERIFIED"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"networkx: {output}",
+            tool_used="networkx", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("GRAPH_MISMATCH"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.85, evidence=f"networkx: {output}",
+            tool_used="networkx", elapsed_s=elapsed,
+        )
+    else:
+        # GRAPH_NO_EDGES, GRAPH_NO_CHECKABLE_PROPERTY, GRAPH_IMPORT_ERROR, etc.
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"networkx: {output}",
+            tool_used="networkx", elapsed_s=elapsed,
+        )
+
+
 def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
     """Stage 2b: Mathematical/logical/statistical verification.
 
@@ -1929,6 +2595,17 @@ def _specialist_b_cell_dispatch(
                 v = _verify_security_scan(tf.extracted_claim, target_file)
             elif tool_name == "bytecode_analysis":
                 v = _verify_bytecode_analysis(tf.extracted_claim, target_file)
+            # ── Tranche B: behavioural + domain-specific tools ──
+            elif tool_name == "symbolic_execution":
+                v = _verify_symbolic_execution(tf.extracted_claim, target_file)
+            elif tool_name == "chemistry_structure":
+                v = _verify_chemistry_structure(tf.extracted_claim)
+            elif tool_name == "biological_sequence":
+                v = _verify_biological_sequence(tf.extracted_claim)
+            elif tool_name == "ml_claim":
+                v = _verify_ml_claim(tf.extracted_claim)
+            elif tool_name == "graph_property":
+                v = _verify_graph_property(tf.extracted_claim)
             elif tool_name == "ast_analysis":
                 # AST analysis is handled by B-Cell v2 (structural AST walker)
                 continue

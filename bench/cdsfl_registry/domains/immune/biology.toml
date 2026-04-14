@@ -32,7 +32,9 @@ statistical = [
 # Biology verification relies on logical consistency and statistical
 # rigour rather than symbolic computation.  SymPy for kinetics equations,
 # scipy.stats for statistical claims.
-mathematical = ["sympy", "dimensional_analysis"]
+# biological_sequence (Biopython) handles DNA/RNA/protein sequence claims
+# (length, GC content, translation, reverse complement).
+mathematical = ["sympy", "biological_sequence", "dimensional_analysis"]
 logical = ["z3"]
 statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
 

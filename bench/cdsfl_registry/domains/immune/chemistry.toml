@@ -32,7 +32,8 @@ statistical = [
 [immune.verification_tools]
 
 # Primary: SymPy for symbolic chemistry. Fallback: stoichiometric checker.
-mathematical = ["sympy", "stoichiometric_balance", "dimensional_analysis"]
+# chemistry_structure (RDKit) handles SMILES / molecular formula / MW claims.
+mathematical = ["sympy", "chemistry_structure", "stoichiometric_balance", "dimensional_analysis"]
 logical = ["z3", "sympy"]
 statistical = ["statsmodels", "scipy", "uncertainty_propagation"]
 
