@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 14 April 2026 19:27 BST
+Last updated: 15 April 2026 00:47 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,50 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **TRANCHES A / B / C — B-CELL DISPATCH CONSOLIDATION (14 April 2026 evening, 19:56 → 23:01 BST):**
+  Branch: `exp39-experimental`. 793 tests pass. 4 commits ahead of origin.
+  Three sequential tranches executed under "boring and safe" directive after
+  an API 500 earlier in the day (recovery from a ~580-line single edit).
+  One wrapper per tool call, targeted greps, single-claim smoke tests.
+
+  **Tranche A — housekeeping (commit `6838160`, 19:56 BST):**
+  CLAUDE.md crosshair moved out of "NOT installed" into the Code Analysis
+  Tools table. `sv` sequential-reading protocol added to CLAUDE.md and user
+  global directives. No functional code changes.
+
+  **Tranche B — 5 new B-Cell specialist wrappers (commit `0c1de8e`, 21:02 BST):**
+  - `_verify_symbolic_execution` (crosshair 0.0.102) — behavioural contracts
+  - `_verify_chemistry_structure` (rdkit 2026.3.1) — SMILES/molecule validation
+  - `_verify_biological_sequence` (biopython 1.87) — sequence structure
+  - `_verify_ml_claim` (scikit-learn 1.8.0) — ML metric/model claims
+  - `_verify_graph_property` (networkx 3.6.1) — graph theoretic claims
+  5 new elif branches appended after the prior 9. 4 domain TOMLs updated.
+  New installations: rdkit, biopython, scikit-learn, networkx. matplotlib
+  was already present. 793 tests green.
+
+  **Tranche C — manifest-driven dispatch refactor (commit `2f22a8a`, 23:01 BST):**
+  NEW `bench/cdsfl_registry/tool_manifest.toml` (238 lines, 20 entries:
+  18 active + 2 delegated). Schema: description, verifier, needs_file,
+  claim_types, domain_hints, cost_class, install_check, package_hint,
+  delegate. `_load_tool_manifest()` lazy singleton added at
+  `immune_agents.py:148` with belt-and-braces validation (drops entries
+  whose verifier does not resolve). `_specialist_b_cell_dispatch()` body
+  replaced: 46-line elif chain → 12-line manifest-driven loop. First-
+  definitive-verdict semantics preserved, `[specialist:<tool>]` evidence
+  suffix intact, `finding_id` stamped. Adding a new B-Cell specialist is
+  now a TOML-only edit. 793 tests pass in 12m 24s.
+
+  **Staleness introduced this session:** CLAUDE.md "NOT installed" line
+  still cites rdkit, biopython, scikit-learn, networkx, matplotlib — all
+  five now installed. Flagged in RECOVERY.md for next-session patch.
+
+  **Pre-Tranche-A chore (commit `d9f8f82`, 19:52 BST):** Stage 6 confer
+  residuals from the morning session committed — `bench/dm/_shadow_stage6.py`
+  (740 lines), 3 confer driver scripts, 3 Stage 6 syntheses, confer log
+  dirs. Pure cleanup of prior untracked-artefact item.
+
+  TTS: pending on next working session (deferred — user approaching rest).
+
 - **DOMAIN TOOL WIRING — B-CELL SPECIALIST DISPATCH (14 April 2026 18:37 BST):**
   Branch: `exp39-experimental`. 793 tests pass (full regression, 17m 21s). Immune-scoped
   subset: 136 tests in 4m 44s. Zero regressions.

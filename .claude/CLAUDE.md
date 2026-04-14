@@ -132,13 +132,25 @@ Both instances have unrestricted access to all tools for STEM research, source i
 - **Stoichiometry claim** → regex + collections (no external dep), or pint for unit-bearing balances
 - **Any claim** → if tools can verify it, tools MUST verify it before verdict
 
+### Additional Tools Installed (Tranche B, 14 April 2026)
+
+Wired into B-Cell specialist dispatch via `bench/cdsfl_registry/tool_manifest.toml`:
+
+| Tool | Import | Use When |
+|------|--------|----------|
+| rdkit 2026.3.1 | `from rdkit import Chem` | SMILES parsing, molecule validation, chemistry structure claims. **Default for chemical structure claims.** |
+| biopython 1.87 | `from Bio import SeqIO` | DNA/RNA/protein sequence validation, basic sequence analysis. **Default for biological sequence claims.** |
+| scikit-learn 1.8.0 | `import sklearn` | ML metric/model claims, baseline classification/regression verification. **Default for ML claims.** |
+| networkx 3.6.1 | `import networkx` | Graph theoretic claims, shortest paths, connectivity, graph property checks. **Default for graph claims.** |
+| crosshair 0.0.102 | `import crosshair` | Symbolic execution (also listed in Code Analysis table above). |
+| matplotlib 3.10.8 | `import matplotlib` | Plotting (installed, not yet routed into any cell). |
+
 ### What Is NOT Installed (do not attempt)
 
-matplotlib, rdkit, biopython, scikit-learn, networkx, pylint, radon, vulture, pyflakes.
-If a domain needs these, flag it and request installation.
-(Note: several of these may be installed by Tranche B of the domain tool wiring work —
-this line is the source of truth at sv time. Always verify with `pip show <pkg>` before
-assuming one way or the other.)
+pylint, radon, vulture, pyflakes. If a domain needs these, flag it and request
+installation. Always verify with `pip show <pkg>` before assuming installation
+state — this line is the source of truth at sv time, but `pip show` is the
+ground truth at run time.
 
 ## Identity
 
