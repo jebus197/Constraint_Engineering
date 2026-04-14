@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 14 April 2026 11:30 BST
+Last updated: 14 April 2026 19:27 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,9 +21,47 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (14 April 2026 09:07 BST)
+## Current Pending Work (14 April 2026 18:37 BST)
 
-793 tests pass. Branch: `exp39-experimental`. Last commit: f5e73ab.
+793 tests pass (full regression 17m 21s, immune subset 136/136). Branch: `exp39-experimental`.
+
+**SESSION 14 APRIL (evening) — DOMAIN TOOL WIRING:**
+- 9 subprocess wrappers added to `bench/immune_agents.py` (lines 1114–1734)
+  covering pint, uncertainties, stoichiometry (regex+collections), PuLP, astropy,
+  mypy, ruff, bandit, dis. Additive only — no existing functions modified.
+- 9 new `elif` branches appended to `_specialist_b_cell_dispatch()`
+  (lines 1913–1931) AFTER existing sympy/z3/statsmodels/scipy branches.
+  First-definitive-result-wins semantics preserved.
+- 5 TOMLs in `bench/cdsfl_registry/domains/immune/` extended with new tool names
+  (physics, engineering, chemistry, biology, cross_domain). `cs_software.toml`
+  already referenced code tools from a prior session.
+- 2 bugs found in smoke tests and fixed before regression:
+  - `immune_agents.py:1131` regex `+` → `*` (single-letter units `m`, `s`, `N`
+    were being silently skipped by the 2+-char regex).
+  - `immune_agents.py:1626` ruff `--output-format=text` → `concise` (ruff
+    rejects `text` and returns rc=2).
+- Full regression green: 793/793 passing, zero regressions vs. prior commit.
+- Shadow containment verified: wrappers run inside `_specialist_b_cell_dispatch()`
+  which runs in shadow mode in Exp 39. Verdicts captured via `specialist_verdicts`
+  but NOT extended into `all_verdicts`. Promotion is a single-line flip at
+  `reference_runner.py` ~3741, not touched.
+- Verified this session did NOT alter:
+  - reference_runner.py (11-line Macrophage diagnostic diff is from prior Stage 6
+    session, mtime 16:42 predates my first edit at 17:23)
+  - ouroboros_cell.py (27-line HARD FIXes also from prior Stage 6 session,
+    mtime 16:40)
+  - dm/_convergence.py, dm/_types.py, dm/_manager.py, dm/_shadow_extensions.py
+    (the ge/cx 2-model and 5-panel review fixes all live here — untouched)
+  - docs/MATHEMATICAL_APPENDIX.md
+- Notes: `experimental_notes/Domain_Tool_Wiring_2026-04-14.md`
+- TTS: `~/Desktop/CDSFL_tts/Domain_Tool_Wiring_2026-04-14.txt`
+- Hygiene: one API 500 mid-session (triggered by ~580-line single Edit).
+  Recovery via `cdsfl_recover.py --full` clean. Resumed with one edit per
+  tool call, targeted greps, single-claim smoke tests.
+- CLAUDE.md stale note fixed: `pint`, `astropy`, `pulp` moved from
+  "NOT installed" list into STEM tools table with correct versions.
+
+**SESSION 14 APRIL (earlier) — TOOL PERMISSIONS + ν_k DESIGN + STAGE 6 APPENDIX:**
 
 **SESSION 14 APRIL — TOOL PERMISSIONS + ν_k DESIGN + STAGE 6 APPENDIX:**
 - CC1 tool permissions: `.claude/settings.json` created, all native + MCP tools auto-approved
@@ -89,15 +127,27 @@ on monolithic payload (~104K). Bootstrapping trap until specialist role or overr
 1. Domain-agnostic gate interface (IFalsificationGate protocol + GateResult)
 2. Convergence gate: add churn detection (§7.1a) as C6
 3. Missing domain configs (biology, info science, engineering immune, cs_software)
-4. B-Cell dispatch: route to domain-specific tools from new TOML configs
+4. ~~B-Cell dispatch: route to domain-specific tools from new TOML configs~~ ✅
+   **DONE 14 April 2026 (evening session).** 9 wrappers + 9 dispatch branches + 5 TOML
+   updates landed. 793 tests green. Shadow mode preserved. Promotion (single-line flip
+   at `reference_runner.py` ~3741) still pending HIL decision.
 5. Severity fusion (§7.7) for gate output synthesis
 6. Sycophancy detection (§7.5)
 7. O1 calibration: sensitivity dial, circuit breaker, semantic clustering
 8. MC command sync across all reference locations
 9. Phase 9 (research write-up) — deferred post-Exp 39
-10. Implementation plan: `~/.claude/plans/effervescent-watching-platypus.md`
+10. Implementation plan: `~/.claude/plans/effervescent-watching-platypus.md` — Phase 6
+    (B4 specialist dispatch) complete this session. Phases 1–5, 7, 8 still pending.
 11. Prompt schema as first-class tested artefact (not string literal in 3700-line file)
 12. OpenRouter tool-use mode for panel models (CC2 has Bash, others need function calling)
+13. Wire hypothesis / beartype / icontract / pyright / mutmut / coverage into cells
+    (installed but not routed — depends on cell design decisions)
+14. Install crosshair if symbolic execution becomes needed for a domain
+15. **Prior session uncommitted artefacts** (not from my session — flagged for review):
+    `bench/dm/_shadow_stage6.py` (imported by `reference_runner.py` via try/except —
+    missing from fresh clone), `bench/confer_stage6_{full,model,r2}.py`,
+    three `experimental_notes/Stage6_*_2026-04-14.md` syntheses,
+    `bench/logs/confer_stage6_*/`. All untracked since commit 532a890.
 
 **Also pending:** Onboarding script redesign.
 <!-- SV:PENDING_END -->

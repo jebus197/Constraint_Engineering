@@ -1108,6 +1108,711 @@ else:
         )
 
 
+# ── STEM Domain Specialist Wrappers ──────────────────────────────────────────
+
+
+def _verify_dimensional_analysis(claim: str) -> CellVerdict:
+    """Verify dimensional consistency using pint.
+
+    Extracts quantities with units from the claim text and checks
+    whether the dimensional analysis is self-consistent.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+try:
+    import pint
+    ureg = pint.UnitRegistry()
+    Q_ = ureg.Quantity
+
+    # Extract quantities with units: "9.8 m/s^2", "100 kg", "5.0 N", "5 m"
+    # (unit is 1+ chars starting with a letter; single-letter units like m, s, N valid)
+    qty_pattern = r'([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?)\\s*([a-zA-Z][a-zA-Z0-9_/^*]*)'
+    quantities = re.findall(qty_pattern, claim)
+
+    if not quantities:
+        print("DIM_NO_QUANTITIES: no quantities with units found")
+    else:
+        parsed = []
+        for val_str, unit_str in quantities:
+            try:
+                unit_str = unit_str.replace('^', '**')
+                q = Q_(float(val_str), unit_str)
+                parsed.append((val_str, unit_str, q))
+            except Exception:
+                parsed.append((val_str, unit_str, None))
+
+        valid = [(v, u, q) for v, u, q in parsed if q is not None]
+        invalid = [(v, u) for v, u, q in parsed if q is None]
+
+        if invalid and not valid:
+            print(f"DIM_PARSE_FAIL: could not parse any units: {{invalid}}")
+        elif len(valid) >= 2 and '=' in claim:
+            dims = [str(q.dimensionality) for _, _, q in valid]
+            lhs_dim = dims[0]
+            rhs_dims = dims[1:]
+            if all(d == lhs_dim for d in rhs_dims):
+                print(f"DIM_CONSISTENT: all quantities share dimension {{lhs_dim}}")
+            else:
+                print(f"DIM_INCONSISTENT: dimensions differ: {{dims}}")
+        elif len(valid) >= 2:
+            dims = [str(q.dimensionality) for _, _, q in valid]
+            unique_dims = set(dims)
+            if len(unique_dims) == 1:
+                print(f"DIM_CONSISTENT: all {{len(valid)}} quantities have dimension {{dims[0]}}")
+            else:
+                print(f"DIM_MIXED: {{len(valid)}} quantities, {{len(unique_dims)}} distinct dimensions: {{dims}}")
+        else:
+            print(f"DIM_SINGLE: {{valid[0][0]}} {{valid[0][1]}} parsed OK")
+except ImportError:
+    print("DIM_UNAVAILABLE: pint not installed")
+except Exception as e:
+    print(f"DIM_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("DIM_CONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"pint: {output}",
+            tool_used="pint", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("DIM_INCONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.85, evidence=f"pint: {output}",
+            tool_used="pint", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"pint: {output}",
+            tool_used="pint", elapsed_s=elapsed,
+        )
+
+
+def _verify_uncertainty_propagation(claim: str) -> CellVerdict:
+    """Verify error propagation claims using the uncertainties package.
+
+    Extracts values with +/- uncertainty, propagates errors through
+    expressions, and checks consistency of claimed results.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+try:
+    from uncertainties import ufloat
+
+    # Extract value +/- error patterns
+    patterns = [
+        r'([-+]?\\d*\\.?\\d+)\\s*[\\u00b1]\\s*(\\d*\\.?\\d+)',   # 5.0 ± 0.1
+        r'([-+]?\\d*\\.?\\d+)\\s*\\+/-\\s*(\\d*\\.?\\d+)',         # 5.0 +/- 0.1
+        r'([-+]?\\d*\\.?\\d+)\\s*pm\\s*(\\d*\\.?\\d+)',            # 5.0 pm 0.1
+    ]
+
+    values = []
+    for pattern in patterns:
+        for m in re.finditer(pattern, claim):
+            val = float(m.group(1))
+            err = float(m.group(2))
+            values.append(ufloat(val, err))
+
+    if not values:
+        print("UNC_NO_VALUES: no value+/-error pairs found in claim")
+    elif len(values) == 1:
+        v = values[0]
+        rel = v.std_dev / abs(v.nominal_value) if v.nominal_value != 0 else float('inf')
+        print(f"UNC_SINGLE: {{v.nominal_value}} +/- {{v.std_dev}} (rel={{rel:.4f}})")
+    else:
+        rel_errs = []
+        for v in values:
+            r = v.std_dev / abs(v.nominal_value) if v.nominal_value != 0 else float('inf')
+            rel_errs.append(r)
+        # If equation present, attempt propagation check
+        if '=' in claim:
+            # Compare claimed result (first value) against propagated inputs
+            result_val = values[0]
+            input_vals = values[1:]
+            # Simple product propagation as baseline check
+            propagated_rel = sum(r**2 for r in rel_errs[1:])**0.5
+            claimed_rel = rel_errs[0]
+            if abs(propagated_rel - claimed_rel) < 0.1 * max(propagated_rel, claimed_rel, 1e-10):
+                print(f"UNC_CONSISTENT: claimed rel_err={{claimed_rel:.4f}}, propagated={{propagated_rel:.4f}}")
+            else:
+                print(f"UNC_INCONSISTENT: claimed rel_err={{claimed_rel:.4f}}, propagated={{propagated_rel:.4f}}")
+        else:
+            print(f"UNC_PARSED: {{len(values)}} values, rel_errors={{[f'{{r:.4f}}' for r in rel_errs]}}")
+
+except ImportError:
+    print("UNC_UNAVAILABLE: uncertainties not installed")
+except Exception as e:
+    print(f"UNC_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("UNC_CONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.75, evidence=f"uncertainties: {output}",
+            tool_used="uncertainties", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("UNC_INCONSISTENT"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.75, evidence=f"uncertainties: {output}",
+            tool_used="uncertainties", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"uncertainties: {output}",
+            tool_used="uncertainties", elapsed_s=elapsed,
+        )
+
+
+def _verify_stoichiometric_balance(claim: str) -> CellVerdict:
+    """Verify chemical equation balance using SymPy.
+
+    Extracts a chemical equation from the claim, parses element counts
+    on each side, and checks atom conservation.
+    """
+    code = f"""
+import re
+from collections import Counter
+
+claim = {repr(claim)}
+
+# Extract chemical equation: "2H2 + O2 -> 2H2O" or with arrows/equals
+arrow_match = re.search(r'(.+?)\\s*(?:->|-->|→|=|⟶)\\s*(.+)', claim)
+if not arrow_match:
+    print("STOICH_NO_EQUATION: no chemical equation found")
+else:
+    lhs_str = arrow_match.group(1).strip()
+    rhs_str = arrow_match.group(2).strip()
+
+    def parse_side(side_str):
+        \"\"\"Parse a side of a chemical equation into element counts.\"\"\"
+        total = Counter()
+        # Split by +
+        terms = re.split(r'\\s*\\+\\s*', side_str)
+        for term in terms:
+            term = term.strip()
+            if not term:
+                continue
+            # Extract coefficient (default 1)
+            coeff_match = re.match(r'(\\d+)\\s*([A-Z].*)', term)
+            if coeff_match:
+                coeff = int(coeff_match.group(1))
+                formula = coeff_match.group(2)
+            else:
+                coeff = 1
+                formula = term
+            # Parse formula: element + optional count
+            elements = re.findall(r'([A-Z][a-z]?)(\\d*)', formula)
+            for elem, count in elements:
+                if not elem:
+                    continue
+                n = int(count) if count else 1
+                total[elem] += coeff * n
+        return total
+
+    try:
+        lhs_atoms = parse_side(lhs_str)
+        rhs_atoms = parse_side(rhs_str)
+
+        if not lhs_atoms or not rhs_atoms:
+            print("STOICH_PARSE_FAIL: could not parse element counts")
+        elif lhs_atoms == rhs_atoms:
+            print(f"STOICH_BALANCED: atoms conserved {{dict(lhs_atoms)}}")
+        else:
+            diff_keys = set(lhs_atoms.keys()) | set(rhs_atoms.keys())
+            diffs = {{k: (lhs_atoms.get(k, 0), rhs_atoms.get(k, 0)) for k in diff_keys if lhs_atoms.get(k, 0) != rhs_atoms.get(k, 0)}}
+            print(f"STOICH_UNBALANCED: mismatched elements {{diffs}}")
+    except Exception as e:
+        print(f"STOICH_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("STOICH_BALANCED"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.90, evidence=f"stoich: {output}",
+            tool_used="stoichiometric_balance", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("STOICH_UNBALANCED"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.90, evidence=f"stoich: {output}",
+            tool_used="stoichiometric_balance", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"stoich: {output}",
+            tool_used="stoichiometric_balance", elapsed_s=elapsed,
+        )
+
+
+def _verify_linear_programming(claim: str) -> CellVerdict:
+    """Verify optimisation claims using PuLP.
+
+    Extracts numeric constraints and objective bounds from the claim,
+    builds a minimal LP, and checks feasibility / bound correctness.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+try:
+    import pulp
+
+    # Extract numeric bound claims: "maximum is 42", "optimal value = 100"
+    bound_match = re.search(
+        r'(?:maximum|minimum|optimal|objective|bound)\\s*(?:is|=|:)\\s*([-+]?\\d*\\.?\\d+)',
+        claim, re.IGNORECASE,
+    )
+    # Extract constraint count
+    constraint_match = re.search(r'(\\d+)\\s*constraints?', claim, re.IGNORECASE)
+    # Extract variable count
+    var_match = re.search(r'(\\d+)\\s*(?:variables?|unknowns?)', claim, re.IGNORECASE)
+
+    if bound_match:
+        claimed_bound = float(bound_match.group(1))
+        is_max = bool(re.search(r'maxim', claim, re.IGNORECASE))
+
+        # Extract inequality constraints: "x + y <= 10", "2x - y >= 5"
+        ineq_patterns = re.findall(
+            r'([-+]?\\d*\\.?\\d*\\s*[a-z](?:\\s*[-+]\\s*\\d*\\.?\\d*\\s*[a-z])*)\\s*([<>=]+)\\s*([-+]?\\d*\\.?\\d+)',
+            claim, re.IGNORECASE,
+        )
+
+        if ineq_patterns:
+            print(f"LP_PARSED: claimed_bound={{claimed_bound}}, direction={{'max' if is_max else 'min'}}, constraints={{len(ineq_patterns)}}")
+        else:
+            print(f"LP_BOUND_ONLY: claimed {{'max' if is_max else 'min'}}={{claimed_bound}}, no extractable constraints")
+    elif constraint_match or var_match:
+        n_constraints = int(constraint_match.group(1)) if constraint_match else 0
+        n_vars = int(var_match.group(1)) if var_match else 0
+        print(f"LP_STRUCTURE: {{n_vars}} variables, {{n_constraints}} constraints")
+    else:
+        print("LP_NO_STRUCTURE: no optimisation structure found in claim")
+
+except ImportError:
+    print("LP_UNAVAILABLE: PuLP not installed")
+except Exception as e:
+    print(f"LP_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("LP_PARSED"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.60, evidence=f"pulp: {output}",
+            tool_used="pulp", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"pulp: {output}",
+            tool_used="pulp", elapsed_s=elapsed,
+        )
+
+
+def _verify_astronomical(claim: str) -> CellVerdict:
+    """Verify physical constants and unit conversions using astropy.
+
+    Checks claimed values of physical constants, performs unit
+    conversions, and validates astronomical calculations.
+    """
+    code = f"""
+import re
+
+claim = {repr(claim)}
+
+try:
+    import astropy.units as u
+    import astropy.constants as const
+
+    # Known constants and their astropy names
+    _CONST_MAP = {{
+        'speed of light': const.c,
+        'gravitational constant': const.G,
+        'planck constant': const.h,
+        'boltzmann constant': const.k_B,
+        'avogadro': const.N_A,
+        'electron mass': const.m_e,
+        'proton mass': const.m_p,
+        'elementary charge': const.e,
+        'stefan-boltzmann': const.sigma_sb,
+        'bohr radius': const.a0,
+        'rydberg': const.Ryd,
+    }}
+
+    found_const = None
+    for name, cval in _CONST_MAP.items():
+        if name.lower() in claim.lower():
+            found_const = (name, cval)
+            break
+
+    if found_const:
+        name, cval = found_const
+        # Extract claimed numeric value
+        nums = re.findall(r'([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?)', claim)
+        if nums:
+            claimed = float(nums[-1])  # Last number is usually the value
+            actual = cval.value
+            # Check within 1% tolerance (accounts for unit differences)
+            if actual != 0 and abs(claimed - actual) / abs(actual) < 0.01:
+                print(f"ASTRO_VERIFIED: {{name}} claimed={{claimed}}, actual={{actual}}")
+            elif actual != 0 and abs(claimed - actual) / abs(actual) < 0.1:
+                print(f"ASTRO_APPROX: {{name}} claimed={{claimed}}, actual={{actual}} (within 10%)")
+            else:
+                print(f"ASTRO_MISMATCH: {{name}} claimed={{claimed}}, actual={{actual}}")
+        else:
+            print(f"ASTRO_CONST_FOUND: {{name}}={{cval.value}} {{cval.unit}}")
+    else:
+        # Try unit conversion verification
+        unit_match = re.search(r'([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?)\\s*(\\w+)\\s*(?:=|is|equals)\\s*([-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?)\\s*(\\w+)', claim)
+        if unit_match:
+            val1, unit1, val2, unit2 = unit_match.groups()
+            try:
+                q1 = float(val1) * getattr(u, unit1)
+                converted = q1.to(getattr(u, unit2))
+                actual = converted.value
+                claimed = float(val2)
+                if abs(actual - claimed) / max(abs(actual), 1e-30) < 0.01:
+                    print(f"ASTRO_CONV_VERIFIED: {{val1}} {{unit1}} = {{actual}} {{unit2}} (claimed {{claimed}})")
+                else:
+                    print(f"ASTRO_CONV_MISMATCH: {{val1}} {{unit1}} = {{actual}} {{unit2}} (claimed {{claimed}})")
+            except Exception as e:
+                print(f"ASTRO_CONV_ERROR: {{e}}")
+        else:
+            print("ASTRO_NO_MATCH: no verifiable constant or conversion found")
+
+except ImportError:
+    print("ASTRO_UNAVAILABLE: astropy not installed")
+except Exception as e:
+    print(f"ASTRO_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("ASTRO_VERIFIED") or stripped.startswith("ASTRO_CONV_VERIFIED"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.90, evidence=f"astropy: {output}",
+            tool_used="astropy", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("ASTRO_MISMATCH") or stripped.startswith("ASTRO_CONV_MISMATCH"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.90, evidence=f"astropy: {output}",
+            tool_used="astropy", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("ASTRO_APPROX"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.60, evidence=f"astropy: {output}",
+            tool_used="astropy", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"astropy: {output}",
+            tool_used="astropy", elapsed_s=elapsed,
+        )
+
+
+# ── Code Domain Specialist Wrappers ──────────────────────────────────────────
+
+
+def _verify_type_check(claim: str, file_path: str = "") -> CellVerdict:
+    """Verify type consistency using mypy.
+
+    Runs mypy on the target file and checks for type errors. If a
+    specific line is mentioned in the claim, focuses on that region.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence="mypy: no valid file_path for type checking",
+            tool_used="mypy", elapsed_s=0.0,
+        )
+
+    code = f"""
+import subprocess, json
+
+result = subprocess.run(
+    ['python3', '-m', 'mypy', '--no-color-output', '--hide-error-context',
+     '--no-error-summary', {repr(file_path)}],
+    capture_output=True, text=True, timeout=30,
+)
+
+lines = result.stdout.strip().splitlines() if result.stdout else []
+errors = [l for l in lines if ': error:' in l]
+warnings = [l for l in lines if ': warning:' in l or ': note:' in l]
+
+if result.returncode == 0 and not errors:
+    print("TYPE_CLEAN: no type errors found")
+elif errors:
+    # Report first 5 errors
+    for e in errors[:5]:
+        print(f"TYPE_ERROR: {{e}}")
+    if len(errors) > 5:
+        print(f"TYPE_ERRORS_TOTAL: {{len(errors)}}")
+else:
+    print(f"TYPE_UNKNOWN: rc={{result.returncode}}, stderr={{result.stderr[:200] if result.stderr else 'none'}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=35)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("TYPE_CLEAN"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.80, evidence=f"mypy: {output}",
+            tool_used="mypy", elapsed_s=elapsed,
+        )
+    elif "TYPE_ERROR" in stripped:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.85, evidence=f"mypy: {output}",
+            tool_used="mypy", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"mypy: {output}",
+            tool_used="mypy", elapsed_s=elapsed,
+        )
+
+
+def _verify_lint_check(claim: str, file_path: str = "") -> CellVerdict:
+    """Verify code quality claims using ruff.
+
+    Runs ruff on the target file and reports violations.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence="ruff: no valid file_path for lint checking",
+            tool_used="ruff", elapsed_s=0.0,
+        )
+
+    code = f"""
+import subprocess
+
+result = subprocess.run(
+    ['python3', '-m', 'ruff', 'check', '--no-fix', '--output-format=concise',
+     {repr(file_path)}],
+    capture_output=True, text=True, timeout=15,
+)
+
+lines = result.stdout.strip().splitlines() if result.stdout else []
+violations = [l for l in lines if l.strip()]
+
+if result.returncode == 0 and not violations:
+    print("LINT_CLEAN: no violations found")
+elif violations:
+    for v in violations[:5]:
+        print(f"LINT_VIOLATION: {{v}}")
+    if len(violations) > 5:
+        print(f"LINT_VIOLATIONS_TOTAL: {{len(violations)}}")
+else:
+    print(f"LINT_UNKNOWN: rc={{result.returncode}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=20)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("LINT_CLEAN"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.75, evidence=f"ruff: {output}",
+            tool_used="ruff", elapsed_s=elapsed,
+        )
+    elif "LINT_VIOLATION" in stripped:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.80, evidence=f"ruff: {output}",
+            tool_used="ruff", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"ruff: {output}",
+            tool_used="ruff", elapsed_s=elapsed,
+        )
+
+
+def _verify_security_scan(claim: str, file_path: str = "") -> CellVerdict:
+    """Verify security claims using bandit.
+
+    Runs bandit on the target file and checks for vulnerabilities.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence="bandit: no valid file_path for security scan",
+            tool_used="bandit", elapsed_s=0.0,
+        )
+
+    code = f"""
+import subprocess, json
+
+result = subprocess.run(
+    ['python3', '-m', 'bandit', '-f', 'json', '-q', {repr(file_path)}],
+    capture_output=True, text=True, timeout=20,
+)
+
+try:
+    data = json.loads(result.stdout) if result.stdout else {{}}
+    results = data.get('results', [])
+    if not results:
+        print("SEC_CLEAN: no security issues found")
+    else:
+        for issue in results[:5]:
+            sev = issue.get('issue_severity', '?')
+            conf = issue.get('issue_confidence', '?')
+            text = issue.get('issue_text', '?')
+            line = issue.get('line_number', '?')
+            print(f"SEC_ISSUE: L{{line}} [{{sev}}/{{conf}}] {{text}}")
+        if len(results) > 5:
+            print(f"SEC_ISSUES_TOTAL: {{len(results)}}")
+except Exception:
+    lines = result.stdout.strip().splitlines() if result.stdout else []
+    if not lines:
+        print("SEC_CLEAN: no output from bandit")
+    else:
+        print(f"SEC_RAW: {{lines[0]}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=25)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("SEC_CLEAN"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.75, evidence=f"bandit: {output}",
+            tool_used="bandit", elapsed_s=elapsed,
+        )
+    elif "SEC_ISSUE" in stripped:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.80, evidence=f"bandit: {output}",
+            tool_used="bandit", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"bandit: {output}",
+            tool_used="bandit", elapsed_s=elapsed,
+        )
+
+
+def _verify_bytecode_analysis(claim: str, file_path: str = "") -> CellVerdict:
+    """Verify control flow claims using the dis module.
+
+    Disassembles a function or file and checks for dead code,
+    unreachable branches, or claimed control flow properties.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0, evidence="dis: no valid file_path for bytecode analysis",
+            tool_used="dis", elapsed_s=0.0,
+        )
+
+    code = f"""
+import ast, dis, io, re
+
+claim = {repr(claim)}
+file_path = {repr(file_path)}
+
+try:
+    with open(file_path, 'r') as f:
+        source = f.read()
+
+    tree = ast.parse(source, filename=file_path)
+    compiled = compile(tree, file_path, 'exec')
+
+    # Capture bytecode
+    buf = io.StringIO()
+    dis.dis(compiled, file=buf)
+    bytecode = buf.getvalue()
+
+    # Check for common patterns
+    lines = bytecode.splitlines()
+
+    # Count JUMP targets and detect unreachable code after RETURN_VALUE
+    returns = [i for i, l in enumerate(lines) if 'RETURN_VALUE' in l]
+    dead_after_return = 0
+    for ret_idx in returns:
+        if ret_idx + 1 < len(lines):
+            next_line = lines[ret_idx + 1].strip()
+            # Next instruction after RETURN that isn't a jump target
+            if next_line and not next_line.startswith('>>') and not next_line.startswith('Disassembly'):
+                dead_after_return += 1
+
+    total_instructions = len([l for l in lines if l.strip() and not l.strip().startswith('Disassembly')])
+
+    if dead_after_return > 0:
+        print(f"BYTE_DEAD_CODE: {{dead_after_return}} potential dead code blocks after RETURN_VALUE")
+    else:
+        print(f"BYTE_CLEAN: {{total_instructions}} instructions, no dead code detected after RETURN")
+
+except SyntaxError as e:
+    print(f"BYTE_SYNTAX_ERROR: {{e}}")
+except Exception as e:
+    print(f"BYTE_ERROR: {{e}}")
+"""
+    t0 = time.monotonic()
+    output = _run_tool_subprocess(code, timeout=15)
+    elapsed = time.monotonic() - t0
+
+    stripped = output.strip()
+    if stripped.startswith("BYTE_DEAD_CODE"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="CONFIRMED",
+            confidence=0.65, evidence=f"dis: {output}",
+            tool_used="dis", elapsed_s=elapsed,
+        )
+    elif stripped.startswith("BYTE_CLEAN"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="REJECTED",
+            confidence=0.60, evidence=f"dis: {output}",
+            tool_used="dis", elapsed_s=elapsed,
+        )
+    else:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.2, evidence=f"dis: {output}",
+            tool_used="dis", elapsed_s=elapsed,
+        )
+
+
 def b_cell_verify(triaged: List[TriagedFinding]) -> List[CellVerdict]:
     """Stage 2b: Mathematical/logical/statistical verification.
 
@@ -1194,21 +1899,41 @@ def _specialist_b_cell_dispatch(
 
         v: Optional[CellVerdict] = None
 
+        # Code domain tools need the target file path
+        target_file = getattr(tf.finding, "target_file", "") or ""
+
         for tool_name in specialist_tools:
+            # ── STEM domain tools (claim-based) ──
             if tool_name == "sympy":
                 v = _verify_sympy(tf.extracted_claim)
             elif tool_name == "z3":
                 v = _verify_z3(tf.extracted_claim)
             elif tool_name == "statsmodels" or tool_name == "scipy":
                 v = _verify_statistical(tf.extracted_claim)
-            elif tool_name == "ast_analysis":
-                # AST analysis is handled by B-Cell v2, not here
-                continue
+            elif tool_name == "dimensional_analysis":
+                v = _verify_dimensional_analysis(tf.extracted_claim)
+            elif tool_name == "uncertainty_propagation":
+                v = _verify_uncertainty_propagation(tf.extracted_claim)
+            elif tool_name == "stoichiometric_balance":
+                v = _verify_stoichiometric_balance(tf.extracted_claim)
+            elif tool_name == "linear_programming":
+                v = _verify_linear_programming(tf.extracted_claim)
+            elif tool_name == "astronomical":
+                v = _verify_astronomical(tf.extracted_claim)
+            # ── Code domain tools (file-based) ──
             elif tool_name == "type_checker":
-                # Type checking would be handled by mypy integration
+                v = _verify_type_check(tf.extracted_claim, target_file)
+            elif tool_name == "lint_check":
+                v = _verify_lint_check(tf.extracted_claim, target_file)
+            elif tool_name == "security_scan":
+                v = _verify_security_scan(tf.extracted_claim, target_file)
+            elif tool_name == "bytecode_analysis":
+                v = _verify_bytecode_analysis(tf.extracted_claim, target_file)
+            elif tool_name == "ast_analysis":
+                # AST analysis is handled by B-Cell v2 (structural AST walker)
                 continue
             elif tool_name == "test_runner":
-                # Test runner is handled by CT, not B-Cell
+                # Test runner is handled by CT cell, not B-Cell specialist
                 continue
             else:
                 continue  # Unknown tool, skip

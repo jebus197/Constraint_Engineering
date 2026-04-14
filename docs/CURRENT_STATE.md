@@ -1,32 +1,33 @@
 # CDSFL Current State
 
-Generated: 14 April 2026 11:30 BST (2026-04-14T11:30:53+01:00)
+Generated: 14 April 2026 19:27 BST (2026-04-14T19:27:09+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `00f5bd2` sv: Full STEM tool access for CC1+CC2, ν_k novelty metric designed, CDSFL self-assessed at 0.807
-- **Committed:** 2026-04-14 09:10:10 +0100
-- **Remote:** ahead by 40
+- **Last commit:** `532a890` sv: Stage 6 two-dimensional (nu_k, c_ext) confer R2 — 8 corrections, shadow calibrator hooked
+- **Committed:** 2026-04-14 11:30:55 +0100
+- **Remote:** ahead by 41
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
+- `M .claude/CLAUDE.md`
+- `A  bench/API_500_SELF_DIAGNOSIS.md`
+- `M bench/cdsfl_registry/domains/immune/biology.toml`
+- `M bench/cdsfl_registry/domains/immune/chemistry.toml`
+- `M bench/cdsfl_registry/domains/immune/cross_domain.toml`
+- `M bench/cdsfl_registry/domains/immune/engineering.toml`
+- `M bench/cdsfl_registry/domains/immune/physics.toml`
+- `M bench/immune_agents.py`
 - `M bench/logs/immune_pipeline.log`
 - `M bench/ouroboros_cell.py`
 - `M bench/reference_runner.py`
-- `M docs/MATHEMATICAL_APPENDIX.md`
-- `M experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
+- `A  experimental_notes/Domain_Tool_Wiring_2026-04-14.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/confer_stage6_model.py`
-- `?? bench/confer_stage6_r2.py`
-- `?? bench/dm/_shadow_stage6.py`
-- `?? bench/logs/confer_stage6_model/`
-- `?? bench/logs/confer_stage6_r2/`
-- `?? experimental_notes/Stage6_Confer_Synthesis_2026-04-14.md`
-- `?? experimental_notes/Stage6_R2_Confer_Synthesis_2026-04-14.md`
+- `?? bench/confer_stage6_full.py`
 
 ---
 
@@ -58,6 +59,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `532a890 sv: Stage 6 two-dimensional (nu_k, c_ext) confer R2 — 8 corrections, shadow calibrator hooked`
 - `00f5bd2 sv: Full STEM tool access for CC1+CC2, ν_k novelty metric designed, CDSFL self-assessed at 0.807`
 - `f5e73ab sv: Exp 39-0 gate complete, 10 bugs fixed, 793 tests green, morning report ready`
 - `5814760 Exp 39-0 gate: 10 bugs found, all fixed, 793 tests green`
@@ -67,4 +69,3 @@ Uncommitted files:
 - `e64bb14 Fix 4 deferred non-blocking items from CC2 runner review`
 - `cb8a936 Fix 4 additional blockers from delayed sub-agent results (10-stream review complete)`
 - `2279adb Fix all pre-launch review blockers — 11 fixes from 10-stream review`
-- `83dd7ab HIL gate, domain TOMLs, PE FFAFP+Meta SRP HARD constraints, FFAFP naming fix`

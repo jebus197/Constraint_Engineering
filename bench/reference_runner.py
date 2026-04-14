@@ -1816,7 +1816,16 @@ def _run_shadow_cells(
             if not all_verdicts:
                 cv_attr = "present" if hasattr(immune_result, "cell_verdicts") else "missing"
                 cv_keys = len(immune_result.cell_verdicts) if hasattr(immune_result, "cell_verdicts") else 0
-                _log(f"  Macrophage: 0 verdicts received (cell_verdicts={cv_attr}, keys={cv_keys})")
+                # Diagnostic: show per-finding verdict counts to identify why empty
+                per_fid_counts = {}
+                if hasattr(immune_result, "cell_verdicts"):
+                    per_fid_counts = {k: len(v) for k, v in immune_result.cell_verdicts.items()}
+                _log(
+                    f"  Macrophage: 0 verdicts received "
+                    f"(cell_verdicts={cv_attr}, keys={cv_keys}, "
+                    f"per_fid={per_fid_counts}, "
+                    f"type={type(immune_result).__name__})"
+                )
 
             triaged = getattr(immune_result, "triaged", None)
             timings = getattr(immune_result, "stage_timings", None)

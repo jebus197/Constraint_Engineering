@@ -250,12 +250,28 @@ class OuroborosCell:
         for anomaly in anomalies:
             targets.append(anomaly)
 
-        # Check for disputed/uncertain findings
+        # Check for disputed/uncertain findings — use descriptions, not IDs
+        # (HARD FIX: finding IDs like 'Gemini_F002' are unsearchable)
         if immune_response:
             final_verdicts = getattr(immune_response, "final_verdicts", {})
+
+            # Build fid → description lookup from round findings
+            fid_to_desc: Dict[str, str] = {}
+            if round_findings:
+                for f in round_findings:
+                    fid = getattr(f, "finding_id", None)
+                    desc = getattr(f, "description", "")
+                    if fid and desc:
+                        fid_to_desc[fid] = desc[:200]
+
             for fid, verdict in final_verdicts.items():
                 if verdict == "UNCERTAIN":
-                    targets.append(f"uncertain_finding:{fid}")
+                    desc = fid_to_desc.get(fid, "")
+                    if desc:
+                        targets.append(f"uncertain_finding:{desc}")
+                    else:
+                        # Fallback: use fid but prefix for clarity
+                        targets.append(f"uncertain_finding:{fid}")
 
         return targets[:5]  # Cap targets
 
@@ -266,10 +282,13 @@ class OuroborosCell:
         """Build structured search queries from targets."""
         queries = []
         for target in targets[:self.MAX_QUERIES_PER_ROUND]:
-            # Extract search terms from the target description
+            # Round-robin source selection (HARD FIX: was always [0])
+            source_idx = len(queries) % len(self.allowed_sources) if self.allowed_sources else 0
+            source = self.allowed_sources[source_idx] if self.allowed_sources else "arxiv"
+
             query = {
                 "target": target,
-                "source": self.allowed_sources[0] if self.allowed_sources else "arxiv",
+                "source": source,
                 "query": self._target_to_query(target),
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }

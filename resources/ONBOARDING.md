@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 14 April 2026 11:30 BST
+Last updated: 14 April 2026 19:27 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,57 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **DOMAIN TOOL WIRING — B-CELL SPECIALIST DISPATCH (14 April 2026 18:37 BST):**
+  Branch: `exp39-experimental`. 793 tests pass (full regression, 17m 21s). Immune-scoped
+  subset: 136 tests in 4m 44s. Zero regressions.
+
+  **Scope:** 9 subprocess wrappers added to `bench/immune_agents.py` (lines 1114–1734)
+  and 9 `elif` branches appended to `_specialist_b_cell_dispatch()` (lines 1913–1931,
+  after existing sympy/z3/statsmodels/scipy branches — first-definitive-result-wins
+  semantics preserved).
+
+  **STEM wrappers (claim-only):**
+  - `_verify_dimensional_analysis` (pint 0.25.3) — DIM_CONSISTENT/DIM_INCONSISTENT
+  - `_verify_uncertainty_propagation` (uncertainties 3.2.3) — UNC_CONSISTENT/UNC_INCONSISTENT
+  - `_verify_stoichiometric_balance` (regex + collections) — STOICH_BALANCED/STOICH_UNBALANCED
+  - `_verify_linear_programming` (PuLP 3.3.0) — LP_PARSED/LP_BOUND_ONLY
+  - `_verify_astronomical` (astropy 7.2.0) — ASTRO_VERIFIED/ASTRO_MISMATCH
+
+  **Code wrappers (claim + file_path):**
+  - `_verify_type_check` (mypy 1.19.1), `_verify_lint_check` (ruff 0.15.9),
+    `_verify_security_scan` (bandit 1.8.6), `_verify_bytecode_analysis` (dis stdlib)
+
+  **Domain configuration updates** — 5 TOMLs in `bench/cdsfl_registry/domains/immune/`:
+  physics (+astronomical, +uncertainty_propagation), engineering (+linear_programming,
+  +uncertainty_propagation), chemistry (+dimensional_analysis, +uncertainty_propagation),
+  biology (+dimensional_analysis, +uncertainty_propagation), cross_domain
+  (+dimensional_analysis, +uncertainty_propagation). `cs_software.toml` already
+  referenced code tools from a prior session.
+
+  **Bugs found and fixed during smoke testing (pre-regression):**
+  1. Dimensional analysis regex required units ≥2 chars, silently skipping `m`, `s`, `N`.
+     `immune_agents.py:1131` — changed `+` to `*` in unit char class.
+  2. Ruff `--output-format=text` rejected (valid values begin with `concise`).
+     `immune_agents.py:1626` — corrected to `concise`.
+
+  **Shadow containment:** New wrappers run inside `_specialist_b_cell_dispatch()`,
+  captured via `specialist_verdicts` at the `reference_runner.py` call site (~line 3741)
+  but NOT extended into `all_verdicts`. Promotion to active is a single-line flip,
+  not touched this session.
+
+  **Installation gap:** Crosshair (symbolic execution) not installed — no wrapper
+  written. hypothesis, beartype, icontract, pyright, mutmut, coverage installed
+  but not wired into any cell (deferred — cell-design scope).
+
+  **Hygiene note:** Session included one Anthropic API 500 triggered by a
+  ~580-line single Edit inserting all 9 wrappers. Recovered via
+  `scripts/cdsfl_recover.py --full`. Work continued with one edit per tool call,
+  targeted greps, single-claim smoke tests. Post-mortem:
+  `bench/API_500_SELF_DIAGNOSIS.md`.
+
+  Notes: `experimental_notes/Domain_Tool_Wiring_2026-04-14.md`.
+  TTS: `~/Desktop/CDSFL_tts/Domain_Tool_Wiring_2026-04-14.txt`.
+
 - **POST EXP 39-0: TOOL PERMISSIONS + ν_k DESIGN + STAGE 6 CONFER (14 April 2026 11:30 BST):**
   Branch: `exp39-experimental`. 793 tests pass.
   

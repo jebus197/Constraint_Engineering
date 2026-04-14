@@ -89,6 +89,9 @@ If the tools cannot verify a claim, the claim is UNVERIFIABLE — escalate, do n
 | statsmodels 0.14.6 | `import statsmodels` | Regression diagnostics, hypothesis tests, time series (ARIMA, ADF), GLM, survival analysis. |
 | mpmath 1.3.0 | `import mpmath` | Arbitrary-precision arithmetic, special functions, numerical verification of symbolic results. |
 | uncertainties 3.2.3 | `import uncertainties` | Error propagation, measurement uncertainty, automatic partial derivatives. |
+| pint 0.25.3 | `import pint` | Dimensional analysis, unit conversion, quantity arithmetic with units. **Default for dimensional consistency checks.** |
+| astropy 7.2.0 | `import astropy` | Physical/astronomical constants, unit conversion, coordinate transforms. Use for constant verification and SI/CGS conversion. |
+| PuLP 3.3.0 | `import pulp` | Linear programming, integer programming, constraint optimisation modelling. |
 | pandas 2.3.3 | `import pandas` | Data frames, time series aggregation, pivot tables, merge/join operations. |
 | Wolfram (MCP) | `mcp__Wolfram__*` | WolframAlpha (natural language queries), WolframLanguageEvaluator (Wolfram Language code), WolframContext (knowledge base). Use for cross-validation of SymPy results, specialised knowledge queries, or when Wolfram Language is more natural than Python. |
 
@@ -120,11 +123,14 @@ Both instances have unrestricted access to all tools for STEM research, source i
 - **Code quality claim** → ruff + mypy + bandit
 - **Logical/constraint claim** → z3
 - **Measurement/uncertainty claim** → uncertainties + mpmath for precision
+- **Dimensional/unit claim** → pint (default) or astropy.units for astronomy
+- **Optimisation/LP claim** → PuLP
+- **Stoichiometry claim** → regex + collections (no external dep), or pint for unit-bearing balances
 - **Any claim** → if tools can verify it, tools MUST verify it before verdict
 
 ### What Is NOT Installed (do not attempt)
 
-matplotlib, scikit-learn, networkx, rdkit, pint, astropy, biopython, pylint, radon, vulture, pyflakes.
+matplotlib, scikit-learn, networkx, rdkit, biopython, pylint, radon, vulture, pyflakes, crosshair.
 If a domain needs these, flag it and request installation.
 
 ## Identity
