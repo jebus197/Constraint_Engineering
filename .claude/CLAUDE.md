@@ -18,7 +18,7 @@ On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and reb
 - `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` — **CANONICAL EXECUTION PLAN** (Section XI). 4-phase plan: A (Exp 36 resume, 5 fixes), B (reference runner + CC2 architecture), C (Bench Run 2, 27 STEM tasks), D (docs/outreach). READ ON RECOVERY.
 - `docs/REPRODUCING.md` — how to replicate experiments
 - `docs/CURRENT_STATE.md` — machine-generated state snapshot (produced by sv script)
-- `docs/MATHEMATICAL_APPENDIX.md` — mathematical framework (1081 lines)
+- `docs/MATHEMATICAL_APPENDIX.md` — mathematical framework (1991 lines, Stage 6 literature-calibrated extension added 14 April 2026)
 - `resources/ONBOARDING.md` — full project history and context
 - `resources/RECOVERY.md` — pending work and recovery protocol
 

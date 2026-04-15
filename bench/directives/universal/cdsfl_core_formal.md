@@ -137,6 +137,18 @@ Each falsification pass that a claim survives increases trust in that claim,
 but never reaches certainty. Diminishing returns apply — each additional pass
 contributes less than the previous one.
 
+> **Stage-awareness note.** C(n) is Stage 1 of a five-stage model evolution.
+> Later stages subsume it: Stage 4's recursive R_k(i) generalises C(n) to
+> include prior flaw rate π and detection capability p per flaw class; Stage
+> 5 extends R_k(i) with novelty (η), fix efficacy (σ/S_k), and re-injection
+> (ν); Stage 6 adds literature-calibrated novelty (η_int, ν_k, c_ext). Each
+> stage is a strict generalisation — C(n) is a special case of R_k(i) with
+> π = 0 and all pass-specific factors collapsed into a single p. The
+> operational specification that models actually use is
+> `cdsfl_operational.md` §3 (Stage 5) and §16 (Stage 6). The full derivation
+> chain is in `docs/MATHEMATICAL_APPENDIX.md` §1.1. C(n) is retained below
+> for reference and for budget-exhausted termination accounting.
+
 **Formal:**
 ```
 Cumulative detection probability after n passes:

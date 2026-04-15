@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 15 April 2026 00:47 BST
+Last updated: 15 April 2026 19:06 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,59 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **MODEL-FACING DIRECTIVE GAP CLOSURE — STAGE 6 + FFAFP (15 April 2026, 14:xx → 19:03 BST):**
+  Branch: `exp39-experimental`. 793 tests pass in 703s (11m 43s). 1 commit ahead of
+  origin after this sv. User directive: "plug all remaining outstanding gaps both
+  in the experiment 39 runner and in the CDSFL schema as a whole. (Including any
+  stale docs.) Take care and work sequentially."
+
+  **Problem found:** Grep for FFAFP / c_ext / e_value in `bench/directives/universal/`
+  returned zero matches before edits. Stage 6 and the FFAFP admissibility constraint
+  set existed only in the mathematical appendix — not in what models actually
+  receive at run time. Appendix is authoritative; directives are operative.
+
+  **Edits landed (7 files):**
+  1. `bench/directives/universal/cdsfl_operational.md` (448 → ~660 lines):
+     - §9 line 366: `ν_k` → `ν_eff,k` to resolve symbol collision with Stage-6
+       literature novelty. Added Notation note disambiguating operational
+       re-injection floor (ν_eff) from appendix literature novelty (ν_k).
+     - §2 Output Format: mandatory ADMISSIBILITY + NOVELTY reporting blocks.
+       Missing ADMISSIBILITY flagged by FFAFP gate; missing NOVELTY defaults
+       to (ν_k=0, c_ext=0) — Stage 6 reduces to Stage 5. Parser is permissive
+       by design (see `runner_core.py:333`); enforcement is downstream via gates.
+     - NEW §15 — FFAFP Admissibility Constraint Set. Formal definitions of
+       S_min, G-completeness, d_tool, σ_measured, q_retest plus reporting template.
+     - NEW §16 — Stage 6 Literature-Calibrated Extension. Four-quadrant
+       (ν_k, c_ext) table, η decomposition η_combined = η_int·(1−c_ext·(1−ν_k)),
+       orthogonality with R_k, E-value shadow-mode note, directive hierarchy.
+  2. `bench/directives/universal/cdsfl_core_formal.md`: §5 C(n) prefaced with
+     Stage-awareness blockquote — C(n) is Stage 1, operational uses R_k(i);
+     Stage-6 pointers to operational §3, §16 and appendix §1.1.
+  3. `bench/directives/universal/expert_encoding_template.md` §6: S* formula
+     corrected from `(nu_b + nu_f − q·R) / nu_f` (approximation) to full form
+     `(nu_b + nu_f − nu_b·nu_f − q·R) / (nu_f · (1 − nu_b))`. Old form only
+     accurate when nu_b ≪ 1.
+  4. `bench/cdsfl_registry/universal.toml`: `ffafp_required = true` comment
+     expanded — 4-step → 5-step protocol, admissibility-set mention.
+  5. `bench/reference_runner.py` (~lines 3398-3409): prompt template extended
+     with ADMISSIBILITY (5 gate pass/fail lines) and NOVELTY (ν_k, c_ext,
+     H/H_max, Citations) blocks with worked examples.
+  6. `.claude/CLAUDE.md`: appendix line count 1081 → 1991 with Stage-6
+     annotation (was stale since Tranche C).
+  7. `bench/logs/immune_pipeline.log`: test-run artefact from regression.
+
+  **Verification:** Operational directive is loaded separately at
+  `reference_runner.py:149` and appended post-composer at line 1509, bypassing
+  phenotype caps — updates propagate to all 5 models. Stage 6 now visible in
+  the model's actual prompt context, not just in documentation.
+
+  **Confer activity this session:** none. Pure schema plumbing; no novel
+  claims requiring multi-vendor falsification.
+
+  **HIL-deferred (unchanged from previous sv):**
+  - OpenRouter tool-use wiring for cx/ge/cgpt/ds.
+  - B-Cell specialist dispatch shadow→live flip at `reference_runner.py` ~3741.
+
 - **TRANCHES A / B / C — B-CELL DISPATCH CONSOLIDATION (14 April 2026 evening, 19:56 → 23:01 BST):**
   Branch: `exp39-experimental`. 793 tests pass. 4 commits ahead of origin.
   Three sequential tranches executed under "boring and safe" directive after

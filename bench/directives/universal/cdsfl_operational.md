@@ -79,7 +79,25 @@ state R_old, your estimates for η, d, p, S_k, ν_b, ν_f, and the resulting R_k
 If R_k > 0.5, your claim needs more falsification or a more diverse
 approach. Qualitative assessment alone is not acceptable.
 
+ADMISSIBILITY: Every finding MUST include the admissibility block defined
+in §15 (FFAFP). A finding that passes FALSIFICATION but fails ADMISSIBILITY
+is rejected at the gate and does not enter the registry.
+
+NOVELTY: Every finding MUST include the novelty triple (ν_k, c_ext,
+H/H_max) as defined in §16 (Stage 6 Literature-Calibrated Extension).
+Report the three dimensions separately. Do not collapse them into a single
+score. When no external search was performed, set c_ext = 0 and state so
+— Stage 6 gracefully reduces to Stage 5 in that case.
+
 A finding without a FALSIFICATION section will be rejected by the parser.
+A finding without an ADMISSIBILITY section will be flagged by the FFAFP
+gate (§15) — the fix cannot be admitted and the finding carries residual
+falsification debt until ADMISSIBILITY is supplied.
+A finding without a NOVELTY section defaults to (ν_k = 0, c_ext = 0),
+which reduces Stage 6 to Stage 5 — your finding gets no literature-novelty
+credit. If you did perform an external search, omitting NOVELTY costs you
+that credit; if you did not search, report (0, 0) explicitly so the
+quadrant is documented (see §16).
 "VERIFIED: TRUE" without a described falsification attempt is self-certification,
 not verification, and will be rejected.
 
@@ -363,12 +381,19 @@ capabilities across the panel. It is not an intelligence generator. If no
 model in the panel has the capability to detect a specific flaw class, infinite
 iteration yields a strictly positive residual risk limit:
 
-  lim_{n→∞} R_{n,k} ≥ ν_k
+  lim_{n→∞} R_{n,k} ≥ ν_eff,k
 
 When successive passes produce ΔR_n ≈ 0, the panel has hit the substrate
 ceiling for that flaw class. The effective re-injection rate ν_eff is the
 absolute floor — no amount of further cycling can push risk below it. This
 is a hard exit condition, not a sign to try harder.
+
+**Notation note.** The symbol ν_eff,k above denotes the re-injection floor
+for flaw class k (Stage 5). The symbol ν_k appearing in §16 (Stage 6
+literature novelty) is a different quantity — same subscript because both
+are indexed by flaw class, but the two quantities measure different things
+(re-injection probability vs. literature novelty) and are reported
+separately. Do not conflate them.
 
 ---
 
@@ -446,3 +471,188 @@ The cross-cutting pass examines what modular passes cannot: emergent
 contradictions between components, assumptions that are individually sound
 but collectively incoherent, and interface behaviours that only manifest
 when components interact.
+
+---
+
+## 15. FFAFP Admissibility Constraint Set
+
+Sections 1 through 14 define the self-assessment equation and its working
+protocol. Section 15 defines the admissibility test that any finding or
+parameter update must pass *before* it is allowed to enter R_k(i). The
+equation is only as trustworthy as its inputs. FFAFP — Find, Follow,
+Analyse, Fix, P-pass — is the calibration procedure that enforces input
+quality.
+
+Empirical evidence from Experiments 12–37: without structural enforcement,
+0–13% of submitted findings survived independent falsification. Under
+FFAFP enforcement the rate rose to 60–85%. The difference is not model
+capability improving — it is the constraint set preventing inadmissible
+inputs from entering the update in the first place.
+
+A finding or parameter update is admissible if and only if it satisfies
+all five constraints below simultaneously. Failure on any one rejects the
+finding at the gate — it does not enter the registry, it does not
+contribute to q, it does not update R_k.
+
+**C_FFAFP = { S_min, G-completeness, d_tool, σ_measured, q_retest }**
+
+**S_min — minimum evidence standard.**
+A finding must include a specific location (file, function, line), a
+description of the flaw mechanism, and either a proof-of-concept or a
+formal falsification argument. General warnings ("this may have race
+conditions") without specific evidence are inadmissible. Formally: the
+finding f must contain (location, mechanism, evidence) where evidence ∈
+{proof-of-concept, formal argument, tool output}. Evidence = ∅ → rejected.
+
+**G-completeness — independently verifiable.**
+An independent verifier V, given only the finding text f, must be able to
+reproduce the investigation and produce a verdict v ∈ {CONFIRMED,
+REJECTED, INCONCLUSIVE} without requesting additional information from
+the finder. If verification requires information not present in f, f is
+incomplete and inadmissible.
+
+**d_tool — detection probability grounded in tool output.**
+The detection probability d entering q = η · d · p must come from actual
+tool execution (static analysis, test runner, SymPy verification, AST
+parse), not from self-assessed confidence. A claim of d = 0.9 based on
+"I am certain" is not admissible. d = 0.9 derived from "9 of 10 relevant
+tests caught the flaw class" is admissible. Formally: d_i = f(T_i) where
+T_i is the result of executing a defined verification tool.
+
+**σ_measured — fix efficacy measured, not assumed.**
+When the three-phase extension uses fix efficacy σ (equivalently, the
+S_k score), this must come from *re-running* the verification tools after
+the fix is applied. Declaring σ = 1.0 without post-fix measurement is not
+admissible. Formally: σ is admissible iff post-fix verification V_post
+was executed and σ = g(V_pre, V_post) for a defined mapping g.
+
+**q_retest — q decomposes into independently verifiable factors.**
+The effective detection probability q used in the Bayesian update must be
+decomposable as q = η · d · p where each factor has its own evidence
+trail. A q given as a single opaque number cannot be audited and is
+inadmissible. η comes from similarity computation against prior findings
+(not self-assessment). d comes from tool output (see d_tool). p comes
+from domain configuration or persistent memory.
+
+**What FFAFP is NOT.**
+FFAFP is not a separate mathematical model. It adds no equations to
+R_k(i). It is the operational guarantee that the inputs are valid. FFAFP
+is not `sth` (synthesise) — sth is a metacognitive command that
+consolidates findings after admission. The two are independent.
+
+**Mandatory reporting.**
+Every finding must include, alongside its FALSIFICATION and CORROBORATION
+sections, an admissibility statement of the form:
+
+  ADMISSIBILITY:
+    S_min: <PASS | FAIL — reason>
+    G-completeness: <PASS | FAIL — reason>
+    d_tool: <PASS | FAIL — tool used>
+    σ_measured: <PASS | FAIL | N/A — pre/post measurement pair>
+    q_retest: <PASS | FAIL — factor trail>
+
+A finding that omits ADMISSIBILITY is rejected at parse time, same as
+one missing FALSIFICATION.
+
+---
+
+## 16. Stage 6 Literature-Calibrated Extension
+
+Sections 3 and 15 cover Stage-5 R_k(i) and FFAFP admissibility. Section
+16 extends these with literature-calibrated novelty. Stage 5 treats η as
+a single scalar capturing novelty within the current session. This
+conflates two distinct claims: "new within this conversation" and "new
+against published work". Hossenfelder (2026) showed that OpenAI's claimed
+Erdős-problem solutions were algorithmically novel (the model had not
+seen them before) but were rediscoveries of known results. A pipeline
+that cannot detect rediscovery overweights known findings and produces
+artificially optimistic risk.
+
+Stage 6 decomposes η into internal novelty, literature novelty, and
+search corroboration — three independent dimensions that are never
+collapsed into a single score.
+
+**η decomposition:**
+
+  η_combined = η_int · (1 − c_ext · (1 − ν_k))
+
+where:
+- η_int ∈ [0, 1]: internal novelty — new within the current session?
+  (Existing similarity computation, unchanged from Stage 5.)
+- ν_k ∈ [0, 1]: literature novelty — new against published work? Computed
+  by external search (arXiv, Semantic Scholar, the immune system's O1
+  cell when running live). This ν_k is the *literature* ν, distinct from
+  the substrate-ceiling floor ν_eff,k in §9.
+- c_ext ∈ [0, 1]: search corroboration — how thoroughly did the search
+  cover the relevant space? A corroboration product across multiple
+  independent sources: c_ext = 1 − Π_s (1 − c_s).
+
+**Reduction property.** When c_ext = 0 (no literature search performed) or
+ν_k = 1 (finding is fully novel), η_combined = η_int. Stage 6 reduces
+exactly to Stage 5 in these cases — Stage 5 is a special case, not an
+alternative.
+
+**Two-dimensional reporting — never collapse.**
+ν_k and c_ext are maintained as independent reporting dimensions. A
+finding can be highly novel but poorly corroborated (high ν_k, low
+c_ext), or well-known but thoroughly verified (low ν_k, high c_ext).
+Both are meaningful and must be preserved. The η_combined formula
+projects them into a scalar for the R_k(i) update, but the full
+(ν_k, c_ext, H/H_max) triple is retained for interpretation.
+
+| ν_k  | c_ext | Quadrant          | Interpretation                       |
+|------|-------|-------------------|--------------------------------------|
+| High | High  | Verified novel    | Genuinely new, well-evidenced        |
+| High | Low   | Unverified novel  | Appears new, search was weak         |
+| Low  | High  | Verified known    | Confirmed rediscovery                |
+| Low  | Low   | Weakly assessed   | Appears known, search was weak       |
+
+H/H_max is the abstraction level (§7.2 of the Mathematical Appendix). It
+is reported alongside as *context*, not as evidence — it explains *why*
+c_ext might be low (abstract findings have fewer searchable matches) but
+does not inflate either score. Abstraction is not corroboration.
+
+**Per-finding novelty report (mandatory for Stage-6 enabled runs).**
+Every finding must include a NOVELTY block of the form:
+
+  NOVELTY:
+    ν_k: <0.00–1.00> — rationale (what did you search, what did you find)
+    c_ext: <0.00–1.00> — sources searched and their independent coverage
+    H/H_max: <0.00–1.00> — abstraction level (see §7.2)
+    Citations: <DOI / arXiv ID / URL list, or "none — genuinely novel">
+
+This triple parallels the system-level (F_n, R_n, A) reporting format.
+Do not collapse the three into a single "novelty score".
+
+**Orthogonality with R_k.**
+ν_k measures novelty. c_ext measures search quality. R_k measures
+validity. These are independent dimensions. A finding can be novel but
+wrong, or known but correct. High ν_k does not bypass the FFAFP
+admissibility gate (§15). The full constraint set applies regardless of
+novelty score — novelty is recognised, not exempted.
+
+**E-value gate (proposed, shadow-mode in Exp 39).**
+The S_k verification gate may be strengthened by e-value sequential
+testing (Stanford POPPER framework, Vos et al. 2025, arXiv:2502.09858)
+replacing binary pass/fail with continuously accumulating evidence:
+
+  e_i = 1/FPR_tool on Pass, 0 on Fail, 1 on Inconclusive
+  E_combined = Π_i e_i
+
+Contingent on validated per-tool FPR mappings. In Exp 39 the e-value
+computation runs in shadow mode — logged, not yet gating admission.
+Findings that would be rejected by the binary gate are still rejected;
+e-values only provide additional evidence weight for findings that pass
+the binary gate.
+
+**Directive hierarchy.** When this section conflicts with §3 or §15, the
+more specific constraint wins. §15 admissibility gates fire *before*
+§16 novelty assessment — an inadmissible finding never reaches the
+novelty stage. §3 Bayesian update uses η_combined from §16 only if the
+finding is admissible per §15.
+
+(Stage 6 derived 14 April 2026. Full mathematical derivation, boundary
+conditions, monotonicity analysis, and integration tests in
+`docs/MATHEMATICAL_APPENDIX.md` §1.1 Literature-Calibrated Extension,
+§1.2 FFAFP Calibration Protocol, §1.6 ν_k literature novelty, §1.7 c_ext
+source diversity, §1.8 E-value gate.)
