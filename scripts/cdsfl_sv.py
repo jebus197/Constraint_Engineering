@@ -443,6 +443,31 @@ def update_timestamp(filepath: Path, dry_run: bool = False) -> bool:
 
 _SENSITIVE_PATTERNS = (".env", "credentials", "secret", ".key", ".pem", ".p12")
 
+# Directories whose untracked, non-gitignored files are safe to auto-stage
+# during an sv commit. Top-level ad-hoc files and dotfile caches are
+# deliberately excluded — they must be staged manually by the operator if
+# they are intended for the commit.
+_SAFE_STAGING_DIRS: tuple[str, ...] = (
+    "bench/",
+    "configs/",
+    "docs/",
+    "examples/",
+    "experimental_notes/",
+    "logs/",
+    "resources/",
+    "scripts/",
+)
+
+# Regex for extracting file paths from commit-message prose. Requires a
+# leading whitelisted directory + '/' so bare filenames and embedded
+# substrings (e.g. '…/bench/foo.py' inside a longer path) do not match.
+# The final group captures: <whitelist-dir>/<path-chars>.<extension>.
+_MESSAGE_PATH_RE = re.compile(
+    r"(?<![\w/])("
+    + r"(?:" + "|".join(re.escape(d) for d in _SAFE_STAGING_DIRS) + r")"
+    + r"[\w./-]+\.[A-Za-z0-9]+)"
+)
+
 
 def _git(
     *args: str,
@@ -464,16 +489,85 @@ def _git(
     return result.stdout.strip()
 
 
+def _discover_untracked_in_whitelist(root: Path) -> list[str]:
+    """Return repo-relative paths of untracked, non-gitignored files under
+    the safe-staging whitelist.
+
+    Uses ``git ls-files --others --exclude-standard`` so global gitignore,
+    repo .gitignore, and .git/info/exclude are all honoured automatically.
+    The whitelist adds defense-in-depth against stray top-level or dotfile
+    content that is not gitignored but shouldn't be swept into an sv commit.
+    """
+    out = _git("ls-files", "--others", "--exclude-standard", root=root)
+    if not out:
+        return []
+    return [
+        line for line in out.splitlines()
+        if line and any(line.startswith(d) for d in _SAFE_STAGING_DIRS)
+    ]
+
+
+def _extract_paths_from_message(message: str) -> list[str]:
+    """Extract file paths mentioned in a commit message.
+
+    Only paths rooted at a whitelisted directory with a file extension are
+    returned; bare filenames, shell commands, and prose are ignored. Paths
+    are deduplicated in first-seen order. Trailing ``:<digits>`` line-number
+    suffixes are stripped.
+    """
+    found: list[str] = []
+    seen: set[str] = set()
+    for m in _MESSAGE_PATH_RE.finditer(message):
+        path = re.sub(r":\d+$", "", m.group(1))
+        if path not in seen:
+            seen.add(path)
+            found.append(path)
+    return found
+
+
+def _validate_message_paths(
+    message: str,
+    staged: set[str],
+    root: Path,
+) -> list[str]:
+    """Return paths the commit message names that are neither staged nor
+    already tracked.
+
+    A path that is staged (present in ``git diff --cached --name-only``)
+    passes. A path that is tracked but unchanged also passes — this is a
+    legitimate prose reference to an existing file. Only paths that are
+    *both* unstaged *and* absent from the repo fail, which is exactly the
+    defect class that produced commit f29d0e9 on 2026-04-15.
+    """
+    missing: list[str] = []
+    for path in _extract_paths_from_message(message):
+        if path in staged:
+            continue
+        tracked = _git("ls-files", "--", path, root=root, check=False)
+        if not tracked:
+            missing.append(path)
+    return missing
+
+
 def _commit_and_push(
     message: str,
     push: bool = False,
     root: Path | None = None,
+    auto_stage: bool = True,
+    validate_message: bool = True,
 ) -> bool:
     """Stage sv-related files, commit, optionally push.
 
     Returns True if a commit was created, False if nothing to commit.
     Runs as a single function call — if launched via subprocess from CC,
     the entire commit+push completes even if the conversation compacts.
+
+    auto_stage: if True, discover untracked files under whitelisted project
+        directories (see ``_SAFE_STAGING_DIRS``) and stage them. Defaults on
+        because silent exclusion of untracked files is the defect this fix
+        addresses. Pass False to require manual pre-staging.
+    validate_message: if True, abort before commit if the message names a
+        path that is neither staged nor tracked. Defaults on.
     """
     root = root or repo_root()
 
@@ -485,16 +579,16 @@ def _commit_and_push(
     # 2. Stage all modifications to already-tracked files
     _git("add", "-u", root=root)
 
-    # 3. Stage untracked experiment artifacts
-    for pattern, base in [
-        ("exp*", root / "bench" / "logs"),
-        ("Exp*", root / "experimental_notes"),
-        ("launch_exp*", root / "bench"),
-    ]:
-        if base.exists():
-            for match in base.glob(pattern):
-                rel = str(match.relative_to(root))
-                _git("add", rel, root=root, check=False)
+    # 3. Stage untracked files under whitelisted project directories.
+    #    Honours .gitignore via ``git ls-files --others --exclude-standard``
+    #    and further restricts to _SAFE_STAGING_DIRS as defense-in-depth.
+    if auto_stage:
+        untracked = _discover_untracked_in_whitelist(root)
+        if untracked:
+            print(f"  Auto-staging {len(untracked)} untracked file(s) under whitelist:")
+            for rel in untracked:
+                _git("add", "--", rel, root=root, check=False)
+                print(f"    + {rel}")
 
     # 4. Check what's staged
     staged = _git("diff", "--cached", "--name-only", root=root)
@@ -505,7 +599,7 @@ def _commit_and_push(
     for f in staged.splitlines():
         f = f.strip()
         if any(s in f.lower() for s in _SENSITIVE_PATTERNS):
-            _git("reset", "HEAD", f, root=root)
+            _git("reset", "HEAD", "--", f, root=root)
             print(f"  WARNING: Unstaged sensitive file: {f}")
 
     # Re-check after unstaging
@@ -513,16 +607,31 @@ def _commit_and_push(
     if not staged.strip():
         return False
 
-    n_files = len(staged.strip().splitlines())
+    staged_set = set(staged.splitlines())
+    n_files = len(staged_set)
 
-    # 6. Commit
+    # 6. Validate that every path named in the commit message is either
+    #    staged or already tracked. Closes the defect class of commits
+    #    whose message references files absent from the tree (f29d0e9).
+    if validate_message:
+        missing = _validate_message_paths(message, staged_set, root)
+        if missing:
+            joined = "\n    ".join(missing)
+            raise RuntimeError(
+                "Commit message references paths that are neither staged "
+                "nor tracked:\n    " + joined
+                + "\n  Stage them, remove them from the message, or pass "
+                "--no-validate-message to override."
+            )
+
+    # 7. Commit
     full_msg = f"{message}\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
     _git("commit", "-m", full_msg, root=root, timeout=60)
 
     new_hash = _git("log", "--oneline", "-1", root=root)
     print(f"  Committed: {new_hash} ({n_files} files)")
 
-    # 7. Push
+    # 8. Push
     if push:
         branch = _git("branch", "--show-current", root=root)
         _git("push", "origin", branch, root=root, timeout=120)
@@ -539,6 +648,18 @@ def main() -> None:
     parser.add_argument("--commit", action="store_true", help="Stage and commit sv files")
     parser.add_argument("--push", action="store_true", help="Push after commit (implies --commit)")
     parser.add_argument("-m", "--message", help="Commit message (default: auto-generated)")
+    parser.add_argument(
+        "--no-auto-stage",
+        action="store_true",
+        help="Do not auto-stage untracked files under whitelisted project "
+             "directories; require manual `git add` before sv.",
+    )
+    parser.add_argument(
+        "--no-validate-message",
+        action="store_true",
+        help="Skip the check that every path named in the commit message "
+             "is either staged or already tracked.",
+    )
     args = parser.parse_args()
 
     if args.push:
@@ -636,7 +757,13 @@ def main() -> None:
         print()
         msg = args.message or f"sv: state save {timestamp_now()}"
         try:
-            if _commit_and_push(message=msg, push=args.push, root=root):
+            if _commit_and_push(
+                message=msg,
+                push=args.push,
+                root=root,
+                auto_stage=not args.no_auto_stage,
+                validate_message=not args.no_validate_message,
+            ):
                 print()
                 suffix = " and pushed" if args.push else ""
                 print(f"State save committed{suffix}.")
