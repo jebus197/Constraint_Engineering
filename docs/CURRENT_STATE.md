@@ -1,29 +1,26 @@
 # CDSFL Current State
 
-Generated: 15 April 2026 22:49 BST (2026-04-15T22:49:28+01:00)
+Generated: 16 April 2026 00:20 BST (2026-04-16T00:20:48+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `81cfb97` sv: sv-script auto-staging fix + plain-English feedback channel docs
-- **Committed:** 2026-04-15 21:13:27 +0100
-- **Remote:** ahead by 51
+- **Last commit:** `71ab374` sv: §18 divergence directive — CDSFL's bold-conjectures arm (invention engine)
+- **Committed:** 2026-04-15 22:49:29 +0100
+- **Remote:** ahead by 52
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/cdsfl_registry/schema.toml`
-- `M bench/cdsfl_registry/universal.toml`
-- `M bench/directives/universal/cdsfl_core_formal.md`
-- `M bench/directives/universal/cdsfl_operational.md`
-- `M bench/logs/immune_pipeline.log`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/dm/_divergence.py`
-- `?? bench/tests/test_divergence_directive.py`
-- `?? experimental_notes/Divergence_Directive_Implementation_2026-04-15.md`
-- `?? experimental_notes/Invention_Engine_Divergence_Directive_2026-04-15.md`
+- `?? bench/confer_divergence_directive.py`
+- `?? bench/confer_divergence_round2_convergence.py`
+- `?? bench/logs/confer_divergence_directive/`
+- `?? bench/logs/confer_divergence_round2_convergence/`
+- `?? experimental_notes/Panel_Review_Section17_Section18_2026-04-15.md`
+- `?? experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md`
 
 ---
 
@@ -55,6 +52,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `71ab374 sv: §18 divergence directive — CDSFL's bold-conjectures arm (invention engine)`
 - `81cfb97 sv: sv-script auto-staging fix + plain-English feedback channel docs`
 - `52391aa fix: add missing feedback-channel artefacts referenced by f29d0e9`
 - `f29d0e9 sv: feedback channel (Phase 10) — measurement-to-correction loop closed`
@@ -64,4 +62,3 @@ Uncommitted files:
 - `0c1de8e Tranche B: 5 new B-Cell specialist wrappers + dispatch + 4 TOML updates`
 - `6838160 Tranche A: housekeeping — crosshair note fix + sv sequential-reading protocol`
 - `d9f8f82 chore: commit Stage 6 confer residuals from prior session`
-- `00abd52 sv: Domain tool wiring — 9 B-Cell specialist wrappers, 5 TOMLs, 793 tests green (inc. residual Stage 6 runner/ouroboros diagnostics)`

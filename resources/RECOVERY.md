@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 April 2026 22:49 BST
+Last updated: 16 April 2026 00:20 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,11 +21,107 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (15 April 2026 ~22:40 BST)
+## Current Pending Work (16 April 2026 ~00:15 BST)
 
-912 tests pass (832 prior baseline + 28 sv-script fix tests + 52 new
-divergence-directive tests). Branch: `exp39-experimental`. Pending this
-sv: the §18 Divergence Directive work described below.
+912 tests pass. Branch: `exp39-experimental`. This sv covers the §17 + §18
+five-panel review and the round-2 mathematical-convergence confer. No
+schema edits landed this session — review-only. Three founder decisions
+now pending before Exp 40 launch.
+
+**SESSION 15–16 APRIL — §17 + §18 FIVE-PANEL REVIEW AND ROUND-2 CONVERGENCE:**
+
+Two confers executed back to back. Round 1 was a 5-panel CDSFL/FFAFP review
+of §17 Feedback Channel + §18 Divergence Directive. Round 2 was a
+mathematical-convergence confer that used Stage 6 maths as the arbiter to
+force the panel to a single definitive answer per round-1 divergence.
+
+Dispatchers:
+- `bench/confer_divergence_directive.py` (round 1)
+- `bench/confer_divergence_round2_convergence.py` (round 2, 523 lines)
+
+Combined logs:
+- `bench/logs/confer_divergence_directive/combined_20260415T220231Z.json`
+- `bench/logs/confer_divergence_round2_convergence/combined_20260415T224529Z.json`
+
+Panel notes:
+- `experimental_notes/Panel_Review_Section17_Section18_2026-04-15.md`
+- `experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md`
+
+TTS plain English:
+- `~/Desktop/CDSFL_tts/Panel_Review_Section17_Section18_2026-04-15.txt`
+- `~/Desktop/CDSFL_tts/Round2_Convergence_Section17_Section18_2026-04-15.txt`
+
+**Round-1 findings:**
+
+Consensus 5/5: tradeoff dimension is meta (risks swallowing ontology);
+Jaccard is lexical not semantic; Exp 39/40 plan confounds §17 and §18
+signals; compliance theatre is dominant Q5 risk; ship both directives.
+
+Diverged 5-ways on (D1) Jaccard threshold (0.75 / 0.85 / 0.95 / reframe);
+(D2) penalty tiers (keep / flatten / mild / gated / recidivism-add);
+(D3) experimental design (2×2 factorial / structurally coupled / tag source).
+
+One HARD mechanical finding — sibling alt-vs-alt check missing (Codex +
+ChatGPT independent). Ship-blocker. ~10 LOC + 3 tests.
+
+**Round-2 resolution under Stage 6 arbiter:**
+
+Structural: 5/5 unanimous — §18 multiplier is NOT on R_k (category
+error). Belongs on η_int (primary) + FFAFP admissibility (binary gate)
++ w(f) in kappa_set (already continuous suppression). ν_k explicitly
+forbidden as §18 target (O1-external literature novelty).
+
+D1: 5/5 rename Jaccard role to lexical near-duplicate heuristic. Three-
+of-five keep at 0.85 MVP + sibling + contrast statement; two-of-five want
+immediate similarity-backend swap. Phase 2 empirical.
+
+D2: 5/5 move tiers off R_k. Three-of-five retain tiered multiplier on
+η_int (ChatGPT recommends 1.0 / 0.85 / 0.70 / 0.60 with 0.60 reserved
+for J≥0.98 or recidivism); two-of-five abolish tiers entirely (math self-
+enforces via continuous η_int deflation).
+
+D3: 5/5 2×2 factorial. Cells A (both off), B (§17 only), C (§18 only),
+D (both on). Gemini self-falsified her round-1 "§18-only invalid" under
+parameter orthogonality. Budget fallbacks: B+C+D reusing prior A data
+(recommended); or B+D with claim narrowed to "marginal effect of §18
+given §17".
+
+**Three decisions waiting on founder approval:**
+
+1. **Channel reassignment.** Move §18 multiplier off R_k, onto η_int +
+   admissibility. Touches `bench/dm/_divergence.py::divergence_penalty_multiplier()`
+   and its integration site in `compute_rk()` (currently unwired —
+   moment to wire correctly rather than unwire later). ~30 LOC +
+   8–12 new tests (R_k untouched by §18 outcome; η_int scales with
+   m_div; inadmissible alternatives gate out upstream of η; ν_k
+   unaffected). Recommend yes, before Exp 40.
+
+2. **Contrast-statement requirement.** Mandatory "X changed, Y held
+   constant" clause per alternative. Edit to `bench/directives/universal/cdsfl_operational.md`
+   §18, parser logic in `_divergence.py`. ~5 lines directive + ~20 LOC
+   parser + 3–5 tests. Cheap disambiguator between genuine novelty and
+   lexical near-duplicate under a noisy Jaccard screen. Recommend yes.
+
+3. **Experimental design.** Option C (cells B+C+D, reuse Exp 36–38
+   baseline for cell A) recommended. Option B (B+D with narrowed claim)
+   is current-plan fallback. Option A (fresh baseline + 2×2) overkill.
+
+**Deferred (Exp 40 empirical):**
+
+- Phase 2 embedding backend swap (sentence-transformers all-MiniLM-L6-v2)
+  to replace Jaccard. Post-Exp 40 decides between Gemini's continuous
+  deflation (no threshold) and DeepSeek's τ=0.75 on s(f1,f2).
+- Penalty tier numeric recalibration (let empirical m_div distribution
+  argue).
+- Opportunity-cost-sufficiency test — CC2's falsifier: does §18 need an
+  explicit penalty at all, or does differential convergence credit
+  (opportunity cost) suffice as incentive? Exp 40 cell D vs cell B
+  measures it directly.
+
+**Commit plan after these three decisions land:** single commit covering
+(a) sibling check fix, (b) channel reassignment in `_divergence.py`,
+(c) contrast-statement directive + parser, (d) any experimental design
+runner-config changes. Regression across 912 → ~920-ish tests expected.
 
 **SESSION 15 APRIL LATE — DIVERGENCE DIRECTIVE (§18):**
 

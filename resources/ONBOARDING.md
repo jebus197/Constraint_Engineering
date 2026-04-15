@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 15 April 2026 22:49 BST
+Last updated: 16 April 2026 00:20 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,80 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **§17 + §18 FIVE-PANEL REVIEW AND ROUND-2 CONVERGENCE (15 April 2026, 23:02Z → 16 April 00:10 BST):**
+  Branch: `exp39-experimental`. 912 tests pass (baseline unchanged — this
+  session is review-only, no schema edits yet). Stage 6 math served as the
+  convergence arbiter.
+
+  **Round 1 — 5-panel CDSFL/FFAFP review** (`bench/confer_divergence_directive.py`,
+  combined log `bench/logs/confer_divergence_directive/combined_20260415T220231Z.json`,
+  notes `experimental_notes/Panel_Review_Section17_Section18_2026-04-15.md`
+  + TTS `~/Desktop/CDSFL_tts/Panel_Review_Section17_Section18_2026-04-15.txt`
+  plain English rewrite). Five questions put to Gemini 3.1 Pro, Codex GPT-5.4,
+  ChatGPT GPT-5.4, CC2 Opus 4.6, DeepSeek R1-0528 in parallel (~3 min wall).
+
+  All five converged on: tradeoff dimension is meta (risks swallowing the
+  ontology), Jaccard is lexical not semantic, Exp 39/40 plan confounds the
+  two directives' signals, compliance theatre is the dominant Q5 risk, ship
+  both. Panel diverged on (D1) Jaccard threshold, (D2) penalty tier
+  structure, (D3) experimental design.
+
+  **One HARD mechanical finding — sibling alt-vs-alt check missing**
+  (Codex + ChatGPT independent): §18 text requires alternatives to pass
+  isomorphism against primary *and* against siblings; implementation only
+  checks against primary. Spec/implementation gap. ~10 LOC fix + 3 tests.
+  Ship-blocker for Exp 40.
+
+  **Round 2 — mathematical-convergence confer** (`bench/confer_divergence_round2_convergence.py`,
+  combined log `bench/logs/confer_divergence_round2_convergence/combined_20260415T224529Z.json`,
+  notes `experimental_notes/Round2_Convergence_Section17_Section18_2026-04-15.md`
+  + TTS). Stage 6 math put in front of all 5 models as binding arbiter: R_k
+  recursion, η_combined = η_int · (1 − c_ext · (1 − ν_k)), orthogonality
+  C1, continuous suppression w(f), similarity backend, kappa_set. Charge:
+  converge to a single definitive answer per divergence; answer may be
+  synthesis OR entirely novel. Binding constraints C1 (orthogonality),
+  C2 (w(f) ∉ q_eff), C3 (novelty detectability), C4 (scientific rigour).
+
+  **Six-way structural question asked first — where does the §18 multiplier
+  mathematically belong?** Options: (i) R_k pre-factor (current spec) /
+  (ii) η_int modulator / (iii) ν_k modulator / (iv) w(f) modulator /
+  (v) FFAFP admissibility gate / (vi) combination.
+
+  **5/5 UNANIMOUS** — multiplier is **NOT** on R_k. Current spec is a
+  category error (R_k measures validity; §18 is generator-side novelty
+  enforcement). Primary channel = **η_int**; structural compliance gated
+  at **FFAFP admissibility**; continuous isomorphism suppression already
+  handled by **w(f)** in kappa_set. 5/5 explicit: ν_k must NEVER be
+  modulated by §18 (literature novelty is O1-external). 5/5 on **2×2
+  factorial** design for D3. Gemini self-falsified her round-1 "§18-only
+  invalid" under the parameter-orthogonality argument.
+
+  **Residual divergence is narrow (Phase 2 empirical):** tier structure
+  abolish vs retain on η_int (2 vs 3); Jaccard-0.85-MVP vs immediate
+  similarity-backend swap (3 vs 2).
+
+  **Three decisions pending founder approval:**
+  1. Adopt channel reassignment: §18 multiplier off R_k, onto η_int +
+     admissibility. ~30 LOC + 8–12 tests. Recommend yes before Exp 40.
+  2. Adopt contrast-statement requirement ("X changed, Y held constant"
+     per alternative). ~5 lines directive + ~20 LOC parser + 3–5 tests.
+     Cheap disambiguator for genuine vs theatre novelty. Recommend yes.
+  3. Experimental design: Option C (cells B+C+D, reuse Exp 36–38 for A)
+     recommended. Option B (B+D only with narrowed claim) is current-plan
+     fallback. Option A (full 2×2 with fresh A) overkill.
+
+  **Deferred:** Phase 2 embedding backend swap (sentence-transformers),
+  penalty tier recalibration (let Exp 40 data argue), opportunity-cost-
+  sufficiency test (does §18 need an explicit penalty or does differential
+  convergence credit suffice? CC2's falsifier — Exp 40 cell D vs B
+  measures it).
+
+  **Non-obvious result:** the channel-reassignment answer was not present
+  in any round-1 response. Five models independently arrived at the same
+  topology under a shared mathematical instrument. Mechanism: load-bearing
+  orthogonality constraints disambiguate where prose intuitions diverge.
+  The discipline generalises beyond this divergence set.
+
 - **DIVERGENCE DIRECTIVE — CDSFL'S BOLD-CONJECTURES ARM (15 April 2026, ~22:40 BST):**
   Branch: `exp39-experimental`. 912 tests pass (was 832; +28 sv-script fix tests
   from earlier today, +52 new divergence-directive tests).
