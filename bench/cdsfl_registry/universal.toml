@@ -45,3 +45,13 @@ tuple_canonicalisation = true
 validated_novelty = true
 min_independent_families = 2
 novelty_channel_enabled = true
+
+[feedback_channel]
+# cdsfl_operational.md §17 — corrective loop from schema to model prompt.
+# Per-model feedback on flagged findings is prepended to round K+1's prompt.
+# Defaults ON — the whole point of CDSFL is corrective feedback. Disable
+# only for controlled ablation experiments. Implementation: bench/dm/_feedback.py.
+enabled = true
+top_k = 10                       # max detailed flags per model per round
+max_chars_per_model = 8000       # hard cap on rendered section size
+mode = "imperative"              # imperative = MUST address; advisory = SHOULD address

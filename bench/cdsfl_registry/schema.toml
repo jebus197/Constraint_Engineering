@@ -478,6 +478,39 @@ min_layer = "universal"
 description = "Enable the novelty detection channel."
 
 # =============================================================================
+# [feedback_channel] — cdsfl_operational.md §17: schema → model corrective loop
+# =============================================================================
+
+[feedback_channel.enabled]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Enable the schema-to-model feedback channel (§17). Live default; disable only for controlled ablation."
+
+[feedback_channel.top_k]
+type = "int"
+default = 10
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Maximum detailed flagged findings per model per round. Surplus summarised in aggregate."
+
+[feedback_channel.max_chars_per_model]
+type = "int"
+default = 8000
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Hard cap on feedback section size per model to prevent prompt blow-up."
+
+[feedback_channel.mode]
+type = "enum"
+default = "imperative"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Directive strength — imperative (MUST address) or advisory (SHOULD address)."
+allowed_values = ["imperative", "advisory"]
+
+# =============================================================================
 # [model] — model-specific settings (Layer 4 only)
 # =============================================================================
 

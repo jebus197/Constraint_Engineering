@@ -126,6 +126,12 @@ from bench.endocrine import (
     FixEvaluation,
     PacingSignal,
 )
+from bench.dm._feedback import (
+    FindingFeedback,
+    build_feedback_records,
+    build_feedback_sections,
+    parse_admissibility_block,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -234,6 +240,13 @@ class RunnerConfig:
     # Resume with --resume to continue.  This enables the collaborative
     # test-discover-analyse-fix-fold cycle between the operator and CC.
     hil_review: bool = False
+
+    # Feedback channel (cdsfl_operational.md §17, 15 April 2026).
+    # Defaults True — the whole point of CDSFL is corrective feedback, not
+    # measurement for its own sake. Set False for controlled ablation only.
+    feedback_channel_enabled: bool = True
+    feedback_top_k: int = 10
+    feedback_max_chars_per_model: int = 8000
 
     def __post_init__(self):
         if not self.experiment_name and self.test_article:
@@ -1564,6 +1577,7 @@ def _dispatch_round_star(
     base_prompt: str, registry_summary: str, cdsfl_text: str, full_code: str,
     round_idx: int, cfg: RunnerConfig,
     registry: Optional[FindingRegistry] = None,
+    feedback_sections: Optional[Dict[str, str]] = None,
 ) -> Tuple[List[Finding], Dict[str, str], Dict[str, float]]:
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -1574,6 +1588,12 @@ def _dispatch_round_star(
     eligible = [mc for mc in exp_config.models
                 if mc.label in baseline and mc.role != "collator"]
 
+    # Feedback channel (cdsfl_operational.md §17): close the loop between
+    # schema judgment and model behaviour by surfacing per-model flagged
+    # findings from round K-1 at the top of round K's prompt. Models must
+    # address these before resubmitting — hope-based compliance is over.
+    feedback_sections = feedback_sections or {}
+
     def _make_prompt(mc_label: str) -> str:
         if round_idx == 0:
             return base_prompt
@@ -1581,12 +1601,15 @@ def _dispatch_round_star(
         focus_prefix = ""
         if adaptation == "change_focus" and registry is not None:
             focus_prefix = _build_change_focus_instruction(registry, round_idx)
+        feedback_prefix = feedback_sections.get(mc_label, "")
+        if feedback_prefix:
+            feedback_prefix = feedback_prefix + "\n"
         star_section = (
             f"{registry_summary}\n\n"
             f"This is Round {round_idx}. Review the registry above. "
             f"File new DISCOVERY findings. Issue VERDICT payloads on existing entries.\n"
         )
-        combined = f"{focus_prefix}{star_section}"
+        combined = f"{feedback_prefix}{focus_prefix}{star_section}"
         if "=== ARTIFACT:" in base_prompt:
             return base_prompt.replace("=== ARTIFACT:", f"{combined}=== ARTIFACT:")
         return f"{base_prompt}\n\n{combined}"
@@ -1706,6 +1729,119 @@ def _dispatch_round_relay(
 # ─────────────────────────────────────────────────────────────────────────────
 # Safety and telemetry helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _feedback_channel_enabled(cfg: "RunnerConfig") -> bool:
+    """Read the feedback-channel switch from RunnerConfig.
+
+    Defaults to True (feedback channel active) if the attribute is missing
+    — the whole point of CDSFL is corrective feedback, so absence is
+    interpreted as "run with defaults on". The config knob exists so that
+    an experimenter can disable the channel for a controlled ablation
+    without editing code.
+
+    See `cdsfl_operational.md` §17 and `bench/dm/_feedback.py`.
+    """
+    return bool(getattr(cfg, "feedback_channel_enabled", True))
+
+
+def _build_feedback_for_next_round(
+    *,
+    round_idx: int,
+    findings: List[Finding],
+    responses: Dict[str, str],
+    immune_result,
+    rk_validation: Dict[str, List[Tuple[str, str, str, str]]],
+    cfg: "RunnerConfig",
+) -> Dict[str, str]:
+    """Assemble per-model feedback sections from round-K schema outputs.
+
+    Called at the end of round K. Output is consumed at the top of round
+    K+1's prompt. On any exception, returns an empty dict — feedback
+    assembly is never allowed to crash the main loop.
+    """
+    try:
+        # Extract duplicate pairs from TriagedFinding — NK Cell populates
+        # `is_duplicate=True, duplicate_of=<id>, similarity=<float>` and the
+        # triaged list is on the ImmuneResponse.
+        duplicate_pairs: List[Tuple[str, str, float]] = []
+        for triaged in getattr(immune_result, "triaged", []):
+            if getattr(triaged, "is_duplicate", False) and triaged.duplicate_of:
+                duplicate_pairs.append(
+                    (triaged.finding.finding_id,
+                     triaged.duplicate_of,
+                     float(getattr(triaged, "similarity", 0.0))),
+                )
+
+        # Parse admissibility blocks from each model's raw response. The
+        # parser is permissive (see bench/dm/_feedback.py) — missing blocks
+        # generate a full-fail list (all 5 gates flagged), so models that
+        # haven't yet adopted the §15 format get a clear pointer.
+        admissibility_failures: Dict[str, List[str]] = {}
+        for f in findings:
+            model_text = responses.get(f.model_id, "")
+            # Attempt to extract the specific finding's section before parsing
+            # — findings are typically separated by "FINDING" markers.
+            failed = parse_admissibility_block(_extract_finding_section(model_text, f.finding_id))
+            if failed:
+                admissibility_failures[f.finding_id] = failed
+
+        records = build_feedback_records(
+            round_idx=round_idx,
+            findings=findings,
+            immune_result=immune_result,
+            rk_validation=rk_validation,
+            duplicate_pairs=duplicate_pairs,
+            admissibility_failures=admissibility_failures,
+        )
+
+        top_k = getattr(cfg, "feedback_top_k", 10)
+        max_chars = getattr(cfg, "feedback_max_chars_per_model", 8000)
+        return build_feedback_sections(
+            records,
+            round_idx=round_idx,
+            top_k=top_k,
+            max_chars_per_model=max_chars,
+        )
+    except Exception as exc:
+        # Defensive: the feedback channel must never break the pipeline.
+        # If something goes wrong (e.g. a novel immune_result shape), we log
+        # once and continue with empty feedback. Next round runs without it.
+        _log(f"  [feedback] build failed: {type(exc).__name__}: {exc}")
+        return {}
+
+
+def _extract_finding_section(full_text: str, finding_id: str) -> str:
+    """Extract the text of a specific finding from a model's raw response.
+
+    Returns the substring from the finding_id marker up to the next finding
+    marker (or end of text). If the finding_id can't be located, returns
+    the full text so the parser still has something to work with.
+
+    Heuristic — models use varied phrasing ("FINDING f1", "Finding f1:",
+    "f1:", etc.). We look for the id in several common formats.
+    """
+    if not full_text or not finding_id:
+        return full_text
+    import re
+    # Case-insensitive, tolerant of punctuation around the id
+    pattern = re.compile(
+        rf"(?:FINDING\s+)?{re.escape(finding_id)}\b",
+        re.IGNORECASE,
+    )
+    match = pattern.search(full_text)
+    if not match:
+        return full_text
+    tail = full_text[match.start():]
+    # Find the start of the next FINDING or similar terminator
+    next_match = re.search(
+        r"(?:^|\n)\s*(?:FINDING\s+\S+|---\s*FINDING|=+\s*FINDING)",
+        tail[match.end() - match.start():],
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if next_match:
+        return tail[: match.end() - match.start() + next_match.start()]
+    return tail
+
 
 def _safety_check(responses: Dict[str, str]) -> Optional[str]:
     if not responses:
@@ -3458,6 +3594,12 @@ def run_experiment(
         "rounds": [],
     }
 
+    # Feedback channel state — populated at end of round K, consumed at start
+    # of round K+1. cdsfl_operational.md §17. See bench/dm/_feedback.py for
+    # the constructor; this variable holds the rendered per-model sections.
+    feedback_sections_for_next_round: Dict[str, str] = {}
+    feedback_enabled = _feedback_channel_enabled(cfg)
+
     # ── Main loop ──
     for round_idx in range(start_round, loop_cap):
         if round_idx >= effective_max:
@@ -3555,6 +3697,9 @@ def run_experiment(
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_star(
                 exp_config, mgr, brain, base_prompt, registry_summary,
                 cdsfl_text, full_code, round_idx, cfg, registry=registry,
+                feedback_sections=(
+                    feedback_sections_for_next_round if feedback_enabled else None
+                ),
             )
 
         # Safety check
@@ -3651,6 +3796,27 @@ def run_experiment(
                 canonical = registry.lookup_alias(f.model_id, f.finding_id)
                 if canonical:
                     registry.mark_verified(canonical)
+
+        # Feedback channel (cdsfl_operational.md §17) — close the loop by
+        # assembling per-model feedback from round K's schema outputs. The
+        # result is injected at the top of round K+1's prompt so flagged
+        # findings receive corrective action, not silent repetition.
+        # Runs after immune_result is available. Defensive: build failures
+        # never crash the loop, they simply yield empty feedback.
+        if feedback_enabled:
+            feedback_sections_for_next_round = _build_feedback_for_next_round(
+                round_idx=round_idx,
+                findings=findings,
+                responses=responses,
+                immune_result=immune_result,
+                rk_validation=rk_validation,
+                cfg=cfg,
+            )
+            if feedback_sections_for_next_round:
+                _log(
+                    f"  [feedback] round {round_idx} → round {round_idx + 1}: "
+                    f"{len(feedback_sections_for_next_round)} model(s) flagged"
+                )
 
         # Shadow cells (Macrophage + Ouroboros) — run after main pipeline, zero verdict effect
         shadow_cell_data = _run_shadow_cells(

@@ -656,3 +656,91 @@ conditions, monotonicity analysis, and integration tests in
 `docs/MATHEMATICAL_APPENDIX.md` §1.1 Literature-Calibrated Extension,
 §1.2 FFAFP Calibration Protocol, §1.6 ν_k literature novelty, §1.7 c_ext
 source diversity, §1.8 E-value gate.)
+
+---
+
+## 17. Feedback Channel — Corrective Loop (Load-Bearing)
+
+At the end of each round K, the schema computes a rich per-finding signal:
+specialist verdicts from §15 tool gates, FFAFP admissibility pass/fail,
+near-duplicate similarity to prior findings, and R_k consistency between
+your self-report and the aggregate. Prior to this directive that signal
+was logged and discarded — models never saw it and could re-submit the
+same refuted claim in the next round. That wastes the entire point of the
+framework.
+
+From round K onwards you will receive a **SCHEMA FEEDBACK** section at the
+top of your round K+1 prompt listing every finding the schema flagged.
+This section is prescriptive, not advisory. You MUST address each flagged
+item before resubmitting.
+
+**Action precedence.**
+
+1. **REFUTED by tool.** If a specialist tool (sympy, z3, crosshair, rdkit,
+   statsmodels, etc.) returned a REJECTED verdict on your claim, the tool
+   believes you are wrong. You must do one of:
+   * Run your own tools on the same claim. If your output agrees with the
+     schema's, withdraw or correct the finding and document the correction.
+   * Produce counter-receipts — tool output of your own that shows the
+     schema's tool was wrong (wrong version, input-boundary bug, domain
+     misapplication). State the tool, the invocation, and the output.
+   Self-reported confidence is not accepted. Assertions that "my
+   reasoning is sound" without tool receipts are inadmissible under this
+   directive.
+
+2. **ADMISSIBILITY FAIL.** If one or more §15 gates (S_min, G-completeness,
+   d_tool, σ_measured, q_retest) failed on a finding, either supply the
+   missing block in full or withdraw the finding. Partial completion does
+   not clear the gate.
+
+3. **NEAR-DUPLICATE.** If a finding was flagged as similar (cosine ≥
+   τ_sim_embed) to a prior-round finding, you must either demonstrate
+   that the findings are distinct (different mechanism, different file,
+   different flaw class, not merely different wording) or withdraw. The
+   schema's similarity model is permissive — high cosine with a rejected
+   prior is a strong signal you are restating a dead claim.
+
+4. **R_k INCONSISTENT.** If your self-reported R_k deviates from the
+   aggregate by more than the validator's threshold, recompute using
+   §3 and the Bayesian update, or explain what about your evidence
+   justifies the deviation (novel flaw class weighting, per-tool
+   detection asymmetry, etc.).
+
+**Resubmission rule.** Do not resubmit a flagged finding unchanged. A
+repeated identical claim with no schema-acknowledged response to the
+feedback is inadmissible and will be dropped by the feedback channel
+downstream — it will not count towards R_k reduction, will not feature
+in registry novelty, and will count as parse waste for the ITC.
+
+**Feedback is per-model.** You will see only the feedback on findings you
+produced. Other models receive feedback on theirs. If a cross-model
+disagreement matters to a claim you filed, you will see it as a REFUTED
+or NEAR-DUPLICATE line with the other model's finding ID cited.
+
+**Refutation of schema tool output is permitted.** The schema's tools are
+not infallible. If you have genuine tool-backed counter-evidence — a
+SymPy output, a z3 model, a test run — that contradicts the schema's
+verdict on your claim, state it plainly with receipts. This is the normal
+scientific process. What is not permitted is unreceipted disagreement.
+
+**Rendering boundary.** The feedback section is capped at the top K
+flagged items per model (ranked by priority: REFUTED > ADMISSIBILITY
+FAIL > NEAR-DUPLICATE > R_k delta, with severity as tiebreaker). If you
+have more than K flags in one round, the remainder are surfaced as an
+aggregate count and logged to the round file. Address the top items
+first; if fewer than K in the subsequent round, earlier overflow items
+will surface.
+
+**Disablement.** The channel is gated by `feedback_channel_enabled` in
+`bench/cdsfl_registry/universal.toml` (default `true`). Disabling is
+a controlled-ablation tool for research, not a user convenience. If the
+channel is disabled, you will see no feedback section and are expected
+to operate under §3 Bayesian update alone — accuracy will measurably
+degrade.
+
+(Feedback channel implemented 15 April 2026. Implementation:
+`bench/dm/_feedback.py`; wiring in `bench/reference_runner.py`
+`_dispatch_round_star()` and main loop. The channel closes the
+measurement-to-correction loop: the schema stops being a passive
+observer and starts being a corrective force, which is the entire
+point of CDSFL.)

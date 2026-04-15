@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 April 2026 19:06 BST
+Last updated: 15 April 2026 20:21 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,13 +21,59 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (15 April 2026 19:03 BST)
+## Current Pending Work (15 April 2026 ~20:xx BST)
 
-793 tests pass in 703s. Branch: `exp39-experimental`. 1 commit ahead of origin
-pending this sv. Latest landed commit: `8da9551` (sv: Tranches A/B/C recovery
-state, 15 April 00:47 BST).
+832 tests pass (793 existing + 39 new feedback-channel tests). Branch:
+`exp39-experimental`. 2 commits ahead of origin pending this sv. Latest
+landed commit: `a6ee7b4` (sv: Stage 6 + FFAFP admissibility set now in
+model-facing directives, 15 April 19:06 BST).
 
-**SESSION 15 APRIL — DIRECTIVE GAP CLOSURE (STAGE 6 + FFAFP):**
+**SESSION 15 APRIL EVENING — FEEDBACK CHANNEL (PHASE 10):**
+
+User insight: the schema already computes a rich per-finding signal each
+round (B-Cell verdicts, FFAFP admissibility, near-duplicate, R_k
+validation) but that signal was logged and discarded — models never saw
+it, so the same refuted claim could be resubmitted unchanged. User quote:
+"Measurement is nice. It's a nice to have. But the entire point of this
+project was to make LLM's more reliable, more trustworthy and more
+accurate. What is the point in this measurement if we don't use it for
+anything productive?"
+
+**Fix landed — feedback channel:**
+- NEW `bench/dm/_feedback.py` (533 lines) — `FindingFeedback` dataclass,
+  `build_feedback_records()`, `build_feedback_sections()`, tolerant
+  `parse_admissibility_block()`. Priority ordering: refutation >
+  admissibility > duplicate > R_k. Actions: RECALCULATE /
+  ADD_ADMISSIBILITY_OR_WITHDRAW / DIFFERENTIATE_OR_WITHDRAW /
+  RECALIBRATE_RK.
+- `bench/reference_runner.py` — wired into round loop (post-immune_result
+  at ~line 3808), feedback dict carries to next round's dispatch.
+  `RunnerConfig` gets 3 knobs. Defensive — build failures yield empty
+  dict, never crash the main loop.
+- `bench/directives/universal/cdsfl_operational.md` — NEW §17 (imperative
+  feedback-channel directive).
+- `bench/directives/universal/cdsfl_core_formal.md` — classification
+  summary table split: Stage 1 C(n), Stage 5–6 R_k(i), Stage 6 feedback
+  channel — with pointers to `_feedback.py`.
+- `bench/cdsfl_registry/universal.toml` — NEW `[feedback_channel]`
+  section (enabled=true, top_k=10, max_chars=8000, mode=imperative).
+- NEW `bench/tests/test_feedback_channel.py` — 39 tests across 5 classes,
+  all green. Full regression 832/832.
+
+Live-default, not shadow. The user's framing was structurally
+incompatible with indefinite shadowing. Toggle retained for controlled
+ablation via `[feedback_channel] enabled = false`.
+
+**LESSONS-FORWARD RELATED TO FEEDBACK CHANNEL:**
+- #4 (semantic novelty feedback) — NOW SUBSUMED. §17 carries duplicate
+  similarity back to the emitting model as imperative signal.
+- #6 (prior fix summary) — NOT yet subsumed. Feedback carries schema
+  judgment on findings, not the "here's what we fixed last round"
+  narrative. Separate work.
+- #10 (S_k format pre-check) — COMPLEMENTARY. Format-level pre-check
+  still pending; admissibility parser catches some of it.
+
+**SESSION 15 APRIL AFTERNOON — DIRECTIVE GAP CLOSURE (STAGE 6 + FFAFP):**
 
 User directive: "Yes and plug all remaining outstanding gaps both in the
 experiment 39 runner and in the CDSFL schema as a whole. (Including any stale
@@ -201,24 +247,34 @@ API overload after the ~580-line-edit 500 earlier in the day.
 - TTS: `~/Desktop/CDSFL_tts/Novelty_Scoring_nu_k_Design_2026-04-14.txt`
 
 **IMMEDIATE NEXT STEPS (consult HIL before proceeding):**
-0. **Push 4 local commits to origin** (trivial, zero-risk; branch is ahead)
+0. **Push 50 local commits to origin** (trivial, zero-risk; branch is ahead
+   48 + 2 from this session's directive work + feedback channel)
 1. Wire OpenRouter tool-use (add `tools` parameter to `call_openrouter()`)
 2. Wire DeepSeek specialist role (Phase 6) into pipeline
 3. Implement ν_k metric in O1 (Phase 7) — design complete, code pending
 4. Add Unpaywall + CORE + OpenAlex source adapters to O1
-5. Re-run Exp 39-0 gate test with all fixes in place (18 specialists now wired)
-6. Carry forward remaining 7 lessons from Exp 36-38
+5. Re-run Exp 39-0 gate test with all fixes in place (18 specialists
+   wired + feedback channel live)
+6. Carry forward remaining 6 lessons from Exp 36-38 (was 7; #4 subsumed
+   by feedback channel §17)
 7. Promote specialist dispatch from shadow to live — single-line flip at
    `reference_runner.py` ~3741. HIL decision; recommend one shadow-run
    divergence review first.
 
-**LESSONS-FORWARD AUDIT — 7 STILL MISSING:**
-4. Semantic novelty feedback (3 graduated signals from Exp 37)
+**LESSONS-FORWARD AUDIT — 6 STILL MISSING (was 7):**
+4. ~~Semantic novelty feedback (3 graduated signals from Exp 37)~~ ✅
+   **SUBSUMED 15 April 2026 evening.** The feedback channel (§17) carries
+   per-finding duplicate similarity back to the emitting model as
+   imperative signal: "NEAR-DUPLICATE: cosine X.XX to <prior_id>" with
+   action `DIFFERENTIATE_OR_WITHDRAW`. 3-tier graduation retained
+   implicitly via priority score (similarity × 2.0 contribution).
 6. Prior fix summary context (`_build_prior_fix_summary()` from Exp 37)
 7. Consolidation phase for final 3 rounds (Exp 36 Ground Truth, HIGH)
 8. Per-model ρ tracking with targeted ITC (Exp 36 Ground Truth, HIGH)
 9. Context windowing for long runs (Exp 36 Ground Truth, HIGH)
-10. S_k format pre-check with reformat request (Exp 38) — PARTIALLY ADDRESSED (format now accepted)
+10. S_k format pre-check with reformat request (Exp 38) — PARTIALLY
+    ADDRESSED (format accepted; §17 admissibility parser catches some
+    structural failures)
 11. Parser fixes P2/P3 — CC2 finding leak FIXED, Gemini verdict extraction still pending
 
 **FINGERPRINT GAP:** Attention metrics still null. DeepSeek fingerprint now has
@@ -266,11 +322,14 @@ on monolithic payload (~104K). Bootstrapping trap until specialist role or overr
   against the 14-tool manifest expansion. `universal.toml` FFAFP comment was
   touched this session (5-step protocol), but the manifest-expansion cross-check
   is still open. Low priority.
-- `bench/directives/universal/cdsfl_core_formal.md` §5 C(n) now carries a
+- ~~`bench/directives/universal/cdsfl_core_formal.md` §5 C(n) now carries a
   Stage-awareness blockquote but the downstream classification summary table
   (Section at end) still lists C(n) as the canonical corroboration model —
-  consider a table-row edit next pass. Cosmetic; the blockquote is sufficient
-  for correct model behaviour.
+  consider a table-row edit next pass.~~ ✅ **RESOLVED** this session
+  (feedback channel work, evening). Table now has three rows:
+  Stage 1 reference (C(n)), Stage 5–6 operational (R_k(i)), Stage 6
+  feedback channel — each with pointers to the relevant operational
+  section and source file.
 
 **Also pending:** Onboarding script redesign.
 <!-- SV:PENDING_END -->

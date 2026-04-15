@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 15 April 2026 19:06 BST
+Last updated: 15 April 2026 20:21 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,82 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **FEEDBACK CHANNEL — CLOSE THE MEASUREMENT-TO-CORRECTION LOOP (15 April 2026, 19:xx → 20:xx BST):**
+  Branch: `exp39-experimental`. 832 tests pass (was 793; +39 new feedback-channel
+  tests). 2 commits ahead of origin after this sv.
+
+  **User insight that triggered this session:** the schema performs rich
+  round-by-round calculation (B-Cell verdicts, FFAFP admissibility, NK-Cell
+  duplicate detection, R_k validation) but that signal was being logged and
+  discarded. Models never saw it, so the same refuted claim could be
+  resubmitted in the next round. Quote: "Measurement is nice. It's a nice
+  to have. But the entire point of this project was to make LLM's more
+  reliable, more trustworthy and more accurate. What is the point in this
+  measurement if we don't use it for anything productive, except for
+  knowing when the models got things wrong?"
+
+  **Fix landed — feedback channel (Phase 10):**
+
+  1. NEW `bench/dm/_feedback.py` (533 lines). `FindingFeedback` dataclass
+     captures per-finding schema judgment: refutations (tool + verdict +
+     evidence), admissibility failures (gate names), duplicates
+     (prior_id, cosine), R_k discrepancy (claimed vs aggregate).
+     `build_feedback_records()` merges four independent signals into one
+     record per flagged finding. `build_feedback_sections()` renders
+     per-model prompt prefixes with top-K cap (default 10) and
+     max-chars-per-model cap (default 8000). `parse_admissibility_block()`
+     is a tolerant regex parser — accepts σ or sigma, case-insensitive
+     PASS/FAIL, multiple separators; missing block → all 5 gates FAIL.
+     Priority: refutation > admissibility > duplicate > R_k, with severity
+     as tiebreak. Action: RECALCULATE / ADD_ADMISSIBILITY_OR_WITHDRAW /
+     DIFFERENTIATE_OR_WITHDRAW / RECALIBRATE_RK.
+
+  2. `bench/reference_runner.py` — wired into round loop. New
+     `_build_feedback_for_next_round()` helper runs after `immune_result`
+     is available (line ~3808). Output flows via
+     `feedback_sections_for_next_round` dict into `_dispatch_round_star`
+     for round K+1, where `_make_prompt(mc_label)` prepends the section
+     before the base prompt. Defensive: build failures return empty dict
+     rather than crash the loop. `RunnerConfig` gets three knobs:
+     `feedback_channel_enabled` (default True), `feedback_top_k` (10),
+     `feedback_max_chars_per_model` (8000).
+
+  3. `bench/directives/universal/cdsfl_operational.md` — NEW §17 (~90
+     lines). Frames the channel as imperative (MUST address), documents
+     action precedence, tells models they may refute a schema tool by
+     providing counter-receipts (not self-reported confidence),
+     resubmission of unchanged flagged findings is explicitly
+     inadmissible. Rendering boundary and disablement note included.
+
+  4. `bench/directives/universal/cdsfl_core_formal.md` — classification
+     summary table expanded: C(n) row split into three — Stage 1
+     reference (C(n)), Stage 5–6 operational (R_k(i)), Stage 6 feedback
+     channel (per-finding records) — with pointers to operational §3,
+     §16, §17 and `bench/dm/_feedback.py`.
+
+  5. `bench/cdsfl_registry/universal.toml` — NEW `[feedback_channel]`
+     section (enabled=true, top_k=10, max_chars_per_model=8000,
+     mode="imperative"). `[constraints]` FFAFP comment refreshed to
+     mention §17 routing.
+
+  6. NEW `bench/tests/test_feedback_channel.py` (39 tests across 5
+     classes: TestPriorityAndAction, TestBuildFeedbackRecords,
+     TestBuildFeedbackSections, TestParseAdmissibility, TestFullPipeline).
+     All 39 green; full regression green (832 total).
+
+  **Design decisions worth remembering:**
+
+  - Live-default, not shadow-first. The user's framing (measurement for
+    its own sake is wasted) is structurally incompatible with indefinite
+    shadow mode. Toggle retained for controlled ablation.
+  - Imperative, not advisory wording. "MUST address" — there is no
+    self-reported-confidence escape hatch.
+  - No schema math changes. No new convergence thresholds. Pure plumbing
+    from data already on the floor.
+  - The admissibility parser is permissive by design (matches existing
+    `runner_core.py:333` convention). Enforcement lives downstream; the
+    parser just classifies for §17 feedback.
+
 - **MODEL-FACING DIRECTIVE GAP CLOSURE — STAGE 6 + FFAFP (15 April 2026, 14:xx → 19:03 BST):**
   Branch: `exp39-experimental`. 793 tests pass in 703s (11m 43s). 1 commit ahead of
   origin after this sv. User directive: "plug all remaining outstanding gaps both
