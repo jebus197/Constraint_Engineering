@@ -744,3 +744,88 @@ degrade.
 measurement-to-correction loop: the schema stops being a passive
 observer and starts being a corrective force, which is the entire
 point of CDSFL.)
+
+---
+
+## §18 Divergence Directive
+
+Popper's method has two arms: **bold conjectures** and **severe tests**.
+CDSFL's severe-tests arm is highly developed — the falsification pipeline,
+the admissibility gates, cross-model corroboration, and the §17 feedback
+channel all serve it. The bold-conjectures arm has until now been
+implicit, inherited from whatever the models happen to produce unprompted.
+That asymmetry is arbitrary. This section closes it.
+
+**Per every non-trivial finding, you must supply one of the following two
+structures:**
+
+**Structure A — Primary solution plus ≥1 alternative.** The alternative
+must differ from the primary on at least one of these named dimensions,
+and the dimension must be declared explicitly in the alternative block:
+
+1. **Mechanism** — a different physical, mathematical, or algorithmic
+   pathway to the same outcome.
+2. **Assumption** — a different premise, axiom, or modelling choice,
+   named and contrasted with the primary's.
+3. **Scope** — a different range of applicability (broader, narrower,
+   different regime, different boundary).
+4. **Timescale** — a different temporal horizon, rate, or ordering
+   (asymptotic vs transient, fast vs slow, causal vs synchronic).
+5. **Tradeoff** — a different balance of cost, risk, precision,
+   generality, or other resource — named and quantified where possible.
+
+**Structure B — Primary solution plus scoped null-alternative
+justification.** If you have genuinely searched the alternative space
+and cannot identify a distinct alternative that passes the isomorphism
+check, you must state so explicitly and supply a justification that
+names *the search space you considered, the candidates you rejected,
+and the reason each rejected candidate collapsed to the primary*. This
+is analogous to the anti-deference `null_find_requires_scoped_justification`
+protocol. Bare declarations ("no alternative exists") are inadmissible.
+
+**Cosmetic rewordings are rejected.** The R_k validator applies an
+isomorphism check to the alternative text. If the alternative differs
+from the primary only in surface wording — same mechanism, same
+assumptions, same scope, same trade — it is isomorphic and the finding
+is treated as having supplied no alternative. An isomorphic alternative
+does not earn novelty credit and counts as a null-alternative submission
+without the required justification (double penalty).
+
+**Dimension of difference is non-optional.** An alternative without a
+declared dimension is parsed as cosmetic. Tag the dimension in the
+alternative block header.
+
+**Rendering boundary.** Alternatives are capped at
+`max_chars_per_alternative` (default 2000) per alternative, and at
+`min_alternatives` (default 1) per finding. The model may supply more
+than the minimum; additional alternatives are welcomed and count toward
+`nu_k` (novelty yield) provided each passes the isomorphism check
+against both the primary *and* all other alternatives in the same
+finding.
+
+**Interaction with HARD constraints.** The divergence directive operates
+exclusively inside SOFT-constraint space. HARD constraints (physics,
+mathematics, law, safety) remain inviolable for the primary *and* every
+alternative. An alternative that violates HARD constraints is rejected
+at admissibility, not at isomorphism.
+
+**Interaction with §17 feedback.** If a prior-round alternative was
+refuted by the schema and resurfaces unchanged in the current round, it
+is treated as a resubmitted flagged finding per §17 — inadmissible,
+dropped, no credit. You may refine a refuted alternative and resubmit
+the refined version; the refinement must address the prior refutation.
+
+**Disablement.** The directive is gated by `divergence_enabled` in
+`bench/cdsfl_registry/universal.toml` (default `true`). Disabling is
+a controlled-ablation tool for research, not a user convenience. If the
+directive is disabled, you will see no mandate for alternatives and are
+expected to operate under §3 Bayesian update alone — novelty yield
+(`nu_k`) will measurably decline and the framework reverts to pure
+error-correction mode.
+
+(Divergence directive added 15 April 2026. Implementation:
+`bench/dm/_divergence.py`; validator extension in
+`bench/reference_runner.py` R_k pipeline. The directive closes the
+generation-side gap: the schema stops being a pure critic and starts
+being an invention engine. This is the missing symmetry in Popper's
+arms and the reason CDSFL was built.)

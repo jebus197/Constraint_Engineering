@@ -1,29 +1,35 @@
 # CDSFL Current State
 
-Generated: 15 April 2026 21:13 BST (2026-04-15T21:13:27+01:00)
+Generated: 15 April 2026 22:49 BST (2026-04-15T22:49:28+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `52391aa` fix: add missing feedback-channel artefacts referenced by f29d0e9
-- **Committed:** 2026-04-15 20:22:34 +0100
-- **Remote:** ahead by 50
+- **Last commit:** `81cfb97` sv: sv-script auto-staging fix + plain-English feedback channel docs
+- **Committed:** 2026-04-15 21:13:27 +0100
+- **Remote:** ahead by 51
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
+- `M bench/cdsfl_registry/schema.toml`
+- `M bench/cdsfl_registry/universal.toml`
+- `M bench/directives/universal/cdsfl_core_formal.md`
+- `M bench/directives/universal/cdsfl_operational.md`
 - `M bench/logs/immune_pipeline.log`
-- `M scripts/cdsfl_sv.py`
-- `?? bench/tests/test_sv_commit.py`
-- `?? experimental_notes/Error_Correction_Granularity_2026-04-15.md`
-- `?? experimental_notes/Feedback_Channel_Explanation_2026-04-15.md`
+- `M resources/ONBOARDING.md`
+- `M resources/RECOVERY.md`
+- `?? bench/dm/_divergence.py`
+- `?? bench/tests/test_divergence_directive.py`
+- `?? experimental_notes/Divergence_Directive_Implementation_2026-04-15.md`
+- `?? experimental_notes/Invention_Engine_Divergence_Directive_2026-04-15.md`
 
 ---
 
 ## Tests
 
-**860 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
+**912 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
 
 ---
 
@@ -49,6 +55,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `81cfb97 sv: sv-script auto-staging fix + plain-English feedback channel docs`
 - `52391aa fix: add missing feedback-channel artefacts referenced by f29d0e9`
 - `f29d0e9 sv: feedback channel (Phase 10) — measurement-to-correction loop closed`
 - `a6ee7b4 sv: Stage 6 + FFAFP admissibility set now in model-facing directives`
@@ -58,4 +65,3 @@ Uncommitted files:
 - `6838160 Tranche A: housekeeping — crosshair note fix + sv sequential-reading protocol`
 - `d9f8f82 chore: commit Stage 6 confer residuals from prior session`
 - `00abd52 sv: Domain tool wiring — 9 B-Cell specialist wrappers, 5 TOMLs, 793 tests green (inc. residual Stage 6 runner/ouroboros diagnostics)`
-- `532a890 sv: Stage 6 two-dimensional (nu_k, c_ext) confer R2 — 8 corrections, shadow calibrator hooked`

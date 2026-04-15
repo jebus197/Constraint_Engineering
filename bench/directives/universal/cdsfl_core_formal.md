@@ -305,6 +305,7 @@ mathematical representation. Formalising them would be false rigour.
 | Corroboration model (Stage 1, reference) | Geometric probability: C(n) = 1−(1−p)^n | Yes |
 | Residual-risk model (Stage 5–6, operational) | Recursive R_k(i) with η·d·p, S_k, ν_eff, η_combined via ν_k & c_ext — see `cdsfl_operational.md` §3, §16 and `docs/MATHEMATICAL_APPENDIX.md` §1.1 | Yes |
 | Feedback channel (Stage 6, operational) | Per-finding feedback records (refutations, admissibility, duplicates, R_k discrepancies) prepended to round K+1 prompt — see `cdsfl_operational.md` §17 and `bench/dm/_feedback.py` | Yes |
+| Divergence directive (Stage 6, operational) | Primary finding + ≥1 alternative differing on a named dimension (mechanism / assumption / scope / timescale / tradeoff), or scoped null-justification; isomorphism check penalises cosmetic rewording — see `cdsfl_operational.md` §18 and `bench/dm/_divergence.py` | Yes |
 | Extended P-Pass | DAG with isolation constraint | Yes |
 | Falsification survival | Predicate over pass sequence | Yes |
 | Epistemic marking | Classification function with consolidation | Yes |

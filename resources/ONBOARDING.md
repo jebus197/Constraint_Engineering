@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 15 April 2026 21:13 BST
+Last updated: 15 April 2026 22:49 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,87 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **DIVERGENCE DIRECTIVE — CDSFL'S BOLD-CONJECTURES ARM (15 April 2026, ~22:40 BST):**
+  Branch: `exp39-experimental`. 912 tests pass (was 832; +28 sv-script fix tests
+  from earlier today, +52 new divergence-directive tests).
+
+  **User framing (scoping memo `experimental_notes/Invention_Engine_Divergence_Directive_2026-04-15.md`):**
+  CDSFL was built as an "invention engine", framed against the Lance McLane
+  sci-fi cartoon strip that ended unresolved. Popper's method has two arms —
+  bold conjectures and severe tests. The severe-tests arm (§17 feedback
+  channel, FFAFP admissibility, cross-model corroboration, tool enforcement)
+  is highly developed. The bold-conjectures arm was implicit. §18 closes the
+  asymmetry.
+
+  **Fix landed — divergence directive (§18):**
+
+  1. NEW `bench/dm/_divergence.py` (443 lines). `ALLOWED_DIMENSIONS` tuple
+     fixes the five allowed dimensions of difference — mechanism, assumption,
+     scope, timescale, tradeoff — with a synonym normaliser that maps
+     variants (e.g. `premise` → `assumption`, `trade-off` → `tradeoff`).
+     `DivergenceConfig` dataclass carries runtime knobs. `AlternativeRecord`
+     / `DivergenceRecord` dataclasses capture per-alternative and per-finding
+     audits. `parse_alternative_block()` accepts multiple header styles
+     (inline parenthetical / bracket tags, dash tags, follow-up
+     `Dimension:` lines, bold markdown, `#` headings). `score_isomorphism()`
+     is Jaccard over normalised token sets (embedding backend deferred to
+     Exp 39 Phase 2). `validate_alternative()` enforces dimension presence,
+     length cap, isomorphism threshold (default 0.85), reporting every
+     failure. `parse_null_justification_block()` extracts scoped null
+     alternatives. `validate_null_justification()` enforces minimum length
+     floor (default 60 chars). `build_divergence_record()` assembles the
+     per-finding audit and sets `compliant = True` iff
+     `min_alternatives` (default 1) admissible alternatives survive OR a
+     valid null-justification is supplied. `divergence_penalty_multiplier()`
+     returns a scalar in (0, 1]: 1.0 (compliant), 0.85 (engaged-but-failed),
+     0.70 (no engagement), 0.60 (isomorphic-only — double penalty per §18).
+
+  2. `bench/directives/universal/cdsfl_operational.md` — NEW §18 (~90
+     lines). Imperative mandate. Frames the gap (Popper's missing arm),
+     lists the five allowed dimensions, defines Structure A
+     (primary + alternative on named dimension) and Structure B
+     (primary + scoped null-justification), rejects cosmetic rewordings
+     with isomorphism check and double penalty, declares that divergence
+     operates only in SOFT-constraint space (HARD constraints inviolable
+     for primary and every alternative), declares interaction with §17
+     (refuted alternatives resurfaced unchanged are inadmissible).
+     Disablement gated via `[divergence] enabled = false` for controlled
+     ablation only.
+
+  3. `bench/directives/universal/cdsfl_core_formal.md` — classification
+     summary table, new row for divergence directive pointing to
+     `cdsfl_operational.md` §18 and `bench/dm/_divergence.py`.
+
+  4. `bench/cdsfl_registry/universal.toml` — NEW `[divergence]` section
+     (enabled=true, min_alternatives=1, max_chars_per_alternative=2000,
+     mode=imperative, isomorphism_threshold=0.85,
+     null_justification_min_chars=60).
+
+  5. `bench/cdsfl_registry/schema.toml` — 6 `[divergence.*]` parameter
+     entries registered (same pattern as §17 Phase 10 fix; policy engine
+     now recognises the new block and will not reject it on load).
+
+  6. NEW `bench/tests/test_divergence_directive.py` — 52 tests across 9
+     classes (TestAllowedDimensions, TestParseAlternativeBlock,
+     TestIsomorphismScoring, TestValidateAlternative,
+     TestParseNullJustification, TestBuildDivergenceRecord,
+     TestDivergencePenalty, TestDisabledDirective, TestConfigFromDict).
+     All 52 green on first real run. Full regression **912/912**.
+
+  **Live-default, not shadow.** Mirrors §17 decision — the directive is
+  the point of CDSFL, not an experimental add-on. Toggle retained for
+  controlled ablation.
+
+  **R_k wiring deliberately deferred.** `divergence_penalty_multiplier()`
+  is exposed as a library function but not yet applied inside
+  `compute_rk()`. Reason: the scoping memo recommends sequencing the
+  work after the Exp 39 baseline so each intervention's signal stays
+  attributable. Wire it in once baseline data arrives.
+
+  Companion implementation summary (plain English +
+  TTS): `experimental_notes/Divergence_Directive_Implementation_2026-04-15.md`
+  and mirror on `~/Desktop/CDSFL_tts/`.
+
 - **FEEDBACK CHANNEL — CLOSE THE MEASUREMENT-TO-CORRECTION LOOP (15 April 2026, 19:xx → 20:xx BST):**
   Branch: `exp39-experimental`. 832 tests pass (was 793; +39 new feedback-channel
   tests). 2 commits ahead of origin after this sv.

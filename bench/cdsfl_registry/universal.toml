@@ -55,3 +55,16 @@ enabled = true
 top_k = 10                       # max detailed flags per model per round
 max_chars_per_model = 8000       # hard cap on rendered section size
 mode = "imperative"              # imperative = MUST address; advisory = SHOULD address
+
+[divergence]
+# cdsfl_operational.md §18 — generator-side directive: every non-trivial
+# finding must supply ≥1 alternative on a named dimension (mechanism /
+# assumption / scope / timescale / tradeoff), or a scoped null-justification.
+# Defaults ON — CDSFL's invention-engine arm. Disable only for controlled
+# ablation. Implementation: bench/dm/_divergence.py.
+enabled = true
+min_alternatives = 1                    # required per non-trivial finding
+max_chars_per_alternative = 2000        # hard cap per alternative block
+mode = "imperative"                     # imperative = MUST; advisory = SHOULD
+isomorphism_threshold = 0.85            # Jaccard score >= this = cosmetic reject
+null_justification_min_chars = 60       # floor for scoped null-alternative rationale

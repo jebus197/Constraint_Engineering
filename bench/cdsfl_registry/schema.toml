@@ -511,6 +511,53 @@ description = "Directive strength — imperative (MUST address) or advisory (SHO
 allowed_values = ["imperative", "advisory"]
 
 # =============================================================================
+# [divergence] — cdsfl_operational.md §18: generator-side invention directive
+# =============================================================================
+
+[divergence.enabled]
+type = "bool"
+default = true
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Enable the divergence directive (§18). Live default; disable only for controlled ablation."
+
+[divergence.min_alternatives]
+type = "int"
+default = 1
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum alternatives required per non-trivial finding (null-justification substitutes)."
+
+[divergence.max_chars_per_alternative]
+type = "int"
+default = 2000
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Hard cap on per-alternative block size to prevent prompt blow-up."
+
+[divergence.mode]
+type = "enum"
+default = "imperative"
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Directive strength — imperative (MUST supply) or advisory (SHOULD supply)."
+allowed_values = ["imperative", "advisory"]
+
+[divergence.isomorphism_threshold]
+type = "float"
+default = 0.85
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Jaccard similarity above which alternative is treated as cosmetic isomorphism (rejected)."
+
+[divergence.null_justification_min_chars]
+type = "int"
+default = 60
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum character length for scoped null-alternative justification block."
+
+# =============================================================================
 # [model] — model-specific settings (Layer 4 only)
 # =============================================================================
 

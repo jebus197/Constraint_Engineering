@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 April 2026 21:13 BST
+Last updated: 15 April 2026 22:49 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,12 +21,71 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (15 April 2026 ~20:xx BST)
+## Current Pending Work (15 April 2026 ~22:40 BST)
 
-832 tests pass (793 existing + 39 new feedback-channel tests). Branch:
-`exp39-experimental`. 2 commits ahead of origin pending this sv. Latest
-landed commit: `a6ee7b4` (sv: Stage 6 + FFAFP admissibility set now in
-model-facing directives, 15 April 19:06 BST).
+912 tests pass (832 prior baseline + 28 sv-script fix tests + 52 new
+divergence-directive tests). Branch: `exp39-experimental`. Pending this
+sv: the §18 Divergence Directive work described below.
+
+**SESSION 15 APRIL LATE — DIVERGENCE DIRECTIVE (§18):**
+
+Scoping memo: `experimental_notes/Invention_Engine_Divergence_Directive_2026-04-15.md`.
+Implementation summary: `experimental_notes/Divergence_Directive_Implementation_2026-04-15.md`.
+
+User request: CDSFL was built as an "invention engine" — the severe-tests
+arm is heavily developed (§17 feedback channel, FFAFP admissibility,
+cross-model corroboration, tool enforcement) but the bold-conjectures arm
+is implicit. Close the asymmetry. Every non-trivial finding must now
+supply either (a) ≥1 alternative on a named dimension — mechanism,
+assumption, scope, timescale, or tradeoff — or (b) a scoped null-
+alternative justification analogous to `anti_deference.null_find_requires
+_scoped_justification`. Cosmetic rewordings are rejected by an
+isomorphism check and incur a double penalty.
+
+**Files landed this session:**
+- NEW `bench/dm/_divergence.py` (443 lines) — `ALLOWED_DIMENSIONS` set,
+  `DivergenceConfig`/`AlternativeRecord`/`DivergenceRecord` dataclasses,
+  `parse_alternative_block()`, `parse_null_justification_block()`,
+  `score_isomorphism()` (Jaccard MVP), `validate_alternative()`,
+  `validate_null_justification()`, `build_divergence_record()`,
+  `divergence_penalty_multiplier()`, `divergence_config_from_dict()`.
+- `bench/directives/universal/cdsfl_operational.md` — NEW §18 (~90 lines,
+  imperative divergence directive).
+- `bench/directives/universal/cdsfl_core_formal.md` — classification
+  summary table, new row for divergence directive pointing to §18 and
+  `_divergence.py`.
+- `bench/cdsfl_registry/universal.toml` — NEW `[divergence]` block
+  (enabled=true, min_alternatives=1, max_chars_per_alternative=2000,
+  mode=imperative, isomorphism_threshold=0.85,
+  null_justification_min_chars=60).
+- `bench/cdsfl_registry/schema.toml` — 6 `[divergence.*]` parameter
+  entries registered (enabled, min_alternatives, max_chars_per_alternative,
+  mode, isomorphism_threshold, null_justification_min_chars).
+- NEW `bench/tests/test_divergence_directive.py` — 52 tests across 7
+  classes (TestAllowedDimensions, TestParseAlternativeBlock,
+  TestIsomorphismScoring, TestValidateAlternative,
+  TestParseNullJustification, TestBuildDivergenceRecord,
+  TestDivergencePenalty, TestDisabledDirective, TestConfigFromDict).
+
+**Penalty tiers** (exposed via `divergence_penalty_multiplier()`, not yet
+wired into `compute_rk()` — deferred by design for Exp 39 baseline
+measurement):
+- compliant finding → 1.0
+- engaged-but-failed (missing dim / short null) → 0.85
+- no engagement at all → 0.70
+- isomorphic rewording only → 0.60 (double penalty per §18)
+
+Live-default, not shadow — matches §17 decision. Toggle retained for
+controlled ablation via `[divergence] enabled = false`.
+
+**Sequencing for Exp 39 / Exp 40:**
+1. Run Exp 39 with §17 live, §18 prompt-directive live but penalty
+   unwired → baseline for measurement-to-correction *and* divergence
+   prompt effect together.
+2. Optionally split: Exp 39a (prompt only) vs Exp 39b (prompt + penalty)
+   to isolate the penalty contribution to R_k if signal is ambiguous.
+3. Measure `nu_k` (novelty yield) delta, `R_k` delta, convergence-rounds
+   delta, novel-AND-survived ratio.
 
 **SESSION 15 APRIL EVENING — FEEDBACK CHANNEL (PHASE 10):**
 
