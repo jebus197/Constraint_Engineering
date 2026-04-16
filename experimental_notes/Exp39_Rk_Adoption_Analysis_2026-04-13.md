@@ -4,6 +4,8 @@
 **Experiments compared:** 37 (~100% adoption) vs 39-0 (oscillating, partial adoption)
 **Method:** 4-agent forensic investigation — prompt path tracing (×2), raw output comparison, context budget analysis
 
+R_k(i) below denotes the iterative residual-risk self-assessment after round i. CC2 denotes the Claude Opus 4.6 CLI instance.
+
 ---
 
 ## 1. The Core Question
@@ -103,11 +105,11 @@ Add ANALYSE, FALSIFICATION, and CORROBORATION to `reference_runner.py` `_build_p
 ```python
 "  ANALYSE: classify constraint as HARD or SOFT, state CONFIRMED/UNCERTAIN/REJECTED\n"
 "  FIX: the simplest sufficient correction (for CONFIRMED findings only)\n"
-"  FALSIFICATION: (MANDATORY) state the falsifier, your attempt to satisfy it, "
+"  FALSIFICATION: (MANDATORY) state the falsifier, the attempt to satisfy it, "
 "and the result. Findings without this section will be rejected.\n"
-"  CORROBORATION: (MANDATORY) compute your residual risk R_k using the "
+"  CORROBORATION: (MANDATORY) compute residual risk R_k using the "
 "self-assessment equation in the operational directive. Show R_old, "
-"your numerical estimates for η, d, p, σ, ν, and the resulting R_k. "
+"numerical estimates for η, d, p, σ, ν, and the resulting R_k. "
 "Qualitative-only assessment will be flagged.\n\n"
 ```
 

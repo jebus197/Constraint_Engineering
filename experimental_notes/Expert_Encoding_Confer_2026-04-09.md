@@ -1,8 +1,10 @@
 # Expert Encoding Confer Synthesis — 9 April 2026
 
-Two confers dispatched to **Codex GPT-5.4** and **Gemini 3.1 Pro** under full CDSFL 4-layer schema.
+Two confers (cross-model adversarial review sessions) were dispatched to **Codex GPT-5.4** (OpenAI via OpenRouter) and **Gemini 3.1 Pro** (Google) under the full CDSFL (Constraint-Driven Synthesis and Falsification) 4-layer schema.
 
 ## Confer 1: Expert Encoding S_k Gates
+
+S_k is the tool-verified solution-reliability score, computed from hard admissibility gates and graded effect-evidence gates.
 
 ### Mandatory Template Fixes (converged, both models)
 
@@ -14,10 +16,10 @@ Two confers dispatched to **Codex GPT-5.4** and **Gemini 3.1 Pro** under full CD
 
 ### Architectural Findings
 
-- **Tristate** (Codex): ADMISSIBLE / REJECTED / ESCALATE. Distinguishes "demonstrated bad" from "incomplete information." Significant — currently conflated.
+- **Tristate** (Codex): ADMISSIBLE / REJECTED / ESCALATE — three verdict states for proposed fixes. Distinguishes "demonstrated bad" from "incomplete information." Significant — currently conflated.
 - **Epistemological boundary** (Gemini): $S_k$ evaluates tool outcomes, not ground truth. High $S_k$ = absence of known failure modes, not absence of all failure modes.
 - **Environment state corruption** (Gemini): If gate $g_1$ modifies filesystem, $g_2$ evaluates corrupted state. Template ignores this.
-- **Tool determinism over-specified** (Codex): SAT solvers, FE solvers are "reproducible," not "deterministic." Template would exclude legitimate tools.
+- **Tool determinism over-specified** (Codex): SAT (boolean satisfiability) solvers and FE (finite-element) solvers are "reproducible," not "deterministic." Template would exclude legitimate tools.
 - **Timeout handling** (Gemini): Long-running tools killed at timeout register as $A=0$. Need per-domain $t_{\max}$ with timeout → UNVERIFIED, not hard fail.
 
 ### Python Reference Fixes

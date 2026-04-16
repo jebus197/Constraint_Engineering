@@ -9,11 +9,11 @@
 
 Hossenfelder demonstrated that OpenAI's claimed solutions to ten Erdős problems were rediscoveries of existing literature. Two key insights: (1) AI is currently best understood as a discovery tool — excellent at "finding the PDF" but weak at genuine logical reasoning; (2) novelty without falsifiability is scientifically worthless.
 
-This raised the question: can the CDSFL pipeline distinguish genuinely novel findings from rediscoveries?
+This raised the question: can the CDSFL (Constraint-Driven Synthesis and Falsification) pipeline distinguish genuinely novel findings from rediscoveries?
 
 ## ν_k Metric Design
 
-Per-finding novelty score, ν_k ∈ [0, 1]:
+Per-finding novelty score, ν_k (the literature-novelty score), in the interval [0, 1]:
 
 | Range | Interpretation |
 |-------|---------------|
@@ -29,10 +29,10 @@ Computed by O1 (Ouroboros) cell via literature search. Sources: arXiv, Semantic 
 
 ### η Decomposition
 
-The existing three-phase R_k model (Stage 5) includes η (novelty coefficient). η decomposes into:
+The existing three-phase R_k(i), the iterative residual-risk self-assessment after round i, model (Stage 5, the prior mathematical framework) includes η (the novelty coefficient). η decomposes into:
 
-- **η_int**: internal novelty (within-session, from `_finding_similarity()`)
-- **ν_k** (= η_ext): external novelty (against-literature, from O1 search)
+- **η_int** (the internal novelty score): within-session, from `_finding_similarity()`
+- **ν_k** (= η_ext): external novelty (against-literature, from O1, the Ouroboros literature-search cell)
 
 **Composition formula:**
 
@@ -40,7 +40,7 @@ The existing three-phase R_k model (Stage 5) includes η (novelty coefficient). 
 η_combined = η_int · (1 − c_ext · (1 − ν_k))
 ```
 
-Where `c_ext` ∈ [0, 1] is coverage confidence of the literature search.
+Where `c_ext` (the literature-search quality coefficient), in [0, 1], is the coverage confidence of the literature search.
 
 ### Boundary Conditions (SymPy + Wolfram verified)
 

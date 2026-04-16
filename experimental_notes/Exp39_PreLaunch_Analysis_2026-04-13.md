@@ -38,7 +38,7 @@ The internal sub-agents caught serialisation failures (Finding field truncation,
 
 ## PE HARD Constraint Enforcement — P-Pass Falsification
 
-Three external models (CC2, ChatGPT, DeepSeek) flagged that `ffafp_required` and `structured_reasoning_required` are declared as HARD constraints in the PE schema but lack runtime output validation in the immune pipeline. The Explore agent confirmed no model output validation exists.
+Three external models (CC2 — the Claude Opus 4.6 CLI instance, ChatGPT, DeepSeek) flagged that `ffafp_required` and `structured_reasoning_required` are declared as HARD constraints in the PE (PolicyEngine) schema but lack runtime output validation in the immune pipeline. The Explore agent confirmed no model output validation exists.
 
 **P-pass of the "this is a blocker" claim:**
 
@@ -46,7 +46,7 @@ Three external models (CC2, ChatGPT, DeepSeek) flagged that `ffafp_required` and
 
 2. **Runtime output validation is a separate capability.** The three models reasoned from "HARD = must be enforced at runtime." That interpretation is strict but doesn't match the PE's actual design contract. The PE enforces policy composition rules, not model output compliance.
 
-3. **Prompt compliance ≠ runtime enforcement for LLMs.** Models are probabilistic. The `four_layer` pattern correctly instructs models to use FFAFP and structured reasoning (verified in composer.py lines 773-799). Whether they follow it perfectly is what the immune pipeline assesses via substance validation (B-Cell: mathematical claims, CT: code claims), not format validation.
+3. **Prompt compliance ≠ runtime enforcement for LLMs.** Models are probabilistic. The `four_layer` pattern correctly instructs models to use FFAFP (Find, Follow, Analyse, Fix, P-pass — the 5-step falsification protocol) and structured reasoning (verified in composer.py lines 773-799). Whether they follow it perfectly is what the immune pipeline assesses via substance validation (B-Cell: mathematical claims, CT: code claims), not format validation.
 
 4. **Hard rejection of non-FFAFP output would break experiments.** If the pipeline rejected every finding that didn't contain explicit FIND/FOLLOW/ANALYSE/FIX/P-PASS markers, rejection rates would be catastrophic. DeepSeek and ChatGPT routinely produce valid findings in their preferred format. The immune pipeline correctly validates whether claims are *true*, not whether they were *presented in a specific format*.
 
@@ -54,13 +54,13 @@ Three external models (CC2, ChatGPT, DeepSeek) flagged that `ffafp_required` and
 
 **Verdict:** Not a launch blocker. HARD constraint monotonicity is correctly enforced at the configuration level. Runtime output format validation is a design-level enhancement (soft format scoring, not hard rejection) suitable for a future Phase B implementation.
 
-**Residual risk:** Findings may not always contain explicit FFAFP reasoning chains. This means the *audit trail* is sometimes weaker than intended — you can see the conclusion but not always the derivation path. This affects reviewability, not correctness.
+**Residual risk:** Findings may not always contain explicit FFAFP reasoning chains. This means the *audit trail* is sometimes weaker than intended — the conclusion is visible but not always the derivation path. This affects reviewability, not correctness.
 
 ## Residual Risks for 39-0
 
-1. **Burst mode checkpoint gap** (Codex finding, deferred): burst mode phase state is not checkpointed before HIL pause. Not relevant for 39-0 (`burst_mode=off`). Must be fixed before any burst-mode run.
+1. **Burst mode checkpoint gap** (Codex finding, deferred): burst mode phase state is not checkpointed before HIL (human-in-the-loop) pause. Not relevant for 39-0 (`burst_mode=off`). Must be fixed before any burst-mode run.
 
-2. **Three unread sub-agent streams:** CC2 runner review, DM convergence review, and launch sequencer+PE review completed but results were lost to compaction. Practical risk is low given corroboration coverage from the other 7 streams, but any unique finding from those three is a known unknown.
+2. **Three unread sub-agent streams:** the CC2 runner review, DM (directed messaging) convergence review, and launch sequencer + PE review completed but their results were lost to compaction. Practical risk is low given corroboration coverage from the other 7 streams, but any unique finding from those three is a known unknown.
 
 3. **HIL round visibility:** Gemini noted in the prior readiness confer that round reports present counts only. HIL reviewers get summary statistics, not per-finding detail within the round report. Finding detail is available in per-round JSON files but requires manual inspection.
 
@@ -70,6 +70,6 @@ Three external models (CC2, ChatGPT, DeepSeek) flagged that `ffafp_required` and
 
 All 11 identified blockers are fixed and committed (2279adb). 793/793 tests pass. The PE HARD constraint enforcement concern is P-pass falsified as a design enhancement, not a launch blocker. Burst mode gap is irrelevant for 39-0. The three unread sub-agent streams are a known unknown with low practical risk.
 
-The only remaining question is whether to re-run the 5-panel review to confirm GO. The user's requirement was: "Only when the verdict comes back as 'Go' on all counts will we start Exp 39." The original verdict was NO-GO from all 10 streams. All blockers are fixed, but no model has re-confirmed GO.
+The only remaining question is whether to re-run the 5-panel review to confirm GO. The founder's requirement was: "Only when the verdict comes back as 'Go' on all counts will we start Exp 39." The original verdict was NO-GO from all 10 streams. All blockers are fixed, but no model has re-confirmed GO.
 
 **Recommendation:** Either (a) run a quick re-review focused on the 11 fixed items to confirm GO, or (b) accept the fix-verified + 793-test-pass evidence as sufficient for 39-0 launch. The infrastructure gate is, by design, the experiment that catches remaining issues.

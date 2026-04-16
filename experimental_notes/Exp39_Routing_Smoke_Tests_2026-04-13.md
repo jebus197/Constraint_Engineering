@@ -3,6 +3,8 @@
 **Date:** 13 April 2026 22:23 BST  
 **Context:** Post-confound fixes, pre-relaunch from R2
 
+CC2 below denotes the Claude Opus 4.6 CLI instance. R_k denotes the iterative residual-risk self-assessment.
+
 ---
 
 ## Changes Tested
@@ -72,13 +74,13 @@ Replaced `shadow_mock` in `_fetch_metadata()` with real arXiv and Semantic Schol
 
 ## Killer T-Cell Proposal — P-Pass Analysis
 
-**Proposal:** Repurpose DeepSeek direct API as security scanner using VX-Underground/VirusShare/MalwareBazaar.
+**Proposal (from the founder):** Repurpose DeepSeek direct API as security scanner using VX-Underground / VirusShare / MalwareBazaar.
 
 **P-pass findings:**
 
-1. **Biological mapping inverted.** CD8+ T-cells detect internal compromise (MHC Class I antigen presentation), not external threats. External database scanning maps to innate immunity (TLR-PAMP matching).
-2. **Wrong databases.** VX-Underground/VirusShare/MalwareBazaar are binary malware archives. Cannot hash-match Python source. Tools that would help: GuardDog (YARA source patterns), OSV.dev (known vulnerabilities).
-3. **Pipeline already has CT cell.** Cytotoxic T-Cell (Stage 2a) already implemented in `immune_agents.py`. Pipeline has 9 components; shadow cells not yet proven.
+1. **Biological mapping inverted.** CD8+ T-cells detect internal compromise (MHC Class I antigen presentation), not external threats. External database scanning maps to innate immunity (TLR-PAMP — Toll-Like Receptor / Pathogen-Associated Molecular Pattern matching).
+2. **Wrong databases.** VX-Underground / VirusShare / MalwareBazaar are binary malware archives. Cannot hash-match Python source. Tools that would help: GuardDog (YARA source patterns), OSV.dev (known vulnerabilities).
+3. **Pipeline already has CT (cytotoxic T-cell) cell.** Cytotoxic T-Cell (Stage 2a) already implemented in `immune_agents.py`. Pipeline has 9 components; shadow cells not yet proven.
 
 **Resolution:** Deep verification specialist role (Option A) + security tools in endocrine layer (Option B, deferred). No new immune cell types.
 

@@ -3,20 +3,20 @@
 **Date:** 11 April 2026
 **Experiment:** Ouroboros — system self-review of `bench/reference_runner.py`
 **Duration:** 8 hours 12 minutes, 24 rounds, wall clock cap termination
-**Panel:** 5 models (ChatGPT, CC2, Codex, Gemini, DeepSeek), star topology
+**Panel:** 5 models (ChatGPT GPT-5.4, CC2 Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro, DeepSeek Reasoner), star topology
 **Terminal state:** 545 raw findings, 169 canonical, gamma 0.510, never converged
 
 ---
 
 ## What the Experiment Was
 
-Experiment 38 was the system reviewing itself. Five frontier models examined the reference runner, the central orchestration code for the entire CDSFL bench. The runner contains the convergence logic, the finding lifecycle, the ITC adaptive recovery, the burst mode decomposition, the S_k verification pipeline, and the convergence gate. It is the single largest and most complex file in the repository.
+Experiment 38 was the system reviewing itself. Five frontier models examined the reference runner, the central orchestration code for the entire CDSFL bench. The runner contains the convergence logic, the finding lifecycle, the ITC (intelligent throttling and continuation, the adaptive recovery mechanism), the burst mode decomposition, the S_k (the severity/stringency tristate gate) verification pipeline, and the convergence gate. It is the single largest and most complex file in the repository.
 
-The experiment ran for 8 hours and 12 minutes across 24 rounds before the wall clock cap terminated it. It never converged. 545 raw findings were produced, of which 169 survived deduplication as canonical entries. The gamma parameter reached 0.510 at termination, meaning the discovery rate had fallen to roughly half its initial value. All five models remained active throughout. None were removed.
+The experiment ran for 8 hours and 12 minutes across 24 rounds before the wall clock cap terminated it. It never converged. 545 raw findings were produced, of which 169 survived deduplication as canonical entries. The gamma parameter (cumulative depletion measure) reached 0.510 at termination, meaning the discovery rate had fallen to roughly half its initial value. All five models remained active throughout. None were removed.
 
 ## The Three Layers of Findings
 
-This experiment produced findings at three distinct layers. The first layer is what the models found. The second is what the experiment's own behaviour revealed about the system. The third is what we found by monitoring the experiment from outside.
+This experiment produced findings at three distinct layers. The first layer is what the models found. The second is what the experiment's own behaviour revealed about the system. The third is what was found by monitoring the experiment from outside.
 
 ---
 
@@ -82,7 +82,7 @@ The system accurately detects churn, flagging it when `rho_avg` falls below 0.25
 
 ---
 
-## Layer 3: What We Found by Monitoring
+## Layer 3: What Was Found by Monitoring
 
 ### D1: Churn detection without adaptive response
 
@@ -157,8 +157,8 @@ With all nine fixes applied, Phase 0 should converge within 3-5 rounds. Phases 1
 
 The Ouroboros experiment was CDSFL examining its own implementation under its own methodology. The fact that it found real bugs is both validating and humbling. The methodology works — five models, structured falsification, immune pipeline filtering, S_k verification, and convergence gating together produced genuine, corroborated, actionable findings. But the implementation of that methodology had significant bugs that the methodology itself exposed.
 
-The question is whether the system can close the loop — can it fix what it found and then verify the fixes by running again? That is Experiment 39's purpose. If it succeeds, we will have demonstrated a complete improvement cycle: find bugs, fix bugs, verify fixes, all under the same structured protocol.
+The question is whether the system can close the loop — can it fix what it found and then verify the fixes by running again? That is Experiment 39's purpose. If it succeeds, a complete improvement cycle will have been demonstrated: find bugs, fix bugs, verify fixes, all under the same structured protocol.
 
-The sawtooth novelty pattern and gamma dynamics also have implications for the mathematical model. The R_k self-assessment equation predicts diminishing returns per round, and gamma confirms this quantitatively. But the sawtooth pattern suggests the decay is not smooth — it proceeds in topic-correlated bursts. Per-element convergence is not just an optimisation but a correctness requirement. Without it, the system wastes rounds cycling through already-exhausted topics while other topics remain unexplored.
+The sawtooth novelty pattern and gamma dynamics also have implications for the mathematical model. The R_k(i) self-assessment equation (the iterative residual-risk self-assessment after round i) predicts diminishing returns per round, and gamma confirms this quantitatively. But the sawtooth pattern suggests the decay is not smooth — it proceeds in topic-correlated bursts. Per-element convergence is not just an optimisation but a correctness requirement. Without it, the system wastes rounds cycling through already-exhausted topics while other topics remain unexplored.
 
 Phase B schema design, which proposes per-element convergence with each subsystem converging independently via finding taxonomy, is directly motivated by this observation. Experiment 38 provided the empirical evidence that this design is necessary.

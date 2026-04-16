@@ -1,10 +1,10 @@
 # S_k Confer Synthesis — 9 April 2026
 
-Confer between **Codex GPT-5.4** and **Gemini 3.1 Pro** on the proposed $S_k$ solution reliability extension to the CDSFL mathematical model.
+A confer (cross-model adversarial review session) was held between **Codex GPT-5.4** (OpenAI via OpenRouter) and **Gemini 3.1 Pro** (Google) on the proposed $S_k$ (tool-verified solution-reliability score) extension to the CDSFL (Constraint-Driven Synthesis and Falsification) mathematical model.
 
 ## Background
 
-Experiment 37 demonstrated excellence at **finding** problems but exposed a critical gap in **fixing** them. The CC2v Fix Extractor achieved a 17% success rate (1/6 fixes applied). The natural language → agent conversion pipeline violates the constraint box principle.
+Experiment 37 demonstrated excellence at **finding** problems but exposed a critical gap in **fixing** them. The CC2v Fix Extractor (CC2v = Claude CLI verification subagent) achieved a 17% success rate (1/6 fixes applied). The natural language to agent conversion pipeline violates the constraint box principle (which requires that tool output be the evidence; LLM reasoning interprets but does not substitute for it).
 
 The proposed $S_k$ extension makes solution reliability tool-derived:
 
@@ -20,7 +20,7 @@ Pre-confer verification: **SymPy** (7 special cases ✓), **z3** (4 formal prope
 
 ## Convergence Points
 
-Both models ran full 5-pass FFAFP. Surviving conclusions:
+Both models ran the full 5-pass FFAFP (Find, Follow, Analyse, Fix, P-pass) protocol. Surviving conclusions:
 
 | Finding | Status | Notes |
 |---------|--------|-------|
@@ -49,7 +49,7 @@ Both models ran full 5-pass FFAFP. Surviving conclusions:
 
 ## Valley of Bad Fixes
 
-The most important emergent finding. Discovered by **Gemini**, independently confirmed by **Codex** and **numerically verified**.
+The most important emergent finding. Discovered by **Gemini**, independently confirmed by **Codex** and **numerically verified**. The Valley of Bad Fixes is a regime in which a partially correct fix increases total risk above baseline.
 
 $R_{\text{new}}(S)$ is a **downward-opening parabola** in $S$. The leading coefficient of $S^2$ is negative:
 

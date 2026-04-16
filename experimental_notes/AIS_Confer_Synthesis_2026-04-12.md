@@ -1,13 +1,13 @@
 # AIS Integration Confer Synthesis
 
-**Date:** 12 April 2026  
-**Models consulted:** Gemini 3.1 Pro, Codex GPT-5.4 (via OpenRouter)  
-**Protocol:** CDSFL + FFAFP (Find, Follow, Analyse, Fix, P-pass)  
+**Date:** 12 April 2026
+**Models consulted:** Gemini 3.1 Pro, Codex GPT-5.4 (via OpenRouter)
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework) plus FFAFP (Find, Follow, Analyse, Fix, P-pass)
 **Raw logs:** `bench/logs/confer_ais_integration/`
 
 ## Background
 
-A literature assessment identified five gaps where Artificial Immune System research, Holland's Complex Adaptive Systems work, and Kohonen's Self-Organising Map lineage could inform improvements to the CDSFL immune pipeline. Two external models were consulted independently under the full CDSFL structured falsification protocol. Each model received the assessment document, the source code for `immune_agents.py` and `runner_core.py`, and the CDSFL core directives as system prompt. Both were required to produce explicit FFAFP analysis per gap.
+A literature assessment identified five gaps where AIS (Artificial Immune Systems) research, Holland's Complex Adaptive Systems work, and Kohonen's Self-Organising Map lineage could inform improvements to the CDSFL immune pipeline. Two external models were consulted independently under the full CDSFL structured falsification protocol. Each model received the assessment document, the source code for `immune_agents.py` and `runner_core.py`, and the CDSFL core directives as system prompt. Both were required to produce explicit FFAFP analysis per gap.
 
 ---
 

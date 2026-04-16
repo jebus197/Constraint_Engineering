@@ -2,21 +2,21 @@
 
 **Date:** 15 April 2026 (evening session)
 **Branch:** `exp39-experimental`
-**Scope:** Phase 10 — new `bench/dm/_feedback.py` module, `cdsfl_operational.md` §17 directive, runner wiring, 39 new tests.
+**Scope:** Phase 10 — new `bench/dm/_feedback.py` module, `cdsfl_operational.md` §17 (the Feedback Channel directive), runner wiring, 39 new tests.
 
 ---
 
 ## Context
 
-The CDSFL schema performs rich per-finding calculation every round:
+The CDSFL (Constraint-Driven Synthesis and Falsification) schema performs rich per-finding calculation every round:
 
 - **Cytotoxic T cells** run tests against claimed code defects.
 - **B cells** run specialist verification (sympy, z3, statsmodels, scipy, pint, crosshair, rdkit, biopython, networkx, and twelve others).
 - **NK cells** detect near-duplicates.
 - **Helper T cells** aggregate verdicts.
 - **Regulatory T cells** flag autoimmune over-rejection.
-- An R_k validator recomputes each finding's self-assessed corroboration against the aggregate derivation.
-- The FFAFP admissibility gate classifies each finding against five structural requirements (S_min, G-completeness, d_tool, σ_measured, q_retest).
+- An R_k validator recomputes each finding's self-assessed corroboration against the aggregate derivation. R_k(i) is the iterative residual-risk self-assessment after round i.
+- The FFAFP (Find, Follow, Analyse, Fix, P-pass) admissibility gate classifies each finding against five structural requirements (S_min, G-completeness, d_tool, σ_measured, q_retest).
 
 All of that machinery produced detailed per-finding judgment, round after round, and wrote it to the logs. **Models never saw any of it.** The same refuted claim could be resubmitted unchanged in the next round; a finding with zero admissibility gates passing could carry forward indefinitely; a finding whose self-reported R_k disagreed by 0.6 with the aggregate would simply persist. The schema knew, the schema logged, the models continued regardless.
 
@@ -30,7 +30,7 @@ Four principles shaped the implementation:
 
 1. **Imperative, not advisory.** Flagged findings MUST be addressed. There is no self-reported-confidence escape hatch. Directive wording: *"agree with the tool output or show it wrong with your own tool output."* Claims of certainty without receipts are not a permitted response.
 
-2. **Live-default, not shadow-first.** The user's framing was unambiguous — measurement for its own sake is wasted. The channel is enabled by default in `universal.toml`. A toggle remains for controlled ablation experiments, but the normal operating mode is live.
+2. **Live-default, not shadow-first.** The founder's framing was unambiguous — measurement for its own sake is wasted. The channel is enabled by default in `universal.toml`. A toggle remains for controlled ablation experiments, but the normal operating mode is live.
 
 3. **No schema math changes.** No new convergence thresholds. No new R_k terms. The feedback channel is pure plumbing, routing data that was already being computed into a place where it can affect model behaviour.
 
@@ -89,8 +89,8 @@ mode = "imperative"            # imperative = MUST address
 
 **`cdsfl_core_formal.md` classification summary table expanded.** Single "Corroboration model" row → three rows:
 - Stage 1 reference: `C(n) = 1 − (1 − p)^n` (geometric)
-- Stage 5–6 operational: recursive `R_k(i)` with η·d·p, S_k, ν_eff, η_combined via ν_k & c_ext
-- Stage 6 feedback channel: per-finding feedback records
+- Stage 5–6 operational: recursive `R_k(i)` with η·d·p, S_k (the severity/stringency tristate gate), ν_eff, η_combined via ν_k (the literature-novelty score) & c_ext
+- Stage 6 (the current mathematical framework) feedback channel: per-finding feedback records
 
 Each row points to the relevant operational section and source file.
 

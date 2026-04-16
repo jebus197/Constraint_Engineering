@@ -3,7 +3,7 @@
 **Date:** 13 April 2026, 01:15 BST  
 **Branch:** `exp39-experimental` | **Commit:** `f57d6ce`  
 **Tests:** 793 total, 77 immune agent tests passing  
-**Models consulted:** Gemini 3.1 Pro (confer), Codex 5.3 (dispatched, pending)
+**Models consulted:** Gemini 3.1 Pro (confer), Codex 5.3 (dispatched, pending). CC2 below denotes the Claude Opus 4.6 CLI instance.
 
 ---
 
@@ -22,7 +22,7 @@
 
 Every model-generated finding now carries explicit `origin_type="model"`, distinguishing it from future Ouroboros-origin findings.
 
-### Fix 2: Provenance Fields in FindingRegistry
+### Fix 2: Provenance Fields in FindingRegistry (the in-memory registry of accepted findings)
 
 **File:** `bench/reference_runner.py` — `FindingRegistry.register()` (L307–312)  
 **Fields added:** `origin_type`, `source_ref`, `retrieval_query`, `retrieved_at`, `source_hash`, `source_diversity`
@@ -55,15 +55,15 @@ Registry entries now capture the full provenance packet from the Finding schema.
 
 ## Gemini 3.1 Pro Confer (8,245 chars)
 
-Gemini recommended 5 sequential steps before 39-0: (1) state persistence, (2) HIL visibility, (3) gate interface, (4) convergence math, (5) domain routing.
+Gemini recommended 5 sequential steps before 39-0: (1) state persistence, (2) HIL (human-in-the-loop) visibility, (3) gate interface, (4) convergence math, (5) domain routing.
 
-### FFF Falsification of Gemini's Claims
+### FFF (Find-Follow-Fix) Falsification of Gemini's Claims
 
 | Gemini Claim | Verdict | Evidence |
 |---|---|---|
 | IFalsificationGate + Severity Fusion blocking | **Partially refuted** | Current gate works. Exp 38 ran 24 rounds successfully. |
-| C6 prevents infinite loops | **Refuted** | `max_rounds: 8` + `wall_clock_cap_s: 3600` prevent loops. |
-| cs_software.toml + B-Cell dispatch blocking | **Partially refuted** | 39-0 config doesn't reference domain TOMLs. |
+| C6 (churn detection) prevents infinite loops | **Refuted** | `max_rounds: 8` + `wall_clock_cap_s: 3600` prevent loops. |
+| cs_software.toml + B-Cell dispatch blocking | **Partially refuted** | 39-0 config does not reference domain TOMLs. |
 | ImmuneResponse checkpointing mandatory | **Valid for later, not 39-0** | 8-round test, ~1h. Exp 38 completed 24 rounds without it. |
 | Round report counts-only limits HIL | **Correct** | HIL should see finding details, not just numbers. |
 
@@ -94,7 +94,7 @@ All reduce HIL visibility but don't prevent pipeline function.
 
 | Model | Status | Latency |
 |---|---|---|
-| CC2 (Claude Opus 4.6) | OK | 5.1s |
+| CC2 (Claude Opus 4.6 CLI instance) | OK | 5.1s |
 | Codex (GPT-5.4) | OK | 2.4s |
 | ChatGPT (GPT-5.4) | OK | 1.8s |
 | Gemini (3.1 Pro) | OK | 6.6s |
@@ -129,4 +129,4 @@ python3 bench/launch_exp39.py --only 39-0
 
 ## Codex Response
 
-Dispatched but had not returned at time of assessment. Will be reviewed on arrival.
+Dispatched but had not returned at time of assessment. To be reviewed on arrival.

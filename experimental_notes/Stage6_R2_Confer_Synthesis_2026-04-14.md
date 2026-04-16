@@ -1,10 +1,12 @@
 # Stage 6 Confer Round 2: Two-Dimensional (ν_k, c_ext) Review
 
 **Date:** 14 April 2026, 11:18 BST  
-**Protocol:** CDSFL + FFAFP  
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass)  
 **Models:** Codex GPT-5.4 (86.8s, 21,576 chars), Gemini 3.1 Pro (57.1s, 8,415 chars)  
 **Focus:** Revised two-dimensional novelty architecture, shadow calibration design  
 **Previous round:** `Stage6_Confer_Synthesis_2026-04-14.md` (Round 1, 7 corrections)
+
+ν_k denotes the literature-novelty score; c_ext denotes the literature-search quality coefficient. Stage 6 is the current mathematical framework for CDSFL.
 
 ---
 
@@ -120,7 +122,7 @@ These are Phase 7+ items.
 
 ### Gemini P-PASS (1 attempt, novel)
 
-**Abstraction laundering via bad queries.** If a high-abstraction finding gets poor lexical queries from O1, the system returns 0 results, logs high q_s (0.8 after our fix), and computes high c_ext — then assigns high ν_k because nothing was found. The finding enters the pipeline as "Verified Novel" when it may be a well-known pattern described in different terminology.
+**Abstraction laundering via bad queries.** If a high-abstraction finding gets poor lexical queries from O1 (the Ouroboros literature-search cell), the system returns 0 results, logs high q_s (0.8 after the applied fix), and computes high c_ext — then assigns high ν_k because nothing was found. The finding enters the pipeline as "Verified Novel" when it may be a well-known pattern described in different terminology.
 
 **Resolution:** This proves q_s estimation is the critical calibration target. The Exp 39 proxy (q_s=0.8 for live_empty) is operationally acceptable because the shadow mode is observation-only. For production, q_s must incorporate embedding-based similarity between the query terms and the finding's semantic core. If the query is weak for an abstract concept, q_s should be low, not high. This is a known falsification debt documented for Phase 7.
 

@@ -2,7 +2,7 @@
 
 **Date:** 13 April 2026  
 **Method:** 4-agent forensic investigation (prompt tracing ×2, raw output comparison, context budget analysis) + manual code tracing + lessons-forward audit  
-**Verdict:** Exp 39-0 R_k adoption data is **CONFOUNDED** — not valid for measuring metacognitive capability
+**Verdict:** Exp 39-0 R_k(i) (the iterative residual-risk self-assessment after round i) adoption data is **CONFOUNDED** — not valid for measuring metacognitive capability
 
 ---
 
@@ -14,9 +14,9 @@ Experiment 39-0 is confounded by three independent factors that invalidate R_k a
 |---|----------|----------|----------|
 | C1 | User prompt missing CORROBORATION/FALSIFICATION/ANALYSE | **Critical** | Exp 37 had 10 fields incl. mandatory R_k; reference_runner had 7 — no R_k mandate |
 | C2 | Total payload 4.6× system decomposition threshold | **Critical** | 369K chars (ref_runner 163K + runner_core 38K + immune_agents 167K) vs 80K threshold |
-| C3 | Monolithic dispatch to 3/5 models despite payload > threshold | **High** | CC2/ChatGPT/Gemini received 369K monolithically; only Codex/DeepSeek decomposed |
+| C3 | Monolithic dispatch to 3/5 models despite payload > threshold | **High** | CC2 (Claude Opus 4.6 CLI instance), ChatGPT, and Gemini received 369K monolithically; only Codex and DeepSeek decomposed |
 
-**What is salvageable:** The 78 findings about reference_runner.py bugs, S_k pipeline verdicts, convergence dynamics, γ history, per-model finding counts. These are unaffected by the R_k confound.
+**What is salvageable:** The 78 findings about reference_runner.py bugs, S_k (severity/stringency tristate gate) pipeline verdicts, convergence dynamics, γ history, per-model finding counts. These are unaffected by the R_k confound.
 
 **What is NOT salvageable:** R_k adoption rates. The oscillation measures prompt construction quality and context budget management, not model metacognitive capability.
 
@@ -69,7 +69,7 @@ The fingerprint files (`bench/fingerprints/*.json`) contain schema fields for:
 ### What They Actually Contain
 
 Only the `observed` block with operational counts:
-- `max_successful_context_chars`: CC2=15.7K, ChatGPT=27.6K, Codex=47.4K, DeepSeek=54.8K, Gemini=14.0K
+- `max_successful_context_chars`: CC2 (Claude Opus 4.6 CLI instance) = 15.7K, ChatGPT = 27.6K, Codex = 47.4K, DeepSeek = 54.8K, Gemini = 14.0K
 - `max_successful_prompt_chars`: 465K (all models)
 - `total_findings`, `rounds_participated`, `avg_findings_per_round`
 
@@ -117,9 +117,9 @@ The gate purpose was verifying 22+ Exp 38 fixes and Gemini dispatch parity. This
 
 | Model | Advertised Context | Payload Sent | Output Quality |
 |-------|-------------------|-------------|----------------|
-| Gemini 3.1 Pro | 1M tokens (~4M chars) | 369K chars | Compressed to 3.6K JSON verdicts (R1) |
+| Gemini 3.1 Pro | 1M tokens (~4M chars) | 369K chars | It compressed to 3.6K JSON verdicts (R1) |
 | ChatGPT 5.4 | 128K tokens (~512K chars) | 369K chars | 0 chars (R1), recovered in R2 |
-| CC2 (Claude Opus 4.6) | 200K tokens (~800K chars) | 369K chars | Split format, R_k fragmented |
+| CC2 (Claude Opus 4.6 CLI instance) | 200K tokens (~800K chars) | 369K chars | Split format, R_k fragmented |
 | DeepSeek Reasoner | 128K tokens (~512K chars) | Decomposed | 0 chars per chunk (reasoning budget) |
 | Codex 5.4 | 200K tokens (~800K chars) | Decomposed | Functional, prompt injection artefact R3 |
 

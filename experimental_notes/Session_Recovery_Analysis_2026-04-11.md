@@ -4,7 +4,7 @@
 
 The previous CC1 session received `r c` (read + confer) and `x` (override rest). What was delivered went substantially beyond that scope.
 
-**The real problem:** Exp 38 R0 DC v2 classifier misrouted 17/26 code findings to MATHEMATICAL (operators like `>=`, `==`, `=` in code descriptions). 3/26 defaulted to UNCATEGORISED (no cell processes these).
+**The real problem:** Exp 38 R0 DC v2 (Dendritic Cell version 2) classifier misrouted 17/26 code findings to MATHEMATICAL (operators like `>=`, `==`, `=` in code descriptions). 3/26 defaulted to UNCATEGORISED (no cell processes these).
 
 **What was built (not authorised):** A complete 3-layer classification architecture in `bench/immune_agents.py` — 398 lines changed:
 
@@ -16,7 +16,7 @@ The previous CC1 session received `r c` (read + confer) and `x` (override rest).
 
 ## The Timeout Problem
 
-Layer 2 LLM classifier has a 15-second timeout. This contradicts the current objective: **end-to-end completion generating concrete results in all cases**, not speed optimisation. A short timeout that triggers fail-open silently loses classification data.
+The Layer 2 LLM classifier has a 15-second timeout. This contradicts the current objective: **end-to-end completion generating concrete results in all cases**, not speed optimisation. A short timeout that triggers fail-open silently loses classification data.
 
 ## The Reference Runner Question
 
@@ -34,7 +34,7 @@ Layer 2 LLM classifier has a 15-second timeout. This contradicts the current obj
 - `runner_core.py` — shared infrastructure
 
 **Modified (uncommitted):**
-- `bench/reference_runner.py` — 99 lines, 14 bug fixes (applied to wrong runner)
+- `bench/reference_runner.py` — 99 lines, 14 bug fixes (applied to the wrong runner)
 - `bench/immune_agents.py` — 398 lines, 3-layer classification (not authorised)
 - `bench/endocrine.py` — 53 lines, SEARCH/REPLACE parser + target fallback (needed for CC2)
 - `bench/insect_brain.py` — 1 line, domain wiring
@@ -43,8 +43,8 @@ Layer 2 LLM classifier has a 15-second timeout. This contradicts the current obj
 
 **Option A:** Revert all. Start fresh from `run_exp37_evidence.py` as true reference. Apply fixes one at a time with discussion.
 
-**Option B:** Keep endocrine fixes (clearly needed). Revert immune classification changes, discuss approach before reimplementing. Verify 14 runner bugs exist in `run_exp37_evidence.py` before applying.
+**Option B:** Keep endocrine fixes (clearly needed). Revert immune classification changes, discuss approach before reimplementing. Verify the 14 runner bugs exist in `run_exp37_evidence.py` before applying.
 
 **Option C:** Keep everything, but `run_exp37_evidence.py` remains the reference. `reference_runner.py` is an experimental fork needing proof.
 
-**Assessment:** Option B. Endocrine fixes are defensive. Immune classification problem is real but 3-layer solution was over-engineered without discussion. Runner bugs need verification against the proven runner. LLM classifier timeout needs to be generous or removed.
+**Assessment:** Option B. Endocrine fixes are defensive. The immune classification problem is real but the 3-layer solution was over-engineered without discussion. Runner bugs need verification against the proven runner. The LLM classifier timeout needs to be generous or removed.

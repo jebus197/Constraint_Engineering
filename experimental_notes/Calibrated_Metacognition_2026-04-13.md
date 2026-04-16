@@ -8,7 +8,7 @@
 
 ## Context
 
-During Experiment 39-0, a regression was found: the operational directive (`cdsfl_operational.md`) — which instructs models to compute R_k(i) on their own output — was not loaded by `reference_runner.py`. The runner still computed R_k externally (scoring findings mathematically), but models themselves had no knowledge of the equation. They produced qualitative severity scores rather than numerical self-assessments.
+During Experiment 39-0, a regression was found: the operational directive (`cdsfl_operational.md`) — which instructs models to compute R_k(i) (the iterative residual-risk self-assessment after round i) on their own output — was not loaded by `reference_runner.py`. The runner still computed R_k externally (scoring findings mathematically), but models themselves had no knowledge of the equation. They produced qualitative severity scores rather than numerical self-assessments.
 
 | Experiment | Operational Directive | R_k Adoption | Outcome |
 |-----------|----------------------|-------------|---------|
@@ -24,20 +24,20 @@ Same models, same pipeline, same code. The only difference: whether models recei
 
 ### When the runner computes R_k (measurement)
 
-- η from `_finding_similarity()` — algorithmic cosine/Jaccard
-- S_k from pytest pipeline — tool-verified gates × effect evidence
-- ν from config constants — static
+- η (the per-finding novelty proxy) from `_finding_similarity()` — algorithmic cosine/Jaccard
+- S_k (the severity/stringency tristate gate) from pytest pipeline — tool-verified gates × effect evidence
+- ν (the brittleness or literature-novelty parameter) from config constants — static
 - **No judgment involved.** Function applied to data.
 
 ### When models compute R_k (metacognition)
 
-- η: "Is my finding genuinely novel relative to the registry?"
-- d: "Is my analytical approach independent from prior rounds?"
-- p: "How capable am I of catching this flaw class? Be honest."
+- η: "Is the finding genuinely novel relative to the registry?"
+- d: "Is the analytical approach independent from prior rounds?"
+- p: "How capable is the model of catching this flaw class? Be honest."
 - ν: "How brittle is this code area?"
 - **Judgment required.** Reflected, committed, exposed as falsifiable numbers.
 
-The numbers are what matters. `η=0.8` is falsifiable — another model can respond: "Your η should be 0.2 because this restates C0034." A qualitative label ("high novelty") is not. The equation forces **legibility**. Legibility enables **falsification**. Falsification is where the value lives.
+The numbers are what matters. `η=0.8` is falsifiable — another model can respond: "η should be 0.2 because this restates C0034." A qualitative label ("high novelty") is not. The equation forces **legibility**. Legibility enables **falsification**. Falsification is where the value lives.
 
 ---
 
@@ -101,13 +101,13 @@ Expert encoding evolves from "what tools to run" to "how to calibrate epistemic 
 
 ---
 
-## P-Pass: Can You Script Intelligence?
+## P-Pass: Can Intelligence Be Scripted?
 
 **Claim:** The runner's external R_k computation scripts intelligence.
 
 **Falsifier:** Is external R_k qualitatively the same as model R_k?
 
-**Result:** No. External R_k is scripted measurement. Internal R_k is judgment-based self-assessment. The intelligence lives in the adversarial scrutiny that happens when multiple models compare parameter estimates and challenge each other's self-assessments. The equation doesn't make models smarter — it makes their uncertainty **legible and challengeable**.
+**Result:** No. External R_k is scripted measurement. Internal R_k is judgment-based self-assessment. The intelligence lives in the adversarial scrutiny that happens when multiple models compare parameter estimates and challenge each other's self-assessments. The equation does not make models smarter — it makes their uncertainty **legible and challengeable**.
 
 **Precise claim (P-pass surviving):** An orchestrator and its agents sharing a formal model of epistemic self-assessment, where both compute it independently and calibrate against each other, produces measurably better results than either computing alone. The Exp 37 vs Exp 39 comparison is a natural experiment for this claim.
 
@@ -122,7 +122,7 @@ Expert encoding evolves from "what tools to run" to "how to calibrate epistemic 
 The calibrated metacognition architecture generalises wherever three conditions hold:
 
 1. **Tool-verifiable S_k** — the measurement layer has ground truth
-2. **Meaningful cross-model parameter challenge** — the metacognition layer isn't self-certification
+2. **Meaningful cross-model parameter challenge** — the metacognition layer is not self-certification
 3. **Specifiable parameter priors** — expert encodings can meaningfully calibrate
 
 ### Where it breaks down
@@ -147,4 +147,4 @@ The accidental separation of the equation from the models reveals that scripted 
 
 The expert encoding enhancement: domain-specific parameter calibration extends encodings from tool specification to epistemic calibration. This is a falsifiable architectural claim with at least three testable predictions.
 
-The deepest finding: you cannot script intelligence, but you can script the conditions under which intelligence becomes visible, challengeable, and self-correcting. That is what the operational directive does. Its absence from Exp 39 — and the measurable degradation that followed — is empirical evidence for this claim.
+The deepest finding: intelligence cannot be scripted, but the conditions under which intelligence becomes visible, challengeable, and self-correcting can be. That is what the operational directive does. Its absence from Exp 39 — and the measurable degradation that followed — is empirical evidence for this claim.

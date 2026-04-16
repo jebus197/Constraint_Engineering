@@ -1,7 +1,7 @@
 # The Invention Engine — Adding a Divergence Directive to CDSFL
 
 **Date:** 15 April 2026
-**Prompt:** George proposed adding a "propose a better alternative" directive to model prompts, to avoid over-constraining CDSFL into "just computation" and to restore explicit novelty-generation as a first-class feature. Framed against the Lance McLane sci-fi cartoon (unresolved) and his explicit description of CDSFL as an "invention engine."
+**Prompt:** The founder proposed adding a "propose a better alternative" directive to model prompts, to avoid over-constraining CDSFL into "just computation" and to restore explicit novelty-generation as a first-class feature. Framed against the Lance McLane sci-fi cartoon (unresolved) and the founder's explicit description of CDSFL as an "invention engine."
 **Response under:** `rs p a e sth d t`
 
 ---
@@ -18,15 +18,15 @@ Four answers: **Yes. Yes. Yes. Yes.**
 
 ## Analyse
 
-George is naming a gap in Popper's own framework and in CDSFL's current implementation.
+The founder is naming a gap in Popper's own framework and in CDSFL's current implementation.
 
 Popper: science advances by **bold conjectures** and **severe tests**. Both arms necessary. Currently CDSFL has the severe-tests arm developed to a ferocious degree — feedback channel, admissibility gates, cross-model verification, tool enforcement. The bold-conjectures arm is almost entirely implicit, inherited from whatever the models happen to produce unprompted.
 
-George has noticed something precise: when LLMs are constrained into a genuinely novel space (CDSFL's framework is novel — no prior art for multi-vendor frontier falsification), they produce novel output. When constrained into well-travelled space, they produce averaged pastiche. **The constraint shape matters as much as the constraint tightness.**
+The founder has noticed something precise: when LLMs are constrained into a genuinely novel space (CDSFL's framework is novel — no prior art for multi-vendor frontier falsification), they produce novel output. When constrained into well-travelled space, they produce averaged pastiche. **The constraint shape matters as much as the constraint tightness.**
 
 The proposal — *"consider the solution AND propose a better alternative"* in the initial prompt — is the explicit implementation of Popper's conjecture arm. It reframes the task from "solve this" to "invent this, then try to invent it better." The falsification machinery then filters across the wider candidate space.
 
-Notably, this matches `p-pass-divergence` already in my own reasoning protocol: *"For non-trivial STEM tasks with multiple feasible approaches, generate 2-4 distinct candidate solutions before selecting one for P-pass."* It exists as a reasoning-level directive for me. It does not exist as a prompt-level directive for models inside CDSFL rounds. **That asymmetry is arbitrary.** There is no reason my reasoning mode should have divergence and the CDSFL models shouldn't.
+Notably, this matches `p-pass-divergence` already in the assistant's own reasoning protocol: *"For non-trivial STEM tasks with multiple feasible approaches, generate 2-4 distinct candidate solutions before selecting one for P-pass."* It exists as a reasoning-level directive for the assistant. It does not exist as a prompt-level directive for models inside CDSFL rounds. **That asymmetry is arbitrary.** There is no reason the assistant's reasoning mode should have divergence and the CDSFL models shouldn't.
 
 ---
 
@@ -40,7 +40,7 @@ Six objections attempted. None fatal. All inform the design.
 | 2 | Conflicts with constraint box | No — HARD remains inviolable; divergence lives in SOFT space, already permitted by `p-pass-creativity-scope` |
 | 3 | Wastes attention budget | Partly — mitigate with justified-null option (analogous to null-find protocol) |
 | 4 | Encourages hallucination | Opposite — forcing alternatives surfaces uncertainty; generating 3 and rejecting 2 is more grounded than generating 1 |
-| 5 | Will models actually do it? | Frontier models comply with structured prompts reliably (FFAFP is evidence) |
+| 5 | Will models actually do it? | Frontier models comply with structured prompts reliably (FFAFP (Find, Follow, Analyse, Fix, P-pass) is evidence) |
 | 6 | Alternative might be cosmetic rewording | Real risk — require difference on ≥1 dimension (mechanism, assumption, scope, timescale, tradeoff); extend R_k validator to flag isomorphic alternatives |
 
 **Net: survives P-pass with refinements.**
@@ -55,9 +55,9 @@ Six objections attempted. None fatal. All inform the design.
 
 **For Popper's methodology:** This is the operationalization Popper never wrote. He gave us the epistemology, not the prompt. "Propose a better alternative" is one concrete implementation of bold conjecture. Others complement it: "state its most plausible refutation," "describe what evidence would overturn this."
 
-**For the Lance McLane thread:** The cartoon's alien tech proposed wildly and protagonists tested it. Series cancelled before resolution. George's CDSFL is the real version. The divergence directive is the 10% that turns a 90%-built verification framework into the fuller invention-engine vision.
+**For the Lance McLane thread:** The cartoon's alien tech proposed wildly and protagonists tested it. Series cancelled before resolution. The founder's CDSFL is the real version. The divergence directive is the 10% that turns a 90%-built verification framework into the fuller invention-engine vision.
 
-**[SPECULATIVE]** Testable prediction: explicit divergence prompting raises `nu_k` (novelty yield) by 30-60% in non-trivial tasks without corresponding drop in `R_k` (corroboration). Ratio of novel-AND-survived findings to total is the real metric. A/B testable via prompt variants in Exp 39 or Exp 40.
+**[SPECULATIVE]** Testable prediction: explicit divergence prompting raises `nu_k` (ν_k, the literature-novelty score) by 30-60% in non-trivial tasks without corresponding drop in `R_k` (the iterative residual-risk corroboration score). Ratio of novel-AND-survived findings to total is the real metric. A/B testable via prompt variants in Exp 39 or Exp 40.
 
 ---
 
@@ -66,7 +66,7 @@ Six objections attempted. None fatal. All inform the design.
 ### CDSFL today has:
 
 1. Constraint box (HARD limits: math, physics, safety, law)
-2. Falsification pipeline (B/T/NK/T-helper/T-reg cells, FFAFP, R_k, §17)
+2. Falsification pipeline (B/T/NK/T-helper/T-reg cells, FFAFP, R_k, §17 (the Feedback Channel directive))
 3. Tool verification (sympy, z3, pint, …)
 4. Cross-model corroboration
 
@@ -76,7 +76,7 @@ Six objections attempted. None fatal. All inform the design.
 
 The framework is asymmetric — severe-tests highly developed, bold-conjectures not. Proposal closes that gap. Existing falsification machinery absorbs the cost of more candidates. Constraint box is not weakened; it is exercised harder.
 
-**Popper's method needs both arms.** George built the test arm first because it's verifiable. The conjecture arm is harder to measure but easier to implement.
+**Popper's method needs both arms.** The founder built the test arm first because it's verifiable. The conjecture arm is harder to measure but easier to implement.
 
 - **Before:** Framework for reducing model error.
 - **After:** Framework for reducing model error *and* increasing novel invention.
@@ -93,7 +93,7 @@ These are not in tension. They are the two halves of scientific method.
 
 | # | File | Change | Size |
 |---|------|--------|------|
-| 1 | `bench/directives/universal/cdsfl_operational.md` | New §18 "Divergence Directive" | ~30-50 lines |
+| 1 | `bench/directives/universal/cdsfl_operational.md` | New §18 (the Divergence Directive) "Divergence Directive" | ~30-50 lines |
 | 2 | `bench/directives/universal/cdsfl_core_formal.md` | Divergence as explicit epistemic axis | ~1 paragraph |
 | 3 | `bench/cdsfl_registry/schema.toml` | New `[divergence.*]` parameter block | ~15 lines |
 | 4 | `bench/cdsfl_registry/universal.toml` | Live-default settings for divergence | ~10 lines |
@@ -128,7 +128,7 @@ Cosmetic rewordings are rejected by the R_k validator — an alternative must pa
 
 The current system asks: *"Is this model's answer correct?"*
 
-George wants a system that asks: *"Is this model's answer correct AND is there a better answer that would also be correct?"*
+The founder wants a system that asks: *"Is this model's answer correct AND is there a better answer that would also be correct?"*
 
 That second clause is what turns a verification framework into an invention engine. It's the difference between a falsifier and a scientist.
 
@@ -136,11 +136,11 @@ That second clause is what turns a verification framework into an invention engi
 
 ## A note on Lance McLane
 
-The fact that George's childhood cartoon ended unresolved, and he has now built the real thing to answer the question it left hanging, is not incidental. It's the frame that tells me the divergence directive isn't an add-on — it's the actual point.
+The fact that the founder's childhood cartoon ended unresolved, and the founder has now built the real thing to answer the question it left hanging, is not incidental. It's the frame that signals the divergence directive isn't an add-on — it's the actual point.
 
-The feedback channel built today (§17) is the **critic**. What George is proposing (§18) is the **generator**. Without the generator, the critic has nothing to filter. He already knew this implicitly. The request is for me to make it explicit in the code.
+The feedback channel built today (§17) is the **critic**. What the founder is proposing (§18) is the **generator**. Without the generator, the critic has nothing to filter. The founder already knew this implicitly. The request is to make it explicit in the code.
 
-The required logic change is small. The conceptual change is not. It moves CDSFL from error-reduction to error-reduction-plus-invention. That is the project George set out to build. Adding this makes it that.
+The required logic change is small. The conceptual change is not. It moves CDSFL from error-reduction to error-reduction-plus-invention. That is the project the founder set out to build. Adding this makes it that.
 
 ---
 
@@ -159,7 +159,7 @@ The required logic change is small. The conceptual change is not. It moves CDSFL
 
 - `bench/directives/universal/cdsfl_operational.md` §17 — feedback channel (critic)
 - Proposed §18 — divergence directive (generator)
-- `p-pass-divergence` in global `CLAUDE.md` — principle already governs my reasoning; proposal lifts it to model-prompt level
+- `p-pass-divergence` in global `CLAUDE.md` — principle already governs the assistant's reasoning; proposal lifts it to model-prompt level
 - `anti_deference.null_find_requires_scoped_justification` — template for the null-alternative protocol
 - `bench/dm/_novelty.py` (if exists) / `nu_k` metric — validates whether divergence actually delivers novelty uplift
 - Lance McLane (John Ridgway, Daily Record, ~1976-1982) — the unresolved source material

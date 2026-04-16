@@ -1,9 +1,9 @@
 # Experiment 39 Runner Review — 10-Source Synthesis
 
 **Date:** 13 April 2026 20:09 BST  
-**Method:** 5 internal subagents + 5 external model confers (CC2 failed, 4 responded)  
+**Method:** 5 internal subagents + 5 external model confers (CC2 — the Claude Opus 4.6 CLI instance — failed, 4 responded)  
 **Scope:** reference_runner.py post-confound fixes vs Exp 37 gold standard  
-**Protocol:** CDSFL + FFAFP, with R_k computation where material
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass), with R_k (the iterative residual-risk self-assessment) computation where material
 
 ---
 
@@ -20,7 +20,7 @@
 | ChatGPT 5.4 | External | 20,818 chars | 9 findings: parser enforcement (F001), key drift (F002), notation (F003), prior context (F004), metrics (F005), ID wording (F006), severity anchor (F007), stale sites (F008), file check (F009) |
 | DeepSeek Reasoner | External | 21,921 chars | 5 findings: key mismatch (F001), delimiter (F002), metrics order (F003), notation (F004), parser gap (F005) |
 | Codex 5.6 | External | 7,765 chars | 4 findings: CORROBORATION capture (1), registry overflow cap (2), FIX scope (3), prior context (4) |
-| CC2 Opus 4.6 | External | FAILED | CLI pipe returned empty after 175.7s |
+| CC2 (Claude Opus 4.6 CLI instance) | External | FAILED | CLI pipe returned empty after 175.7s |
 
 ---
 
@@ -97,7 +97,7 @@
    This affects measurement precision, not adoption. Can wire post-launch.
 
 2. **CC2 confer failed** — CLI pipe returned empty. CC2 works for short prompts
-   (tested). The 30K prompt may exceed piped-mode comfort zone. Not a runner issue.
+   (tested). The 30K prompt may exceed piped-mode comfort zone for it. Not a runner issue.
 
 3. **7 still-missing lessons from Exp 36-38** — prior fix summary (partially
    addressed), consolidation phase, per-model ρ tracking, context windowing,

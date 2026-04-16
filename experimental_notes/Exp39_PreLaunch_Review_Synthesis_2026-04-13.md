@@ -1,7 +1,7 @@
 # Exp 39 Pre-Launch Review Synthesis
 
 **Date:** 13 April 2026 04:51 BST
-**Scope:** 10-stream pre-launch review — 5 external model confers (CC2, Codex 5.6, Gemini 3.1 Pro, ChatGPT 5.4, DeepSeek Reasoner) + 5 internal CC sub-agents (InsectBrain, Immune Pipeline, CC2 Runner, DM Convergence, Launch Sequencer/PE)
+**Scope:** 10-stream pre-launch review — 5 external model confers (CC2, the Claude Opus 4.6 CLI instance; Codex 5.6; Gemini 3.1 Pro; ChatGPT 5.4; DeepSeek Reasoner) + 5 internal CC (Claude Code) sub-agents (InsectBrain, Immune Pipeline, CC2 Runner, DM Convergence, Launch Sequencer/PE)
 **Outcome prior to commit 2279adb:** All 10 streams returned NO-GO
 **Outcome after commit 2279adb:** 11 distinct blockers fixed, reassessment below
 
@@ -10,13 +10,13 @@
 
 Four findings were discovered independently by multiple streams. These carry the strongest evidential weight.
 
-**HIL pause / exit 42 mishandling** was the most widely corroborated failure. Gemini identified it as a BLOCKER (exit 42 counted as fatal in required_failures). ChatGPT independently found the same issue. DeepSeek flagged two causally linked symptoms: B1 (HIL pause exits without saving checkpoint) and B3 (resume restarts from experiment 1 rather than the paused position). The InsectBrain sub-agent corroborated the checkpoint side — `_save_checkpoint()` was serialising only 9 of 20 Finding fields, meaning any resume after HIL pause would restore a degraded state even if the checkpoint file existed. Taken together, four streams converged on one root dysfunction: the HIL pause/resume path was broken end-to-end, spanning exit code propagation, checkpoint completeness, and field restoration.
+**HIL (human-in-the-loop) pause / exit 42 mishandling** was the most widely corroborated failure. Gemini identified it as a BLOCKER (exit 42 counted as fatal in required_failures). ChatGPT independently found the same issue. DeepSeek flagged two causally linked symptoms: B1 (HIL pause exits without saving checkpoint) and B3 (resume restarts from experiment 1 rather than the paused position). The InsectBrain sub-agent corroborated the checkpoint side — `_save_checkpoint()` was serialising only 9 of 20 Finding fields, meaning any resume after HIL pause would restore a degraded state even if the checkpoint file existed. Taken together, four streams converged on one root dysfunction: the HIL pause/resume path was broken end-to-end, spanning exit code propagation, checkpoint completeness, and field restoration.
 
 **Launch CLI plumbing** was independently found by two external models. Codex identified that `launch_exp39.py` did not forward `--hil-review` or `--resume` to the child runner and therefore could not propagate exit 42 correctly. ChatGPT raised the identical finding. No sub-agent was scoped to the launch script directly, but the consequence (broken resume) was the downstream manifestation caught by DeepSeek and Gemini.
 
 **DOMAIN_MAP missing entries** (biology, cs_software, information_science) was found by ChatGPT and independently by DeepSeek (B2). Two external models, no sub-agent coverage — this is a gap in the internal review scope rather than a weakness of the finding itself.
 
-**PE HARD constraint runtime enforcement** was raised by CC2 (as a structural observation: `ffafp_required` and `structured_reasoning_required` defined in schema but no runtime validation in the immune pipeline), corroborated by ChatGPT (labelled UNCERTAIN), and by DeepSeek (B4, labelled HARD VIOLATION). Three streams flagged this. The sub-agent immune pipeline review also caught related unenforced behaviour — `UNSCORED` verdicts incorrectly rejected — which is a manifestation of the same class of problem: immune agent behaviour not matching declared schema constraints.
+**PE (PolicyEngine) HARD constraint runtime enforcement** was raised by CC2 (as a structural observation: `ffafp_required` and `structured_reasoning_required` defined in schema but no runtime validation in the immune pipeline), corroborated by ChatGPT (labelled UNCERTAIN), and by DeepSeek (B4, labelled HARD VIOLATION). Three streams flagged this. The sub-agent immune pipeline review also caught related unenforced behaviour — `UNSCORED` verdicts incorrectly rejected — which is a manifestation of the same class of problem: immune agent behaviour not matching declared schema constraints.
 
 **Config pattern mismatch** (all 14 configs using `pattern="fff"` rather than the reviewed four-layer protocol) was found by Codex alone among the external models. No sub-agent caught it. It is a clean single-source finding, not corroborated, but mechanically verifiable and unambiguous.
 
@@ -33,7 +33,7 @@ Eleven distinct blockers were fixed in commit 2279adb. Classified by type:
 
 **Config (1):** All 14 experiment configs using `pattern="fff"` — the old single-layer pattern — rather than `"four_layer"`, meaning the reviewed protocol was not being invoked.
 
-**Design / schema (1):** NK cell false-positive patterns from domain TOML not merged into immune agents; Reg T v2 UNCERTAIN rate check missing. These were added in the fix commit but sit at the boundary between implementation gap and design oversight.
+**Design / schema (1):** NK (natural killer) cell false-positive patterns from domain TOML not merged into immune agents; Reg T (regulatory T-cell) v2 UNCERTAIN rate check missing. These were added in the fix commit but sit at the boundary between implementation gap and design oversight.
 
 
 ## Residual Risks
@@ -42,7 +42,7 @@ Three categories of concern were raised by reviewers but are not fully resolved 
 
 **Burst mode checkpoint gap.** Codex flagged that burst mode phase state is not checkpointed before pause. This was explicitly deferred as not relevant for 39-0 (burst_mode=off) but remains unresolved for future runs that enable burst mode. It is a latent correctness risk conditional on configuration.
 
-**PE HARD constraint runtime enforcement.** All three models that flagged this — CC2, ChatGPT, DeepSeek — agree that `ffafp_required` and `structured_reasoning_required` are declared in schema but not enforced at runtime in the immune pipeline. The fix commit added Reg T v2 UNCERTAIN rate check and NK cell FP pattern merging, which are adjacent improvements, but the specific structural gap — no runtime validation that findings entering immune processing satisfy the schema constraints — was not listed among the 11 committed fixes. This is the most significant open item. If the gap remains, HARD constraint definitions serve as documentation rather than enforcement, which contradicts the core CDSFL premise.
+**PE HARD constraint runtime enforcement.** All three models that flagged this — CC2, ChatGPT, DeepSeek — agree that `ffafp_required` and `structured_reasoning_required` are declared in schema but not enforced at runtime in the immune pipeline. The fix commit added Reg T v2 UNCERTAIN rate check and NK cell FP (false-positive) pattern merging, which are adjacent improvements, but the specific structural gap — no runtime validation that findings entering immune processing satisfy the schema constraints — was not listed among the 11 committed fixes. This is the most significant open item. If the gap remains, HARD constraint definitions serve as documentation rather than enforcement, which contradicts the core CDSFL (Constraint-Driven Synthesis and Falsification) premise.
 
 **HIL visibility.** Gemini's readiness confer (separate from this review, logged in the 13 April readiness assessment) noted that round reports present counts only, giving HIL reviewers insufficient signal to make informed pause/continue decisions. This was assessed as valid and deferred. It does not block 39-0 but degrades the quality of HIL oversight during the run.
 

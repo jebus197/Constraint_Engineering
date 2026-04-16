@@ -3,17 +3,19 @@
 **Date:** 12 April 2026, 01:30 BST
 **Context:** Founder-proposed additions to Exp 39 scope, assessed for feasibility
 
+CDSFL = Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework.
+
 ---
 
 ## Proposed Additions (6)
 
 ### 1. Expert Encodings Integration
 
-**Status:** Schema complete (10 sections, S_k framework, tristate). Python encoding at CROSS-VERIFIED. Not wired into runner.
+**Status:** Schema complete (10 sections, S_k (the severity/stringency tristate gate) framework, tristate). Python encoding at CROSS-VERIFIED. Not wired into runner.
 
 **Integration path:** Immune pipeline B-Cell + CT infrastructure → S_k gate evaluator → registry feedback. Estimated 150-200 lines.
 
-**Verdict:** ✅ Fits in Exp 39 as a dedicated phase.
+**Verdict:** Fits in Exp 39 as a dedicated phase.
 
 ### 2. Single System + Distributed Compute
 
@@ -21,7 +23,7 @@
 
 **Assessment:** Architectural changes requiring dispatch, convergence, and mathematical model rework. Months of work.
 
-**Verdict:** ❌ Does not fit. Separate workstream post-Bench Run 2.
+**Verdict:** Does not fit. Separate workstream post-Bench Run 2.
 
 ### 3. Research Cell — The Macrophage
 
@@ -31,7 +33,7 @@
 
 **HARD constraint:** Non-determinism. Web search results vary by day. Requires caching/snapshotting for reproducibility.
 
-**Verdict:** ⚠️ Feasible as shadow-mode prototype. Full activation in Exp 40 after measuring contribution.
+**Verdict:** Feasible as shadow-mode prototype. Full activation in Exp 40 after measuring contribution.
 
 ### 4. Composable Domain Cell Types
 
@@ -39,25 +41,25 @@
 
 **Granularity:** One cell per discipline initially. Split when empirical data justifies it.
 
-**Verdict:** ✅ No new code needed. Specialist cells are a separate build-out when domain encodings exist.
+**Verdict:** No new code needed. Specialist cells are a separate build-out when domain encodings exist.
 
 ### 5. Mathematical Model Extension
 
-**Current model:** R_k(i) = R_k(i-1) · (1 - q_ik) / (1 - q_ik · R_k(i-1)), q = η·d·p
+**Current model:** R_k(i) = R_k(i-1) · (1 - q_ik) / (1 - q_ik · R_k(i-1)), q = η·d·p — where R_k(i) is the iterative residual-risk self-assessment after round i.
 
 **Extension path:** Add λ_ext parameter modifying p_ik when external research available.
 
 **Principle:** Build → Run → Measure → THEN fit. Extending before data is speculation.
 
-**Verdict:** ❌ Must follow data. Exp 39 generates data; subsequent experiment fits parameters.
+**Verdict:** Must follow data. Exp 39 generates data; subsequent experiment fits parameters.
 
 ### 6. Finding Extraction / HIL Phase Gate
 
 **Status:** Registry tracks everything. Report generator creates summaries. Gap: human review pause between burst mode phases.
 
-**Integration:** `build_findings_summary()` at phase transitions already produces summaries. Add HIL approval gate. ~30-50 lines.
+**Integration:** `build_findings_summary()` at phase transitions already produces summaries. Add HIL (human-in-the-loop) approval gate. ~30-50 lines.
 
-**Verdict:** ✅ Fits in Exp 39.
+**Verdict:** Fits in Exp 39.
 
 ---
 
@@ -65,14 +67,14 @@
 
 | Component | Status | Effort | In Scope? |
 |-----------|--------|--------|-----------|
-| 22+ fix verification | Built | Done | ✅ Core |
-| Expert Encodings S_k | Designed | 150-200 LOC | ✅ Phase |
-| HIL phase gate | Trivial | 30-50 LOC | ✅ Addition |
-| Gemini → OpenRouter | Config | ~10 LOC | ✅ Switch |
-| Macrophage prototype | Novel | 200-300 LOC | ⚠️ Shadow only |
-| Single/distributed | Draft | Months | ❌ Later |
-| Math model extension | Analytical | After data | ❌ Later |
-| Domain cell build-out | Designed | After encodings | ❌ Later |
+| 22+ fix verification | Built | Done | Core |
+| Expert Encodings S_k | Designed | 150-200 LOC | Phase |
+| HIL phase gate | Trivial | 30-50 LOC | Addition |
+| Gemini → OpenRouter | Config | ~10 LOC | Switch |
+| Macrophage prototype | Novel | 200-300 LOC | Shadow only |
+| Single/distributed | Draft | Months | Later |
+| Math model extension | Analytical | After data | Later |
+| Domain cell build-out | Designed | After encodings | Later |
 
 ---
 
@@ -97,7 +99,7 @@
 - Domain cell separation fails at discipline boundaries (e.g., thermodynamics at chemistry-physics interface)
 
 ### New falsifiable questions
-1. Does macrophage measurably improve η (finding detection rate)? *Testable in one experiment.*
+1. Does macrophage measurably improve η (the internal novelty score, finding detection rate)? *Testable in one experiment.*
 2. Does specialist cell diversity improve γ (convergence speed) beyond model diversity? *Testable by comparison.*
 3. Minimum domain cells for cross-synthesis emergence? *Testable by panel variation.* [SPECULATIVE]
 

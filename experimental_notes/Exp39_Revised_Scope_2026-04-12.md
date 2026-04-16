@@ -3,6 +3,8 @@
 **Date:** 12 April 2026, 02:26 BST
 **Context:** Correction to initial scope refinement. Sub-areas are research questions for the experiment, not build targets.
 
+CDSFL = Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework.
+
 ---
 
 ## Correction
@@ -62,7 +64,7 @@ Further safeguards beyond shadow mode are engineering choices, not fundamental b
 
 ## Mathematical Model as Sub-Area
 
-The mathematical model is a research question for Exp 39, not a prerequisite. Models study it, propose extensions, verify with SymPy/z3, challenge each other. Output: **verified proposals** for extending R_k(i) to account for specialist cells, macrophage, cross-domain synthesis. The founder decides what to adopt.
+The mathematical model is a research question for Exp 39, not a prerequisite. Models study it, propose extensions, verify with SymPy/z3, challenge each other. Output: **verified proposals** for extending R_k(i) (the iterative residual-risk self-assessment after round i) to account for specialist cells, macrophage, cross-domain synthesis. The founder decides what to adopt.
 
 ---
 
@@ -77,7 +79,7 @@ The mathematical model is a research question for Exp 39, not a prerequisite. Mo
 | 4 | Cross-domain synthesis | All enabled cells |
 | Integration | Synthesise across phases | All |
 
-Macrophage runs in shadow/advisory mode across all phases.
+S_k is the severity/stringency tristate gate. Macrophage runs in shadow/advisory mode across all phases.
 
 ---
 

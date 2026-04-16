@@ -2,11 +2,13 @@
 
 **Date:** 12 April 2026
 **Type:** Literature assessment
-**Trigger:** Founder query — do these research lineages impact CDSFL, or are they already covered?
+**Trigger:** Question posed — do these research lineages impact CDSFL, or are they already covered?
+
+CDSFL = Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework.
 
 ## Overview
 
-Three research lineages evaluated against CDSFL: John Henry Holland's complex adaptive systems and learning classifier systems; Teuvo Kohonen's self-organising maps; and the broader artificial immune systems (AIS) field that connects them.
+Three research lineages evaluated against CDSFL: John Henry Holland's complex adaptive systems and learning classifier systems; Teuvo Kohonen's self-organising maps; and the broader AIS (Artificial Immune Systems) field that connects them.
 
 **Short answer:** CDSFL already embodies most of the relevant principles, in some cases more thoroughly than published AIS systems. Five incremental improvements are worth pursuing. None requires importing a new algorithm wholesale.
 
@@ -14,7 +16,7 @@ Three research lineages evaluated against CDSFL: John Henry Holland's complex ad
 
 ## 1. Holland: Complex Adaptive Systems
 
-Holland identified seven CAS fundamentals — four properties (aggregation, nonlinearity, flows, diversity) and three mechanisms (tagging, internal models, building blocks).
+Holland identified seven CAS (Complex Adaptive Systems) fundamentals — four properties (aggregation, nonlinearity, flows, diversity) and three mechanisms (tagging, internal models, building blocks).
 
 **CDSFL embodies 5 of 7:**
 
@@ -28,21 +30,23 @@ Holland identified seven CAS fundamentals — four properties (aggregation, nonl
 | Internal models | No anticipatory dispatch | **Gap** |
 | Building blocks | No recombination of findings | Not applicable |
 
+S_k is the severity/stringency tristate gate.
+
 **Gap: Internal models.** CDSFL does not predict what each model will find next round and steer dispatch accordingly. The DiminishingReturnsDetector tracks per-model novelty rates — the data for prediction exists, but the forward-looking coupling to prompt construction does not.
 
 **Gap: Credit assignment.** No reinforcement loop propagates confirmation/rejection verdicts back into dispatch weighting. CapabilityFingerprint is static, not adaptive.
 
-The Schema Theorem does not apply (no GA). Echo provides loose structural analogies at the finding level.
+The Schema Theorem does not apply (no GA, genetic algorithm). Echo provides loose structural analogies at the finding level.
 
 ## 2. Holland: Learning Classifier Systems
 
-LCS combines condition-action rules with reinforcement learning and a genetic algorithm for rule discovery. CDSFL's pipeline contains condition-action structures (S_k gate, remediation chains, FSM transition table) but these are static and designer-specified.
+LCS (Learning Classifier Systems) combines condition-action rules with reinforcement learning and a genetic algorithm for rule discovery. CDSFL's pipeline contains condition-action structures (S_k gate, remediation chains, FSM transition table) but these are static and designer-specified.
 
 The inversely-proportional mutation rate from CLONALG (good strategies fine-tuned, bad strategies radically changed) is a useful heuristic the DetectorHealthMonitor could adopt, though Bayesian optimisation achieves the same result with less conceptual overhead.
 
 ## 3. Kohonen: Self-Organising Maps
 
-**SOMs are the wrong tool for CDSFL's problem.** At ~169 canonical findings, the map would have ~64 neurons — marginal territory where SOM adds nothing over simpler methods. The PNNL study (2022) that applied SOMs to 137K CVEs used BERT embeddings as input to the SOM, confirming the embedding does the heavy lifting.
+**SOMs (Self-Organising Maps) are the wrong tool for CDSFL's problem.** At ~169 canonical findings, the map would have ~64 neurons — marginal territory where SOM adds nothing over simpler methods. The PNNL study (2022) that applied SOMs to 137K CVEs used BERT embeddings as input to the SOM, confirming the embedding does the heavy lifting.
 
 **The actionable finding is not about SOMs.** `_finding_similarity()` already flags its own limitation in a docstring: "a middle ground between raw Jaccard (too strict) and embedding-based similarity (too complex for the current infrastructure)." The complexity argument no longer holds — `sentence-transformers` is available, implementation is ~10 lines, inference under 1 second.
 
@@ -61,7 +65,7 @@ The AIS field connects Holland and Kohonen through computational immune mechanis
 | Trained innate immunity | DetectorHealthMonitor (adaptive sensitivity, remediation, pathology memory) | More thorough than published AIS |
 | Danger signals | Reg-T autoimmune detection (rejection rate > 65% → override) | Computationally substantive |
 | Immune memory | NK Cell false-positive database | Partial — within-experiment only |
-| Signal integration | S_k = A·E tristate gate | Structurally analogous to DCA |
+| Signal integration | S_k = A·E tristate gate | Structurally analogous to DCA (Dendritic Cell Algorithm) |
 | Idiotypic suppression | NK Cell deduplication | Hard threshold, not continuous |
 
 ### Ranked improvements (value vs. cost)

@@ -81,7 +81,7 @@ for J≥0.98 or recidivism); two-of-five abolish tiers entirely (math self-
 enforces via continuous η_int deflation).
 
 D3: 5/5 2×2 factorial. Cells A (both off), B (§17 only), C (§18 only),
-D (both on). Gemini self-falsified her round-1 "§18-only invalid" under
+D (both on). Gemini self-falsified its round-1 "§18-only invalid" under
 parameter orthogonality. Budget fallbacks: B+C+D reusing prior A data
 (recommended); or B+D with claim narrowed to "marginal effect of §18
 given §17".

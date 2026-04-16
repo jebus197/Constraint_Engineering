@@ -2,7 +2,7 @@
 
 **Date:** 15 April 2026, 23:50 BST
 **Dispatch:** 22:45Z (parallel, ThreadPoolExecutor max_workers=5)
-**Protocol:** CDSFL + FFAFP, Stage 6 math as arbiter
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass), Stage 6 (the current mathematical framework) math as arbiter
 **Logs:** `bench/logs/confer_divergence_round2_convergence/combined_20260415T224529Z.json`
 
 ---
@@ -23,7 +23,7 @@ Wall-time: ~4 min 10s parallel (bottlenecked by DeepSeek). All responses succeed
 
 ## The round-2 charge
 
-Round 1 surfaced three genuine divergences (Jaccard threshold, penalty tiers, experimental design). Round 2 put Stage 6 math — R_k(i) recursive form, η_combined = η_int · (1 − c_ext · (1 − ν_k)), continuous suppression w(f), similarity backend, kappa_set, orthogonality C1 — as the arbiter, and asked each model to converge on a single definitive answer per divergence. Answer could be a synthesis of existing positions OR an entirely novel solution.
+Round 1 surfaced three genuine divergences (Jaccard (a token-overlap similarity metric) threshold, penalty tiers, experimental design). Round 2 put Stage 6 math — R_k(i) (the iterative residual-risk self-assessment after round i) recursive form, η_combined = η_int (the internal novelty score) · (1 − c_ext · (1 − ν_k (the literature-novelty score))), continuous suppression w(f) (the continuous suppression weight for finding f), similarity backend, kappa_set (the set-level convergence metric), orthogonality C1 — as the arbiter, and asked each model to converge on a single definitive answer per divergence. Answer could be a synthesis of existing positions OR an entirely novel solution.
 
 Binding constraints:
 - **C1** — ν_k / c_ext / R_k orthogonality must be preserved
@@ -43,7 +43,7 @@ Structural question posed first: where in Stage 6 does the divergence multiplier
 | Primary channel = η_int (novelty, internal) | **5/5** |
 | Admissibility gate = FFAFP S_min for structural violations | **5/5** |
 | **2×2 factorial** is the correct D3 answer | **5/5** |
-| ν_k must NEVER be modulated by §18 | **5/5** explicit |
+| ν_k must NEVER be modulated by §18 (the Divergence Directive) | **5/5** explicit |
 | Sibling alt-vs-alt check ship-blocker (round-1 carryover) | **5/5** |
 | Rename Jaccard role to "lexical near-duplicate heuristic" | **5/5** |
 | Gemini's "§18-only is invalid" self-falsified in round 2 | **5/5** (incl. Gemini) |
@@ -68,7 +68,7 @@ Once the channel assignment is fixed, every downstream question resolves cleanly
 
 - **D1** (threshold) becomes a novelty-channel detection problem — threshold calibration matters less because the consequence of error is η_int deflation, not R_k corruption.
 - **D2** (tier structure) — numbers matter less than the channel. Tiers if retained go on η_int, never R_k.
-- **D3** (experimental design) — §17 acts on R_k / σ / ν, §18 acts on η_int. These are orthogonal channels with potentially nonzero interaction via q = η·d·p. Factorial design is mathematically required, not optional.
+- **D3** (experimental design) — §17 (the Feedback Channel directive) acts on R_k / σ / ν, §18 acts on η_int. These are orthogonal channels with potentially nonzero interaction via q = η·d·p. Factorial design is mathematically required, not optional.
 
 ## Definitive resolutions
 
@@ -146,7 +146,7 @@ Per-cell: R_k trajectory, η_int distribution, w(f) distribution, kappa_set conv
 
 **Channel separation is a general antidote to compliance theatre.** Separate validity from novelty, route each signal to its natural channel, and the math itself distinguishes genuine alternatives (high η_int) from theatre (w(f) → w_floor). This generalises beyond CDSFL.
 
-**Self-falsification survives cross-panel pressure when the math is shared.** Gemini reversed her round-1 position when parameter orthogonality made it indefensible. FFAFP reproducibility across vendors — not just within-model.
+**Self-falsification survives cross-panel pressure when the math is shared.** Gemini reversed its round-1 position when parameter orthogonality made it indefensible. FFAFP reproducibility across vendors — not just within-model.
 
 ### Boundary conditions
 
@@ -166,7 +166,7 @@ Per-cell: R_k trajectory, η_int distribution, w(f) distribution, kappa_set conv
 ## P-pass discipline (round 2)
 
 Self-falsification remained active across the panel:
-- **Gemini** reversed her round-1 §18-only-invalid position — cleanest cross-round self-falsification
+- **Gemini** reversed its round-1 §18-only-invalid position — cleanest cross-round self-falsification
 - **CC2** identified the strongest remaining falsifier (opportunity cost may be insufficient, testable in Exp 40)
 - **Codex** & **ChatGPT** addressed four falsifiers each against C1–C4
 - **DeepSeek** flagged residual FN risk on τ=0.75, logged as residue
@@ -175,7 +175,7 @@ Round-2 P-pass survived all panel-internal attacks against C1–C4 after channel
 
 ---
 
-## Three decisions for the founder
+## Three decisions pending founder approval
 
 1. **Adopt the structural move** — §18 multiplier off R_k, onto η_int + admissibility. ~30 LOC + 8–12 tests. Recommended before Exp 40.
 2. **Adopt the contrast statement requirement** — ~5 lines directive + ~20 LOC parser + 3–5 tests. Recommended before Exp 40.

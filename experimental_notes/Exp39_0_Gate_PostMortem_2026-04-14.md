@@ -3,7 +3,7 @@
 **Date:** 14 April 2026
 **Experiment:** exp39_0_gate (infrastructure gate test)
 **Target:** `bench/runner_core.py` (38K)
-**Models:** CC2, Codex, ChatGPT, Gemini, DeepSeek (R1-0528)
+**Models:** CC2 (the CLI-piped Claude Opus 4.6 instance), Codex GPT-5.4, ChatGPT GPT-5.4, Gemini 3.1 Pro, DeepSeek R1-0528
 **Rounds:** 6 (R0-R5), terminated by wall clock cap (4388s / ~73 min)
 **Convergence:** Never reached (gate too strict)
 
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-Exp 39-0 was a gate test for infrastructure validation. It ran to wall clock cap, producing 111 findings (41 canonical, 2 phantom from parser bugs, effective 39). Gamma reached 0.461 (strong depletion). R_k mathematical model adoption was 5/5 (100%). The experiment exposed 8 bugs across 4 severity levels. Two bugs were fixed mid-session (race condition, double-counting). Six remain for fixing before Exp 39-1.
+Exp 39-0 was a gate test for infrastructure validation. It ran to wall clock cap, producing 111 findings (41 canonical, 2 phantom from parser bugs, effective 39). Gamma (the depletion coefficient measuring novel-finding fall-off across rounds) reached 0.461, indicating strong depletion. R_k (the iterative residual-risk self-assessment after round k) mathematical model adoption was 5/5 (100%). The experiment exposed 8 bugs across 4 severity levels. Two bugs were fixed mid-session (race condition, double-counting). Six remain for fixing before Exp 39-1.
 
 The pipeline's immune system works correctly at the per-step level. The systemic failures are all integration bugs — format mismatches, attribute name mismatches, and over-strict thresholds. No architectural redesign is needed.
 
@@ -21,7 +21,7 @@ The pipeline's immune system works correctly at the per-step level. The systemic
 
 ### P0 (blocking, fix before next run)
 
-**1. S_k format mismatch (0% ADMISSIBLE across all rounds)**
+**1. S_k (the severity/stringency tristate gate) format mismatch (0% ADMISSIBLE across all rounds)**
 - The prompt tells models format A (`====` separator, `>>>> REPLACE` closer)
 - The parser reconstructs format B (`==== REPLACE` separator, `>>>>` closer)
 - The S_k evaluator checks for format C (bare `====` separator)

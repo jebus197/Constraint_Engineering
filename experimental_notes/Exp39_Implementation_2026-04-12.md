@@ -1,5 +1,7 @@
 # CDSFL Experiment 39 — Implementation Summary, 12 April 2026
 
+CDSFL = Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework.
+
 ## Current State
 
 Nine phases (0–8) have been completed on the `exp39-experimental` branch across **9 commits**. The test baseline stood at **762 tests**. It now stands at **784**, with **22 new tests** added. All tests are passing.
@@ -12,7 +14,7 @@ Housekeeping commit with a novelty yield bug fix in shadow extensions.
 
 ### Phase 1 — Kappa Set Denominator Preparation
 
-Refactored the κ-set calculation to separate the **weighted numerator** from the **raw denominator**. This prevents the kappa overflow bug, where suppression weights in the denominator caused κ to leave [0, 1].
+Refactored the κ-set (kappa_set, the set-level convergence metric) calculation to separate the **weighted numerator** from the **raw denominator**. This prevents the kappa overflow bug, where suppression weights in the denominator caused κ to leave [0, 1].
 
 ### Phase 2 — Embedding Similarity Shared Backend
 
@@ -26,7 +28,7 @@ The suppression weight is defined as:
 
 > `w(f) = max(exp(−λ_s × Σ top-k similarities), weight_floor)`
 
-This fixes the **order-dependence bug**. Suppression weights are excluded from `q_effective` and the κ-set denominator, preventing corroboration collapse.
+where w(f) is the continuous suppression weight for finding f. This fixes the **order-dependence bug**. Suppression weights are excluded from `q_effective` and the κ-set denominator, preventing corroboration collapse.
 
 ### Phase 4 — Persistent Immune Memory
 
@@ -40,7 +42,7 @@ Cross-experiment learning via per-flaw-class confirmation rates with exponential
 
 ### Phase 5 — FFAFP Calibration Protocol
 
-Formalised in mathematical appendix §1.2. Documents the **5-constraint admissibility set**:
+FFAFP (Find, Follow, Analyse, Fix, P-pass) formalised in mathematical appendix §1.2. Documents the **5-constraint admissibility set**:
 
 1. Minimum evidence standard
 2. *G*-completeness
@@ -61,7 +63,7 @@ New cell type with two modes:
 - **Macrophage mode** — anomaly hunting
 - **Microglia mode** — self-referential pipeline health checks
 
-Detects: verdict clustering, severity concentration, timing spikes, tool monoculture, persistent anomalies, and tool–claim mismatches. Exception-based audit logging surfaces only anomalies to the HIL. Evidence is signed into the verification chain with **L1/L2/L3 separation**. Shadow mode only for Exp 39.
+Detects: verdict clustering, severity concentration, timing spikes, tool monoculture, persistent anomalies, and tool–claim mismatches. Exception-based audit logging surfaces only anomalies to the HIL (human-in-the-loop). Evidence is signed into the verification chain with **L1/L2/L3 separation**. Shadow mode only for Exp 39.
 
 ### Phase 8 — Mathematical Appendix Expansion
 

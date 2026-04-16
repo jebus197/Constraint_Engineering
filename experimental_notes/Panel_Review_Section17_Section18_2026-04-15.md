@@ -2,7 +2,7 @@
 
 **Date:** 15 April 2026, 23:15 BST
 **Dispatch:** 22:02Z (parallel, ThreadPoolExecutor max_workers=5)
-**Protocol:** CDSFL directives (system prompt) + FFAFP (user prompt)
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) directives (system prompt) + FFAFP (Find, Follow, Analyse, Fix, P-pass) (user prompt)
 **Logs:** `bench/logs/confer_divergence_directive/combined_20260415T220231Z.json`
 
 ---
@@ -25,11 +25,11 @@ Wall-time: ~3 min parallel (bottlenecked by DeepSeek). All responses succeeded f
 
 Q1 — Is the dimension set (mechanism / assumption / scope / timescale / tradeoff) sufficient and non-overlapping?
 
-Q2 — Is Jaccard-over-stopword-filtered-token-sets an adequate isomorphism metric for MVP?
+Q2 — Is Jaccard (a token-overlap similarity metric)-over-stopword-filtered-token-sets an adequate isomorphism metric for MVP?
 
-Q3 — Are the penalty tiers (1.0 / 0.85 / 0.70 / 0.60) coherent with the rest of the R_k equation?
+Q3 — Are the penalty tiers (1.0 / 0.85 / 0.70 / 0.60) coherent with the rest of the R_k (the iterative residual-risk self-assessment) equation?
 
-Q4 — Does the sequencing plan (Exp 39 baseline §17, Exp 40 §17+§18) actually isolate the signal, or do §17 and §18 interact confoundingly?
+Q4 — Does the sequencing plan (Exp 39 baseline §17 (the Feedback Channel directive), Exp 40 §17+§18 (the Divergence Directive)) actually isolate the signal, or do §17 and §18 interact confoundingly?
 
 Q5 — P-pass the whole pair: most plausible scenario under which §17 + §18 make CDSFL worse.
 
@@ -65,7 +65,7 @@ Q5 — P-pass the whole pair: most plausible scenario under which §17 + §18 ma
 
 **On experimental design:**
 - Codex / ChatGPT / DeepSeek: 2×2 factorial required
-- Gemini: §17/§18 are structurally coupled — §18-only is scientifically invalid (own P-pass falsified this)
+- Gemini: §17/§18 are structurally coupled — §18-only is scientifically invalid (its own P-pass falsified this)
 - CC2: SOFT confound, attribute via `correction_source` tag
 
 ---
@@ -78,7 +78,7 @@ Q5 — P-pass the whole pair: most plausible scenario under which §17 + §18 ma
 
 3. **Null-justification is gameable** (Gemini, ChatGPT). `len > 60` defeated by stock macro. HARD in principle, SOFT in practice per CC2's bounded-blast-radius argument.
 
-4. **Compliance theatre risk** (5/5, intensity varies). Models converge on formulaic alternative shapes; ν_k rises nominally while semantic novelty stagnates.
+4. **Compliance theatre risk** (5/5, intensity varies). Models converge on formulaic alternative shapes; ν_k (the literature-novelty score) rises nominally while semantic novelty stagnates.
 
 ## SOFT findings — calibration
 
@@ -115,7 +115,7 @@ Q5 — P-pass the whole pair: most plausible scenario under which §17 + §18 ma
 
 **Option B (pragmatic, Gemini/CC2 position):** Keep Exp 39/40 as planned, add diversity metric and correction-source logging, publish attribution limitation honestly. Research claim becomes "marginal effect of §18 given §17".
 
-Recommendation: Option B sufficient for invention-engine objective. Option A sufficient for scientific-isolation objective. User decision.
+Recommendation: Option B sufficient for invention-engine objective. Option A sufficient for scientific-isolation objective. Pending founder decision.
 
 ### Defer (do not touch now)
 
@@ -156,7 +156,7 @@ The honest research claim is narrower than "invention engine": §18 is an *enfor
 
 Self-falsification intensity was uneven across the panel:
 
-- **Gemini** — highest rate: 2 fixes revised under own falsifier, 1 rejected outright
+- **Gemini** — highest rate: 2 fixes revised under its own falsifier, 1 rejected outright
 - **ChatGPT** — marked Jaccard recommendation [SPECULATIVE], partial
 - **CC2** — tested each fix for perverse incentives, found bounded
 - **Codex** — lighter P-pass, accepted MVP constraint

@@ -70,7 +70,7 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   at **FFAFP admissibility**; continuous isomorphism suppression already
   handled by **w(f)** in kappa_set. 5/5 explicit: ν_k must NEVER be
   modulated by §18 (literature novelty is O1-external). 5/5 on **2×2
-  factorial** design for D3. Gemini self-falsified her round-1 "§18-only
+  factorial** design for D3. Gemini self-falsified its round-1 "§18-only
   invalid" under the parameter-orthogonality argument.
 
   **Residual divergence is narrow (Phase 2 empirical):** tier structure

@@ -4,9 +4,9 @@
 **Duration:** 8h12m (05:21–14:33 BST, 24 rounds, wall clock cap)
 **Termination:** WALL CLOCK CAP (29,503s). Never converged.
 **Target Article:** `bench/reference_runner.py`
-**Panel:** 5 models — ChatGPT (GPT-5.4/OpenRouter), CC2 (Opus/claude_cli), Codex (GPT-5.4/OpenRouter), Gemini (3.1 Pro/Google GenAI), DeepSeek (Reasoner/DeepSeek API)
+**Panel:** 5 models — ChatGPT (GPT-5.4/OpenRouter), CC2 (Opus 4.6/claude_cli), Codex (GPT-5.4/OpenRouter), Gemini (3.1 Pro/Google GenAI), DeepSeek (Reasoner/DeepSeek API)
 **Topology:** Star (shared findings)
-**Pattern:** FFF
+**Pattern:** FFAFP (Find, Follow, Analyse, Fix, P-pass)
 **S_k:** Enabled
 
 ## Round-by-Round Metrics
@@ -63,7 +63,7 @@ From R7, novelty alternates between burst and zero rounds in a remarkably stable
 | near-zero | R20, R22 | 1, 1 |
 | low | R21 | 2 |
 
-From R16, strict burst-zero alternation broke down into double-bursts (R16-R17: 5,4) and irregular patterns. Burst amplitude declined through R16-R18 (5→4→0) then spiked at R19 (7) when models found a new topic vein, before settling to near-zero (R20-R22: 1, 2, 1). Final round R23 produced a 6-novel burst — demonstrating the system can still find novelty even at γ=0.51.
+From R16, strict burst-zero alternation broke down into double-bursts (R16-R17: 5,4) and irregular patterns. Burst amplitude declined through R16-R18 (5 to 4 to 0) then spiked at R19 (7) when models found a new topic vein, before settling to near-zero (R20-R22: 1, 2, 1). Final round R23 produced a 6-novel burst, demonstrating the system can still find novelty even at γ=0.51.
 
 Cause: multi-topic scope. The runner contains convergence logic, ITC, finding lifecycle, burst mode, status transitions, and more. Models cycle through different topic areas, producing novelty bursts when they find a new vein, followed by zero rounds when they revisit already-catalogued issues. In a per-element convergence scheme, individual topics would converge independently and faster.
 
@@ -91,7 +91,7 @@ C0002, C0032, C0041, C0063, C0085 — all with sk=1.000, S*=0.000, R: 0.500 to 0
 
 ## Bug: Phase 0 Missing Convergence Overrides
 
-**Severity:** CRITICAL — root cause of experiment's inability to converge.
+**Severity:** CRITICAL — root cause of the experiment's inability to converge.
 
 Burst mode is active (6 phases + integration, 56-round budget). `phase_convergence_overrides()` in `burst_planner.py` (line 527) returns tighter criteria per phase (`earliest_stop_round: phase_round_offset + 3`, `consecutive_rounds_required: 2`). But these overrides are only applied at phase transitions (`reference_runner.py` line 2831). Phase 0 never gets them — it runs with base config (`earliest_stop_round: 12`).
 
@@ -112,7 +112,7 @@ Multi-model corroboration means 2+ independent models reported the same bug in s
 | 5 | `RunnerConfig.__post_init__` silently overrides user-configured `rho_earliest_round` | 2x+ | 0.90 | R2+ |
 | 6 | `contested_count()` hardcoded grace period ignores `contested_grace_rounds` parameter | 2x | 0.85 | R5+ |
 
-All 6 are confirmed by multiple independent models and are consistent with observed experiment behaviour. Fixes deferred to Exp 39 (not applied during live run).
+All 6 are confirmed by multiple independent models and are consistent with observed experiment behaviour. Fixes deferred to Exp 39 (not applied during the live run).
 
 ## Design Findings from Experiment Monitoring
 
@@ -124,7 +124,7 @@ The convergence gate detects churn accurately (`ρ_avg < 0.25` → `[CHURN]`) bu
 
 **B. Stall convergence input.** `_check_stall_convergence()` checks `open_ch + contested` stability but not churn duration. If ρ_avg < threshold for N consecutive rounds AND γ > 0.45, that is a stronger stall signal than static count stability.
 
-**C. Dynamic gate relaxation.** When γ > 0.45 (strong depletion, independently confirmed) and churn persists > N rounds, the remaining ρ contributions are re-derivations, not genuine novelty. Gate could relax specific conditions under these jointly-confirmed depletion signals.
+**C. Dynamic gate relaxation.** When γ > 0.45 (strong depletion, independently confirmed) and churn persists > N rounds, the remaining ρ contributions are re-derivations, not genuine novelty. The gate could relax specific conditions under these jointly-confirmed depletion signals.
 
 ### D2: Contested Findings Need Timeout and HIL Escalation
 
@@ -136,21 +136,21 @@ If a finding stays contested for > 2 rounds, models have had multiple opportunit
 3. Remove escalated findings from `contested_count()` — now HIL's responsibility.
 4. HIL resolves: CONFIRM, REFUTE, or MERGE.
 
-In Exp 38, 12 contested findings have been blocking convergence for 3+ rounds. With this mechanism, contested count would have started draining at R14 and convergence gate would have one fewer blocker.
+In Exp 38, 12 contested findings have been blocking convergence for 3+ rounds. With this mechanism, the contested count would have started draining at R14 and the convergence gate would have one fewer blocker.
 
-Both D1 and D2 are detection-without-action gaps: the system measures a condition accurately but doesn't act on it adaptively. Combined with the Phase 0 override fix, these three changes would substantially improve convergence behaviour in Exp 39.
+Both D1 and D2 are detection-without-action gaps: the system measures a condition accurately but does not act on it adaptively. Combined with the Phase 0 override fix, these three changes would substantially improve convergence behaviour in Exp 39.
 
 ### D3: z3 Grounding Breakthrough (R22)
 
-B-Cell produced a z3 SMT-LIB grounded CONFIRMED proof for ChatGPT_F001 in R22, grounding variables `earliest_stop_round` and `rho_earliest_round`. This is the first CONFIRMED finding via formal verification in the later rounds and validates the RunnerConfig `__post_init__` silent override bug (#5 in corroborated bugs). Shows z3 verification works when the claim is about config-space relationships.
+The B-Cell produced a z3 SMT-LIB grounded CONFIRMED proof for ChatGPT_F001 in R22, grounding variables `earliest_stop_round` and `rho_earliest_round`. This is the first CONFIRMED finding via formal verification in the later rounds and validates the RunnerConfig `__post_init__` silent override bug (#5 in corroborated bugs). Shows z3 verification works when the claim is about config-space relationships.
 
 ### D4: MERGE Deadlock Accumulation
 
-12+ findings persistently MERGE DEFERRED due to target disagreement across all R16-R23 rounds. Same findings appear every round (C0008, C0011, C0015, C0016, C0018, C0037, C0038, C0041, C0044, C0084, C0087, C0090). C0011 has 9 competing merge targets. Models cannot agree on which findings should merge, creating a permanent contested population that blocks convergence. Needs either automated deduplication heuristic or HIL arbitration.
+12+ findings persistently MERGE DEFERRED due to target disagreement across all R16-R23 rounds. Same findings appear every round (C0008, C0011, C0015, C0016, C0018, C0037, C0038, C0041, C0044, C0084, C0087, C0090). C0011 has 9 competing merge targets. Models cannot agree on which findings should merge, creating a permanent contested population that blocks convergence. Needs either an automated deduplication heuristic or HIL arbitration.
 
 ### D5: Gemini UNSTRUCTURED Finding Format
 
-From R22, Gemini produced at least one finding tagged as `UNSTRUCTURED` — could not be parsed into standard finding format. Parser assigned it to immune pipeline as-is. Indicates Gemini's output format degrades with accumulated context. Related to P2/P3 parser issues.
+From R22, Gemini produced at least one finding tagged as `UNSTRUCTURED` — could not be parsed into standard finding format. The parser assigned it to the immune pipeline as-is. Indicates Gemini's output format degrades with accumulated context. Related to P2/P3 parser issues.
 
 ### D6: DeepSeek Chunk Delivery Failures
 
@@ -170,11 +170,11 @@ From R18 onward, DeepSeek consistently received non-WAITING responses on chunk 1
 
 ### P1: S_k ESCALATE — No SEARCH/REPLACE Blocks (159 occurrences)
 
-**Severity:** HIGH — dominant failure mode throughout experiment.
+**Severity:** HIGH — the dominant failure mode throughout the experiment.
 
 Models emit findings without properly formatted SEARCH/REPLACE fix blocks. S_k cannot evaluate fixes without them, resulting in ESCALATE verdict. 159 total escalations across all rounds vs maximum 11 ADMISSIBLE. This means ~75% of all canonical findings are unevaluable by S_k.
 
-**Root cause:** Model prompt does not enforce SEARCH/REPLACE format, or models describe fixes in prose rather than structured blocks. Some models (CC2, DeepSeek, Gemini) consistently fail to produce parseable fix blocks.
+**Root cause:** The model prompt does not enforce SEARCH/REPLACE format, or models describe fixes in prose rather than structured blocks. Some models (CC2, DeepSeek, Gemini) consistently fail to produce parseable fix blocks.
 
 **Fix for next runner:** Strengthen the fix-format instructions in the dispatch prompt. Consider providing a concrete SEARCH/REPLACE template. Add a pre-S_k format check that requests reformatting from the model if blocks are missing.
 
@@ -184,9 +184,9 @@ Models emit findings without properly formatted SEARCH/REPLACE fix blocks. S_k c
 
 CC2's R5 F003 finding had a DESCRIPTION containing backtick-quoted `"F001"` in analysis prose (discussing alias resolution in the registry). The parser extracted this inner `"F001"` as a separate finding identifier, creating the phantom finding: `CC2_"F001"`, the lookup works. But if the model emits MERGE C0005 <- C0002...`
 
-This garbled ID flowed through the entire immune pipeline (LLM classifier, B-Cell, formalisation agent, fix verification, HIL escalation). Pipeline handled it gracefully (UNEVALUABLE/HIL escalation), but 6 pipeline processing slots were consumed by a phantom.
+This garbled ID flowed through the entire immune pipeline (LLM classifier, B-Cell, formalisation agent, fix verification, HIL escalation). The pipeline handled it gracefully (UNEVALUABLE/HIL escalation), but 6 pipeline processing slots were consumed by a phantom.
 
-**Root cause:** Finding parser regex matches quoted identifiers inside DESCRIPTION text rather than only at field-declaration boundaries.
+**Root cause:** The finding parser regex matches quoted identifiers inside DESCRIPTION text rather than only at field-declaration boundaries.
 
 **Fix for next runner:** Tighten the finding parser to match FINDING_ID only at line-start or after a field delimiter. Do not extract identifiers from within DESCRIPTION, PROPOSED_FIX, or FOLLOW text.
 
@@ -199,9 +199,9 @@ Gemini's responses mixed verdict declarations (MERGE, CONFIRM, CHALLENGE) with f
 - `Gemini_CONFIRM C0008`
 - `Gemini_CHALLENGE C0019`
 
-These were processed as findings and LOCKED as REJECTED by reconciliation (correctly — they're not real findings).
+These were processed as findings and LOCKED as REJECTED by reconciliation (correctly — they are not real findings).
 
-**Root cause:** Parser doesn't distinguish verdict lines from finding declarations when they share structural markers.
+**Root cause:** The parser does not distinguish verdict lines from finding declarations when they share structural markers.
 
 **Fix for next runner:** Parse verdict lines (CONFIRM, MERGE, CHALLENGE) separately and before finding extraction. Strip them from the response before finding parsing runs.
 
@@ -211,9 +211,9 @@ These were processed as findings and LOCKED as REJECTED by reconciliation (corre
 
 CC2 (8), Gemini (3), DeepSeek (6), and others produce PROPOSED_FIX blocks without specifying the target file path. The fix verifier cannot locate the file to apply the patch.
 
-**Root cause:** PROPOSED_FIX schema doesn't require a target file field, or models omit it even when instructed.
+**Root cause:** The PROPOSED_FIX schema does not require a target file field, or models omit it even when instructed.
 
-**Fix for next runner:** Add explicit `TARGET_FILE` field to the finding schema. Validate its presence before passing to S_k. If missing, attempt to infer from the DESCRIPTION's file reference.
+**Fix for next runner:** Add an explicit `TARGET_FILE` field to the finding schema. Validate its presence before passing to S_k. If missing, attempt to infer from the DESCRIPTION's file reference.
 
 ### P5: LLM Classifier "Below Threshold" Log Misleading (Cosmetic)
 
@@ -221,25 +221,25 @@ CC2 (8), Gemini (3), DeepSeek (6), and others produce PROPOSED_FIX blocks withou
 
 For MATHEMATICAL findings, the MATHEMATICAL guard prevents LLM override regardless of confidence threshold. But the log message says "below threshold 0.70" which implies the threshold was the deciding factor. In reality, the MATHEMATICAL guard would have blocked the override even at conf=1.0.
 
-**Fix for next runner:** Change log message from "below threshold X" to "MATHEMATICAL guard retained" when the MATHEMATICAL guard is the active constraint.
+**Fix for next runner:** Change the log message from "below threshold X" to "MATHEMATICAL guard retained" when the MATHEMATICAL guard is the active constraint.
 
 ### P6: DeepSeek Finding ID Drift (F100)
 
 **Severity:** LOW — cosmetic, no pipeline impact.
 
-DeepSeek emitted `F100` as a finding ID in R6 (normal range is F001-F010). Suggests model's internal counter has drifted after 7 rounds of interaction. Parser accepted it — the pipeline is ID-agnostic.
+DeepSeek emitted `F100` as a finding ID in R6 (normal range is F001-F010). Suggests the model's internal counter has drifted after 7 rounds of interaction. The parser accepted it — the pipeline is ID-agnostic.
 
-**No fix needed.** Parser is correctly flexible on ID format.
+**No fix needed.** The parser is correctly flexible on ID format.
 
 ## Infrastructure Issues
 
 ### Gemini 403 PERMISSION_DENIED (R4 only)
 
-Gemini was blocked by Google Cloud billing enforcement during R4 dispatch. All 5 retry attempts failed. Resolved by user paying the outstanding bill — Gemini returned normally in R5 (260.9s response time in R6). No code change was needed.
+Gemini was blocked by Google Cloud billing enforcement during R4 dispatch. All 5 retry attempts failed. Resolved by the founder paying the outstanding bill — Gemini returned normally in R5 (260.9s response time in R6). No code change was needed.
 
 ### google.generativeai Deprecation Warning
 
-Both `google-generativeai 0.8.6` (old) and `google-genai 1.70.0` (new) are installed. The codebase uses the new package, but the old deprecated package fires a FutureWarning from shared namespace. Deferred fix: `pip3 uninstall google-generativeai` (not executed during live experiment).
+Both `google-generativeai 0.8.6` (old) and `google-genai 1.70.0` (new) are installed. The codebase uses the new package, but the old deprecated package fires a FutureWarning from shared namespace. Deferred fix: `pip3 uninstall google-generativeai` (not executed during the live experiment).
 
 ## Terminal Summary
 
@@ -291,4 +291,4 @@ However, the review was bottom-up (implementation bugs in one file) rather than 
 3. HIL review of the 5 persistently ADMISSIBLE findings (C0002, C0032, C0041, C0063, C0085)
 4. HIL review of z3-CONFIRMED CC2_F004 and DeepSeek_F006
 5. Commit the 5 uncommitted fixes in working tree
-6. Uninstall deprecated google-generativeai package
+6. Uninstall the deprecated google-generativeai package

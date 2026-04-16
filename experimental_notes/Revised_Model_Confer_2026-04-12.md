@@ -1,13 +1,13 @@
 # Revised Mathematical Model — Confer Results and Synthesis
 
-**Date:** 12 April 2026  
-**Models consulted:** Gemini 3.1 Pro, Codex GPT-5.4 (via OpenRouter)  
-**Protocol:** CDSFL + FFAFP (Find, Follow, Analyse, Fix, P-pass)  
+**Date:** 12 April 2026
+**Models consulted:** Gemini 3.1 Pro, Codex GPT-5.4 (via OpenRouter)
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework) plus FFAFP (Find, Follow, Analyse, Fix, P-pass)
 **Raw logs:** `bench/logs/confer_revised_model/`
 
 ## Background
 
-Three modifications to the CDSFL mathematical model were proposed based on AIS literature assessment. Two external models reviewed the complete revised model under structured falsification protocol. The review identified three critical errors and several engineering issues, all correctable before implementation.
+Three modifications to the CDSFL mathematical model were proposed based on AIS (Artificial Immune Systems) literature assessment. Two external models reviewed the complete revised model under structured falsification protocol. The review identified three critical errors and several engineering issues, all correctable before implementation.
 
 ## The Three Proposed Modifications
 
@@ -32,6 +32,8 @@ Replace fixed prior pi_k with evidence-backed Beta-Binomial prior from cross-exp
 ```
 q_eff = η · w(f) · d · p
 ```
+
+where η is the internal novelty score and w(f) is the continuous suppression weight for finding f.
 
 **Problem:** If 5 independent models find the same bug, confirmations 2–5 are suppressed to w_floor=0.05. The Bayesian update barely moves. Independent corroboration is penalised because text is similar.
 
@@ -69,6 +71,8 @@ Order-invariant, smooth decay, no collapse cascade. k=3 or 5.
 ```
 kappa_set(r) = 1 - Σ(w_j · S_j^novel) / Σ(w_k · S_k^cum)
 ```
+
+where kappa_set is the set-level convergence metric.
 
 **Problem:** Denominator represents total discovered severity mass — should monotonically increase. Weighting it by suppression makes it shrink artificially. Can cause fraction > 1.0.
 
@@ -161,7 +165,7 @@ w(f) = max(exp(-λ_s · Σ_{g ∈ TopK(f)} sim(f,g)), w_floor)
 ```
 
 Applies to: kappa_set numerator, report ordering, triage priority.
-Does NOT apply to: q_eff, R_k(i) update, Bayesian detection.
+Does NOT apply to: q_eff, R_k(i) update, Bayesian detection — where R_k(i) is the iterative residual-risk self-assessment after round i.
 
 ### Weighted kappa_set
 

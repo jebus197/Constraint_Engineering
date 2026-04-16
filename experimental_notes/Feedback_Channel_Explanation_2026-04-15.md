@@ -6,19 +6,19 @@
 
 ---
 
-## The problem we solved
+## The problem solved
 
-The CDSFL framework is designed to make large language models more reliable. It works by asking multiple models to analyse the same problem, then checking their answers against mathematical tools, looking for agreement across models, and flagging claims that do not survive scrutiny.
+The CDSFL (Constraint-Driven Synthesis and Falsification) framework is designed to make large language models more reliable. It works by asking multiple models to analyse the same problem, then checking their answers against mathematical tools, looking for agreement across models, and flagging claims that do not survive scrutiny.
 
 Every round of this process produces detailed per-finding judgment. The framework knows when a model's claim has been refuted by a mathematical tool. It knows when a finding fails structural quality checks. It knows when a new finding is really just a repeat of an old one in disguise. It knows when the model's self-reported confidence in a finding does not match the evidence.
 
 **All of this information was being written to log files. The models themselves never saw any of it.**
 
-This is the gap we spent today closing.
+This is the gap the session was dedicated to closing.
 
-Why did this matter? Because the same refuted claim could be resubmitted, unchanged, in the next round. A finding that failed every structural quality check could be carried forward indefinitely. A model whose self-reported confidence disagreed with reality by a wide margin could simply persist in claiming certainty. The framework was measuring errors but doing nothing to correct them.
+Why did it matter? Because the same refuted claim could be resubmitted, unchanged, in the next round. A finding that failed every structural quality check could be carried forward indefinitely. A model whose self-reported confidence disagreed with reality by a wide margin could simply persist in claiming certainty. The framework was measuring errors but doing nothing to correct them.
 
-George's own framing, earlier in the day:
+The founder's own framing, earlier in the day:
 
 > Measurement is nice, it is a nice to have. But the entire point of this project was to make LLMs more reliable, more trustworthy, and more accurate. What is the point in measurement if we do not use it for anything productive, except for knowing when the models got things wrong?
 
@@ -26,19 +26,19 @@ George's own framing, earlier in the day:
 
 ## Four design principles
 
-Four ideas shaped how we built the solution.
+Four ideas shaped how the solution was built.
 
 1. **Imperative, not advisory.** When the framework flags a finding, the model must address it. There is no opt-out based on the model's self-reported confidence. The directive text reads: *agree with the tool output or show it wrong with your own tool output.* Claims of certainty without receipts are not a permitted response.
 
 2. **Live by default, not shadow first.** Some parts of this framework are built in shadow mode first — they observe and log but do not influence behaviour. The feedback channel is different. It is turned on by default in the framework's configuration. A toggle remains for controlled scientific ablation experiments, but the normal operating mode is live.
 
-3. **No changes to the underlying mathematics.** The framework has a recursive equation, R_k(i), that tracks each finding's corroboration score across rounds. We did not touch that equation. We did not add new convergence thresholds. The feedback channel is pure plumbing — routing information that was already being computed into a place where it can affect model behaviour.
+3. **No changes to the underlying mathematics.** The framework has a recursive equation, R_k(i) (the iterative residual-risk self-assessment after round i), that tracks each finding's corroboration score across rounds. That equation was not touched. No new convergence thresholds were added. The feedback channel is pure plumbing — routing information that was already being computed into a place where it can affect model behaviour.
 
 4. **Defensive under all conditions.** Feedback assembly must never crash the main experimental loop. Parser failure, missing finding ID, unreadable number, malformed model response — all yield an empty feedback dictionary, quiet debug log, and the round continues. Observability beats brittleness.
 
 ---
 
-## What we built
+## What was built
 
 One new Python module: `bench/dm/_feedback.py` — 533 lines, four distinct surfaces.
 
@@ -83,7 +83,7 @@ One file changed in the runner — `bench/reference_runner.py` — at three wiri
 
 ## The directive
 
-Section 17 was added to `bench/directives/universal/cdsfl_operational.md` — ~90 lines of text that models themselves see.
+§17 (the Feedback Channel directive) was added to `bench/directives/universal/cdsfl_operational.md` — ~90 lines of text that models themselves see.
 
 It opens by framing the gap: *the schema signal was logged and discarded. That wastes the framework.*
 
@@ -95,7 +95,7 @@ It states the resubmission rule: unchanged flagged findings are inadmissible. Dr
 
 It explains per-model routing, rendering boundaries (top-K, max-chars), and that disablement is for controlled scientific ablation only — not for convenience.
 
-A table in `cdsfl_core_formal.md` was also expanded: the single "corroboration model" row became three rows, pointing to Stage 1 reference (geometric `C(n)`), Stage 5–6 operational (recursive `R_k(i)`), and the new Stage 6 feedback channel (per-finding records).
+A table in `cdsfl_core_formal.md` was also expanded: the single "corroboration model" row became three rows, pointing to Stage 1 reference (geometric `C(n)`), Stage 5–6 operational (recursive `R_k(i)`), and the new Stage 6 (the current mathematical framework) feedback channel (per-finding records).
 
 ---
 
@@ -117,7 +117,7 @@ All 39 green on first real run. Full regression: **832/832 pass**.
 
 ## One defect caught late
 
-The full regression caught one defect that local tests had missed. The framework has a policy engine (`bench/cdsfl_registry/engine.py`) that validates every config file against a schema. When we added the four new `[feedback_channel.*]` parameters to `universal.toml`, the schema registry had not been updated to know about them. The policy engine rejected the new parameters as unknown.
+The full regression caught one defect that local tests had missed. The framework has a policy engine (`bench/cdsfl_registry/engine.py`) that validates every config file against a schema. When the four new `[feedback_channel.*]` parameters were added to `universal.toml`, the schema registry had not been updated to know about them. The policy engine rejected the new parameters as unknown.
 
 This was actually a good catch — the validator exists specifically to catch this kind of drift. Fix was adding four matching blocks to `bench/cdsfl_registry/schema.toml`, each declaring `type`, `default`, `constraint_class`, `min_layer`, and `description`. `test_policy_engine.py` went from 39/40 → 40/40. Full regression confirmed 832/832.
 
@@ -127,7 +127,7 @@ This was actually a good catch — the validator exists specifically to catch th
 
 The save-state script (`scripts/cdsfl_sv.py`) has a quieter defect that surfaced during the commit. It only stages modifications to already-tracked files. New untracked files are silently excluded.
 
-Our `sv` commit message referenced three new files (`_feedback.py`, `test_feedback_channel.py`, `Feedback_Channel_Phase10_2026-04-15.md`) — but none were actually in the commit. Caught after the push; a follow-up commit (`52391aa`) added them. The repository was in an inconsistent state for <1 minute.
+The `sv` commit message referenced three new files (`_feedback.py`, `test_feedback_channel.py`, `Feedback_Channel_Phase10_2026-04-15.md`) — but none were actually in the commit. Caught after the push; a follow-up commit (`52391aa`) added them. The repository was in an inconsistent state for <1 minute.
 
 A separate side-task is flagged to fix this. Proposed fix: detect untracked files in known project directories and auto-stage, with a validation step that every path named in the commit message appears in the staged diff before `git commit` is invoked. Close the defect class, not just the symptom.
 

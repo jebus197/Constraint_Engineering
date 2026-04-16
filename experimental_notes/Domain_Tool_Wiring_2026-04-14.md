@@ -8,7 +8,7 @@
 
 ## Context
 
-The CDSFL immune pipeline's specialist B-Cell dispatch stage routes domain-specific claims to domain-specific verification tools. Prior to this session, the dispatch handled only SymPy, z3, statsmodels and SciPy. Fourteen further tools had been installed on the host but were not wired. The task was to write subprocess wrappers for each installed tool and register them in the dispatch, so non-coding STEM domains (physics, chemistry, biology, engineering) could verify claims mechanically rather than relying on SymPy alone.
+The CDSFL (Constraint-Driven Synthesis and Falsification) immune pipeline's specialist B-Cell dispatch stage routes domain-specific claims to domain-specific verification tools. Prior to this session, the dispatch handled only SymPy, z3, statsmodels and SciPy. Fourteen further tools had been installed on the host but were not wired. The task was to write subprocess wrappers for each installed tool and register them in the dispatch, so non-coding STEM domains (physics, chemistry, biology, engineering) could verify claims mechanically rather than relying on SymPy alone.
 
 ## Tool inventory
 

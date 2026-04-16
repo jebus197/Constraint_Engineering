@@ -8,7 +8,7 @@
 
 ## What this is
 
-The divergence directive (§18) is CDSFL's Popperian **bold-conjectures arm**. The framework already had the **severe-tests arm** — the falsification pipeline, the admissibility gates, the cross-model corroboration, the §17 feedback channel added earlier today. Until now the generator side was implicit, inherited from whatever the models happened to produce unprompted. §18 closes that gap.
+The divergence directive (§18, the Divergence Directive) is the Popperian **bold-conjectures arm** of CDSFL (Constraint-Driven Synthesis and Falsification, a multi-vendor LLM falsification framework). The framework already had the **severe-tests arm** — the falsification pipeline, the admissibility gates, the cross-model corroboration, the §17 (Feedback Channel directive) added earlier today. Until now the generator side was implicit, inherited from whatever the models happened to produce unprompted. §18 closes that gap.
 
 Per the directive, every non-trivial finding must now supply one of two structures:
 
@@ -65,11 +65,11 @@ These are deliberately conservative for the MVP. Final calibration depends on Ex
 
 2. **Live by default.** `divergence_enabled = true` out of the box. No shadow-first phase. The whole point of CDSFL is structured novelty under structured falsification — the directive is not an experimental add-on.
 
-3. **Zero schema math changes.** R_k(i), the recursive corroboration equation, is untouched. The penalty multiplier is an optional pre-factor that can be wired in after Exp 39 baseline measurement, or left unwired so Exp 40 can isolate the prompt-level effect alone.
+3. **Zero schema math changes.** R_k(i), the recursive corroboration equation (the iterative residual-risk self-assessment after round i), is untouched. The penalty multiplier is an optional pre-factor that can be wired in after Exp 39 baseline measurement, or left unwired so Exp 40 can isolate the prompt-level effect alone.
 
 4. **Defensive under all conditions.** Parse failure returns empty records, not exceptions. Unknown dimensions resolve to `None` and surface as a validation reason. Disabled directive returns a compliant neutral record so downstream code never branches on the toggle.
 
-5. **Isomorphism detection is lexical, not semantic.** MVP uses Jaccard over normalised token sets: deterministic, fast, no model dependency. Swapping in sentence-transformer embeddings is a follow-up (scheduled as Exp 39 Phase 2).
+5. **Isomorphism detection is lexical, not semantic.** MVP uses Jaccard (a token-overlap similarity metric) over normalised token sets: deterministic, fast, no model dependency. Swapping in sentence-transformer embeddings is a follow-up (scheduled as Exp 39 Phase 2).
 
 ---
 
@@ -81,9 +81,9 @@ The Invention Engine scoping memo (written earlier today) recommended sequencing
 
 1. Run Exp 39 with §17 live, no divergence directive → baseline measurement of measurement-to-correction effect.
 2. Add divergence directive (§18) → Exp 40 or §18-extension run.
-3. Measure novelty-yield (`nu_k`) delta, corroboration (`R_k`) delta, convergence-rounds delta, novel-AND-survived ratio.
+3. Measure novelty-yield (`nu_k`, the literature-novelty score) delta, corroboration (`R_k`) delta, convergence-rounds delta, novel-AND-survived ratio.
 
-Each change gets its own signal and effects attribute cleanly. Wiring the penalty into R_k now would compound two independent interventions. The penalty function is there when Exp 39 data tells us how to calibrate it.
+Each change gets its own signal and effects attribute cleanly. Wiring the penalty into R_k now would compound two independent interventions. The penalty function is there when Exp 39 data tells the team how to calibrate it.
 
 ---
 

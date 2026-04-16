@@ -1,23 +1,23 @@
 # DC v2 3-Layer Classification Fix: Codex Confer Record
 
 **Date**: 2026-04-10T23:45:25+01:00
-**Confer**: CC1 (Claude Opus 4.6) + CX (Codex GPT-5.4)
-**Subject**: Post-implementation review of 3-layer DC v2 classification fix
+**Confer**: CC1 (Claude Opus 4.6, the interactive Anthropic instance) and CX (Codex GPT-5.4, OpenAI via OpenRouter)
+**Subject**: Post-implementation review of the 3-layer DC v2 (Dendritic Cell version 2) classification fix
 **File**: `bench/immune_agents.py` (lines 2149-2248, 2824-2958, 3641-3677)
 **Tests**: `bench/tests/test_immune_agents.py` (24 new tests)
 
 ## Context
 
-Exp 38 R0: DC v2 regex classifier misrouted 17/26 code findings to MATHEMATICAL and left 3/26 as UNCATEGORISED (dead-end). A 3-layer fix was implemented:
-- Layer 1: Domain-aware code-context regex before math pattern
-- Layer 2: LLM classifier for UNCATEGORISED residue only
-- Layer 3: Hard verification gate + domain wiring
+Experiment 38 Round 0 (R0): the DC v2 regex classifier misrouted 17/26 code findings to MATHEMATICAL and left 3/26 as UNCATEGORISED (a dead-end label that no immune cell processes). A 3-layer fix was implemented:
+- Layer 1: Domain-aware code-context regex applied before the math pattern
+- Layer 2: LLM (large language model) classifier for UNCATEGORISED residue only
+- Layer 3: Hard verification gate plus domain wiring
 
 Five prior confer findings (F1-F5) were addressed. This confer reviews the implementation.
 
 ## Codex Empirical Test Results
 
-Codex ran the regex patterns against 7 adversarial samples in a read-only sandbox. Results reproduced independently by CC1:
+Codex ran the regex patterns against 7 adversarial samples in a read-only sandbox. Results were reproduced independently by CC1:
 
 | Sample | code_context | strong_math | Would misroute in SW? |
 |--------|-------------|-------------|----------------------|
@@ -41,7 +41,7 @@ CC1 additional samples:
 
 **FIND**: Line 2163: `\bmethod\b|\bfunction\b|\battribute\b|\bvariable\b` matches mathematical uses of these words. "The function f(x)" matches `\bfunction\b`. "The variable n" matches `\bvariable\b`. "This method converges" matches `\bmethod\b`. "The attribute of a relation" matches `\battribute\b`. These are standard mathematical vocabulary.
 
-**FOLLOW**: In software domain, any description containing "function", "variable", "method", or "attribute" in a mathematical context will be routed to CODE_BEHAVIORAL (0.65 confidence) instead of MATHEMATICAL or LOGICAL. CT cells investigate code bugs, not mathematical claims. The finding will receive a CT verdict but no B-Cell verdict (B-Cell only processes MATHEMATICAL/LOGICAL/STATISTICAL). The CT cell will likely produce UNCERTAIN (no code to investigate), and Stage 6 hard gate will escalate to HIL. So the misroute does not cause silent failure — it causes unnecessary HIL escalation and wasted CT cycles.
+**FOLLOW**: In the software domain, any description containing "function", "variable", "method", or "attribute" in a mathematical context will be routed to CODE_BEHAVIORAL (0.65 confidence) instead of MATHEMATICAL or LOGICAL. CT cells (Cytotoxic T cells, the code-investigation specialists) investigate code bugs, not mathematical claims. The finding will receive a CT verdict but no B-Cell verdict (B-Cell, the mathematical/logical/statistical specialist, only processes those three classes). The CT cell will likely produce UNCERTAIN (no code to investigate), and Stage 6 (the current mathematical framework) hard gate will escalate to HIL (human-in-the-loop). So the misroute does not cause silent failure — it causes unnecessary HIL escalation and wasted CT cycles.
 
 **FIX**: Two options:
 1. **Conservative**: Remove `\bmethod\b|\bfunction\b|\battribute\b|\bvariable\b` from `_CODE_CONTEXT_PATTERN`. These words are too ambiguous between code and math. The remaining patterns (def, class, self., import, __dunder__, return, raises, Error/Exception, dict access, status mutation, bug language, foo()) are all unambiguously code-specific.
@@ -71,7 +71,7 @@ r"|\b(?:symmetric|transitive|reflexive)\b"    # relation properties
 
 ### CX-F3: No lock contention between Layer 2 and Stage 2 (Q3) — NO ISSUE
 
-**FIND**: Stage 1.7 (Layer 2 LLM active classifier, line 3357-3367) runs sequentially BEFORE Stage 2 (parallel verification, line 3375+). The pipeline flow is: Stage 1 → 1.5 → 1.7 → Stage 2. Within Stage 2, CT v1 (line 651) and CT v2 (line 1763) both acquire `_CLAUDE_CLI_LOCK`, but they run in the same ThreadPoolExecutor and contend only with each other — not with Stage 1.7.
+**FIND**: Stage 1.7 (Layer 2 LLM active classifier, line 3357-3367) runs sequentially BEFORE Stage 2 (parallel verification, line 3375+). The pipeline flow is: Stage 1 to 1.5 to 1.7 to Stage 2. Within Stage 2, CT v1 (line 651) and CT v2 (line 1763) both acquire `_CLAUDE_CLI_LOCK`, but they run in the same ThreadPoolExecutor and contend only with each other — not with Stage 1.7.
 
 **FOLLOW**: The only contention path would be if Stage 1.5 (shadow, 45s timeout per finding, iterates all findings) were still running when Stage 1.7 starts. But Stage 1.5 completes before Stage 1.7 begins (sequential in pipeline). The shadow classifier (Stage 1.5) does iterate all findings serially under the lock (45s timeout each), which could take 45s * N_findings before Stage 1.7 even starts. With 26 findings that is up to 1170s of shadow classification time. But this is a pre-existing latency issue with the shadow classifier, not a new issue introduced by Layer 2.
 

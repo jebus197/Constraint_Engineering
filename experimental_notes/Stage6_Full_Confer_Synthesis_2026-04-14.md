@@ -1,10 +1,10 @@
 # Stage 6 Full Panel Confer Synthesis: Literature-Calibrated Extension and Shadow Calibration
 
 **Date:** 14 April 2026  
-**Protocol:** CDSFL + FFAFP  
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass)  
 **Round:** 3 (full panel)  
-**Models:** Gemini 3.1 Pro, Codex GPT-5.4, CC2 Claude Opus 4.6, ChatGPT GPT-5.4, DeepSeek R1-0528  
-**Subject:** Two-dimensional (nu_k, c_ext) architecture and shadow calibration instrumentation  
+**Models:** Gemini 3.1 Pro, Codex GPT-5.4, CC2 Claude Opus 4.6 (the CLI-piped instance), ChatGPT GPT-5.4, DeepSeek R1-0528  
+**Subject:** Two-dimensional (nu_k, the literature-novelty score; c_ext, the literature-search quality coefficient) architecture and shadow calibration instrumentation  
 **Previous rounds:** R1 (Gemini + Codex, 7 corrections), R2 (Gemini + Codex, 5 HARD + 3 SOFT corrections)  
 **Previous synthesis documents:**
 - `Stage6_Confer_Synthesis_2026-04-14.md` (R1)
@@ -14,7 +14,7 @@
 
 ## Unanimous Verdict (5 of 5 Models)
 
-The core Stage 6 mathematical architecture — eta_combined, the two-dimensional (nu_k, c_ext) reporting architecture, boundary conditions, monotonicity, and reduction properties — is **SOUND**.
+The core Stage 6 (the current mathematical framework) architecture — eta_combined (the integrated novelty coefficient), the two-dimensional (nu_k, c_ext) reporting architecture, boundary conditions, monotonicity, and reduction properties — is **SOUND**.
 
 The shadow calibrator (`_shadow_stage6.py`) contains multiple HARD errors that would produce actively misleading calibration data if uncorrected before Exp 39.
 

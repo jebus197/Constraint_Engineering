@@ -1,7 +1,7 @@
 # Macrophage / Ouroboros (O1) Cell Type Split
 
 **Date:** 12 April 2026
-**Protocol:** CDSFL + FFAFP
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework) plus FFAFP (Find, Follow, Analyse, Fix, P-pass)
 **Models:** Gemini 3.1 Pro (43.6s, 9912 chars) + Codex 5.3 (398.6s, 8467 chars)
 **Confer logs:** `bench/logs/confer_cell_split/`
 
@@ -15,9 +15,9 @@ The CDSFL immune pipeline's `ouroboros_cell.py` has two modes (macrophage + micr
 
 ### Macrophage Cell (Internal Pipeline Monitor)
 - **Role:** Internal observer and patrol cell. Watches, detects, advises.
-- **Capabilities:** Pipeline monitoring, PE gate meta-monitoring, systemic pathology detection.
+- **Capabilities:** Pipeline monitoring, PE (Policy Engine) gate meta-monitoring, systemic pathology detection.
 - **Pipeline stage:** Continuous observation, advisory only.
-- **Output:** Observations filtered by sensitivity dial → HIL queue.
+- **Output:** Observations filtered by sensitivity dial → HIL (human-in-the-loop) queue.
 - **API access:** NONE. Strict isolation.
 - **Biology:** Macrophages are patrol cells that operate inside the body, engulfing pathogens and presenting them to other immune cells.
 

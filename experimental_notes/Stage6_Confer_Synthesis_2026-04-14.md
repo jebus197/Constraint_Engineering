@@ -1,8 +1,8 @@
 # Stage 6 Confer Synthesis — Gemini 3.1 Pro and Codex GPT-5.4
 
 **Date:** 14 April 2026
-**Protocol:** CDSFL + FFAFP
-**Subject:** Stage 6 literature-calibrated extension to the mathematical model
+**Protocol:** CDSFL (Constraint-Driven Synthesis and Falsification) + FFAFP (Find, Follow, Analyse, Fix, P-pass)
+**Subject:** Stage 6 (the current mathematical framework) literature-calibrated extension to the mathematical model
 **Models:** Gemini 3.1 Pro (65.9s, 10274 chars), Codex GPT-5.4 (89.7s, 22236 chars)
 
 ---
@@ -43,7 +43,7 @@ Strict > criterion means a single test producing e = 1/α exactly fails the thre
 
 ### 6. Continuous Evidence Discard (SOFT — ACKNOWLEDGED)
 
-E_combined is used for binary admissibility only; its magnitude does not propagate into R_k(i). Gemini proposed linking E_combined to d_eff. This is marked [SPECULATIVE] and deferred — the coupling would add complexity without empirical justification yet.
+E_combined (the corroborated e-value across tools) is used for binary admissibility only; its magnitude does not propagate into R_k(i). Gemini proposed linking E_combined to d_eff (the effective detection probability). This is marked [SPECULATIVE] and deferred; the coupling would add complexity without empirical justification yet.
 
 **Response:** Added explicit statement that e-values currently bound admission only, not risk magnitude. Future coupling to d is possible but requires empirical calibration.
 

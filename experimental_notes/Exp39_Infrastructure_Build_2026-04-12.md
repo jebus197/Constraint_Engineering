@@ -5,6 +5,8 @@
 **Commit:** `b0f33d7`
 **Tests:** 762 passing (3 independent runs)
 
+CDSFL = Constraint-Driven Synthesis and Falsification, the Popperian multi-vendor LLM falsification framework.
+
 ## Experiment 38 Fixes Folded into the Runner
 
 ### 1. D1-B Churn Stall Convergence
@@ -25,7 +27,7 @@ Two-tier design: advisory (gamma >= 0.30 + sustained churn) means convergence is
 
 Every finding now carries an explicit `target_file` field identifying which file the finding is about. All four parser paths (JSON array, JSON object, tuple, and marker/block) now extract or infer this field. If the model doesn't state it explicitly, the parser regex-matches file paths from the description and proposed fix text.
 
-Load-bearing for fix verification — you can't verify a fix if you don't know what file it targets.
+Load-bearing for fix verification — a fix cannot be verified if the target file is unknown.
 
 ### 3. LLM-Primary Classifier
 
@@ -43,7 +45,7 @@ Gemini dispatch moved from the Google GenAI API to OpenRouter. Model ID: `google
 
 **Files:** `bench/cdsfl_registry/domains/statistics.toml`, `bench/cdsfl_registry/domains/immune/statistics.toml`, `bench/cdsfl_registry/schema.toml`
 
-New TOML configs for the statistics specialist cell. Defines verification requirements (hypothesis tests, effect sizes, distribution checks) and immune pipeline parameters (claim patterns, CT prompt template, false positive patterns). Six new parameters added to the PE schema.
+New TOML configs for the statistics specialist cell. Defines verification requirements (hypothesis tests, effect sizes, distribution checks) and immune pipeline parameters (claim patterns, CT prompt template, false positive patterns). Six new parameters added to the PE (Policy Engine) schema.
 
 ## Experiment 39 Infrastructure
 
@@ -75,6 +77,8 @@ Each config specifies: round limits, wall clock cap, convergence criteria (prima
 | 39-K | Physics Shadow | 6 | 1h | physics | shadow |
 | 39-L | Chemistry Shadow | 6 | 1h | chemistry | shadow |
 | 39-M | Engineering Shadow | 6 | 1h | engineering | shadow |
+
+S_k is the severity/stringency tristate gate.
 
 ### 8. Sequencer Script
 
