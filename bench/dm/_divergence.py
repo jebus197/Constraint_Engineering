@@ -11,28 +11,62 @@ either:
 
 * **Structure A** — Primary solution + ≥1 alternative differing from the
   primary on a named dimension (mechanism / assumption / scope / timescale
-  / tradeoff).
+  / tradeoff). Every alternative MUST also declare a contrast statement
+  naming explicitly how it differs from the primary on that dimension.
 * **Structure B** — Primary solution + a scoped null-alternative
   justification (analogous to anti-deference `null_find_requires_scoped_
   justification`).
 
 This module parses the raw model output for alternative / null-justification
-blocks, validates them against the directive, scores cosmetic-isomorphism
-(Jaccard over token sets; embedding backend deferred), and exposes a
-penalty multiplier that the R_k pipeline can apply at the finding level.
+blocks, validates them against the directive, scores lexical near-duplicate
+similarity (Jaccard over token sets; embedding backend deferred), runs a
+sibling alt-vs-alt admissibility check, and exposes a modulator that the
+R_k pipeline applies to **η_int** — never to R_k directly.
+
+─────────────────────────────────────────────────────────────────────────────
+CHANNEL ASSIGNMENT — ORTHOGONALITY CONTRACT (round-2 5/5 unanimous)
+─────────────────────────────────────────────────────────────────────────────
+Stage 6 math has three semantic channels:
+
+    R_k(i) — iterative residual-risk self-assessment   (pipeline outcome)
+    ν_k    — literature-grounded novelty yield         (external signal)
+    c_ext  — external-citation density                 (external signal)
+
+The divergence modulator operates on **η_int** (internal novelty), which
+flows into q via the η decomposition:
+
+    η_combined = η_int · (1 − c_ext · (1 − ν_k))
+    q          = η_combined · d · p
+    R_k(i)     = R_k(i-1) · (1 − q) / (1 − q · R_k(i-1))
+
+The modulator multiplies η_int only. It is forbidden from entering q_eff
+as an independent pre-factor on R_k, and it is forbidden from counting
+toward ν_k. The three channels are *assignment-orthogonal* — a divergence
+penalty affects R_k through η_int → q → the recurrence, not as a direct
+R_k multiplier. This is the channel-assignment invariant that all five
+models converged on in round-2 review.
+
+The continuous-suppression weight w(f) is a DIFFERENT construct. It lives
+in kappa_set's numerator (weighted) with a raw denominator, and it is
+EXCLUDED from q_eff (Corroboration Collapse fix, 12 April 2026). See
+`bench/dm/_convergence.py` for w(f). Do not conflate w(f) with the
+η_int modulator defined here — they act on different channels.
+─────────────────────────────────────────────────────────────────────────────
 
 Design notes:
 
 * MVP uses Jaccard similarity over normalised token sets — deterministic,
-  fast, no model dependency. Swapping in sentence-transformer embeddings
-  is a follow-up and will use the shared similarity backend (§Phase 2 of
-  the Exp 39 plan).
-* No schema math changes. No change to R_k(i) structure. The penalty
-  multiplier is a pre-factor applied to the contribution of a finding
-  that violates the directive.
+  fast, no model dependency. The role is a **lexical near-duplicate
+  heuristic**: high Jaccard flags surface-level rewording, not semantic
+  equivalence. Swapping in sentence-transformer embeddings is a follow-up
+  via the shared similarity backend (§Phase 2 of the Exp 39 plan).
+* No schema math changes to R_k. The modulator multiplies η_int at the
+  finding level and propagates through q into the recurrence.
 * Validator is permissive on parse (many header styles accepted) and
-  strict on semantics (dimension must be one of the five allowed; isomorphism
-  threshold is enforced; null-justification must meet minimum length).
+  strict on semantics (dimension must be one of the five allowed;
+  isomorphism threshold is enforced; contrast statement must be present
+  and ≥min_contrast_chars; sibling alt-vs-alt isomorphism is a
+  ship-blocker that flips the second-occurring alternative inadmissible).
 * Disabled gracefully — all parse / validate functions return empty or
   neutral results when the directive is off; no pipeline mutation.
 """
@@ -103,6 +137,31 @@ _DIM_LINE_RE = re.compile(
     re.VERBOSE | re.IGNORECASE | re.MULTILINE,
 )
 
+# Contrast-statement regex — matches an explicit "differs from primary" /
+# "contrast" / "in contrast" line naming how the alternative departs from
+# the primary on the declared dimension. This is the round-2 ship-blocker:
+# without a contrast statement, an alternative is inadmissible even if its
+# Jaccard is low and the dimension is valid.
+_CONTRAST_RE = re.compile(
+    r"""
+    ^\s*
+    (?:\*{1,2})?
+    (?:
+        differs?\s+from\s+primary        # "differs from primary"
+        | contrast(?:s)?(?:\s+with\s+primary)?  # "contrast" / "contrasts with primary"
+        | in\s+contrast(?:\s+to\s+primary)?     # "in contrast" / "in contrast to primary"
+        | departs?\s+from\s+primary      # "departs from primary"
+        | vs\.?\s+primary                # "vs primary" / "vs. primary"
+    )
+    \s*[:\-—]\s*
+    (?P<contrast>.+?)
+    \s*
+    (?:\*{1,2})?
+    \s*$
+    """,
+    re.VERBOSE | re.IGNORECASE | re.MULTILINE,
+)
+
 # Null-justification block header — flexible phrasing accepted.
 _NULL_HEADER_RE = re.compile(
     r"""
@@ -145,6 +204,16 @@ class DivergenceConfig:
 
     Mirrors the `[divergence]` block in `bench/cdsfl_registry/universal.toml`
     and is schema-validated by the policy engine.
+
+    Round-2 additions:
+
+    * ``min_contrast_chars`` — minimum character length of the mandatory
+      contrast statement attached to each alternative.
+    * ``near_copy_threshold`` — Jaccard at or above this is treated as a
+      near-copy and triggers the severe η_int modulator tier (0.60).
+    * ``sibling_isomorphism_threshold`` — Jaccard between two sibling
+      alternatives for the same finding at or above this marks the
+      later-occurring sibling inadmissible (alt-vs-alt ship-blocker).
     """
 
     enabled: bool = True
@@ -153,6 +222,10 @@ class DivergenceConfig:
     mode: str = "imperative"  # "imperative" | "advisory"
     isomorphism_threshold: float = 0.85
     null_justification_min_chars: int = 60
+    # Round-2 additions
+    min_contrast_chars: int = 20
+    near_copy_threshold: float = 0.98
+    sibling_isomorphism_threshold: float = 0.85
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,9 +238,22 @@ class AlternativeRecord:
     """Parsed and validated alternative block for a single finding.
 
     Produced by :func:`parse_alternative_block` and consumed by the R_k
-    pipeline for divergence-penalty application. Failure modes are encoded
-    in ``admissible`` + ``rejection_reasons`` rather than exceptions — a
+    pipeline for η_int modulation. Failure modes are encoded in
+    ``admissible`` + ``rejection_reasons`` rather than exceptions — a
     malformed alternative is never fatal, only penalised.
+
+    Round-2 additions:
+
+    * ``contrast_statement`` — parsed "differs from primary on X in that
+      Y" clause; ``None`` if absent.
+    * ``sibling_max_isomorphism`` — highest Jaccard score observed
+      against any earlier-indexed sibling alternative for the same
+      finding. ``0.0`` if this is the first alternative.
+    * ``admissibility_gate_passed`` — composite flag true iff this
+      alternative survived the primary-isomorphism gate AND the
+      sibling-isomorphism gate AND the contrast-statement gate. This is
+      the round-2 ship-blocker aggregate; ``admissible`` mirrors it for
+      backward compatibility with existing callers.
     """
 
     primary_finding_id: str
@@ -176,6 +262,10 @@ class AlternativeRecord:
     isomorphism_score: float = 0.0  # Jaccard vs primary; 0.0 = orthogonal
     admissible: bool = False
     rejection_reasons: List[str] = field(default_factory=list)
+    # Round-2 additions
+    contrast_statement: Optional[str] = None
+    sibling_max_isomorphism: float = 0.0
+    admissibility_gate_passed: bool = False
 
 
 @dataclass
@@ -183,7 +273,7 @@ class DivergenceRecord:
     """Per-finding divergence audit for one round.
 
     Collected by :func:`build_divergence_records`; the aggregate outcome
-    ``compliant`` governs whether the divergence penalty is applied.
+    ``compliant`` governs whether the η_int modulator is applied.
     """
 
     finding_id: str
@@ -202,8 +292,8 @@ def _tokenise(text: str) -> set:
     """Normalise text to a lower-case token set for Jaccard comparison.
 
     Drops stopwords, numbers-only tokens, and tokens shorter than two chars.
-    Kept deliberately simple — we are detecting *cosmetic rewording*, not
-    doing paraphrase detection.
+    Kept deliberately simple — we are running a *lexical near-duplicate
+    heuristic*, not paraphrase detection.
     """
     tokens = _WORD_RE.findall(text.lower())
     return {t for t in tokens if t not in _STOPWORDS and len(t) >= 2}
@@ -213,9 +303,10 @@ def score_isomorphism(primary: str, alternative: str) -> float:
     """Jaccard similarity between primary and alternative token sets.
 
     Returns in [0.0, 1.0]. 0.0 means disjoint vocabulary; 1.0 means identical
-    after stopword removal. The intended interpretation is *lexical overlap*
-    — a high score flags a likely surface-level rewording, not a semantic
-    duplicate per se.
+    after stopword removal. The intended interpretation is **lexical
+    near-duplicate heuristic** — a high score flags likely surface-level
+    rewording, not a semantic duplicate per se. Embedding-based similarity
+    (sentence-transformer backend) is the follow-up replacement.
     """
     a = _tokenise(primary)
     b = _tokenise(alternative)
@@ -263,6 +354,28 @@ def _normalise_dimension(raw: Optional[str]) -> Optional[str]:
     return canonical if canonical in ALLOWED_DIMENSIONS else None
 
 
+def parse_contrast_statement(body: str) -> Tuple[Optional[str], str]:
+    """Extract a single-line contrast statement from an alternative body.
+
+    Looks for a line matching :data:`_CONTRAST_RE` and returns
+    ``(statement, body_without_contrast_line)``. If no contrast line is
+    present returns ``(None, body)``. Only the first match is consumed so
+    models may include prose discussion of the contrast further in the
+    body without it being double-counted in isomorphism scoring.
+    """
+    if not body:
+        return None, body
+    m = _CONTRAST_RE.search(body)
+    if not m:
+        return None, body
+    statement = m.group("contrast").strip()
+    # Remove the matched contrast line from the body so it doesn't inflate
+    # Jaccard against the primary (the contrast line is meta, not primary
+    # claim text).
+    body_stripped = (body[: m.start()] + body[m.end():]).strip()
+    return statement or None, body_stripped
+
+
 def parse_alternative_block(
     text: str,
     primary_finding_id: str,
@@ -273,11 +386,13 @@ def parse_alternative_block(
 
     Accepts several header forms (see ``_ALT_HEADER_RE``). For each
     alternative found, attempts to resolve its declared dimension from
-    inline tag, follow-up ``Dimension:`` line, or marks it missing. Computes
+    inline tag, follow-up ``Dimension:`` line, or marks it missing. Parses
+    the mandatory contrast statement (round-2 requirement). Computes
     Jaccard isomorphism vs ``primary_text`` and stores the result.
 
-    Does not itself gate admissibility — see :func:`validate_alternative`.
-    Returns ``[]`` if no alternative blocks found.
+    Does not itself gate admissibility — see :func:`validate_alternative`
+    and :func:`check_sibling_admissibility`. Returns ``[]`` if no
+    alternative blocks found.
     """
     if config is None:
         config = DivergenceConfig()
@@ -308,14 +423,20 @@ def parse_alternative_block(
                 body = body[dim_line_match.end():].strip()
 
         dimension = _normalise_dimension(dim_raw)
-        score = score_isomorphism(primary_text, body)
+
+        # Parse contrast statement (round-2). Consume it from the body so
+        # it doesn't inflate Jaccard against the primary.
+        contrast, body_without_contrast = parse_contrast_statement(body)
+
+        score = score_isomorphism(primary_text, body_without_contrast)
 
         records.append(
             AlternativeRecord(
                 primary_finding_id=primary_finding_id,
-                alternative_text=body,
+                alternative_text=body_without_contrast,
                 dimension=dimension,
                 isomorphism_score=score,
+                contrast_statement=contrast,
             )
         )
 
@@ -360,13 +481,19 @@ def validate_alternative(
 
     An alternative is admissible iff all of:
 
-    * ``dimension`` is one of :data:`ALLOWED_DIMENSIONS`;
     * ``alternative_text`` is non-empty;
     * ``alternative_text`` is ≤ ``max_chars_per_alternative``;
-    * ``isomorphism_score`` < ``isomorphism_threshold``.
+    * ``dimension`` is one of :data:`ALLOWED_DIMENSIONS`;
+    * ``isomorphism_score`` < ``isomorphism_threshold`` (lexical
+      near-duplicate heuristic against the primary);
+    * ``contrast_statement`` is present and ≥ ``min_contrast_chars``
+      (round-2: every alternative must explicitly name how it differs
+      from the primary on the declared dimension).
 
     Reasons are accumulated so a failing alternative reports every failure,
-    not just the first.
+    not just the first. Sibling alt-vs-alt isomorphism is checked
+    separately in :func:`check_sibling_admissibility` so this function
+    stays pairwise primary-vs-alt.
     """
     if config is None:
         config = DivergenceConfig()
@@ -389,10 +516,78 @@ def validate_alternative(
             f">= {config.isomorphism_threshold})"
         )
 
+    # Round-2: mandatory contrast statement
+    if alternative.contrast_statement is None:
+        reasons.append("missing_contrast_statement")
+    elif len(alternative.contrast_statement.strip()) < config.min_contrast_chars:
+        reasons.append(
+            f"contrast_statement_too_short ({len(alternative.contrast_statement.strip())} < "
+            f"{config.min_contrast_chars})"
+        )
+
     admissible = not reasons
     alternative.admissible = admissible
     alternative.rejection_reasons = list(reasons)
+    # admissibility_gate_passed is only flipped true by the full gate in
+    # build_divergence_record (after sibling check); this function alone
+    # cannot grant it.
     return admissible, reasons
+
+
+def check_sibling_admissibility(
+    alternatives: List[AlternativeRecord],
+    config: Optional[DivergenceConfig] = None,
+) -> None:
+    """Run the sibling alt-vs-alt isomorphism check in place.
+
+    Round-2 ship-blocker: when two alternatives for the same finding are
+    lexically near-duplicates of each other (Jaccard ≥
+    ``sibling_isomorphism_threshold``), the later-occurring sibling is
+    flipped inadmissible. The earlier sibling stands — the penalty lands
+    on redundant submission, not on genuine first divergence.
+
+    Mutates each :class:`AlternativeRecord` in place:
+
+    * ``sibling_max_isomorphism`` — filled with the highest sibling
+      Jaccard observed against any earlier-indexed alternative.
+    * ``admissible`` — flipped to False if the sibling check fails, and
+      a ``sibling_cosmetic_isomorphism`` reason is appended.
+    * ``admissibility_gate_passed`` — set True iff ``admissible`` is
+      still True after this pass (composite gate aggregate).
+
+    Preserves ordering: the first alternative always keeps its existing
+    admissibility; only alternatives at index ≥ 1 can be demoted by this
+    check.
+    """
+    if config is None:
+        config = DivergenceConfig()
+    if not alternatives:
+        return
+
+    for i, alt in enumerate(alternatives):
+        max_sib = 0.0
+        worst_sibling_idx: Optional[int] = None
+        for j in range(i):
+            sib = alternatives[j]
+            sib_iso = score_isomorphism(sib.alternative_text, alt.alternative_text)
+            if sib_iso > max_sib:
+                max_sib = sib_iso
+                worst_sibling_idx = j
+        alt.sibling_max_isomorphism = max_sib
+
+        if max_sib >= config.sibling_isomorphism_threshold:
+            # Ship-blocker: flip inadmissible if it survived primary gate.
+            reason = (
+                f"sibling_cosmetic_isomorphism "
+                f"(jaccard_vs_alt_{worst_sibling_idx}={max_sib:.3f} "
+                f">= {config.sibling_isomorphism_threshold})"
+            )
+            if reason not in alt.rejection_reasons:
+                alt.rejection_reasons.append(reason)
+            alt.admissible = False
+
+        # Composite gate: passes all stages iff still admissible.
+        alt.admissibility_gate_passed = alt.admissible
 
 
 def validate_null_justification(
@@ -439,13 +634,19 @@ def build_divergence_record(
 
     The record captures every alternative parsed (admissible or not), the
     optional null-justification, and a top-level ``compliant`` verdict the
-    pipeline uses to decide whether to apply the divergence penalty.
+    pipeline uses to decide whether to apply the η_int modulator.
 
     ``compliant`` is true iff:
 
-    * at least ``min_alternatives`` alternatives pass :func:`validate_alternative`,
+    * at least ``min_alternatives`` alternatives pass
+      :func:`validate_alternative` **AND** the sibling admissibility check,
       **OR**
-    * a valid null-justification is supplied per :func:`validate_null_justification`.
+    * a valid null-justification is supplied per
+      :func:`validate_null_justification`.
+
+    Round-2: sibling admissibility is now part of the compliance decision.
+    An alternative that passes primary gates but duplicates an earlier
+    sibling is demoted and does NOT count toward ``min_alternatives``.
 
     When the directive is disabled, returns a compliant record with empty
     content so downstream code never needs to branch on the toggle.
@@ -456,7 +657,7 @@ def build_divergence_record(
     record = DivergenceRecord(finding_id=finding_id)
 
     # Disabled: emit a compliant empty record. The pipeline treats this as
-    # "divergence not required this round" and applies no penalty.
+    # "divergence not required this round" and applies no modulation.
     if not config.enabled:
         record.compliant = True
         return record
@@ -466,6 +667,10 @@ def build_divergence_record(
     )
     for alt in alternatives:
         validate_alternative(alt, config)
+
+    # Round-2 ship-blocker: sibling alt-vs-alt isomorphism check.
+    check_sibling_admissibility(alternatives, config)
+
     record.alternatives = alternatives
 
     null_block = parse_null_justification_block(raw_output)
@@ -506,28 +711,47 @@ def build_divergence_record(
     return record
 
 
-def divergence_penalty_multiplier(
+def eta_int_modulator(
     record: DivergenceRecord,
     config: Optional[DivergenceConfig] = None,
 ) -> float:
-    """Return a scalar in (0, 1] that scales a finding's contribution to R_k.
+    """Return a scalar in (0, 1] that modulates **η_int** for a finding.
 
-    Design:
+    Channel contract (round-2 5/5 unanimous): this scalar multiplies the
+    internal-novelty channel η_int; it does NOT pre-multiply R_k, it does
+    NOT enter q as an independent factor, and it does NOT count toward ν_k.
+    The modulator's effect on R_k flows exclusively through:
 
-    * Compliant finding → 1.0 (no penalty).
+        η_int_modulated = m · η_int
+        η_combined      = η_int_modulated · (1 − c_ext · (1 − ν_k))
+        q               = η_combined · d · p
+        R_k(i)          = R_k(i-1) · (1 − q) / (1 − q · R_k(i-1))
+
+    Tier design (four levels; severe 0.60 reserved for near-copy or
+    recidivism):
+
+    * Compliant finding → 1.0 (no modulation).
     * Non-compliant finding with at least one parsed-but-inadmissible
-      alternative → 0.85 (soft penalty; the model engaged with the directive
-      but failed the gate).
+      alternative (missing contrast, missing dimension, sibling duplicate,
+      etc., where isomorphism stayed below the near-copy threshold) → 0.85
+      (soft modulation; the model engaged with the directive but failed
+      the gate).
     * Non-compliant finding with neither alternative nor null-justification
-      → 0.70 (hard penalty; the model ignored the directive entirely).
-    * Isomorphic-only submission (alternatives present, all flagged cosmetic)
-      → 0.60 (double penalty per §18 — treated as null submission *and*
-      without the required justification).
+      → 0.70 (hard modulation; the model ignored the directive entirely).
+    * Near-copy submission (at least one alternative with Jaccard ≥
+      ``near_copy_threshold``, default 0.98) → 0.60 (severe; reserved for
+      lexical near-duplicates and recidivism). Also applied when every
+      alternative is cosmetically isomorphic (all flagged ≥ isomorphism
+      threshold but < near-copy threshold → still treated as null
+      submission without justification, which is the original §18 double
+      penalty).
 
-    These multipliers are deliberately conservative in the MVP. The penalty
-    exists to shift the equilibrium toward compliance; it is not meant to
-    dominate R_k calculation. Final calibration depends on Exp 39 / Exp 40
-    baselines.
+    The modulators are deliberately conservative in the MVP. They shift
+    equilibrium toward compliance; they are not meant to dominate R_k.
+    Final calibration depends on Exp 39 / Exp 40 baselines.
+
+    Backward compatibility: the legacy name
+    :func:`divergence_penalty_multiplier` is preserved as an alias below.
     """
     if config is None:
         config = DivergenceConfig()
@@ -538,19 +762,41 @@ def divergence_penalty_multiplier(
     has_null = record.null_justification is not None
 
     if has_any_alt:
+        # Severe tier 1: any alternative is a near-copy (lexical
+        # near-duplicate at or above near_copy_threshold, default 0.98).
+        any_near_copy = any(
+            a.isomorphism_score >= config.near_copy_threshold
+            for a in record.alternatives
+        )
+        if any_near_copy:
+            return 0.60
+
+        # Severe tier 2: every alternative flagged cosmetic (at or above
+        # isomorphism_threshold, default 0.85). This is the original §18
+        # double-penalty case — null submission without justification.
         all_isomorphic = all(
             any(r.startswith("cosmetic_isomorphism") for r in a.rejection_reasons)
             for a in record.alternatives
         )
         if all_isomorphic:
             return 0.60
+
+        # Soft tier: model engaged with the directive but failed some gate
+        # (contrast, sibling, dimension, etc.).
         return 0.85
 
     if has_null:
         # Null block supplied but failed validation (too short, etc.)
         return 0.85
 
+    # Hard tier: model ignored the directive entirely.
     return 0.70
+
+
+# Backward-compatibility alias. Existing tests and call sites import
+# `divergence_penalty_multiplier`; the round-2 rename relocates the
+# function's semantic home onto η_int but keeps the old name working.
+divergence_penalty_multiplier = eta_int_modulator
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -583,6 +829,17 @@ def divergence_config_from_dict(payload: Optional[Dict]) -> DivergenceConfig:
         null_justification_min_chars=int(
             payload.get(
                 "null_justification_min_chars", defaults.null_justification_min_chars
+            )
+        ),
+        min_contrast_chars=int(
+            payload.get("min_contrast_chars", defaults.min_contrast_chars)
+        ),
+        near_copy_threshold=float(
+            payload.get("near_copy_threshold", defaults.near_copy_threshold)
+        ),
+        sibling_isomorphism_threshold=float(
+            payload.get(
+                "sibling_isomorphism_threshold", defaults.sibling_isomorphism_threshold
             )
         ),
     )

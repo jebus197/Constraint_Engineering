@@ -58,13 +58,21 @@ mode = "imperative"              # imperative = MUST address; advisory = SHOULD 
 
 [divergence]
 # cdsfl_operational.md §18 — generator-side directive: every non-trivial
-# finding must supply ≥1 alternative on a named dimension (mechanism /
+# finding must supply >=1 alternative on a named dimension (mechanism /
 # assumption / scope / timescale / tradeoff), or a scoped null-justification.
 # Defaults ON — CDSFL's invention-engine arm. Disable only for controlled
 # ablation. Implementation: bench/dm/_divergence.py.
+#
+# Channel assignment (round-2 5/5 unanimous, 16 April 2026): the modulator
+# multiplies eta_int, never R_k directly, never credits nu_k. See module
+# docstring in bench/dm/_divergence.py for the orthogonality contract.
 enabled = true
 min_alternatives = 1                    # required per non-trivial finding
 max_chars_per_alternative = 2000        # hard cap per alternative block
 mode = "imperative"                     # imperative = MUST; advisory = SHOULD
-isomorphism_threshold = 0.85            # Jaccard score >= this = cosmetic reject
+isomorphism_threshold = 0.85            # Jaccard >= this vs primary = cosmetic reject
 null_justification_min_chars = 60       # floor for scoped null-alternative rationale
+# Round-2 additions (16 April 2026)
+min_contrast_chars = 20                 # floor for the mandatory "Differs from primary:" clause
+near_copy_threshold = 0.98              # Jaccard >= this triggers the severe 0.60 tier
+sibling_isomorphism_threshold = 0.85    # alt-vs-alt Jaccard >= this flips the later alt inadmissible

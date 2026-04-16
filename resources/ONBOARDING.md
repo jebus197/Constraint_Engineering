@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 16 April 2026 00:20 BST
+Last updated: 16 April 2026 02:50 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,38 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **§18 ROUND-2 IMPLEMENTATION + ROUND-3 FINAL REVIEW (16 April 2026, 01:00–02:30 BST):**
+  Branch: `exp39-experimental`. 935 tests pass (was 912; +23 new round-2
+  divergence tests). Documentation refresh: 47 files reformatted for
+  third-party voice + plain English + AI gender-neutrality (commit `0651974`).
+
+  **Round-2 consensus implemented:** channel reassignment (η_int modulator,
+  not R_k pre-factor), mandatory contrast statement, sibling alt-vs-alt
+  mandatory rejection gate, near-copy 0.98 severe tier. Function renamed
+  `divergence_penalty_multiplier` → `eta_int_modulator` (alias retained).
+  Files: `bench/dm/_divergence.py` (rewrite), `cdsfl_operational.md` §18
+  (rewrite), `universal.toml` + `schema.toml` (3 new fields each).
+
+  **Tool cross-check:** SymPy/z3 verification 41/41 pass. Channel-assignment
+  invariant confirmed symbolically: ∂R/∂m ≠ 0 (modulator reaches R_k);
+  η_int=0 kills path (multiplicative); c_ext=1,ν_k=0 kills path (known).
+  ruff + mypy clean. 75/75 divergence tests, 935/935 full suite.
+
+  **Round-3 5-panel review** (`bench/confer_divergence_round3_final.py`):
+  3/5 immediate convergence (Gemini, CC2, DeepSeek). 2/5 diverged (Codex,
+  ChatGPT) on one prose/code mismatch in the severe-tier documentation —
+  corrected. Effective 5/5 after fix.
+
+  **Residual debt (documented, not blocking):** recidivism detection needs
+  cross-round state from reference_runner.py; end-to-end channel-assignment
+  boundary unverified at integration call site; `divergence_config_from_dict(None)`
+  returns `enabled=False` (intentional).
+
+  **Founder feedback (standing correction):** CDSFL must converge to ONE
+  definitive recommendation for the HIL, not present multiple options.
+  Alternatives are internal exploration; output is a single answer with
+  visible reasoning. Recorded in `memory/feedback_hil_fatigue.md`.
+
 - **§17 + §18 FIVE-PANEL REVIEW AND ROUND-2 CONVERGENCE (15 April 2026, 23:02Z → 16 April 00:10 BST):**
   Branch: `exp39-experimental`. 912 tests pass (baseline unchanged — this
   session is review-only, no schema edits yet). Stage 6 math served as the

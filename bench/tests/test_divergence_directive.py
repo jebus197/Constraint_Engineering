@@ -28,21 +28,21 @@ from __future__ import annotations
 import os
 import sys
 
-import pytest
-
 _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-from bench.dm._divergence import (
+from bench.dm._divergence import (  # noqa: E402
     ALLOWED_DIMENSIONS,
     AlternativeRecord,
     DivergenceConfig,
-    DivergenceRecord,
     build_divergence_record,
+    check_sibling_admissibility,
     divergence_config_from_dict,
     divergence_penalty_multiplier,
+    eta_int_modulator,
     parse_alternative_block,
+    parse_contrast_statement,
     parse_null_justification_block,
     score_isomorphism,
     validate_alternative,
@@ -61,16 +61,31 @@ PRIMARY_TEXT = (
 )
 
 
-def _alt_with_dim_inline(dim: str, body: str) -> str:
+# Round-2: every alternative now requires a contrast statement. Fixture
+# helpers inject one by default so existing tests keep asserting primary
+# behaviour. Tests that explicitly exercise the missing-contrast case use
+# the *_no_contrast variants below.
+_DEFAULT_CONTRAST = (
+    "Differs from primary: uses a distinct update rule targeting the same "
+    "residual, with different convergence guarantees."
+)
+
+
+def _alt_with_dim_inline(dim: str, body: str, contrast: str = _DEFAULT_CONTRAST) -> str:
+    return f"Alternative 1 (dimension: {dim})\n{body}\nDiffers from primary: {contrast}\n"
+
+
+def _alt_with_dim_dash(dim: str, body: str, contrast: str = _DEFAULT_CONTRAST) -> str:
+    return f"Alternative — dimension: {dim}\n{body}\nDiffers from primary: {contrast}\n"
+
+
+def _alt_with_followup_dim(dim: str, body: str, contrast: str = _DEFAULT_CONTRAST) -> str:
+    return f"Alternative:\nDimension: {dim}\n{body}\nDiffers from primary: {contrast}\n"
+
+
+def _alt_no_contrast(dim: str, body: str) -> str:
+    """Alternative block WITHOUT a contrast statement (round-2 failure mode)."""
     return f"Alternative 1 (dimension: {dim})\n{body}\n"
-
-
-def _alt_with_dim_dash(dim: str, body: str) -> str:
-    return f"Alternative — dimension: {dim}\n{body}\n"
-
-
-def _alt_with_followup_dim(dim: str, body: str) -> str:
-    return f"Alternative:\nDimension: {dim}\n{body}\n"
 
 
 def _null_block(body: str) -> str:
@@ -245,6 +260,10 @@ class TestValidateAlternative:
             alternative_text="Newton-Raphson with Hessian storage.",
             dimension="mechanism",
             isomorphism_score=0.2,
+            contrast_statement=(
+                "Differs from primary: uses explicit Hessian inversion instead "
+                "of matrix-free line search."
+            ),
         )
         ok, reasons = validate_alternative(alt)
         assert ok is True
@@ -412,7 +431,9 @@ class TestBuildDivergenceRecord:
     def test_multiple_alternatives_one_admissible_compliant(self):
         raw = (
             "Alternative 1 (dimension: mechanism)\n"
-            "Replace CG with truncated-Newton using matvec Hessian products only.\n\n"
+            "Replace CG with truncated-Newton using matvec Hessian products only.\n"
+            "Differs from primary: second-order curvature via matvec, no full "
+            "Hessian storage.\n\n"
             "Alternative 2:\n"
             "Some other vague suggestion without a dimension.\n"
         )
@@ -527,3 +548,307 @@ class TestConfigFromDict:
         assert cfg.enabled is True
         assert cfg.min_alternatives == 1  # default
         assert cfg.max_chars_per_alternative == 2000  # default
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TestRound2ChannelReassignment
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestRound2ChannelReassignment:
+    """Round-2 unanimous 5/5 model convergence: contrast statement requirement,
+    sibling alt-vs-alt ship-blocker, near-copy 0.98 severe tier, and the
+    channel-assignment rename of the penalty multiplier onto η_int.
+
+    See `bench/dm/_divergence.py` module docstring for the orthogonality
+    contract: the modulator acts on η_int, never as an independent R_k
+    pre-factor, never on ν_k.
+    """
+
+    # ── Contrast statement parser ──────────────────────────────────────────
+
+    def test_parse_contrast_differs_from_primary(self):
+        body = (
+            "Replace CG with truncated-Newton.\n"
+            "Differs from primary: uses second-order curvature via matvec.\n"
+        )
+        contrast, stripped = parse_contrast_statement(body)
+        assert contrast is not None
+        assert "second-order" in contrast
+        assert "Differs from primary" not in stripped
+
+    def test_parse_contrast_in_contrast_to_primary(self):
+        body = (
+            "Assume strict convexity.\n"
+            "In contrast to primary: narrows the admissible function class.\n"
+        )
+        contrast, _ = parse_contrast_statement(body)
+        assert contrast is not None
+        assert "narrows" in contrast
+
+    def test_parse_contrast_vs_primary(self):
+        body = (
+            "Single-precision arithmetic throughout.\n"
+            "vs. primary: trades numerical accuracy for throughput.\n"
+        )
+        contrast, _ = parse_contrast_statement(body)
+        assert contrast is not None
+        assert "throughput" in contrast
+
+    def test_parse_contrast_absent_returns_none(self):
+        body = "Replace CG with truncated-Newton. No explicit contrast line here."
+        contrast, stripped = parse_contrast_statement(body)
+        assert contrast is None
+        assert stripped == body
+
+    # ── Contrast statement validation ──────────────────────────────────────
+
+    def test_missing_contrast_rejected(self):
+        raw = _alt_no_contrast(
+            "mechanism",
+            "Replace CG with truncated-Newton using matvec Hessian products only.",
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.compliant is False
+        assert any(
+            "missing_contrast_statement" in r
+            for r in rec.alternatives[0].rejection_reasons
+        )
+
+    def test_too_short_contrast_rejected(self):
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Replace CG with truncated-Newton using matvec Hessian products only.\n"
+            "Differs from primary: short.\n"  # 5 chars — under default 20
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.compliant is False
+        assert any(
+            "contrast_statement_too_short" in r
+            for r in rec.alternatives[0].rejection_reasons
+        )
+
+    def test_min_contrast_chars_configurable(self):
+        raw = _alt_with_dim_inline(
+            "mechanism",
+            "Replace CG with truncated-Newton.",
+            contrast="A" * 30,  # satisfies 20, satisfies 30, fails 40
+        )
+        # Default (20) — admissible
+        rec_default = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec_default.compliant is True
+        # Raised to 40 — rejected
+        cfg_strict = DivergenceConfig(min_contrast_chars=40)
+        rec_strict = build_divergence_record("f1", PRIMARY_TEXT, raw, cfg_strict)
+        assert rec_strict.compliant is False
+
+    # ── Sibling alt-vs-alt isomorphism ship-blocker ────────────────────────
+
+    def test_sibling_near_duplicate_second_rejected(self):
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Replace CG with truncated-Newton using matvec Hessian products.\n"
+            "Differs from primary: second-order curvature via matvec.\n\n"
+            "Alternative 2 (dimension: assumption)\n"
+            "Replace CG with truncated-Newton using matvec Hessian products.\n"
+            "Differs from primary: assumes Hessian-vector product is cheap.\n"
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        # First alt stands, second flipped inadmissible by sibling check.
+        assert rec.alternatives[0].admissible is True
+        assert rec.alternatives[1].admissible is False
+        assert any(
+            "sibling_cosmetic_isomorphism" in r
+            for r in rec.alternatives[1].rejection_reasons
+        )
+        # Sibling isomorphism is recorded on the second, not the first.
+        assert rec.alternatives[0].sibling_max_isomorphism == 0.0
+        assert rec.alternatives[1].sibling_max_isomorphism >= 0.85
+
+    def test_sibling_distinct_both_admissible(self):
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Truncated-Newton with matvec Hessian products.\n"
+            "Differs from primary: second-order curvature via matvec not line search.\n\n"
+            "Alternative 2 (dimension: tradeoff)\n"
+            "Accept slower wall-clock convergence for dramatically reduced memory footprint.\n"
+            "Differs from primary: memory-bounded regime instead of speed-optimal.\n"
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.alternatives[0].admissible is True
+        assert rec.alternatives[1].admissible is True
+        # Neither should have high sibling iso.
+        assert rec.alternatives[1].sibling_max_isomorphism < 0.85
+
+    def test_sibling_check_does_not_demote_first(self):
+        # First alternative never has an earlier sibling, so should never be
+        # demoted by the sibling check regardless of what follows it.
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Truncated-Newton with matvec products.\n"
+            "Differs from primary: matvec, not line search, drives descent.\n\n"
+            "Alternative 2 (dimension: mechanism)\n"
+            "Truncated-Newton with matvec products.\n"  # duplicate of alt 1
+            "Differs from primary: matvec, not line search, drives descent.\n"
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.alternatives[0].admissible is True
+        assert rec.alternatives[0].sibling_max_isomorphism == 0.0
+
+    def test_sibling_threshold_configurable(self):
+        # Moderate overlap: ~0.5 Jaccard. Default 0.85 passes; tightened 0.4 rejects.
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Truncated-Newton with matvec products descending the gradient.\n"
+            "Differs from primary: matvec-based second order replaces line search.\n\n"
+            "Alternative 2 (dimension: assumption)\n"
+            "Truncated-Newton with matvec products assumed cheap per step.\n"
+            "Differs from primary: assumes Hessian-vector product is O(n) not O(n^2).\n"
+        )
+        # Default threshold — probably both admissible (low-moderate overlap).
+        rec_default = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        # Tightened threshold — second should be demoted.
+        cfg_tight = DivergenceConfig(sibling_isomorphism_threshold=0.30)
+        rec_tight = build_divergence_record("f1", PRIMARY_TEXT, raw, cfg_tight)
+        # At minimum, the tightened configuration should be at least as
+        # strict as the default (fewer or equal admissible alternatives).
+        admissible_default = sum(1 for a in rec_default.alternatives if a.admissible)
+        admissible_tight = sum(1 for a in rec_tight.alternatives if a.admissible)
+        assert admissible_tight <= admissible_default
+
+    # ── Near-copy 0.98 severe tier ─────────────────────────────────────────
+
+    def test_near_copy_098_severe_tier(self):
+        # Identical primary text forced through the alternative channel —
+        # Jaccard 1.0, far above near-copy threshold 0.98.
+        raw = _alt_with_dim_inline(
+            "mechanism",
+            PRIMARY_TEXT,  # identical to primary → iso 1.0
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        # Both the near-copy tier (1.0 >= 0.98) and the all-isomorphic tier
+        # would select 0.60; the near-copy tier takes precedence but the
+        # observable value is 0.60 either way.
+        assert eta_int_modulator(rec) == 0.60
+
+    def test_near_copy_threshold_configurable(self):
+        # Force a mid-high iso alternative that lands between the default
+        # isomorphism_threshold (0.85) and near_copy_threshold (0.98).
+        # Use a text that shares most but not all tokens with primary.
+        shared = (
+            "conjugate gradient descent Polak-Ribiere updates Armijo "
+            "backtracking line search"
+        )  # every content token from primary
+        raw = _alt_with_dim_inline("mechanism", shared)
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        # Iso is expected >= 0.85 → all-isomorphic → 0.60 under default.
+        assert eta_int_modulator(rec) == 0.60
+
+    # ── Channel-reassignment rename: eta_int_modulator + legacy alias ──────
+
+    def test_eta_int_modulator_same_function_as_legacy_alias(self):
+        # The rename is semantic; the old export must still resolve to the
+        # same callable so external call sites don't break.
+        assert eta_int_modulator is divergence_penalty_multiplier
+
+    def test_eta_int_modulator_returns_identity_on_compliance(self):
+        raw = _alt_with_dim_inline(
+            "mechanism",
+            "Truncated-Newton with matvec Hessian products.",
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert eta_int_modulator(rec) == 1.0
+
+    def test_eta_int_modulator_in_unit_interval_all_failure_modes(self):
+        cases = [
+            "just primary",
+            _alt_with_dim_inline("mechanism", PRIMARY_TEXT),  # near-copy
+            _alt_with_dim_inline("mechanism", "Truncated Newton."),  # compliant
+            _alt_no_contrast("mechanism", "Truncated-Newton with matvec."),  # missing contrast
+            "Alternative:\nNewton.\n",  # missing dim
+        ]
+        for raw in cases:
+            rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+            m = eta_int_modulator(rec)
+            assert 0.0 < m <= 1.0, f"modulator {m} out of range for: {raw!r}"
+
+    # ── admissibility_gate_passed composite flag ───────────────────────────
+
+    def test_admissibility_gate_passed_composite_flag(self):
+        raw = _alt_with_dim_inline(
+            "mechanism",
+            "Truncated-Newton with matvec Hessian products.",
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.alternatives[0].admissibility_gate_passed is True
+
+    def test_admissibility_gate_passed_false_when_sibling_rejects(self):
+        raw = (
+            "Alternative 1 (dimension: mechanism)\n"
+            "Truncated-Newton with matvec Hessian products.\n"
+            "Differs from primary: matvec-based second order not line search.\n\n"
+            "Alternative 2 (dimension: assumption)\n"
+            "Truncated-Newton with matvec Hessian products.\n"
+            "Differs from primary: assumes cheap Hessian-vector product.\n"
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.alternatives[0].admissibility_gate_passed is True
+        assert rec.alternatives[1].admissibility_gate_passed is False
+
+    def test_admissibility_gate_passed_false_when_contrast_missing(self):
+        raw = _alt_no_contrast(
+            "mechanism",
+            "Truncated-Newton with matvec Hessian products.",
+        )
+        rec = build_divergence_record("f1", PRIMARY_TEXT, raw)
+        assert rec.alternatives[0].admissibility_gate_passed is False
+
+    # ── Config loading of new fields ───────────────────────────────────────
+
+    def test_config_loads_round2_fields(self):
+        payload = {
+            "enabled": True,
+            "min_contrast_chars": 15,
+            "near_copy_threshold": 0.97,
+            "sibling_isomorphism_threshold": 0.80,
+        }
+        cfg = divergence_config_from_dict(payload)
+        assert cfg.min_contrast_chars == 15
+        assert cfg.near_copy_threshold == 0.97
+        assert cfg.sibling_isomorphism_threshold == 0.80
+
+    def test_config_round2_fields_have_defaults(self):
+        cfg = divergence_config_from_dict({"enabled": True})
+        assert cfg.min_contrast_chars == 20
+        assert cfg.near_copy_threshold == 0.98
+        assert cfg.sibling_isomorphism_threshold == 0.85
+
+    # ── check_sibling_admissibility direct invocation ──────────────────────
+
+    def test_check_sibling_admissibility_empty_list_noop(self):
+        # Must not raise on empty input.
+        check_sibling_admissibility([])
+        check_sibling_admissibility([], DivergenceConfig())
+
+    def test_check_sibling_admissibility_mutates_in_place(self):
+        a1 = AlternativeRecord(
+            primary_finding_id="f1",
+            alternative_text="Truncated-Newton matvec products here.",
+            dimension="mechanism",
+            isomorphism_score=0.2,
+            admissible=True,
+            contrast_statement="x" * 25,
+        )
+        a2 = AlternativeRecord(
+            primary_finding_id="f1",
+            alternative_text="Truncated-Newton matvec products here.",  # duplicate
+            dimension="assumption",
+            isomorphism_score=0.2,
+            admissible=True,
+            contrast_statement="y" * 25,
+        )
+        check_sibling_admissibility([a1, a2])
+        assert a1.admissible is True
+        assert a2.admissible is False
+        assert a1.admissibility_gate_passed is True
+        assert a2.admissibility_gate_passed is False

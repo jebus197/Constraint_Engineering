@@ -761,7 +761,10 @@ structures:**
 
 **Structure A — Primary solution plus ≥1 alternative.** The alternative
 must differ from the primary on at least one of these named dimensions,
-and the dimension must be declared explicitly in the alternative block:
+the dimension must be declared explicitly in the alternative block, and
+the alternative must carry a **contrast statement** naming how it
+departs from the primary on that dimension (see Contrast requirement
+below):
 
 1. **Mechanism** — a different physical, mathematical, or algorithmic
    pathway to the same outcome.
@@ -776,20 +779,53 @@ and the dimension must be declared explicitly in the alternative block:
 
 **Structure B — Primary solution plus scoped null-alternative
 justification.** If you have genuinely searched the alternative space
-and cannot identify a distinct alternative that passes the isomorphism
-check, you must state so explicitly and supply a justification that
-names *the search space you considered, the candidates you rejected,
-and the reason each rejected candidate collapsed to the primary*. This
-is analogous to the anti-deference `null_find_requires_scoped_justification`
-protocol. Bare declarations ("no alternative exists") are inadmissible.
+and cannot identify a distinct alternative that passes the lexical
+near-duplicate heuristic, you must state so explicitly and supply a
+justification that names *the search space you considered, the
+candidates you rejected, and the reason each rejected candidate
+collapsed to the primary*. This is analogous to the anti-deference
+`null_find_requires_scoped_justification` protocol. Bare declarations
+("no alternative exists") are inadmissible.
 
-**Cosmetic rewordings are rejected.** The R_k validator applies an
-isomorphism check to the alternative text. If the alternative differs
-from the primary only in surface wording — same mechanism, same
-assumptions, same scope, same trade — it is isomorphic and the finding
-is treated as having supplied no alternative. An isomorphic alternative
-does not earn novelty credit and counts as a null-alternative submission
-without the required justification (double penalty).
+**Contrast requirement.** Every alternative must include a contrast
+statement of the form *"Differs from primary: …"* (or equivalent:
+*"In contrast to primary: …"*, *"vs. primary: …"*). The statement
+names, in natural language, how the alternative departs from the
+primary on the declared dimension. Minimum length is governed by
+`min_contrast_chars` (default 20). An alternative that omits the
+contrast statement, or supplies one shorter than the minimum, is
+inadmissible regardless of its primary-vs-alternative similarity score.
+
+**Cosmetic rewordings are rejected.** The R_k validator applies a
+lexical near-duplicate heuristic (Jaccard over normalised token sets)
+to the alternative text. If the alternative differs from the primary
+only in surface wording — same mechanism, same assumptions, same scope,
+same trade — it is treated as having supplied no alternative. A
+near-duplicate alternative does not earn novelty credit and counts as a
+null-alternative submission without the required justification (double
+penalty). Note: the Jaccard heuristic is a **lexical near-duplicate
+filter**, not a semantic-equivalence test; an embedding backend is the
+planned follow-up.
+
+**Near-copy severe tier.** The severe η_int modulation tier (0.60)
+fires in three cases: (a) any alternative at or above
+`near_copy_threshold` (default 0.98 Jaccard); (b) recidivism (same
+rejected alternative re-submitted across rounds); or (c) **all**
+alternatives are cosmetically isomorphic (every alternative at or
+above `isomorphism_threshold`, default 0.85). Case (c) is the original
+§18 double-penalty: submitting nothing but compliance theatre is
+treated as null-alternative-without-justification and carries the
+severe modulator. A single inadmissible alternative among others that
+pass does not trigger the severe tier — that is the 0.85 soft-penalty
+case.
+
+**Sibling alt-vs-alt isomorphism is a ship-blocker.** When a finding
+carries multiple alternatives, each subsequent alternative is compared
+against every earlier-indexed sibling. If any sibling-vs-sibling
+Jaccard reaches `sibling_isomorphism_threshold` (default 0.85) the
+later-occurring alternative is flipped inadmissible — the first
+alternative stands, the later duplicate is dropped. A finding cannot
+earn credit for the same alternative twice by re-phrasing it.
 
 **Dimension of difference is non-optional.** An alternative without a
 declared dimension is parsed as cosmetic. Tag the dimension in the
@@ -799,9 +835,26 @@ alternative block header.
 `max_chars_per_alternative` (default 2000) per alternative, and at
 `min_alternatives` (default 1) per finding. The model may supply more
 than the minimum; additional alternatives are welcomed and count toward
-`nu_k` (novelty yield) provided each passes the isomorphism check
-against both the primary *and* all other alternatives in the same
-finding.
+`η_int` (internal novelty channel) provided each passes the primary
+near-duplicate check, the sibling near-duplicate check, and the
+contrast-statement check. Alternatives **do not** count toward `ν_k`,
+which is the literature-grounded novelty channel and is maintained by
+the external-evidence pipeline, not by prompt-level divergence. The
+two channels are assignment-orthogonal by design — see the Stage 6
+channel assignment below.
+
+**Channel assignment (Stage 6 invariant).** The R_k / ν_k / c_ext
+channels are orthogonal in the **assignment** sense. The divergence
+modulator multiplies `η_int` (internal novelty). Its effect reaches
+R_k exclusively through the decomposition
+`η_combined = η_int · (1 − c_ext · (1 − ν_k))` feeding `q = η_combined
+· d · p` and then the R_k recurrence. The modulator is forbidden from
+acting as an independent pre-factor on R_k; it is forbidden from
+entering q as a free factor outside η_int; it is forbidden from
+crediting ν_k. Implementation enforces these invariants in
+`bench/dm/_divergence.py` (see the module-level Orthogonality
+Contract). The round-2 model review ratified this assignment 5/5
+unanimous.
 
 **Interaction with HARD constraints.** The divergence directive operates
 exclusively inside SOFT-constraint space. HARD constraints (physics,
@@ -812,20 +865,25 @@ at admissibility, not at isomorphism.
 **Interaction with §17 feedback.** If a prior-round alternative was
 refuted by the schema and resurfaces unchanged in the current round, it
 is treated as a resubmitted flagged finding per §17 — inadmissible,
-dropped, no credit. You may refine a refuted alternative and resubmit
-the refined version; the refinement must address the prior refutation.
+dropped, no credit, and (in repeat cases) routed to the near-copy
+severe tier as recidivism. You may refine a refuted alternative and
+resubmit the refined version; the refinement must address the prior
+refutation and carry a contrast statement naming what changed.
 
 **Disablement.** The directive is gated by `divergence_enabled` in
 `bench/cdsfl_registry/universal.toml` (default `true`). Disabling is
 a controlled-ablation tool for research, not a user convenience. If the
 directive is disabled, you will see no mandate for alternatives and are
-expected to operate under §3 Bayesian update alone — novelty yield
-(`nu_k`) will measurably decline and the framework reverts to pure
+expected to operate under §3 Bayesian update alone — internal novelty
+`η_int` will measurably decline and the framework reverts to pure
 error-correction mode.
 
-(Divergence directive added 15 April 2026. Implementation:
-`bench/dm/_divergence.py`; validator extension in
-`bench/reference_runner.py` R_k pipeline. The directive closes the
-generation-side gap: the schema stops being a pure critic and starts
-being an invention engine. This is the missing symmetry in Popper's
-arms and the reason CDSFL was built.)
+(Divergence directive added 15 April 2026. Round-2 unanimous model
+review 16 April 2026 ratified: contrast statement requirement,
+sibling alt-vs-alt ship-blocker, near-copy 0.98 severe tier, and the
+channel-assignment invariant locating the modulator on η_int rather
+than R_k. Implementation: `bench/dm/_divergence.py`; validator
+extension in `bench/reference_runner.py` R_k pipeline. The directive
+closes the generation-side gap: the schema stops being a pure critic
+and starts being an invention engine. This is the missing symmetry in
+Popper's arms and the reason CDSFL was built.)

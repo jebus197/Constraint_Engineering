@@ -557,6 +557,30 @@ constraint_class = "SOFT"
 min_layer = "universal"
 description = "Minimum character length for scoped null-alternative justification block."
 
+# Round-2 additions (16 April 2026) — unanimous 5/5 model convergence.
+# Mandatory contrast statement, near-copy severe tier, sibling ship-blocker.
+
+[divergence.min_contrast_chars]
+type = "int"
+default = 20
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Minimum character length for the mandatory 'Differs from primary:' contrast statement on every alternative."
+
+[divergence.near_copy_threshold]
+type = "float"
+default = 0.98
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Jaccard at or above this triggers the severe 0.60 eta_int modulation tier (reserved for near-copy and recidivism)."
+
+[divergence.sibling_isomorphism_threshold]
+type = "float"
+default = 0.85
+constraint_class = "SOFT"
+min_layer = "universal"
+description = "Sibling alt-vs-alt Jaccard at or above this marks the later-occurring alternative inadmissible (ship-blocker)."
+
 # =============================================================================
 # [model] — model-specific settings (Layer 4 only)
 # =============================================================================
