@@ -51,17 +51,19 @@ within context budget and API-error safety.
 | 1E.1 §17 wiring | VERIFIED (inherited) | — | Already wired in `reference_runner.py`; carries into v2. |
 | 1E.2 §18 wiring | VERIFIED (inherited) | — | Already wired. `eta_int_modulator` remains library-exposed but not called from `compute_rk` (deferred to Exp 54 per plan). |
 | 1E.3 Specialist cell live-promotion | DEFERRED | — | Single-line flip at `reference_runner_v2.py:~3741`. Needs domain-routing dispatch audit before flipping. |
-| 1E.4 K/L/M functional shadow | DEFERRED | — | Physics/chemistry/engineering specialist-cell implementations. Several hundred LOC per domain. |
+| 1E.4 K/L/M functional shadow | VERIFIED | 21/21 | Physics (pint + astropy), chemistry (rdkit + stoichiometric_balance), engineering (pint-backed FOS via dimensional_analysis + linear_programming). Tests in `bench/tests/test_specialist_shadow_cells.py` confirm verifier functionality on synthetic domain claims, manifest wiring, and that K/L/M remain in shadow (not in `LIVE_SPECIALIST_DOMAINS`). |
 | 1E.5 Fingerprint attention metrics | DEFERRED | — | Wire existing ITC data into fingerprint JSON (measured_attention_span etc.). Non-trivial integration. |
 | 1E.6 Dynamic decomposition by payload | DEFERRED | — | Replace static `pre_decompose_models` list with dynamic threshold check. Exp 40 target (~52K) is under threshold regardless. |
 | 1E.7 Cross-model diversity metric | IMPLEMENTED | 12/12 | New `bench/dm/_diversity.py`. Computes mean pairwise Jaccard + template_collapse_risk across §18 alternatives. Module-level only; runner integration (logging per round into round JSON) still pending. |
-| 1E.8 Ouroboros query-quality fix | DEFERRED | — | Requires O1 cell query-builder rewrite + source-rotation adapters. Major work. |
+| 1E.8 Ouroboros query-quality fix | IMPLEMENTED | 12/12 | Query builder already resolves finding IDs to descriptions and strips numeric/parenthetical noise. Source rotation via `allowed_sources` round-robin in `_build_queries`. arxiv package (2.4.1) installed; live metadata path returns `live`/`live_empty` rather than `shadow_mock`. Tests in `bench/tests/test_ouroboros_query_quality.py`. |
 | 1E.9 Recidivism detection cross-round | DEFERRED | — | `_divergence.py` currently within-round only. |
 | 1E.10 Channel-assignment boundary assertion | DEFERRED | — | Runtime assertion useful only when `eta_int_modulator` is wired into `compute_rk` (Exp 54). |
-| 1E.11 OpenRouter tool-use mode | DEFERRED | — | Requires API feature work for four non-CC2 models. |
-| 1E.12 DeepSeek specialist role (Phase 6) | DEFERRED | — | Depends on 1B.2 fingerprint fix (now done) + tool-use mode. |
+| 1E.11 OpenRouter tool-use mode | IMPLEMENTED | 36/36 | New module `bench/openrouter_tools.py`: 5 TOOL_SPECS (sympy/z3/pytest/ruff/mypy) in OpenAI function-calling JSON schema, subprocess-isolated local dispatchers, `dispatch_tool_call` router with structured-JSON error paths, `call_openrouter_with_tools` tool-call loop with `MAX_TOOL_ITERATIONS=6` safety cap. Path-safety via `_resolve_repo_path`. Tests in `bench/tests/test_openrouter_tools.py`. |
+| 1E.12 DeepSeek specialist role (Phase 6) | IMPLEMENTED | 29/29 | `_verify_deepseek_formal` in `bench/immune_agents.py`: DeepSeek R1 reasoner as formal-verification specialist. Tool registered in `tool_manifest.toml` as `deepseek_formal` (claim_types: logical, mathematical). Wired into `mathematics.toml` logical list AFTER z3/sympy so LLM only fires when mechanical tools defer. Confidence capped at 0.5. Graceful degradation on missing API key / network error / parse failure. Tests in `bench/tests/test_deepseek_specialist.py`. |
 
 **Stage 3 result:** 12 new tests for 1E.7 module. Schema wiring largely deferred; §17 and §18 already live from prior work. Deferred items do not block Exp 40 for its stated scope (target under payload threshold, specialist cells live for the four declared domains only once 1E.3 lands).
+
+**Stage 3 continuation (later same day — autonomous mode under `x` override):** 1E.4, 1E.8, 1E.11, 1E.12 all landed. 98 new tests added (21 + 12 + 36 + 29). K/L/M specialist verifiers verified functional; Ouroboros query-quality + source rotation + arxiv package all confirmed green; OpenRouter function-calling infrastructure wired for the four non-CC2 models; DeepSeek formal-verification specialist added to the B-Cell dispatch as an LLM fallback after mechanical tools.
 
 ### Stage 4 — Test article decomposition
 
@@ -115,6 +117,22 @@ within context budget and API-error safety.
 
 - `experimental_notes/Exp40_Implementation_Progress_2026-04-17.md` (this file)
 
+### Added during autonomous continuation (same day, `x` override)
+
+**Code (modifications):**
+- `bench/immune_agents.py` — added `_verify_deepseek_formal` specialist verifier + `_parse_deepseek_formal_response` + module constants
+- `bench/cdsfl_registry/tool_manifest.toml` — registered `deepseek_formal` tool entry
+- `bench/cdsfl_registry/domains/immune/mathematics.toml` — appended `deepseek_formal` to logical-claim verification_tools list (AFTER mechanical tools)
+
+**New modules:**
+- `bench/openrouter_tools.py` — OpenAI function-calling TOOL_SPECS for sympy/z3/pytest/ruff/mypy, subprocess-isolated local dispatchers, path-safety helper, tool-call loop with iteration cap
+
+**New tests (98 total, all green):**
+- `bench/tests/test_specialist_shadow_cells.py` — 21 (K/L/M cells)
+- `bench/tests/test_ouroboros_query_quality.py` — 12 (Ouroboros query + arxiv)
+- `bench/tests/test_openrouter_tools.py` — 36 (tool spec/dispatch/path-safety/loop)
+- `bench/tests/test_deepseek_specialist.py` — 29 (parser/degradation/integration)
+
 ### `reference_runner.py`
 
 **UNTOUCHED** per founder directive. Exp 39 runner frozen until v2 is tested and founder approves promotion.
@@ -128,17 +146,13 @@ within context budget and API-error safety.
 - 1D.5 S_k format pre-check with reformat request
 - 1D.6 Gemini verdict extraction parser fix
 
-**Stage 3 remainders:**
+**Stage 3 remainders (after continuation session):**
 - 1E.3 Specialist cell live-promotion (needs domain-routing audit)
-- 1E.4 Physics/chemistry/engineering specialist cells (functional shadow)
 - 1E.5 Fingerprint attention metrics wiring
 - 1E.6 Dynamic decomposition by payload size
 - 1E.7 Wiring of diversity metric into runner's per-round logging
-- 1E.8 Ouroboros query-quality + source-rotation adapters
 - 1E.9 Recidivism detection cross-round
 - 1E.10 Channel-assignment boundary assertion (useful only post-Exp-54 wiring)
-- 1E.11 OpenRouter tool-use mode
-- 1E.12 DeepSeek specialist role
 
 **Stage 4 for Exp 41–53:**
 - Target selection and config generation per experiment, sequentially after each prior experiment's lessons fold in

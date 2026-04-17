@@ -223,6 +223,18 @@ cost_class = "slow"
 install_check = "import crosshair"
 package_hint = "crosshair-tool>=0.0.102"
 
+# ── Model-backed specialists (network, cost-bounded) ────────────────────
+
+[tools.deepseek_formal]
+description = "DeepSeek R1 reasoner as formal-verification specialist — LLM fallback for claims mechanical verifiers cannot decide."
+verifier = "_verify_deepseek_formal"
+needs_file = false
+claim_types = ["logical", "mathematical"]
+domain_hints = ["mathematics", "information_science", "cs_software"]
+cost_class = "slow"
+install_check = "import openai"
+package_hint = "openai>=1.0"
+
 # ── Delegated tools (handled by other cells) ─────────────────────────────
 
 [tools.ast_analysis]

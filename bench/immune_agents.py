@@ -323,6 +323,21 @@ _DOMAIN_ALIAS = {
     "software": "code",  # exp38 uses "software", TOML is "code"
 }
 
+# Exp 40 1E.3 (2026-04-17): specialist B-Cell verdicts are PROMOTED from
+# shadow to live for these domains. Per constraint S5 of the Exp 40 plan,
+# physics / chemistry / engineering specialists remain in shadow mode until
+# their tool coverage is validated in a later tranche (1E.4 K/L/M cells).
+# When `run_immune_pipeline` is invoked with a domain in this set, the
+# specialist verdicts are appended to `all_verdicts` and flow through to
+# Helper T synthesis; otherwise they are logged under
+# `b_cell_specialist_shadow` and discarded.
+LIVE_SPECIALIST_DOMAINS: frozenset = frozenset({
+    "mathematics",
+    "statistics",
+    "biology",
+    "information_science",
+})
+
 
 def load_domain_config(domain: str) -> Dict[str, Any]:
     """Load domain-specific immune configuration from TOML.
@@ -1100,6 +1115,158 @@ else:
             confidence=0.2, evidence=f"z3: {output}", tool_used="z3",
             elapsed_s=elapsed,
         )
+
+
+# ── DeepSeek formal-verification specialist (Exp 40 1E.12) ──────────────────
+#
+# DeepSeek R1 reasoner acts as a specialist verifier for formal / long-chain
+# logical claims that mechanical verifiers (z3, sympy) return UNCERTAIN on.
+# This is a *model-based* specialist — distinct from the generic panel role
+# where DeepSeek is one of five round-robin models producing findings.
+#
+# Design choices:
+#   * Called only when invoked via the specialist dispatch. The domain TOML
+#     places `deepseek_formal` AFTER z3 and sympy so cheaper tools run first
+#     and only definitively-UNCERTAIN claims reach the LLM.
+#   * Confidence capped at 0.5 — LLM reasoning is not as rigorous as a
+#     mechanical proof, so specialist verdicts must sit below mechanical
+#     ones in any voting scheme.
+#   * Graceful degradation: if DEEPSEEK_API_KEY is missing or the network
+#     call fails, returns UNCERTAIN with a descriptive evidence string
+#     instead of raising. This keeps the dispatch pipeline flowing.
+#   * Short timeout (120 s) and bounded max_tokens (4096) to guard against
+#     runaway chain-of-thought cost.
+#   * Strict JSON output format parsed with a small grammar — any parse
+#     failure is a conservative UNCERTAIN, never a false CONFIRMED.
+
+_DEEPSEEK_SPECIALIST_PROMPT = """You are a formal-verification specialist. \
+Evaluate the following claim and respond in exactly the JSON format below.
+
+CLAIM: {claim}
+
+Respond with valid JSON and nothing else:
+{{
+  "verdict": "CONFIRMED" | "REJECTED" | "UNCERTAIN",
+  "reasoning": "<one short paragraph of reasoning>",
+  "confidence": <float between 0 and 1>
+}}
+
+CONFIRMED means the claim is provably or overwhelmingly true under standard \
+interpretation. REJECTED means the claim is provably false. UNCERTAIN means \
+either insufficient information or the claim is ill-formed for formal check."""
+
+
+_DEEPSEEK_SPECIALIST_MODEL_ID = "deepseek-reasoner"
+_DEEPSEEK_SPECIALIST_MAX_TOKENS = 4096
+_DEEPSEEK_SPECIALIST_TIMEOUT_S = 120
+_DEEPSEEK_SPECIALIST_CONFIDENCE_CAP = 0.5
+
+
+def _verify_deepseek_formal(claim: str) -> CellVerdict:
+    """Formal-verification LLM specialist backed by DeepSeek R1 reasoner.
+
+    Returns a ``CellVerdict`` whose ``tool_used`` field is
+    ``"deepseek_formal"`` — deliberately distinct from the generic panel
+    role so that downstream synthesis can tell specialist verdicts apart
+    from panel findings.
+    """
+    t0 = time.monotonic()
+
+    if not os.environ.get("DEEPSEEK_API_KEY"):
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence="deepseek_formal: DEEPSEEK_API_KEY not set — specialist skipped",
+            tool_used="deepseek_formal",
+            elapsed_s=time.monotonic() - t0,
+        )
+
+    try:
+        from bench.experiment_11_orchestrator import call_deepseek
+    except ImportError as exc:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence=f"deepseek_formal: orchestrator import failed: {exc}",
+            tool_used="deepseek_formal",
+            elapsed_s=time.monotonic() - t0,
+        )
+
+    prompt = _DEEPSEEK_SPECIALIST_PROMPT.format(claim=claim)
+    try:
+        raw = call_deepseek(
+            model_id=_DEEPSEEK_SPECIALIST_MODEL_ID,
+            system_prompt=None,
+            user_prompt=prompt,
+            max_tokens=_DEEPSEEK_SPECIALIST_MAX_TOKENS,
+            timeout=_DEEPSEEK_SPECIALIST_TIMEOUT_S,
+            max_retries=1,
+        )
+    except Exception as exc:  # network, circuit breaker, rate limit
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence=f"deepseek_formal: API error: {type(exc).__name__}: "
+                     f"{str(exc)[:200]}",
+            tool_used="deepseek_formal",
+            elapsed_s=time.monotonic() - t0,
+        )
+
+    elapsed = time.monotonic() - t0
+
+    # Parse the strict JSON output. Tolerant to a leading code-fence the
+    # model sometimes wraps JSON in, but strict about the fields themselves.
+    parsed = _parse_deepseek_formal_response(raw)
+    if parsed is None:
+        return CellVerdict(
+            cell_type=CellType.B_CELL, finding_id="", verdict="UNCERTAIN",
+            confidence=0.0,
+            evidence=f"deepseek_formal: unparseable response: {raw[:300]!r}",
+            tool_used="deepseek_formal",
+            elapsed_s=elapsed,
+        )
+
+    verdict_str = parsed.get("verdict", "UNCERTAIN")
+    if verdict_str not in {"CONFIRMED", "REJECTED", "UNCERTAIN"}:
+        verdict_str = "UNCERTAIN"
+    raw_conf = float(parsed.get("confidence", 0.0) or 0.0)
+    confidence = min(max(raw_conf, 0.0), _DEEPSEEK_SPECIALIST_CONFIDENCE_CAP)
+    reasoning = str(parsed.get("reasoning", "") or "")[:400]
+
+    return CellVerdict(
+        cell_type=CellType.B_CELL, finding_id="", verdict=verdict_str,
+        confidence=confidence,
+        evidence=f"deepseek_formal: {reasoning}",
+        tool_used="deepseek_formal",
+        elapsed_s=elapsed,
+    )
+
+
+def _parse_deepseek_formal_response(raw: str) -> Optional[Dict[str, Any]]:
+    """Extract the JSON object from the DeepSeek response. Returns None on
+    failure so the caller can convert to a safe UNCERTAIN verdict."""
+    if not raw or not raw.strip():
+        return None
+    text = raw.strip()
+    # Strip markdown code fences if present.
+    if text.startswith("```"):
+        lines = text.split("\n")
+        # Drop opening fence and any closing fence.
+        lines = [ln for ln in lines if not ln.strip().startswith("```")]
+        text = "\n".join(lines).strip()
+    # Extract the first top-level JSON object.
+    start = text.find("{")
+    end = text.rfind("}")
+    if start < 0 or end <= start:
+        return None
+    candidate = text[start:end + 1]
+    try:
+        parsed = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    return parsed
 
 
 def _verify_statistical(claim: str) -> CellVerdict:
@@ -5200,13 +5367,30 @@ def run_immune_pipeline(
                     for v in nk_verdicts:
                         tool_usage[v.tool_used] = tool_usage.get(v.tool_used, 0) + 1
                 elif name == "b_cell_specialist":
-                    # Phase B4 SHADOW: log divergences, don't affect verdicts
+                    # 1E.3 (2026-04-17): LIVE for math/stats/bio/info-sci,
+                    # SHADOW for physics/chemistry/engineering (constraint S5).
                     specialist_verdicts = result
-                    _shadow_log.info(
-                        "B-Cell specialist (shadow): %d verdicts",
-                        len(specialist_verdicts),
-                    )
-                    tool_usage["b_cell_specialist_shadow"] = len(specialist_verdicts)
+                    if domain in LIVE_SPECIALIST_DOMAINS:
+                        all_verdicts.extend(specialist_verdicts)
+                        for v in specialist_verdicts:
+                            tool_usage[v.tool_used] = (
+                                tool_usage.get(v.tool_used, 0) + 1
+                            )
+                        tool_usage["b_cell_specialist_live"] = len(
+                            specialist_verdicts,
+                        )
+                        _shadow_log.info(
+                            "B-Cell specialist (LIVE, domain=%s): %d verdicts",
+                            domain, len(specialist_verdicts),
+                        )
+                    else:
+                        tool_usage["b_cell_specialist_shadow"] = len(
+                            specialist_verdicts,
+                        )
+                        _shadow_log.info(
+                            "B-Cell specialist (shadow, domain=%s): %d verdicts",
+                            domain or "<none>", len(specialist_verdicts),
+                        )
                 else:
                     cell_verdicts = result
                     all_verdicts.extend(cell_verdicts)

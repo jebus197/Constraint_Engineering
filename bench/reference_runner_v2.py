@@ -1574,6 +1574,90 @@ def _update_observed_fingerprint(
                 fp["prompt_chars_history"] = history[-50:]
 
 
+# Exp 40 fix 1E.5: per-model attention metrics computed from ITC +
+# parse-yield history. These populate previously-null fingerprint fields
+# so that burst_planner's D_decay quality gate has real data instead of
+# the 0.0 default that was silently disabling it.
+_PARSE_YIELD_HARD_FLOOR = 0.5
+
+
+def _compute_attention_metrics(
+    fp: Dict[str, Any],
+    novelty_history: List[int],
+    parse_yield_history: List[float],
+) -> Dict[str, Any]:
+    """Derive 6 attention metrics from observed fingerprint + ITC data.
+
+    Writes directly into ``fp`` and returns it. All values are primitive
+    numeric types (int / float / bool) so the fingerprint JSON stays
+    round-trip safe. The 6 fields are:
+
+    * ``measured_attention_span`` — largest prompt the model has handled
+      with adequate quality (chars). Straight mirror of
+      ``max_successful_prompt_chars``.
+    * ``compression_threshold`` — smallest prompt size where the model
+      has shown stress (either a dispatch failure or a parse-yield
+      collapse). When no stress has been observed, the value equals
+      ``max_successful_prompt_chars`` as an upper-bound proxy.
+    * ``quality_at_capacity`` — mean of the three most recent parse
+      yields. Proxy for quality at the current operating range.
+    * ``decomposition_recommended`` — bool. True when the model has
+      shown stress below the hard decomposition floor.
+    * ``attention_ratio`` — ``max_successful / max_attempted``. 1.0 when
+      no failures have been observed; < 1 once failures begin.
+    * ``D_decay`` — Duane/geometric decay score from per-round novelty
+      counts. Higher = steeper decay. 0.0 when decay cannot be measured
+      (insufficient rounds or pure churn pattern).
+    """
+    from bench.decay_analysis import compute_d_score
+
+    max_ok = int(fp.get("max_successful_prompt_chars", 0) or 0)
+    max_fail = int(fp.get("max_failed_prompt_chars", 0) or 0)
+
+    measured_attention_span = max_ok
+
+    parse_yield_low = [y for y in parse_yield_history if y < _PARSE_YIELD_HARD_FLOOR]
+    has_yield_stress = bool(parse_yield_low)
+
+    if max_fail > 0:
+        compression_threshold = max_fail
+    elif has_yield_stress and max_ok > 0:
+        compression_threshold = max_ok
+    elif max_ok > 0:
+        compression_threshold = max_ok
+    else:
+        compression_threshold = 0
+
+    if parse_yield_history:
+        recent = parse_yield_history[-3:]
+        quality_at_capacity = sum(recent) / len(recent)
+    else:
+        quality_at_capacity = 1.0
+
+    decomposition_recommended = False
+    if max_fail > 0 and max_fail < DECOMPOSE_HARD_FLOOR_CHARS:
+        decomposition_recommended = True
+    if has_yield_stress and max_ok > 0 and max_ok < DECOMPOSE_HARD_FLOOR_CHARS:
+        decomposition_recommended = True
+
+    total_attempted = max(max_ok, max_fail)
+    if total_attempted > 0:
+        attention_ratio = max_ok / total_attempted
+    else:
+        attention_ratio = 1.0
+
+    raw_d = compute_d_score(list(novelty_history)) if novelty_history else -1.0
+    d_decay = 0.0 if raw_d < 0 else float(raw_d)
+
+    fp["measured_attention_span"] = int(measured_attention_span)
+    fp["compression_threshold"] = int(compression_threshold)
+    fp["quality_at_capacity"] = round(float(quality_at_capacity), 4)
+    fp["decomposition_recommended"] = bool(decomposition_recommended)
+    fp["attention_ratio"] = round(float(attention_ratio), 4)
+    fp["D_decay"] = round(float(d_decay), 4)
+    return fp
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Topology instruction templates
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3686,6 +3770,16 @@ def run_experiment(
     # Exp 40 fix 1A.3: track novel CRITICAL count per round for γ-alt gate.
     novel_critical_history: List[int] = []
     consecutive_churn_rounds: int = 0  # D1: tracks sustained churn for phase transition
+    # Exp 40 1D.3: per-model rho tracking for targeted ITC decisions.
+    # Each list holds one entry per completed round for that model. Missing
+    # rounds are zero-filled when the model produced no findings that round.
+    novelty_counts_per_model: Dict[str, List[int]] = {}
+    raw_counts_per_model: Dict[str, List[int]] = {}
+    # Exp 40 1E.9: per-finding prior-round alternatives for cross-round
+    # recidivism detection. Keyed by finding_id; value is the most recent
+    # round's parsed alternatives. Consumed by build_divergence_record via
+    # check_sibling_admissibility on the next round's build.
+    prior_round_alternatives_by_finding: Dict[str, List[Any]] = {}
 
     if cfg.resume and brain.load_checkpoint():
         start_round = brain.state.current_round + 1
@@ -3709,6 +3803,17 @@ def run_experiment(
             novel_critical_history = ckpt_data.get("novel_critical_history", [])
             cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
             consecutive_churn_rounds = ckpt_data.get("consecutive_churn_rounds", 0)
+            # Exp 40 1D.3: restore per-model rho history
+            _pm_novel = ckpt_data.get("novelty_counts_per_model", {})
+            if isinstance(_pm_novel, dict):
+                novelty_counts_per_model = {
+                    str(k): [int(x) for x in v] for k, v in _pm_novel.items()
+                }
+            _pm_raw = ckpt_data.get("raw_counts_per_model", {})
+            if isinstance(_pm_raw, dict):
+                raw_counts_per_model = {
+                    str(k): [int(x) for x in v] for k, v in _pm_raw.items()
+                }
             # R39-06: Restore ITC module state for quality tracking continuity
             _restored_itc = ckpt_data.get("itc_model_state")
             if _restored_itc and isinstance(_restored_itc, dict):
@@ -4058,11 +4163,20 @@ def run_experiment(
         # but does not parse as an S_k block. Fed to next round as a
         # reformat-request prompt section.
         sk_reformat_requests_for_next_round = []
+        # Exp 40 1D.3: per-model counters for this round (novel + raw).
+        per_model_novel_this_round: Dict[str, int] = {}
+        per_model_raw_this_round: Dict[str, int] = {}
         for f in findings:
+            per_model_raw_this_round[f.model_id] = (
+                per_model_raw_this_round.get(f.model_id, 0) + 1
+            )
             existing = registry.lookup_alias(f.model_id, f.finding_id)
             if existing is None:
                 cid = registry.register(f, f.model_id)
                 novel_this_round += 1
+                per_model_novel_this_round[f.model_id] = (
+                    per_model_novel_this_round.get(f.model_id, 0) + 1
+                )
                 if getattr(f, "severity", 0.0) >= 0.7:
                     novel_critical_this_round += 1
                 # 1D.5 pre-check: only for novel findings with a proposed fix.
@@ -4077,6 +4191,21 @@ def run_experiment(
         novelty_counts.append(novel_this_round)
         novel_critical_history.append(novel_critical_this_round)  # Exp 40 1A.3
         raw_counts.append(len(findings))
+        # Exp 40 1D.3: extend per-model history arrays with this round's
+        # tally. All known models (from baseline plus any new emitters)
+        # receive an entry so the arrays stay aligned across rounds.
+        _models_this_round = (
+            set(baseline)
+            | set(per_model_novel_this_round)
+            | set(per_model_raw_this_round)
+        )
+        for _label in _models_this_round:
+            novelty_counts_per_model.setdefault(_label, []).append(
+                per_model_novel_this_round.get(_label, 0),
+            )
+            raw_counts_per_model.setdefault(_label, []).append(
+                per_model_raw_this_round.get(_label, 0),
+            )
 
         # A2: Rho
         rho_current, rho_avg, rho_churn = _compute_rho(novelty_counts, raw_counts, cfg)
@@ -4183,6 +4312,19 @@ def run_experiment(
                 s_floor=cfg.sk_s_floor,
             )
 
+        # Exp 40 1D.3: compute per-model rho BEFORE the ITC loop so each
+        # model's DEGRADATION suppression uses its own discovery efficiency,
+        # not the pooled panel-average. A model with collapsed per-model rho
+        # (< rho_threshold) gets ITC restart; a model with healthy per-model
+        # rho is left alone even if the panel as a whole is in churn.
+        rho_avg_per_model: Dict[str, float] = {}
+        for _label in baseline:
+            _nv = novelty_counts_per_model.get(_label, [])
+            _rw = raw_counts_per_model.get(_label, [])
+            if _nv and _rw:
+                _, _rho_m_avg, _ = _compute_rho(_nv, _rw, cfg)
+                rho_avg_per_model[_label] = _rho_m_avg
+
         # ITC per-model
         for model_label in list(baseline):
             model_findings = [f for f in findings if f.model_id == model_label]
@@ -4212,8 +4354,12 @@ def run_experiment(
                 verdict_count=model_verdicts,
             )
             if classification:
+                # Exp 40 1D.3: per-model rho gates DEGRADATION suppression.
+                # Fall back to the pooled rho_avg when per-model history is
+                # missing (cold start, or model joined mid-run).
+                _model_rho = rho_avg_per_model.get(model_label, rho_avg)
                 _itc_adapt(model_label, classification, round_idx,
-                           rho_rolling_avg=rho_avg, rho_threshold=cfg.rho_threshold)
+                           rho_rolling_avg=_model_rho, rho_threshold=cfg.rho_threshold)
             elif model_label in _itc_model_state:
                 _itc_clear_adaptation(model_label)
             _update_observed_fingerprint(
@@ -4222,6 +4368,16 @@ def run_experiment(
                 prompt_chars=prompt_lengths.get(model_label, 0),
                 raw_finding_markers=raw_markers,
                 dispatch_error=dispatch_err,
+            )
+            # Exp 40 fix 1E.5: refresh the 6 derived attention metrics so
+            # fingerprint consumers (burst_planner, B-Cell dispatcher,
+            # decomposition heuristics) see up-to-date values each round.
+            _compute_attention_metrics(
+                observed_fingerprints.setdefault(model_label, {}),
+                novelty_counts_per_model.get(model_label, []),
+                _itc_model_state.get(model_label, {}).get(
+                    "parse_yield_history", [],
+                ),
             )
 
         # Directed messages (relay only)
@@ -4273,6 +4429,9 @@ def run_experiment(
             "registry": registry.to_dict(),
             "novelty_counts": novelty_counts,
             "raw_counts": raw_counts,
+            # Exp 40 1D.3: per-model rho history persists across resumes
+            "novelty_counts_per_model": novelty_counts_per_model,
+            "raw_counts_per_model": raw_counts_per_model,
             "rho_history": [round(r, 6) for r in rho_history],
             "gamma_history": [round(g, 6) for g in gamma_history],
             "gate_history": gate_history,
@@ -4312,25 +4471,61 @@ def run_experiment(
         # For each finding, extract the §18 alternative blocks from the
         # emitting model's raw response; pool across the panel; compute mean
         # pairwise Jaccard. Logging-only — does not gate admission or R_k.
+        # Exp 40 fix 1E.9: the same pass builds per-finding DivergenceRecord
+        # objects so we can flag cross-round recidivism — a round K+1
+        # alternative that replicates a round K alternative unchanged — and
+        # surface the severe 0.60 tier through eta_int_modulator.
         cross_model_diversity: Optional[Dict[str, Any]] = None
+        recidivism_hits: List[Dict[str, Any]] = []
+        current_round_alternatives_by_finding: Dict[str, List[Any]] = {}
         try:
+            from bench.dm._divergence import (
+                build_divergence_record as _build_divergence_record,
+                DivergenceConfig as _DivergenceConfig,
+            )
+            _div_cfg = _DivergenceConfig(enabled=True)
             per_model_alts: List[Tuple[str, str]] = []
             for f in findings:
                 raw = responses.get(f.model_id, "")
                 if not raw:
                     continue
-                alts = parse_alternative_block(
-                    raw, f.finding_id, f.description or "",
+                prior_alts = prior_round_alternatives_by_finding.get(
+                    f.finding_id, [],
                 )
-                for alt in alts:
-                    alt_text = getattr(alt, "text", "") or ""
+                rec = _build_divergence_record(
+                    f.finding_id, f.description or "", raw,
+                    config=_div_cfg,
+                    prior_round_alternatives=prior_alts,
+                )
+                if rec.alternatives:
+                    current_round_alternatives_by_finding[f.finding_id] = list(
+                        rec.alternatives,
+                    )
+                for alt in rec.alternatives:
+                    alt_text = getattr(alt, "alternative_text", "") or ""
                     if alt_text.strip():
                         per_model_alts.append((f.model_id, alt_text))
+                    if (
+                        getattr(alt, "prior_round_isomorphism", 0.0)
+                        >= _div_cfg.near_copy_threshold
+                    ):
+                        recidivism_hits.append({
+                            "finding_id": f.finding_id,
+                            "model_id": f.model_id,
+                            "prior_round_isomorphism": round(
+                                float(alt.prior_round_isomorphism), 4,
+                            ),
+                            "reasons": list(alt.rejection_reasons),
+                        })
             if per_model_alts:
                 cross_model_diversity = diversity_signal_from_round(per_model_alts)
         except Exception as _e:
             # Logging-only metric — never crash the loop on parse errors.
             cross_model_diversity = {"error": f"{type(_e).__name__}: {_e}"}
+
+        if recidivism_hits:
+            _log(f"  1E.9 recidivism: {len(recidivism_hits)} alt(s) flagged")
+        prior_round_alternatives_by_finding = current_round_alternatives_by_finding
 
         round_data: Dict[str, Any] = {
             "round": round_idx, "type": round_type,
@@ -4349,6 +4544,7 @@ def run_experiment(
             "stall_detector": stall_result,
             "shadow_cells": shadow_cell_data,
             "cross_model_diversity": cross_model_diversity,
+            "recidivism_hits": recidivism_hits,
         }
         result["rounds"].append(round_data)
 

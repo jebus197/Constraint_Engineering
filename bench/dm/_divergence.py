@@ -254,6 +254,14 @@ class AlternativeRecord:
       sibling-isomorphism gate AND the contrast-statement gate. This is
       the round-2 ship-blocker aggregate; ``admissible`` mirrors it for
       backward compatibility with existing callers.
+
+    Exp 40 fix 1E.9 (cross-round recidivism):
+
+    * ``prior_round_isomorphism`` — highest Jaccard observed against any
+      alternative supplied by the same finding's prior rounds. ``0.0`` if
+      no prior-round alternatives were passed to the check. At or above
+      ``near_copy_threshold`` this flips ``admissible`` False and
+      triggers the severe 0.60 tier in :func:`eta_int_modulator`.
     """
 
     primary_finding_id: str
@@ -266,6 +274,8 @@ class AlternativeRecord:
     contrast_statement: Optional[str] = None
     sibling_max_isomorphism: float = 0.0
     admissibility_gate_passed: bool = False
+    # Exp 40 1E.9: cross-round recidivism
+    prior_round_isomorphism: float = 0.0
 
 
 @dataclass
@@ -537,6 +547,7 @@ def validate_alternative(
 def check_sibling_admissibility(
     alternatives: List[AlternativeRecord],
     config: Optional[DivergenceConfig] = None,
+    prior_round_alternatives: Optional[List[AlternativeRecord]] = None,
 ) -> None:
     """Run the sibling alt-vs-alt isomorphism check in place.
 
@@ -558,6 +569,15 @@ def check_sibling_admissibility(
     Preserves ordering: the first alternative always keeps its existing
     admissibility; only alternatives at index ≥ 1 can be demoted by this
     check.
+
+    Exp 40 fix 1E.9 (cross-round recidivism): when
+    ``prior_round_alternatives`` is provided, each current alternative is
+    also scored against every prior-round alternative for the same
+    finding. The highest Jaccard is written into
+    ``prior_round_isomorphism``. At or above ``near_copy_threshold``
+    (default 0.98) the alternative is demoted to inadmissible and a
+    ``recidivism_near_copy`` rejection reason is appended. The same
+    severity tier fires in :func:`eta_int_modulator`.
     """
     if config is None:
         config = DivergenceConfig()
@@ -585,6 +605,29 @@ def check_sibling_admissibility(
             if reason not in alt.rejection_reasons:
                 alt.rejection_reasons.append(reason)
             alt.admissible = False
+
+        # Exp 40 1E.9: cross-round recidivism check.
+        if prior_round_alternatives:
+            max_prior = 0.0
+            worst_prior_idx: Optional[int] = None
+            for k, prior in enumerate(prior_round_alternatives):
+                prior_text = getattr(prior, "alternative_text", "") or ""
+                if not prior_text:
+                    continue
+                prior_iso = score_isomorphism(prior_text, alt.alternative_text)
+                if prior_iso > max_prior:
+                    max_prior = prior_iso
+                    worst_prior_idx = k
+            alt.prior_round_isomorphism = max_prior
+            if max_prior >= config.near_copy_threshold:
+                reason = (
+                    f"recidivism_near_copy "
+                    f"(jaccard_vs_prior_round_alt_{worst_prior_idx}="
+                    f"{max_prior:.3f} >= {config.near_copy_threshold})"
+                )
+                if reason not in alt.rejection_reasons:
+                    alt.rejection_reasons.append(reason)
+                alt.admissible = False
 
         # Composite gate: passes all stages iff still admissible.
         alt.admissibility_gate_passed = alt.admissible
@@ -629,6 +672,7 @@ def build_divergence_record(
     primary_text: str,
     raw_output: str,
     config: Optional[DivergenceConfig] = None,
+    prior_round_alternatives: Optional[List[AlternativeRecord]] = None,
 ) -> DivergenceRecord:
     """Assemble a DivergenceRecord for a single finding from raw model output.
 
@@ -647,6 +691,11 @@ def build_divergence_record(
     Round-2: sibling admissibility is now part of the compliance decision.
     An alternative that passes primary gates but duplicates an earlier
     sibling is demoted and does NOT count toward ``min_alternatives``.
+
+    Exp 40 fix 1E.9: when ``prior_round_alternatives`` is provided, the
+    sibling admissibility pass also checks for recidivism — alternatives
+    that replicate a prior-round alternative unchanged incur the severe
+    0.60 tier via :func:`eta_int_modulator`.
 
     When the directive is disabled, returns a compliant record with empty
     content so downstream code never needs to branch on the toggle.
@@ -669,7 +718,12 @@ def build_divergence_record(
         validate_alternative(alt, config)
 
     # Round-2 ship-blocker: sibling alt-vs-alt isomorphism check.
-    check_sibling_admissibility(alternatives, config)
+    # Exp 40 1E.9: sibling check also scans prior-round alternatives
+    # for cross-round recidivism when they are supplied.
+    check_sibling_admissibility(
+        alternatives, config,
+        prior_round_alternatives=prior_round_alternatives,
+    )
 
     record.alternatives = alternatives
 
@@ -764,8 +818,12 @@ def eta_int_modulator(
     if has_any_alt:
         # Severe tier 1: any alternative is a near-copy (lexical
         # near-duplicate at or above near_copy_threshold, default 0.98).
+        # Exp 40 fix 1E.9: also fires on cross-round recidivism when the
+        # current alternative replicates a prior-round alternative for
+        # the same finding unchanged.
         any_near_copy = any(
-            a.isomorphism_score >= config.near_copy_threshold
+            (a.isomorphism_score >= config.near_copy_threshold)
+            or (a.prior_round_isomorphism >= config.near_copy_threshold)
             for a in record.alternatives
         )
         if any_near_copy:
