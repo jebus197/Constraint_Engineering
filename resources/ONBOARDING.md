@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 17 April 2026 05:12 BST
+Last updated: 17 April 2026 14:28 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,72 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 STAGE 3 CLOSURE — PHASE A + PHASE B (17 April 2026, 08:00–14:30 BST):**
+  Branch: `exp39-experimental`. HEAD `6580737` (docs sync) over `bdfc93a`
+  (Phase B) over `8b8682d` (Phase A), 3 commits ahead of origin. Full
+  suite: 1250/1250 tests passing (20 min 23 s wall-clock).
+
+  **Scope:** close all actionable Stage 3 items from the Exp 40–54 plan
+  that do not require Exp 54's `eta_int_modulator` wiring. Two autonomous
+  continuation rounds under the founder's standing rest-period override.
+
+  **Phase A — commit `8b8682d` (98 new tests):** items 1D.5 (S_k format
+  pre-check with reformat request), 1D.6 (Gemini verdict extraction),
+  1E.6 (dynamic decomposition by payload size), 1E.7 (cross-model
+  diversity metric wired into per-round logging), 1E.10 (channel-
+  assignment boundary helper `compute_rk_with_eta_channel`; runtime
+  assertion awaits Exp 54 wiring).
+
+  **Phase B — commit `bdfc93a` (200+ new tests):** items 1D.3 (per-model
+  ρ tracking via `novelty_counts_per_model` + `raw_counts_per_model`),
+  1E.3 (specialist cell live-promotion audit; FLIP deferred pending
+  K/L/M tool-coverage confirmation), 1E.4 (physics/chemistry/engineering
+  functional shadow cells — 21 tests, astropy + RDKit + pint + stoichio
+  balance), 1E.5 (fingerprint attention metrics populated from ITC +
+  parse-yield history), 1E.8 (Ouroboros query-quality fix + live arXiv
+  verification), 1E.9 (cross-round recidivism via
+  `prior_round_isomorphism`), 1E.11 (OpenRouter function-calling tool-
+  use — 5 TOOL_SPECS, subprocess dispatchers, 36 tests),
+  1E.12 (DeepSeek R1 formal-verification specialist — 29 tests,
+  confidence capped at 0.5).
+
+  **Residual Stage 3 items (both gated, not blocking Exp 40 launch):**
+  - **1E.3 LIVE_SPECIALIST_DOMAINS flip** — one-line `frozenset` edit
+    at `immune_agents.py:334`. K/L/M verdicts currently logged under
+    `b_cell_specialist_shadow`. Held back pending founder judgement on
+    broader tool coverage across claim types.
+  - **1E.10 runtime call-site assertion** — depends on Exp 54 wiring
+    of `eta_int_modulator` into `compute_rk`. Base wrapper
+    `compute_rk_with_eta_channel` landed Phase A; runtime assertion
+    lands with Exp 54.
+
+  **Infrastructure status (B-Cell specialist dispatch):**
+  - 18+ active tools in `bench/cdsfl_registry/tool_manifest.toml`
+  - Live domains: mathematics, statistics, biology, information science
+  - Shadow domains: physics (K), chemistry (L), engineering (M) —
+    functionally verified, promotion gated
+
+  **Side discovery, separate background task spawned:** `_verify_sympy`
+  in `immune_agents.py` silently returns UNCERTAIN on every claim because
+  the subprocess sandbox uses `global_dict={'__builtins__': {}}`, which
+  prevents SymPy from constructing `Integer` literals. Framework-wide
+  silent regression. A separate session has been delegated to repair
+  it without reopening the MF-40 RCE vector the current blocklist closes.
+
+  **§17 Feedback Channel + §18 Divergence Directive** both live.
+  Penalty wiring into `compute_rk()` deferred by design for Exp 40
+  attribution; lands in Exp 54.
+
+  **Exp 40 status:** runner v2 scaffolded, tested at 1250, docs in
+  place. Three open items before launch:
+  1. Founder approval to promote runner v2 over frozen v1.
+  2. Optional 1E.3 live-promotion flip.
+  3. Push 3 local commits to origin on explicit `sv`.
+
+  **Next session priorities:** (a) founder decision on v2 promotion;
+  (b) Exp 40 launch against `bench/dm/_feedback.py` (~22K target,
+  ~30K context); (c) fold Exp 40 lessons into Exp 41 config.
+
 - **EXP 40–54 PLAN + RUNNER V2 SCAFFOLD (17 April 2026, 01:45–04:38 BST):**
   Branch: `exp39-experimental`. 935 tests still pass (no code changes).
   HEAD unchanged at `cc6cc1a` entering the session.

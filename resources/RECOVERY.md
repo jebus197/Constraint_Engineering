@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 April 2026 05:12 BST
+Last updated: 17 April 2026 14:28 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,7 +21,91 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (17 April 2026 ~05:30 BST)
+## Current Pending Work (17 April 2026 ~14:30 BST)
+
+**SESSION 17 APRIL — EXP 40 STAGE 3 CLOSURE (Phase A + Phase B):**
+
+Branch: `exp39-experimental`. HEAD `6580737` over `bdfc93a` over
+`8b8682d`; three commits ahead of origin. 1250/1250 tests passing.
+Working tree clean at sv entry.
+
+**What landed across two autonomous continuation rounds:**
+
+Phase A — `8b8682d` (98 new tests):
+- 1D.5 S_k format pre-check + reformat-request path
+- 1D.6 Gemini verdict-extraction adapter
+- 1E.6 dynamic decomposition by payload size
+- 1E.7 diversity metric wired into per-round logging
+- 1E.10 `compute_rk_with_eta_channel` wrapper (runtime assertion
+  awaits Exp 54 `eta_int_modulator` wiring)
+
+Phase B — `bdfc93a` (200+ new tests):
+- 1D.3 per-model ρ tracking (`novelty_counts_per_model` +
+  `raw_counts_per_model`) — ITC can now target stuck models rather
+  than firing globally
+- 1E.3 specialist-cell live-promotion audit completed (FLIP held
+  back pending K/L/M coverage — single-line edit at
+  `immune_agents.py:334`)
+- 1E.4 physics/chemistry/engineering (K/L/M) functional shadow cells
+  — astropy AU, RDKit SMILES `CCO`, pint factor-of-safety,
+  stoichiometric balance (21 tests, all passing)
+- 1E.5 fingerprint attention metrics (`measured_attention_span`,
+  `compression_threshold`, `quality_at_capacity`,
+  `decomposition_recommended`, `attention_ratio`, `D_decay`)
+  populated from ITC + parse-yield history
+- 1E.8 Ouroboros query-quality fix verified (12 tests incl. live
+  arXiv network test confirming `live` / `live_empty` over
+  `shadow_mock`)
+- 1E.9 `AlternativeRecord.prior_round_isomorphism` +
+  cross-round admissibility check
+- 1E.11 OpenRouter function-calling tool-use (`bench/openrouter_tools.py`)
+  — 5 TOOL_SPECS (sympy/z3/pytest/ruff/mypy), subprocess-isolated
+  dispatchers, path-safety gatekeeper, tool-call loop capped at 6
+  iterations (36 tests)
+- 1E.12 DeepSeek R1 formal-verification specialist
+  (`_verify_deepseek_formal` in `immune_agents.py`) with 0.5
+  confidence cap; wired into `mathematics.toml` after z3/sympy for
+  cost control (29 tests)
+
+**Docs sync — `6580737`:**
+`experimental_notes/Exp40_Implementation_Progress_2026-04-17.md`
+updated: 8 DEFERRED → IMPLEMENTED markers with commit-hash references;
+Stage 2 remainders reduced from 3 to 0; Stage 3 remainders reduced
+from 6 to 2 (1E.3 flip, 1E.10 runtime assertion — both gated).
+
+**Residual Stage 3 (both gated, not blocking Exp 40):**
+
+1. **1E.3 LIVE_SPECIALIST_DOMAINS flip** — K/L/M verdicts currently
+   log under `b_cell_specialist_shadow`. One-line edit. Held back
+   pending founder judgement on broader tool coverage.
+2. **1E.10 runtime call-site assertion** — depends on `eta_int_modulator`
+   wiring in Exp 54. Base wrapper already landed Phase A.
+
+**Open items before Exp 40 launch:**
+
+1. **Founder decision:** approve promotion of `reference_runner_v2.py`
+   over frozen v1. v2 is tested at 1250, docs in place.
+2. **1E.3 live-promotion flip** (optional; K/L/M in shadow is safe
+   for Exp 40 since Exp 40's target is `bench/dm/_feedback.py`).
+3. **Push 3 local commits to origin** — only on explicit `sv` from
+   founder (this save-state produces the fourth commit + push).
+
+**Spawned background task:** `_verify_sympy` silent regression. The
+sandboxed subprocess uses `global_dict={'__builtins__': {}}` which
+prevents SymPy from constructing `Integer` literals during parsing.
+Every SymPy specialist verdict in the live pipeline returns
+UNCERTAIN regardless of claim truth. Framework-wide. Separate
+background session delegated to repair it without reopening the
+MF-40 RCE vector the current blocklist closes.
+
+**Deferred to Exp 54 by design:**
+- Penalty wiring for §18 into `compute_rk()` (needs attribution
+  factorial isolation)
+- `eta_int_modulator` into `compute_rk` (gates 1E.10 runtime
+  assertion)
+- Runner v2 behavioural changes beyond what Exp 40 exercises
+
+**Prior session text retained for continuity:**
 
 **SESSION 17 APRIL LATE — EXP 40 RUNNER IMPLEMENTATION (Stages 1–3 partial):**
 

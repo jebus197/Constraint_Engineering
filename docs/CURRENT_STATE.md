@@ -1,38 +1,26 @@
 # CDSFL Current State
 
-Generated: 17 April 2026 05:12 BST (2026-04-17T05:12:08+01:00)
+Generated: 17 April 2026 14:28 BST (2026-04-17T14:28:54+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `54d956e` sv: Exp 40-54 execution plan + runner v2 scaffold + shadow-log audit
-- **Committed:** 2026-04-17 04:41:45 +0100
-- **Remote:** ahead by 57
+- **Last commit:** `6580737` docs: sync Exp40 progress doc with Phase A + B commit state
+- **Committed:** 2026-04-17 14:14:28 +0100
+- **Remote:** ahead by 61
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/logs/immune_pipeline.log`
-- `M bench/reference_runner_v2.py`
-- `M bench/runner_core.py`
+- `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/dm/_diversity.py`
-- `?? bench/dm/_round_context.py`
-- `?? bench/exp40_configs/`
-- `?? bench/launch_exp40.py`
-- `?? bench/tests/test_deepseek_header_adapter.py`
-- `?? bench/tests/test_diversity_metric.py`
-- `?? bench/tests/test_gamma_alt_convergence.py`
-- `?? bench/tests/test_macrophage_fallback.py`
-- `?? bench/tests/test_round_context.py`
-- `?? experimental_notes/Exp40_Implementation_Progress_2026-04-17.md`
 
 ---
 
 ## Tests
 
-**992 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
+**1250 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
 
 ---
 
@@ -58,13 +46,13 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `6580737 docs: sync Exp40 progress doc with Phase A + B commit state`
+- `bdfc93a exp40: Phase B fixes 1D.3/1E.3/1E.4/1E.5/1E.8/1E.9/1E.11/1E.12 (200+ tests)`
+- `8b8682d exp40: Phase A fixes 1D.5/1D.6/1E.6/1E.7/1E.10 (98 tests)`
+- `834e65c sv: Exp 40 runner v2 - γ-alt convergence + Macrophage fallback + DeepSeek parser + round-context helpers + diversity metric + Exp 40 config/launcher (57 new tests)`
 - `54d956e sv: Exp 40-54 execution plan + runner v2 scaffold + shadow-log audit`
 - `cc6cc1a sv: §18 round-2 implementation + round-3 5-panel review + documentation refresh`
 - `d11457b docs: add refresh-sweep summary note (third-party voice + plain-English + AI-gender-neutrality)`
 - `0651974 docs: reformat 7-day notes for third-party voice + plain English, remove AI-gendered pronouns`
 - `4580465 sv: §17+§18 panel review and round-2 mathematical convergence — 5/5 unanimous on channel reassignment (R_k → η_int + FFAFP admissibility), 2×2 factorial for D3, ν_k prohibition explicit, three founder decisions pending`
 - `71ab374 sv: §18 divergence directive — CDSFL's bold-conjectures arm (invention engine)`
-- `81cfb97 sv: sv-script auto-staging fix + plain-English feedback channel docs`
-- `52391aa fix: add missing feedback-channel artefacts referenced by f29d0e9`
-- `f29d0e9 sv: feedback channel (Phase 10) — measurement-to-correction loop closed`
-- `a6ee7b4 sv: Stage 6 + FFAFP admissibility set now in model-facing directives`
