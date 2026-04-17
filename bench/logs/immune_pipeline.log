@@ -35129,3 +35129,53 @@
 2026-04-16T02:23:41 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
 2026-04-16T02:23:41 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
 2026-04-16T02:23:41 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-04-17T05:00:25 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-04-17T05:00:25 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:00:25 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:00:25 INFO DC v2 (v2): 2/2 findings reclassified
+2026-04-17T05:00:25 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-04-17T05:00:33 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 8.2s)
+2026-04-17T05:00:43 INFO LLM classifier OVERRIDE: f2 — regex=uncategorised → llm=code_behavioral (conf=0.87, threshold=0.70, 9.9s)
+2026-04-17T05:00:43 INFO LLM classifier: 0/2 agree with regex (0.0%), 1 overrides applied
+2026-04-17T05:00:43 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-04-17T05:00:52 INFO Layer 2 reclassification: f1 — UNCATEGORISED → code_behavioral (conf=0.60)
+2026-04-17T05:00:52 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-04-17T05:00:53 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-17T05:02:33 INFO CT v2 (v2): 0 verdicts in 100.3s — none
+2026-04-17T05:02:33 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-04-17T05:02:33 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-04-17T05:02:33 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-04-17T05:02:33 INFO Reconciliation locked 1 finding(s): f2
+2026-04-17T05:02:33 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-04-17T05:02:33 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:02:33 INFO DC v2 (v2): 1/1 findings reclassified
+2026-04-17T05:02:33 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-04-17T05:02:41 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.90, threshold=0.70, 8.1s)
+2026-04-17T05:02:41 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-04-17T05:02:41 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-04-17T05:02:41 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-04-17T05:03:53 INFO CT v2 (v2): 0 verdicts in 72.4s — none
+2026-04-17T05:03:53 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-04-17T05:03:53 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-04-17T05:03:53 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-04-17T05:03:53 INFO Reconciliation locked 1 finding(s): f1
+2026-04-17T05:03:53 INFO Auto-ESCALATED to HIL: f1 (matches p1, no fix after 2+ rounds)
+2026-04-17T05:03:53 INFO Auto-escalated 1 findings to HIL (no programmatic fix)
+2026-04-17T05:03:53 INFO Reconciliation: f1 — v1=CONFIRMED(0.60) vs v2=REJECTED(0.90) → REJECTED(0.90)
+2026-04-17T05:03:53 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.80, v2=0.70, max=0.80 >= 0.5)
+2026-04-17T05:03:53 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.80, v2=0.70, max=0.80 >= 0.5)
+2026-04-17T05:03:53 INFO Reconciliation UNSCORED: f1 — both pipelines REJECTED but low confidence (v1=0.35, v2=0.40, max=0.40 < 0.5) — absence of evidence, not evidence of absence
+2026-04-17T05:03:53 INFO Reconciliation UNSCORED: f1 — both pipelines REJECTED but low confidence (v1=0.36, v2=0.33, max=0.36 < 0.5) — absence of evidence, not evidence of absence
+2026-04-17T05:03:56 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m0_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m0_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m1_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m1_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m2_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m2_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m3_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m3_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m4_f0 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 reclassification: r0_m4_f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-04-17T05:03:56 INFO DC v2 (v2): 10/10 findings reclassified
+2026-04-17T05:03:56 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.

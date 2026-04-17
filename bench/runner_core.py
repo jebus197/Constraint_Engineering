@@ -359,6 +359,31 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
     response = re.sub(r'^\s*```\w*\s*\n?', '', response, flags=re.MULTILINE)
     response = re.sub(r'^\s*```\s*$', '', response, flags=re.MULTILINE)
 
+    # Exp 40 fix 1B.3: DeepSeek often emits findings as markdown H3 headers
+    # of the form '### Finding N: Title' followed by FIND/FOLLOW/ANALYSE/FIX
+    # blocks without explicit FINDING_ID/SEVERITY/FLAW_CLASS markers. Parse
+    # this by converting the header into synthetic marker lines that the
+    # downstream marker-format parser (Format 3 below) recognises. Default
+    # severity 0.7 (above CRITICAL threshold so the finding isn't lost to
+    # autoimmune filtering), default flaw_class 1 (generic). Models that
+    # supply explicit markers override these defaults automatically.
+    def _deepseek_header_adapter(m: 're.Match') -> str:
+        num = m.group(1)
+        title = m.group(2).strip()
+        return (
+            f"\nFINDING_ID: F{int(num):03d}\n"
+            f"SEVERITY: 0.7\n"
+            f"FLAW_CLASS: 1\n"
+            f"ABSTRACTION_INDEX: 0.6\n"
+            f"DESCRIPTION: {title}\n"
+        )
+    response = re.sub(
+        r'^###\s+Finding\s+(\d+)\s*:\s*(.+?)$',
+        _deepseek_header_adapter,
+        response,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+
     # ── 1. JSON array parser ─────────────────────────────────────────
     # ChatGPT (GPT-5.4) outputs findings as JSON arrays:
     #   [{"FINDING_ID": "IM_F001", "SEVERITY": 0.9, ...}, ...]

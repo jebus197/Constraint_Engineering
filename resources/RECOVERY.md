@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 April 2026 04:41 BST
+Last updated: 17 April 2026 05:12 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,12 +21,65 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (17 April 2026 ~04:38 BST)
+## Current Pending Work (17 April 2026 ~05:30 BST)
+
+**SESSION 17 APRIL LATE — EXP 40 RUNNER IMPLEMENTATION (Stages 1–3 partial):**
+
+Branch: `exp39-experimental`. 57 new tests, all passing.
+`bench/reference_runner.py` UNTOUCHED per founder directive.
+
+**What landed (code + tests):**
+
+- `bench/reference_runner_v2.py` — γ-alt convergence path added, new `_check_gamma_alt_convergence` function; Macrophage defensive fallback synthesising verdict-like objects from `final_verdicts` when `cell_verdicts` is empty; round-context helpers (prior-fix-summary, consolidation preamble, windowed context) wired into dispatch-time prompt prefix; 7 new config fields (γ-alt trio + round-context quad); quality gate now also protects `max_successful_prompt_chars` (not just `prompt_chars_history`); `novel_critical_history` tracked and persisted via checkpoint.
+- `bench/runner_core.py` — `parse_findings` adapter converts DeepSeek `### Finding N: Title` markdown headers into synthetic marker lines so the existing marker-format parser recovers them. Defaults: severity 0.7, flaw_class 1. Explicit markers still take precedence.
+- `bench/dm/_round_context.py` NEW — three helpers: `build_prior_fix_summary`, `build_consolidation_preamble`, `build_windowed_context`.
+- `bench/dm/_diversity.py` NEW — cross-model pairwise-Jaccard metric for §18 compliance-theatre detection. Module ready; runner integration pending.
+- `bench/exp40_configs/40_gate.json` NEW — Exp 40 runner config (target `bench/dm/_feedback.py` ~22K; context `bench/dm/_types.py` ~30K; total 52K under threshold).
+- `bench/launch_exp40.py` NEW — entry script with `--dry-run`/`--preflight`/`--resume`; dry-run verified.
+- Five new test files under `bench/tests/`: `test_gamma_alt_convergence.py` (15), `test_macrophage_fallback.py` (6), `test_deepseek_header_adapter.py` (8), `test_round_context.py` (16), `test_diversity_metric.py` (12). 57 passing total.
+- `experimental_notes/Exp40_Implementation_Progress_2026-04-17.md` NEW — stage-by-stage status with what's done, what's deferred, and why.
+
+**Audit finding recorded during implementation:** the original Exp 40 plan overstated P0/P1 backlog. 1A.1, 1A.2, 1C.1, 1C.2 were already inherited from `reference_runner.py` into v2 at copy time. 1A.3 partial (threshold done; γ-alt path was the missing half — now added).
+
+**Items NOT yet implemented (documented in
+`Exp40_Implementation_Progress_2026-04-17.md`):**
+
+- Stage 2 refinements: 1D.3 per-model ρ tracking, 1D.5 S_k format pre-check
+  with reformat request, 1D.6 Gemini verdict extraction
+- Stage 3 larger refactors: 1E.3 specialist cell live-promotion,
+  1E.4 physics/chemistry/engineering functional shadow cells,
+  1E.5 fingerprint attention metrics wiring, 1E.6 dynamic decomposition by
+  payload size, 1E.7 diversity-metric runner integration,
+  1E.8 Ouroboros query-quality fix + source-rotation adapters,
+  1E.9 recidivism detection cross-round, 1E.10 channel-assignment boundary
+  assertion, 1E.11 OpenRouter tool-use mode, 1E.12 DeepSeek specialist role
+- Stage 4 for Exp 41–53: target selection + config per experiment
+  (deferred per founder's sequential-build directive)
+- Stage 6: Exp 54 integration run + 2×2 factorial
+
+**What Exp 40 has that Exp 39-0 did not (summary):**
+
+- γ-alt convergence: termination when γ ≥ 0.30 OR 3 rounds zero-novel-CRIT
+- Macrophage observations: shadow now sees verdicts via fallback path
+- DeepSeek recovery: all 6 of Exp 39-0 R5's findings parse correctly
+- Quality-gated fingerprints: bootstrap trap fixed
+- Consolidation, prior-fix-summary, windowed-context preambles at dispatch
+- Diversity metric module ready for compliance-theatre detection
+
+**Next session priorities (in order):**
+
+1. Run Exp 40 (the runner is ready for its scoped purpose)
+2. Optionally land remaining Stage 3 refinements before launch
+3. Fold Exp 40 lessons into Exp 41 config
+
+**Prior session text retained for continuity:**
+
+**SESSION 17 APRIL — EXP 40–54 PLAN + RUNNER V2 SCAFFOLD:**
 
 935 tests still pass (no code changes this session). Branch:
 `exp39-experimental`. Working tree: four new files landing at this sv.
 
-**SESSION 17 APRIL — EXP 40–54 PLAN + RUNNER V2 SCAFFOLD:**
+**SESSION 17 APRIL (EARLIER) — EXP 40–54 PLAN + RUNNER V2 SCAFFOLD:**
 
 HEAD entering session: `cc6cc1a`. HEAD after sv (this commit): updated
 by script.

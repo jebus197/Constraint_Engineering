@@ -132,6 +132,12 @@ from bench.dm._feedback import (
     build_feedback_sections,
     parse_admissibility_block,
 )
+# Exp 40 fix 1D.1, 1D.2, 1D.4: round-context helpers.
+from bench.dm._round_context import (
+    build_prior_fix_summary,
+    build_consolidation_preamble,
+    build_windowed_context,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -205,6 +211,21 @@ class RunnerConfig:
     max_novel_findings: int = 2
     open_ch_stability_window: int = 3
     max_open_crit_high: int = 5  # Was 0 (unreachable). Exp 39-0 fix.
+    # γ-alt convergence path (Exp 40 fix, Item 1A.3 remainder from Exp 40 plan).
+    # Fires when EITHER gamma >= gamma_alt_threshold OR
+    # gamma_alt_consecutive_zero_crit consecutive rounds with zero novel CRITICAL.
+    # Documented in Exp 39 sub-experiment configs as pass_condition.
+    gamma_alt_threshold: float = 0.30
+    gamma_alt_consecutive_zero_crit: int = 3
+    gamma_alt_earliest_round: int = 3
+    # Round-context helpers (Exp 40 1D.1, 1D.2, 1D.4).
+    prior_fix_summary_enabled: bool = True
+    prior_fix_summary_max_entries: int = 20
+    prior_fix_summary_max_chars: int = 4000
+    consolidation_rounds: int = 3
+    windowed_context_enabled: bool = True
+    windowed_context_full_rounds: int = 2
+    windowed_context_max_chars: int = 6000
     rho_earliest_round: int = 12
     stall_window: int = 3
     stall_earliest_round: int = 15
@@ -971,6 +992,68 @@ def _check_state_convergence(
     return False, f"Gate passed this round but not {cfg.consecutive_rounds_required} consecutive"
 
 
+def _check_gamma_alt_convergence(
+    round_idx: int,
+    gamma: float,
+    novel_critical_history: List[int],
+    cfg: RunnerConfig,
+) -> Tuple[bool, str]:
+    """γ-based alternative convergence path (Exp 40 fix, Item 1A.3).
+
+    Documented in Exp 39 sub-experiment configs as an alternative pass
+    condition but previously never implemented in code. The Exp 39-0
+    post-mortem flagged this as P0: the main gate requires
+    ``open_ch <= max_open_crit_high`` which was structurally unreachable
+    at threshold 0; even with the threshold bumped to 5, depletion on
+    high-severity findings can be slow enough to time out on wall clock.
+
+    Fires when EITHER:
+      (1) gamma (Duane depletion estimate) >= cfg.gamma_alt_threshold, OR
+      (2) cfg.gamma_alt_consecutive_zero_crit consecutive rounds have
+          produced zero novel CRITICAL findings (severity >= 0.7).
+
+    These conditions are OR (either is sufficient), matching the config
+    text. Condition 1 captures cumulative depletion; condition 2 captures
+    round-level critical-severity exhaustion.
+
+    Returns (converged, reason).
+    """
+    if round_idx < cfg.gamma_alt_earliest_round:
+        return False, (
+            f"γ-alt too early (round {round_idx} < "
+            f"{cfg.gamma_alt_earliest_round})"
+        )
+
+    # Condition 1: gamma threshold
+    if gamma >= cfg.gamma_alt_threshold:
+        return True, (
+            f"GAMMA_ALT_CONVERGED: gamma={gamma:.3f} >= "
+            f"{cfg.gamma_alt_threshold} at round {round_idx}"
+        )
+
+    # Condition 2: consecutive zero novel CRITICAL
+    window = cfg.gamma_alt_consecutive_zero_crit
+    if len(novel_critical_history) >= window:
+        recent = novel_critical_history[-window:]
+        if all(n == 0 for n in recent):
+            return True, (
+                f"GAMMA_ALT_CONVERGED: {window} consecutive rounds "
+                f"with zero novel CRITICAL (history tail={recent}) "
+                f"at round {round_idx}"
+            )
+
+    # Neither condition met
+    recent_tail = (
+        novel_critical_history[-window:]
+        if len(novel_critical_history) >= window
+        else novel_critical_history
+    )
+    return False, (
+        f"γ-alt not met: gamma={gamma:.3f} < {cfg.gamma_alt_threshold}; "
+        f"novel_crit_recent={recent_tail}"
+    )
+
+
 def _check_stall_convergence(
     round_idx: int,
     registry: FindingRegistry,
@@ -1395,16 +1478,15 @@ def _update_observed_fingerprint(
         fp["max_successful_context_chars"] = max(
             fp.get("max_successful_context_chars", 0), response_chars)
         if prompt_chars > 0:
-            fp["max_successful_prompt_chars"] = max(
-                fp.get("max_successful_prompt_chars", 0), prompt_chars)
-            # Quality gate: only add to budget history if output quality
-            # is acceptable. "Did not crash" != "was successful."
-            # Gemini confer finding: without this gate, degraded outputs
-            # at high context inflate the history, keeping budgets high
-            # and accelerating quality collapse.
-            # Reads the adaptive threshold computed by _itc_detect
-            # (stored in _itc_model_state["last_adaptive_threshold"]).
-            # Falls back to hard floor (0.5) during cold start.
+            # Quality gate: compute FIRST, then apply to both
+            # max_successful_prompt_chars AND history updates.
+            # Exp 40 fix 1B.2: previously max_successful_prompt_chars was
+            # updated unconditionally when response_chars > 0. That let
+            # DeepSeek chunked-dispatch successes inflate the fingerprint
+            # from the 0-char-chunk decomposition trap, causing
+            # _should_decompose to re-decompose on subsequent monolithic
+            # payloads of similar size. Now the update is gated on the
+            # same parse-yield threshold as prompt_chars_history.
             quality_ok = True
             if raw_finding_markers >= 2:
                 _py = findings_count / raw_finding_markers
@@ -1412,6 +1494,9 @@ def _update_observed_fingerprint(
                 _thresh = _state.get("last_adaptive_threshold", 0.5)
                 if _py < _thresh:
                     quality_ok = False
+            if quality_ok:
+                fp["max_successful_prompt_chars"] = max(
+                    fp.get("max_successful_prompt_chars", 0), prompt_chars)
             history = fp.setdefault("prompt_chars_history", [])
             if quality_ok:
                 history.append(prompt_chars)
@@ -1943,23 +2028,59 @@ def _run_shadow_cells(
                     mode=MacrophageMode.PATROL, shadow=True,
                 )
 
-            # Extract verdicts from immune result
-            all_verdicts = []
-            if hasattr(immune_result, "cell_verdicts"):
+            # Extract verdicts from immune result. Exp 40 fix 1B.1:
+            # previously the Macrophage saw 0 verdicts across all 6 rounds
+            # of Exp 39-0 despite the pipeline producing 16+ per round.
+            # Now two-path: primary = cell_verdicts dict (per-finding lists);
+            # fallback = synthesise lightweight verdict-like objects from
+            # final_verdicts when cell_verdicts is absent or empty, so the
+            # Macrophage's cluster/severity/timing checks can still fire.
+            all_verdicts: List[Any] = []
+            cv_attr = hasattr(immune_result, "cell_verdicts")
+            if cv_attr:
                 for vid_list in immune_result.cell_verdicts.values():
                     all_verdicts.extend(vid_list)
 
             if not all_verdicts:
-                cv_attr = "present" if hasattr(immune_result, "cell_verdicts") else "missing"
-                cv_keys = len(immune_result.cell_verdicts) if hasattr(immune_result, "cell_verdicts") else 0
-                # Diagnostic: show per-finding verdict counts to identify why empty
-                per_fid_counts = {}
-                if hasattr(immune_result, "cell_verdicts"):
-                    per_fid_counts = {k: len(v) for k, v in immune_result.cell_verdicts.items()}
+                # Fallback: synthesise from final_verdicts (Dict[str, str]).
+                fv = getattr(immune_result, "final_verdicts", None)
+                if fv:
+                    from types import SimpleNamespace
+                    for fid, verdict_str in fv.items():
+                        # Mimic CellVerdict-like interface: .verdict, .confidence,
+                        # .finding_id, .tool_used, .cell_type — Macrophage only
+                        # reads .verdict and .confidence in _patrol_observe.
+                        conf = 0.5
+                        fc = getattr(immune_result, "final_confidences", None)
+                        if fc and fid in fc:
+                            conf = float(fc[fid])
+                        all_verdicts.append(SimpleNamespace(
+                            finding_id=fid,
+                            verdict=verdict_str,
+                            confidence=conf,
+                            tool_used="synthesised_from_final_verdicts",
+                            cell_type="synthesised",
+                        ))
+
+            if not all_verdicts:
+                cv_keys = (
+                    len(immune_result.cell_verdicts) if cv_attr else 0
+                )
+                per_fid_counts = (
+                    {k: len(v) for k, v in immune_result.cell_verdicts.items()}
+                    if cv_attr else {}
+                )
+                fv_attr = hasattr(immune_result, "final_verdicts")
+                fv_keys = (
+                    len(immune_result.final_verdicts) if fv_attr else 0
+                )
                 _log(
-                    f"  Macrophage: 0 verdicts received "
-                    f"(cell_verdicts={cv_attr}, keys={cv_keys}, "
-                    f"per_fid={per_fid_counts}, "
+                    f"  Macrophage: 0 verdicts after both primary and "
+                    f"fallback paths "
+                    f"(cell_verdicts={'present' if cv_attr else 'missing'}, "
+                    f"keys={cv_keys}, per_fid={per_fid_counts}, "
+                    f"final_verdicts={'present' if fv_attr else 'missing'}, "
+                    f"fv_keys={fv_keys}, "
                     f"type={type(immune_result).__name__})"
                 )
 
@@ -3420,6 +3541,8 @@ def run_experiment(
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
     stall_history: List[Dict[str, int]] = []
+    # Exp 40 fix 1A.3: track novel CRITICAL count per round for γ-alt gate.
+    novel_critical_history: List[int] = []
     consecutive_churn_rounds: int = 0  # D1: tracks sustained churn for phase transition
 
     if cfg.resume and brain.load_checkpoint():
@@ -3441,6 +3564,7 @@ def run_experiment(
             gate_history = ckpt_data.get("gate_history", [])
             open_ch_history = ckpt_data.get("open_ch_history", [])
             stall_history = ckpt_data.get("stall_history", [])
+            novel_critical_history = ckpt_data.get("novel_critical_history", [])
             cumulative_context_chars = ckpt_data.get("cumulative_context_chars", 0)
             consecutive_churn_rounds = ckpt_data.get("consecutive_churn_rounds", 0)
             # R39-06: Restore ITC module state for quality tracking continuity
@@ -3694,6 +3818,42 @@ def run_experiment(
                     )
                 _metrics += "=== END METRICS ===\n\n"
                 registry_summary = _metrics + registry_summary
+
+            # Exp 40 fix 1D.1 / 1D.2 / 1D.4: inject round-context helpers.
+            # Consolidation preamble fires during the final
+            # cfg.consolidation_rounds rounds. Prior-fix summary lists
+            # closed canonical entries so models do not re-surface them.
+            # Windowed context compresses older rounds into a one-line
+            # summary for long runs.
+            _context_prefix = ""
+            _consolidation = build_consolidation_preamble(
+                round_idx=round_idx,
+                max_rounds=effective_max,
+                consolidation_rounds=cfg.consolidation_rounds,
+            )
+            if _consolidation:
+                _context_prefix += _consolidation
+            if cfg.prior_fix_summary_enabled:
+                _fix_summary = build_prior_fix_summary(
+                    registry=registry,
+                    round_idx=round_idx,
+                    max_entries=cfg.prior_fix_summary_max_entries,
+                    max_chars=cfg.prior_fix_summary_max_chars,
+                )
+                if _fix_summary:
+                    _context_prefix += _fix_summary
+            if cfg.windowed_context_enabled and result.get("rounds"):
+                _window = build_windowed_context(
+                    per_round_summaries=result["rounds"],
+                    round_idx=round_idx,
+                    window_full_rounds=cfg.windowed_context_full_rounds,
+                    max_chars=cfg.windowed_context_max_chars,
+                )
+                if _window:
+                    _context_prefix += _window
+            if _context_prefix:
+                registry_summary = _context_prefix + registry_summary
+
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_star(
                 exp_config, mgr, brain, base_prompt, registry_summary,
                 cdsfl_text, full_code, round_idx, cfg, registry=registry,
@@ -3726,15 +3886,19 @@ def run_experiment(
 
         # Register findings
         novel_this_round = 0
+        novel_critical_this_round = 0  # Exp 40 1A.3: severity >= 0.7
         for f in findings:
             existing = registry.lookup_alias(f.model_id, f.finding_id)
             if existing is None:
                 registry.register(f, f.model_id)
                 novel_this_round += 1
+                if getattr(f, "severity", 0.0) >= 0.7:
+                    novel_critical_this_round += 1
             else:
                 registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
 
         novelty_counts.append(novel_this_round)
+        novel_critical_history.append(novel_critical_this_round)  # Exp 40 1A.3
         raw_counts.append(len(findings))
 
         # A2: Rho
@@ -3906,6 +4070,21 @@ def run_experiment(
         )
         _log(f"  Convergence: {conv_reason}")
 
+        # Exp 40 fix 1A.3: γ-based alternative convergence path.
+        # Documented in Exp 39 sub-experiment configs but previously
+        # never implemented. Fires when cumulative depletion (γ ≥ 0.30)
+        # or critical-severity exhaustion (3r zero novel CRIT) is reached.
+        gamma_alt_converged, gamma_alt_reason = _check_gamma_alt_convergence(
+            round_idx, gamma, novel_critical_history, cfg,
+        )
+        if gamma_alt_converged and not converged:
+            _log(f"  γ-alt: {gamma_alt_reason}")
+            converged = True
+            conv_reason = gamma_alt_reason
+        elif not gamma_alt_converged:
+            # Log but don't promote — main gate governs until γ-alt fires.
+            _log(f"  γ-alt: {gamma_alt_reason}")
+
         # Stall detector
         stall_result = _check_stall_convergence(
             round_idx, registry, gamma, stall_history, cfg,
@@ -3922,6 +4101,7 @@ def run_experiment(
             "gate_history": gate_history,
             "open_ch_history": open_ch_history,
             "stall_history": stall_history,
+            "novel_critical_history": novel_critical_history,
             "cumulative_context_chars": cumulative_context_chars,
             "consecutive_churn_rounds": consecutive_churn_rounds,
             "itc_model_state": _itc_model_state,
