@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 16 April 2026 02:50 BST
+Last updated: 17 April 2026 04:41 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -21,10 +21,108 @@ session loss, compaction event, or fresh start with a new model instance.
 This is enough to resume most tasks.
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (16 April 2026 ~02:30 BST)
+## Current Pending Work (17 April 2026 ~04:38 BST)
 
-935 tests pass. Branch: `exp39-experimental`. Round-2 consensus implemented,
-round-3 5-panel review completed (effective 5/5 convergence after prose fix).
+935 tests still pass (no code changes this session). Branch:
+`exp39-experimental`. Working tree: four new files landing at this sv.
+
+**SESSION 17 APRIL — EXP 40–54 PLAN + RUNNER V2 SCAFFOLD:**
+
+HEAD entering session: `cc6cc1a`. HEAD after sv (this commit): updated
+by script.
+
+**What landed (non-code artefacts):**
+
+- `experimental_notes/Exp40_Readiness_and_Novelty_Review_2026-04-17.md`
+  and TTS mirror on Desktop — comprehensive review: the novelty thread
+  (ν_k + §18), Exp 39's 14 sub-experiments, unfolded work in three
+  layers (P0 bugs, lessons-forward, schema wiring), factors forward
+  (test article size, measured-vs-advertised attention, prompt schema
+  technical debt, compliance theatre, schema drift, opportunity-cost
+  sufficiency, fingerprint bootstrapping trap).
+- `experimental_notes/Exp40_to_54_Execution_Plan_2026-04-17.md` —
+  parseable implementation checklist. Part 1 = runner fixes (1A/1B/1C
+  bug classes + 1D lessons-forward + 1E schema wiring). Part 2 =
+  shadow-log audit and FFAFP cycles. Part 3 = 14-target decomposition.
+  Part 4 = experiment sequence 40 → 54. Part 5 = gate criteria between
+  experiments. Each item has acceptance criteria and cross-references
+  to the readiness review.
+- `experimental_notes/Exp40_Runner_Audit_2026-04-17.md` — the 12
+  Exp 39-0 shadow logs analysed: Ouroboros active in R0 only (4
+  anomalies, 2 candidates, queries built from literal finding IDs,
+  arxiv returned shadow_mock despite package being installed);
+  R1–R5 empty because all findings were DUPLICATE. Macrophage
+  blind in all 6 rounds. Stage 6 calibrator predates Exp 39-0.
+  Part 1 item-by-item status reconciliation included.
+
+**What landed (code scaffold, zero behaviour change):**
+
+- `bench/reference_runner_v2.py` — 4,344-line pristine copy of
+  `reference_runner.py`. Ready for in-place fixes. The Exp 39 runner
+  `reference_runner.py` is UNTOUCHED per founder directive and stays
+  frozen until v2 is tested and explicitly promoted.
+
+**Audit revealed inherited fixes (plan overstated P0 debt):**
+
+- **1A.1 S_k format mismatch** — DONE. Current parser at
+  `reference_runner.py:2325` accepts both `====` and `==== REPLACE`
+  separators; both bare `>>>>` and `>>>> REPLACE` closers. Comment
+  labelled "Exp 39-0 confound fix".
+- **1A.2 parser emitting source code as finding IDs** — DONE.
+  `_sanitize_fstring_id()` at `runner_core.py:320` handles f-string
+  templates; `_CODE_LEAK_VARNAMES` guard at line 689 rejects Python
+  variable-name leaks plus f-strings, parentheses, trailing commas.
+- **1A.3 convergence gate unreachable** — PARTIAL. Default threshold
+  bumped from 0 to 5 at `reference_runner.py:207` with comment
+  "Was 0 (unreachable). Exp 39-0 fix." γ-based alternative path
+  (γ ≥ 0.30 OR three consecutive rounds with zero novel CRITICAL)
+  still documentation-only.
+
+Remaining Part 1 ≈ 17 substantive implementations plus 3 regression
+tests. Effort reduced vs original plan by ~4 items.
+
+**Scope decisions recorded (via `a, d` confer + founder approval):**
+
+1. 14 single-target experiments (Exp 40 through 53), 1:1 mapping from
+   Exp 39 sub-experiments 39-0 through 39-M, each with a right-sized
+   decomposed article. Exp 40's target proposed as
+   `bench/dm/_feedback.py` (the §17 module, ~20K, fits dispatch
+   pipeline). Final selection per experiment confirmed at config time.
+2. Exp 54 = integration run + 2×2 factorial for §17/§18 attribution.
+   `eta_int_modulator` gets wired into `compute_rk` at Exp 54, not
+   Exp 40. Deferred on resource grounds; project has run without
+   attribution factorial to date.
+3. Specialist cells mathematics/statistics/biology/information science
+   promoted shadow → live for Exp 40 (single-line flip at
+   `reference_runner.py:~3741` moved to v2). Physics/chemistry/
+   engineering built functional in shadow, not placeholder; promotion
+   gated on empirical data from experiments 41 onwards.
+4. Runner evolves in place. Single `reference_runner_v2.py`. No forks.
+   `reference_runner.py` frozen until founder decision to supersede.
+5. Ouroboros principle governs: each experiment's runner = previous
+   experiment's runner + previous experiment's lessons.
+6. No preferred scientific outcome. Popperian interpretive analysis
+   follows each experiment; claims are not pre-declared.
+
+**Next session priorities (in order):**
+
+1. Implement γ-alt convergence path (1A.3 remainder). Self-contained,
+   ~30–60 LOC in `bench/dm/_convergence.py` plus tests.
+2. Diagnose Macrophage wiring (1B.1) at the `immune_result.cell_verdicts`
+   producer site in `bench/immune_agents.py`.
+3. Replay 39-0 R5 DeepSeek output against current `parse_findings` to
+   confirm or refute 1B.3 (markdown bold-heading parsing).
+4. Begin schema wiring items 1E.5 (fingerprint attention metrics from
+   existing ITC data), 1E.6 (dynamic decomposition), 1E.7 (cross-model
+   diversity metric logging), 1E.8 (Ouroboros query-quality fix plus
+   enable real arxiv retrieval).
+5. Add regression tests for 1A.1 and 1A.2 to v2 (the fixes that already
+   shipped, so that future edits don't regress them).
+
+**Not in scope this sv:** modifications to `reference_runner.py`; any
+runner behaviour change in v2; Experiment 40 launch.
+
+**Prior session (16 April) residual text retained for reference:**
 
 **SESSION 16 APRIL — DOCUMENTATION REFRESH + §18 ROUND-2 IMPLEMENTATION:**
 

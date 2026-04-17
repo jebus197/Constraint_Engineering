@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 16 April 2026 02:50 BST
+Last updated: 17 April 2026 04:41 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,56 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40–54 PLAN + RUNNER V2 SCAFFOLD (17 April 2026, 01:45–04:38 BST):**
+  Branch: `exp39-experimental`. 935 tests still pass (no code changes).
+  HEAD unchanged at `cc6cc1a` entering the session.
+
+  **Session scope:** consolidate the novelty thread, recover full context,
+  produce a parseable execution plan for Experiments 40–54, audit the
+  inherited state of Part 1 bug-fix items, scaffold a new runner without
+  modifying the Exp 39 runner.
+
+  **Artefacts produced (all non-code except the v2 scaffold):**
+  - `experimental_notes/Exp40_Readiness_and_Novelty_Review_2026-04-17.md`
+    and TTS mirror — comprehensive review of the novelty thread,
+    Exp 39's 14 sub-experiments, unfolded work, factors forward
+  - `experimental_notes/Exp40_to_54_Execution_Plan_2026-04-17.md` —
+    parseable plan: 5 parts, ~30 numbered items, acceptance criteria,
+    gate criteria, canonical file layout
+  - `experimental_notes/Exp40_Runner_Audit_2026-04-17.md` — shadow-log
+    audit (12 files from Exp 39-0) + item-by-item verification of Part 1
+    against current code
+  - `bench/reference_runner_v2.py` — pristine 4,344-line copy of
+    `reference_runner.py`, ready for in-place fixes
+
+  **Significant finding during audit:** the plan's P0 backlog is
+  overstated. Current `reference_runner.py` already has S_k format
+  mismatch fixed (1A.1 DONE at line 2325), parser emitting source code
+  as finding IDs fixed (1A.2 DONE via `_sanitize_fstring_id` and
+  `_CODE_LEAK_VARNAMES` guard in `runner_core.py`), and convergence-gate
+  threshold bumped from 0 to 5 (1A.3 PARTIAL — γ-alternative path still
+  TODO). v2 inherits all of these fixes.
+
+  **Scope decisions recorded (via `a, d` confer + founder approval):**
+  - 14 single-target experiments, Exp 40–53, 1:1 mapping from 39-0
+    through 39-M, each with a right-sized decomposed article
+  - Exp 54 = integration run with 2×2 factorial for §17/§18 attribution.
+    `eta_int_modulator` gets wired into `compute_rk` here; deferred from
+    Exp 40 on resource grounds
+  - Specialist cells mathematics/statistics/biology/information science
+    promoted shadow → live for Exp 40; physics/chemistry/engineering
+    built functional in shadow, promotion gated on empirical data from
+    Exp 41 onwards
+  - Runner evolves in place (single `reference_runner_v2.py`, no forks);
+    `reference_runner.py` stays frozen until v2 is tested and explicitly
+    promoted by founder decision
+  - No preferred scientific outcome: Popperian interpretive analysis
+    follows each experiment; claims are not pre-declared
+
+  **Next session priorities:** γ-alt convergence path (1A.3 remainder),
+  Macrophage wiring diagnosis (1B.1), DeepSeek parse-findings replay
+  test (1B.3 verification), schema wiring items 1E.5–1E.8.
+
 - **§18 ROUND-2 IMPLEMENTATION + ROUND-3 FINAL REVIEW (16 April 2026, 01:00–02:30 BST):**
   Branch: `exp39-experimental`. 935 tests pass (was 912; +23 new round-2
   divergence tests). Documentation refresh: 47 files reformatted for
