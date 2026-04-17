@@ -138,6 +138,52 @@ from bench.dm._round_context import (
     build_consolidation_preamble,
     build_windowed_context,
 )
+# Exp 40 fix 1D.5: S_k SEARCH/REPLACE format pre-check + reformat request.
+from bench.dm._sk_format import (
+    check_sk_format_admissible,
+    build_reformat_requests as build_sk_reformat_requests,
+)
+# Exp 40 fix 1E.7: cross-model diversity metric (compliance-theatre detector).
+from bench.dm._diversity import diversity_signal_from_round
+# Exp 40 fix 1E.7: per-finding alternative extraction for diversity metric.
+from bench.dm._divergence import parse_alternative_block
+
+
+# Exp 40 fix 1E.6: hard payload floor for decomposition decisions.
+# Independent of fingerprint observed-capacity values — large monolithic
+# dispatches degrade parse yield even when the model accepts them.
+DECOMPOSE_HARD_FLOOR_CHARS = 80_000
+
+
+def should_decompose_v2(
+    model_label: str, mgr, payload_chars: int = 0,
+) -> bool:
+    """v2 decomposition decision with a fingerprint-agnostic hard floor.
+
+    The underlying :func:`_should_decompose` is fingerprint-driven: a model
+    whose fingerprint reports high observed capacity will accept large
+    monolithic payloads, which in Exp 39-0 caused parse-yield collapse on
+    369K dispatches to CC2/ChatGPT/Gemini (their fingerprints reported
+    465K observed capacity × 0.9 safety margin = 418K ≥ 369K, no
+    decompose, quality crashed).
+
+    Layered decision:
+
+    1. Payload > ``DECOMPOSE_HARD_FLOOR_CHARS`` (80K) → force decompose.
+       This overrides the fingerprint's observed-capacity opinion. Even
+       if the model has "proven" it can ingest more, quality collapses
+       above the floor for ambient-noise reasons independent of
+       successful-dispatch outcomes.
+    2. Otherwise defer to :func:`_should_decompose` which still honours
+       ``pre_decompose_models`` override, observed prompt limits, failure
+       ceilings, and the static 80K fallback when fingerprint data is
+       absent.
+
+    Returns ``True`` iff the caller should decompose the payload.
+    """
+    if payload_chars > DECOMPOSE_HARD_FLOOR_CHARS:
+        return True
+    return _should_decompose(model_label, mgr, payload_chars=payload_chars)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -618,10 +664,29 @@ class FindingRegistry:
 _VERDICT_RE = re.compile(
     # F13 fix: C\d{4,} supports IDs beyond 9999
     # F19 fix: bare | inside character class (no backslash needed)
-    r'^\s*(?:[*]{0,2}[-*]?\s*)?(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)\s+(C\d{4,})'
-    r'(?:\s*[*]{0,2}\s*[|<\-\u2014\u2013\u2190]+\s*(.*))?',
+    # 1D.6 fix: broadened Gemini format coverage. Original missed
+    # bold-wrapped keyword alone (**CONFIRM**), bullet+bold combinations,
+    # numbered-list prefixes (1. / 1)), blockquote prefixes (>), and
+    # colon/period separators after the canonical ID.
+    r'^[ \t]*'                                  # line start + indent
+    r'(?:>[ \t]*)?'                             # optional blockquote
+    r'(?:[-*][ \t]+|\d+[.)][ \t]+)?'            # optional bullet or numbered-list prefix
+    r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic opener
+    r'(CONFIRM|CHALLENGE|EXTEND|MERGE|REOPEN)'
+    r'(?:\*{1,2}|_{1,2})?'                      # optional bold/italic closer on keyword
+    r'[ \t]+'
+    r'(?:\*{1,2}|_{1,2})?'                      # optional bold opener on canonical ID
+    r'(C\d{4,})'
+    r'(?:\*{1,2}|_{1,2})?'                      # optional bold closer on canonical ID
+    # Optional description separator + description.
+    # Separators now include `:` and `.` (Gemini uses both), in addition to
+    # `|`, `<`, `-`, em-dash, en-dash, left-arrow.
+    r'(?:[ \t]*(?:\*{1,2}|_{1,2})?[ \t]*[|<:.\-\u2014\u2013\u2190]+[ \t]*(.*))?',
     re.MULTILINE,
 )
+
+
+_VERDICT_TRAILING_FORMAT = re.compile(r'[\s*_]+$')
 
 
 def _parse_verdicts(
@@ -629,7 +694,11 @@ def _parse_verdicts(
 ) -> List[Tuple[str, str, str]]:
     results: List[Tuple[str, str, str]] = []
     for m in _VERDICT_RE.finditer(response_text):
-        results.append((m.group(1), m.group(2), (m.group(3) or "").strip()))
+        description = (m.group(3) or "").strip()
+        # Strip trailing markdown format chars (** / __) when the whole
+        # verdict line was bold-wrapped.
+        description = _VERDICT_TRAILING_FORMAT.sub("", description).strip()
+        results.append((m.group(1), m.group(2), description))
     return results
 
 
@@ -1612,7 +1681,9 @@ def _dispatch_single_model(
     # total payload = system prompt + user prompt (which already embeds full_code
     # via _build_prompt). Do NOT add full_code again — that double-counts ~64K.
     _total_payload_chars = len(model_cdsfl) + len(prompt)
-    if _should_decompose(mc.label, mgr, payload_chars=_total_payload_chars):
+    if should_decompose_v2(
+        mc.label, mgr, payload_chars=_total_payload_chars,
+    ):
         fallback = _multiturn_fallback(
             mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)
         if fallback is not None:
@@ -2958,6 +3029,23 @@ def compute_sk(
     )
 
 
+class ChannelViolationError(RuntimeError):
+    """Raised when the divergence modulator is passed in a forbidden channel slot.
+
+    Channel contract (round-2 5/5 unanimous, round-3 converged):
+
+        eta_int_modulated = m_div * eta_int
+        eta_combined      = eta_int_modulated * (1 - c_ext * (1 - nu_k))
+        q                 = eta_combined * d * p
+        R_k update        = compute_rk(R_old, q, sk, ...)
+
+    FORBIDDEN paths:
+      * m_div as pre-factor on R_k (e.g. ``m_div * R_old``)
+      * m_div entering q as an independent factor outside eta_int
+      * m_div contributing to nu_k
+    """
+
+
 def compute_rk(
     R_old: float, q: float, sk: float,
     nu_b: float = 0.05, nu_f: float = 0.20,
@@ -2965,6 +3053,13 @@ def compute_rk(
     """Three-phase R_k update: detection -> resolution -> re-injection.
 
     Uses bounded nu_eff = 1 - (1-nu_b)*(1-(1-sk)*nu_f).
+
+    Channel boundary: ``q`` must already include any divergence modulation
+    via ``m_div * eta_int`` upstream. This function is the sink, not the
+    site where the modulator is applied. Callers that need the channel
+    check enforced at composition time should use
+    :func:`compute_rk_with_eta_channel` which decomposes q and validates
+    the assignment is on eta_int, not on R_k or q directly.
     """
     # Defensive cast and clamp all probability-space inputs to [0, 1]
     R_old = max(0.0, min(1.0, float(R_old)))
@@ -2993,6 +3088,53 @@ def compute_rk(
     R_k = R_base * (1.0 - nu_eff) + nu_eff
 
     return max(0.0, min(1.0, R_k))
+
+
+def compute_rk_with_eta_channel(
+    R_old: float, sk: float,
+    eta_int: float, m_div: float,
+    c_ext: float, nu_k: float,
+    d: float, p: float,
+    nu_b: float = 0.05, nu_f: float = 0.20,
+) -> float:
+    """R_k update that enforces the eta_int channel for the divergence modulator.
+
+    Exp 40 fix 1E.10: composes q from primitives with m_div applied ONLY
+    as an eta_int multiplier. Ranges are validated at entry; if a caller
+    accidentally passes m_div in a forbidden slot (e.g. by computing
+    ``R_old_modulated = m_div * R_old`` and then supplying that), the
+    range check on R_old catches it when m_div * R_old drifts out of
+    [0, 1] and the input-clamp silently coerces it — which itself is a
+    regression surface. To defend against that, we validate m_div and
+    eta_int as separate inputs *here* before composing q.
+    """
+    # Explicit channel validation — inputs that would be silently clamped
+    # by compute_rk are rejected here as channel violations.
+    for name, value in (
+        ("m_div", m_div), ("eta_int", eta_int),
+        ("c_ext", c_ext), ("nu_k", nu_k), ("d", d), ("p", p),
+    ):
+        fval = float(value)
+        if not (0.0 <= fval <= 1.0):
+            raise ChannelViolationError(
+                f"{name}={fval} must be in [0, 1]; the divergence modulator "
+                f"(m_div) multiplies eta_int only, not R_k or q directly."
+            )
+
+    # Canonical channel composition — m_div only on eta_int.
+    eta_int_modulated = m_div * eta_int
+    eta_combined = eta_int_modulated * (1.0 - c_ext * (1.0 - nu_k))
+    q = eta_combined * d * p
+
+    # Final sanity: q is a probability; composition must not produce q > 1.
+    # Given each factor is in [0, 1], q ∈ [0, 1] algebraically. If this
+    # invariant is ever violated we have a numerical or input-ordering bug.
+    if not (0.0 <= q <= 1.0 + 1e-9):
+        raise ChannelViolationError(
+            f"composed q={q} escaped [0, 1]; channel invariant broken."
+        )
+
+    return compute_rk(R_old, q, sk, nu_b=nu_b, nu_f=nu_f)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3724,6 +3866,12 @@ def run_experiment(
     feedback_sections_for_next_round: Dict[str, str] = {}
     feedback_enabled = _feedback_channel_enabled(cfg)
 
+    # Exp 40 fix 1D.5 — S_k SEARCH/REPLACE format pre-check.
+    # Populated at end of round K with (canonical_id, diagnostic_reason)
+    # pairs for findings whose proposed_fix did not parse as an S_k block.
+    # Consumed at start of round K+1 as a reformat-request prompt section.
+    sk_reformat_requests_for_next_round: List[Tuple[str, str]] = []
+
     # ── Main loop ──
     for round_idx in range(start_round, loop_cap):
         if round_idx >= effective_max:
@@ -3749,8 +3897,18 @@ def run_experiment(
 
         # Dispatch — topology-dependent
         if cfg.topology == "relay":
+            # Exp 40 fix 1D.5: attach S_k reformat requests to the relay
+            # base_prompt so they reach every relay hop. Star branch injects
+            # via registry_summary below; relay has no registry_summary slot.
+            _relay_prompt = base_prompt
+            if sk_reformat_requests_for_next_round:
+                _sk_reformat = build_sk_reformat_requests(
+                    sk_reformat_requests_for_next_round,
+                )
+                if _sk_reformat:
+                    _relay_prompt = _sk_reformat + "\n\n" + base_prompt
             findings, responses, per_model_durations, prompt_lengths = _dispatch_round_relay(
-                exp_config, mgr, brain, base_prompt, cdsfl_text, full_code,
+                exp_config, mgr, brain, _relay_prompt, cdsfl_text, full_code,
                 round_idx, cfg, registry=registry,
             )
         else:
@@ -3851,6 +4009,15 @@ def run_experiment(
                 )
                 if _window:
                     _context_prefix += _window
+            # Exp 40 fix 1D.5: S_k reformat request — rendered at round K+1
+            # from round K's pre-check results. Non-empty only when prior
+            # round emitted unparseable proposed_fix entries.
+            if sk_reformat_requests_for_next_round:
+                _sk_reformat = build_sk_reformat_requests(
+                    sk_reformat_requests_for_next_round,
+                )
+                if _sk_reformat:
+                    _context_prefix += _sk_reformat + "\n\n"
             if _context_prefix:
                 registry_summary = _context_prefix + registry_summary
 
@@ -3887,13 +4054,23 @@ def run_experiment(
         # Register findings
         novel_this_round = 0
         novel_critical_this_round = 0  # Exp 40 1A.3: severity >= 0.7
+        # Exp 40 fix 1D.5: collect findings whose proposed_fix is non-empty
+        # but does not parse as an S_k block. Fed to next round as a
+        # reformat-request prompt section.
+        sk_reformat_requests_for_next_round = []
         for f in findings:
             existing = registry.lookup_alias(f.model_id, f.finding_id)
             if existing is None:
-                registry.register(f, f.model_id)
+                cid = registry.register(f, f.model_id)
                 novel_this_round += 1
                 if getattr(f, "severity", 0.0) >= 0.7:
                     novel_critical_this_round += 1
+                # 1D.5 pre-check: only for novel findings with a proposed fix.
+                fix_text = getattr(f, "proposed_fix", "") or ""
+                if fix_text.strip():
+                    ok, reason = check_sk_format_admissible(fix_text)
+                    if not ok:
+                        sk_reformat_requests_for_next_round.append((cid, reason))
             else:
                 registry.add_verdict(existing, f.model_id, "CONFIRM", round_idx)
 
@@ -4131,6 +4308,30 @@ def run_experiment(
             }
             for f in findings
         ]
+        # Exp 40 fix 1E.7: cross-model diversity (compliance-theatre detector).
+        # For each finding, extract the §18 alternative blocks from the
+        # emitting model's raw response; pool across the panel; compute mean
+        # pairwise Jaccard. Logging-only — does not gate admission or R_k.
+        cross_model_diversity: Optional[Dict[str, Any]] = None
+        try:
+            per_model_alts: List[Tuple[str, str]] = []
+            for f in findings:
+                raw = responses.get(f.model_id, "")
+                if not raw:
+                    continue
+                alts = parse_alternative_block(
+                    raw, f.finding_id, f.description or "",
+                )
+                for alt in alts:
+                    alt_text = getattr(alt, "text", "") or ""
+                    if alt_text.strip():
+                        per_model_alts.append((f.model_id, alt_text))
+            if per_model_alts:
+                cross_model_diversity = diversity_signal_from_round(per_model_alts)
+        except Exception as _e:
+            # Logging-only metric — never crash the loop on parse errors.
+            cross_model_diversity = {"error": f"{type(_e).__name__}: {_e}"}
+
         round_data: Dict[str, Any] = {
             "round": round_idx, "type": round_type,
             "findings_count": len(findings),
@@ -4147,6 +4348,7 @@ def run_experiment(
             "sk_pipeline": sk_stats,
             "stall_detector": stall_result,
             "shadow_cells": shadow_cell_data,
+            "cross_model_diversity": cross_model_diversity,
         }
         result["rounds"].append(round_data)
 
