@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 18 April 2026 06:42 BST
+Last updated: 18 April 2026 11:20 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -609,6 +609,76 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
 <!-- SV:LATEST_EXP_END -->
 
+
+- **README v3 DRAFT + NOVELTY-SYNTHESIS GAP CLOSURE + APPLY-DRAFTED-EDITS DIRECTIVE (18 April 2026, 09:20–11:20 BST):**
+  Session work, no new experimental evidence. Three strands continuing
+  directly from the earlier 06:20–07:00 v2-draft session.
+
+  **Strand 1 — README v3 draft landed at the repo root.**
+  Full rewrite to `README_v3_draft_2026-04-18.md` and its TTS sibling
+  `~/Desktop/CDSFL_tts/README_v3_Draft_2026-04-18.txt`. v3 rebuilds the
+  README on the foundation of the founder's April 2026 blog post rather
+  than the v2 9-section plan shape, preserving first-person authorial
+  voice and blog-post fluidity. Integrates the Stage 6 Round 2 confer
+  outcome (literature-calibrated novelty), the §17 Feedback Channel
+  (imperative), and the §18 Divergence Directive (generator-side
+  isomorphism check, Jaccard 0.85, five dimensions). Hossenfelder 2026
+  "The AI Maths Revolution Has Begun" integrated as §6.6 (rediscovery
+  concern addressed by ν_k · c_ext literature × search-quality channel)
+  plus a Further Reading pointer — used as direct prompt for the
+  Stage 6 extension, not as decoration. v2 drafts left in place
+  untouched so the founder can compare side-by-side before any
+  promotion of v3 over the existing `README.md`. Proportionate to
+  traceable contribution per standing directive — no over-egging.
+
+  **Strand 2 — Six-edit closure of the novelty-synthesis gap.**
+  Cross-referenced audit identified a gap: §18 Divergence Directive
+  and Channel 2 (generator-side novelty / η_int) were documented in
+  Stage 6 sections but inconsistently reflected in the Abstract,
+  §3 mathematical-layer enumeration, §6 title, §10 summary points,
+  §12 Implications, and §13 Conclusion. Six drafted edits applied
+  to both the markdown and TTS files in parallel (TTS rendered with
+  zero markdown, spelled-out Greek, "Section Eighteen" for §18).
+  Net effect: where Channel 1 (R_k validity) and Channel 3
+  (ν_k · c_ext literature × search quality) appear in framing,
+  Channel 2 (η_int generator-side / §18 Divergence Directive) now
+  appears alongside them. The Popperian severe-tests arm and
+  bold-conjectures arm are now mathematically distinct across the
+  document's framing surface, not only in the Stage 6 chapter. TTS
+  timestamp bumped 09:43 → 09:52 BST on apply.
+
+  **Strand 3 — Apply-drafted-edits standing directive captured.**
+  Founder correction on the first message of this session: "There
+  is no reason to only partially do this, or to defer? Why did you
+  defer? Do not omit this. It will probably be important context
+  for you later also." Trigger: the six novelty-synthesis edits
+  above had been drafted and flagged as 'un-applied' rather than
+  applied. Captured as new persistent-memory file
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/feedback_apply_drafted_edits.md`
+  and indexed in that folder's `MEMORY.md`. Rule: once edits have
+  been drafted under `a, d` (or any equivalent approval-to-analyse)
+  and nothing has countermanded them, apply them and mention the
+  scope briefly in the end-of-turn summary. Reserve "should I
+  proceed?" for destructive or externally visible actions per the
+  Executing Actions with Care guidance. Companion to
+  `feedback_hil_fatigue.md`: that memory governs output shape,
+  this one governs execution timing.
+
+  **Working tree state at sv entry:**
+  Branch: `exp39-experimental`. HEAD `6580737` over `bdfc93a` over
+  `8b8682d`; three commits ahead of origin (this save-state produces
+  the fourth commit + push). 1250/1250 tests still passing — no
+  `bench/` code touched. Untracked drafts at repo root pending
+  founder decision on `README.md` promotion:
+  `README_v2_draft_2026-04-18.{docx,html,md}` and
+  `README_v3_draft_2026-04-18.md`.
+
+  **Still pending (not sv-blocking):**
+  - Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types.
+  - Founder decision on `README.md` promotion (v2 vs v3 vs retain
+    current).
+  - Untracked v2 docx/html/md cleanup once a promotion path is
+    chosen.
 
 - **FRAMING CORRECTION + STANDING DIRECTIVES + README v2 DRAFT (18 April 2026, 06:20–07:00 BST):**
   Session work, no new experimental evidence. Three strands.

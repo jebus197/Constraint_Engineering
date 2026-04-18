@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 18 April 2026 06:42 BST
+Last updated: 18 April 2026 11:20 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -61,7 +61,57 @@ correct twice.
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (17 April 2026 ~14:30 BST)
+## Current Pending Work (18 April 2026 ~11:20 BST)
+
+**SESSION 18 APRIL — README v3 DRAFT + NOVELTY-SYNTHESIS GAP CLOSURE + APPLY-DRAFTED-EDITS DIRECTIVE:**
+
+Branch: `exp39-experimental`. HEAD `6580737` over `bdfc93a` over
+`8b8682d`; three commits ahead of origin at sv entry (this save-state
+produces the fourth commit + push). 1250/1250 tests still passing —
+no `bench/` code touched this session. Untracked drafts at repo
+root: `README_v2_draft_2026-04-18.{docx,html,md}` and
+`README_v3_draft_2026-04-18.md`.
+
+**What landed this session (documentation + memory only):**
+
+1. **README v3 draft** at `README_v3_draft_2026-04-18.md` and TTS
+   sibling at `~/Desktop/CDSFL_tts/README_v3_Draft_2026-04-18.txt`.
+   Built on the founder's April 2026 blog post foundation with the
+   Stage 6 Round 2 confer outcome, §17 Feedback Channel, §18
+   Divergence Directive, and Hossenfelder 2026 reference all
+   integrated. v2 drafts retained untouched for side-by-side
+   comparison.
+
+2. **Novelty-synthesis gap closure** — six edits applied to both
+   markdown and TTS covering Abstract, §3 mathematical layer, §6
+   title, §10 summary, §12 Implications, and §13 Conclusion.
+   Channel 2 (generator-side η_int / §18 Divergence Directive) now
+   appears in framing surface wherever Channel 1 (R_k) and Channel 3
+   (ν_k · c_ext) appear. The severe-tests and bold-conjectures arms
+   of Popperian method now mathematically distinct across the
+   document's framing, not only in the Stage 6 chapter. TTS
+   timestamp bumped to 09:52 BST.
+
+3. **Apply-drafted-edits standing directive** captured as new
+   persistent memory `feedback_apply_drafted_edits.md` and indexed
+   in `MEMORY.md`. Triggered by the founder's first message of this
+   session: 'apply edits that have already been drafted under
+   approval-to-analyse, do not stall with a second confirmation
+   loop'. Companion to `feedback_hil_fatigue.md` (output shape)
+   and governs execution timing.
+
+**Open items, not sv-blocking:**
+
+1. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
+   (K/L/M physics/chemistry/engineering — tranche B already landed
+   in `bench/cdsfl_registry/tool_manifest.toml` per Phase B).
+2. Founder decision on `README.md` promotion: retain current, promote
+   v2, or promote v3. Recommend awaiting side-by-side read.
+3. Untracked v2 `.docx/.html/.md` at repo root pending promotion
+   decision — will either move to `experimental_notes/drafts/` or
+   delete once a v3 promotion is signed off.
+
+**Prior session text retained for continuity:**
 
 **SESSION 17 APRIL — EXP 40 STAGE 3 CLOSURE (Phase A + Phase B):**
 
