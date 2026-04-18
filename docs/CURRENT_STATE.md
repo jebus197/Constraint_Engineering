@@ -1,20 +1,26 @@
 # CDSFL Current State
 
-Generated: 17 April 2026 14:28 BST (2026-04-17T14:28:54+01:00)
+Generated: 18 April 2026 06:42 BST (2026-04-18T06:42:53+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `6580737` docs: sync Exp40 progress doc with Phase A + B commit state
-- **Committed:** 2026-04-17 14:14:28 +0100
-- **Remote:** ahead by 61
+- **Last commit:** `7326a04` sv: Exp 40 Stage 3 closure — Phase A + B landed, 1250 tests, residual items gated
+- **Committed:** 2026-04-17 14:28:54 +0100
+- **Remote:** ahead by 62
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
+- `?? README_v2_draft_2026-04-18.docx`
+- `?? README_v2_draft_2026-04-18.html`
+- `?? README_v2_draft_2026-04-18.md`
+- `?? bench/confer_exp40_prelaunch_round1.py`
+- `?? experimental_notes/CDSFL_Stage_Three_Closure_Explained_2026-04-17.md`
+- `?? experimental_notes/Expert_Encodings_Tradable_Assets_2026-04-17.md`
 
 ---
 
@@ -46,6 +52,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `7326a04 sv: Exp 40 Stage 3 closure — Phase A + B landed, 1250 tests, residual items gated`
 - `6580737 docs: sync Exp40 progress doc with Phase A + B commit state`
 - `bdfc93a exp40: Phase B fixes 1D.3/1E.3/1E.4/1E.5/1E.8/1E.9/1E.11/1E.12 (200+ tests)`
 - `8b8682d exp40: Phase A fixes 1D.5/1D.6/1E.6/1E.7/1E.10 (98 tests)`
@@ -55,4 +62,3 @@ Uncommitted files:
 - `d11457b docs: add refresh-sweep summary note (third-party voice + plain-English + AI-gender-neutrality)`
 - `0651974 docs: reformat 7-day notes for third-party voice + plain English, remove AI-gendered pronouns`
 - `4580465 sv: §17+§18 panel review and round-2 mathematical convergence — 5/5 unanimous on channel reassignment (R_k → η_int + FFAFP admissibility), 2×2 factorial for D3, ν_k prohibition explicit, three founder decisions pending`
-- `71ab374 sv: §18 divergence directive — CDSFL's bold-conjectures arm (invention engine)`

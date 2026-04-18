@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 17 April 2026 14:28 BST
+Last updated: 18 April 2026 06:42 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -609,6 +609,76 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
 <!-- SV:LATEST_EXP_END -->
 
+
+- **FRAMING CORRECTION + STANDING DIRECTIVES + README v2 DRAFT (18 April 2026, 06:20–07:00 BST):**
+  Session work, no new experimental evidence. Three strands.
+
+  **Strand 1 — Expert encodings framing corrected in place.**
+  The earlier 17 April synthesis led with a 'tradable asset' framing that
+  over-rotated on one strand of the documentary record and under-weighted
+  CDSFL's MIT-licensed, fundamentalist open-source character. Both the
+  markdown at `experimental_notes/Expert_Encodings_Tradable_Assets_2026-04-17.md`
+  and the TTS sibling at `~/Desktop/CDSFL_tts/Expert_Encodings_Tradable_Assets_2026-04-17.txt`
+  rewritten (not annotated). New framing retitled "Expert Encodings,
+  Specialist B-Cell Dispatch, and the Authoring Bridge". Nine parts covering:
+  the MIT / open-source mission restored; the expert-vs-plumbing separation
+  (domain experts author encodings following the 10-section template at
+  `bench/directives/universal/expert_encoding_template.md` — they do not
+  touch `bench/immune_agents.py` or the per-domain TOML files, in the same
+  way a Microsoft Word user does not edit the word processor's source); the
+  two-operating-modes requirement (multi-vendor via OpenRouter and
+  single-system / single-user, both on the Round 1 panel agenda); the
+  confer-vs-experiments distinction (confer is internal development
+  protocol, not a shipped-product feature); the corrected tier workflow for
+  a no-confer launch (SEED on schema pass → DRAFT on fixtures + tool
+  manifest → CROSS-VERIFIED on internal or trusted-community review →
+  CURATED / OPERATIONAL / VALIDATED on real experimental evidence); and
+  three canonical sub-questions for the Round 1 panel of Experiment 40 —
+  authoring bridge design, single-user mode, topology review. Tradability
+  language retained factually where it appears in the record
+  (`resources/ONBOARDING.md:1593`, `resources/configs/example_domain_expert_config.md:51`)
+  as a downstream consequence of portability, not as the originating purpose.
+
+  **Strand 2 — Standing corrections added to `resources/RECOVERY.md`.**
+  New "Standing Corrections (Load-Bearing Directives)" section covering
+  two directives the founder has named load-bearing. Quote convention:
+  single `'quotes'` mean paraphrase, indirect reference, or emphasis —
+  not verbatim prior wording; double `"quotes"` mean verbatim direct
+  quotation. Factual synthesis over agreement amplification: when the
+  founder asks for analysis, deliver evidence-grounded factual synthesis
+  anchored in the documentary record; when evidence points away from the
+  founder's framing, say so with citations rather than elaborating the
+  framing into a thesis. Full bodies live in persistent memory under
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/`
+  as `feedback_quote_convention.md` and `feedback_factual_synthesis.md`.
+  Both also captured to OpenBrain as high-priority decisions
+  (IDs `fdd8c6a2-5c41-4817-a6af-e79f0077c3aa` and
+  `7a1cba01-01d9-47bc-adde-81d3159d3582`) for cross-session retrieval.
+
+  **Strand 3 — README v2 draft rendered in three formats for founder review.**
+  Full rewrite to `README_v2_draft_2026-04-18.md` at the repo root
+  (23,101 bytes). Preserves the existing `README.md` untouched so the
+  founder can compare side-by-side before any promotion. Draft is
+  structured in the 9-section shape agreed in plan discussion: what CDSFL
+  is (MIT, two stated purposes); P-Pass and Extended P-Pass; why a
+  constraint box is needed; the five-layer stack; HARD/SOFT constraints
+  and `[VERIFY:current]` / `[SPECULATIVE]` flags; expert encodings with the
+  10-section template and tier ladder and the expert-vs-plumbing boundary;
+  the mathematical framework at three levels (C(n) operational, R_k(i)
+  recursive, Stage 6 with S_k = A·E and η_combined); composer and
+  interaction-pattern presets; the two operating modes; confer-vs-experiments;
+  the planned authoring bridge as a Round 1 panel question; tiered review
+  (Tier 0–3); persistence and verification; human role and multi-architecture;
+  the method applied to itself; benchmark and the path toward a configured
+  synthetic domain expert; contents, quick start, known boundaries;
+  contributing; one-sentence summary. HTML render at
+  `README_v2_draft_2026-04-18.html` (27,440 bytes, Python markdown 3.10.2
+  with fenced_code, tables, nl2br extensions and Georgia-serif CSS). DOCX
+  render at `README_v2_draft_2026-04-18.docx` (19,940 bytes, produced via
+  LibreOffice headless with explicit `HTML (StarWriter)` input filter and
+  `docx:MS Word 2007 XML` output filter — default filter chain fails
+  without the explicit specification). No files under `bench/` touched.
+  1250/1250 tests still passing.
 
 - **EXP 37 CONVERGED (9 April 2026, 10:18 BST):**
   Evidence layer review (`evidence.py` + `verification_chain.py`), star topology,

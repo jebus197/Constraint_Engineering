@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 April 2026 14:28 BST
+Last updated: 18 April 2026 06:42 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -19,6 +19,46 @@ session loss, compaction event, or fresh start with a new model instance.
 9. **For Exp 36 ground truth and forward path:** read `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` — canonical reference consolidating all findings, immune status corrections, 13 design improvements, mathematical model gaps, and resumption plan.
 
 This is enough to resume most tasks.
+
+## Standing Corrections (Load-Bearing Directives)
+
+Two directives the founder has named load-bearing. They must survive every
+session handoff, compaction, and recovery. Full bodies live in persistent
+memory under `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/`.
+
+### Quote convention (`feedback_quote_convention.md`)
+
+The founder uses two quote styles with distinct meaning:
+
+- **Single `'quotes'`** — paraphrase, indirect reference, or emphasis drawing
+  attention to a term. NOT a claim of verbatim prior wording.
+- **Double `"quotes"`** — verbatim direct quotation. Treat as an exact string.
+
+When reflecting the founder's intent back in documents (TTS files,
+experimental notes, README, MEMORY, RECOVERY, IM posts, commit messages),
+prefer paraphrase with clear attribution over lifting single-quoted phrases
+into headline positions. Misreading a single-quoted framing as a verbatim
+anchor caused the 17 April 2026 Expert_Encodings TTS incident.
+
+### Factual synthesis over agreement amplification (`feedback_factual_synthesis.md`)
+
+When the founder corrects a framing, deliver the correction grounded in the
+canonical project documents (README, PAPER, FOUNDERS_NOTES, blog post,
+MATHEMATICAL_APPENDIX), not in the correction's own rhetoric.
+
+Agreement amplification — extending the founder's correction phrase into a
+full thesis — is a named failure mode. Cross-reference the canonical record
+first. If the record contradicts or moderates the founder's current framing,
+say so with citations. Popperian falsification is the project's method;
+reflexive concurrence is a cost.
+
+Recorded after the Expert_Encodings_Tradable_Assets incident on 17–18 April 2026:
+a single-quoted `'tradable asset'` phrase was built into a headline thesis
+without cross-referencing against README, PAPER, FOUNDERS_NOTES, or the
+MIT-licensed open-source character of the project. The founder had to
+correct twice.
+
+---
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (17 April 2026 ~14:30 BST)
