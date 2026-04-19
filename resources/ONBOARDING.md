@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 18 April 2026 11:20 BST
+Last updated: 19 April 2026 10:35 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -609,6 +609,119 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
 <!-- SV:LATEST_EXP_END -->
 
+
+- **README v3 CORRECTIONS + NEW `rg` MC COMMAND (19 April 2026, 09:45–10:30 BST):**
+  Session work, no new experimental evidence. Two strands continuing
+  directly from the 18 April v3 draft session.
+
+  **Strand 1 — Thirteen-point correction sweep of the README v3 draft.**
+  Founder-directed corrections applied to both
+  `README_v3_draft_2026-04-18.md` and the TTS sibling
+  `~/Desktop/CDSFL_tts/README_v3_Draft_2026-04-18.txt`. (1) Exp 39 /
+  Exp 40 runner references stripped — README is about what the
+  project IS, not what is currently in flight; such content belongs
+  in RECOVERY.md and experimental_notes. (2) Ouroboros cell
+  explained on first mention (symbol of self-reference applied to
+  literature-checking discipline on findings the framework's own
+  models have produced). (3) Five-model heterogeneous panel given
+  explicit "remarkable-fact" framing in the Abstract (different
+  training curricula, objectives, tokenisers, safety regimes —
+  blind-spots-as-signal). (4) Tool-deterministic constraint box
+  made explicit in Part 1 and Part 5 as a load-bearing commitment,
+  with the open-source tool envelope enumerated (SymPy, z3, NumPy,
+  SciPy, mpmath, uncertainties, pint, astropy, RDKit, Biopython,
+  NetworkX, scikit-learn, AST, ruff, mypy, bandit, CrossHair) and
+  the "deterministic verification over statistical pattern
+  completion" behaviour documented. (5) Unified recursive state
+  equation R_k(i) documented in §6.5 as the models' own reasoning
+  methodology from Exp 37 onwards — each model computes q = η·d·p,
+  derives R_detection/R_base/updated R_k, and uses ΔR_k as its
+  stopping heuristic, moving reasoning onto a numerical surface
+  the HIL can inspect. (6) Biological analogy forward-referenced
+  on first mention in Part 1 so no cell name is used before §8/§9
+  explain it. (7) B-Cell Complex reframed as applicable across
+  eight STEM domains — mathematics, physics, chemistry, engineering,
+  biology, statistics + ML, graph theory, code-level behavioural
+  contracts — not just code correction. (8) Wolfram Alpha clarified
+  as local cross-check only, never in the admissibility chain
+  during a run; project prefers open-source tools wherever a
+  fit-for-purpose alternative exists ("fundamentalist open source").
+  (9) Future-development framing stripped from §11 — Exp 40 2×2
+  factorial paragraph and three canonical panel sub-questions
+  (authoring bridge, single-user mode, topology review) moved to
+  experimental_notes / RECOVERY with a single pointer paragraph
+  left behind. (10) §9 Confer definition reworded ("what model
+  panels do to each other" informal phrasing removed). (11) Topology
+  defined inline on first mention in §8 ("the pattern of which
+  agents communicate with which, and through what routing — the
+  graph shape of the review network"). (12) Substrate/model
+  agnosticism expanded in §9 to cover human teams, heterogeneous
+  multi-vendor machine panels, hybrid teams, and non-human
+  biological intelligences; the evaluation machinery does not
+  privilege any substrate at the level of its definitions.
+  (13) New §9 HIL definition block — final decision authority on
+  fix application, stage promotion, constraint reclassification,
+  and contested-finding adjudication; "not a rubber stamp";
+  single-recommendation-per-decision convergence; substrate-agnostic
+  by function rather than by species. TTS timestamp bumped
+  09:52 → 10:23 BST; Draft revision bumped three → four. Markdown
+  closing line reframed: "19 April 2026. Fundamentalist open source
+  under the MIT License. A running system, a maintained test suite,
+  and a mathematical appendix under iterative extension."
+
+  **Strand 2 — New `rg` MC command introduced and registered.**
+  Founder named a new metacognitive command during the correction
+  list: `rg <topic>` = re-read the anchoring resources for that
+  topic (persistent-memory files, canonical project docs,
+  experimental notes, directive files) before producing new output
+  on it, and name the resources consulted in a one-line preamble.
+  Trigger observation: multiple concepts the founder considered
+  foundational (substrate agnosticism, the HIL's role, the
+  tool-deterministic constraint box, the biological analogy, the
+  unified equation as reasoning method) had not made it onto the
+  README surface despite being present throughout the project
+  record — session state was insufficient, canonical resources
+  were where the truth lived. Registered in the four locations
+  named by the founder's standing directive:
+  `~/.claude/CLAUDE.md` (shorthand list + dedicated paragraph
+  after the sv paragraph), `.claude/CLAUDE.md` (project MC table),
+  `docs/REPRODUCING.md` (MC table), and
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`
+  (Shorthand Additions + Feedback section pointer). New
+  persistent-memory file
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/rg_command.md`
+  created with full protocol body — trigger conditions, overlap
+  with `rt` (wholesale rebuild) and `rs` (session state restore),
+  anchoring-resource list, and the requirement to name consulted
+  resources in the rg preamble. Combinable with other MC commands
+  in the usual way: `rg p` = regain context then P-pass;
+  `rg a d` = regain context, analyse dispassionately, discuss
+  before proceeding.
+
+  **Working tree state at sv entry:**
+  Branch: `exp39-experimental`. HEAD `7334e49` (last sv).
+  Modified, tracked: `.claude/CLAUDE.md` (rg row),
+  `docs/REPRODUCING.md` (rg row). Untracked at repo root (not in
+  sv whitelist — retained for founder's README-promotion decision):
+  `README_v2_draft_2026-04-18.{docx,html,md}` and
+  `README_v3_draft_2026-04-18.md` (13 corrections applied this
+  session). Outside the repo: `~/.claude/CLAUDE.md` edited,
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`
+  edited, `memory/rg_command.md` created, TTS file at
+  `~/Desktop/CDSFL_tts/README_v3_Draft_2026-04-18.txt` fully
+  mirrors the markdown at revision four. 1250/1250 tests still
+  passing — no `bench/` code touched this session.
+
+  **Still pending (not sv-blocking):**
+  - Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell
+    types (carried forward from prior sv).
+  - Founder decision on `README.md` promotion (v2 vs v3 vs
+    retain current).
+  - Untracked v2 `.docx/.html/.md` cleanup once a promotion path
+    is chosen.
+  - Return to the outstanding Experiment 40 confer round with the
+    other models, per founder's framing at the start of this
+    session.
 
 - **README v3 DRAFT + NOVELTY-SYNTHESIS GAP CLOSURE + APPLY-DRAFTED-EDITS DIRECTIVE (18 April 2026, 09:20–11:20 BST):**
   Session work, no new experimental evidence. Three strands continuing

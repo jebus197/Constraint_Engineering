@@ -1,18 +1,20 @@
 # CDSFL Current State
 
-Generated: 18 April 2026 11:20 BST (2026-04-18T11:20:22+01:00)
+Generated: 19 April 2026 10:35 BST (2026-04-19T10:35:56+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `ef50d4e` sv: expert-encoding framing correction + quote/synthesis standing directives + README v2 draft
-- **Committed:** 2026-04-18 06:42:53 +0100
-- **Remote:** ahead by 63
+- **Last commit:** `7334e49` sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive
+- **Committed:** 2026-04-18 11:20:22 +0100
+- **Remote:** ahead by 64
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
+- `M .claude/CLAUDE.md`
+- `M docs/REPRODUCING.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
 - `?? README_v2_draft_2026-04-18.docx`
@@ -50,6 +52,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `7334e49 sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive`
 - `ef50d4e sv: expert-encoding framing correction + quote/synthesis standing directives + README v2 draft`
 - `7326a04 sv: Exp 40 Stage 3 closure — Phase A + B landed, 1250 tests, residual items gated`
 - `6580737 docs: sync Exp40 progress doc with Phase A + B commit state`
@@ -59,4 +62,3 @@ Uncommitted files:
 - `54d956e sv: Exp 40-54 execution plan + runner v2 scaffold + shadow-log audit`
 - `cc6cc1a sv: §18 round-2 implementation + round-3 5-panel review + documentation refresh`
 - `d11457b docs: add refresh-sweep summary note (third-party voice + plain-English + AI-gender-neutrality)`
-- `0651974 docs: reformat 7-day notes for third-party voice + plain English, remove AI-gendered pronouns`

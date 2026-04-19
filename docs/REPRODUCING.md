@@ -189,6 +189,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `r` | Re-read key context files |
 | `x` | Override sleep/rest-period warnings |
 | `sth` | Synthesise — consolidate findings into a coherent whole |
+| `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
 
 ### Model Confer Dispatch
 
