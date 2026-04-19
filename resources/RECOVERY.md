@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 19 April 2026 10:35 BST
+Last updated: 19 April 2026 13:48 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -61,9 +61,125 @@ correct twice.
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (19 April 2026 ~10:30 BST)
+## Current Pending Work (19 April 2026 ~13:45 BST)
 
-**SESSION 19 APRIL — README v3 CORRECTIONS + NEW `rg` MC COMMAND:**
+**SESSION 19 APRIL (midday) — BROADER DOCUMENTATION STALENESS SWEEP (6-BATCH PASS):**
+
+Branch: `exp39-experimental`. Founder flagged (via `rg, qc`) that the
+online repo had not received meaningful documentation updates since
+roughly 4 April 2026, despite the April project work (R_k(i)
+unification 8 April, semantic novelty fix 9 April, immune cell
+taxonomy 9 April, Tranches A/B 13–14 April, Stage 6 literature-
+calibrated extension 14 April, §17 feedback channel 15 April, §18
+divergence directive 15–16 April, Exp 40 Stage 3 closure 17–18
+April). A 6-batch plan was drafted, approved for autonomous
+execution, and completed this session.
+
+1. **Batch 1 — `docs/FOUNDERS_NOTES.md`.** Added 12 dated
+   first-person reflective entries covering 5–19 April: the Confound
+   Cascade (5 Apr), Model Relay vs Structured Blackboard (6 Apr),
+   MIDCA Reassessment (7 Apr), Mathematical Model Under Audit
+   (7–8 Apr), Cell Type Architecture (9 Apr), Three-Layer Schema
+   and Ouroboros (10–11 Apr), Tranches A/B/C (13–14 Apr), Stage 6
+   Two-Dimensional Novelty (14 Apr), Feedback Channel (15 Apr),
+   Divergence Directive (15–16 Apr), Experiment 40 Stage 3 Closure
+   (17–18 Apr), README v3 and `rg` Command (18–19 Apr). TTS mirror
+   at `~/Desktop/CDSFL_tts/Founders_Notes_Update_2026-04-19.txt`,
+   markdown mirror at
+   `experimental_notes/Founders_Notes_Update_2026-04-19.md`.
+
+2. **Batch 2 — `resources/SHORTCUTS.md`.** Rewrote the MC table to
+   match the current set. Added: `rg`, `ag`, `sth`, `cc2`, `cx`,
+   `ge`, `cgpt`, `ds`, `f`, `ext`. Removed deprecated `rr`. Fixed
+   `g` → `ge`. Added a dedicated Model Confer Dispatch subtable and
+   composition examples including `rg a d`, `rg p`, `ag cx ge cc2`,
+   `f sy`. No mirrors (mechanical update with no new analytical
+   content).
+
+3. **Batch 3 — `docs/ARCHITECTURE.md` + `bench/directives/universal/
+   cdsfl_topology_formal.md`.** Dual Popperian arms framing in the
+   architecture Overview. Extended substrate-agnosticism language to
+   cover human teams, hybrid panels, and non-human biological
+   intelligences. Added B-Cell Complex section with manifest-driven
+   dispatch and composition law `S_k = A · E`. Added §17 and §18
+   sections with action precedence and channel-reassignment tables.
+   Added Ouroboros (O1) and Macrophage cell sections. Updated data
+   flow with §18 audit and §17 feedback assembly as
+   pre-composition steps. Mathematical framework: `C(n) → R_k(i)`;
+   appendix now 1991 lines; Stage 6 extension noted. Topology
+   specification gained two new clauses — T9 (Feedback Channel
+   Interaction §17) and T10 (Divergence Directive Interaction §18)
+   — plus an extended Classification Summary table. TTS mirror at
+   `~/Desktop/CDSFL_tts/Architecture_Update_2026-04-19.txt`, markdown
+   mirror at `experimental_notes/Architecture_Update_2026-04-19.md`.
+
+4. **Batch 4 — `docs/EXTENDED_RATIONALE.md`.** Added five
+   general-audience dated sections matching the document's existing
+   reflective register: The Unified State Equation (8 April),
+   Cells With Teeth (9–14 April), Two Arms Not One (14–16 April),
+   Substrate Agnosticism Extended (mid-April), Experiment 40 and
+   Operational Closure (17–19 April). `C(n)` preserved in context
+   as pedagogical introduction; `R_k(i)` introduced as its
+   closure. TTS mirror + markdown mirror in the usual locations.
+
+5. **Batch 5 — `docs/EXPERIMENTAL_RESULTS.md`.** Appended 11 new
+   entries covering Experiment 29, the 8 April mathematical model
+   audit, the 9 April semantic novelty fix, the 9 April immune cell
+   type architecture, Tranches A/B/C (13–14 April), Experiment 36
+   CC2 agent performance (8–12 April), the Stage 6 extension
+   (14 April), §17 implementation (15 April), §18 implementation
+   (15–16 April), Experiment 40 Stage 3 closure (17–18 April), and
+   this documentation sweep (18–19 April). Structure matches prior
+   entries — dates, models, artefacts, results, raw data pointers.
+   TTS + markdown mirrors in the usual locations.
+
+6. **Batch 6 — `PAPER.md`.** Version bumped from 1.0 (March 2026)
+   to 1.1 (April 2026). Abstract extended to record the current
+   state (R_k unification, §17/§18, Stage 6, B-Cell Complex, Exp 40
+   1250/1250, Exp 41–54 2×2 factorial). New **Addendum: April 2026
+   Developments** inserted before the References block, in seven
+   subsections covering R_k(i), Stage 6, §17+§18 with the arm-
+   independence design decision, the B-Cell composition law and
+   tool manifest, extended substrate agnosticism, Exp 40 closure,
+   and seven new falsifiable claims with refutation conditions.
+   Existing *Invitation to Falsify* and *References* blocks
+   preserved unchanged. TTS + markdown mirrors in the usual
+   locations.
+
+**What this leaves:**
+
+- Working tree modifications: `PAPER.md`, `docs/ARCHITECTURE.md`,
+  `docs/EXPERIMENTAL_RESULTS.md`, `docs/EXTENDED_RATIONALE.md`,
+  `docs/FOUNDERS_NOTES.md`, `bench/directives/universal/
+  cdsfl_topology_formal.md`, `resources/SHORTCUTS.md` +
+  timestamp updates on `resources/ONBOARDING.md` and
+  `resources/RECOVERY.md`.
+- New untracked files: five paired `.md` mirrors in
+  `experimental_notes/` plus their `.txt` siblings on the founder's
+  Desktop under `~/Desktop/CDSFL_tts/`.
+- No code changes. 1250/1250 tests still passing (no `bench/` touched).
+- HEAD stays on `exp39-experimental`; this save-state produces the
+  next commit over `145e9e2`.
+
+**Open items, not sv-blocking:**
+
+1. Return to the outstanding Experiment 40 confer round with the
+   other models — the original starting point before this doc
+   sweep was flagged. Carried forward.
+2. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
+   (K/L/M physics/chemistry/engineering — carried forward from
+   prior sv).
+3. Founder decision on `README.md` promotion (v2 vs v3 vs retain
+   current) still pending; v3 is through the 13-point correction
+   sweep but no promotion has been signed off. Batch 7 (README
+   promotion) was deferred in the 6-batch plan pending founder
+   decision after walk.
+4. Untracked v2 `.docx/.html/.md` at repo root pending the same
+   promotion decision.
+
+---
+
+**SESSION 19 APRIL (morning) — README v3 CORRECTIONS + NEW `rg` MC COMMAND:**
 
 Branch: `exp39-experimental`. HEAD `7334e49` (last sv) entering session;
 this save-state produces the next commit + push. Working tree on sv

@@ -1,14 +1,14 @@
 # Constraint-Driven Synthesis and Falsification: A Methodology for AI-Augmented Engineering
 
 **Author:** George Jackson
-**Date:** March 2026
-**Version:** 1.0
+**Date:** April 2026
+**Version:** 1.1
 
 ---
 
 ## Abstract
 
-Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March 2026), identifying 44 issues across 18 review rounds — with heterogeneous architectures finding defects that homogeneous review missed. A cognitive measurement framework (Duane NHPP decay curves, Abstraction Index, Adoption Delta, multi-verifier Bayesian severity, capability fingerprints) enables quantitative assessment of analytical quality across conditions. An unexpected empirical observation: composite multi-agent systems operating under structured falsification exhibit measurable second-order cognitive properties — analysing their own analysis and improving through metacognitive feedback — that no individual agent possesses. This emergence is formalised, substrate-agnostic, and falsifiable. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
+Large Language Models produce confident, well-structured outputs that are frequently wrong in ways not visible to non-experts. Three mechanisms drive this: a training bias toward agreeableness over accuracy, uniform certainty signalling across all claims regardless of evidential basis, and complete memory loss between sessions. This paper describes Constraint-Driven Synthesis and Falsification (CDSFL), a methodology that addresses all three by coupling generation with iterative adversarial self-testing (the P-Pass), enforcing explicit constraint classification, requiring epistemic marking of uncertain claims, and persisting verified reasoning across session boundaries. The P-Pass is formalised as a corroboration model: C(n) = 1 − (1 − p)ⁿ, which quantifies why the methodology's value scales with model capability and produces zero corroboration when adversarial reasoning is absent. An extended structured model accommodates variable detection probability across flaw classes and pass diversity. A unified recursive state equation R_k(i), derived during the April 2026 mathematical audit, supersedes C(n) as the canonical claim-state representation and forms the object on which the feedback and divergence channels operate. A combined detection model (G_n) formalises the human expert's role as an independent falsifier rather than a passive reviewer, parameterising their contribution by expertise, methodology formality, and domain-specific variables, with self-correcting parameters that converge on observed performance. The methodology has been applied by a single practitioner across multiple engineering projects. Empirical multi-architecture review has been conducted: five models from four independent vendors (Anthropic Claude, Google Gemini, OpenAI GPT, DeepSeek) reviewed the methodology and its implementation under shared falsification protocol (March–April 2026). A cognitive measurement framework (Duane NHPP decay curves, Abstraction Index, Adoption Delta, multi-verifier Bayesian severity, capability fingerprints) enables quantitative assessment of analytical quality across conditions. An unexpected empirical observation: composite multi-agent systems operating under structured falsification exhibit measurable second-order cognitive properties — analysing their own analysis and improving through metacognitive feedback — that no individual agent possesses. This emergence is formalised, substrate-agnostic, and falsifiable. In April 2026, two further channels were integrated to operationalise the two Popperian arms independently: §17 (feedback channel, severe-testing arm) and §18 (divergence directive, bold-conjecture arm), together with a Stage 6 literature-calibrated extension introducing a second novelty dimension c_ext and a manifest-driven B-Cell Complex of 18 active specialist domains. Experiment 40 Stage 3 closed the integration test at 1250/1250 tests passing. The 2×2 factorial scheduled as Experiments 41–54 will test whether the channel additions produce the improvements the derivations predict. A reproducible, schema-agnostic evaluation protocol and testbench are provided. Every claim in this document is presented as a falsifiable assertion.
 
 ---
 
@@ -1227,7 +1227,138 @@ If any of these claims do not survive external testing, the methodology is impro
 
 ---
 
-*Constraint-Driven Synthesis and Falsification Loop (CDSFL) v1.0. Derived by iterative Popperian falsification. March 2026.*
+*Constraint-Driven Synthesis and Falsification Loop (CDSFL) v1.1. Derived by iterative Popperian falsification. March 2026 (v1.0), April 2026 (v1.1).*
+
+---
+
+## Addendum: April 2026 Developments
+
+This addendum records the material developments to the framework and its implementation in the period April 2026, consolidating changes that have been audited, tested, and integrated into the production code. It is placed before the references rather than folded into the earlier parts so that readers can locate the revisions at a glance. The integration point is commit `6580737`, at which the test suite stands at 1250 / 1250 passing.
+
+### A.1 The Unified Recursive State Equation
+
+The mathematical audit of 8 April 2026 (25 of 25 internal consistency checks, 5 pre-existing gaps confirmed, 2 previously reported statistics disputed) produced a single recursive expression for the claim-state in round *i* of review cycle *k*:
+
+```
+R_k(i) = R_det · (1 − ν_k) + ν_k
+R_det  = R_k(i−1) · (1 − q_ik) / (1 − q_ik · R_k(i−1))
+ν*     = q · R        (critical re-injection equilibrium)
+```
+
+The deterministic part R_det has the expected structure of a Bayesian update given fresh evidence of strength q_ik. The novelty injection rate ν_k keeps the system from collapsing into self-confirmation; at equilibrium, ν* = q · R.
+
+This equation supersedes C(n) as the canonical claim-state representation. The earlier C(n) = 1 − (1 − p)ⁿ remains useful as a pedagogical introduction — it is the degenerate limit of R_k(i) under uniform flaw detection, independent passes, and no novelty injection — but the working system computes and updates R_k(i), not C(n). The feedback and divergence channels described below operate on R_k(i) and on η_int (internal efficacy); the channels do not touch C(n).
+
+### A.2 Stage 6 — Literature-Calibrated Extension
+
+The Stage 6 extension (14 April 2026) adds a second novelty dimension, c_ext, capturing the fraction of a claim that has been calibrated against independent external data or literature outside the panel. The composite efficacy term becomes:
+
+```
+η_combined = η_int · (1 − c_ext · (1 − ν_k))
+```
+
+The interpretation is asymmetric by design. A claim with high internal novelty but high external calibration receives a modest penalty. A claim with both high ν_k and low c_ext — highly novel and externally unchecked — receives the largest penalty. The equation's degenerate limit (c_ext = 0) recovers the pre-Stage 6 single-novelty behaviour.
+
+The ν_k design iterated over two confer rounds and produced 12 corrections before acceptance. A shadow calibrator estimates c_ext from external reference retrieval and is hooked into the live metric through the composition law described in A.4. The mathematical appendix, extended with Stage 6, now stands at 1991 lines.
+
+### A.3 The Two Popperian Arms: §17 and §18
+
+Two channels were added in mid-April 2026 to operationalise severe testing and bold conjecture as independent but structurally-related mechanisms.
+
+**§17 — Feedback Channel** (`bench/dm/_feedback.py`, 533 lines). For a finding *f* produced in round *r*, §17 assembles a tuple
+
+```
+F(f, r) = (flags, verdict, refutations, admissibility_fails,
+           near_dup_ids, r_k_discrepancy)
+```
+
+and renders, in round *r + 1*, a bounded section for each model *m* containing only the feedback whose origin was *m* and whose flag set is non-empty:
+
+```
+feedback_section(m, r+1) = render(
+    { F(f, r) : f.origin = m ∧ F(f, r).flags ≠ ∅ },
+    top_k, max_chars
+)
+```
+
+Action precedence within the channel is fixed:
+
+```
+REFUTED  >  ADMISSIBILITY FAIL  >  NEAR-DUPLICATE  >  R_k INCONSISTENT
+```
+
+For any finding, only the first matching action is rendered. The severity of a test and the severity of its consequence are thereby held in alignment.
+
+**§18 — Divergence Directive** (`bench/dm/_divergence.py`, 443 lines). §18 names five dimensions along which a conjecture may diverge from its siblings — mechanism, assumption, scope, timescale, tradeoff — and requires explicit registration of divergence along at least one dimension. Isomorphism against sibling conjectures is assessed using a Jaccard similarity threshold of 0.85. The channel assignment then applies a modulator to η_int:
+
+| Channel             | η_int_modulator |
+|---------------------|-----------------|
+| Compliant           | 1.00            |
+| Engaged but failed  | 0.85            |
+| No engagement       | 0.70            |
+| Isomorphic-only     | 0.60            |
+
+The design decision that took longest to get right concerns where the modulator acts. Earlier drafts applied it to R_k directly, which would have conflated the severity of a test with the boldness of a claim: a bold-but-refuted conjecture would have suffered twice, once for being refuted and again for being bold. Applying the modulator to η_int instead preserves the independence of the two arms. A brave but refuted conjecture is punished for being refuted, not for being brave. A compliant but isomorphic one is punished for its isomorphism, not rewarded for its agreement. The asymmetry is load-bearing.
+
+### A.4 The B-Cell Complex and the Composition Law
+
+The immune-cell taxonomy (9 April 2026) formalises seven cell types — Dendritic, Cytotoxic T, Natural Killer, Regulatory T, B-Cell Complex, Macrophage, and Ouroboros (O1) — each with a defined envelope, verdict grammar, and calibration bar. Every cell's output obeys a uniform composition law:
+
+```
+S_k = A · E
+A   = Π g_j              (product of gate values)
+E   = Σ w_m · e_m        (weighted evidence aggregate under confidence w_m)
+```
+
+The gate product A qualifies the cell to opine on a claim; the evidence sum E aggregates its per-piece evidence. If any gate fails, A = 0 and the cell's output is zero — the framework refuses to confuse the absence of a verification tool with the success of verification.
+
+The B-Cell Complex is the specialist hub. Its manifest at `bench/cdsfl_registry/tool_manifest.toml` declares 18 active domains and 2 delegated, wired across Tranches A (16 domains, 13 April 2026) and B (+4 domains, 14 April 2026):
+
+| Category | Live Domains |
+|----------|--------------|
+| Symbolic / constraint | SymPy, z3, CrossHair |
+| Numerical | NumPy, SciPy, mpmath |
+| Statistical | statsmodels, scikit-learn |
+| Dimensional / physical | pint, astropy, uncertainties |
+| Chemistry / biology | RDKit, Biopython |
+| Graph theory | NetworkX |
+| Optimisation | PuLP |
+| Code analysis | AST, pytest, ruff, mypy, bandit |
+
+Tranche C domains are held in shadow (collecting telemetry) until they pass their calibration bar. Shadow-to-live promotion is gated, not scheduled.
+
+### A.5 Substrate Agnosticism, Extended
+
+Earlier versions of this paper described the framework as model-agnostic and domain-agnostic. The April 2026 language extension names four valid configurations of the framework:
+
+1. Heterogeneous frontier model panel (the original case).
+2. All-human expert panel operating under the same constraint set.
+3. Hybrid panel combining humans and models at separate admissibility tiers.
+4. Non-human biological intelligences (insect or cephalopod brains) interfaced through tool use, provided they satisfy the same admissibility and composition-law constraints.
+
+The claim is not that these configurations are empirically interchangeable — they are not. The claim is that the CDSFL constraint set does not require a particular substrate in order to operate. Expertise ceases to be a property of who or what produced a claim and becomes a property of whether the claim survived the discipline. This framing is deliberately severe; the alternative — locking expertise to substrate rather than to discipline — is the failure mode the methodology was built to resist.
+
+### A.6 Experiment 40 and Operational Closure
+
+Experiment 40 Stage 3 was substantially closed during 17–18 April 2026. Phase A (commit `8b8682d`) integrated §17 and the B-Cell composition law. Phase B (commit `bdfc93a`) integrated §18 and the Stage 6 literature-calibrated extension. Documentation synchronisation followed at commit `6580737`. Test suite: 1250 / 1250 passing.
+
+Two residual items are explicitly named: test `1E.3` (value-flip assertion gated behind a specific feature flag, out of scope for Stage 3 closure) and test `1E.10` (runtime assertion deferred to Experiment 54, the integration experiment).
+
+Stage 3 closure establishes drift-freedom between the formal documents, the mathematics, and the code. It does not establish empirical validation of the §17 and §18 hypotheses. That validation, if it occurs, comes from the 2×2 factorial in Experiments 41–54: structure (framework on / off) × calibration (Stage 6 on / off), run against the frontier task set, with per-cell R_k trajectories and η_int modulator traces captured as primary measurements. The experimental programme is structured so that a failure to find the predicted improvement is as legible as a success.
+
+### A.7 Addendum Summary of Falsifiable Claims
+
+The April 2026 developments introduce the following additional claims, each admitting its own refutation condition:
+
+- **R_k(i) as canonical claim-state** — falsified if a fundamentally different update rule predicts claim-state trajectories more accurately on the frontier task set.
+- **Stage 6 two-dimensional novelty** — falsified if c_ext provides no measurable improvement in claim-efficacy prediction over ν_k alone.
+- **§17 severe-testing arm** — falsified if rounds with §17 feedback show no measurable reduction in repeat-finding rate compared to rounds without.
+- **§18 bold-conjecture arm with η_int modulation** — falsified if the channel assignment produces no measurable divergence effect on conjecture quality under equivalent R_k trajectories.
+- **Arm independence** — falsified if the η_int modulator design produces R_k degradation indistinguishable from a direct-to-R_k modulator on the same tasks.
+- **B-Cell composition law** — falsified if a simpler aggregation rule predicts per-cell output with equal accuracy on the calibration set.
+- **Substrate agnosticism, extended** — falsified if configurations 2, 3, or 4 cannot produce outputs conformant to the admissibility and composition-law constraints on frontier-difficulty tasks.
+
+Each of these is testable by the 2×2 factorial or by targeted ablation on the same harness. The framework's discipline requires that these claims remain testable — not that they remain true.
 
 ---
 

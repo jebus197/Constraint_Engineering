@@ -1,26 +1,33 @@
 # CDSFL Current State
 
-Generated: 19 April 2026 10:35 BST (2026-04-19T10:35:56+01:00)
+Generated: 19 April 2026 13:48 BST (2026-04-19T13:48:18+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `7334e49` sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive
-- **Committed:** 2026-04-18 11:20:22 +0100
-- **Remote:** ahead by 64
+- **Last commit:** `145e9e2` sv: README v3 13-point corrections + rg MC command introduction
+- **Committed:** 2026-04-19 10:35:57 +0100
+- **Remote:** ahead by 65
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M .claude/CLAUDE.md`
-- `M docs/REPRODUCING.md`
+- `M PAPER.md`
+- `M bench/directives/universal/cdsfl_topology_formal.md`
+- `M docs/ARCHITECTURE.md`
+- `M docs/EXPERIMENTAL_RESULTS.md`
+- `M docs/EXTENDED_RATIONALE.md`
+- `M docs/FOUNDERS_NOTES.md`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
+- `M resources/SHORTCUTS.md`
 - `?? README_v2_draft_2026-04-18.docx`
 - `?? README_v2_draft_2026-04-18.html`
 - `?? README_v2_draft_2026-04-18.md`
 - `?? README_v3_draft_2026-04-18.md`
+- `?? experimental_notes/Architecture_Update_2026-04-19.md`
+- `?? experimental_notes/Experimental_Results_Update_2026-04-19.md`
 
 ---
 
@@ -52,6 +59,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `145e9e2 sv: README v3 13-point corrections + rg MC command introduction`
 - `7334e49 sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive`
 - `ef50d4e sv: expert-encoding framing correction + quote/synthesis standing directives + README v2 draft`
 - `7326a04 sv: Exp 40 Stage 3 closure — Phase A + B landed, 1250 tests, residual items gated`
@@ -61,4 +69,3 @@ Uncommitted files:
 - `834e65c sv: Exp 40 runner v2 - γ-alt convergence + Macrophage fallback + DeepSeek parser + round-context helpers + diversity metric + Exp 40 config/launcher (57 new tests)`
 - `54d956e sv: Exp 40-54 execution plan + runner v2 scaffold + shadow-log audit`
 - `cc6cc1a sv: §18 round-2 implementation + round-3 5-panel review + documentation refresh`
-- `d11457b docs: add refresh-sweep summary note (third-party voice + plain-English + AI-gender-neutrality)`
