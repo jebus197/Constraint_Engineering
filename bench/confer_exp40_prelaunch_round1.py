@@ -7,8 +7,7 @@ Five-model (star-topology) review of the Phase A + Phase B work
 (commits 8b8682d + bdfc93a + docs sync 6580737 + sv 7326a04).
 
 Round 1 charge: assess Phase A + B code closures, outstanding issues,
-and answer three architectural / methodological meta-questions that
-have emerged:
+and answer two architectural meta-questions that have emerged:
 
   M1. Specialist-cell cross-domain composability — should the per-domain
       tool lists be siloed (as now), or should domains loan tools to one
@@ -18,12 +17,6 @@ have emerged:
       offers relay/direct-conversation. Which is most productive for
       which experiment class, and is there a third pattern worth
       exploring?
-
-  M3. Correctness ratio, empirical novelty, external DCY material, and
-      the 'just doing maths' objection — what does the invention-engine
-      goal require mathematically, without reframing the goal and
-      without amplifying the framework beyond what the evidence
-      supports?
 
 Rounds 2 and 3 will follow once Round 1 findings are in. Round 2:
 expert-system assessment of per-domain TOMLs under the cross-domain
@@ -381,105 +374,6 @@ Panel charge:
     require explicit derivation — e.g. does relay topology bias eta_int
     through conversational reinforcement, and if so how should that be
     modelled?
-
-### M3 — Correctness ratio, empirical novelty, and the 'just doing maths' objection
-
-The project's stated goal is an 'invention engine' / 'science calculator'
-— a tool that helps competent engineers and scientists produce
-technically correct AND novel outputs under structured falsification.
-Not AGI, not ASI. Two measurable claims live inside that goal, and an
-external reviewer predictably objects to the framing. This meta-question
-asks the panel to constrain itself tightly to the immediate problem —
-no reframing of the goal, no concession that it is simply a more
-elaborate form of retrieval, and no rhetorical elevation of the
-framework beyond what the evidence supports.
-
-(i) CORRECTNESS. Exp 40 is a software-gate infrastructure experiment.
-Bench Run 2 (27 STEM problems) is the next empirical test on tasks
-that are not software-engineering tickets. Candidate metric: of N
-solution paths proposed by the panel on a given task, how many are
-independently verifiable as correct? If 49 of any 50 solutions in a
-round were independently correct, is the ratio M/N itself a metric
-worth tracking? Does it fold into the R_k validity channel as
-additional evidence, or does it warrant an orthogonal reporting
-channel alongside R_k, nu_k, c_ext?
-
-(ii) NOVELTY EXTENSION. Stage 6 novelty (nu_k, c_ext) is literature-
-grounded, not self-assessed. Bench Run 2 exercises it outside the
-software-engineering corpus the framework was calibrated on. What
-signals, if any, in the Exp 40 2x2 factorial would predict Bench
-Run 2 success or failure on the novelty channel specifically (not
-on correctness)? Is there a derivable boundary between constraint-
-density regimes that induce novelty and those that induce
-hallucination, or is that boundary purely empirical and must be
-measured?
-
-(iii) EXTERNAL DCY MATERIAL (panel to verify independently).
-External material reaching the founder proposes a "Divergence
-Compliance Yield" as a continuous within-model diversity metric,
-framed as a replacement for the discrete divergence modulator
-m_div in {1.00, 0.85, 0.70, 0.60}:
-
-    DCY = max_k [ (1 - sim(f, A_k)) * (1 - Jaccard(Deps(f), Deps(A_k))) * I_FFF ]
-
-where sim is the bounded embedding similarity from Appendix §1.3,
-Deps(x) is described as the set of downstream dependencies/modules
-affected by the fix for finding x, and I_FFF is an indicator (1 if
-the FFF consequence trace is active, 0 pre-Follow). The panel is
-asked to independently verify:
-
-  (a) Is the formulation mathematically sound given that §1.3
-      similarity s(f1, f2) = (1 - beta) * content_sim + beta * b_class
-      with CLASS_BONUS = 0.3 and beta = 0.2 caps at s = 0.86, not 1.0
-      by construction? In particular, is the claimed compliance-theatre
-      boundary ("sim = 1, Jaccard = 1 therefore DCY = 0") reachable, or
-      is sim = 1 unreachable and the boundary therefore mis-specified?
-  (b) Does the I_FFF = 0 case behave as the prose describes ("relies
-      entirely on the embedding semantic distance") or as the formula
-      computes (DCY = 0 regardless of sim)? If these disagree, which
-      is the intended semantics?
-  (c) Is Deps(.) an object the architecture actually has, or is the
-      dependency set being imported from outside the framework? §7.12
-      in the appendix covers FFF defect-flux convergence, not a
-      per-finding downstream dependency set — clarify whether the
-      attribution is correct.
-  (d) Does a continuous form add reasoning value beyond the discrete
-      m_div tier already in production, for Exp 40 specifically and
-      Bench Run 2 in prospect, or is the discrete tier sufficient?
-
-If the formulation is salvageable, propose the correction that makes
-its boundary behaviour match its stated intent. If not, reject it
-with reasons.
-
-(iv) THE 'JUST DOING MATHS' OBJECTION. An external reviewer will
-ask: is the panel generating genuine technical synthesis, or is it
-executing sophisticated retrieval-and-recombination of training-
-data patterns dressed in mathematical formalism? The question is
-operational, not rhetorical. Panel charge: what measurable signal
-— collectable during or after a run, not asserted about a run —
-would distinguish genuine synthesis from sophisticated retrieval-
-and-recombination? If no such signal exists within the current
-framework, say so and state plainly whether the invention-engine
-goal requires the distinction to be resolvable, or whether the
-goal is achievable even if the distinction is empirically
-indistinguishable.
-
-Panel charge (summary):
-
-  - M/N correctness ratio: formal metric, folklore, or already
-    subsumed by R_k? If a metric, where does it sit in Stage 6?
-  - Novelty extension to Bench Run 2: is there a derivable boundary
-    between novelty-inducing and hallucination-inducing constraint
-    density, or is it purely empirical? What Exp 40 signals, if
-    any, would predict Bench Run 2 novelty performance?
-  - External DCY material: independently verify sub-claims (a)-(d)
-    above; propose the correction that makes it sound or reject it
-    with reasons. Judge whether a continuous form supersedes m_div
-    or duplicates it.
-  - 'Just doing maths' objection: name the operational signal that
-    would settle it, or declare the distinction empirically
-    indistinguishable and explain why that is acceptable (or not)
-    for the invention-engine goal.
 """
 
 # ---------------------------------------------------------------------------
@@ -490,8 +384,7 @@ CHARGE = """
 ## Round-1 charge
 
 You and four other frontier models are reviewing the Phase A + Phase B
-work and answering the three meta-questions above (M1 architectural,
-M2 architectural, M3 methodological / mathematical).
+work and answering the two architectural meta-questions above.
 
 Requirements:
 
@@ -532,32 +425,14 @@ Output format (prose-only formal conclusions with workings shown):
      - Whether a third topology is worth exploring.
      - Interaction with Stage 6 math.
 
-  E. META-QUESTION M3 (correctness ratio, empirical novelty, external
-     DCY material, 'just doing maths' objection)
-     - Your stance on M/N correctness as either a formal Stage 6
-       channel or a quantity subsumed by R_k.
-     - Your stance on Exp 40 -> Bench Run 2 novelty-prediction signals
-       and whether the constraint-density boundary between novelty-
-       inducing and hallucination-inducing regimes is derivable or
-       purely empirical.
-     - Your independent verdict on the external DCY material (sub-
-       claims a-d in M3 above), including either the correction that
-       makes the formulation sound or reasons for rejection, and a
-       verdict on whether a continuous form supersedes or duplicates
-       the discrete m_div tier.
-     - Your operational signal (or honest "no signal available") for
-       distinguishing genuine synthesis from sophisticated retrieval-
-       and-recombination, and whether the invention-engine goal
-       requires the distinction to be resolvable.
-
-  F. BEST OVERALL ROUTE FORWARD
+  E. BEST OVERALL ROUTE FORWARD
      - One-paragraph prose recommendation: given the current state
        (1,250 tests, Phase A + B landed, runner v1 frozen, K/L/M in
        shadow, SymPy sandbox regression pending), what is the best next
        step and why?
 
-  G. P-PASS
-     - Falsify your own answers in A-F. Where might you be wrong?
+  F. P-PASS
+     - Falsify your own answers in A-E. Where might you be wrong?
 
 Word budget: up to 2,500 words. Use the budget; do not pad to reach it.
 """
@@ -719,7 +594,7 @@ def run_confer() -> dict:
     print(f"  Timestamp: {ts}")
     print("  Protocol: CDSFL + FFAFP, Stage 6 math as arbiter")
     print("  Models: ge, cx, cc2, cgpt, ds (parallel, star dispatch)")
-    print("  Charge: Phase A+B assessment + M1 cross-domain + M2 topology + M3 correctness/novelty/DCY")
+    print("  Charge: Phase A+B assessment + M1 cross-domain + M2 topology")
     print(f"{'=' * 72}\n")
 
     results: dict[str, dict] = {}
