@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 20 April 2026 04:46 BST
+Last updated: 20 April 2026 11:33 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -25,6 +25,161 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 PRE-LAUNCH PANEL REVIEW — ROUNDS 1 → 3B CONVERGENCE (20 April 2026, 05:50–11:15 BST):**
+  Branch: `exp39-experimental`. HEAD `2c966ca` entering the session; no
+  code changes this session (bench/ untouched, 1250 tests still passing).
+  Five-round star-topology panel review completed under compelled
+  convergence, producing a single locked pre-launch specification for
+  Experiment 40.
+
+  **Protocol:** star topology, CDSFL + FFAFP, Stage 6 math as arbiter,
+  `P1 shadow-promotion-now`, `P2 runner v1 preservation`,
+  `P3 15-experiment plan` (Exp 40–54), `P4 synthesis qualifier`,
+  compelled convergence (each model yields-with-reasons or
+  refutes-with-reasons; no menu-for-founder). Rounds 3 + 3B ran under
+  additional constraints `C1 efficiency`, `C2 human/machine rationality`,
+  `C3 non-gameability`, `C4 effectiveness`, `C5 UX seamlessness`,
+  `C6 third-party defensibility`, `C7 internal/external consistency`,
+  `C8 CDSFL schema fit`.
+
+  **Panel:** Gemini 3.1 Pro, Codex GPT-5.4, Claude Opus 4.6 (CC2),
+  ChatGPT GPT-5.4, DeepSeek R1-0528. Parallel dispatch via
+  `ThreadPoolExecutor(max_workers=5)`. Five combined logs under
+  `bench/logs/confer_exp40_prelaunch_round{1,2a,2b,3,3b}/`. Five
+  dispatch scripts at `bench/confer_exp40_prelaunch_round{1,2a,2b,3,3b}.py`.
+
+  **Round 1 — five-model panel review (`05:50Z`):** briefing ~21K
+  chars covering the Exp 40 closure state. Unanimous: (1) `_verify_sympy`
+  silent regression must be fixed before launch; (2) runner v2 should be
+  promoted to default (*founder overruled under `P2` — v1 stays default,
+  see `memory/feedback_runner_preservation.md`*); (3) keep star topology
+  for review format; (4) current closure is sound, no hidden blocker
+  found. Codex *self-retracted* its own earlier §18-extension continuous
+  penalty formula on its own initiative — rarest event in panel review.
+  Notes: `experimental_notes/Exp40_Prelaunch_Round1_Panel_2026-04-20.md`.
+
+  **Round 2A — yield-or-refute (`09:23Z`):** six residual questions
+  (activation sequence, verdict combination, novelty/hallucination
+  boundary, reason-trace schema, v1 preservation predicates, topology
+  label). Panel aligned on standing policies P1/P2/P3. Residual
+  divergence concentrated on Q3 conditional novelty ceiling (runtime
+  vs post-hoc), Q4 reason-trace field set, Q5 predicate structure,
+  Q6 topology label (`star` vs `star-with-paired-challenge`).
+
+  **Round 2B — yield-or-refute (`09:38Z`):** Codex yielded to (c)
+  star topology, narrowed Q4 to a 10-field schema. CC2 yielded to
+  Gemini on literal-substring verification, to ChatGPT on
+  counterfactual sensitivity. Gemini yielded to ChatGPT on
+  counterfactual sensitivity, to Codex on the conditional bound.
+  DeepSeek yielded to Codex on structured telemetry. ChatGPT largely
+  held its prior position. 4/5 moved toward convergence; residuals
+  on Q3/Q4/Q5/Q6 still required arbitration.
+
+  **Round 3 — final lock with C1–C8 narrowing (`10:03Z`):** introduced
+  the tightened constraint box as the arbiter. Q6 *unanimous* `star`.
+  Q4 unanimous on a 10-field schema but with enum-value variance on
+  `other` and `supported_agreement`. Q5 unanimous on the four-family
+  structure but with magnitude/selection variance. Q3 split 3–2:
+  Codex/ChatGPT/DeepSeek chose (w2) post-hoc; Gemini/CC2 chose (w1)
+  runtime. Split under `P4` required arbitration.
+
+  **Round 3B — canonical-draft arbitration (`10:11Z`):** rather than a
+  fourth yield-or-refute, a single canonical answer was drafted per
+  residual under C1–C8 and each model required to APPROVE with literal
+  quoted substring or REFUTE with literal quoted substring and a
+  counter-proposal demonstrably superior under P4.
+
+  **Final locked state (all four residuals):**
+
+  - **Q3-wiring: 5/5 APPROVE `(w2)` post-hoc.** Conditional novelty
+    ceiling is computed at report generation only, not wired into
+    the runtime. Fields `r_min_policy`, `nu_max_for_r_min`,
+    `exceeds_nu_max` derived post-hoc from already-logged Stage 6
+    parameters. CC2 explicit yield: *"My R3 position (w1) overweighted
+    C4 and underweighted P2."* Rationale: any new runtime code path,
+    even one emitting a boolean flag, changes v1 runtime behaviour
+    and confounds the preservation evidence under `P2`. Post-hoc
+    computation is O(n) over logs, zero hot-path cost (C1), and
+    reproducible by any third-party reviewer holding the log plus
+    the declared R_min policy (C6).
+
+  - **Q4-lock: 10-field reason-trace schema stands.** Fields:
+    `issue_id`, `stance`, `target_model_id`, `target_quote_literal`,
+    `reason_type`, `reason_text`, `prior_position_hash`,
+    `new_position_hash`, `state_delta`, `compliance_risk_flag`.
+    Closed enums: `target_model_id` is one of the five panel models
+    or `none` (iff `stance == unchanged`). `reason_type` has exactly
+    six values — `other` and `supported_agreement` are EXCLUDED
+    (first closes the accountability escape hatch; second is
+    semantically covered by `stance == unchanged`). `target_quote_literal`
+    must be a literal substring of the cited peer's prior-round
+    answer (machine-checkable without similarity heuristics).
+    `compliance_risk_flag` is DERIVED by the runner from the other
+    nine fields, not trusted to the writing model. Position anchors
+    are SHA-256 hashes. 3/5 APPROVE; 2 partial refutes (ChatGPT
+    wanted `supported_agreement` re-added; DeepSeek wanted
+    config-driven `target_model_id`); both refutes *not demonstrably
+    better* under P4 and the constraint box, canonical stands.
+
+  - **Q5-lock: four-family predicate set with three adopted refinements.**
+    Families: Math-path fidelity, Correction fidelity, Counterfactual
+    sensitivity, Convergence stability. Experiment-level gate:
+    `accept_v1_preservation = all four families pass`. All predicates
+    deterministic, O(1) or O(n) over logged fields; no probabilistic
+    classifier; no embedding dependency; no free-parameter tuning.
+    Adopted refinements:
+    - *Gemini* — Family 2 simplified to
+      `accept_correction_fidelity = (downstream_revisit_count >= upstream_revision_count)`,
+      eliminating the canonical draft's false-negative trap when a
+      model proactively revisits a downstream claim with no upstream
+      trigger.
+    - *Codex* — Family 3 Counterfactual sensitivity: four independent
+      replays per selected dispatch (`eta_int ± 0.10`, `nu_k ± 0.10`)
+      with explicit run-count aligned to protocol, eliminating the
+      canonical's prose/predicate mismatch.
+    - *ChatGPT* — Family 3 coverage uses `ceil(applicable / 10)` not
+      `floor`, and final-round `unresolved_divergence_count == 0` in
+      Family 4. Both refinements improve C6 reproducibility and close
+      the "panel converged but lock is not a lock" edge case.
+    Magnitude ±0.10 absolute (clamped to [0,1]); deterministic stride
+    (every 10th applicable dispatch, first included); minimum one
+    selected dispatch.
+
+  - **Q6-lock: 5/5 unanimous `star`.** Topology for Exp 40 is star
+    (each model answers in isolation on the same briefing).
+    `star-with-paired-challenge` variant (each answer challenged once
+    by one other model before the founder sees it) deferred to the
+    subsequent experiment in the sequence, where four of five models
+    already supported it.
+
+  **Non-obvious result:** canonical-draft arbitration produced 5/5
+  convergence on Q3 in one round after Round 3's 3–2 split. CC2's
+  explicit yield naming its own R3 error (overweighting C4, under-
+  weighting P2) is the mechanism: under `P4` + C1–C8, the question
+  became "which answer is demonstrably most robust under the tightest
+  constraint box" rather than "which answer does each model prefer".
+  The star topology did not weaken the convergence — it strengthened
+  it by preventing the partial refutes from coalescing into a bloc.
+
+  **Residual founder decisions (carried into next session):**
+  1. Activation sequence gate — three items from Round 2A Q1 (SMT
+     sandbox fix, 1E.10 hardcoded-wrapper gated-shadow, K/L/M
+     specialist live-promotion flip). Under `P1`, the default is
+     activate now. Decision deferred through Rounds 1→3B and is
+     now the primary blocker for Exp 40 launch.
+  2. Implementation of the locked Q4 schema in code
+     (reference_runner_v1 — runner stays v1 per `P2`).
+  3. Implementation of the locked Q5 four predicate families in the
+     preservation audit harness.
+  4. Wiring of the locked Q3 post-hoc conditional novelty ceiling
+     computation into the Exp 40 report generator.
+  5. Setting `topology='star'` in the Exp 40 runner config.
+
+  **Artefacts this session:** five dispatch scripts, five combined
+  logs, paired TTS + experimental_notes mirror for the full rounds
+  1→3B arc. No `bench/` code changes. 1250/1250 tests still passing.
+  This save-state produces the next commit over `2c966ca`.
+
 - **EXP 40 STAGE 3 CLOSURE — PHASE A + PHASE B (17 April 2026, 08:00–14:30 BST):**
   Branch: `exp39-experimental`. HEAD `6580737` (docs sync) over `bdfc93a`
   (Phase B) over `8b8682d` (Phase A), 3 commits ahead of origin. Full

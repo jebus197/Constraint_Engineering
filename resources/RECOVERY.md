@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 20 April 2026 04:46 BST
+Last updated: 20 April 2026 11:33 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -62,6 +62,162 @@ correct twice.
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (20 April 2026)
+
+**SESSION 20 APRIL (late morning) — EXP 40 PRE-LAUNCH PANEL CONVERGENCE (ROUNDS 1 → 3B):**
+
+Branch: `exp39-experimental`. HEAD `2c966ca` (housekeeping part 2)
+entering the session; no code changes this session. bench/ untouched,
+1250/1250 tests still passing. Five-round star-topology panel review
+completed under compelled convergence. Single locked pre-launch
+specification produced for Experiment 40.
+
+**Panel + protocol.** Gemini 3.1 Pro, Codex GPT-5.4, CC2 (Claude Opus 4.6),
+ChatGPT GPT-5.4, DeepSeek R1-0528 dispatched in parallel (max_workers=5)
+under CDSFL + FFAFP with standing policies `P1 shadow-promotion-now`,
+`P2 runner v1 preservation`, `P3 15-experiment plan`, `P4 synthesis
+qualifier`. Rounds 3 + 3B additionally constrained by `C1` efficiency,
+`C2` human/machine rationality, `C3` non-gameability, `C4` effectiveness,
+`C5` UX seamlessness, `C6` third-party defensibility, `C7` internal/
+external consistency, `C8` CDSFL schema fit.
+
+**Rounds landed (all logs under `bench/logs/confer_exp40_prelaunch_round{1,2a,2b,3,3b}/`):**
+
+1. **Round 1 (`05:50Z`) — five-model panel review.** Unanimous on
+   `_verify_sympy` fix priority, v2-promotion recommendation (founder
+   overruled under `P2`), `star` topology retained, closure sound.
+   Codex self-retracted its own §18-extension continuous penalty
+   formula unprompted. Notes:
+   `experimental_notes/Exp40_Prelaunch_Round1_Panel_2026-04-20.md`.
+
+2. **Round 2A (`09:23Z`) — yield-or-refute.** Residuals narrowed to
+   Q3 conditional-novelty-ceiling wiring, Q4 reason-trace schema,
+   Q5 v1 preservation predicates, Q6 topology label.
+
+3. **Round 2B (`09:38Z`) — yield-or-refute.** 4/5 yielded on at least
+   one residual. Codex narrowed Q4 to 10-field schema. CC2 and Gemini
+   yielded to ChatGPT on counterfactual sensitivity. DeepSeek yielded
+   to Codex on structured telemetry. ChatGPT held prior position.
+
+4. **Round 3 (`10:03Z`) — final lock with C1–C8.** Q6 unanimous
+   `star`. Q4 unanimous on 10-field schema with enum-value variance.
+   Q5 unanimous on four-family structure with magnitude/selection
+   variance. Q3 split 3–2 on (w1) runtime vs (w2) post-hoc.
+
+5. **Round 3B (`10:11Z`) — canonical-draft arbitration.** Single
+   canonical answer per residual under C1–C8; each model APPROVE or
+   REFUTE with literal quoted substring and P4-compliant counter.
+   CC2's explicit yield on Q3 (*"overweighted C4 and underweighted P2"*)
+   flipped the 3–2 split to 5/5 APPROVE `(w2)` in one round.
+
+**Locked pre-launch specification.**
+
+- **Q3-wiring = `(w2)` post-hoc only.** Conditional novelty ceiling
+  (`r_min_policy`, `nu_max_for_r_min`, `exceeds_nu_max`) derived at
+  report generation from already-logged Stage 6 parameters. No runtime
+  code path. O(n) over logs, zero hot-path cost, reproducible by any
+  third-party reviewer holding the log plus the declared R_min policy.
+  Satisfies P2 (no v1 behaviour change), C1, C6.
+
+- **Q4-lock = 10-field reason-trace schema.** `issue_id`, `stance`,
+  `target_model_id`, `target_quote_literal`, `reason_type`,
+  `reason_text`, `prior_position_hash`, `new_position_hash`,
+  `state_delta`, `compliance_risk_flag`. Closed enums: `target_model_id`
+  ∈ {five panel model ids} ∪ {`none`} (with `none` iff
+  `stance == unchanged`); `reason_type` has six values —
+  `other` and `supported_agreement` EXCLUDED. `target_quote_literal`
+  must be a literal substring of the cited peer's prior-round answer.
+  `compliance_risk_flag` is runner-derived from the other nine fields;
+  position anchors are SHA-256 hashes. 3 APPROVE + 2 partial refutes
+  (ChatGPT: `supported_agreement`; DeepSeek: config-driven
+  `target_model_id`); both refutes *not demonstrably better* under
+  P4, canonical stands.
+
+- **Q5-lock = four-family predicate set with three adopted refinements.**
+  Families: Math-path fidelity (1), Correction fidelity (2),
+  Counterfactual sensitivity (3), Convergence stability (4).
+  Experiment gate: `accept_v1_preservation = (all four families pass)`.
+  All predicates deterministic, O(1) or O(n) over logged fields.
+  Refinements adopted:
+  - Gemini — Family 2 simplified to
+    `accept_correction_fidelity = (downstream_revisit_count >= upstream_revision_count)`,
+    eliminating the false-negative trap when a model proactively
+    revisits with no upstream trigger.
+  - Codex — Family 3 requires four independent replays per selected
+    dispatch (`eta_int ± 0.10`, `nu_k ± 0.10`) with run-count aligned
+    to protocol.
+  - ChatGPT — Family 3 coverage uses `ceil(applicable / 10)` not
+    `floor`; Family 4 requires `unresolved_divergence_count == 0`
+    in the final round.
+  Magnitude ±0.10 absolute (clamped to [0,1]); deterministic stride
+  (every 10th applicable dispatch, first included); minimum one
+  selected dispatch.
+
+- **Q6-lock = 5/5 unanimous `star`.** Star-with-paired-challenge
+  variant (four of five supported it in Round 1) deferred to a
+  subsequent experiment in the sequence.
+
+**Residual founder decisions (primary blockers for Exp 40 launch):**
+
+1. **Activation sequence gate.** Three items from Round 2A Q1: (i)
+   SMT sandbox fix (replace `exec(code, {'__builtins__': {}}, {})`
+   with `parse_expr(..., local_dict=WHITELIST)`); (ii) 1E.10 runtime
+   assertion wrapper at `reference_runner_v2.py:3510`, hardcoded
+   `m_div = 1.0` with `"gated-shadow: m_div=1.0 hardcoded until
+   wiring event"` log tag; (iii) K/L/M specialist cell flip at
+   `immune_agents.py:334`, extending `LIVE_SPECIALIST_DOMAINS` to
+   include physics, chemistry, engineering. Standing policy
+   `P1 shadow-promotion-now` (`memory/feedback_shadow_promotion_now.md`)
+   favours activate-now as default. Decision deferred through five
+   rounds; now the primary pre-launch blocker.
+
+2. **Implementation of the locked Q4 schema in runner v1 code.**
+   Runner stays v1 per `P2`; the schema is a new module or an
+   extension to existing trace-emission code rather than a runner
+   swap.
+
+3. **Implementation of the locked Q5 four preservation predicates**
+   in the preservation audit harness (new module; preserves P2 by
+   operating on logs, not runtime).
+
+4. **Post-hoc wiring of the locked Q3 conditional novelty ceiling
+   computation** into the Exp 40 report generator.
+
+5. **`topology='star'` set in the Exp 40 runner config.**
+
+**Artefacts produced this session (all new, none committed):**
+
+- `bench/confer_exp40_prelaunch_round{1,2a,2b,3,3b}.py` — five
+  dispatch scripts.
+- `bench/logs/confer_exp40_prelaunch_round{1,2a,2b,3,3b}/` — five
+  log directories with one JSON per model plus combined log.
+- `experimental_notes/Exp40_Prelaunch_Round1_Panel_2026-04-20.md`
+  already existed; this save-state adds a paired TTS + markdown
+  mirror covering Rounds 2A through 3B at
+  `experimental_notes/Exp40_Prelaunch_Rounds2_to_3B_2026-04-20.md`
+  and `~/Desktop/CDSFL_tts/Exp40_Prelaunch_Rounds2_to_3B_2026-04-20.txt`.
+
+**What this leaves.** Working-tree modifications this session:
+`bench/confer_exp40_prelaunch_round1.py` (minor edits during the
+run), five new round scripts, five new log directories, two new
+mirror files, plus the ONBOARDING / RECOVERY / memory updates from
+this save-state. No `bench/` code changes, no test changes.
+1250/1250 tests still passing. HEAD stays on `exp39-experimental`.
+This save-state produces the next commit over `2c966ca`.
+
+**Open items, not sv-blocking:**
+
+1. Activation sequence gate decision still pending (see §1 of
+   founder decisions above). Was deferred through five rounds; the
+   panel's consensus under `P1` is activate now.
+2. Return to the outstanding Experiment 40 launch against
+   `bench/dm/_feedback.py` once the activation-sequence gate is
+   resolved and the locked Q3/Q4/Q5/Q6 specification has been
+   implemented in the runner + report generator.
+3. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
+   (K/L/M physics/chemistry/engineering — carried forward from
+   prior sessions).
+
+---
 
 **SESSION 20 APRIL — README PROMOTION + REGULATORY-COMPLIANCE CONSOLIDATION (5-BATCH PASS):**
 
