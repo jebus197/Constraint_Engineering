@@ -10,6 +10,23 @@ reproduce or refute the results.
   current state, architecture overview, and how to get productive immediately.
 - **[RECOVERY.md](RECOVERY.md)** — How to rebuild full working context from
   the repository alone after a session loss, compaction event, or fresh start.
+- **[SHORTCUTS.md](SHORTCUTS.md)** — Metacognitive command and shorthand
+  reference. Short tokens (e.g. `p`, `sv`, `qc`, `rg`, `sq`) that direct
+  model behaviour; combinable.
+- **[MEMORY.md](MEMORY.md)** — Public mirror of CC1's (Claude Code,
+  instance 1) persistent auto-memory, filtered to project-scoped entries.
+  Makes visible what context the assisting agent carries across sessions.
+- **[MEMORY_EXCLUSIONS.md](MEMORY_EXCLUSIONS.md)** — Companion to
+  MEMORY.md. Names the entries withheld and the criteria that withheld
+  them, so the public record is honest about the shape of what is not
+  mirrored.
+- **[OPENBRAIN_FINDING.md](OPENBRAIN_FINDING.md)** — Explains why the
+  OpenBrain cross-agent memory store is not mirrored here (cross-project
+  scope, privacy boundary) and what is available in its place.
+- **[configs/](configs/)** — Abstract domain-expert encoding templates
+  (ANON variants). Pair with the populated examples under
+  `bench/exp39_configs/` and the concrete template
+  `examples/structural_building.txt.example`.
 
 ## For Reviewers
 
