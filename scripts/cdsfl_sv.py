@@ -624,14 +624,43 @@ def _commit_and_push(
                 "--no-validate-message to override."
             )
 
-    # 7. Commit
+    # 7. Onboarding-script wiring sanity check.
+    #    cdsfl_onboard.py reads project prose from ONBOARDING.md and the
+    #    MC reference from REPRODUCING.md at runtime. If either file has
+    #    drifted out of sync (missing SV markers, missing canonical
+    #    section headings), the --dry-run fails and we abort before
+    #    committing so the defect does not land in origin.
+    onboard_script = root / "scripts" / "cdsfl_onboard.py"
+    if onboard_script.exists():
+        try:
+            dry = subprocess.run(
+                [sys.executable, str(onboard_script), "--dry-run"],
+                capture_output=True,
+                text=True,
+                cwd=str(root),
+                timeout=30,
+            )
+        except (subprocess.TimeoutExpired, OSError) as err:
+            raise RuntimeError(
+                f"cdsfl_onboard.py --dry-run could not be executed: {err}. "
+                "Fix the script or pass --skip-onboard-check to override."
+            ) from err
+        if dry.returncode != 0:
+            raise RuntimeError(
+                "cdsfl_onboard.py --dry-run FAILED — aborting commit.\n"
+                f"stderr:\n{dry.stderr.strip()}\n"
+                "Canonical-doc wiring has drifted. Repair ONBOARDING.md / "
+                "REPRODUCING.md before committing."
+            )
+
+    # 8. Commit
     full_msg = f"{message}\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
     _git("commit", "-m", full_msg, root=root, timeout=60)
 
     new_hash = _git("log", "--oneline", "-1", root=root)
     print(f"  Committed: {new_hash} ({n_files} files)")
 
-    # 8. Push
+    # 9. Push
     if push:
         branch = _git("branch", "--show-current", root=root)
         _git("push", "origin", branch, root=root, timeout=120)

@@ -1,29 +1,26 @@
 # CDSFL Current State
 
-Generated: 20 April 2026 02:20 BST (2026-04-20T02:20:11+01:00)
+Generated: 20 April 2026 03:46 BST (2026-04-20T03:46:25+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `04bc286` sv: broader documentation staleness sweep — 6-batch pass (FOUNDERS_NOTES + SHORTCUTS + ARCHITECTURE + topology_formal + EXTENDED_RATIONALE + EXPERIMENTAL_RESULTS + PAPER) with paired TTS + experimental_notes mirrors
-- **Committed:** 2026-04-19 13:48:19 +0100
-- **Remote:** ahead by 66
+- **Last commit:** `436f9a0` sv: 20 April README promotion + regulatory-compliance consolidation (FOUNDERS_NOTES revisions + README v3→canonical + PAPER Part V regulatory alignment + EXTENDED_RATIONALE auditable cognitive infrastructure + new docs/COMPLIANCE_FRAMEWORK.md with EU AI Act/GDPR/NIST AI RMF/ISO42001 mapping + 6 supplementary-artefact templates)
+- **Committed:** 2026-04-20 02:20:11 +0100
+- **Remote:** ahead by 67
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M PAPER.md`
+- `M .claude/CLAUDE.md`
+- `D  CX_FULL_HANDOFF.md`
 - `M README.md`
-- `M docs/EXPERIMENTAL_RESULTS.md`
-- `M docs/EXTENDED_RATIONALE.md`
-- `M docs/FOUNDERS_NOTES.md`
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
-- `?? docs/COMPLIANCE_FRAMEWORK.md`
-- `?? experimental_notes/Founders_Notes_Revisions_2026-04-20.md`
-- `?? experimental_notes/README_Promotion_2026-04-20.md`
-- `?? experimental_notes/Regulatory_Compliance_Framework_2026-04-20.md`
+- `M docs/REPRODUCING.md`
+- `M resources/SHORTCUTS.md`
+- `M scripts/cdsfl_onboard.py`
+- `M scripts/cdsfl_qc.py`
+- `M scripts/cdsfl_sv.py`
 
 ---
 
@@ -55,6 +52,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `436f9a0 sv: 20 April README promotion + regulatory-compliance consolidation (FOUNDERS_NOTES revisions + README v3→canonical + PAPER Part V regulatory alignment + EXTENDED_RATIONALE auditable cognitive infrastructure + new docs/COMPLIANCE_FRAMEWORK.md with EU AI Act/GDPR/NIST AI RMF/ISO42001 mapping + 6 supplementary-artefact templates)`
 - `04bc286 sv: broader documentation staleness sweep — 6-batch pass (FOUNDERS_NOTES + SHORTCUTS + ARCHITECTURE + topology_formal + EXTENDED_RATIONALE + EXPERIMENTAL_RESULTS + PAPER) with paired TTS + experimental_notes mirrors`
 - `145e9e2 sv: README v3 13-point corrections + rg MC command introduction`
 - `7334e49 sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive`
@@ -64,4 +62,3 @@ Uncommitted files:
 - `bdfc93a exp40: Phase B fixes 1D.3/1E.3/1E.4/1E.5/1E.8/1E.9/1E.11/1E.12 (200+ tests)`
 - `8b8682d exp40: Phase A fixes 1D.5/1D.6/1E.6/1E.7/1E.10 (98 tests)`
 - `834e65c sv: Exp 40 runner v2 - γ-alt convergence + Macrophage fallback + DeepSeek parser + round-context helpers + diversity metric + Exp 40 config/launcher (57 new tests)`
-- `54d956e sv: Exp 40-54 execution plan + runner v2 scaffold + shadow-log audit`

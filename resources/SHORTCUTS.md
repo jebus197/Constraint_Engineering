@@ -35,6 +35,7 @@ reader-facing summary; it must remain aligned with those files.
 | `rt` | Read all recovery resources + continue |
 | `rs` | Recover state — full recovery from IM + session-context + action queue + checkpoints + memory + recovery resources |
 | `rg` | Regain full context on a named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output; name the resources consulted in a one-line preamble |
+| `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs; sub-agents inherit the same constraint |
 | `sv` | Save state — run `scripts/cdsfl_sv.py`, update recovery docs, commit and push |
 | `qc` | Quality control — run `scripts/cdsfl_qc.py` and fix reported issues |
 | `re` | External research (web search, arXiv, Semantic Scholar) |

@@ -62,6 +62,7 @@ Single-letter and short commands that direct model behaviour. Combinable
 | `x` | Override sleep/rest warnings |
 | `sth` | Synthesise — consolidate findings into a coherent whole |
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+| `sq` | Sequential — strictly one tool call at a time, no parallel batches. Avoids stressing Anthropic servers during long runs. Sub-agents inherit the same constraint. |
 
 ### Model Confer Dispatch (combinable)
 

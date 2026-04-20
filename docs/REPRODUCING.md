@@ -190,6 +190,7 @@ in the conversation and can be combined (e.g. `p a e d`).
 | `x` | Override sleep/rest-period warnings |
 | `sth` | Synthesise — consolidate findings into a coherent whole |
 | `rg` | Regain full context on named topic — re-read anchoring memory files, canonical docs, and experimental notes before producing new output. Name the resources consulted. |
+| `sq` | Sequential — strictly one tool call at a time, no parallel batches, to avoid stressing Anthropic servers during long autonomous runs. When dispatching sub-agents, the sequential constraint propagates to them. Does not change what work is done, only the rate at which requests are issued. |
 
 ### Model Confer Dispatch
 
