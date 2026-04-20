@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 19 April 2026 13:48 BST
+Last updated: 20 April 2026 02:20 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -61,7 +61,107 @@ correct twice.
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (19 April 2026 ~13:45 BST)
+## Current Pending Work (20 April 2026)
+
+**SESSION 20 APRIL — README PROMOTION + REGULATORY-COMPLIANCE CONSOLIDATION (5-BATCH PASS):**
+
+Branch: `exp39-experimental`. Continues the 18–19 April documentation
+arc into four concrete deliveries this session: README v3 promoted to
+`README.md` and prior drafts retired; a new regulatory-alignment
+subsection added to `PAPER.md` Part V with a four-regime mapping table;
+a new `Auditable Cognitive Infrastructure` subsection added to
+`docs/EXTENDED_RATIONALE.md`; and a new standalone
+`docs/COMPLIANCE_FRAMEWORK.md` created with EU AI Act / GDPR /
+NIST AI RMF / ISO/IEC 42001 mapping, ten honest gaps, and six
+supplementary-artefact templates (key management, incident response,
+third-party audit procedure, system/model card, complaint mechanism,
+DPIA). 1250/1250 tests still passing — no `bench/` code touched this
+session.
+
+1. **Batch A — `docs/FOUNDERS_NOTES.md` revisions.** Cell-type-
+   architecture timing corrected (cells first appeared 2–4 April;
+   composition law explicit 9 April). New "The Equation Becomes the
+   Constraint Box (9 April 2026)" entry for math-as-primary-reasoning
+   separated from the composition law entry. Ouroboros paragraph
+   deepened with the serpent-consuming-tail framing. Stage 6 entry
+   rewritten as "On Novelty as a Moving Target (14 April 2026)" with
+   both the Hossenfelder concern and the synthesis-preservation
+   concern held together. README/`rg` entry and the 19 April meta
+   entry removed.
+
+2. **Batch B — `README.md` promotion.** Eight first-person instances
+   fixed in the v3 draft (lines 13, 15, 17, 19, 53, 75, 94, 96).
+   Synthesis-preservation paragraph added to §6.6 immediately after
+   the Hossenfelder paragraph. §8 expert-encoding essence-capture
+   framing strengthened with the ten-section detail. Footer bumped
+   to 20 April 2026, 40 experiments, 1250 tests, appendix at 1991
+   lines. Regulatory-alignment paragraph added to §8 pointing at the
+   new `docs/COMPLIANCE_FRAMEWORK.md`. `docs/COMPLIANCE_FRAMEWORK.md`
+   entry added to Further Reading. v3 copied over `README.md`; v2
+   `.docx/.html/.md` and v3 `.md` drafts removed from the working
+   tree.
+
+3. **Batch D — Regulatory-compliance consolidation.** Three surfaces:
+   (a) `PAPER.md` Part V gained a new "Alignment with Modern
+   Governance Frameworks" subsection with an eight-row primitive /
+   four-regime mapping table and a load-bearing paragraph naming
+   CDSFL as not a governance product. (b) `docs/EXTENDED_RATIONALE.md`
+   gained a new "Auditable Cognitive Infrastructure (April 2026)"
+   section between Experiment 40 Stage 3 closure and the final
+   pointer footer. (c) `docs/COMPLIANCE_FRAMEWORK.md` created new
+   at ~500 lines covering: honest framing; ten identified gaps
+   (G1–G10); per-regime mapping tables (EU AI Act, GDPR, NIST AI
+   RMF, ISO/IEC 42001); six supplementary-artefact templates
+   (key-management specification, incident-response protocol with
+   SEV tiers and role roster, third-party audit procedure, system
+   and model card template, complaint mechanism, DPIA). Framing
+   throughout: primitives provided, gaps named, legal judgement
+   reserved.
+
+4. **Batch E — Broken-reference sweep.** v2/v3 draft references in
+   prior-session narrative removed or marked as resolved; memory
+   file path corrections; EXPERIMENTAL_RESULTS.md and ONBOARDING.md
+   line-specific broken-ref fixes from the pre-compaction audit.
+
+5. **Batch F — Mirrors.** Paired TTS (`~/Desktop/CDSFL_tts/*.txt`)
+   and `experimental_notes/*.md` mirrors for Batches A, B, and D.
+   Batches C and E are structural / housekeeping and do not receive
+   mirrors.
+
+**What this leaves:**
+
+- Working tree modifications: `README.md` (full replacement),
+  `PAPER.md` (Part V extension), `docs/EXTENDED_RATIONALE.md`
+  (new section appended), `docs/FOUNDERS_NOTES.md` (Batch A
+  revisions), `resources/RECOVERY.md`, `resources/ONBOARDING.md`,
+  `docs/EXPERIMENTAL_RESULTS.md`.
+- New file: `docs/COMPLIANCE_FRAMEWORK.md`.
+- Deleted files: `README_v2_draft_2026-04-18.docx`,
+  `README_v2_draft_2026-04-18.html`,
+  `README_v2_draft_2026-04-18.md`,
+  `README_v3_draft_2026-04-18.md`.
+- New untracked files: three paired `.md` mirrors in
+  `experimental_notes/` plus their `.txt` siblings on the founder's
+  Desktop under `~/Desktop/CDSFL_tts/`.
+- No code changes. 1250/1250 tests still passing (no `bench/`
+  touched).
+- This save-state produces the next commit.
+
+**Open items, not sv-blocking:**
+
+1. Return to the outstanding Experiment 40 confer round with the
+   other models — the original starting point before the 18–19
+   April and 20 April doc sweeps were flagged. Still carried
+   forward.
+2. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
+   (K/L/M physics/chemistry/engineering — carried forward).
+3. Once the regulatory-compliance consolidation has been read, a
+   second pass on `docs/COMPLIANCE_FRAMEWORK.md` may be warranted
+   to flesh out the EU AI Act Annex IV and NIST AI RMF coverage
+   where the current mapping is labelled "Provides partially" —
+   specifically the input-document packaging.
+
+**Prior session text retained for continuity:**
 
 **SESSION 19 APRIL (midday) — BROADER DOCUMENTATION STALENESS SWEEP (6-BATCH PASS):**
 
@@ -169,13 +269,13 @@ execution, and completed this session.
 2. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
    (K/L/M physics/chemistry/engineering — carried forward from
    prior sv).
-3. Founder decision on `README.md` promotion (v2 vs v3 vs retain
-   current) still pending; v3 is through the 13-point correction
-   sweep but no promotion has been signed off. Batch 7 (README
-   promotion) was deferred in the 6-batch plan pending founder
-   decision after walk.
-4. Untracked v2 `.docx/.html/.md` at repo root pending the same
-   promotion decision.
+3. ~~Founder decision on `README.md` promotion (v2 vs v3 vs retain
+   current) still pending.~~ **Resolved 20 April:** v3 promoted to
+   `README.md` after first-person corrections and Batch B additions;
+   v2 drafts deleted.
+4. ~~Untracked v2 `.docx/.html/.md` at repo root pending the same
+   promotion decision.~~ **Resolved 20 April:** deleted alongside
+   v3 promotion.
 
 ---
 
@@ -280,13 +380,12 @@ remain at repo root from prior sessions. 1250/1250 tests still passing
 1. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
    (K/L/M physics/chemistry/engineering — carried forward from
    prior sv).
-2. Founder decision on `README.md` promotion (v2 vs v3 vs retain
-   current) still pending; v3 is now through the 13-point correction
-   sweep but no promotion has been signed off.
-3. Untracked v2 `.docx/.html/.md` at repo root pending the same
-   promotion decision — will either move to
-   `experimental_notes/drafts/` or delete once a v3 promotion is
-   signed off.
+2. ~~Founder decision on `README.md` promotion (v2 vs v3 vs retain
+   current) still pending.~~ **Resolved 20 April:** v3 promoted to
+   `README.md` after first-person corrections and Batch B additions.
+3. ~~Untracked v2 `.docx/.html/.md` at repo root pending the same
+   promotion decision.~~ **Resolved 20 April:** deleted alongside
+   v3 promotion.
 4. Return to the outstanding Experiment 40 confer round with the
    other models, per founder's framing at the start of this session.
 
@@ -334,11 +433,10 @@ root: `README_v2_draft_2026-04-18.{docx,html,md}` and
 1. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
    (K/L/M physics/chemistry/engineering — tranche B already landed
    in `bench/cdsfl_registry/tool_manifest.toml` per Phase B).
-2. Founder decision on `README.md` promotion: retain current, promote
-   v2, or promote v3. Recommend awaiting side-by-side read.
-3. Untracked v2 `.docx/.html/.md` at repo root pending promotion
-   decision — will either move to `experimental_notes/drafts/` or
-   delete once a v3 promotion is signed off.
+2. ~~Founder decision on `README.md` promotion.~~ **Resolved 20
+   April:** v3 promoted to `README.md`.
+3. ~~Untracked v2 `.docx/.html/.md` at repo root pending promotion
+   decision.~~ **Resolved 20 April:** deleted.
 
 **Prior session text retained for continuity:**
 

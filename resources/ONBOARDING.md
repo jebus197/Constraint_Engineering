@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 19 April 2026 13:48 BST
+Last updated: 20 April 2026 02:20 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -715,10 +715,10 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   **Still pending (not sv-blocking):**
   - Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell
     types (carried forward from prior sv).
-  - Founder decision on `README.md` promotion (v2 vs v3 vs
-    retain current).
-  - Untracked v2 `.docx/.html/.md` cleanup once a promotion path
-    is chosen.
+  - ~~Founder decision on `README.md` promotion (v2 vs v3 vs
+    retain current).~~ **Resolved 20 April:** v3 promoted.
+  - ~~Untracked v2 `.docx/.html/.md` cleanup once a promotion path
+    is chosen.~~ **Resolved 20 April:** deleted.
   - Return to the outstanding Experiment 40 confer round with the
     other models, per founder's framing at the start of this
     session.

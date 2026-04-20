@@ -437,6 +437,25 @@ What is captured: plan state, progress, rationale, hypotheses, key decisions, co
 
 What is not captured: sub-token attention patterns and implicit contextual weighting — aspects of reasoning the model cannot introspect on. This is the irreducible floor shared by all approaches. It is not a comparative disadvantage.
 
+### Alignment with Modern Governance Frameworks
+
+The persistence and verification primitives described above map cleanly onto technical controls commonly required by current AI and data-governance frameworks. The alignment is genuine but partial: the framework provides primitives, not conformity packages. The mapping below names each primitive and the regime that most directly relies on it, without claiming that the primitive on its own satisfies the regime.
+
+| CDSFL primitive | EU AI Act | GDPR | NIST AI RMF | ISO/IEC 42001 |
+|---|---|---|---|---|
+| Append-only record store + SHA-256 hash chain | Art. 12 logging of high-risk system events | Art. 5(1)(f) integrity; Art. 32 security of processing | MEASURE 2.1 documentation of system state | Cl. 8.4 operational records |
+| Epoch Merkle tree sealing (RFC 9162) | Art. 12 tamper-evident logs | Art. 32 tamper-evident processing record | MEASURE 2.7 verifiability | Cl. 8.4; Cl. 9.1 monitoring |
+| Ed25519 signatures over findings | Art. 13 traceable provider obligations | Art. 5(2) accountability | GOVERN 1.7 accountable record-keeping | Cl. 5.3 roles and responsibilities |
+| Admissibility gates + hard-gate tool verification | Art. 15 accuracy, robustness, cybersecurity | Art. 5(1)(d) accuracy of personal data | MEASURE 2.3 robustness under evaluation | Cl. 8.3 operational controls |
+| Programmatic rejection of unverified claims | Art. 14 human oversight surface | Art. 22 meaningful information about automated decisions | MANAGE 2.3 non-conforming output handling | Cl. 8.3 |
+| Immune-pipeline audit trail | Art. 12; Annex IV technical documentation | Art. 30 records of processing activities | MEASURE 2.1; MANAGE 3.1 | Cl. 7.5 documented information |
+| HIL sign-off on escalation | Art. 14 human oversight | Art. 22 human review of automated decisions | GOVERN 2.1 accountable human role | Cl. 5.3 |
+| Findings persistence across revisions | Art. 12 log retention | Art. 5(1)(e) storage limitation compatibility | MEASURE 2.7 | Cl. 7.5 |
+
+This table is a technical statement, not a legal one. Full compliance with any of the named regimes depends on supplementary controls that sit outside the framework — key-management practice, incident-response capability, third-party audit procedure, conformity documentation, data-protection impact assessment, complaint mechanism, model and system cards. Those artefacts are treated as first-class in [docs/COMPLIANCE_FRAMEWORK.md](COMPLIANCE_FRAMEWORK.md), which carries the honest gap statement and a set of supplementary-artefact templates. That document is not legal advice; it is a technical audit of what the framework supplies, what it does not, and where each gap can be filled.
+
+The framing matters. CDSFL is not a governance product. It is a scientific-method framework that happens to leave behind the kind of audit trail governance bodies increasingly ask for. Projects that adopt the framework inherit the primitives; they do not inherit compliance.
+
 ---
 
 ## Part VI — Quality Defence

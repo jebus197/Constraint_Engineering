@@ -1391,7 +1391,7 @@ The schema held across models. Each model produced outputs conformant to the str
 Two confer patterns were observed that became load-bearing in later experiments. First, the **framing confound**: when the orchestrator pre-announces a model's role (adversarial vs. supportive), outputs anchor to that framing rather than to the object of review. Fix: neutral framing with role emerging from the constraint set rather than from explicit instruction. Second, the **long-session degradation**: models operating in sessions beyond approximately 18 hours of continuous dispatch began conflating earlier and later definitions of the same term. Fix: ITC restarts with fresh context plus fingerprint-informed scope, never benching.
 
 **Raw data:** `bench/logs/experiment_29_*`
-**Analysis:** `experimental_notes/Three_Layer_Schema_Integration_2026-04-07.md`
+**Analysis:** `experimental_notes/Exp29_Implementation_Complete_2026-04-04.md`, `experimental_notes/DC_v2_3Layer_Confer_2026-04-10.md`
 
 ---
 
@@ -1480,7 +1480,7 @@ Domains identified for future calibration: additional specialist libraries for d
 
 **Final active count at commit 6580737:** 18 active + 2 delegated.
 
-**Analysis:** `experimental_notes/Tranche_Integration_Report_2026-04-14.md`
+**Analysis:** `experimental_notes/Domain_Tool_Wiring_2026-04-14.md`
 
 ---
 
@@ -1512,7 +1512,7 @@ Domains identified for future calibration: additional specialist libraries for d
 
 Under-routing was the dominant failure mode: 3 of 4 non-broken agents were not escalating marginal cases to the orchestrator, causing Agent 5 to receive a disproportionate escalation load. Fix priorities identified for Experiment 37.
 
-**Analysis:** `experimental_notes/Exp36_Agent_Performance_2026-04-12.md`
+**Analysis:** `experimental_notes/Exp36_Results_Summary_2026-04-08.md`, `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md`
 
 ---
 
@@ -1536,7 +1536,7 @@ The interpretation: a claim with high internal novelty but high external calibra
 
 The ν_k design iterated over 2 confer rounds, producing 12 corrections. The shadow calibrator was hooked into the live metric via the composition law. ν_k is now a live input to R_k updates, with the shadow calibrator producing the c_ext estimate from external reference retrieval.
 
-**Analysis:** `experimental_notes/Stage_6_Extension_2026-04-14.md`, `experimental_notes/nu_k_Design_2026-04-14.md`
+**Analysis:** `experimental_notes/Stage6_R2_Confer_Synthesis_2026-04-14.md`, `experimental_notes/Novelty_Scoring_nu_k_Design_2026-04-14.md`
 
 ---
 
@@ -1617,7 +1617,7 @@ Earlier drafts applied the modulator to R_k itself. That design was discarded be
 Stage 3 closure establishes that the formal documents, the mathematics, and the code describe the same object without drift. It does not establish empirical validation of the framework's underlying hypotheses about §17 and §18; that validation is scheduled for the 2×2 factorial in Experiments 41–54.
 
 **Raw data:** `bench/logs/experiment_40_*`
-**Analysis:** `experimental_notes/Exp40_Stage3_Closure_2026-04-18.md`
+**Analysis:** `experimental_notes/Exp40_1E8_1E11_1E12_Completion_2026-04-17.md`, `experimental_notes/CDSFL_Stage_Three_Closure_Explained_2026-04-17.md`
 
 ---
 
