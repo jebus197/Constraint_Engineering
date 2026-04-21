@@ -1,14 +1,12 @@
 # Regulatory Compliance Framework — 20 April 2026
 
-## What This Document Covers
+## Scope
 
 On 20 April 2026 the Constraint-Driven Synthesis and Falsification (CDSFL) project added three pieces of regulatory-compliance material to its documentation set:
 
 1. A new subsection added to Part V of the white paper (`PAPER.md`) — *Alignment with Modern Governance Frameworks*.
 2. A new section added to the general-audience rationale (`docs/EXTENDED_RATIONALE.md`) — *Auditable Cognitive Infrastructure (April 2026)*.
 3. A new standalone document at `docs/COMPLIANCE_FRAMEWORK.md`.
-
-This note describes what each of the three pieces says, what framing they use, and why they were added at this point in the project's timeline.
 
 ---
 
@@ -167,13 +165,9 @@ Voice: same as the rest of the project's documentation. British spelling. Known 
 
 ---
 
-## Why This Was Added Now
+## Timing Rationale
 
-The framework had reached a point in April 2026 where its persistence and verification layer was mature, and the alignment with modern governance requirements visible, that not documenting the alignment would have been the omission.
-
-At the same time, documenting the alignment without stating its limits honestly would have been a different kind of omission, and a more damaging one. A framework that claimed more than it delivered would undermine the project's own commitment to Popperian falsification.
-
-The three pieces are the project's attempt to state the position accurately: what the framework supplies, what it does not, how it lines up with what modern governance regimes ask, and what a deployment would need to add on top.
+By April 2026 the persistence and verification layer had matured and the alignment with modern governance requirements had become visible. Documenting that alignment without overclaiming required the stated-partiality framing: what the framework supplies, what it does not, how it lines up with what modern governance regimes ask, and what a deployment would need to add on top.
 
 ---
 

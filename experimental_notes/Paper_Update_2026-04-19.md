@@ -1,8 +1,6 @@
 # Paper Update — 19 April 2026
 
-This note documents the April 2026 update to the white paper,
-`PAPER.md`, bringing it from version 1.0 to version 1.1. Three
-changes were made:
+`PAPER.md` was updated in April 2026 from version 1.0 to version 1.1. Three changes were made:
 
 1. Version line and date updated.
 2. Abstract extended to record the April 2026 developments.
@@ -153,12 +151,4 @@ Seven new falsifiable claims, each with its refutation condition:
 
 ## Summary
 
-The Addendum approach preserves the original paper structure and its
-established voice while recording the April 2026 developments as an
-auditable set of additions. The existing *Invitation to Falsify*
-block was not modified. The *References* block was not modified. The
-narrative continuity of the paper was preserved while the
-mathematical and architectural progress of the project was brought
-into the formal record. The Addendum closes with an explicit set of
-falsifiable claims that the 2×2 factorial in Experiments 41–54 is
-designed to test.
+The Addendum is appended rather than replacing any prior content. The existing *Invitation to Falsify* block and the *References* block are unchanged. The Addendum closes with an explicit set of falsifiable claims that the 2×2 factorial in Experiments 41–54 is designed to test.

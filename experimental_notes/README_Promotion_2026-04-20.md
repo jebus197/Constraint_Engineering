@@ -1,8 +1,8 @@
 # README Promotion — 20 April 2026
 
-## What This Document Covers
+## Scope
 
-On 20 April 2026 the v3 draft of the public README for the Constraint-Driven Synthesis and Falsification (CDSFL) project was promoted to become the canonical `README.md` at the repository root. The v2 drafts, retained at the repository root for side-by-side comparison during the review period, were deleted as part of the promotion. This note documents the changes applied to the v3 draft before promotion, the state of the footer after promotion, the new material added, and what was retained unchanged.
+On 20 April 2026 the v3 draft of the public README for the Constraint-Driven Synthesis and Falsification (CDSFL) project was promoted to become the canonical `README.md` at the repository root. The v2 drafts, retained at the repository root for side-by-side comparison during the review period, were deleted as part of the promotion. Changes applied to the v3 draft before promotion, footer state after promotion, new material added, and content retained unchanged are recorded below.
 
 ---
 
@@ -10,7 +10,7 @@ On 20 April 2026 the v3 draft of the public README for the Constraint-Driven Syn
 
 The v3 draft had been built on 18 April 2026 on the foundation of the founder's April 2026 blog post, not on the v2 nine-section plan shape. On 19 April 2026 it had been taken through a thirteen-point correction sweep covering: Exp 39 / Exp 40 runner references removed from the public surface, first-mention explanation of the Ouroboros cell, expanded five-model panel framing in the Abstract, explicit tool-deterministic constraint box, introduction of `R_k(i)` as the models' own reasoning methodology from Exp 37 onwards, and plain inline definitions of several terms.
 
-What the v3 draft did not yet have, at the point where this session picked it up, was the additional 20 April material the sweep was building toward, plus the first-person oversights that had slipped through the 19 April correction round.
+At the start of the 20 April promotion pass, the v3 draft had not yet received the additional 20 April material or correction of a set of residual first-person oversights.
 
 ---
 
@@ -18,7 +18,7 @@ What the v3 draft did not yet have, at the point where this session picked it up
 
 The README is a public document — third-person or descriptive voice throughout. Eight remaining first-person instances were corrected at lines 13, 15, 17, 19, 53, 75, 94, and 96 of the draft. One additional instance on line 13 (`which I call the P-Pass` → `called the P-Pass`) was caught during the correction round and fixed in the same pass. The document now reads in a consistent descriptive voice.
 
-**Retained first-person (intentional):** lines 11 and 35 preserve the idiomatic "for me" in contexts where the founder is making a personal statement about the origin of the project. The directive for this session was to fix first-person oversights, not to strip the document of personal anchoring where that anchoring is load-bearing.
+**Retained first-person (intentional):** lines 11 and 35 preserve the idiomatic "for me" in contexts where the founder is making a personal statement about the origin of the project. The scope was to fix first-person oversights, not to strip the document of personal anchoring where that anchoring is load-bearing.
 
 ---
 
@@ -66,7 +66,7 @@ The paragraph is careful to note that:
 - The alignment is genuine but partial.
 - The framework provides technical primitives commonly required by these regimes; it does not by itself constitute a conformity package.
 - Full compliance depends on supplementary controls that sit around the framework, not inside it.
-- A detailed mapping and honest gap statement live in `docs/COMPLIANCE_FRAMEWORK.md` (created in Batch D of this session).
+- A detailed mapping and honest gap statement live in `docs/COMPLIANCE_FRAMEWORK.md`.
 - The document is not legal advice.
 
 ---

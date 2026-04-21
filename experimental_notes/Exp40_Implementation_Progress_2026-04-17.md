@@ -6,11 +6,11 @@
 
 ---
 
-## Scope decided at session start
+## Scope
 
-User directive: implement the Exp 40–54 plan in full within this session,
-in discrete stages, FFAFP + SymPy/z3 + P-pass where applicable, staying
-within context budget and API-error safety.
+Implement the Exp 40–54 plan in full, in discrete stages, with
+FFAFP + SymPy/z3 + P-pass where applicable, within context budget and
+API-error safety.
 
 ---
 

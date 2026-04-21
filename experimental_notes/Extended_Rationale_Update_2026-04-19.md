@@ -1,13 +1,6 @@
 # Extended Rationale Update — 19 April 2026
 
-This note documents the April 2026 additions to the general-audience
-companion document `docs/EXTENDED_RATIONALE.md`. The document had been
-updated in late March 2026 with the three-architecture review section.
-Since then, five substantive developments had occurred that the
-general-audience document did not yet reflect. The refresh adds five
-new sections, written in the same reflective journalistic register as
-the rest of the document, each tied to a dated milestone in April
-2026.
+`docs/EXTENDED_RATIONALE.md` was last updated in late March 2026 with the three-architecture review section. Five substantive developments since then are recorded as five new sections, each tied to a dated milestone in April 2026.
 
 ## The Unified State Equation (8 April 2026)
 
@@ -163,15 +156,4 @@ measurements that follow, not a substitute for them.
 
 ## Summary
 
-The five new sections bring the general-audience document into line
-with the April 2026 state of the project. The register matches the
-existing document. Technical terms are introduced with inline glosses
-on first use. The sections preserve the existing structure, appearing
-between the 27 March 2026 section on the method applied to itself and
-the closing references block. No existing claims were removed. The
-mathematical notation `C(n)` is preserved in context as the
-pedagogical introduction and then shown to have been superseded by
-the unified equation, rather than being deleted from the earlier
-narrative. The refresh was additive and preserved the reflective
-journalistic voice that distinguishes the extended rationale from the
-formal specification and the white paper.
+The five new sections bring `EXTENDED_RATIONALE.md` into line with the April 2026 state of the project. They are inserted between the 27 March 2026 section on the method applied to itself and the closing references block. Prior claims remain. The `C(n)` notation is preserved in context as the pedagogical introduction and then shown to have been superseded by the unified equation.

@@ -62,7 +62,7 @@ That question is the only question that matters for self-assessment. Not "how ha
 
 Verified independently by SymPy and Wolfram Alpha.
 
-Once you have your current risk estimate R_k, the update rule depends on only two things: your current risk, and the effective detection of your next pass. The prior is absorbed into the running risk estimate and never referenced again.
+Once the current risk estimate R_k is known, the update rule depends on only two things: the current risk, and the effective detection of the next pass. The prior is absorbed into the running risk estimate and never referenced again.
 
 This makes the equation **self-contained at every step**. A model can pick it up at any point, assess current risk, and decide what to do next. No history required beyond the current state.
 

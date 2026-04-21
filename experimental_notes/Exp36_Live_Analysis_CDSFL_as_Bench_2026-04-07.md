@@ -1,6 +1,7 @@
 # CDSFL as an AI Interaction Design Bench — Live Analysis from Experiment 36
 
-**Date:** 7 April 2026, ~02:55 BST. Experiment 36 is running live while this analysis is written.
+**Date:** 7 April 2026, ~02:55 BST
+**Context:** Analysis written while Experiment 36 was running live.
 
 ## The Claim
 

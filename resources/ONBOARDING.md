@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 20 April 2026 04:46 BST
+Last updated: 21 April 2026 01:14 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -21,6 +21,18 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
 **Local path:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/`
 
 **Visual architecture:** [`docs/CDSFL_Topology.svg`](../docs/CDSFL_Topology.svg) — whole-body topology map showing all components and their biological analogues.
+
+## Standing Rules (Load-Bearing, Must Survive Compaction)
+
+Four rules the founder has named load-bearing. They apply across every session, model instance, and recovery; full bodies live in persistent memory under `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/` and in the Standing Corrections section of `resources/RECOVERY.md`.
+
+- **Quote convention** (`feedback_quote_convention.md`). Single `'quotes'` mean paraphrase, indirect reference, or emphasis — not verbatim prior wording. Double `"quotes"` mean verbatim direct quotation. Do not promote a single-quoted phrase into a headline thesis without cross-referencing canonical documents.
+- **Factual synthesis over agreement amplification** (`feedback_factual_synthesis.md`). Deliver evidence-grounded analysis anchored in the documentary record. If the evidence moderates or contradicts the founder's current framing, say so with citations. Agreement amplification is a named failure mode.
+- **MC commands are non-optional** (`mc_commands_nonoptional.md`, 20 April 2026). When the founder issues a metacognitive-command sequence (for example `rg, sq, a, sy, sth, p, d, t`), every command in the sequence must be executed in full, in order. No skipping, no silent merging, no reinterpretation. If a step cannot be completed in the current turn, name the blocker; do not quietly drop it.
+- **`rg` and "recover full context" mean no summary, no truncation** (`rg_command.md`, 20 April 2026). Read the named resources end-to-end. Do not paraphrase, distil, or chunk-summarise. Do not work from a prior ledger when the raw record is available. Chunk with offset/limit if the file exceeds a single `Read` call, and continue until every line has been traversed.
+- **Notes are forward-facing for third-party consumption** (`feedback_tts_dissemination.md`, clarified 20 April 2026). Experimental notes and TTS files document methodology and outcomes only. No accountability preambles, no compliance ledgers, no notes-about-notes, no self-referential framing, no "this document corrects X" appendices. Written as if authored by a neutral third party, not as an AI narrating its own work.
+- **Every technical note requires three artefacts** (`feedback_notes_paired_output.md`, 20 April 2026). One technical markdown at `experimental_notes/<Name>_YYYY-MM-DD.md` with full rigour. One plain-English companion at `~/Desktop/<Project>_tts/<Name>_YYYY-MM-DD.txt` written for a technically-literate non-specialist. One inline chat summary. All three non-optional.
+- **Dates and times are numerical with local timezone** (`feedback_tts_format.md`, 20 April 2026). Acceptable: `2026-04-20`, `2026-04-20 22:32 BST`, `20 April 2026, 22:32 BST`. Word-form dates and times ("the eighteenth of April twenty twenty six") are prohibited across both TTS and markdown. The plain-English directive applies to technical prose, not to numbers, dates, timestamps, version strings, file paths, or code anchors.
 
 ## Current State (update after each major milestone)
 
@@ -609,6 +621,77 @@ DeepSeek V3.2, Gemini 3.1 Pro, and ChatGPT 5.4 as additional review models.
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
 <!-- SV:LATEST_EXP_END -->
 
+
+- **EXP 40 PRE-LAUNCH PANEL AUDIT + NOTE-DISCIPLINE RULES (20 April 2026, 19:00 BST → 21 April 01:08 BST):**
+  Branch: `exp39-experimental`. 1250 tests still passing, no runtime code changes
+  landed this window. Working tree contains 20 modified experimental notes and 2
+  new audit artefacts plus supporting confer log directories. Target of record:
+  `bench/dm/_feedback.py` (§17 feedback channel) and `bench/dm/_types.py`.
+
+  **Strand 1 — Exp 40 pre-launch panel audit.** Five-model panel (Codex GPT-5.4,
+  Gemini 3.1 Pro, ChatGPT GPT-5.4, CC2 Opus 4.6, DeepSeek R1) re-audited against
+  `bench/reference_runner_v2.py` under corrective framing anchored on
+  `bench/experiments/exp40/40_gate.json` pass-condition plus Stage 6 orthogonality.
+  An earlier audit round was reverted on founder instruction after a "v1
+  preservation" misframing inflated blast radius. Artefacts:
+  `bench/confer_exp40_reaudit_round1.py`, `bench/logs/confer_exp40_reaudit_round1/`,
+  `experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md`,
+  `experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md`, with plain-
+  English TTS mirrors on `~/Desktop/CDSFL_tts/`.
+
+  **HIL decisions outstanding at sv entry** (carried into RECOVERY.md):
+  1. Schema decomposition scope — audit extends inventory, or implementer owns
+     it inside Exp 40 runtime.
+  2. Gemini dissent on wrapper activation — hold or overrule.
+  3. Whether shadow-promotion-now applies to the SymPy sandbox fix identified
+     in the Stage 3 closure (subprocess sandbox silences `_verify_sympy`).
+  4. `nu_max` binding threshold — 5%, 10%, or 25%.
+
+  **Strand 2 — Note-discipline rules locked into persistent memory.** Four rules
+  registered during this session, all dated 20 April 2026, all written into
+  `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/` with
+  pointers in `MEMORY.md`:
+
+  - `feedback_tts_dissemination.md` — notes are forward-facing documents for
+    third-party consumption, documenting methodology and outcomes only. No
+    accountability preambles, no compliance ledgers, no notes-about-notes, no
+    self-referential framing. Neutral third-party voice.
+  - `feedback_notes_paired_output.md` — every technical note requires three
+    artefacts: the technical markdown at `experimental_notes/<Name>_YYYY-MM-DD.md`,
+    a plain-English companion at `~/Desktop/<Project>_tts/<Name>_YYYY-MM-DD.txt`
+    fit for a technically-literate non-specialist, and an inline chat summary
+    covering the main points. All three non-optional.
+  - `feedback_tts_format.md` — date and time format standardised as numerical
+    with local timezone. Acceptable forms: `2026-04-20`, `2026-04-20 22:32 BST`,
+    `20 April 2026, 22:32 BST`. Word-form dates and numbers prohibited in both
+    TTS `.txt` and markdown `.md`.
+  - The four pointers are mirrored into the Standing Rules section of this file
+    (above) so they survive compaction.
+
+  **Strand 3 — Full-corpus audit of notes against the new rules.** Two sub-agents
+  dispatched sequentially under `sq` (strictly sequential tool use, no parallel
+  batches): one over `experimental_notes/` (119 files scanned, 20 edited, 1
+  JSON skipped, 98 clean), one over `~/Desktop/CDSFL_tts/` (307 files scanned,
+  approximately 24 edited). Edits strip accountability preambles, remove notes-
+  about-notes sections, and convert word-form dates and numbers to numerical
+  form. Files edited in the repo are listed in RECOVERY.md under "Note-corpus
+  audit 2026-04-20".
+
+  **Flagged for founder judgment** (not auto-edited):
+  - `experimental_notes/Notes_Documentation_Refresh_2026-04-16.md` — meta-note
+    about note protocol. Ambiguous under the new rule; retained pending
+    decision.
+  - Older raw-ledger TTS files in `~/Desktop/CDSFL_tts/` from 2026-03 — em-dash
+    and markdown residue, not within the scope of today's audit.
+  - `~/Desktop/CDSFL_tts/2026-03-10_Signal_Protocol_Research.txt` and
+    `2026-03-11_OB_White_Paper.txt` — heavy markdown, pre-dates TTS format rule.
+  - Obsolete duplicates: `2026-03-13_Directives_old.txt`, superseded Popper
+    drafts (subsumed by `CDSFL_Popper_Maths_Final_2026-03-27.txt`), superseded
+    Framework drafts (subsumed by `_Complete_` versions).
+
+  **No new test runs this session.** No schema math changes, no directive
+  edits under `bench/directives/`, no runner edits. The work is protocol-level
+  and documentary.
 
 - **README v3 CORRECTIONS + NEW `rg` MC COMMAND (19 April 2026, 09:45–10:30 BST):**
   Session work, no new experimental evidence. Two strands continuing

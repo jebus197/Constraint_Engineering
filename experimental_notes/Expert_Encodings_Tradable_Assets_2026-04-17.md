@@ -4,9 +4,7 @@
 
 ---
 
-## Part 1. What this document corrects
-
-An earlier synthesis of this material led with a "tradable asset" framing that over-rotated on one strand of the documentary record and under-weighted CDSFL's MIT-licensed, fundamentalist open-source character. This version restores the accurate framing.
+## Part 1. Framing
 
 CDSFL is the Constraint-Driven Synthesis and Falsification Loop: an MIT-licensed, open-source methodology and software framework for making AI-assisted technical work more reliable. It has two stated purposes:
 
@@ -77,8 +75,6 @@ Both modes must be selectable via registry and UX settings. The mathematical imp
 ---
 
 ## Part 5. Confer and experiments are different things
-
-The earlier synthesis blurred an important distinction:
 
 - **Confer** is CDSFL's internal development and review protocol. It is what model panels do to each other during design work (as on 9 April 2026 with the expert-encoding template). It is an internal tool for the framework's developers and for review of encoding proposals. It is not a feature of the shipped product for end users.
 - **Experiments** are the execution pipeline. Models dispatched in a structured topology under directives composed from universal, domain, and expert-provided layers. This is what end users will run.

@@ -61,7 +61,7 @@ This aligns with the models-as-neurones hypothesis from the burst reasoning anal
 ## Extrapolation
 
 ### What Generalises
-- **Metacognition is instrumentable.** You can build tools that make cognitive processes measurable, and once measured, improvable. CDSFL is a proof of concept for this principle
+- **Metacognition is instrumentable.** Tools can make cognitive processes measurable, and once measured, improvable. CDSFL is a proof of concept for this principle
 - **Substrate-agnostic:** the Duane NHPP doesn't care whether findings come from humans, AI models, or a mixed panel. ITC strategies (restart_fresh, change_focus, strip_context) are functional descriptions of attention management that apply to any analytical agent
 - **Architectural property:** if CDSFL genuinely measures metacognition, then metacognition emerges from the right monitoring-and-adjustment loops regardless of whether they're implemented in neurons, silicon, or pen-and-paper protocols — the §8 substrate agnosticism thesis made concrete
 

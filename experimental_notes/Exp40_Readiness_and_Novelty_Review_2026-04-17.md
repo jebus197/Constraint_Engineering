@@ -3,8 +3,7 @@
 **Date:** 17 April 2026
 **Branch:** `exp39-experimental`
 **HEAD:** `cc6cc1a`
-
-This note consolidates three threads: the novelty work completed in CDSFL (Constraint-Driven Synthesis and Falsification, a Popperian multi-vendor large language model falsification framework) during the 72 hours from 14 to 16 April 2026; the structure and coverage of Experiment 39; and the remaining work not yet folded into a runner for Experiment 40, alongside factors outside those two threads that warrant attention.
+**Scope:** three threads — novelty work completed in CDSFL (Constraint-Driven Synthesis and Falsification, a Popperian multi-vendor large language model falsification framework) during the 72 hours from 14 to 16 April 2026; the structure and coverage of Experiment 39; and the remaining work not yet folded into a runner for Experiment 40, alongside other factors worth attention.
 
 ---
 

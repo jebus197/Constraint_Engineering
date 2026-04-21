@@ -1,7 +1,7 @@
 # Error Correction Granularity — Post-Hoc vs In-Flight
 
 **Date:** 15 April 2026
-**Prompt:** The founder asked whether §17's (the Feedback Channel directive) post-round feedback is a waste of opportunity/time relative to in-flight error correction in computer memory systems. Answered under `p a d e sth d t`.
+**Prompt:** The founder asked whether §17's (the Feedback Channel directive) post-round feedback is a waste of opportunity/time relative to in-flight error correction in computer memory systems.
 
 ---
 

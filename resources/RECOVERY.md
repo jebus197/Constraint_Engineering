@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 20 April 2026 04:46 BST
+Last updated: 21 April 2026 01:14 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -58,12 +58,185 @@ without cross-referencing against README, PAPER, FOUNDERS_NOTES, or the
 MIT-licensed open-source character of the project. The founder had to
 correct twice.
 
+### MC commands are non-optional (`mc_commands_nonoptional.md`)
+
+Standing rule, 20 April 2026. When the founder issues a metacognitive-command
+sequence (for example `rg, sq, a, sy, sth, p, d, t`), every command in the
+sequence must be executed in full, in order. No skipping, no silent merging
+of steps, no reinterpretation. If a step cannot be completed in the current
+turn, say so explicitly and name the blocker; do not quietly drop it. MC
+definitions live in `~/.claude/CLAUDE.md`, project `.claude/CLAUDE.md`, and
+`docs/REPRODUCING.md`; extended clauses (such as the no-summary rule on
+`rg`) live in the corresponding memory file and take precedence.
+
+### `rg` and "recover full context" mean no summary, no truncation (`rg_command.md`)
+
+Standing rule, 20 April 2026. `rg <topic>` and the plain-English equivalent
+"recover full context" both require reading the named resources end-to-end.
+Do not paraphrase, distil, or chunk-summarise. Do not work from a prior
+ledger when the raw record is available. If a file exceeds a single `Read`
+tool call, chunk with offset/limit and continue until every line has been
+traversed. The founder added this clause after observing that a "full
+context" regain had compressed five confer-round combined logs into a
+16-entry ledger, missing material detail.
+
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20 April 2026)
+## Current Pending Work (20–21 April 2026)
 
-**SESSION 20 APRIL — README PROMOTION + REGULATORY-COMPLIANCE CONSOLIDATION (5-BATCH PASS):**
+**SESSION 20 APRIL (evening) → 21 APRIL (01:08 BST) — EXP 40 PRE-LAUNCH PANEL AUDIT + NOTE-DISCIPLINE RULES + FULL-CORPUS NOTE AUDIT:**
+
+Branch: `exp39-experimental`. No runtime code changes this window; 1250
+tests still passing from the prior `sv`. Working tree: 20 modified
+experimental notes plus two new audit artefacts and supporting confer
+log directories. This is a protocol-level and documentary session.
+
+1. **Exp 40 pre-launch panel re-audit.** Five-model panel (Codex GPT-5.4,
+   Gemini 3.1 Pro, ChatGPT GPT-5.4, CC2 Opus 4.6, DeepSeek R1) re-
+   audited against `bench/reference_runner_v2.py` under corrective
+   framing anchored on `bench/experiments/exp40/40_gate.json` pass-
+   condition plus Stage 6 orthogonality. A prior round had been
+   reverted on founder instruction after a "v1 preservation"
+   misframing inflated the blast radius. Artefacts:
+   `bench/confer_exp40_reaudit_round1.py`,
+   `bench/logs/confer_exp40_reaudit_round1/`,
+   `experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md`,
+   `experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md`,
+   plain-English TTS mirrors at
+   `~/Desktop/CDSFL_tts/Exp40_Pre_Launch_Panel_Audit_2026-04-20.txt`
+   and `~/Desktop/CDSFL_tts/Exp40_Pre_Launch_Panel_Audit_Full_Report_2026-04-20.txt`.
+
+2. **HIL decisions outstanding for Exp 40 launch** (carried forward,
+   not resolved this session):
+
+   a. Schema decomposition scope — does the audit extend the
+      inventory, or does the Exp 40 implementer own decomposition at
+      runtime?
+   b. Gemini dissent on wrapper activation — hold or overrule?
+   c. Whether the 20 April shadow-promotion-now policy applies to the
+      SymPy sandbox fix identified in the Stage 3 closure
+      (subprocess sandbox at `bench/immune_agents.py:947-1019` uses
+      `global_dict={'__builtins__': {}}` and silently returns
+      `UNCERTAIN` for every claim). A separate session has been
+      delegated to repair it.
+   d. `nu_max` binding threshold — 5%, 10%, or 25%?
+   e. 1E.10 wrapper runtime assertion at
+      `bench/reference_runner_v2.py:3510` — gated on Exp 54
+      `eta_int_modulator` wiring; not required for Exp 40 launch.
+   f. Debug q-composition assertion at the same call site.
+   g. Closure-state stratification in `resources/ONBOARDING.md`.
+
+3. **Four note-discipline rules locked into persistent memory** under
+   `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/`,
+   all dated 20 April 2026, all mirrored into the Standing Rules
+   section of `resources/ONBOARDING.md`:
+
+   a. `feedback_tts_dissemination.md` — experimental notes and TTS
+      files are forward-facing documents for third-party consumption.
+      Methodology and outcomes only. No accountability preambles,
+      no compliance ledgers, no notes-about-notes, no self-referential
+      framing, no "this document corrects X" appendices. Neutral
+      third-party voice.
+   b. `feedback_notes_paired_output.md` — every technical note
+      requires three artefacts: the technical markdown at
+      `experimental_notes/<Name>_YYYY-MM-DD.md` (full rigour), a
+      plain-English companion at
+      `~/Desktop/<Project>_tts/<Name>_YYYY-MM-DD.txt` (fit for a
+      technically-literate non-specialist), and an inline chat
+      summary. All three non-optional.
+   c. `feedback_tts_format.md` — dates and times use numerical
+      format with local timezone. Acceptable: `2026-04-20`,
+      `2026-04-20 22:32 BST`, `20 April 2026, 22:32 BST`. Word-form
+      dates ("the eighteenth of April twenty twenty six") and
+      numbers ("four thousand three hundred forty four lines") are
+      prohibited in both `.txt` and `.md`.
+   d. Pointers added to
+      `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+
+4. **Full-corpus note audit.** Two sub-agents dispatched sequentially
+   under `sq`: one over `experimental_notes/`, one over
+   `~/Desktop/CDSFL_tts/`. `experimental_notes/` — 119 files scanned,
+   20 edited, 1 JSON skipped, 98 clean. `~/Desktop/CDSFL_tts/` — 307
+   files scanned, approximately 24 edited. Edits strip accountability
+   preambles, remove notes-about-notes sections, and convert
+   word-form dates and numbers to numerical form.
+
+   Files edited in `experimental_notes/`:
+   `Architecture_Update_2026-04-19.md`,
+   `CDSFL_Metacognition_Microscope_2026-04-07.md`,
+   `Divergence_Round2_Implementation_2026-04-16.md`,
+   `Error_Correction_Granularity_2026-04-15.md`,
+   `Exp36_Live_Analysis_CDSFL_as_Bench_2026-04-07.md`,
+   `Exp36_Session_Findings_2026-04-07.md`,
+   `Exp40_Implementation_Progress_2026-04-17.md`,
+   `Exp40_Pre_Launch_Panel_Audit_2026-04-20.md` (accountability
+   appendix removed),
+   `Exp40_Readiness_and_Novelty_Review_2026-04-17.md`,
+   `Experimental_Results_Update_2026-04-19.md`,
+   `Expert_Encodings_Tradable_Assets_2026-04-17.md`,
+   `Extended_Rationale_Update_2026-04-19.md`,
+   `Feedback_Channel_Phase10_2026-04-15.md`,
+   `Founders_Notes_Revisions_2026-04-20.md`,
+   `Founders_Notes_Update_2026-04-19.md`,
+   `Invention_Engine_Divergence_Directive_2026-04-15.md`,
+   `Paper_Update_2026-04-19.md`,
+   `README_Promotion_2026-04-20.md`,
+   `Regulatory_Compliance_Framework_2026-04-20.md`,
+   `Unified_Equation_2026-04-08.md`.
+
+5. **Flagged for founder judgment, not auto-edited:**
+
+   a. `experimental_notes/Notes_Documentation_Refresh_2026-04-16.md`
+      — a meta-note about note protocol. Ambiguous under the new rule;
+      retained pending decision.
+   b. Older raw-ledger `.txt` files in `~/Desktop/CDSFL_tts/` from
+      March 2026 — em-dash and markdown residue outside the scope of
+      today's audit.
+   c. `~/Desktop/CDSFL_tts/2026-03-10_Signal_Protocol_Research.txt`
+      and `~/Desktop/CDSFL_tts/2026-03-11_OB_White_Paper.txt` — heavy
+      markdown, predate the TTS format rule.
+   d. Obsolete duplicates: `~/Desktop/CDSFL_tts/2026-03-13_Directives_old.txt`,
+      superseded Popper drafts (subsumed by
+      `~/Desktop/CDSFL_tts/CDSFL_Popper_Maths_Final_2026-03-27.txt`),
+      superseded Framework drafts (subsumed by `_Complete_` versions).
+      Decision required: delete or retain.
+
+**What this leaves:**
+
+- Working tree modifications (from this session plus the prior
+  20 April session awaiting commit): 20 edited experimental notes
+  plus `resources/ONBOARDING.md` and `resources/RECOVERY.md`
+  (updated this save-state). Earlier untracked items from the
+  20 April batch sessions — `README.md` full replacement,
+  `PAPER.md` Part V extension, `docs/EXTENDED_RATIONALE.md` new
+  section, `docs/FOUNDERS_NOTES.md` revisions,
+  `docs/COMPLIANCE_FRAMEWORK.md` new file — remain as described
+  in the retained 20 April (morning) session text below.
+- New untracked files from this session:
+  `bench/confer_exp40_reaudit_round1.py`,
+  `bench/logs/confer_exp40_reaudit_round1/`,
+  `experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md`,
+  `experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md`.
+- No code changes under `bench/`. 1250/1250 tests still passing
+  from the prior sv baseline.
+- This save-state produces the next commit.
+
+**Open items, not sv-blocking:**
+
+1. Exp 40 HIL decisions (a–d above) — founder call required before
+   launch.
+2. Flagged ambiguous files and obsolete duplicates — founder decision
+   on edit, retain, or delete.
+3. Return to the outstanding Experiment 40 confer round with the
+   other models — the original starting point before the April doc
+   sweeps were flagged. Still carried forward.
+4. Regenerate `docs/CDSFL_Topology.svg` with expanded B-Cell types
+   (K/L/M physics/chemistry/engineering — carried forward).
+
+**Prior session text retained for continuity:**
+
+**SESSION 20 APRIL (morning) — README PROMOTION + REGULATORY-COMPLIANCE CONSOLIDATION (5-BATCH PASS):**
 
 Branch: `exp39-experimental`. Continues the 18–19 April documentation
 arc into four concrete deliveries this session: README v3 promoted to

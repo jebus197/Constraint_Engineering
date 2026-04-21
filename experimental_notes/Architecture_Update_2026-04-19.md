@@ -1,16 +1,6 @@
 # Architecture Update — 19 April 2026
 
-This note describes the refresh of two canonical project documents:
-`docs/ARCHITECTURE.md` and
-`bench/directives/universal/cdsfl_topology_formal.md`. Both had drifted
-from the current system state, predating Experiment 40 Stage 3 closure,
-the Stage 6 literature-calibrated extension of the mathematical model,
-the §17 feedback channel, the §18 divergence directive, the
-manifest-driven B-Cell Complex, and the promotion of model agnosticism
-to full substrate agnosticism (extending to human teams and non-human
-biological intelligences). The refresh brings both documents into line
-with the current record and with the 1250 tests passing at commit
-`6580737`.
+Two canonical project documents were refreshed: `docs/ARCHITECTURE.md` and `bench/directives/universal/cdsfl_topology_formal.md`. Both had drifted from the current system state, predating Experiment 40 Stage 3 closure, the Stage 6 literature-calibrated extension of the mathematical model, the §17 feedback channel, the §18 divergence directive, the manifest-driven B-Cell Complex, and the promotion of model agnosticism to full substrate agnosticism (extending to human teams and non-human biological intelligences). Both documents now describe the state at commit `6580737`, 1250 tests passing.
 
 ## ARCHITECTURE.md refresh
 
@@ -190,16 +180,4 @@ production code that realises it.
 
 ## Summary
 
-Both documents now describe the system as it exists at commit
-`6580737`, 1250 tests passing, Experiment 40 Stage 3 substantially
-closed, with the residual items gated or deferred to Experiment 54.
-The dual Popperian arms framing, the unified recursive state equation,
-the Stage 6 literature-calibrated extension, the §17 feedback channel,
-the §18 divergence directive with its `eta_int_modulator` table, the
-manifest-driven B-Cell Complex, and the extended substrate agnosticism
-are all present in the canonical architecture document and the formal
-topology specification. The refresh was additive where possible,
-preserving the formal-specification style of the topology document and
-the narrative style of the architecture document. No claims were
-introduced that are not already supported by production code or by
-prior audited mathematical derivations.
+At commit `6580737`, 1250 tests passing, with Experiment 40 Stage 3 substantially closed and residual items gated or deferred to Experiment 54, the canonical architecture document and the formal topology specification both now carry: the dual Popperian arms framing; the unified recursive state equation; the Stage 6 literature-calibrated extension; the §17 feedback channel; the §18 divergence directive with its `eta_int_modulator` table; the manifest-driven B-Cell Complex; and the extended substrate agnosticism. Every added claim traces to production code or to a prior audited mathematical derivation.

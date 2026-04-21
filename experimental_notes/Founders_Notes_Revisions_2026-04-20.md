@@ -1,8 +1,8 @@
 # Founders Notes Revisions — 20 April 2026
 
-## What This Document Covers
+## Scope
 
-On 20 April 2026 the Constraint-Driven Synthesis and Falsification (CDSFL) project made a further set of revisions to `docs/FOUNDERS_NOTES.md`, the long-form reflective record in which design decisions, their motivations, and the reasoning that led to them are preserved in the founder's own voice. This session's revisions did not add new material at the end of the document. They corrected four existing entries that had drifted in small but material ways from what the canonical record shows actually happened during April 2026, and they removed two entries that belonged on other project surfaces.
+On 20 April 2026 a further set of revisions was made to `docs/FOUNDERS_NOTES.md`, the long-form reflective record in which design decisions, their motivations, and the reasoning that led to them are preserved in the founder's own voice. The 20 April revisions did not add new material at the end of the document. They corrected four existing entries that had drifted in small but material ways from what the canonical record shows actually happened during April 2026, and they removed two entries that belonged on other project surfaces.
 
 ---
 

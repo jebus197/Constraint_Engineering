@@ -72,7 +72,6 @@ A third README draft was written on 18 April, rebuilt on the foundation of an Ap
 | Period covered | 5 April 2026 through 19 April 2026 |
 | Insertion point | after "Complementarity, Not Competition", before "Closing Reflection" |
 | Voice | first-person reflective, consistent with existing document |
-| Model-credit framing | avoided per public-attribution directive |
 | Regression impact | none — documentation only |
 
 ## References

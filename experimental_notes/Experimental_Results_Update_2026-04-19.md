@@ -1,10 +1,6 @@
 # Experimental Results Update — 19 April 2026
 
-This note documents the April 2026 additions to the canonical
-experimental results document `docs/EXPERIMENTAL_RESULTS.md`. The
-document previously ended at the HIL Comparison Experiments
-(C1, C3, C4, C5) dated 4 April 2026. Eleven new entries have been
-appended, covering the period from 5 April 2026 through 19 April 2026.
+`docs/EXPERIMENTAL_RESULTS.md` previously ended at the HIL Comparison Experiments (C1, C3, C4, C5) dated 4 April 2026. Eleven new entries have been appended, covering the period from 5 April 2026 through 19 April 2026.
 
 ## Summary of Appended Entries
 
@@ -180,10 +176,4 @@ substantive batch produced a TTS `.txt` mirror at
 
 ## Closing Note
 
-The eleven new entries bring the experimental results document into
-alignment with the April 2026 state of the project. The structure and
-style of the existing document were preserved. Each entry includes
-dates, models, artefacts, and, where applicable, raw data and analysis
-references. No existing entries were removed or modified. The Planned
-Experiments section is unchanged pending the outcome of the 2×2
-factorial in Experiments 41–54.
+The eleven new entries bring `EXPERIMENTAL_RESULTS.md` into alignment with the April 2026 state of the project. Each entry includes dates, models, artefacts, and, where applicable, raw data and analysis references. Prior entries remain unchanged. The Planned Experiments section is unchanged pending the outcome of the 2×2 factorial in Experiments 41–54.

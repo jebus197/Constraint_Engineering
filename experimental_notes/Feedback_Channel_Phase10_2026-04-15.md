@@ -20,7 +20,7 @@ The CDSFL (Constraint-Driven Synthesis and Falsification) schema performs rich p
 
 All of that machinery produced detailed per-finding judgment, round after round, and wrote it to the logs. **Models never saw any of it.** The same refuted claim could be resubmitted unchanged in the next round; a finding with zero admissibility gates passing could carry forward indefinitely; a finding whose self-reported R_k disagreed by 0.6 with the aggregate would simply persist. The schema knew, the schema logged, the models continued regardless.
 
-This is the gap this session was dedicated to closing.
+Closing that gap is the purpose of the Phase 10 implementation.
 
 ---
 
