@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 21 April 2026 01:14 BST
+Last updated: 21 April 2026 11:56 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -84,6 +84,98 @@ context" regain had compressed five confer-round combined logs into a
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (20–21 April 2026)
+
+**SESSION 21 APRIL (01:35–11:31 BST) — EXP 40–54 CONSOLIDATED PLAN + PANEL REVIEW ROUND 1 + FOLD-INS:**
+
+Branch: `exp39-experimental`. No runtime code changes this session; 1250 tests
+still passing from the prior sv baseline. Documentary and protocol-level work,
+producing a dispatch surface for the final review round of the 14-experiment
+arc plus Exp 54 integration.
+
+1. **Consolidated execution plan produced.** `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`
+   folds the 20 April pre-launch audit decisions (F1 SymPy sandbox restoration,
+   F2 wrapper activation, F3 debug q-composition assertion, F4 closure-state
+   stratification) into the 17 April canonical execution plan, with per-
+   experiment lessons-forward mapping and explicit carry-forward of risks.
+   Plain-English companion at
+   `~/Desktop/CDSFL_tts/Exp40_to_54_Consolidated_Plan_2026-04-21.txt`.
+
+2. **Panel review round 1 dispatched and closed.** Five-model panel (Gemini
+   3.1 Pro, Codex GPT-5.4, CC2 Opus 4.6, ChatGPT GPT-5.4, DeepSeek R1-0528)
+   dispatched via `bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py`.
+   Star topology with CC1 as hub. Full CDSFL + FFAFP system prompt. Framing
+   anchored on `bench/exp40_configs/40_gate.json` pass-condition plus Stage 6
+   orthogonality. Dispatch `2026-04-21T10:14:09Z`, all five responses returned
+   within 227 seconds wall time. Raw responses at
+   `bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/`.
+   Technical outcome at
+   `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md`.
+   Plain-English companion at
+   `~/Desktop/CDSFL_tts/Exp40_to_54_Plan_Review_Panel_Round1_Plain_English_2026-04-21.txt`.
+   No second round required.
+
+3. **Five material fold-ins applied to the consolidated plan:**
+
+   a. Gate C preflight at Exp 40 launch — live-path check of the §17
+      admissibility parser on `bench/dm/_feedback.py` before first live
+      dispatch.
+   b. Gate C threshold-freeze at Exp 54 launch — admissibility, severity,
+      and tier thresholds frozen and applied identically across factorial
+      cells A/B/C/D, preventing calibration drift contamination of main-
+      effect attribution.
+   c. Three-layer Cell A integrity strategy for Exp 54 — primary archive
+      integrity check, Gemini's fresh-run fallback, DeepSeek's sensitivity-
+      analysis fallback.
+   d. Shadow-promotion-now bounding condition — each promoted component must
+      pass a non-distortion check against the 40_gate.json pass_condition
+      before live activation. F2 satisfies this via its 1e-9 regression gate;
+      K/L/M shadow cells need equivalent evidence before post-Exp-53 live
+      promotion.
+   e. Target-article commitment for Exp 47/52/53 — synthesise minimal native
+      modules (15–25K chars, purpose-built); Exp 51 conditional on
+      `bench/cdsfl_registry/composer.py` physics-content density verification,
+      falls back to synthesis if insufficient.
+
+4. **Items documented-only (not folded in):** RQ1 speculative DeepSeek
+   additions (§17 epistemic-flag handling, §18 cosmetic-rewrite suppression)
+   — no evidence of current misclassification. RQ5 three incompatible
+   reordering proposals from Gemini/ChatGPT/DeepSeek — retained as post-
+   Exp-49 watch items, not pre-launch gate changes.
+
+5. **Memory updates:** `feedback_shadow_promotion_now.md` updated with the
+   RQ4 bounding condition. Three new memory files registered earlier in
+   this continuation window: `feedback_communication_density.md`,
+   `feedback_no_session_deferral.md`, `feedback_complete_task_lists.md`.
+   `MEMORY.md` index updated.
+
+**What this leaves:**
+
+- Working tree modifications for commit: `resources/ONBOARDING.md` and
+  `resources/RECOVERY.md` (updated this save-state);
+  `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` (new);
+  `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md`
+  (new); `bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py`
+  (new); `bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/`
+  (new).
+- No code changes under `bench/` core runtime. 1250/1250 tests still
+  passing from the prior sv baseline.
+- This save-state produces the next commit.
+
+**Open items, not sv-blocking:**
+
+1. Exp 40 HIL decisions carried forward from 20 April list — schema
+   decomposition scope, Gemini dissent on wrapper activation, SymPy sandbox
+   shadow-promotion ruling, `nu_max` binding threshold — plus Exp 40 launch
+   approval now that plan review round 1 is closed.
+2. Target-article construction for Exp 47/52/53 (and conditional for Exp 51):
+   Exp 40 post-mortem action items, pre-Exp-47 completion. Not Exp 40 launch
+   blockers.
+3. Gate C preflight procedure (live-path check of §17 admissibility parser):
+   implementation required before Exp 40 launch.
+4. Gate C threshold-freeze procedure: implementation required before Exp 54
+   launch (not Exp 40 launch).
+
+---
 
 **SESSION 20 APRIL (evening) → 21 APRIL (01:08 BST) — EXP 40 PRE-LAUNCH PANEL AUDIT + NOTE-DISCIPLINE RULES + FULL-CORPUS NOTE AUDIT:**
 

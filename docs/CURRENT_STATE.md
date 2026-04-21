@@ -1,33 +1,24 @@
 # CDSFL Current State
 
-Generated: 21 April 2026 01:14 BST (2026-04-21T01:14:07+01:00)
+Generated: 21 April 2026 11:56 BST (2026-04-21T11:56:26+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `5c81f33` Revert b3d9420 — Exp 40 pre-launch panel review carried the wrong framing
-- **Committed:** 2026-04-20 12:23:20 +0100
-- **Remote:** ahead by 71
+- **Last commit:** `616ad43` sv: Exp 40 pre-launch panel re-audit + note-discipline rules + full-corpus note audit — four rules locked into memory (no self-reflection, paired technical+plain-English output, inline chat summary, numerical dates); 20 experimental_notes/ files edited to strip self-referential framing and convert word-form dates/numbers; new audit artefacts bench/confer_exp40_reaudit_round1.py + experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md + experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md; resources/ONBOARDING.md and resources/RECOVERY.md updated with today's session entry and four standing rules
+- **Committed:** 2026-04-21 01:14:07 +0100
+- **Remote:** ahead by 72
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/logs/immune_pipeline.log`
-- `M experimental_notes/Architecture_Update_2026-04-19.md`
-- `M experimental_notes/CDSFL_Metacognition_Microscope_2026-04-07.md`
-- `M experimental_notes/Divergence_Round2_Implementation_2026-04-16.md`
-- `M experimental_notes/Error_Correction_Granularity_2026-04-15.md`
-- `M experimental_notes/Exp36_Live_Analysis_CDSFL_as_Bench_2026-04-07.md`
-- `M experimental_notes/Exp36_Session_Findings_2026-04-07.md`
-- `M experimental_notes/Exp40_Implementation_Progress_2026-04-17.md`
-- `M experimental_notes/Exp40_Readiness_and_Novelty_Review_2026-04-17.md`
-- `M experimental_notes/Experimental_Results_Update_2026-04-19.md`
-- `M experimental_notes/Expert_Encodings_Tradable_Assets_2026-04-17.md`
-- `M experimental_notes/Extended_Rationale_Update_2026-04-19.md`
-- `M experimental_notes/Feedback_Channel_Phase10_2026-04-15.md`
-- `M experimental_notes/Founders_Notes_Revisions_2026-04-20.md`
-- `M experimental_notes/Founders_Notes_Update_2026-04-19.md`
+- `M resources/ONBOARDING.md`
+- `M resources/RECOVERY.md`
+- `?? bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py`
+- `?? bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/`
+- `?? experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`
+- `?? experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md`
 
 ---
 
@@ -59,6 +50,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `616ad43 sv: Exp 40 pre-launch panel re-audit + note-discipline rules + full-corpus note audit — four rules locked into memory (no self-reflection, paired technical+plain-English output, inline chat summary, numerical dates); 20 experimental_notes/ files edited to strip self-referential framing and convert word-form dates/numbers; new audit artefacts bench/confer_exp40_reaudit_round1.py + experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md + experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md; resources/ONBOARDING.md and resources/RECOVERY.md updated with today's session entry and four standing rules`
 - `5c81f33 Revert b3d9420 — Exp 40 pre-launch panel review carried the wrong framing`
 - `b3d9420 sv: Exp 40 pre-launch panel review rounds 1-3B convergence — Q3 post-hoc only, Q4 10-field reason-trace schema, Q5 four preservation predicate families with 3 adopted refinements, Q6 star topology; activation-sequence gate now primary blocker for launch`
 - `2c966ca sv: housekeeping part 2 — logs two-subfolder policy + Merkle sealing + examples/resources/ READMEs + CC1 memory mirror`
@@ -68,4 +60,3 @@ Uncommitted files:
 - `145e9e2 sv: README v3 13-point corrections + rg MC command introduction`
 - `7334e49 sv: README v3 draft + novelty-synthesis gap closure + apply-drafted-edits directive`
 - `ef50d4e sv: expert-encoding framing correction + quote/synthesis standing directives + README v2 draft`
-- `7326a04 sv: Exp 40 Stage 3 closure — Phase A + B landed, 1250 tests, residual items gated`

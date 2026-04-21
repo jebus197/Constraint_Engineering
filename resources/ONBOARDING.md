@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 21 April 2026 01:14 BST
+Last updated: 21 April 2026 11:56 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -621,6 +621,79 @@ Four rules the founder has named load-bearing. They apply across every session, 
   Never converged. Terminated by wall clock cap (29,503s / 8h12m).
 <!-- SV:LATEST_EXP_END -->
 
+
+- **EXP 40–54 CONSOLIDATED PLAN + PANEL REVIEW ROUND 1 (21 April 2026, 01:35–11:31 BST):**
+  Branch: `exp39-experimental`. 1250 tests still passing, no runtime code changes
+  landed this session. Documentary and protocol-level work. Target of record:
+  the 14-experiment arc plus Exp 54 integration (`bench/dm/_feedback.py`,
+  `bench/dm/_convergence.py`, `bench/dm/_divergence.py`, `bench/evidence.py`,
+  `bench/dm/_memory.py`, `bench/dm/_shadow_stage6.py`, `bench/immune_agents.py`
+  macrophage subsection, `bench/cdsfl_registry/composer.py`, and
+  `bench/reference_runner_v2.py` as Exp 54 meta-test candidate).
+
+  **Strand 1 — Consolidated plan for Experiments 40 through 54.** Produced
+  `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` folding
+  the 20 April pre-launch audit decisions (F1 SymPy sandbox restoration,
+  F2 wrapper activation at compute_rk call site, F3 debug q-composition
+  assertion, F4 closure-state stratification) into the 17 April canonical
+  execution plan, with per-experiment lessons-forward mapping and explicit
+  carry-forward of risks. Plain-English companion at
+  `~/Desktop/CDSFL_tts/Exp40_to_54_Consolidated_Plan_2026-04-21.txt`.
+
+  **Strand 2 — Scoped panel review round 1.** Five-model panel (Gemini 3.1
+  Pro, Codex GPT-5.4, CC2 Opus 4.6, ChatGPT GPT-5.4, DeepSeek R1-0528)
+  dispatched via `bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py`
+  under star topology with CC1 as hub. Full CDSFL + FFAFP system prompt.
+  Framing anchored on `bench/exp40_configs/40_gate.json` pass-condition plus
+  Stage 6 orthogonality (R_k, nu_k, c_ext as independent reporting
+  dimensions). No model drifted back to the refuted v1-preservation
+  framing. Dispatch 2026-04-21T10:14:09Z, all five responses returned
+  within 227 seconds wall time. Raw responses at
+  `bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/`.
+
+  **Strand 3 — Outcome synthesis and fold-ins.** Technical outcome note
+  at `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md`,
+  plain-English companion at
+  `~/Desktop/CDSFL_tts/Exp40_to_54_Plan_Review_Panel_Round1_Plain_English_2026-04-21.txt`.
+  Five material fold-ins applied to the consolidated plan:
+  (1) Gate C preflight at Exp 40 launch — live-path check of §17
+  admissibility parser on `bench/dm/_feedback.py`;
+  (2) Gate C threshold-freeze at Exp 54 launch — admissibility, severity,
+  and tier thresholds frozen and applied identically across factorial
+  cells A/B/C/D to prevent calibration drift contamination;
+  (3) Three-layer Cell A integrity strategy for Exp 54 — primary archive
+  integrity check, Gemini fresh-run fallback, DeepSeek sensitivity-analysis
+  fallback;
+  (4) Shadow-promotion-now bounding condition — each promoted component
+  must pass a non-distortion check against the 40_gate.json pass_condition
+  before live activation (F2 satisfies this via its 1e-9 regression gate;
+  K/L/M shadow cells need equivalent evidence);
+  (5) Target-article commitment for Exp 47/52/53 — synthesise minimal
+  native modules (15–25K chars, purpose-built); Exp 51 conditional on
+  `composer.py` physics-content density verification, falls back to
+  synthesis if insufficient.
+  Two items documented-only: RQ1 speculative DeepSeek additions (§17
+  epistemic-flag handling, §18 cosmetic-rewrite suppression) not folded
+  without evidence of current misclassification; RQ5 three incompatible
+  reordering proposals retained as post-Exp-49 watch items rather than
+  pre-launch gate changes.
+
+  **Memory updates.** `feedback_shadow_promotion_now.md` updated with the
+  RQ4 bounding condition. Three new memory files from the continuation
+  window: `feedback_communication_density.md` (match density to decision
+  surface), `feedback_no_session_deferral.md` (schedule against concrete
+  triggers, not "next session"), `feedback_complete_task_lists.md` (once
+  approved with `y`, every item runs to completion).
+
+  **HIL decisions outstanding at sv entry** (carried into RECOVERY.md):
+  carry-forward from 20 April list — schema decomposition scope, Gemini
+  dissent on wrapper activation, SymPy sandbox shadow-promotion ruling,
+  `nu_max` binding threshold — plus Exp 40 launch approval now that plan
+  review round 1 is closed.
+
+  **No new test runs this session.** No schema math changes, no directive
+  edits under `bench/directives/`, no runner edits. The work is protocol-
+  level and documentary.
 
 - **EXP 40 PRE-LAUNCH PANEL AUDIT + NOTE-DISCIPLINE RULES (20 April 2026, 19:00 BST → 21 April 01:08 BST):**
   Branch: `exp39-experimental`. 1250 tests still passing, no runtime code changes
