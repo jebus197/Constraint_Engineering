@@ -974,7 +974,21 @@ else:
                 'Ge': sympy.Ge, 'Le': sympy.Le, 'And': sympy.And,
                 **{{s: symbols(s) for s in set(re.findall(r'\\b([a-z][a-z0-9_]*)\\b', claim)) if s not in ('e', 'pi', 'oo', 'sqrt', 'cos', 'sin', 'log', 'exp')}}
             }},
-            global_dict={{'__builtins__': {{}}}})
+            # F1 fix (2026-04-21): restore AST-resolution allow-list. Empty global_dict
+            # caused every SymPy verdict to return UNCERTAIN with
+            # "UNVERIFIABLE: name 'Integer' is not defined". Keep __builtins__ empty
+            # (RCE safety per MF-40 blocklist) and add only symbolic classes parse_expr
+            # needs at AST construction time.
+            global_dict={{
+                '__builtins__': {{}},
+                'Integer': sympy.Integer, 'Float': sympy.Float,
+                'Rational': sympy.Rational, 'Symbol': sympy.Symbol,
+                'Add': sympy.Add, 'Mul': sympy.Mul, 'Pow': sympy.Pow,
+                'pi': sympy.pi, 'E': sympy.E, 'oo': sympy.oo,
+                'sqrt': sympy.sqrt, 'Eq': sympy.Eq,
+                'Gt': sympy.Gt, 'Lt': sympy.Lt, 'Ge': sympy.Ge, 'Le': sympy.Le,
+                'log': sympy.log, 'exp': sympy.exp,
+            }})
         result = sympy.simplify(expr)
         if result == True:
             print("VERIFIED_TRUE")
@@ -5387,9 +5401,29 @@ def run_immune_pipeline(
                         tool_usage["b_cell_specialist_shadow"] = len(
                             specialist_verdicts,
                         )
+                        # K/L/M bounding-condition enrichment (2026-04-21):
+                        # Round 2 plan review RQ4 requires a non-distortion
+                        # check vs 40_gate.json pass_condition before
+                        # live-promoting physics/chemistry/engineering.
+                        # Log structured per-verdict detail so audit can
+                        # compare shadow specialist outputs against live
+                        # core-cell verdicts for coupling or duplication.
+                        shadow_detail = [
+                            {
+                                "claim_id": getattr(v, "claim_id", None),
+                                "verdict": getattr(v, "verdict", None),
+                                "severity": getattr(v, "severity", None),
+                                "tool_used": getattr(v, "tool_used", None),
+                                "evidence": (
+                                    (getattr(v, "evidence", "") or "")[:256]
+                                ),
+                            }
+                            for v in specialist_verdicts
+                        ]
                         _shadow_log.info(
-                            "B-Cell specialist (shadow, domain=%s): %d verdicts",
+                            "B-Cell specialist (shadow, domain=%s): %d verdicts; detail=%s",
                             domain or "<none>", len(specialist_verdicts),
+                            json.dumps(shadow_detail),
                         )
                 else:
                     cell_verdicts = result

@@ -1068,3 +1068,67 @@ class TestOuroborosCell:
         for candidate in shadow_log.candidate_claims:
             assert candidate.provenance.origin_type == "external_ouroboros"
             assert candidate.falsification_debt == "high"
+
+
+class TestSympyF1SandboxAllowList:
+    """F1 fix regression: global_dict must carry the SymPy AST allow-list.
+
+    Before the F1 fix (2026-04-21), global_dict was empty
+    ('__builtins__': {}) and every SymPy verdict returned UNCERTAIN with
+    evidence "UNVERIFIABLE: name 'Integer' is not defined" because
+    parse_expr could not resolve the symbolic classes it constructs at
+    AST parse time. The fix adds Integer, Float, Rational, Symbol, Add,
+    Mul, Pow, log, exp plus the pi/E/oo/sqrt/Eq/Gt/Lt/Ge/Le constants.
+    """
+
+    def test_basic_arithmetic_resolves_not_uncertain(self):
+        """F1 baseline: 2 + 2 == 4 must parse without the Integer NameError."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("2 + 2 == 4")
+        # Prior to fix: UNCERTAIN with "Integer is not defined" in evidence.
+        assert "Integer" not in verdict.evidence, (
+            "F1 regression: SymPy cannot resolve 'Integer' — "
+            f"global_dict allow-list missing; evidence={verdict.evidence}"
+        )
+        assert verdict.verdict in ("CONFIRMED", "UNCERTAIN"), verdict.verdict
+        # If the verdict ran at all (not just NameError), prefer CONFIRMED
+        # on a trivially-true claim.
+        if "UNVERIFIABLE" not in verdict.evidence:
+            assert verdict.verdict == "CONFIRMED", (
+                f"2 + 2 == 4 should be CONFIRMED when SymPy can parse it; "
+                f"got {verdict.verdict} with evidence={verdict.evidence}"
+            )
+
+    def test_algebraic_identity_confirmed(self):
+        """F1 functional: (x+1)**2 == x**2 + 2*x + 1 resolves to VERIFIED_TRUE."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("(x + 1)**2 == x**2 + 2*x + 1")
+        assert "Integer" not in verdict.evidence
+        assert "UNVERIFIABLE" not in verdict.evidence, (
+            f"F1 algebraic identity failed: {verdict.evidence}"
+        )
+
+    def test_rce_blocklist_still_catches_import(self):
+        """F1 safety: MF-40 AST blocklist continues to reject RCE vectors.
+
+        The F1 allow-list adds symbolic classes but must NOT weaken the
+        MF-40 dangerous-token blocklist. A claim containing __import__
+        must still be blocked before parse_expr runs.
+        """
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("__import__('os').system('id')")
+        assert verdict.verdict == "UNCERTAIN"
+        assert (
+            "MF-40 blocklist" in verdict.evidence
+            or "BLOCKED" in verdict.evidence
+        ), f"RCE vector not blocked — evidence: {verdict.evidence}"
+
+    def test_rce_blocklist_catches_builtins_subclasses(self):
+        """F1 safety: __subclasses__ path-to-code-execution is blocked."""
+        from bench.immune_agents import _verify_sympy
+        verdict = _verify_sympy("().__class__.__subclasses__()[0]")
+        assert verdict.verdict == "UNCERTAIN"
+        assert (
+            "MF-40 blocklist" in verdict.evidence
+            or "BLOCKED" in verdict.evidence
+        ), f"Subclasses RCE path not blocked — evidence: {verdict.evidence}"

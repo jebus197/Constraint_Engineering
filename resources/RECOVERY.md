@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 21 April 2026 11:56 BST
+Last updated: 21 April 2026 18:56 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -84,6 +84,52 @@ context" regain had compressed five confer-round combined logs into a
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (20–21 April 2026)
+
+**SESSION 2026-04-21 (15:40–17:50 BST) — EXP 40 PRE-LAUNCH CODE CHANGES + ROUND 2 PLAN REVIEW CLOSE:**
+
+Branch: `exp39-experimental`. Non-network pytest subset 1121/1121 passing (19m02s); focused regression subset 249/249 passing (9m17s). Six network-dependent test files excluded because they depend on live API state and do not exercise the code paths touched this session.
+
+1. **Three fix items from the 2026-04-20 pre-launch audit folded into runtime code:**
+
+   a. **F1 — SymPy sandbox allow-list at `bench/immune_agents.py:977`.** Pre-existing bug `global_dict={'__builtins__': {}}` caused every SymPy verdict to silently return UNCERTAIN. Fix expands allow-list (Integer, Float, Rational, Symbol, Add, Mul, Pow, pi, E, oo, sqrt, Eq, Gt, Lt, Ge, Le, log, exp) while keeping `__builtins__` empty so RCE blocklist holds. Four regression tests added under `TestSympyF1SandboxAllowList` in `bench/tests/test_immune_agents.py`; 4/4 pass in 7.70s.
+
+   b. **F2 — 1E.10 wrapper activation in identity mode at `bench/reference_runner_v2.py:3510`.** Swapped bare `compute_rk(R_old, q, sk, nu_b, nu_f)` for `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)`. At identity parameters the wrapper reduces mathematically to bare `compute_rk(q)` — 1620-case pre-verification (2026-04-20 re-audit) within 1e-9, plus 567-case pytest-level grid sweep under `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped `false → true`.
+
+   c. **F3 — Debug channel assertion at `bench/reference_runner_v2.py:3510`.** Gated by `DEBUG_CHANNEL_CHECK` environment variable; independent `compute_rk` invocation plus assertion that wrapped `R_new` matches bare within 1e-9. Production default: no-op. Purpose: catch future refactors that shift identity-mode parameters.
+
+2. **K/L/M shadow-audit logging enriched at `bench/immune_agents.py:5400-5428`** — step 1 of the Round 2 RQ4 bounding condition. Shadow log statement for physics (K), chemistry (L), engineering (M) specialists previously recorded only verdict count; now records per-verdict structured detail (`claim_id`, `verdict`, `severity`, `tool_used`, 256-char `evidence` excerpt) serialised to JSON. Measurement of non-distortion against `40_gate.json` pass_condition proceeds across Exp 40–50 rounds before the `LIVE_SPECIALIST_DOMAINS` frozenset flip at `bench/immune_agents.py:334`. Each domain flips independently at its specialist experiment: K at Exp 51, L at Exp 52, M at Exp 53, if non-distortion holds for that domain.
+
+3. **Plan review Round 2 closed.** Dispatched 2026-04-21 15:40 BST; five-model responses 17:32–17:34 BST via `bench/confer_exp40to54_plan_review_round2_2026-04-21.py`. Outcome at `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round2_Outcome_2026-04-21.md`. Per-RQ convergence:
+   - RQ1: 3/5 Codex-preflight YES (Gate C step, not new F-item); DeepSeek's flag-handling and cosmetic-rewrite suppression withdrawn.
+   - RQ2: 5/5 YES (pre-Exp-54 threshold-freeze required; CC2 and DeepSeek yielded on detection-vs-prevention distinction).
+   - RQ3: 3-NO / 2 YES-conditional narrow split. Both sides agree runner-version confound is real; disagreement is operational (archive-first vs fresh-run-unconditional). Founder decides at Exp 54 entry; 3-layer Cell A strategy covers both paths.
+   - RQ4: 5/5 CONDITIONALLY SAFE with non-distortion check against pass_condition.
+   - RQ5: 5/5 NO reorder; retain current ordering (three Round 1 YES proposals were mutually incompatible).
+   - RQ6a: 5/5 NO native for Exp 51 physics; DeepSeek withdrew composer.py claim.
+   - RQ6b: 5/5 synthesise minimal native modules for Exp 47/51/52/53; Codex withdrew adapter proposal on orthogonality argument.
+
+   **CC2 note:** Opus 4.6 via CLI piped mode timed out 3× at 300s each in the post-compaction repeat dispatch (162751Z tag); the Round 2 outcome recorded above is from the earlier successful dispatch (163249Z tag) where all 5 models returned responses.
+
+4. **Canonical Source-of-Truth plan updated** at `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and byte-identical in-repo companion at `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`. Sections: standing constraints S1–S13, 15-experiment arc rows, fold-in consolidation across all review rounds, 17-row shadow element status, 3 residual founder-decision items, Round 2 outcome, appendices A/B/C.
+
+5. **Paired output artefacts.** Markdown at `experimental_notes/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.md`; plain-English TTS companion at `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.txt`; inline chat summary delivered in session.
+
+6. **Memory updates landed pre-compaction:** CC1-synthesis clause in `feedback_compelled_convergence.md`; K/L/M textbook-case clause in `feedback_shadow_promotion_now.md`; pointers added to `MEMORY.md` for `feedback_runner_v1_v2.md` and `feedback_bcell_not_tool.md`.
+
+**What this leaves:**
+
+- Working tree modifications for commit: `bench/immune_agents.py` (F1 + K/L/M enrichment), `bench/reference_runner_v2.py` (F2 + F3), `bench/exp40_configs/40_gate.json` (F2 flag flip), `bench/tests/test_channel_boundary.py` (grid sweep), `bench/tests/test_immune_agents.py` (F1 regression class), `bench/confer_exp40to54_plan_review_round2_2026-04-21.py` (new), `bench/logs/confer_exp40to54_plan_review_round2_2026-04-21/*` (new), `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round2_Outcome_2026-04-21.md` (new), `experimental_notes/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.md` (new), `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` (updated), `resources/ONBOARDING.md` + `resources/RECOVERY.md` (updated this save-state), Desktop canonical plan at `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and TTS at `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.txt` (outside repo).
+- This save-state produces the next commit.
+
+**Open items, not sv-blocking:**
+
+1. Exp 40 launch approval now that F1/F2/F3 have landed and Round 2 is closed. The three residual founder-decision items listed in §5 of the consolidated plan (SMT, 1E.10 wrapper, K/L/M) resolve to: SMT activated; 1E.10 activated in identity mode; K/L/M held until non-distortion measurement completes.
+2. RQ3 residual at Exp 54 entry: archive-first-with-fallback vs fresh-run-unconditional for Cell A. Founder decides.
+3. Target-article construction for Exp 47/51/52/53 — synthesise minimal native modules; pre-Exp-47 completion. Not Exp 40 launch blockers.
+4. Gate C preflight procedure (live-path check of §17 admissibility parser) — implementation required before Exp 40 first live dispatch.
+5. Gate C threshold-freeze procedure — implementation required before Exp 54 launch (not Exp 40 launch).
+
+---
 
 **SESSION 21 APRIL (01:35–11:31 BST) — EXP 40–54 CONSOLIDATED PLAN + PANEL REVIEW ROUND 1 + FOLD-INS:**
 

@@ -144,6 +144,41 @@ class TestBoundaryConditions:
             assert 0.0 <= rk <= 1.0
 
 
+class TestWrapperIdentityModeGridSweep:
+    """F2 shadow-promotion identity guarantee (2026-04-21).
+
+    At m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q the wrapper
+    reduces mathematically to bare compute_rk(q). This test documents
+    the identity-mode invariant the Exp 40 shipping config relies on
+    (reference_runner_v2.py:3510) by sweeping a dense grid and
+    comparing both forms within 1e-9.
+    """
+
+    def test_grid_identity_mode(self):
+        eta_ints = [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1.0]
+        R_olds = [0.05, 0.15, 0.3, 0.45, 0.5, 0.6, 0.75, 0.85, 0.95]
+        sks = [0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9]
+        mismatches = []
+        count = 0
+        for q in eta_ints:
+            for R_old in R_olds:
+                for sk in sks:
+                    count += 1
+                    direct = compute_rk(R_old=R_old, q=q, sk=sk)
+                    wrapped = compute_rk_with_eta_channel(
+                        R_old=R_old, sk=sk,
+                        eta_int=q, m_div=1.0,
+                        c_ext=0.0, nu_k=0.0, d=1.0, p=1.0,
+                    )
+                    if not math.isclose(direct, wrapped, abs_tol=1e-9):
+                        mismatches.append((q, R_old, sk, direct, wrapped))
+        assert not mismatches, (
+            f"F2 identity violated in {len(mismatches)}/{count} cases: "
+            f"{mismatches[:5]}"
+        )
+        assert count >= 500, f"Grid too sparse: only {count} cases"
+
+
 class TestForbiddenShortcutDetection:
     """Demonstrates the class of errors the channel check prevents."""
 

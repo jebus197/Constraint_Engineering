@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 21 April 2026 11:56 BST
+Last updated: 21 April 2026 18:56 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -37,6 +37,27 @@ Four rules the founder has named load-bearing. They apply across every session, 
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 PRE-LAUNCH CODE CHANGES + ROUND 2 PLAN REVIEW CLOSE (2026-04-21, 15:40–17:50 BST):**
+  Branch: `exp39-experimental`. Non-network pytest subset 1121/1121 passing (19m02s); focused regression subset 249/249 passing (9m17s). Six network-dependent test files excluded because they depend on live API state; they do not exercise the code paths touched this session.
+
+  **Scope.** Close three fix items from the 2026-04-20 pre-launch audit (F1 SymPy sandbox, F2 1E.10 wrapper activation, F3 debug channel assertion); enrich K/L/M shadow-audit logging as step one of the Round 2 RQ4 bounding condition; close Round 2 plan review; update canonical Source-of-Truth plan at `~/Desktop/CDSFL_Consolidated_Plan_2026-04-21.md` and the in-repo companion at `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`.
+
+  **F1 — SymPy sandbox allow-list.** `bench/immune_agents.py:977`. Pre-existing bug: `global_dict={'__builtins__': {}}` caused every SymPy verdict to return UNCERTAIN. Fix expands allow-list (Integer, Float, Rational, Symbol, Add, Mul, Pow, pi, E, oo, sqrt, Eq, Gt, Lt, Ge, Le, log, exp) while keeping `__builtins__` empty for RCE blocklist preservation. Four regression tests added under `TestSympyF1SandboxAllowList` — 4/4 passed in 7.70s.
+
+  **F2 — 1E.10 wrapper activation (identity mode).** `bench/reference_runner_v2.py:3510` now calls `compute_rk_with_eta_channel(R_old, sk, eta_int=q, m_div=1.0, c_ext=0.0, nu_k=0.0, d=1.0, p=1.0, nu_b, nu_f)` instead of bare `compute_rk`. At identity parameters the wrapper reduces mathematically to the bare form; verified across 1620 parameter combinations within 1e-9 in the 2026-04-20 re-audit, plus 567 triples via new `TestWrapperIdentityModeGridSweep` in `bench/tests/test_channel_boundary.py`. Config flag `eta_int_modulator_wired_into_compute_rk` in `bench/exp40_configs/40_gate.json` flipped from `false` to `true`.
+
+  **F3 — Debug channel assertion.** `bench/reference_runner_v2.py:3510`. Gated by `DEBUG_CHANNEL_CHECK` environment variable. When set, computes the bare `compute_rk` independently and asserts the wrapped result matches within 1e-9. Production default: no-op.
+
+  **K/L/M shadow-audit enrichment.** `bench/immune_agents.py:5400-5428`. Shadow-specialist log statement previously recorded only verdict count; now records per-verdict structured detail (claim_id, verdict, severity, tool_used, 256-char evidence excerpt) serialised to JSON. This is step 1 of the Round 2 RQ4 bounding condition — measurement of non-distortion vs `40_gate.json` pass_condition proceeds across Exp 40–50 rounds before the `LIVE_SPECIALIST_DOMAINS` frozenset flip at `bench/immune_agents.py:334`. Each domain flips independently at its specialist experiment (K at Exp 51, L at Exp 52, M at Exp 53) if non-distortion holds.
+
+  **Plan review Round 2 close.** Dispatched 2026-04-21 15:40 BST, responses received 17:32–17:34 BST. Outcome file: `experimental_notes/Exp40_to_54_Plan_Review_Panel_Round2_Outcome_2026-04-21.md`. Per-RQ convergence: RQ1 3/5 Codex-preflight YES (Gate C step, not new F-item); RQ2 5/5 YES (pre-Exp-54 threshold-freeze required); RQ3 3-NO / 2 YES-conditional narrow split (founder decides at Exp 54 entry; 3-layer Cell A strategy covers both paths); RQ4 5/5 CONDITIONALLY SAFE with non-distortion check; RQ5 5/5 NO reorder; RQ6a 5/5 NO native for Exp 51 physics; RQ6b 5/5 synthesise minimal native modules for Exp 47/51/52/53. CC2 (Opus 4.6 via CLI) timed out 3× at 300s each in the post-compaction repeat dispatch; outcome above is from the earlier successful dispatch where all five models returned responses.
+
+  **Canonical plan state.** Seven sections maintained in two byte-identical locations (Desktop master + in-repo companion): standing constraints S1–S13, 15-experiment arc per-experiment rows, fold-in consolidation across all review rounds, shadow element status (17 rows), residual founder-decision items (3), Round 2 outcome, appendix A/B/C.
+
+  **Residual founder decisions.** (1) RQ3 Cell A strategy at Exp 54 entry (archive-first-with-fallback vs fresh-run-unconditional). (2) Exp 40 launch approval now that F1/F2/F3 landed and Round 2 is closed. (3) Optional K/L/M frozenset flip held until non-distortion measurement completes.
+
+  **Experimental note paired output (all three artefacts):** `experimental_notes/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.md`, `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Code_Changes_Round2_Close_2026-04-21.txt`, and the inline chat summary.
+
 - **EXP 40 STAGE 3 CLOSURE — PHASE A + PHASE B (17 April 2026, 08:00–14:30 BST):**
   Branch: `exp39-experimental`. HEAD `6580737` (docs sync) over `bdfc93a`
   (Phase B) over `8b8682d` (Phase A), 3 commits ahead of origin. Full

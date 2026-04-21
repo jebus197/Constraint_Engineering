@@ -44,8 +44,8 @@
         "section_17_feedback_channel": true,
         "section_18_divergence_directive": true,
         "divergence_round2_extensions": ["contrast_statement", "sibling_check", "near_copy_0.98"],
-        "eta_int_modulator_wired_into_compute_rk": false,
-        "_note": "eta_int_modulator wiring into compute_rk is deferred to Exp 54 integration per Exp 40 plan."
+        "eta_int_modulator_wired_into_compute_rk": true,
+        "_note": "F2 (2026-04-21): eta_int_modulator wiring pulled forward from Exp 54 to Exp 40 under shadow-promotion-now policy. Wrapper runs in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q) at bench/reference_runner_v2.py:3510; mathematically equivalent to the prior bare compute_rk(q) path but exercises the wrapper's channel validation. 1620-case identity verified in re-audit 2026-04-20."
     },
 
     "_specialist_cells": {

@@ -3507,10 +3507,31 @@ def _evaluate_sk_for_findings(
             entry["sk_result"]["passes_threshold"] = passes
             if passes:
                 # Close the R_k loop: compute updated risk
-                R_new = compute_rk(
-                    R_old=R_old, q=q, sk=sk_result.sk,
+                # F2 (2026-04-21): route through compute_rk_with_eta_channel
+                # in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1,
+                # eta_int=q) so q flows through the channel validator. At
+                # identity, eta_combined = 1.0 * q * (1 - 0*(1-0)) = q,
+                # and q_out = q * 1 * 1 = q — mathematically equivalent
+                # to the bare compute_rk(q) path. Verified as identity
+                # across 1620 parameter combinations in the 20 April
+                # pre-launch re-audit. Ships under
+                # `eta_int_modulator_wired_into_compute_rk: true` in
+                # bench/exp40_configs/40_gate.json.
+                R_new = compute_rk_with_eta_channel(
+                    R_old=R_old, sk=sk_result.sk,
+                    eta_int=q, m_div=1.0,
+                    c_ext=0.0, nu_k=0.0,
+                    d=1.0, p=1.0,
                     nu_b=nu_b, nu_f=nu_f,
                 )
+                if os.environ.get("DEBUG_CHANNEL_CHECK"):
+                    _R_bare = compute_rk(R_old=R_old, q=q, sk=sk_result.sk,
+                                         nu_b=nu_b, nu_f=nu_f)
+                    assert abs(R_new - _R_bare) < 1e-9, (
+                        f"F2 identity broken at cid={cid}: wrapper "
+                        f"R_new={R_new} != bare R_bare={_R_bare} "
+                        f"(q={q}, R_old={R_old}, sk={sk_result.sk})"
+                    )
                 entry["sk_result"]["R_old"] = R_old
                 entry["sk_result"]["R_new"] = R_new
                 stats["admissible"] += 1
