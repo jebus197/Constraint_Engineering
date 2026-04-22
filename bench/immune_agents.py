@@ -5408,11 +5408,20 @@ def run_immune_pipeline(
                         # Log structured per-verdict detail so audit can
                         # compare shadow specialist outputs against live
                         # core-cell verdicts for coupling or duplication.
+                        #
+                        # Schema bound to CellVerdict's actual dataclass
+                        # fields (bench/immune_agents.py:231): finding_id,
+                        # verdict, confidence, tool_used, evidence. An
+                        # earlier draft of this enrichment used `claim_id`
+                        # and `severity` which are not CellVerdict fields —
+                        # those always resolved to None and silently lost
+                        # two of the five audit signals (FFAFP fix
+                        # 22 April 2026).
                         shadow_detail = [
                             {
-                                "claim_id": getattr(v, "claim_id", None),
+                                "finding_id": getattr(v, "finding_id", None),
                                 "verdict": getattr(v, "verdict", None),
-                                "severity": getattr(v, "severity", None),
+                                "confidence": getattr(v, "confidence", None),
                                 "tool_used": getattr(v, "tool_used", None),
                                 "evidence": (
                                     (getattr(v, "evidence", "") or "")[:256]

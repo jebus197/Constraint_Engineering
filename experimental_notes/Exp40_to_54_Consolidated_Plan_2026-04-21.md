@@ -59,6 +59,62 @@ Pass criteria default to the `40_gate.json` pattern: `γ ≥ 0.30 OR 3 consecuti
 
 ---
 
+## 2a. Target-article scope briefs (Exp 47, 51, 52, 53)
+
+Round 2 closed the Exp 47/51/52/53 target-article question with 5/5 convergence on **minimal native synthesis** — short modules, 15–25K characters each, written for the purpose, one per experiment. Each module must embed falsifiable claims that exercise the routed specialist tool set for its domain; adapting third-party content was rejected because it would conflate **c_ext** (a search-quality metric that measures how well the loop explores the claim space) with **target-module validity** (whether the article under review is sound in its domain), which are intended to be orthogonal variables in the experiment design.
+
+The 15–25K character budget comfortably accommodates 4–6 distinct claim clusters per module. Each cluster names its falsifiability route (which tools in the B-Cell specialist's `tool_manifest.toml` routing would be expected to fire) and includes at least one intentionally false claim so the specialist has something to reject; a module that produces only confirmations tells the panel nothing about discriminative capacity.
+
+### Exp 47 — Biology (native synthesis, ~15–25K chars)
+
+Biology B-Cell specialist routes per `domains/immune/biology.toml`: mathematical → `sympy + biological_sequence + dimensional_analysis`; logical → `z3`; statistical → `statsmodels + scipy + uncertainty_propagation`.
+
+Claim clusters:
+1. **Sequence-validity claims.** DNA / RNA / protein sequences with assertions about validity, GC content, open reading frames, stop-codon positions. Falsifiability route: `biopython` `Seq` operations + regex cross-check.
+2. **Dimensional claims.** Molar mass, concentration, reaction-rate kinetics with explicit units. Falsifiability route: `pint` dimensional analysis.
+3. **Statistical-distribution claims.** Allele frequency, Hardy–Weinberg equilibrium, χ² goodness-of-fit. Falsifiability route: `scipy.stats` + `statsmodels` cross-check.
+4. **Mathematical claims.** Logistic-growth ODE with specific parameters, population-dynamics fixed points. Falsifiability route: `sympy` + optional `scipy.integrate` numerical cross-check.
+5. **At least one intentionally false claim** (e.g. a sequence labelled "protein" that contains invalid codons) for specialist-rejection test.
+
+### Exp 51 — Physics (native synthesis, ~15–25K chars)
+
+Physics B-Cell specialist routes per `domains/immune/physics.toml`: mathematical → `sympy + dimensional_analysis + astronomical`. Specialist is K, shadow until Exp 51 live-flip.
+
+Claim clusters:
+1. **Kinematics claims.** Projectile motion, orbital period, free-fall timing with specific numerical values. Falsifiability route: `sympy` symbolic + `pint` dimensional + `astropy.constants` cross-check.
+2. **Conservation laws.** Energy conservation in elastic collisions, momentum in two-body scattering, charge invariance under named transformations. Falsifiability route: `sympy` + numerical bounds via `scipy`.
+3. **Dimensional consistency.** F = ma verification, P = W/t, specific relativistic-limit sanity checks. Falsifiability route: `pint` + `astropy.units` cross-check.
+4. **Special-function claims.** Specific integrals, series expansions of physical quantities, asymptotic limits. Falsifiability route: `sympy` + `mpmath` (arbitrary-precision cross-check).
+5. **At least one intentionally false claim** (e.g. a kinetic-energy formula missing the ½ factor) for specialist-rejection test.
+
+### Exp 52 — Chemistry (native synthesis, ~15–25K chars)
+
+Chemistry B-Cell specialist routes per `domains/immune/chemistry.toml`: chemical-structure claims via `chemistry_structure` (RDKit); dimensional via `dimensional_analysis`. Specialist is L, shadow until Exp 52 live-flip.
+
+Claim clusters:
+1. **SMILES validity.** Valid and invalid SMILES strings with assertions about parse success and molecular identity. Falsifiability route: `rdkit.Chem.MolFromSmiles` + regex structural cross-check.
+2. **Stoichiometry.** Balanced-equation claims with coefficient-sum assertions. Falsifiability route: `rdkit` + `collections.Counter` atom-balance cross-check.
+3. **Molecular-weight claims.** Specific molecules with stated molecular weights in g/mol. Falsifiability route: `rdkit` `Descriptors.MolWt` + `pint` dimensional check.
+4. **Functional-group identification.** SMARTS-pattern claims for carbonyl, hydroxyl, amine presence. Falsifiability route: `rdkit` substructure matching.
+5. **At least one intentionally false claim** (e.g. an unbalanced equation claimed as balanced) for specialist-rejection test.
+
+### Exp 53 — Engineering (native synthesis, ~15–25K chars)
+
+Engineering B-Cell specialist routes per `domains/immune/engineering.toml`: mathematical → `sympy + uncertainty_propagation + dimensional_analysis`. Specialist is M, shadow until Exp 53 live-flip.
+
+Claim clusters:
+1. **Load-factor calculations.** Beam deflection, column buckling, stress–strain with specific numerical values. Falsifiability route: `sympy` + `pint` + `uncertainties` propagation.
+2. **Material-tolerance claims.** Stated tolerance ranges for yield strength, fatigue limit, with uncertainty propagation. Falsifiability route: `uncertainties` package + `scipy` for confidence bounds.
+3. **Safety-factor routing.** Nominal load vs. worst-case load with specific safety-factor values. Falsifiability route: manual formula re-derivation (`sympy`) + dimensional check (`pint`).
+4. **Dimensional consistency across subsystems.** Units across mechanical, thermal, electrical domains. Falsifiability route: `pint` + `astropy.units` cross-check.
+5. **At least one intentionally false claim** (e.g. a safety factor stated as dimensionless but computed with non-cancelling units) for specialist-rejection test.
+
+### Drafting cadence and storage
+
+Each module drafts ahead of its experiment's entry, not at entry. Draft files land under `bench/cdsfl_registry/targets/` (directory created on first module draft): `targets/exp47_biology.md`, `targets/exp51_physics.md`, `targets/exp52_chemistry.md`, `targets/exp53_engineering.md`. Each draft reviewed against Part 3 selection criteria (claim density, falsifiability coverage, no metaphor, one intentional false claim) before insertion into its experiment run.
+
+---
+
 ## 3. Fold-in consolidation across all review rounds
 
 Rounds 1–4 of the pre-launch panel review (commit `b3d9420`) were **reverted** at `5c81f33` on 20 April 2026 after the "v1 preservation" framing was identified as a category error between v1 (historical) and v2 (active). The re-audit under corrected framing is the authoritative source for pre-launch fold-ins.
@@ -160,6 +216,53 @@ CC2 (Opus 4.6 via CLI piped mode) timed out 3× at 300s each in the post-compact
 
 ---
 
+## 6a. Exp 39 → Exp 40 gap-closure list
+
+Nine residual gap items are carried forward from Exp 38/39 and subsequent pre-launch confer rounds. Each item gets FFAFP (Find–Follow–Analyse–Fix–P-pass) and multi-tool cross-verification where computational. The table below names the current state, whether the item blocks Exp 40 launch, the scheduled close trigger, and the FFAFP status at the time of writing. **Closed** in this context means fix applied, regression test added (where applicable), and the change committed.
+
+| # | Gap | Current state | Pre-Exp-40 blocker? | Scheduled close trigger | FFAFP status | Cross-reference |
+|---|-----|----------------|----------------------|-------------------------|--------------|-----------------|
+| G1 | Gate C preflight wiring into Exp 40 launcher | Specified in §6 Round 2 fold-in; not wired | **Yes** | Pre-Exp-40 launch | CLOSED | §6 RQ1 / §4 row 12 |
+| G2 | K/L/M shadow-audit regression test | Enriched JSON logging landed 21 April; no pytest coverage | No | Pre-Exp-40 launch | CLOSED | §6 RQ4 / §4 rows 9–11 |
+| G3 | Ouroboros query-quality calibrator test harness | Zero pytest coverage; prerequisite for Exp 50 self-referential calibration module | No (Exp 50 blocker) | Pre-Exp-50 prep | CLOSED | §2 Exp 50 row / Item 1E.8 |
+| G4 | `open_crit_high_count()` REOPENED-status handling | Partial fix applied; no REOPENED regression test | No (v2 correctness) | Pre-Exp-40 launch | CLOSED | Runner v2 correctness |
+| G5 | `contested_count()` `grace_period` parameter wiring | Parameter in signature; call-site hardcodes `grace=2` | No (v2 correctness) | Pre-Exp-40 launch | CLOSED | Runner v2 correctness |
+| G6 | Specialist-to-specialist verdict-conflict resolution | No arbitration mechanism in v2; Exp 49 cross-domain synthesis assumes one | No (Exp 49 blocker) | Exp 44 post-mortem → Exp 49 prep | Scheduled | §2 Exp 49 row |
+| G7 | MERGE deadlock auto-arbitration | D2 escalation only; no auto-merge path | No (Exp 44 boundary concern) | Exp 44 post-mortem | Scheduled | §2 Exp 44 row |
+| G8 | Burst-mode Phase 0 convergence override | Not folded; burst mode disabled for Exp 40 | No | Future burst experiment (not scheduled in current 15-arc) | Scheduled | Out-of-arc |
+| G9 | F4 closure-state labels applied across all schema elements | Lexicon defined 20 April; applied inconsistently across `resources/ONBOARDING.md` CDSFL schema index | No (documentation) | Pre-Exp-40 launch (ONBOARDING sweep) | CLOSED | §4 row 4 / §6 RQ1 |
+
+**Multi-tool cross-verification pairings, per gap.** Each computational gap gets at least two relevant tools during FFAFP. Pairings called out here align with the standing multi-tool rule (see project CLAUDE.md § Local Tool Constraint Box). G1: AST inspection of `bench/reference_runner_v2.py` launcher + pytest call-path regression. G2: pytest + AST schema check on emitted JSON. G3: pytest + SymPy (for symbolic forms of expected (ν_k_proxy, c_ext, H_ratio) triples) + mpmath numerical cross-check. G4: pytest + `inspect` signature verification. G5: pytest + `inspect` + `dis` for call-site verification that `grace_period` is honoured. G6, G7, G8: scheduled — multi-tool pairings to be nailed down at their respective close triggers. G9: documentation-only; no computational cross-verification.
+
+**Pre-Exp-40 launch path.** Of the nine gaps, G1, G2, G4, G5, and G9 must close before Exp 40 launch. G1 is the operational blocker (Gate C preflight is a hard requirement per §6 RQ1). G2 protects the K/L/M shadow-audit evidence that Round 2's non-distortion check depends on. G4 and G5 are runner v2 correctness items carried from v1-to-v2 porting. G9 is the ONBOARDING label-application sweep that completes the F4 documentation pass landed earlier in the arc.
+
+**Post-launch path.** G3 closes before Exp 50's self-referential Stage 6 calibrator runs (Ouroboros query quality is the named Item 1E.8 prerequisite). G6 and G7 close at the Exp 44 post-mortem because Exp 44 is the first experiment that forces multi-specialist composition to hit live edge cases. G8 is out-of-arc — the current 15-experiment design does not exercise burst mode — and remains documented for a later burst experiment.
+
+**Update 22 April 2026 (overnight shift).** G1, G2, G3, G4, G5, and G9 closed during the 21–22 April overnight shift. Gate C preflight now wired into `bench/launch_exp40.py` with six new tests; K/L/M shadow-audit enriched logging pinned by eleven tests at `bench/tests/test_shadow_audit_klm.py` (fix applied to dict-comp key binding at `bench/immune_agents.py:5411-5421`); Stage 6 calibrator harness pinned by eighteen tests with SymPy-verified delta + noisy-OR identities at `bench/tests/test_shadow_stage6_calibrator.py`; `open_crit_high_count()` REOPENED regression pinned by eleven tests at `bench/tests/test_open_crit_high_count_v2.py` (no fix required; the 22 April `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal was already correct); `contested_count()` grace-period behaviour pinned by ten tests at `bench/tests/test_contested_count_v2.py` (parameter respected; no fix required); ONBOARDING closure-state lexicon section added. Full per-item FFAFP traces are in the operational plan `Completed in current window` log. The three remaining gaps — G6, G7, G8 — retain `Scheduled` status; their explicit trigger specifications follow in §6b.
+
+## 6b. Scheduled trigger specifications (G6, G7, G8)
+
+Each scheduled gap carries (a) the upstream event that moves it from `Scheduled` to active FFAFP, (b) the multi-tool cross-verification pairings to apply on activation, and (c) the minimum evidence threshold for the close verdict. A reader looking for the next agent's instructions for these three gaps should match on (a) first; if the entry event has not yet happened, no action is due.
+
+**G6 — Specialist-to-specialist verdict-conflict resolution.**
+- *Entry trigger.* Exp 44 run completion followed by post-mortem identifying at least one case where two specialists of different domains returned incompatible verdicts (ACCEPT vs REJECT, or ACCEPT vs ABSTAIN, or REJECT vs ABSTAIN) on the same `Finding`. If Exp 44 produces no such case, the trigger migrates to Exp 49 (cross-domain synthesis experiment), which by construction forces the math + stats + CS specialists to co-rule on shared claims. Migration to Exp 49 is automatic: G6 stays open and its evidence bar is the first observed conflict across the two candidate experiments.
+- *Multi-tool pairings on activation.* pytest (unit tests for the arbitration rule); AST inspection of `bench/reference_runner_v2.py` to locate the dispatch point where two `CellVerdict` results meet; `inspect` to pin the signature of any new arbitration callable; trace-log parsing (pandas optional, plain string matching sufficient) to confirm the conflict cases in the post-mortem evidence set.
+- *Close criterion.* (i) Explicit arbitration rule implemented and documented (probabilistic-weighted on `confidence`, precedence-by-domain-priority, or escalate-to-D2 fallback — decision delegated to the post-mortem); (ii) regression test covering the three conflict patterns above plus at least one three-specialist extension; (iii) integration test dispatching two specialists on a synthetic conflict claim and checking the arbitrated outcome; (iv) `_confer_log` extended with a `conflict_outcome` field so downstream replay can distinguish primary vs arbitrated verdicts.
+
+**G7 — MERGE deadlock auto-arbitration.**
+- *Entry trigger.* Exp 44 run completion followed by post-mortem identifying at least one MERGE deadlock event in the trace log — defined as two specialists each holding a verdict whose combination the current D2 escalation rule cannot resolve into a single unified claim within the round budget. Trace-log field: existing `merge_state` or equivalent escalation marker in `bench/reference_runner_v2.py`. If Exp 44 produces no deadlock, the trigger migrates to Exp 49 (same rationale as G6) and then to Exp 54 integration if still clean.
+- *Multi-tool pairings on activation.* pytest (unit tests); AST inspection of the MERGE path in `bench/reference_runner_v2.py`; `inspect` for any new `resolve_merge` callable; trace-log parsing to build a deadlock taxonomy (minimum three observed patterns before arbitration is designed, to avoid fitting the rule to a single case).
+- *Close criterion.* (i) Auto-merge rule specified (probabilistic-weighted, explicit-precedence, or fallback-to-split-claim — decision delegated to the post-mortem evidence); (ii) unit test per taxonomy entry; (iii) integration test running both specialists on a synthetic deadlock claim with the arbitrated outcome pinned; (iv) documentation of the deadlock taxonomy in `docs/ARCHITECTURE.md` under the MERGE-path section.
+
+**G8 — Burst-mode Phase 0 convergence override.**
+- *Entry trigger.* Authorisation of a future burst-mode experiment. NOT in the current 15-experiment Exp 40–54 arc by design — burst mode is disabled for every experiment in the arc, so the gap remains documented rather than active. The trigger is external to the arc: a new experiment proposal that explicitly enables burst-mode dispatch, or a post-mortem from a non-burst experiment that argues burst would have helped.
+- *Multi-tool pairings on activation.* pytest (unit tests for both burst and non-burst dispatch paths); AST inspection of `RunnerConfig` and the burst-dispatch path in `bench/reference_runner_v2.py`; `inspect` for signature stability of any new `burst_convergence_override` callable.
+- *Close criterion.* (i) Burst-mode convergence-override flag added to `RunnerConfig` with documented default (`False` to preserve the current arc's behaviour); (ii) regression test covering both the flag-off path (identical to current behaviour) and the flag-on path (override behaviour specified at experiment entry); (iii) documentation of the override semantics in `docs/ARCHITECTURE.md` under a new burst-mode subsection.
+
+The three entries above all leave the specific arbitration / override rule unspecified at design time. This is deliberate: the correct rule depends on the empirical patterns the post-mortems expose, and pre-specifying the rule before the evidence exists would violate the Popperian discipline the project runs under. Each gap's "arbitration rule" is therefore a placeholder to be filled in from evidence, not a pre-registered algorithm to be verified against evidence.
+
+---
+
 ## 7. Appendix A — canonical file layout
 
 | Artefact | Path |
@@ -210,6 +313,22 @@ Three distinct architectural layers. Conflating them is the standing error.
 3. **Domain configs** — `bench/cdsfl_registry/domains/immune/<domain>.toml`: per domain declares which tools a specialist routes claims to, grouped by `claim_type` (MATHEMATICAL, LOGICAL, CODE_STRUCTURAL, CODE_BEHAVIORAL, STATISTICAL). Example: biology → mathematical: `sympy + biological_sequence + dimensional_analysis`; logical: `z3`; statistical: `statsmodels + scipy + uncertainty_propagation`.
 
 A claim enters, Dendritic triages to a `ClaimType`, B-Cell specialist dispatch looks up the domain config, reads the tool list for that claim type, and calls the corresponding verifier functions. A cell is never equivalent to one tool; a cell dispatches claims across a set of tools per its domain's config.
+
+## Section 8 — Forward-looking founder decisions to revisit
+
+Five decisions carry forward from Round 2 closure. None is a pre-launch blocker — F1 (SMT sandbox), F2 (1E.10 wrapper), F3 (debug assertion removal) have all landed, K/L/M shadow-audit enrichment is integrated, Round 2 closed via compelled convergence. Each decision requires a founder call at a concrete future trigger. Recorded here as a consolidated decision register; each item anchors back to the section of this plan that carries the full detail.
+
+1. **Experiment 40 launch approval.** With F1/F2/F3 landed, K/L/M enriched, and Round 2 closed, the Exp 40 launch gate moves to founder go/no-go. Trigger: this plan review. Anchors: §5 (pre-launch residuals now resolved), §6 (Round 2 outcome).
+
+2. **Experiment 54 Cell A layer selection.** Research Question 3 closed with a 3:2 residual split on whether Layer 1 (archive-first integrity check with fresh-run fallback) or Layer 2 (fresh-run unconditional) is authoritative for Cell A. The three-layer Cell A strategy in §2 is operationally compatible with either resolution. Trigger: Exp 54 entry, after Exp 40–53 complete. Anchors: §6 (RQ3 residual), §2 (Exp 54 row).
+
+3. **Target-article construction for Experiments 47, 51, 52, 53.** Round 2 converged 5/5 on minimal native synthesis rather than adapter wrapping. Four short native target modules remain to be constructed at approximately 15–25K characters per domain — physics for Exp 51, plus the three domains for Exp 47, 52, 53. Trigger: before each experiment in the 47/51/52/53 sequence; Exp 47 is the first such trigger. Anchors: §2 (per-experiment rows for 47/51/52/53), §3 (RQ 6a, RQ 6b).
+
+4. **Gate C admissibility-parser preflight scheduling.** Round 2 folded Codex's §17 preflight in as a Gate C step rather than an F item. The preflight must be wired into the Exp 40 launcher before first run. Trigger: Exp 40 launcher integration, pre-launch. Anchors: §3 (RQ 1 fold-in), §4 row 16.
+
+5. **Pre-Experiment-54 threshold freeze.** Round 2 closed 5/5 that admissibility, severity, and tier thresholds must be frozen before the Exp 54 factorial, identical across Cells A, B, C, D. Trigger: between Exp 53 close and Exp 54 entry. Anchors: §3 (RQ 2 fold-in), §4 row 17.
+
+No additional panel work is required to resolve any of these. Decisions 2, 4, 5 are scoped in-plan; decisions 1 and 3 are approval/execution gates.
 
 ---
 

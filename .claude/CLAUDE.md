@@ -13,6 +13,7 @@ On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and reb
 
 ## Key Documentation
 
+- `experimental_notes/CDSFL_Agent_Operational_Plan.md` — **AGENT OPERATIONAL TRACKER** for the Exp 40–54 arc + Bench Run 2. Self-consumption note: terse, actionable, dynamically updated. Canonical copy at `~/Desktop/CDSFL_Agent_Operational_Plan.md`; repo mirror for version-controlled recoverability. **FIRST READ on compaction** — it names the exact resume pointer, per-experiment target-article matrix, standing Exp-39→Exp-40 gap-closure list, and multi-tool cross-verification pairings.
 - `docs/GLOSSARY.md` — every term, acronym, Greek letter defined
 - `docs/ARCHITECTURE.md` — system components and data flow
 - `experimental_notes/Exp36_Ground_Truth_Reference_2026-04-08.md` — **CANONICAL EXECUTION PLAN** (Section XI). 4-phase plan: A (Exp 36 resume, 5 fixes), B (reference runner + CC2 architecture), C (Bench Run 2, 27 STEM tasks), D (docs/outreach). READ ON RECOVERY.
@@ -157,6 +158,18 @@ ground truth at run time.
 ## Identity
 
 CC1 = this instance (UX mode, interactive). CC2 = CLI headless instance.
+
+## Note-Writing Standard
+
+TTS and experimental notes MUST comply with `cdsfl_note_standard_v1.md` in the CDSFL persistent memory folder. The standard is locked as of 21 April 2026, approved expressly by the founder. **Read it before writing any note.**
+
+**The 10 rules, summarised.** (1) Numerical date with local timezone on line 2. (2) Summary section names the claim or decision, not the act of filing — never "a note was written", "a register was appended". (3) Content-driven section headers, not process headers. (4) Every internal label (F1/F2/F3, K/L/M, RQ, Gate C, Cells A/B/C/D, compelled convergence, shadow promotion, specialist dispatch, FFAFP, nu_k, c_ext) glossed inline on first use, one clause each. (5) Greek letters phonetic in TTS, symbolic in markdown. (6) No phonetic path spelling in TTS — name files as nouns with a brief locator. (7) No md5/line-count/byte-identity prose in TTS; in markdown only as tables when evidentially load-bearing. (8) Cross-references by note title, not by file path. (9) Third-party neutral voice throughout — no "I", no "you", no "we decided", no accountability preambles, no notes-about-notes, no self-critique; the subject is always the experiment, the claim, the decision. (10) Length 60–400 lines TTS, 40–300 lines markdown; P-pass notes close with 3–4 falsifiable follow-ups; operational/planning notes close by stating the next review trigger.
+
+**Foot-line convention.** Every compliant note ends with exactly one line as its final content: `Written under CDSFL note standard v1 (21 April 2026).` A missing foot-line flags a note that predates or violates the standard.
+
+**Canonical failure example.** `experimental_notes/Exp40_to_54_Plan_Section8_Decision_Register_2026-04-21.md` and its TTS companion (21 April 2026, pre-standard) are the reference failure catalogued in the standard file.
+
+**Amendment.** The founder amends this standard. Any change lands as v2 with a dated lock line; v1 is preserved for archival continuity.
 
 ## Standing Corrections
 

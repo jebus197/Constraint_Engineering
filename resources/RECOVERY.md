@@ -1,11 +1,13 @@
 # Recovery Protocol
 
-Last updated: 21 April 2026 19:01 BST
+Last updated: 22 April 2026 02:10 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
 ## Minimum Recovery (2 minutes)
+
+**First read (added 22 April 2026):** `experimental_notes/CDSFL_Agent_Operational_Plan.md` (repo mirror) or `~/Desktop/CDSFL_Agent_Operational_Plan.md` (canonical copy). The operational plan names the exact resume pointer for the Exp 40–54 arc + Bench Run 2, holds the per-experiment target-article matrix, the Exp-39→Exp-40 gap-closure list, and the multi-tool cross-verification pairings. Start there; it supersedes the more general ONBOARDING read for agents continuing experimental work. Then proceed with the list below for broader context.
 
 1. Read `resources/ONBOARDING.md` — current project state, architecture,
    key concepts
@@ -83,7 +85,31 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20–21 April 2026)
+## Current Pending Work (20–22 April 2026)
+
+**SESSION 2026-04-21 23:12 BST → 2026-04-22 02:00 BST — EXP 40 PRE-LAUNCH GAP-CLOSURE OVERNIGHT SHIFT:**
+
+Branch: `exp39-experimental`. Autonomous shift under the founder's pre-sleep standing directive ("Fix it all. I will go to sleep however. I'm very tired."). Six of nine residual Exp 39 → Exp 40 gap-closure items closed in-session; the other three received explicit entry-trigger specifications rather than in-session resolution. Test count grew from 1255 to 1311 (56 new tests across five new test files). **All 56 new tests pass in 2.33 s.** Fast non-network sweep excluding five long-running or CLI-blocking files (`test_openrouter_tools.py` 36, `test_deepseek_specialist.py` 29, `test_dynamic_management.py` 283, `test_ouroboros_query_quality.py` 11, `test_exp29_integration.py` 44): **907/907 pass in 342.12 s**, zero failures. `test_exp29_integration.py::test_three_round_flow` confirmed hanging on `Claude CLI Haiku` LLM-classifier invocations (14.4 s per call, pre-existing, unrelated to overnight edits); `bench/logs/immune_pipeline.log` at 02:05:51 BST shows the overnight `finding_id`/`confidence` rename emitting correctly. Longer non-ignore sweep deferred to the daylight review window.
+
+1. **G1 — Gate C Codex preflight wired into `bench/launch_exp40.py`.** Added `gate_c_preflight()` function with live-path import check, `ADMISSIBILITY_GATES` schema-drift guard, and 5-case canonical parser matrix. Wired into `--preflight` and full-run CLI paths; `--dry-run` unchanged; `--skip-gate-c` escape added. 6 new tests in `bench/tests/test_launch_exp40.py`, all pass.
+
+2. **G2 — K/L/M shadow-audit regression test + bug fix at `bench/immune_agents.py:5411-5421`.** FFAFP on the 21 April enrichment surfaced a bug: `shadow_detail` dict-comp used `claim_id` and `severity` as keys, but neither is a `CellVerdict` dataclass field (verified via `dataclasses.fields(CellVerdict) == {finding_id, verdict, confidence, tool_used, evidence}`). Both resolved to `None`, halving the Round 2 RQ4 non-distortion signal. Fix renamed the two keys to real fields. 11 new tests in `bench/tests/test_shadow_audit_klm.py` (AST schema + field binding + behavioural replica + log-format pin; 2.48 s).
+
+3. **G3 — Stage 6 calibrator test harness at `bench/dm/_shadow_stage6.py`.** No fix needed; 14 April two-dimensional design intact. 18 new tests in `bench/tests/test_shadow_stage6_calibrator.py` (6 classes: public API, triple invariants, SymPy-verified δ = η·c_ext·(1−ν_k) delta identity via `sp.simplify(...) == 0`, SymPy-verified noisy-OR combiner c_ext_raw = 1 − (1−c_s1)(1−c_s2) → 0.65 at (0.5, 0.3), frequency-scaling monotonicity + C_MAX saturation, epistemic tagging, source-truth constants; 0.76 s). Unblocks Exp 50.
+
+4. **G4 — `open_crit_high_count()` REOPENED regression at `bench/reference_runner_v2.py:454`.** No fix needed; existing `_NON_TERMINAL = ("OPEN", "CONTESTED", "REOPENED")` literal already handles REOPENED correctly. 11 new tests in `bench/tests/test_open_crit_high_count_v2.py` (behavioural + purity + signature via `typing.get_type_hints` + AST source-truth).
+
+5. **G5 — `contested_count()` grace-period regression at `bench/reference_runner_v2.py:464`.** No fix needed; parameter is respected. Three call-sites (1019, 1135, 1214-1215) use default implicitly — not a defect for launch but a latent wiring gap for future sweep experiments. 10 new tests in `bench/tests/test_contested_count_v2.py` (behavioural at boundaries + signature + AST default + call-site purity; 0.82 s). Parallel hardcoded `grace_period = 2` at `reference_runner_v2.py:829` logged for post-launch re-review.
+
+6. **G9 — F4 closure-state lexicon applied.** New `## Closure-State Lexicon (F4, locked 21 April 2026)` section added to `resources/ONBOARDING.md` between Standing Rules and Current State, defining `library_complete` / `shadow_integrated` / `live_operational` with examples and promotion-order rule. Stale K/L/M shadow-audit field-list description on ONBOARDING line 51 corrected in situ from the pre-compaction `claim_id, severity` to the real `CellVerdict` fields, with explicit "22 April 2026 correction" note and `shadow_integrated` label. Full retroactive labelling of remaining shadow mentions not attempted — forward-going discipline applies.
+
+7. **G6, G7, G8 — scheduled trigger specifications.** New §6b added to `experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md` and its Desktop mirror. G6 (specialist-to-specialist verdict conflict) and G7 (MERGE deadlock) trigger at Exp 44 post-mortem with automatic migration to Exp 49 if Exp 44 is clean. G8 (burst-mode convergence override) requires external authorisation — out-of-arc. Each gap carries multi-tool pairings (pytest + AST + `inspect` + trace-log parsing) and minimum evidence thresholds. Arbitration rules deliberately unspecified at design time (Popperian discipline).
+
+**Paired-output artefacts (three per standing rule):** `experimental_notes/Exp40_PreLaunch_Gap_Closure_Overnight_2026-04-22.md`, `~/Desktop/CDSFL_tts/Exp40_PreLaunch_Gap_Closure_Overnight_2026-04-22.txt`, and the inline chat summary.
+
+**Next triggers.** Pre-launch blocker set CLOSED. Remaining pre-launch item: founder's Exp 40 launch approval. Post-launch: G6 + G7 at Exp 44 post-mortem (or Exp 49 migration if Exp 44 is clean); G8 out-of-arc.
+
+---
 
 **SESSION 2026-04-21 (15:40–17:50 BST) — EXP 40 PRE-LAUNCH CODE CHANGES + ROUND 2 PLAN REVIEW CLOSE:**
 

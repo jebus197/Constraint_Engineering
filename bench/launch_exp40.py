@@ -44,6 +44,119 @@ def _load_exp40_config() -> dict:
     return json.loads(config_path.read_text(encoding="utf-8"))
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Gate C — §17 admissibility-parser preflight
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Folded into Exp 40 launch per the Round 2 plan review (21 April 2026, RQ1
+# resolution). The admissibility parser at `bench/dm/_feedback.py` has 10
+# offline regression tests at `bench/tests/test_feedback_channel.py` covering
+# format tolerance and edge cases. This preflight is the **live-path**
+# counterpart: it imports the parser at launch time and runs a small set of
+# canonical cases, comparing output against expected values. A mismatch
+# blocks the launch and surfaces the failing case.
+#
+# Protects against:
+#   (a) Import failure at launch time (environment drift, missing module)
+#   (b) Silent drift in the `ADMISSIBILITY_GATES` tuple (schema change
+#       without test update)
+#   (c) Environment-specific regex behaviour that escapes offline testing
+#
+# The preflight does NOT attempt to re-run the full offline suite — those
+# tests already guard format tolerance. Gate C's job is a minimal live-path
+# confidence check before dispatching to the runner.
+
+_GATE_C_EXPECTED_GATES = {
+    "S_min", "G-completeness", "d_tool", "σ_measured", "q_retest",
+}
+
+
+def gate_c_preflight() -> tuple[bool, list[str]]:
+    """Run the §17 admissibility-parser live-path preflight.
+
+    Returns
+    -------
+    (ok, failures) : tuple[bool, list[str]]
+        ``ok`` is True iff all canonical cases match expected output and the
+        ``ADMISSIBILITY_GATES`` tuple has not drifted.
+        ``failures`` is a list of human-readable failure descriptions; empty
+        on success.
+    """
+    try:
+        from bench.dm._feedback import (
+            parse_admissibility_block,
+            ADMISSIBILITY_GATES,
+        )
+    except ImportError as exc:
+        return False, [f"import failed: {exc}"]
+
+    failures: list[str] = []
+
+    # Schema-drift check: the gate set is load-bearing for the rest of the
+    # pipeline. Drift here is decision-changing downstream.
+    if set(ADMISSIBILITY_GATES) != _GATE_C_EXPECTED_GATES:
+        failures.append(
+            "ADMISSIBILITY_GATES drift: got "
+            f"{sorted(set(ADMISSIBILITY_GATES))}, "
+            f"expected {sorted(_GATE_C_EXPECTED_GATES)}"
+        )
+
+    # Canonical case matrix. Each case is (label, input_text, expected_set).
+    # Cases are drawn from the existing offline test suite to keep the
+    # preflight aligned with tested behaviour.
+    cases: list[tuple[str, str, set[str]]] = [
+        ("missing_block_all_fail", "no admissibility block present",
+         set(_GATE_C_EXPECTED_GATES)),
+        ("empty_input_all_fail", "", set(_GATE_C_EXPECTED_GATES)),
+        (
+            "all_pass_no_failures",
+            (
+                "ADMISSIBILITY:\n"
+                "  S_min: PASS\n"
+                "  G-completeness: PASS\n"
+                "  d_tool: PASS\n"
+                "  σ_measured: PASS\n"
+                "  q_retest: PASS\n"
+            ),
+            set(),
+        ),
+        (
+            "one_fail_rest_pass",
+            (
+                "ADMISSIBILITY:\n"
+                "  S_min: PASS\n"
+                "  G-completeness: PASS\n"
+                "  d_tool: FAIL (pytest not run)\n"
+                "  σ_measured: PASS\n"
+                "  q_retest: PASS\n"
+            ),
+            {"d_tool"},
+        ),
+        (
+            "sigma_ascii_variant_accepted",
+            (
+                "ADMISSIBILITY:\n"
+                "  S_min: PASS\n"
+                "  G-completeness: PASS\n"
+                "  d_tool: PASS\n"
+                "  sigma_measured: PASS\n"
+                "  q_retest: PASS\n"
+            ),
+            set(),
+        ),
+    ]
+
+    for label, text, expected in cases:
+        got = set(parse_admissibility_block(text))
+        if got != expected:
+            failures.append(
+                f"case '{label}': expected failed-gate set "
+                f"{sorted(expected)}, got {sorted(got)}"
+            )
+
+    return len(failures) == 0, failures
+
+
 def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
     """Map JSON keys to RunnerConfig fields."""
     from bench.reference_runner_v2 import RunnerConfig  # noqa: E402
@@ -117,6 +230,9 @@ def main() -> int:
                         help="Run model connectivity preflight only.")
     parser.add_argument("--resume", action="store_true",
                         help="Resume from checkpoint.")
+    parser.add_argument("--skip-gate-c", action="store_true",
+                        help="Skip Gate C admissibility-parser preflight "
+                             "(debug only; NOT recommended).")
     args = parser.parse_args()
 
     exp_cfg = _load_exp40_config()
@@ -149,21 +265,57 @@ def main() -> int:
         return 0
 
     if args.preflight:
-        # Preflight lives inside reference_runner_v2.run_experiment; a
-        # lightweight stand-alone path checks model dispatch availability.
+        # Gate C admissibility-parser preflight (live-path check). Runs here
+        # regardless of --skip-gate-c, because --preflight IS the preflight
+        # mode; bypassing the gate in this mode would defeat the flag's
+        # purpose.
+        ok, failures = gate_c_preflight()
+        if not ok:
+            print("=" * 60)
+            print("GATE C PREFLIGHT FAILED — §17 admissibility parser")
+            print("=" * 60)
+            for fail in failures:
+                print(f"  - {fail}")
+            print("")
+            print("Investigate bench/dm/_feedback.py and rerun.")
+            return 1
+        print(f"Gate C preflight: PASS (5 canonical cases, "
+              f"{len(_GATE_C_EXPECTED_GATES)} gates verified)")
+
+        # Model-connectivity preflight lives inside reference_runner_v2.
         try:
-            from bench.reference_runner_v2 import run_preflight
+            from bench.reference_runner_v2 import run_preflight  # noqa: F401
             from bench.reference_runner_v2 import (
                 ExperimentConfig,  # noqa: F401
             )
         except ImportError as e:
-            print(f"Preflight import failed: {e}")
+            print(f"Model-connectivity preflight import failed: {e}")
             return 1
-        print("Preflight not wired as stand-alone in v2; use --dry-run "
-              "and then run without flags to invoke preflight in context.")
+        print("Model-connectivity preflight not wired as stand-alone in v2; "
+              "use --dry-run and then run without flags to invoke it in "
+              "context.")
         return 0
 
-    # Full run
+    # Full run — Gate C preflight runs first unless explicitly skipped.
+    if not args.skip_gate_c:
+        ok, failures = gate_c_preflight()
+        if not ok:
+            print("=" * 60)
+            print("GATE C PREFLIGHT FAILED — §17 admissibility parser")
+            print("=" * 60)
+            for fail in failures:
+                print(f"  - {fail}")
+            print("")
+            print("Launch aborted. Investigate bench/dm/_feedback.py and "
+                  "rerun. To bypass (debug only, NOT recommended), add "
+                  "--skip-gate-c.")
+            return 1
+        print(f"Gate C preflight: PASS (5 canonical cases, "
+              f"{len(_GATE_C_EXPECTED_GATES)} gates verified)")
+    else:
+        print("WARNING: Gate C preflight skipped (--skip-gate-c). "
+              "Launch proceeding without live-path parser verification.")
+
     try:
         from bench.reference_runner_v2 import run_experiment  # noqa: E402
     except ImportError as e:
