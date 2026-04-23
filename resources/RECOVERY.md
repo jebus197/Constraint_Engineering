@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 22 April 2026 02:10 BST
+Last updated: 23 April 2026 05:01 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -86,6 +86,34 @@ context" regain had compressed five confer-round combined logs into a
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (20–22 April 2026)
+
+**SESSION 2026-04-22 02:15–02:30 BST — EXP 40 PRE-LAUNCH OVERSIGHT Q&A — FOUNDER DEBRIEF:**
+
+Branch: `exp39-experimental`. HEAD `991cde0` unchanged at debrief entry; follow-up operational-plan mark-done at `42b737f`. Founder-initiated oversight of the overnight gap-closure shift. No new experimental work.
+
+1. **`test_exp29_integration.py` naming clarified.** The file name predates Exp 40; authored during Exp 29 three-round-flow integration work and retained for regression coverage of the real-dispatch path. Exclusion from overnight fast-sweep is a pytest wall-clock decision (Claude CLI Haiku LLM-classifier at ~14.4 s per call), not an Exp 40 arc statement.
+
+2. **"Integration" has two senses in the arc.** *Fold-in-and-test* = carry forward outstanding Exp 39 and confer-round fixes into the runner, test, commit (what the overnight directive meant). *Exp 54 factorial integration run* = the 2×2 experiment measuring §17/§18 contributions across Cells A/B/C/D. Distinct artefacts.
+
+3. **Honest gap catalogue recorded.** Overnight shift closed 5 of 9 residual items fully (G1 Gate C preflight wiring, G2 K/L/M shadow-audit regression + bug fix, G3 Stage 6 calibrator test harness, G4 `open_crit_high_count` REOPENED regression, G5 `contested_count` grace-period regression — each with tests, commit, push). 3 of 9 received specification only (G6 specialist-to-specialist verdict conflict, G7 MERGE deadlock auto-arbitration, G8 burst-mode convergence override — entry triggers, multi-tool pairings, evidence thresholds in §6b; no code). 1 of 9 partial (G9 F4 lexicon — section added + single stalest description corrected; ~40 remaining mentions not retroactively labelled). The Popperian framing on G6/G7/G8 is genuine design discipline and in part cover for overnight-risk judgement calls.
+
+4. **Four residuals identified beyond the G-list.** (a) Exp 39-0 gate contradiction — memory says "COMPLETE" while `max_open_crit_high=0` recovery criterion needs cross-check against live runner state. (b) Per-finding R_k time-series tracking — assess whether it blocks any specific Exp 40–54 experiment. (c) Scientific-notation sub-rule (`1×10^N (number-words)` with verified exponent-to-word correspondence) present in operational-plan tracker and `memory/feedback_1e10_catch.md`, but not yet amended into the locked `cdsfl_note_standard_v1.md` — requires v1.1 or v2 with dated lock line per the standard's own amendment clause. (d) Full retroactive F4 closure-state labelling not performed.
+
+5. **Panel-review status mapped.** Already reviewed: F1/F2/F3 strategy, Gate C preflight step, Stage 6 design, Exp 40–54 scope and ordering, RQ6b native synthesis commitment, K/L/M non-distortion principle, shadow-promotion-now policy. NOT reviewed: G2 code correctness at `bench/immune_agents.py:5411-5421`, §2a target-article scope briefs for Exp 47/51/52/53, §6b trigger specs for G6/G7/G8, G3/G4/G5 test coverage adequacy, G9 lexicon wording.
+
+6. **Pending founder decisions (non-automated, blocking Exp 40 launch only on founder judgement, not on code state).** (i) Scope of focused confer round — proposed Q1 G2 code correctness, Q2 §2a scope briefs, Q3 §6b trigger specs, optional Q4 G6/G7/G8 trigger-vs-implement policy; rested-morning window recommended. (ii) G6/G7/G8 path: panel review, implement now, or accept deferral with explicit flagging in pre-launch checklist. (iii) Whether the four residuals block Exp 40 launch or defer to post-launch housekeeping.
+
+7. **Memory captured.** `memory/feedback_fix_all_scope_split.md` records the lesson that autonomous "fix all" windows must decompose the target list into bounded-fix / specification-only / full-sweep at write time, not at debrief. Indexed in MEMORY.md.
+
+**What this leaves:** No working-tree modifications for commit beyond this save-state's ONBOARDING/RECOVERY/ce_state/operational-plan and memory-file updates. HEAD `991cde0` plus follow-up `42b737f` remain the runtime state; this sv produces the documentary-state commit on top.
+
+**Open items, not sv-blocking:**
+1. Focused confer round scope approval (founder).
+2. G6/G7/G8 path decision (founder).
+3. Residuals disposition — block Exp 40 launch or defer (founder).
+4. Exp 40 launch approval itself.
+
+---
 
 **SESSION 2026-04-21 23:12 BST → 2026-04-22 02:00 BST — EXP 40 PRE-LAUNCH GAP-CLOSURE OVERNIGHT SHIFT:**
 
