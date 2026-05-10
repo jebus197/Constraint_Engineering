@@ -25,15 +25,19 @@ On `rc` or `rs` (recover): run `python3 scripts/cdsfl_recover.py --full` and reb
 
 ## Model Confer Dispatch
 
-- `cc2` = Claude Opus 4.6 via CLI piped mode (`claude -p`), Max subscription
-- `cx` = Codex GPT-5.4 via OpenRouter API
-- `ge` = Gemini 3.1 Pro via Google GenAI API
-- `cgpt` = ChatGPT GPT-5.4 via OpenRouter API
-- `ds` = DeepSeek Reasoner via DeepSeek API
+Panel composition (current as of 2026-05-10, smoke-tested):
+
+- `cc2` = Claude Opus 4.7 via CLI piped mode (`claude -p`), Max subscription
+- `cx` = Codex GPT-5.5 via OpenRouter API (`openai/gpt-5.5`)
+- `ge` = Gemini 3.1 Pro Preview via OpenRouter API (`google/gemini-3.1-pro-preview`) — moved from direct Google API to OpenRouter on 2026-05-10 to draw on existing OpenRouter credits at identical pricing
+- `cgpt` = ChatGPT GPT-5.5 via OpenRouter API (`openai/gpt-5.5`)
+- `ds` = DeepSeek V4 Pro via DeepSeek direct API (`deepseek-v4-pro`) — upgraded from R1-0528 on 2026-05-10; the older `deepseek-reasoner` is no longer listed by DeepSeek
 
 All models run under latest CDSFL directives as system prompt. Combinable: `cx ge cc2`.
 CDSFL directives: `bench/directives/universal/cdsfl_core_formal.md`
 Composer: `bench/cdsfl_registry/composer.py`
+
+Smoke-test record (2026-05-10, prompt: anchor "17 is prime", schema-conforming JSON with verdict/reasoning/falsification fields): all four upgraded routes returned `verdict=CONFIRMED` with non-empty reasoning and falsification, total wall-clock 36.8s sequential.
 
 ## Metacognitive Commands (MC)
 
@@ -67,15 +71,15 @@ Single-letter and short commands that direct model behaviour. Combinable
 
 ### Model Confer Dispatch (combinable)
 
-| Cmd | Model | Route |
-|-----|-------|-------|
-| `cc2` | Claude Opus 4.6 | CLI piped mode (`claude -p`), Max subscription |
-| `cx` | Codex GPT-5.4 | OpenRouter API |
-| `ge` | Gemini 3.1 Pro | Google GenAI API |
-| `cgpt` | ChatGPT GPT-5.4 | OpenRouter API |
-| `ds` | DeepSeek Reasoner | DeepSeek API |
+| Cmd | Model | Route | Identifier |
+|-----|-------|-------|---|
+| `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription | `opus` |
+| `cx` | Codex GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ge` | Gemini 3.1 Pro Preview | OpenRouter API | `google/gemini-3.1-pro-preview` |
+| `cgpt` | ChatGPT GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ds` | DeepSeek V4 Pro | DeepSeek direct API | `deepseek-v4-pro` |
 
-Example: `cx ge cc2` = confer with all three on current task.
+Example: `cx ge cc2` = confer with all three on current task. Updated 2026-05-10 (panel rotation: 4.6→4.7, 5.4→5.5, R1-0528→V4 Pro, Gemini route Google direct→OpenRouter).
 
 ## Local Tool Constraint Box
 

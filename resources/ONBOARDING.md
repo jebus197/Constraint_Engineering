@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 23 April 2026 05:01 BST
+Last updated: 10 May 2026 18:00 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -43,6 +43,47 @@ Every shadow or promoted component is described by exactly one of three closure-
 - **live_operational.** Code drives live decisions — its outputs affect verdicts, gates, or downstream state. Reversion requires an explicit policy change, not just a config flip. Example: the §17 feedback directive as of Exp 39; the §18 divergence directive as of Exp 39.
 
 Promotion always proceeds library_complete → shadow_integrated → live_operational, never skipping a tier. Under the 20 April 2026 shadow-promotion-now policy (`feedback_shadow_promotion_now.md`) any shadow_integrated → live_operational transition requires non-distortion evidence against the governing `pass_condition` in the relevant gate file.
+
+### Component Closure-State Index (retroactive sweep, 10 May 2026)
+
+Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every running code component named in this document is listed once below with its current label, file location, and the date that label became authoritative. Forward-going additions get a label at write time. The index is the canonical source for closure state; in-line mentions in narrative below this section may use the bare component name without re-stating the label.
+
+**live_operational** (drives live decisions in the runner pipeline):
+
+| Component | Location | Live since |
+|---|---|---|
+| §17 Feedback Channel directive | `bench/dm/_feedback.py` + `bench/directives/universal/cdsfl_operational.md` §17 | Exp 39 (2026-04-13) |
+| §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
+| F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
+| F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v2.py:3510` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
+| B-Cell macrophage specialist | `bench/immune_agents.py` macrophage section | Exp 36 era |
+| B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
+| B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
+| B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
+| B-Cell information-science specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/information-science.toml` | Exp 36 era |
+| Gate C admissibility-parser preflight | `bench/launch_exp40.py:gate_c_preflight()` | 2026-04-22 |
+| `RunnerConfig.max_open_crit_high` (default raised 0 → 5) | `bench/reference_runner_v2.py:259` (mirrored at `reference_runner.py:207`) | 2026-04-13 (Exp 39-0 fix) |
+| ν_k (nu_k) novelty metric, two-dimensional with c_ext | `bench/dm/_shadow_stage6.py` (calibrator) + `bench/reference_runner_v2.py` (consumer) | 2026-04-14 |
+| c_ext external coverage metric | `bench/dm/_shadow_stage6.py` noisy-OR combiner | 2026-04-14 |
+| Compelled-convergence star topology dispatch | `bench/cdsfl_registry/composer.py` + per-confer scripts | Round 1 plan review (2026-04-21) |
+
+**shadow_integrated** (logged but does not drive verdicts; live flip gated on non-distortion evidence):
+
+| Component | Location | Shadow since | Flip trigger |
+|---|---|---|---|
+| K/L/M shadow-audit logging | `bench/immune_agents.py:5400-5428` (fix at lines 5411-5421 on 2026-04-22) | 2026-04-21 (corrected 2026-04-22) | Exp 51 (K), Exp 52 (L), Exp 53 (M); per-domain non-distortion check against `bench/exp40_configs/40_gate.json` `pass_condition` across Exp 40–50 rounds |
+| Stage 6 query-quality calibrator | `bench/dm/_shadow_stage6.py` | 2026-04-14 | Exp 50 (Stage 6 self-referential calibration experiment) |
+| B-Cell physics specialist (K, shadow) | dispatch entry pending in `LIVE_SPECIALIST_DOMAINS`; tools routed per `domains/immune/physics.toml` | Exp 36 tranche | Exp 51 |
+| B-Cell chemistry specialist (L, shadow) | dispatch entry pending; tools routed per `domains/immune/chemistry.toml` | Exp 36 tranche | Exp 52 |
+| B-Cell engineering specialist (M, shadow) | dispatch entry pending; tools routed per `domains/immune/engineering.toml` | Exp 36 tranche | Exp 53 |
+
+**library_complete** (code present and tested, not in any live or shadow path):
+
+| Component | Location | Library-complete since | Path to activation |
+|---|---|---|---|
+| F3 `DEBUG_CHANNEL_CHECK` assertion | `bench/reference_runner_v2.py:3510` site, gated by env var `DEBUG_CHANNEL_CHECK=1` | 2026-04-21 | Activated in dev/CI when set; production default is no-op by design (refactor tripwire, not runtime guard) |
+
+The index is updated when a component changes tier. The Stage 6 calibrator and the K/L/M shadow trio are the active flip candidates for the Exp 40–53 arc.
 
 ## Current State (update after each major milestone)
 

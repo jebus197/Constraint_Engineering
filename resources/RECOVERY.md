@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 23 April 2026 05:01 BST
+Last updated: 10 May 2026 18:00 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,7 +85,35 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20–22 April 2026)
+## Current Pending Work (20 April – 10 May 2026)
+
+**SESSION 2026-05-10 — EXP 40 PRE-LAUNCH RESIDUALS CLOSURE + PANEL ROTATION + ROUND 2 BUILD:**
+
+Branch: `exp39-experimental`. HEAD at session start `7cdf846` (post-hiatus, 16-day gap from 23 April). Founder directive: full Exp 40-54 arc target, 7-day clock, all four residuals to close NOW (not defer), all five panel models update to current frontier where a successor exists, OpenRouter route for Gemini to draw on existing credits.
+
+1. **OpenRouter pre-flight verifications.** `/auth/key` returns valid; `/credits` shows $530 total, $176.17 used, ≈$353.83 remaining — comfortable for Round 2 plus the experimental arc through OpenRouter routes. DeepSeek `/v1/models` lists `deepseek-v4-pro` and `deepseek-v4-flash` ONLY (R1-0528/`deepseek-reasoner` no longer listed; upgrade is mandatory). Opus 4.7 confirmed as the Max-subscription-served version (founder confirmation).
+
+2. **All four residuals from the 22 April oversight Q&A closed:**
+   - **(a) Exp 39-0 gate state cross-check.** `bench/logs/exp39_0_gate_20260413T193320Z/completion_signal.json` records `status: INCOMPLETE` (6 rounds, no convergence, final kappa 0.619, 111 findings). Cross-check confirmed Exp 39-0 was a CALIBRATION experiment that surfaced finding F7/F23 — `max_open_crit_high=0` was structurally unreachable. Fix landed: `RunnerConfig.max_open_crit_high` default raised 0 → 5 at `bench/reference_runner_v2.py:259` (mirrored at `reference_runner.py:207`), regression-pinned at `bench/tests/test_runner_status_transitions.py:242`. The original threshold was the SUBJECT of Exp 39-0, not its prerequisite. `~/.claude/projects/.../memory/ce_state.md` updated to reflect this distinction (work-stream COMPLETE; experiment INCOMPLETE in own log).
+   - **(b) Per-finding R_k time-series tracking — assessed.** `grep` on `r_k_history|rk_trajectory|rk_time_series|per_finding_rk` across `bench/reference_runner_v2.py` and `bench/runner_core.py` returned zero matches. Plan and `MATHEMATICAL_APPENDIX.md` carry no time-series-R_k requirement. **Not a blocker for any Exp 40-54 experiment as currently planned.** Forward-going enhancement candidate; no current dependency.
+   - **(c) Scientific-notation amendment to locked note standard.** `~/.claude/projects/.../memory/cdsfl_note_standard_v1.1.md` created (additive amendment, dated lock 2026-05-10). Adds Rule 11 — 11a scientific-notation format `1×10^N (number-words)` with verified exponent-to-word correspondence; 11b `<digit>E.<digit>` item-reference recognition (prevents 1E.10 → "ten billion" misreading). All ten v1 rules unchanged. MEMORY.md indexed v1.1 as current working version, v1 preserved for archival continuity.
+   - **(d) F4 retroactive closure-state labelling sweep.** Component Closure-State Index added to `resources/ONBOARDING.md` as a subsection of the F4 lexicon block. 19 running components tabled with labels (live_operational, shadow_integrated, library_complete), file locations, dates of state confirmation, and flip triggers where applicable. Forward-going additions get a label at write time; in-line narrative below the index may use bare component names without re-stating the label.
+
+3. **Panel rotation to current frontier (smoke-tested 2026-05-10).** All five upgraded routes returned `verdict=CONFIRMED` on the anchor "17 is prime", JSON-conforming, falsification field populated, total wall-clock 36.8 s sequential:
+   - `cc2` Claude Opus 4.6 → **4.7** (Max subscription served version).
+   - `cx` Codex GPT-5.4 → **5.5** via OpenRouter (`openai/gpt-5.5`).
+   - `ge` Gemini 3.1 Pro Preview: route Google direct → **OpenRouter** (`google/gemini-3.1-pro-preview`); same price tier, draws on existing credit pool.
+   - `cgpt` ChatGPT GPT-5.4 → **5.5** via OpenRouter (`openai/gpt-5.5`).
+   - `ds` DeepSeek Reasoner R1-0528 → **V4 Pro** via DeepSeek direct API (`deepseek-v4-pro`); R1 endpoint no longer listed.
+   Project CLAUDE.md "Model Confer Dispatch" section and combinable table updated to reflect the new panel.
+
+4. **Round 2 confer script built.** `bench/confer_exp40_focused_round2_2026-05-10.py` — five questions: Q1 G2 code correctness with code excerpt; Q2 §2a target-article scope briefs for Exp 47/51/52/53; Q3 §6b trigger specifications for G6/G7/G8; Q4 (optional) trigger-vs-implement policy; Q5 closure-now disposition of the four residuals with founder reasoning surfaced. Compelled-convergence star topology, parallel dispatch via ThreadPoolExecutor(max_workers=5), per-model + combined logs to `bench/logs/confer_exp40_focused_round2_2026-05-10/`.
+
+5. **Sequencing from here.** Sv-checkpoint this state. Dispatch Round 2 (~5-15 min wall-clock floor). Read consolidated outcome. Apply findings (FFAFP on any code change, P-pass on conclusions). Sv again. Comprehensive docs sweep (README, ONBOARDING, RECOVERY, MATHEMATICAL_APPENDIX, PAPER, GLOSSARY, ARCHITECTURE, REPRODUCING, CURRENT_STATE — sequential per file). Then Experiment 40 dispatch, post-mortem, and the rest of the 40-54 arc within the 7-day window.
+
+**Open items at session close:** None of the 22 April residuals; none of the model-rotation prerequisites. Outstanding founder decisions: the focused Round 2 outcome may surface fold-in items requiring approval before Exp 40 launches; Cell A entry-method for Exp 54 (RQ3) still due at Exp 54 entry (founder).
+
+---
 
 **SESSION 2026-04-22 02:15–02:30 BST — EXP 40 PRE-LAUNCH OVERSIGHT Q&A — FOUNDER DEBRIEF:**
 
