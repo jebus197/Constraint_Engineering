@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 10 May 2026 19:35 BST
+Last updated: 13 May 2026 02:08 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -34,15 +34,16 @@ Four rules the founder has named load-bearing. They apply across every session, 
 - **Every technical note requires three artefacts** (`feedback_notes_paired_output.md`, 20 April 2026). One technical markdown at `experimental_notes/<Name>_YYYY-MM-DD.md` with full rigour. One plain-English companion at `~/Desktop/<Project>_tts/<Name>_YYYY-MM-DD.txt` written for a technically-literate non-specialist. One inline chat summary. All three non-optional.
 - **Dates and times are numerical with local timezone** (`feedback_tts_format.md`, 20 April 2026). Acceptable: `2026-04-20`, `2026-04-20 22:32 BST`, `20 April 2026, 22:32 BST`. Word-form dates and times ("the eighteenth of April twenty twenty six") are prohibited across both TTS and markdown. The plain-English directive applies to technical prose, not to numbers, dates, timestamps, version strings, file paths, or code anchors.
 
-## Closure-State Lexicon (F4, locked 21 April 2026)
+## Closure-State Lexicon (F4, locked 21 April 2026; extended 13 May 2026)
 
-Every shadow or promoted component is described by exactly one of three closure-state labels. The lexicon removes ambiguity when new reviewers ask whether a feature is "done" — "done" alone is underspecified; the label names which layer is done.
+Every shadow or promoted component is described by exactly one of four closure-state labels. The lexicon removes ambiguity when new reviewers ask whether a feature is "done" — "done" alone is underspecified; the label names which layer is done.
 
 - **library_complete.** Code exists and is correct on its own terms — it parses, imports, and has pytest coverage for its documented public surface. It is NOT yet hooked into any live pipeline, runner, or dispatch path. Example: a draft specialist tool file that passes its own unit tests but is not wired into `tool_manifest.toml`.
+- **tripwire.** Code is present in the live or dev/CI pipeline and is observation-only by default — off, or on-emit-only — but becomes assertive (halts the run, blocks the gate, or otherwise drives an outcome) when an explicit flag (environment variable, config key, or CLI option) is set. Distinguished from `library_complete` because the code IS hooked into a pipeline path; distinguished from `shadow_integrated` because its activated behaviour can drive run-level outcomes rather than just emit observations. Example: F3 `DEBUG_CHANNEL_CHECK` at `bench/reference_runner_v2.py:3510` — production default is no-op, but when `DEBUG_CHANNEL_CHECK=1` is set the assertion compares the wrapped `compute_rk_with_eta_channel(...)` output against an independently computed bare `compute_rk(...)` output and raises `AssertionError` (halting the run) on mismatch beyond 1e-9. *Added 2026-05-13 per Round 3 4/5 convergence — relieves edge-case pressure on F3-style flag-gated tripwires.*
 - **shadow_integrated.** Code is hooked into the live pipeline in an observation-only capacity. It runs on every relevant input, emits logs or metrics, and participates in audits, but its outputs do NOT drive verdicts, promotions, or gate decisions. Example: the K/L/M shadow-audit enrichment at `bench/immune_agents.py:5400-5428` (22 April 2026) — it records per-verdict detail for Round 2 RQ4 non-distortion measurement without altering runner behaviour.
 - **live_operational.** Code drives live decisions — its outputs affect verdicts, gates, or downstream state. Reversion requires an explicit policy change, not just a config flip. Example: the §17 feedback directive as of Exp 39; the §18 divergence directive as of Exp 39.
 
-Promotion always proceeds library_complete → shadow_integrated → live_operational, never skipping a tier. Under the 20 April 2026 shadow-promotion-now policy (`feedback_shadow_promotion_now.md`) any shadow_integrated → live_operational transition requires non-distortion evidence against the governing `pass_condition` in the relevant gate file.
+Promotion always proceeds library_complete → tripwire (if applicable) → shadow_integrated → live_operational. The tripwire tier is optional in a component's lifecycle: most components flow directly library_complete → shadow_integrated → live_operational. Tripwire applies specifically to flag-gated assertions and runtime guards that exist to catch refactor drift, mismatch, or other should-never-happen conditions and halt rather than observe. Under the 20 April 2026 shadow-promotion-now policy (`feedback_shadow_promotion_now.md`) any shadow_integrated → live_operational transition requires non-distortion evidence against the governing `pass_condition` in the relevant gate file.
 
 ### Component Closure-State Index (retroactive sweep, 10 May 2026)
 
@@ -77,11 +78,15 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 | B-Cell chemistry specialist (L, shadow) | dispatch entry pending; tools routed per `domains/immune/chemistry.toml` | Exp 36 tranche | Exp 52 |
 | B-Cell engineering specialist (M, shadow) | dispatch entry pending; tools routed per `domains/immune/engineering.toml` | Exp 36 tranche | Exp 53 |
 
-**library_complete** (code present and tested, not in any live or shadow path):
+**tripwire** (present in the pipeline, off by default, becomes assertive when flag set):
 
-| Component | Location | Library-complete since | Path to activation |
-|---|---|---|---|
-| F3 `DEBUG_CHANNEL_CHECK` assertion | `bench/reference_runner_v2.py:3510` site, gated by env var `DEBUG_CHANNEL_CHECK=1` | 2026-04-21 | Activated in dev/CI when set; production default is no-op by design (refactor tripwire, not runtime guard) |
+| Component | Location | Tripwire since | Flag | Assertive behaviour |
+|---|---|---|---|---|
+| F3 `DEBUG_CHANNEL_CHECK` assertion | `bench/reference_runner_v2.py:3510` | 2026-05-13 (relabelled from `library_complete` per Round 3 4/5 convergence) | env var `DEBUG_CHANNEL_CHECK=1` | Compares wrapped `compute_rk_with_eta_channel` output against an independently computed bare `compute_rk` output; raises `AssertionError` (halts the run) on mismatch beyond 1e-9. Production default is no-op. |
+
+**library_complete** (code present and tested, not in any live, shadow, or tripwire path):
+
+*Currently empty.* Components arriving at library_complete are expected during target-article drafting for Experiments 47, 51, 52, 53 (the synthesised native modules — each module is `library_complete` after drafting but before insertion into its experiment).
 
 The index is updated when a component changes tier. The Stage 6 calibrator and the K/L/M shadow trio are the active flip candidates for the Exp 40–53 arc.
 
