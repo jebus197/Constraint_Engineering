@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -33,6 +34,25 @@ if str(_HERE.parent) not in sys.path:
     sys.path.insert(0, str(_HERE.parent))
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
+
+# Load .env so API keys (OPENROUTER_API_KEY, DEEPSEEK_API_KEY, etc.) are
+# available to the runner and orchestrator subprocesses. Without this,
+# the rotated panel's OpenRouter routes (Codex, ChatGPT, Gemini, DeepSeek)
+# fail at first dispatch with RuntimeError: OPENROUTER_API_KEY not set.
+# Mirrors the .env-loading pattern used by every confer script under
+# bench/. Each KEY=VALUE in .env is set via os.environ.setdefault so any
+# shell-provided value already in the environment takes precedence.
+_ENV_FILE = _HERE.parent / ".env"
+if _ENV_FILE.exists():
+    for _line in _ENV_FILE.read_text().splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#"):
+            continue
+        if _line.startswith("export "):
+            _line = _line[7:]
+        if "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
 
 
 def _load_exp40_config() -> dict:
