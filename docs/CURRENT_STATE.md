@@ -1,28 +1,33 @@
 # CDSFL Current State
 
-Generated: 14 May 2026 02:52 BST (2026-05-14T02:52:02+01:00)
+Generated: 14 May 2026 06:34 BST (2026-05-14T06:34:18+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `7601985` sv: Exp 40 pre-launch focused Round 3 + three-round synthesis — full convergence, all fold-ins applied
-- **Committed:** 2026-05-13 02:08:49 +0100
-- **Remote:** ahead by 82
+- **Last commit:** `ae1de45` fix: launch_exp40.py — load .env at import time so API keys reach the runner
+- **Committed:** 2026-05-14 03:05:15 +0100
+- **Remote:** ahead by 87
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M .claude/CLAUDE.md`
-- `M PAPER.md`
-- `M README.md`
-- `M docs/ARCHITECTURE.md`
-- `M docs/GLOSSARY.md`
-- `M docs/REPRODUCING.md`
-- `M resources/RECOVERY.md`
-- `?? experimental_notes/Exp40_PreLaunch_Focused_Round2_Outcome_Plain_English_2026-05-10.md`
-- `?? experimental_notes/Exp40_PreLaunch_Focused_Round3_Outcome_and_Synthesis_Plain_English_2026-05-13.md`
-- `?? experimental_notes/Exp40_PreLaunch_State_Post_Hiatus_Plain_English_2026-05-09.md`
+- `M bench/exp40_configs/40_gate.json`
+- `M bench/fingerprints/CC2.json`
+- `M bench/fingerprints/ChatGPT.json`
+- `M bench/fingerprints/Codex.json`
+- `M bench/fingerprints/DeepSeek.json`
+- `M bench/fingerprints/Gemini.json`
+- `M bench/logs/immune_pipeline.log`
+- `?? bench/logs/exp40_gate_20260514T020550Z/`
+- `?? bench/logs/exp40_launch_20260514T015600Z.log`
+- `?? bench/logs/exp40_launch_20260514T020001Z.log`
+- `?? bench/logs/exp40_launch_20260514T020219Z.log`
+- `?? bench/logs/exp40_launch_20260514T020550Z.log`
+- `?? bench/logs/exp40_resume_20260514T032658Z.log`
+- `?? experimental_notes/Exp40_PostMortem_2026-05-14.md`
+- `?? experimental_notes/Exp40_PostMortem_Plain_English_2026-05-14.md`
 
 ---
 
@@ -34,33 +39,33 @@ Uncommitted files:
 
 ## Latest Experiment
 
-- **Experiment:** exp39_0_gate (#39)
-- **Status:** INCOMPLETE
+- **Experiment:** exp40_gate (#40)
+- **Status:** WALL_CLOCK_CAP
 - **Topology:** star
-- **Target:** `bench/runner_core.py`
-- **Rounds:** 6
-- **Total findings:** 111
-- **Gamma:** 0.4612
+- **Target:** `bench/dm/_feedback.py`
+- **Rounds:** 10
+- **Total findings:** 207
+- **Gamma:** 0.1433
 - **Models:** CC2, ChatGPT, Codex, DeepSeek, Gemini
 - **Per model:**
-  - CC2: 28
-  - Codex: 25
-  - ChatGPT: 25
-  - Gemini: 21
-  - DeepSeek: 12
-- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp39_0_gate_20260413T193320Z`
+  - DeepSeek: 68
+  - Gemini: 61
+  - ChatGPT: 37
+  - CC2: 26
+  - Codex: 15
+- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z`
 
 ---
 
 ## Recent Commits
 
+- `ae1de45 fix: launch_exp40.py — load .env at import time so API keys reach the runner`
+- `2fdecbd fix: launch_exp40.py — pass test_article, context_files, domain to RunnerConfig`
+- `22adc0b fix: launch_exp40.py — correct run_experiment call signature`
+- `d1dba7f fix: bench panel rotation — orchestrator + runner v2 model IDs updated to current frontier`
+- `cf24f6d sv: Exp 40 pre-launch docs sweep + two-version note standard (v1.2) + plain-English retrofits`
 - `7601985 sv: Exp 40 pre-launch focused Round 3 + three-round synthesis — full convergence, all fold-ins applied`
 - `4d4d4f1 sv: Exp 40 pre-launch focused Round 2 outcome — 5/5 clean returns, high-confidence fold-ins applied, paired notes landed`
 - `38398fb sv: Exp 40 pre-launch — residuals (a)(b)(c)(d) closed + panel rotation to current frontier + Round 2 confer script built`
 - `7cdf846 docs: operational plan — correct sv-prep completed-log dates (22 April → 23 April) after post-compaction resume; add 23 April 05:01 BST sv-landing entry for commit 7c9df2b`
 - `7c9df2b sv: founder oversight Q&A debrief post-overnight-shift — honest gap catalogue recorded (5 of 9 G-items fully closed, 3 of 9 specification-only, 1 of 9 partial; four residuals identified beyond the G-list — Exp 39-0 gate contradiction not personally verified, per-finding R_k time-series not addressed, scientific-notation sub-rule not amended into locked cdsfl_note_standard_v1.md, full retroactive F4 closure-state labelling not performed); integration semantics clarified (fold-in-and-test vs Exp 54 factorial run); panel-review status mapped (F1/F2/F3 + Gate C step + Stage 6 design + scope/ordering + RQ6b + K/L/M non-distortion + shadow-promotion-now already reviewed; G2 code correctness + section 2a scope briefs + section 6b trigger specs + G3/G4/G5 coverage + G9 lexicon wording NOT reviewed); three founder decisions now pending (focused confer round scope proposal, G6/G7/G8 path, residuals disposition); new memory file feedback_fix_all_scope_split.md captures lesson that autonomous fix-all windows must decompose target lists into bounded-fix / specification-only / full-sweep at start of window not at debrief; ONBOARDING + RECOVERY + ce_state + operational plan (Desktop + repo mirror) + MEMORY.md index updated; no runtime code changes; HEAD at debrief entry 991cde0 + follow-up 42b737f; documentary-state commit on top`
-- `42b737f docs: operational plan — mark E4 + E5 done post-991cde0 sv; set waking-review resume pointer`
-- `991cde0 sv: overnight gap-closure G1+G2+G3+G4+G5+G9 closed + G6/G7/G8 trigger specs — six of nine Exp 39 → Exp 40 residual gaps closed in autonomous overnight shift (Gate C preflight wired into launch_exp40.py, K/L/M shadow-audit bug fix at immune_agents.py:5411-5421 renaming claim_id/severity to real CellVerdict fields finding_id/confidence, Stage 6 calibrator SymPy-verified test harness, open_crit_high_count REOPENED regression, contested_count grace_period regression, F4 closure-state lexicon added to ONBOARDING with shadow_integrated/library_complete/live_operational definitions); G6/G7/G8 now carry explicit entry triggers, multi-tool pairings, and minimum evidence thresholds in consolidated-plan §6b with Popperian arbitration framing; 56 new tests added (6+11+18+11+10), all passing in 2.33s; fast non-network regression sweep excluding five long-running or CLI-blocking files returns 907/907 pass in 342.12s, zero failures; test_exp29_integration::test_three_round_flow hang confirmed pre-existing (Claude CLI Haiku 14.4s/call) and unrelated to overnight edits per bench/logs/immune_pipeline.log 02:05:51 BST evidence showing the finding_id/confidence rename emitting correctly; paired output at experimental_notes/Exp40_PreLaunch_Gap_Closure_Overnight_2026-04-22.md + Desktop TTS companion; operational plan tracker mirrored into repo at experimental_notes/CDSFL_Agent_Operational_Plan.md; ONBOARDING/RECOVERY/ce_state updated`
-- `be6d13a sv: memory sweep + OB session capture post Exp 40 pre-launch close — refresh ce_state.md + project_exp40_plan.md + MEMORY.md index to 2fbedcd/1255 tests/Round 2 closed`
-- `2fbedcd sv: Exp 40 pre-launch F1/F2/F3 + K/L/M shadow-audit enrichment + Round 2 plan review close; 1121/1121 non-network tests pass`
-- `76a6731 sv: Exp 40-54 consolidated plan + panel review round 1 — five-model panel (Gemini 3.1 Pro, Codex GPT-5.4, CC2 Opus 4.6, ChatGPT GPT-5.4, DeepSeek R1-0528) dispatched under star topology with 40_gate.json pass-condition + Stage 6 orthogonality framing, all responses within 227s wall time, no v1-preservation drift; five material fold-ins applied (Gate C preflight for section-17 admissibility parser at Exp 40 launch, Gate C threshold-freeze at Exp 54 launch applied identically across factorial cells, three-layer Cell A integrity strategy for Exp 54 with Gemini fresh-run and DeepSeek sensitivity-analysis fallbacks, shadow-promotion-now bounding condition requiring non-distortion check against pass_condition before live activation, Exp 47/52/53 target synthesis commitment with Exp 51 conditional on composer.py physics content); new artefacts bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py + bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/ + experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md + experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md plus plain-English TTS mirrors on Desktop; feedback_shadow_promotion_now.md memory updated with conditionally-safe bounding condition; three new memory files from earlier in this continuation window (feedback_communication_density.md, feedback_no_session_deferral.md, feedback_complete_task_lists.md); resources/ONBOARDING.md and resources/RECOVERY.md updated with 21 April session entry`

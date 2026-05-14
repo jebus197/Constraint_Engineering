@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 14 May 2026 02:52 BST
+Last updated: 14 May 2026 06:34 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.

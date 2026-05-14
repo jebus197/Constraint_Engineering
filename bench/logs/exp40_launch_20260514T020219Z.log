@@ -1,0 +1,55 @@
+[03:02:19] ============================================================
+[03:02:19] EXPERIMENT: exp40_gate
+[03:02:19]   Topology: star/blackboard
+[03:02:19]   Pattern: four_layer
+[03:02:19]   Max rounds: 8 (extension to 10)
+[03:02:19]   Convergence: state-based, earliest R3
+[03:02:19]   Target: bench/dm/_feedback.py
+[03:02:19]   Context: ['bench/dm/_types.py']
+[03:02:19]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[03:02:19]   Domain: software
+[03:02:19]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020219Z
+[03:02:19] ============================================================
+[03:02:19]   Target: 21,473 chars
+[03:02:19]   Context: 1 files
+[03:02:19]   Total: 49,129 chars with headers
+[03:02:19]   S_k pipeline: capturing baseline gate scores...
+[03:02:20]   S_k baseline: ruff=0, bandit={'high': 0, 'medium': 0}
+[03:02:20] 
+------------------------------------------------------------
+[03:02:20] Round 0/7 (blind)
+[03:02:20] ------------------------------------------------------------
+[03:02:20]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[03:02:20]   Decomposed dispatch: claude_cli/opus, 2 chunks, ~49,115 chars
+[03:02:20]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[03:02:20]   [claude-cli] multi-turn dispatch: 2 chunks + final, session=6e31ab10..., ~104,702 chars total
+[03:02:20]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:1714: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+[03:02:20]   [claude-cli] delivering chunk 1/3 (21,545 chars, target_0)
+[03:02:20]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[03:02:21]   ChatGPT: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:21]   Gemini: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:21]   Codex: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:21]   DeepSeek: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+Gate C preflight: PASS (5 canonical cases, 5 gates verified)
+[03:02:21] Dispatching to ChatGPT (openai/gpt-5.5) via openrouter...
+[03:02:21] Dispatching to DeepSeek (deepseek/deepseek-v4-pro) via openrouter...
+[03:02:21] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[03:02:21] Dispatching to Codex (openai/gpt-5.5) via openrouter...
+[03:02:22]   Gemini: RuntimeError — OPENROUTER_API_KEY not set
+[03:02:22]   Decomposed dispatch: openrouter/google/gemini-3.1-pro-preview, 2 chunks, ~49,115 chars
+[03:02:22]   Gemini: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:22]   Codex: RuntimeError — OPENROUTER_API_KEY not set
+[03:02:22]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[03:02:22]   Codex: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:22]   ChatGPT: RuntimeError — OPENROUTER_API_KEY not set
+[03:02:22]   Decomposed dispatch: openrouter/openai/gpt-5.5, 2 chunks, ~49,115 chars
+[03:02:22]   ChatGPT: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:22]   DeepSeek: RuntimeError — OPENROUTER_API_KEY not set
+[03:02:22]   Decomposed dispatch: openrouter/deepseek/deepseek-v4-pro, 2 chunks, ~49,115 chars
+[03:02:22]   DeepSeek: multi-turn FAILED — RuntimeError: OPENROUTER_API_KEY not set
+[03:02:27]   [claude-cli] delivering chunk 2/3 (27,570 chars, target_1)
+[03:02:31]   [claude-cli] delivering final instruction (chunk 3/3)
