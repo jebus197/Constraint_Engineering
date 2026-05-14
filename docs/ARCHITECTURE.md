@@ -174,6 +174,19 @@ Hierarchical constraint enforcement. Five-layer cascade: foundation, domain, tas
 
 Central coordination hub. Manages checkpoint persistence (save / restore experiment state), round coordination, relay-mode message routing, and convergence signalling. Named for its role as a minimal but essential coordination point.
 
+### Component Maturity (Closure-State Lexicon)
+
+Every code component in the pipeline carries one of four maturity labels (the F4 lexicon, locked 21 April 2026 with `tripwire` added 13 May 2026):
+
+| Label | Definition | Drives outcomes? |
+|---|---|---|
+| `library_complete` | Code present and tested, not hooked into any live or shadow pipeline path. | No |
+| `tripwire` | Hooked into the pipeline; observation-only by default, assertive when an explicit flag is set. | Only when flag is set |
+| `shadow_integrated` | Hooked into the live pipeline in observation-only capacity; emits logs and metrics but does not drive verdicts, promotions, or gate decisions. | No |
+| `live_operational` | Drives live decisions; reversion requires explicit policy change. | Yes |
+
+Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional; most components flow directly through shadow to live. The Component Closure-State Index at the F4 lexicon section in `resources/ONBOARDING.md` is the canonical source for each component's current label.
+
 ## Data Flow (One Round)
 
 ```

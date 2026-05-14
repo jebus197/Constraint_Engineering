@@ -1,23 +1,28 @@
 # CDSFL Current State
 
-Generated: 13 May 2026 02:08 BST (2026-05-13T02:08:49+01:00)
+Generated: 14 May 2026 02:52 BST (2026-05-14T02:52:02+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `4d4d4f1` sv: Exp 40 pre-launch focused Round 2 outcome — 5/5 clean returns, high-confidence fold-ins applied, paired notes landed
-- **Committed:** 2026-05-10 19:35:36 +0100
-- **Remote:** ahead by 81
+- **Last commit:** `7601985` sv: Exp 40 pre-launch focused Round 3 + three-round synthesis — full convergence, all fold-ins applied
+- **Committed:** 2026-05-13 02:08:49 +0100
+- **Remote:** ahead by 82
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`
-- `M resources/ONBOARDING.md`
-- `?? bench/confer_exp40_focused_round3_2026-05-13.py`
-- `?? bench/logs/confer_exp40_focused_round3_2026-05-13/`
-- `?? experimental_notes/Exp40_PreLaunch_Focused_Round3_Outcome_and_Synthesis_2026-05-13.md`
+- `M .claude/CLAUDE.md`
+- `M PAPER.md`
+- `M README.md`
+- `M docs/ARCHITECTURE.md`
+- `M docs/GLOSSARY.md`
+- `M docs/REPRODUCING.md`
+- `M resources/RECOVERY.md`
+- `?? experimental_notes/Exp40_PreLaunch_Focused_Round2_Outcome_Plain_English_2026-05-10.md`
+- `?? experimental_notes/Exp40_PreLaunch_Focused_Round3_Outcome_and_Synthesis_Plain_English_2026-05-13.md`
+- `?? experimental_notes/Exp40_PreLaunch_State_Post_Hiatus_Plain_English_2026-05-09.md`
 
 ---
 
@@ -49,6 +54,7 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `7601985 sv: Exp 40 pre-launch focused Round 3 + three-round synthesis — full convergence, all fold-ins applied`
 - `4d4d4f1 sv: Exp 40 pre-launch focused Round 2 outcome — 5/5 clean returns, high-confidence fold-ins applied, paired notes landed`
 - `38398fb sv: Exp 40 pre-launch — residuals (a)(b)(c)(d) closed + panel rotation to current frontier + Round 2 confer script built`
 - `7cdf846 docs: operational plan — correct sv-prep completed-log dates (22 April → 23 April) after post-compaction resume; add 23 April 05:01 BST sv-landing entry for commit 7c9df2b`
@@ -58,4 +64,3 @@ Uncommitted files:
 - `be6d13a sv: memory sweep + OB session capture post Exp 40 pre-launch close — refresh ce_state.md + project_exp40_plan.md + MEMORY.md index to 2fbedcd/1255 tests/Round 2 closed`
 - `2fbedcd sv: Exp 40 pre-launch F1/F2/F3 + K/L/M shadow-audit enrichment + Round 2 plan review close; 1121/1121 non-network tests pass`
 - `76a6731 sv: Exp 40-54 consolidated plan + panel review round 1 — five-model panel (Gemini 3.1 Pro, Codex GPT-5.4, CC2 Opus 4.6, ChatGPT GPT-5.4, DeepSeek R1-0528) dispatched under star topology with 40_gate.json pass-condition + Stage 6 orthogonality framing, all responses within 227s wall time, no v1-preservation drift; five material fold-ins applied (Gate C preflight for section-17 admissibility parser at Exp 40 launch, Gate C threshold-freeze at Exp 54 launch applied identically across factorial cells, three-layer Cell A integrity strategy for Exp 54 with Gemini fresh-run and DeepSeek sensitivity-analysis fallbacks, shadow-promotion-now bounding condition requiring non-distortion check against pass_condition before live activation, Exp 47/52/53 target synthesis commitment with Exp 51 conditional on composer.py physics content); new artefacts bench/confer_exp40to54_consolidated_plan_review_2026-04-21.py + bench/logs/confer_exp40to54_consolidated_plan_review_2026-04-21/ + experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md + experimental_notes/Exp40_to_54_Plan_Review_Panel_Round1_Outcome_2026-04-21.md plus plain-English TTS mirrors on Desktop; feedback_shadow_promotion_now.md memory updated with conditionally-safe bounding condition; three new memory files from earlier in this continuation window (feedback_communication_density.md, feedback_no_session_deferral.md, feedback_complete_task_lists.md); resources/ONBOARDING.md and resources/RECOVERY.md updated with 21 April session entry`
-- `616ad43 sv: Exp 40 pre-launch panel re-audit + note-discipline rules + full-corpus note audit — four rules locked into memory (no self-reflection, paired technical+plain-English output, inline chat summary, numerical dates); 20 experimental_notes/ files edited to strip self-referential framing and convert word-form dates/numbers; new audit artefacts bench/confer_exp40_reaudit_round1.py + experimental_notes/Exp40_Pre_Launch_Panel_Audit_2026-04-20.md + experimental_notes/Exp40_Reaudit_Verified_Outcome_2026-04-20.md; resources/ONBOARDING.md and resources/RECOVERY.md updated with today's session entry and four standing rules`

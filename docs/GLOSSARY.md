@@ -37,6 +37,15 @@ Constraint-Driven Synthesis and Falsification. The protocol-level architecture f
 
 Popper's degree of corroboration. Measures how well evidence E supports hypothesis H given background knowledge. Used in the runner to track overall corroboration of findings. Defined in the white paper Section 2.1.
 
+### Closure-State Labels (F4 lexicon)
+
+Four-label vocabulary describing a code component's maturity within the runtime pipeline. Locked 21 April 2026 (three labels); extended 13 May 2026 (added `tripwire`). Full definitions in `resources/ONBOARDING.md` under "Closure-State Lexicon". Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional and applies specifically to flag-gated runtime guards.
+
+- **`library_complete`** — code present and tested, not hooked into any live or shadow pipeline path.
+- **`tripwire`** — code hooked into the pipeline, observation-only by default (off, or on-emit-only), but becomes assertive (halts the run, blocks the gate, drives an outcome) when an explicit flag is set. Example: `DEBUG_CHANNEL_CHECK` assertion at `bench/reference_runner_v2.py:3510`.
+- **`shadow_integrated`** — code hooked into the live pipeline in observation-only capacity. Runs on every relevant input, emits logs and metrics, but does not drive verdicts, promotions, or gate decisions. Example: K/L/M shadow-audit logging.
+- **`live_operational`** — code drives live decisions; outputs affect verdicts, gates, or downstream state. Reversion requires explicit policy change. Examples: §17 feedback directive, §18 divergence directive.
+
 ### Composer
 
 The directive composition system (`bench/cdsfl_registry/composer.py`). Produces per-model phenotype-transformed versions of CDSFL directives. Each model receives the same underlying constraints but formatted for its processing characteristics (length caps, format density, stripping levels).

@@ -197,13 +197,15 @@ in the conversation and can be combined (e.g. `p a e d`).
 These commands direct the model to confer on the current task with a specific
 frontier model from the panel. Combinable: `cx ge cc2` confers with all three.
 
-| Cmd | Model | Route |
-|-----|-------|-------|
-| `cc2` | Claude Opus 4.6 | CLI piped mode (`claude -p`), Max subscription |
-| `cx` | Codex GPT-5.4 | OpenRouter API |
-| `ge` | Gemini 3.1 Pro | Google GenAI API |
-| `cgpt` | ChatGPT GPT-5.4 | OpenRouter API |
-| `ds` | DeepSeek Reasoner | DeepSeek API |
+| Cmd | Model | Route | Identifier |
+|-----|-------|-------|---|
+| `cc2` | Claude Opus 4.7 | CLI piped mode (`claude -p`), Max subscription | `opus` |
+| `cx` | Codex GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ge` | Gemini 3.1 Pro Preview | OpenRouter API | `google/gemini-3.1-pro-preview` |
+| `cgpt` | ChatGPT GPT-5.5 | OpenRouter API | `openai/gpt-5.5` |
+| `ds` | DeepSeek V4 Pro | DeepSeek direct API | `deepseek-v4-pro` |
+
+Panel updated 14 May 2026: Claude Opus 4.6→4.7 (Max subscription), GPT-5.4→5.5 for `cx`/`cgpt` (same OpenRouter tier), Gemini route moved Google direct→OpenRouter (same price tier, draws on existing prepaid credits), DeepSeek Reasoner R1-0528→V4 Pro (mandatory; older endpoint retired by DeepSeek). All four upgraded routes were smoke-tested against a known-answer prompt before adoption. The panel is rotated to current frontier on a rolling basis; reproduction should use whichever versions are current at run time, smoke-tested per route.
 
 All models run under CDSFL directives as system prompt. See
 `bench/directives/universal/cdsfl_core_formal.md` for the directive text and

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 13 May 2026 02:08 BST
+Last updated: 14 May 2026 02:52 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,7 +85,36 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20 April – 10 May 2026)
+## Current Pending Work (20 April – 14 May 2026)
+
+**SESSION 2026-05-13 → 14 — EXP 40 PRE-LAUNCH ROUND 3 + COMPREHENSIVE DOCS SWEEP + TWO-VERSION NOTE STANDARD (v1.2):**
+
+Branch: `exp39-experimental`. HEAD at session start `4d4d4f1` (Round 2 sv). Founder directive: complete the autonomous arc for pre-launch (Round 3 to close residual divergence from Round 2 under compelled convergence, then comprehensive docs sweep, then Experiment 40 dispatch).
+
+1. **Round 3 dispatched 2026-05-13 02:00 BST.** Same 5-model panel as Round 2 (Opus 4.7, GPT-5.5 ×2, Gemini 3.1 Pro Preview via OpenRouter, DeepSeek V4 Pro). Three questions targeting Round 2's residual divergence. Wall-clock 166 s; all 5 returned cleanly. Outcomes:
+   - **Q1 Exp 44 vs Exp 49 trigger:** 5/5 on B (Exp 49 primary, Exp 44 early-observation checkpoint). All four prior Exp-44 endorsers moved on DeepSeek's structural argument.
+   - **Q2 F3 closure-state label:** 4/5 on C (new `tripwire` label added to F4 lexicon as 4th tier). CC2 held A (`library_complete` is fine under the existing three-label lexicon); did not refute the proposed addition.
+   - **Q3 brief refinements (4 sub-items):** Q3(a) Exp 51 z3 cluster — 4/5 NO based on partial §2a routing excerpt, CC2 YES based on actual `physics.toml`. Direct source verification under sy (file inspection) confirmed CC2 correct — physics.toml routes mathematical to `[sympy, dimensional_analysis, z3, astronomical]` AND logical to `[z3, sympy]`. Source wins under FFAFP. **YES applied.** Q3(b) `stoichiometric_balance` rename in Exp 52 — **5/5 YES, applied.** Q3(c-units) drop `astropy.units` from Exp 53 — **5/5 YES-drop, applied.** Q3(c-LP) linear_programming cluster in Exp 53 — 4/5 NO-skip based on partial §2a excerpt, CC2 YES-add based on actual `engineering.toml`. Verification confirmed CC2 correct — engineering.toml routes mathematical to `[sympy, dimensional_analysis, linear_programming]`. Source wins. **YES applied.**
+
+2. **Fold-ins applied to consolidated plan + Desktop byte-identical mirror:**
+   - §6b G6 + G7 reworded: Exp 49 primary trigger, Exp 44 early-observation checkpoint.
+   - §2a Exp 51 physics: routing text corrected to include z3; new claim cluster 5 (logical/conservation-violation, z3-routable) added; false-claim cluster renumbered to 6.
+   - §2a Exp 52 chemistry: stoichiometry cluster tool name corrected from `collections.Counter` to `stoichiometric_balance`.
+   - §2a Exp 53 engineering: routing text corrected (added linear_programming, dropped astronomical); cluster 4 dimensional consistency drops astropy.units; new claim cluster 5 (optimisation/constrained-design, linear_programming-routable) added; false-claim cluster renumbered to 6.
+
+3. **F4 closure-state lexicon extended:** `tripwire` label added to `resources/ONBOARDING.md` between `library_complete` and `shadow_integrated`. Promotion order updated: `library_complete → tripwire (if applicable) → shadow_integrated → live_operational`. F3 `DEBUG_CHANNEL_CHECK` relocated in the Component Closure-State Index from `library_complete` to `tripwire`. The `library_complete` section of the index is currently empty (next entrants expected during Exp 47/51/52/53 module drafting).
+
+4. **Note standard advanced to v1.2 (locked 2026-05-14).** Adds Rule 12: substantive technical notes carry **two markdown versions** plus a TTS companion. Technical at `experimental_notes/<Name>_<DATE>.md` (full rigour, glossed jargon). Plain-English at `experimental_notes/<Name>_Plain_English_<DATE>.md` (register: smart curious non-specialist; no internal labels as standalone tokens; narrative over enumeration; ~2/3 length of technical). TTS at `~/Desktop/CDSFL_tts/<Name>_<DATE>.txt` mirroring the plain-English markdown. Refines Rule 4 (label-glossing applies to technical version; plain-English largely omits internal labels). v1.2 indexed in MEMORY.md as current working version; v1 and v1.1 preserved for archival continuity.
+
+5. **Plain-English retrofit for the three most recent technical notes:** plain-English markdown companions created for `Exp40_PreLaunch_State_Post_Hiatus_2026-05-09`, `Exp40_PreLaunch_Focused_Round2_Outcome_2026-05-10`, `Exp40_PreLaunch_Focused_Round3_Outcome_and_Synthesis_2026-05-13`. TTS files at `~/Desktop/CDSFL_tts/` for the same three rewritten to mirror the plain-English version (replacing the previous technical TTS).
+
+6. **Comprehensive docs sweep:** README panel-composition line updated (4.6→4.7, 5.4→5.5, R1-0528→V4 Pro, Gemini route Google→OpenRouter) with rolling-rotation footnote; historical references preserved as-is. `docs/GLOSSARY.md` gains a Closure-State Labels entry covering all four labels with examples. `docs/ARCHITECTURE.md` gains a Component Maturity subsection at the end of the Components section, summarising the four-tier promotion order. `docs/REPRODUCING.md` model-panel table updated to current versions with route changes annotated. `PAPER.md` Methodology gains a current-as-of-14-May panel table alongside the historical April panel (vendor count corrected from 3 to 4). `MATHEMATICAL_APPENDIX.md` requires no change — math is unchanged by lexicon updates.
+
+7. **Sequencing from here:** sv-checkpoint this state, then Experiment 40 dispatch. No outstanding pre-launch blockers. No outstanding founder-judgement items from the focused-review work-stream.
+
+**Open items at session close:** None pre-launch. The Cell A entry-method decision for Experiment 54 (RQ3) remains a founder call at Exp 54 entry (well downstream).
+
+---
 
 **SESSION 2026-05-10 — EXP 40 PRE-LAUNCH RESIDUALS CLOSURE + PANEL ROTATION + ROUND 2 BUILD:**
 

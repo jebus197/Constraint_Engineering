@@ -657,7 +657,9 @@ This section documents the procedures used in all empirical experiments. It is s
 
 ### Models
 
-Five frontier-class models from three vendors participate as co-equal reviewers:
+Five frontier-class models from four vendors participate as co-equal reviewers. The table below records the panel as it stood at the time this section was written (April 2026); the panel is rotated to current frontier on a rolling basis, with each rotated route smoke-tested against a known-answer prompt before substantive use. The most recent rotation occurred 14 May 2026 and is recorded in `resources/ONBOARDING.md` and `docs/REPRODUCING.md`; the canonical source for the current panel is the operational tracker at `experimental_notes/CDSFL_Agent_Operational_Plan.md`. The methodology in this Part is independent of any specific model version.
+
+Panel as of April 2026:
 
 | Model | Vendor | Access Method |
 |---|---|---|
@@ -667,7 +669,17 @@ Five frontier-class models from three vendors participate as co-equal reviewers:
 | Gemini 3.1 Pro Preview | Google | Google GenAI SDK (multi-turn chat) |
 | ChatGPT 5.4 | OpenAI | `chatgpt --model gpt-5.4` CLI |
 
-Opus 4.6 serves as orchestrator (coordinates the protocol), domain expert (generates expert guidance in HIL/CDSFL+HIL conditions), AND reviewer (produces independent findings alongside the other four). This "team captain" role — participating while also coordinating — mirrors how a lead researcher functions in a real review team.
+Panel as of 14 May 2026 (current at time of last update to this paper):
+
+| Model | Vendor | Access Method |
+|---|---|---|
+| Opus 4.7 (Claude) | Anthropic | `claude -p` CLI (Max subscription) |
+| Codex (GPT-5.5) | OpenAI | OpenRouter API (`openai/gpt-5.5`) |
+| DeepSeek V4 Pro | DeepSeek | DeepSeek direct API (`deepseek-v4-pro`) |
+| Gemini 3.1 Pro Preview | Google | OpenRouter API (`google/gemini-3.1-pro-preview`) |
+| ChatGPT (GPT-5.5) | OpenAI | OpenRouter API (`openai/gpt-5.5`) |
+
+Claude (in the CC2 slot) serves as orchestrator (coordinates the protocol), domain expert (generates expert guidance in HIL/CDSFL+HIL conditions), AND reviewer (produces independent findings alongside the other four). This "team captain" role — participating while also coordinating — mirrors how a lead researcher functions in a real review team.
 
 ### Factorial Design
 
