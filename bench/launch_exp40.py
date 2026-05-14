@@ -166,6 +166,12 @@ def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
     kwargs = {
         "experiment_name": exp_cfg["experiment_name"],
         "models": exp_cfg["models"],
+        # Target article + context files — required by run_experiment to
+        # read the source-under-review. Missing these caused an
+        # IsADirectoryError on the first real launch attempt 14 May 2026.
+        "test_article": exp_cfg["test_article"],
+        "context_files": exp_cfg.get("context_files", []),
+        "domain": exp_cfg.get("domain", "software"),
         "max_rounds": exp_cfg.get("max_rounds", 8),
         "extension_cap": exp_cfg.get("extension_cap", 10),
         "wall_clock_cap_s": exp_cfg.get("wall_clock_cap_s", 3600),
