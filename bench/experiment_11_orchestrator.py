@@ -117,7 +117,7 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="Codex",
-            model_id="openai/gpt-5.4",
+            model_id="openai/gpt-5.5",
             api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),
@@ -130,7 +130,7 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="ChatGPT",
-            model_id="openai/gpt-5.4",
+            model_id="openai/gpt-5.5",
             api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),
@@ -152,7 +152,7 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="DeepSeek",
-            model_id="deepseek/deepseek-r1-0528",
+            model_id="deepseek/deepseek-v4-pro",
             api="openrouter",
             role="participant",
             system_prompt_path=str(cdsfl_path),

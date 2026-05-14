@@ -191,11 +191,11 @@ def should_decompose_v2(
 # ─────────────────────────────────────────────────────────────────────────────
 
 MODEL_ROSTER = {
-    "CC2": "Claude Opus 4.6 (Anthropic)",
-    "Codex": "GPT-5.4 Codex (OpenAI)",
-    "Gemini": "Gemini 3.1 Pro (Google)",
-    "DeepSeek": "DeepSeek Reasoner (DeepSeek)",
-    "ChatGPT": "GPT-5.4 (OpenAI)",
+    "CC2": "Claude Opus 4.7 (Anthropic)",
+    "Codex": "GPT-5.5 (OpenAI)",
+    "Gemini": "Gemini 3.1 Pro Preview (Google)",
+    "DeepSeek": "DeepSeek V4 Pro (DeepSeek)",
+    "ChatGPT": "GPT-5.5 (OpenAI)",
 }
 
 # Operational directive — R_k(i) self-assessment equation and working protocol.
