@@ -318,16 +318,27 @@ def main() -> int:
 
     try:
         from bench.reference_runner_v2 import run_experiment  # noqa: E402
+        from bench.experiment_11_orchestrator import load_default_config  # noqa: E402
     except ImportError as e:
-        print(f"ERROR: could not import reference_runner_v2: {e}")
+        print(f"ERROR: could not import runner v2 or orchestrator: {e}")
         return 1
 
     runner_cfg = _build_runner_config(exp_cfg, args)
 
-    # Delegate to the runner's own entry. The runner expects to receive
-    # the experiment config (test_article path, context_files list) from
-    # wrapper infrastructure; we pass the dict in exp_cfg directly.
-    result = run_experiment(runner_cfg, exp_cfg)
+    # Load the ExperimentConfig (model panel + system prompt) the runner
+    # expects. `load_default_config` returns an `ExperimentConfig`
+    # populated from `bench/experiment_11_orchestrator.py`'s ModelConfig
+    # entries plus the CDSFL system prompt text.
+    exp_config_obj = load_default_config()
+    cdsfl_path = (Path(__file__).resolve().parent.parent
+                  / "bench" / "directives" / "universal"
+                  / "cdsfl_core_formal.md")
+    cdsfl_text = cdsfl_path.read_text(encoding="utf-8")
+
+    # Delegate to the runner's entry point with the correct signature:
+    # run_experiment(exp_config: ExperimentConfig, cdsfl_text: str,
+    #                cfg: RunnerConfig)
+    result = run_experiment(exp_config_obj, cdsfl_text, runner_cfg)
 
     if result.get("terminated"):
         print(f"\nExperiment terminated: {result['terminated']}")
