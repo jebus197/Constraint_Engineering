@@ -4,7 +4,7 @@
 
 **Function.** Authoritative operational tracker for the Exp 40–54 arc and the subsequent Bench Run 2 (27 frontier STEM problem sets). First resource to read after any compaction or long break.
 
-**Last updated.** 15 May 2026 22:30 BST. Post-continuation 12-item fix tranche executed under full MC discipline (cc2 cx ge cgpt ds sq f sy p t). 9 engineering items complete; architectural confer completed via mandated local-P-pass fallback (Codex CLI unstable in env); Exp 40 R17–R21 resume + live confer surfaced as founder decisions (cost/supervision gates). 229 regression tests pass across the tranche + 8 pre-continuation fixes + adjacent suites. New module `bench/merge_arbitration.py` (G7, default-disabled). 6 new test files. Paired fix-tranche post-mortem written: technical `experimental_notes/Exp40_Fix_Tranche_Postmortem_2026-05-15.md`, plain-English `..._Plain_English_2026-05-15.md`, TTS `~/Desktop/CDSFL_tts/Exp40_Fix_Tranche_Postmortem_2026-05-15.txt`. HEAD `3bbf2c7` (working tree regression-clean, sv pending founder direction).
+**Last updated.** 15 May 2026 22:30 BST. Post-continuation 12-item fix tranche executed under full MC discipline (cc2 cx ge cgpt ds sq f sy p t). 9 engineering items complete; architectural confer completed via mandated local-P-pass fallback (Codex CLI unstable in env); Exp 40 R17–R21 resume + live confer surfaced as founder decisions (cost/supervision gates). 229 regression tests pass across the tranche + 8 pre-continuation fixes + adjacent suites. New module `bench/merge_arbitration.py` (G7, default-disabled). 6 new test files. Paired fix-tranche post-mortem written: technical `experimental_notes/Exp40_Fix_Tranche_Postmortem_2026-05-15.md`, plain-English `..._Plain_English_2026-05-15.md`, TTS `~/Desktop/CDSFL_tts/Exp40_Fix_Tranche_Postmortem_2026-05-15.txt`. **sv landed: HEAD `7ecbf26` pushed to `origin/exp39-experimental`** (137 files: tranche + 6 test files + 4 post-mortems + run logs + regenerated state; ONBOARDING/RECOVERY/ce_state updated). Codex CLI restored to 0.130.0 (notarized, authenticated). Working tree clean post-sv.
 
 **Prior update.** 15 May 2026 05:30 BST. Experiment 40 continuation run completed (ran 03:15:48 → 05:20:26 BST, 7,478 seconds, exit code 0). Wall-clock cap fired at Round 17 boundary. Seven rounds completed in this leg (R10–R16); 17 rounds total across both legs of Exp 40. γ-decay reached 0.034 (deep converged regime); γ-alt boolean not met. Seventeen BUGZILLA verified CLOSED transitions. Six D4 MERGE DEADLOCK escalations to HIL — G7 evidence cluster now in hand. Paired post-mortem written: technical at `experimental_notes/Exp40_Continuation_Postmortem_2026-05-15.md`, plain-English at `experimental_notes/Exp40_Continuation_Postmortem_Plain_English_2026-05-15.md`, TTS at `~/Desktop/CDSFL_tts/Exp40_Continuation_Postmortem_2026-05-15.txt`. HEAD prior to post-mortem write: `3bbf2c7`. Working tree carries the run's untracked log files + the three new post-mortem documents.
 
@@ -253,8 +253,9 @@ Top item = resume point after compaction.
 **Next action — founder review of the fix-tranche post-mortem (15 May 2026, evening).**
 
 The post-continuation 12-item fix tranche is complete (9 engineering items
-+ local architectural P-pass; 229 tests pass; HEAD `3bbf2c7`, working tree
-regression-clean, sv pending). Read in this order:
++ local architectural P-pass; 229 tests pass; **sv landed HEAD `7ecbf26`
+pushed to origin/exp39-experimental**, working tree clean; codex CLI
+restored 0.130.0 notarized+authed). Read in this order:
    a. Plain-English `experimental_notes/Exp40_Fix_Tranche_Postmortem_Plain_English_2026-05-15.md`
       (or TTS `~/Desktop/CDSFL_tts/Exp40_Fix_Tranche_Postmortem_2026-05-15.txt`).
    b. Technical `experimental_notes/Exp40_Fix_Tranche_Postmortem_2026-05-15.md`
