@@ -484,9 +484,20 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
     # use a permissive boundary — any line starting with a known section
     # name in caps terminates the block.
     tail = finding_text[marker_match.end():]
+    # FINDING_ID added to the alternation 15 May 2026 per Exp 40 panel
+    # consensus. Four of five models (CC2, ChatGPT, Codex, DeepSeek)
+    # independently produced findings reporting this terminator gap:
+    # when the next finding's marker is FINDING_ID:, the regex fails
+    # to match because `_ID` appears between FINDING and `:`. Result:
+    # the ADMISSIBILITY block consumes text from the subsequent
+    # finding, producing the parser-runaway pattern that polluted
+    # canonical finding identifiers throughout Exp 40 (e.g.
+    # 'Gemini_` has `_ID` before the colon...'). Reconciliation
+    # canonical: C0008.
     section_terminator = re.search(
         r"^\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|"
-        r"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|FINDING)\s*:",
+        r"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|"
+        r"FINDING_ID|FINDING)\s*:",
         tail,
         re.MULTILINE,
     )

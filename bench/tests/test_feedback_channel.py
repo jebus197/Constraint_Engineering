@@ -624,6 +624,40 @@ class TestParseAdmissibility:
         failed = set(parse_admissibility_block(text))
         assert failed == set(ADMISSIBILITY_GATES)
 
+    def test_finding_id_marker_terminates_block(self):
+        """Regression for the Exp 40 panel-found parser bug
+        (canonical C0008). Before 15 May 2026 fix, FINDING_ID: in the
+        next finding did not match the terminator regex (because `_ID`
+        appears between FINDING and the colon), so the ADMISSIBILITY
+        block consumed text from the subsequent finding.
+
+        Fix: FINDING_ID added to the terminator alternation in
+        bench/dm/_feedback.py parse_admissibility_block.
+        """
+        text = """
+        FINDING_ID: F001
+        ADMISSIBILITY:
+          S_min: PASS
+          G-completeness: FAIL (no verifier reproduces)
+          d_tool: PASS
+          σ_measured: PASS
+          q_retest: PASS
+        FINDING_ID: F002
+        ADMISSIBILITY:
+          S_min: FAIL (location missing)
+          G-completeness: PASS
+          d_tool: PASS
+          σ_measured: PASS
+          q_retest: PASS
+        """
+        # Parser should return failures for F001's block only —
+        # NOT also pick up F002's "S_min: FAIL".
+        failed = parse_admissibility_block(text)
+        assert failed == ["G-completeness"], (
+            f"ADMISSIBILITY block leaked across FINDING_ID boundary; "
+            f"expected ['G-completeness'], got {failed}"
+        )
+
     def test_missing_gates_count_as_failed(self):
         """If the block exists but skips a gate, the skipped gate is FAIL."""
         text = """
