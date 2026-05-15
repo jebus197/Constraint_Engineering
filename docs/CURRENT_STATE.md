@@ -1,33 +1,24 @@
 # CDSFL Current State
 
-Generated: 15 May 2026 23:12 BST (2026-05-15T23:12:29+01:00)
+Generated: 15 May 2026 23:24 BST (2026-05-15T23:24:08+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `3bbf2c7` feat: launcher_core shared infrastructure + G7 merge-deadlock design
-- **Committed:** 2026-05-15 03:22:07 +0100
-- **Remote:** ahead by 97
+- **Last commit:** `553d41d` sv-followup: operational tracker HEAD 3bbf2c7->7ecbf26 post-sv
+- **Committed:** 2026-05-15 23:13:44 +0100
+- **Remote:** ahead by 99
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/decomposed_dispatch.py`
-- `M bench/dm/_sk_format.py`
-- `M bench/exp40_configs/40_gate.json`
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Gemini.json`
-- `M bench/immune_agents.py`
-- `M bench/insect_brain.py`
-- `M bench/launch_exp40.py`
-- `M bench/launcher_core.py`
-- `M bench/logs/exp40_gate_20260514T020550Z/checkpoint.json`
-- `M bench/logs/exp40_gate_20260514T020550Z/completion_signal.json`
-- `M bench/logs/exp40_gate_20260514T020550Z/exp40_gate_report.json`
+- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
+- `M resources/RECOVERY.md`
+- `?? bench/confer_exp40_architectural_2026-05-15.py`
+- `?? bench/logs/confer_exp40_architectural_2026-05-15/`
+- `?? experimental_notes/Exp40_Architectural_Confer_Outcome_2026-05-15.md`
+- `?? experimental_notes/Exp40_Architectural_Confer_Outcome_Plain_English_2026-05-15.md`
 
 ---
 
@@ -59,6 +50,8 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `553d41d sv-followup: operational tracker HEAD 3bbf2c7->7ecbf26 post-sv`
+- `7ecbf26 sv: Exp 40 continuation + post-continuation fix tranche (1a-1e parser/classifier/RT-v2/ITC/reformat), G7 merge-arbitration module (default-disabled), DeepSeek Phase-1 reasoning_content fix, gamma-input triple-cross-verification, codex false-positive resolution; 229 tests pass; paired post-mortems`
 - `3bbf2c7 feat: launcher_core shared infrastructure + G7 merge-deadlock design`
 - `7f3066b fix: ITC CAPABILITY_MISMATCH false positive on verdict-heavy rounds`
 - `a8a33c2 feat: make Bugzilla paradigm explicit to the panel`
@@ -67,5 +60,3 @@ Uncommitted files:
 - `26b28f8 fix: gamma input — use post-reconciliation novelty, not pre-`
 - `8cb1fbe feat: integrate Bugzilla CLOSED-loop into runner v2 state machine`
 - `12ad362 feat: Bugzilla CLOSED-loop module + Exp 40 validation`
-- `35c44b6 fix: decomposed-dispatch synthesis empty-response fallback`
-- `f3684a3 sv: Exp 40 launch + complete — first experiment in arc closed, post-mortem written`

@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 15 May 2026 23:12 BST
+Last updated: 15 May 2026 23:24 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -99,7 +99,9 @@ Branch `exp39-experimental`. HEAD at session start `3bbf2c7`; this sv is the nex
 
 4. **Fold-in verified.** The full tranche is in the live Exp 40 runner chain (clean imports, G7 off, config round-trips). The resume runs the corrected runner.
 
-**Pending founder decisions (cost/supervision gates, not unfinished work):** (1) live five-model architectural confer — local P-pass covered the substance; live confer is the G7-enablement go/no-go gate. (2) Exp 40 R17–R21 resume — multi-hour, real OpenRouter spend, close-monitoring practice. Both ready; nothing blocked.
+5. **Live architectural confer CLOSED 2026-05-15 23:25 BST.** Five-model compelled-convergence round (Gemini/Codex/CC2/ChatGPT/DeepSeek, star, `cdsfl_core_formal.md`, single round) reached **5/5 on all three questions + 5/5 OVERALL: YES** to resume R17–R21 (G7 disabled) and YES to enable G7 at Exp 41 as designed; no blocking items; sole caveat is operational discipline (watch documented escalation triggers during R17–R21). Codex CLI restored (0.130.0 notarized) so the full live panel ran. Outcome note `experimental_notes/Exp40_Architectural_Confer_Outcome_2026-05-15.md` (+ plain-English + TTS).
+
+**One pending founder decision (cost/supervision gate, not unfinished work):** Exp 40 R17–R21 resume — multi-hour, real OpenRouter spend, close-monitoring practice. The architecture is now panel-validated (sound to resume G7-disabled, sound to enable G7 at Exp 41). Ready when the founder elects to start it; purely a cost/supervision call now, not an architectural one.
 
 **SESSION 2026-05-13 → 14 — EXP 40 PRE-LAUNCH ROUND 3 + COMPREHENSIVE DOCS SWEEP + TWO-VERSION NOTE STANDARD (v1.2):**
 

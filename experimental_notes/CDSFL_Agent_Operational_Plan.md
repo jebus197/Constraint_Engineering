@@ -262,15 +262,26 @@ restored 0.130.0 notarized+authed). Read in this order:
       — per-item outcomes, test ledger, files changed, deferral rationale.
    c. The 15 May 22:30 entries in the Completed log below.
 
-**Two open items are founder DECISIONS, not unfinished work:**
-   - **Live five-model architectural confer** — local P-pass covered the
-     substance (found+fixed 2 issues). Live confer remains the founder's
-     go/no-go gate before G7 *enablement*. Trigger: Codex CLI stability +
-     founder available to supervise API spend.
+**Live architectural confer — CLOSED 2026-05-15 23:25 BST.** Ran the
+five-model compelled-convergence round (Gemini/Codex/CC2/ChatGPT/
+DeepSeek, star, `cdsfl_core_formal.md`, single round). **5/5 on all
+three questions + 5/5 OVERALL: YES to (a) resume R17–R21 with G7
+disabled, YES to (b) enable G7 at Exp 41 as designed. No blocking
+items.** Sole caveat = operational discipline: watch the two
+documented escalation triggers during R17–R21 (mangled IDs → UUID;
+non-stale extract failures → in-round dispatch). Outcome note:
+`experimental_notes/Exp40_Architectural_Confer_Outcome_2026-05-15.md`
+(+ plain-English + TTS). Logs:
+`bench/logs/confer_exp40_architectural_2026-05-15/`.
+
+**One open item remains a founder DECISION, not unfinished work:**
    - **Exp 40 R17–R21 resume** — multi-hour run, significant OpenRouter
      spend, founder's established practice is close monitoring. Full fix
-     tranche folded in + regression-clean; ready when the founder elects
-     to start it, at the preferred monitoring cadence.
+     tranche folded in + regression-clean; the panel has now validated
+     the architecture is sound to resume (G7 disabled) and to enable G7
+     at Exp 41. Ready when the founder elects to start it, at the
+     preferred monitoring cadence. This is a cost/supervision call, not
+     an architectural one — the architecture is signed off.
 
 **sv** is also pending founder direction — the whole tranche is one
 coherent regression-clean changeset ready to commit (new module
