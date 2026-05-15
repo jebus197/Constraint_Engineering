@@ -1352,9 +1352,20 @@ def _itc_detect(
         return ITC_CAPABILITY_MISMATCH
     if not response_text or len(response_text.strip()) < 50:
         return ITC_TRANSIENT_FAILURE
-    if findings_count == 0 and len(response_text) > 200:
+    if findings_count == 0 and verdict_count == 0 and len(response_text) > 200:
+        # Original false-positive case: model produced substantive output
+        # but the parser extracted neither findings nor verdicts. That
+        # IS a real signal (parser failure or model misbehaviour).
+        # Verdict-heavy rounds (Codex Exp 40 rounds 3-4: 5,715 chars of
+        # MERGE/CHALLENGE/REJECT verdicts on existing canonical findings)
+        # are healthy late-arc behaviour, not CAPABILITY_MISMATCH — the
+        # 15 May 2026 fix adds 'verdict_count == 0' to the gate so those
+        # rounds are no longer falsely flagged.
         history = _itc_model_state.get(model_label, {}).get("history", [])
-        recent_empty = sum(1 for h in history[-2:] if h.get("findings") == 0)
+        recent_empty = sum(
+            1 for h in history[-2:]
+            if h.get("findings") == 0 and h.get("verdicts", 0) == 0
+        )
         if recent_empty >= 1:
             return ITC_CAPABILITY_MISMATCH
         return ITC_TRANSIENT_FAILURE
