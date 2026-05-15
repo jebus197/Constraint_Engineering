@@ -377,6 +377,32 @@ def _decomposed_openrouter(
         )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
+
+    # Fallback: if Phase 2 synthesis returned empty content but Phase 1
+    # produced real chunk analyses, reconstruct the response from those
+    # analyses rather than losing the model's actual output. This bug
+    # surfaced in Exp 40 Rounds 3 and 7 (Gemini via OpenRouter): chunk 2
+    # returned partial/truncated content (hitting max_tokens=4096),
+    # synthesis prompt got messy input, Phase 2 returned empty content,
+    # the runner recorded that empty as the canonical response and
+    # discarded ~50K chars of real Phase 1 content. Fix landed 15 May
+    # 2026 — preserve chunk analyses as the fallback response.
+    if not result_text:
+        fallback_parts = [
+            f"=== ANALYSIS OF {a['label']} "
+            f"(synthesis returned empty, chunk content preserved) ===\n"
+            f"{a['analysis']}"
+            for a in per_chunk_analyses
+            if a.get('analysis', '').strip()
+        ]
+        if fallback_parts:
+            result_text = "\n\n".join(fallback_parts)
+            _log(
+                f"  [openrouter:{model_id}] WARN: synthesis returned 0 chars; "
+                f"reconstructed from {len(fallback_parts)} chunk analyses "
+                f"({len(result_text):,} chars)"
+            )
+
     turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
 
@@ -550,6 +576,28 @@ def _decomposed_deepseek(
         )
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
+
+    # Fallback: same defensive pattern as _decomposed_openrouter — if
+    # Phase 2 synthesis returns empty content but Phase 1 produced
+    # chunk analyses, reconstruct the response from those analyses.
+    # Closes the same bug class across all per-chunk-analysis
+    # dispatchers (15 May 2026 fix).
+    if not result_text:
+        fallback_parts = [
+            f"=== ANALYSIS OF {a['label']} "
+            f"(synthesis returned empty, chunk content preserved) ===\n"
+            f"{a['analysis']}"
+            for a in per_chunk_analyses
+            if a.get('analysis', '').strip()
+        ]
+        if fallback_parts:
+            result_text = "\n\n".join(fallback_parts)
+            _log(
+                f"  [deepseek:{model_id}] WARN: synthesis returned 0 chars; "
+                f"reconstructed from {len(fallback_parts)} chunk analyses "
+                f"({len(result_text):,} chars)"
+            )
+
     turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
 
