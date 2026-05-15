@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 14 May 2026 06:34 BST
+Last updated: 15 May 2026 23:12 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,7 +85,21 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20 April – 14 May 2026)
+## Current Pending Work (20 April – 15 May 2026)
+
+**SESSION 2026-05-15 — EXP 40 CONTINUATION + POST-CONTINUATION FIX TRANCHE + CODEX FALSE-POSITIVE:**
+
+Branch `exp39-experimental`. HEAD at session start `3bbf2c7`; this sv is the next commit.
+
+1. **Exp 40 continuation ran to wall-clock cap** (R10–R16, 7,478 s, exit 0). Deep γ-decay convergence (0.034) but γ-alt boolean not met. 26 CLOSED / 179 canonical / 280 raw. Six D4 MERGE deadlocks + three D2 escalations = the G7 evidence cluster. Paired post-mortem written.
+
+2. **12-item post-continuation fix tranche complete** under MC discipline. Five anomaly fixes (1a parser hardening; 1b classifier log-honesty — log defect not logic; 1c RT-v2 bias windowing, opt-in; 1d ITC γ-gate — fixed the real HIL-flag-noise bug; 1e strengthened reformat, in-round dispatch deferred w/ trigger). G7 merge-arbitration module + runner integration + γ tie-breaker, **default-disabled** per staged-enablement-at-Exp-41. DeepSeek Phase-1 zero-char root cause fixed (4096→8192 cap + `reasoning_content` fallback). Eight prior fixes re-verified; gamma-input math triple-cross-verified (z3 + SymPy + NumPy). Architectural confer done as local-P-pass fallback (Codex CLI unstable) — found+fixed 2 issues. **229 regression tests pass**; 6 new test files; paired fix-tranche post-mortem written.
+
+3. **Codex CLI false-positive resolved.** macOS XProtect quarantined the pre-existing cask codex 0.117.0 mid-session (stale-heuristic false positive on a valid OpenAI-signed binary; Gatekeeper blocked execution — never ran). Founder-authorised `brew reinstall --cask codex` → 0.130.0, `spctl`-accepted Notarized Developer ID, authenticated. No founder macOS action required.
+
+4. **Fold-in verified.** The full tranche is in the live Exp 40 runner chain (clean imports, G7 off, config round-trips). The resume runs the corrected runner.
+
+**Pending founder decisions (cost/supervision gates, not unfinished work):** (1) live five-model architectural confer — local P-pass covered the substance; live confer is the G7-enablement go/no-go gate. (2) Exp 40 R17–R21 resume — multi-hour, real OpenRouter spend, close-monitoring practice. Both ready; nothing blocked.
 
 **SESSION 2026-05-13 → 14 — EXP 40 PRE-LAUNCH ROUND 3 + COMPREHENSIVE DOCS SWEEP + TWO-VERSION NOTE STANDARD (v1.2):**
 

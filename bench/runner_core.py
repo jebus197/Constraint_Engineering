@@ -330,6 +330,51 @@ def _sanitize_fstring_id(fid: str, model_id: str) -> str:
     return fid
 
 
+# Exp 40 fix 1a (post-continuation 15 May 2026): structural finding-ID
+# validation. Live evidence from the 15 May continuation run surfaced
+# finding IDs drawn from arbitrary code fragments (e.g. `f for f in
+# findings}` from a Python dict-comprehension, single-backtick literals,
+# multi-token descriptive text). The Exp 39 leakage guards
+# (`_CODE_LEAK_VARNAMES`, parens, f-string markers) only caught Python
+# variable-name leaks. The structural rule catches the broader class:
+# a finding ID is a single token of [A-Za-z0-9_] characters only. Every
+# legitimate ID in the project's registry conforms — F001, CC2_F001,
+# C0144_VERDICT_CONFIRM, IM_F001, UNSTRUCTURED, LB_R2_F001, etc.
+# Anomaly captured in
+# `experimental_notes/Exp40_Continuation_Postmortem_2026-05-15.md` §2.
+# The panel that produced the mangled IDs ALSO independently diagnosed
+# the underlying defect (`{f.finding_id: f for f in findings}` silently
+# overwriting on shared finding_id) — making the panel's own analysis
+# the design reference.
+_VALID_FID_STRUCTURE = re.compile(r'^[A-Za-z0-9_]+$')
+
+
+def _structurally_valid_fid(fid: str) -> bool:
+    """Return True iff `fid` matches the canonical structural pattern.
+
+    Strict: a finding ID is a single token of alphanumeric characters
+    and underscores only. Whitespace, braces, backticks, hyphens,
+    operators, and any other punctuation are rejected.
+
+    All five model paths (JSON array, JSON object, tuple, marker, bare)
+    must call this on the candidate ID after `_sanitize_fstring_id` and
+    after the model_id-prefix application. Block-level fallbacks (e.g.
+    the UNSTRUCTURED sentinel) bypass this check by construction since
+    their IDs are runner-generated, not model-supplied.
+    """
+    if not fid:
+        return False
+    # Exp 40 fix 1a P-pass hardening (15 May 2026): a pathological
+    # all-alphanumeric id (e.g. 5000 chars) is structurally "valid"
+    # but degenerate — no real finding id exceeds ~40 chars
+    # (longest observed: C0144_VERDICT_CONFIRM = 21). Bound the length
+    # so a model echoing a huge token cannot register a giant phantom
+    # canonical key. 128 is generous headroom over any legitimate id.
+    if len(fid) > 128:
+        return False
+    return bool(_VALID_FID_STRUCTURE.match(fid))
+
+
 def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Extract structured findings from model response.
 
@@ -432,6 +477,15 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                     # Skip _FOLLOW companion entries — supplementary
                     if "_FOLLOW" in fid.upper():
                         continue
+                    # Exp 40 fix 1a: strip stray whitespace (parity with
+                    # the marker path's .strip()) then reject mangled IDs.
+                    # A model emitting "F001 " with a trailing space is
+                    # producing a legitimate ID with trivial noise — not
+                    # a code-fragment leak — so normalise before the
+                    # structural gate rather than dropping the finding.
+                    fid = fid.strip()
+                    if not _structurally_valid_fid(fid):
+                        continue
                     severity = float(norm.get("SEVERITY", 0.5))
                     severity = max(0.0, min(1.0, severity))
                     flaw_raw = norm.get("FLAW_CLASS", 1)
@@ -512,6 +566,11 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
                 fid = str(norm.get("FINDING_ID", f"F{len(findings)+1:03d}"))
                 fid = _sanitize_fstring_id(fid, model_id)
                 if "_FOLLOW" in fid.upper():
+                    continue
+                # Exp 40 fix 1a: strip then reject mangled IDs (see
+                # JSON-array path above for rationale).
+                fid = fid.strip()
+                if not _structurally_valid_fid(fid):
                     continue
                 severity = float(norm.get("SEVERITY", 0.5))
                 severity = max(0.0, min(1.0, severity))
@@ -725,6 +784,15 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             or finding_id.startswith("f\"")
             or finding_id.startswith("f'")
         ):
+            continue
+
+        # Exp 40 fix 1a (post-continuation 15 May 2026): structural
+        # finding-ID validation. See `_structurally_valid_fid` helper at
+        # module top for rationale + the four other parser paths that
+        # call the same helper. Mangled-ID class documented in
+        # `experimental_notes/Exp40_Continuation_Postmortem_2026-05-15.md`
+        # Anomaly 2.
+        if not _structurally_valid_fid(finding_id):
             continue
         severity = float(sev_match.group(1)) if sev_match else 0.5
         flaw_class = _parse_flaw_class(fc_match.group(1)) if fc_match else 1

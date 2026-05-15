@@ -1,75 +1,79 @@
 {
-    "_comment": "Exp 40: infrastructure gate under reference_runner_v2. Target is the \u00a717 feedback channel module (bench/dm/_feedback.py, ~22K). This is the first decomposed target element from the 14-sub-experiment series. Exp 40 maps to Exp 39-0 (infrastructure gate) but with (a) right-sized test article, (b) \u00a717 + \u00a718 directives live, (c) \u03b3-alt convergence path wired, (d) specialist cells for math/stats/bio/info-sci live-promoted, (e) Macrophage verdict-wiring fallback, (f) DeepSeek '### Finding N:' header adapter, (g) fingerprint update quality-gated.",
-    "test_article": "bench/dm/_feedback.py",
-    "context_files": [
-        "bench/dm/_types.py"
+  "_comment": "Exp 40: infrastructure gate under reference_runner_v2. Target is the \u00a717 feedback channel module (bench/dm/_feedback.py, ~22K). This is the first decomposed target element from the 14-sub-experiment series. Exp 40 maps to Exp 39-0 (infrastructure gate) but with (a) right-sized test article, (b) \u00a717 + \u00a718 directives live, (c) \u03b3-alt convergence path wired, (d) specialist cells for math/stats/bio/info-sci live-promoted, (e) Macrophage verdict-wiring fallback, (f) DeepSeek '### Finding N:' header adapter, (g) fingerprint update quality-gated.",
+  "test_article": "bench/dm/_feedback.py",
+  "context_files": [
+    "bench/dm/_types.py"
+  ],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 18,
+  "extension_cap": 20,
+  "wall_clock_cap_s": 7200,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp40_gate",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 2,
+  "gamma_alt_threshold": 0.3,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": false,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "test_cmd": "python3 -m pytest bench/tests/test_feedback_channel.py -q --tb=line",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_ouroboros": {
+    "api_access": [
+      "arxiv",
+      "semantic_scholar"
+    ]
+  },
+  "_convergence_criteria": {
+    "description": "Gate passes if: (a) all 5 models produce parseable output with R_k, (b) \u03b3-alt path triggers at \u03b3 \u2265 0.30 OR 3 rounds zero novel CRITICAL, (c) R_k adoption \u2265 80% across models, (d) \u00a717 and \u00a718 admissibility rates logged. Wall-clock cap is a safety net, not the expected termination path.",
+    "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt implemented in reference_runner_v2._check_gamma_alt_convergence.",
+    "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds."
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "divergence_round2_extensions": [
+      "contrast_statement",
+      "sibling_check",
+      "near_copy_0.98"
     ],
-    "topology": "star",
-    "pattern": "four_layer",
-    "max_rounds": 8,
-    "extension_cap": 10,
-    "wall_clock_cap_s": 7200,
-    "earliest_stop_round": 3,
-    "models": [
-        "CC2",
-        "Codex",
-        "Gemini",
-        "DeepSeek",
-        "ChatGPT"
+    "eta_int_modulator_wired_into_compute_rk": true,
+    "_note": "F2 (2026-04-21): eta_int_modulator wiring pulled forward from Exp 54 to Exp 40 under shadow-promotion-now policy. Wrapper runs in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q) at bench/reference_runner_v2.py:3510; mathematically equivalent to the prior bare compute_rk(q) path but exercises the wrapper's channel validation. 1620-case identity verified in re-audit 2026-04-20."
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science"
     ],
-    "experiment_name": "exp40_gate",
-    "domain": "software",
-    "rho_threshold": 0.25,
-    "rho_rolling_window": 3,
-    "consecutive_rounds_required": 2,
-    "gamma_alt_threshold": 0.3,
-    "gamma_alt_consecutive_zero_crit": 3,
-    "gamma_alt_earliest_round": 3,
-    "consolidation_rounds": 3,
-    "prior_fix_summary_enabled": true,
-    "windowed_context_enabled": true,
-    "sk_enabled": true,
-    "test_cmd": "python3 -m pytest bench/tests/test_feedback_channel.py -q --tb=line",
-    "sk_s_floor": 0.0,
-    "burst_mode": "off",
-    "_macrophage": {
-        "mode": "patrol"
-    },
-    "_ouroboros": {
-        "api_access": [
-            "arxiv",
-            "semantic_scholar"
-        ]
-    },
-    "_convergence_criteria": {
-        "description": "Gate passes if: (a) all 5 models produce parseable output with R_k, (b) \u03b3-alt path triggers at \u03b3 \u2265 0.30 OR 3 rounds zero novel CRITICAL, (c) R_k adoption \u2265 80% across models, (d) \u00a717 and \u00a718 admissibility rates logged. Wall-clock cap is a safety net, not the expected termination path.",
-        "pass_condition": "gamma >= 0.30 OR (3 consecutive rounds with 0 novel CRITICAL findings). Gamma-alt implemented in reference_runner_v2._check_gamma_alt_convergence.",
-        "fail_condition": "Any model fails to produce parseable output in 2+ consecutive rounds."
-    },
-    "_directives_live": {
-        "section_17_feedback_channel": true,
-        "section_18_divergence_directive": true,
-        "divergence_round2_extensions": [
-            "contrast_statement",
-            "sibling_check",
-            "near_copy_0.98"
-        ],
-        "eta_int_modulator_wired_into_compute_rk": true,
-        "_note": "F2 (2026-04-21): eta_int_modulator wiring pulled forward from Exp 54 to Exp 40 under shadow-promotion-now policy. Wrapper runs in identity mode (m_div=1.0, c_ext=0, nu_k=0, d=1, p=1, eta_int=q) at bench/reference_runner_v2.py:3510; mathematically equivalent to the prior bare compute_rk(q) path but exercises the wrapper's channel validation. 1620-case identity verified in re-audit 2026-04-20."
-    },
-    "_specialist_cells": {
-        "live": [
-            "mathematics",
-            "statistics",
-            "biology",
-            "information_science"
-        ],
-        "functional_shadow": [
-            "physics",
-            "chemistry",
-            "engineering"
-        ]
-    },
-    "_payload_note": "_feedback.py=22K + _types.py=30K = 52K total. Under 80K threshold. All 5 models receive monolithic dispatch. No pre-decomposition expected.",
-    "_sequence_note": "Exp 40 is the first of 14 single-target experiments (40-53) derived from Exp 39 sub-experiments 39-0 through 39-M. Lessons from Exp 40 fold into Exp 41's runner config. Exp 54 is the integration run with 2\u00d72 factorial for \u00a717/\u00a718 attribution."
+    "functional_shadow": [
+      "physics",
+      "chemistry",
+      "engineering"
+    ]
+  },
+  "_payload_note": "_feedback.py=22K + _types.py=30K = 52K total. Under 80K threshold. All 5 models receive monolithic dispatch. No pre-decomposition expected.",
+  "_sequence_note": "Exp 40 is the first of 14 single-target experiments (40-53) derived from Exp 39 sub-experiments 39-0 through 39-M. Lessons from Exp 40 fold into Exp 41's runner config. Exp 54 is the integration run with 2\u00d72 factorial for \u00a717/\u00a718 attribution."
 }

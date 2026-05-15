@@ -167,6 +167,18 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         if gf in exp_cfg:
             kwargs[gf] = exp_cfg[gf]
 
+    # G7 merge-arbitration fields (Exp 40 continuation, 15 May 2026).
+    # Future launchers inherit arbitration passthrough; default-
+    # disabled unless a config sets merge_arbitration_enabled.
+    for af in (
+        "merge_arbitration_enabled",
+        "merge_arbitration_min_defer_count",
+        "merge_arbitration_max_per_round",
+        "merge_arbitration_tiebreaker_gamma",
+    ):
+        if af in exp_cfg:
+            kwargs[af] = exp_cfg[af]
+
     # Round-context helper fields (1D.1, 1D.2, 1D.4)
     for cf in (
         "prior_fix_summary_enabled",

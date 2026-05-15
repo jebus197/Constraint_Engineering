@@ -1241,6 +1241,18 @@ class InsectBrain:
         """
         from bench.immune_agents import run_immune_pipeline
 
+        # Exp 40 fix 1c (post-continuation 15 May 2026): persistent
+        # per-model bias-window state. Lives on the brain so it spans
+        # the whole experiment (the brain is the only object that
+        # persists across rounds at this layer). Passed into the
+        # Regulatory T v2 meta-check so a model's ≥85%-removal AUTOIMMUNE
+        # flag only fires after the condition holds for N consecutive
+        # rounds — preventing per-round HIL noise in converged-state
+        # runs where one model reasonably produces mostly known
+        # findings (continuation Anomaly 4).
+        if not hasattr(self, "_rt_bias_window_state"):
+            self._rt_bias_window_state: Dict[str, int] = {}
+
         # Prior findings for NK cell dedup
         prior = [f for rnd in self.state.all_findings[:-1] for f in rnd] if self.state.all_findings else []
 
@@ -1257,6 +1269,8 @@ class InsectBrain:
             ct_enabled=True,
             ct_timeout=600,  # Allow CT v2 full investigation time (was 300, timed out)
             domain=getattr(self.config, "domain", ""),
+            rt_bias_window_state=self._rt_bias_window_state,
+            rt_bias_window_rounds=3,
         )
         elapsed = time.monotonic() - t0
 

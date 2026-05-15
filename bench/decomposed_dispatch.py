@@ -112,6 +112,48 @@ def _is_waiting(response: str) -> bool:
     return "WAITING" in cleaned and len(cleaned) < 200
 
 
+# Exp 40 continuation fix (15 May 2026): Phase-1 chunk budget +
+# reasoning-content fallback. Root cause of the DeepSeek/Gemini
+# "section N analysis complete (0 chars)" anomaly (continuation
+# Anomaly 1): Phase-1 per-chunk calls capped max_tokens at 4096.
+# DeepSeek V4 Pro and Gemini 3.1 Pro are REASONING models — they emit
+# a chain-of-thought (`reasoning_content`) before the final answer
+# (`content`). A large chunk + the full 4-Layer protocol prompt
+# induces a long reasoning trace; the 4096 budget is exhausted before
+# any `content` is produced, so `content` is empty and the actual
+# review — which lives in `reasoning_content` — was silently
+# discarded (the dispatchers only read `.content`). The 35c44b6
+# synthesis fallback rescued the *synthesis* layer but not the
+# Phase-1 layer where the loss originates.
+#
+# Two-part fix: (i) raise the Phase-1 cap so reasoning models have
+# room to emit final content after the trace; (ii) when `content` is
+# still empty, fall back to `reasoning_content` — a code-review
+# reasoning trace IS substantive analysis and is far better than an
+# empty section. Bounded: the cap rise is modest (cost-aware) and the
+# fallback only triggers on otherwise-empty content.
+_PHASE1_MAX_TOKENS = 8192
+
+
+def _extract_message_text(message) -> str:
+    """Return the usable text from a chat completion message.
+
+    Prefers `content`. Falls back to `reasoning_content` (the
+    reasoning trace of a reasoning model) when `content` is empty —
+    for a code-review prompt the trace contains the actual findings,
+    so preserving it prevents the silent zero-char data loss.
+    """
+    content = (getattr(message, "content", None) or "").strip()
+    if content:
+        return content
+    reasoning = (getattr(message, "reasoning_content", None) or "").strip()
+    if reasoning:
+        return reasoning
+    # Some OpenAI-compatible routes expose the trace as `reasoning`.
+    reasoning_alt = (getattr(message, "reasoning", None) or "").strip()
+    return reasoning_alt
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # API-specific multi-turn implementations
 # ─────────────────────────────────────────────────────────────────────────────
@@ -306,7 +348,7 @@ def _decomposed_openrouter(
         response = client.chat.completions.create(
             model=model_id,
             messages=chunk_messages,
-            max_tokens=4096,
+            max_tokens=_PHASE1_MAX_TOKENS,
             temperature=0.0,
             timeout=timeout,
         )
@@ -316,7 +358,12 @@ def _decomposed_openrouter(
                 f"API returned no choices after chunk {n} "
                 f"(possible upstream 500 error)"
             )
-        resp_text = (response.choices[0].message.content or "").strip()
+        resp_text = _extract_message_text(response.choices[0].message)
+        if resp_text and not (
+            response.choices[0].message.content or "").strip():
+            _log(f"  [openrouter:{model_id}] section {n}: content "
+                 f"empty, recovered {len(resp_text):,} chars from "
+                 f"reasoning trace")
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})
@@ -507,7 +554,7 @@ def _decomposed_deepseek(
         response = client.chat.completions.create(
             model=model_id,
             messages=chunk_messages,
-            max_tokens=4096,
+            max_tokens=_PHASE1_MAX_TOKENS,
             timeout=timeout,
         )
         if not response.choices:
@@ -516,7 +563,12 @@ def _decomposed_deepseek(
                 f"API returned no choices after chunk {n} "
                 f"(possible upstream 500 error)"
             )
-        resp_text = (response.choices[0].message.content or "").strip()
+        resp_text = _extract_message_text(response.choices[0].message)
+        if resp_text and not (
+            response.choices[0].message.content or "").strip():
+            _log(f"  [deepseek:{model_id}] section {n}: content "
+                 f"empty, recovered {len(resp_text):,} chars from "
+                 f"reasoning trace")
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})

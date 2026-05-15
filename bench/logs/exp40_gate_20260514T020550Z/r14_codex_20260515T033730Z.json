@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260515T033730Z",
+  "phase": "r14",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 1949,
+  "response": "SCHEMA_FEEDBACK_RESPONSE:\n- WITHDRAW Codex_UNSTRUCTURED — the prior unstructured finding is a duplicate of settled canonical findings C0023/C0156 and lacked §15 admissibility gates. I am not resubmitting it unchanged.\n\nVERDICT:\n- REOPEN C0156 | Evidence from the current Round 14 artifact shows the claimed closed fix is not present in `bench/dm/_feedback.py`. `FindingFeedback.action` still checks only `self.refutations`, and `priority_score()` still awards the +3.0 refutation priority only for `self.refutations`, not for `final_verdict == \"REJECTED\"`.\n\nCurrent artifact excerpts:\n\n```python\n@property\ndef action(self) -> str:\n    ...\n    if self.refutations:\n        return \"RECALCULATE\"\n```\n\n```python\nscore = 0.0\nif self.refutations:\n    score += 3.0\n```\n\nThis is direct source evidence that the C0156 fix was not applied to the reviewed artifact, or was lost after closure.\n\nNo new DISCOVERY findings are filed. The only substantive issue from my independent target_0 analysis is already represented by C0023/C0156; filing it again would be duplicate compute waste. The target_1 section was read-only context and remains out of review scope.\n\nGLOBAL P-PASS:\n- Pass 1: Checked whether the target_0 issue is novel. It is not; registry contains C0023, C0060, C0152, and C0156 for the same root cause.\n- Pass 2: Checked whether the issue is actually fixed in the current artifact. It is not; the source still contains the unfixed branches.\n- Pass 3: Checked whether filing a new finding would violate the registry instruction. It would; the correct action is REOPEN/CHALLENGE, not rediscovery.\n- Pass 4: Checked target_1 scope. It is explicitly marked read-only context; no finding filed.\n- Pass 5: No additional cross-section issue survives the duplicate/scope filters.\n\nDefinitive stance: no new finding is submitted; the prior duplicate is withdrawn, and C0156 should be reopened because the Round 14 artifact still contains the unfixed code.",
+  "metadata": {
+    "round": 14,
+    "elapsed": 125.2,
+    "chars": 1949,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

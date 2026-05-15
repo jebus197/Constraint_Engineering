@@ -4408,6 +4408,8 @@ def regulatory_t_v2(
     triaged: List[TriagedFinding],
     max_rejection_rate: float = 0.65,
     min_findings_for_check: int = 5,
+    bias_window_state: Optional[Dict[str, int]] = None,
+    bias_window_rounds: int = 3,
 ) -> Tuple[bool, str, "RegulatoryResult"]:
     """Regulatory T Cell v2: fixed math + structured output.
 
@@ -4415,6 +4417,32 @@ def regulatory_t_v2(
     1. Check 1 uses combined removal rate (rejected + duplicated) / total
     2. Check 3 only counts findings present in final_verdicts (intersection)
     3. Check 3 uses proportional threshold (>= 0.85) instead of exact match
+
+    Exp 40 fix 1c (post-continuation 15 May 2026): the per-model-bias
+    check (Check 3) fired AUTOIMMUNE every round a model hit ≥85%
+    removal. In a converged-state run one model (the continuation's
+    Gemini) reasonably produces mostly already-canonicalised findings
+    and hits 100% removal every round, generating a recurring HIL flag
+    that needs no action and forcing per-round resurrection churn
+    (continuation Anomaly 4). The per-model-bias reason is now
+    optionally windowed: if `bias_window_state` is supplied (a
+    caller-owned dict that persists across rounds), the reason is only
+    promoted to a flag when the model has sustained the condition for
+    `bias_window_rounds` consecutive rounds. Combined-removal-rate
+    (Check 1) and uncertain-rate (Check 2) are NOT windowed — they are
+    round-level pipeline-health signals, not convergence noise.
+
+    Backward compatibility: when `bias_window_state` is None (the
+    default), Check 3 fires immediately exactly as before — every
+    pre-existing caller and test sees unchanged behaviour. Only the
+    round-aware runner passes a state dict.
+
+    Args:
+        bias_window_state: Optional caller-owned {model_id: consecutive
+            high-removal round count}. Mutated in place. None = no
+            windowing (legacy behaviour).
+        bias_window_rounds: Consecutive-round threshold before a
+            per-model-bias reason is promoted to a flag. Default 3.
 
     Returns:
         (autoimmune_flag, reason_string, RegulatoryResult)
@@ -4493,12 +4521,47 @@ def regulatory_t_v2(
     for mid, total_m in model_counts.items():
         rem_m = model_removed.get(mid, 0)
         # v2: proportional threshold >= 0.85 instead of exact match
-        if total_m >= 3 and rem_m / total_m >= 0.85:
-            reasons.append(
-                f"[RT_v2] {rem_m}/{total_m} ({rem_m / total_m:.0%}) findings "
-                f"from {mid} removed — possible systematic bias"
-            )
-            checks_fired.append(f"per_model_bias:{mid}")
+        _hit = total_m >= 3 and rem_m / total_m >= 0.85
+        if bias_window_state is None:
+            # Legacy path (default): fire immediately, unchanged.
+            if _hit:
+                reasons.append(
+                    f"[RT_v2] {rem_m}/{total_m} "
+                    f"({rem_m / total_m:.0%}) findings from {mid} "
+                    f"removed — possible systematic bias"
+                )
+                checks_fired.append(f"per_model_bias:{mid}")
+        else:
+            # Exp 40 fix 1c: windowed path. Track consecutive
+            # high-removal rounds per model; only promote to a flag
+            # once the streak reaches bias_window_rounds.
+            if _hit:
+                streak = bias_window_state.get(mid, 0) + 1
+                bias_window_state[mid] = streak
+                if streak >= bias_window_rounds:
+                    reasons.append(
+                        f"[RT_v2] {rem_m}/{total_m} "
+                        f"({rem_m / total_m:.0%}) findings from "
+                        f"{mid} removed for {streak} consecutive "
+                        f"rounds — possible systematic bias"
+                    )
+                    checks_fired.append(f"per_model_bias:{mid}")
+                else:
+                    checks_fired.append(
+                        f"per_model_bias_windowed:{mid}"
+                        f":{streak}/{bias_window_rounds}"
+                    )
+                    _shadow_log.info(
+                        "RT v2: %s at %d/%d (%.0f%% removed) — "
+                        "windowing (round %d/%d before AUTOIMMUNE)",
+                        mid, rem_m, total_m,
+                        (rem_m / total_m) * 100,
+                        streak, bias_window_rounds,
+                    )
+            else:
+                # Streak broken — reset.
+                if bias_window_state.get(mid):
+                    bias_window_state[mid] = 0
 
     # Build per-model breakdown for structured output
     per_model = {
@@ -4688,13 +4751,32 @@ def typed_llm_classifier(
             comparisons.append(record)
 
             if should_override:
-                _shadow_log.info(
-                    "LLM classifier OVERRIDE: %s — regex=%s → llm=%s "
-                    "(conf=%.2f, threshold=%.2f, %.1fs)",
-                    f.finding_id, regex_tf.claim_type.value,
-                    llm_type.value, llm_confidence,
-                    override_threshold, elapsed,
-                )
+                # Exp 40 fix 1b (post-continuation 15 May 2026): the
+                # OVERRIDE log previously printed "threshold=%.2f"
+                # unconditionally, including in llm_primary (software)
+                # mode where the confidence threshold is NOT applied at
+                # all (any valid disagreeing classification wins because
+                # regex agreement is ~15% in software). That made a
+                # correct llm-primary override at conf=0.68 read as a
+                # sub-threshold bug (continuation Anomaly 3). The log
+                # now states the actual gating reason.
+                if llm_primary:
+                    _shadow_log.info(
+                        "LLM classifier OVERRIDE: %s — regex=%s → "
+                        "llm=%s (conf=%.2f, llm-primary [software]: "
+                        "threshold N/A, %.1fs)",
+                        f.finding_id, regex_tf.claim_type.value,
+                        llm_type.value, llm_confidence, elapsed,
+                    )
+                else:
+                    _shadow_log.info(
+                        "LLM classifier OVERRIDE: %s — regex=%s → "
+                        "llm=%s (conf=%.2f, threshold=%.2f cleared, "
+                        "%.1fs)",
+                        f.finding_id, regex_tf.claim_type.value,
+                        llm_type.value, llm_confidence,
+                        override_threshold, elapsed,
+                    )
                 regex_triaged[i] = TriagedFinding(
                     finding=regex_tf.finding,
                     claim_type=llm_type,
@@ -4711,7 +4793,26 @@ def typed_llm_classifier(
                     f.finding_id, regex_tf.claim_type.value,
                     llm_type.value, llm_confidence, elapsed,
                 )
+            elif disagrees and llm_type == ClaimType.UNCATEGORISED:
+                # Exp 40 fix 1b: in BOTH llm_primary and non-primary
+                # modes a disagreeing finding whose llm_type is
+                # UNCATEGORISED is skipped because there is no valid
+                # reclassification target — NOT because of the
+                # confidence threshold. The old single "below threshold"
+                # branch mislabelled this case (continuation showed
+                # Codex_UNSTRUCTURED at conf=0.88 — above 0.70 — logged
+                # "below threshold 0.70", which is self-contradictory).
+                _shadow_log.info(
+                    "LLM classifier: %s — regex=%s llm=%s "
+                    "(conf=%.2f, llm=uncategorised: no valid "
+                    "reclass target, %.1fs)",
+                    f.finding_id, regex_tf.claim_type.value,
+                    llm_type.value, llm_confidence, elapsed,
+                )
             elif disagrees:
+                # Reaches here only in non-primary mode with a valid
+                # llm_type below the confidence threshold — the one
+                # case where "below threshold" is the honest reason.
                 _shadow_log.info(
                     "LLM classifier: %s — regex=%s llm=%s "
                     "(conf=%.2f, below threshold %.2f, %.1fs)",
@@ -5202,6 +5303,8 @@ def run_immune_pipeline(
     false_positive_db: Optional[List[Dict[str, Any]]] = None,
     max_rejection_rate: float = 0.65,
     domain: str = "",
+    rt_bias_window_state: Optional[Dict[str, int]] = None,
+    rt_bias_window_rounds: int = 3,
 ) -> ImmuneResponse:
     """Run the full 6-cell immune pipeline.
 
@@ -5541,6 +5644,8 @@ def run_immune_pipeline(
     )
     v2_autoimmune, v2_reg_reason, v2_reg_detail = regulatory_t_v2(
         final_verdicts, triaged, max_rejection_rate,
+        bias_window_state=rt_bias_window_state,
+        bias_window_rounds=rt_bias_window_rounds,
     )
     # WP6a: v2 is primary, v1 for comparison logging
     autoimmune_flag = v2_autoimmune

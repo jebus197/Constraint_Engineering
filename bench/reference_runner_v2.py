@@ -274,6 +274,22 @@ class RunnerConfig:
     gamma_alt_threshold: float = 0.30
     gamma_alt_consecutive_zero_crit: int = 3
     gamma_alt_earliest_round: int = 3
+    # G7 merge-deadlock arbitration (Exp 40 continuation, 15 May 2026).
+    # Design: experimental_notes/G7_Merge_Deadlock_Resolution_Design_2026-05-15.md.
+    # Default DISABLED — the design stages enablement for Exp 41
+    # (single specialist, low MERGE expected, low blast radius). When
+    # enabled: on the Nth consecutive defer of a finding the runner
+    # dispatches a compelled-convergence single-answer query to the
+    # panel; ≥3/5 agreement merges or keeps-distinct, otherwise the
+    # finding stays deferred. Per-round dispatch cap bounds cost
+    # (~$0.50/dispatch ⇒ ≤ ~$1.50/round at the default cap of 3).
+    # tiebreaker_gamma adds the round-level trigger (Gemini confer
+    # input): when γ < tiebreaker_gamma AND γ-alt is not met, sweep
+    # unresolved deadlocks through arbitration at round close.
+    merge_arbitration_enabled: bool = False
+    merge_arbitration_min_defer_count: int = 2
+    merge_arbitration_max_per_round: int = 3
+    merge_arbitration_tiebreaker_gamma: float = 0.05
     # Round-context helpers (Exp 40 1D.1, 1D.2, 1D.4).
     prior_fix_summary_enabled: bool = True
     prior_fix_summary_max_entries: int = 20
@@ -844,6 +860,98 @@ def _compute_rho(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# G7 merge-arbitration integration seam
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _try_merge_arbitration(
+    entry: dict, canonical_id: str, by_target: dict,
+    registry: "FindingRegistry", round_idx: int, defer_count: int,
+) -> Optional[str]:
+    """Attempt G7 compelled-convergence arbitration for one deferred
+    finding.
+
+    Inert unless `_merge_arb_ctx` is populated AND enabled AND the
+    finding has hit the min-defer threshold AND per-round budget
+    remains. Returns:
+        "MERGED"        — arbitration merged it (caller should continue)
+        "KEEP_DISTINCT" — arbitration kept it distinct (caller continue)
+        None            — no arbitration (caller falls through to the
+                           existing defer/deadlock logic, unchanged)
+    """
+    ctx = _merge_arb_ctx
+    if not ctx or not ctx.get("enabled"):
+        return None
+    if defer_count < ctx.get("min_defer_count", 2):
+        return None
+    if ctx.get("used_this_round", 0) >= ctx.get("max_per_round", 3):
+        return None
+    panel = ctx.get("panel") or []
+    dispatch_fn = ctx.get("dispatch_fn")
+    if not panel or dispatch_fn is None:
+        return None
+
+    try:
+        from bench.merge_arbitration import dispatch_merge_arbitration
+    except Exception as e:  # module missing — degrade to legacy defer
+        _log(f"  G7 arbitration unavailable ({e}) — falling back to "
+             f"MERGE DEFERRED for {canonical_id}")
+        return None
+
+    # Build the new-finding + candidate dicts from registry state.
+    new_finding = {
+        "finding_id": canonical_id,
+        "description": entry.get("description", ""),
+        "proposed_fix": entry.get("proposed_fix", ""),
+        "target_file": entry.get("target_file", ""),
+        "severity": entry.get("severity", ""),
+    }
+    candidates = []
+    for tid in by_target:
+        if tid == "__unknown__":
+            continue
+        tgt = registry.entries.get(tid)
+        if tgt is None:
+            continue
+        candidates.append({
+            "canonical_id": tid,
+            "description": tgt.get("description", ""),
+        })
+    if len(candidates) < 2:
+        # Arbitration only meaningful with ≥2 real candidates.
+        return None
+
+    ctx["used_this_round"] = ctx.get("used_this_round", 0) + 1
+    result = dispatch_merge_arbitration(
+        new_finding, candidates, panel, dispatch_fn,
+        majority=ctx.get("majority", 3), log_fn=_log,
+    )
+    ctx.setdefault("log", []).append({
+        "round": round_idx, **result.to_dict(),
+    })
+
+    if result.decision == "MERGE" and result.target:
+        registry.resolve(canonical_id, "MERGED", round_idx,
+                          merged_into=result.target)
+        _log(f"  G7 MERGE ARBITRATED {canonical_id} -> "
+             f"{result.target}: {result.rationale}")
+        return "MERGED"
+    if result.decision == "KEEP_DISTINCT":
+        # Abandon the auto-merge attempt; the finding stays its own
+        # canonical entry. Clear pending MERGE verdicts so the
+        # deadlock does not re-trigger next round on stale votes.
+        entry["verdicts"] = [
+            v for v in entry.get("verdicts", [])
+            if v.get("verdict") != "MERGE"
+        ]
+        entry["merge_defer_count"] = 0
+        entry["g7_kept_distinct_round"] = round_idx
+        _log(f"  G7 KEEP DISTINCT {canonical_id}: {result.rationale}")
+        return "KEEP_DISTINCT"
+    # DEFER — caller falls through to existing logic unchanged.
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Status transitions and convergence gate
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -930,6 +1038,18 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                 defer_count = entry.get("merge_defer_count", 0) + 1
                 entry["merge_defer_count"] = defer_count
                 max_defer = cfg.max_contested_rounds if cfg else 5
+                # G7 (Exp 40 continuation): before logging DEFERRED or
+                # escalating to D4 HIL deadlock, attempt compelled-
+                # convergence arbitration. Inert unless explicitly
+                # enabled via cfg.merge_arbitration_enabled (default
+                # False → this is a no-op and the legacy defer/deadlock
+                # logic below runs unchanged).
+                _g7 = _try_merge_arbitration(
+                    entry, canonical_id, by_target, registry,
+                    round_idx, defer_count,
+                )
+                if _g7 in ("MERGED", "KEEP_DISTINCT"):
+                    continue
                 if defer_count >= max_defer:
                     # Deadlock: escalate to HIL, remove from active merge
                     entry["hil_escalated"] = True
@@ -1332,6 +1452,23 @@ ITC_DEGRADATION = "DEGRADATION"
 _itc_model_state: Dict[str, Dict[str, Any]] = {}
 _itc_hil_flags: List[Dict[str, Any]] = []
 
+# G7 merge-arbitration context (Exp 40 continuation, 15 May 2026).
+# Follows the established module-state pattern (_itc_*) so
+# _update_finding_statuses keeps a stable signature — its other
+# callers/tests are unaffected. Populated by run_experiment at
+# experiment start only when cfg.merge_arbitration_enabled is True;
+# left empty otherwise, in which case every arbitration hook is inert
+# and behaviour is byte-identical to pre-G7.
+#   enabled        : bool
+#   panel          : list[ModelConfig]
+#   dispatch_fn    : callable(model_cfg, prompt) -> (response, elapsed)
+#   min_defer_count: int (arbitrate on the Nth consecutive defer)
+#   max_per_round  : int (per-round dispatch budget)
+#   tiebreaker_gamma : float (round-level sweep trigger)
+#   used_this_round: int (reset each round by run_experiment)
+#   log            : list[dict] (audit trail of arbitration results)
+_merge_arb_ctx: Dict[str, Any] = {}
+
 
 _FINDING_DECL_RE = re.compile(
     r'(?:FINDING.ID\s*[:=]|<<<\s*FINDING\b|\(F\d{2,4}[,)])',
@@ -1465,15 +1602,80 @@ def _itc_adapt(
     model_label: str, classification: str, round_idx: int,
     rho_rolling_avg: float = 1.0,
     rho_threshold: float = 0.25,
+    gamma_current: float = 1.0,
+    gamma_converged_threshold: float = 0.10,
 ):
-    """A4 fix: suppress DEGRADATION restart when rho is healthy."""
+    """ITC (the "IT Crowd fix": restart-fresh on degradation, with
+    fingerprint-informed scope) adaptation selection.
+
+    A4 fix (Exp 40 1D.3): suppress the DEGRADATION restart when the
+    per-model rho is healthy (still finding new things → low yield is
+    not collapse).
+
+    Exp 40 fix 1d (post-continuation 15 May 2026): two corrections.
+
+    (i) γ-regime gate. The continuation reached deep convergence by
+    γ-decay (terminal γ≈0.034) yet every panel member was flagged
+    DEGRADATION because, in the converged regime, the panel naturally
+    produces shorter, more verdict-heavy output (low parse yield). Low
+    yield there is *convergence*, not *degradation*; an ITC restart
+    would hand a fresh instance ground the panel has already settled,
+    defeating the burst-reasoning rationale that motivates ITC.
+    DEGRADATION is now also suppressed when γ is in the converged
+    regime (γ < gamma_converged_threshold), independently of rho.
+
+    (ii) Suppressed DEGRADATION must not feed the HIL underperformer
+    flag. The A4 fix suppressed the restart *adaptation* but the
+    DEGRADATION was still recorded as a `classification` in history
+    *before* the suppression check, so `_itc_consecutive_failures`
+    still counted it and `_itc_flag_underperformer` still fired the
+    per-round HIL flag (continuation Anomaly 5 — all five models
+    HIL-flagged every round despite no restart occurring). A
+    suppressed round is now recorded with `classification=None` (and a
+    separate `suppressed` marker for observability), so it neither
+    feeds the consecutive-failure streak nor the HIL flag.
+    """
     state = _itc_model_state.setdefault(model_label, {
         "history": [], "adaptation": None, "retry_count": 0,
         "escalation_level": 0,
     })
+
+    # Decide DEGRADATION suppression BEFORE recording history so the
+    # recorded classification reflects the suppression decision.
+    suppressed = False
+    suppress_reason = ""
+    if classification == ITC_DEGRADATION:
+        if rho_rolling_avg >= rho_threshold:
+            suppressed = True
+            suppress_reason = (
+                f"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} "
+                f"(normal depletion)"
+            )
+        elif gamma_current < gamma_converged_threshold:
+            suppressed = True
+            suppress_reason = (
+                f"gamma={gamma_current:.3f} < "
+                f"{gamma_converged_threshold} (converged regime — low "
+                f"yield is convergence, not degradation; ITC restart "
+                f"would defeat the burst-reasoning rationale)"
+            )
+
+    # Record history. A suppressed DEGRADATION is NOT a classification:
+    # it must not feed _itc_consecutive_failures (line ~1457 counts
+    # truthy 'classification') nor the HIL underperformer flag.
     state["history"].append({
-        "round": round_idx, "classification": classification, "findings": 0,
+        "round": round_idx,
+        "classification": None if suppressed else classification,
+        "suppressed": classification if suppressed else None,
+        "findings": 0,
     })
+
+    if suppressed:
+        _log(f"  ITC [{model_label}]: {classification} suppressed — "
+             f"{suppress_reason}")
+        state["adaptation"] = None
+        return
+
     consecutive = _itc_consecutive_failures(model_label)
     if classification == ITC_TRANSIENT_FAILURE:
         if state["retry_count"] < 1:
@@ -1494,11 +1696,9 @@ def _itc_adapt(
         else:
             state["adaptation"] = "restart_fresh"
     elif classification == ITC_DEGRADATION:
-        if rho_rolling_avg >= rho_threshold:
-            _log(f"  ITC [{model_label}]: {classification} suppressed — "
-                 f"rho_avg={rho_rolling_avg:.3f} >= {rho_threshold} (normal depletion)")
-            state["adaptation"] = None
-        elif consecutive < 2:
+        # Reached only when NOT suppressed: rho unhealthy AND γ still
+        # in the active regime — a genuine degradation signal.
+        if consecutive < 2:
             state["adaptation"] = "change_focus"
         else:
             state["adaptation"] = "restart_fresh"
@@ -3964,6 +4164,44 @@ def run_experiment(
             _log(f"  Registry restored: {len(registry.entries)} entries")
 
     experiment_start = time.monotonic()
+
+    # G7 merge-arbitration context setup (Exp 40 continuation). Inert
+    # unless cfg.merge_arbitration_enabled. When enabled, the panel +
+    # a short-prompt dispatch wrapper are registered in module state so
+    # _try_merge_arbitration (called from _update_finding_statuses) and
+    # the round-level tie-breaker can reach the models without
+    # threading dispatch infra through the status-updater signature.
+    _merge_arb_ctx.clear()
+    if getattr(cfg, "merge_arbitration_enabled", False):
+        def _arb_dispatch(mc, prompt: str):
+            # Arbitration queries are short + self-contained; send a
+            # minimal system prompt rather than the full CDSFL text so
+            # the call stays cheap. Bounded wall clock.
+            return dispatch_to_model(
+                mc, prompt,
+                "You are a careful code-review panelist. Answer "
+                "exactly as instructed.",
+                wall_clock_limit=getattr(mc, "timeout", 120) * 2,
+            )
+        _merge_arb_ctx.update({
+            "enabled": True,
+            "panel": list(exp_config.models),
+            "dispatch_fn": _arb_dispatch,
+            "min_defer_count": getattr(
+                cfg, "merge_arbitration_min_defer_count", 2),
+            "max_per_round": getattr(
+                cfg, "merge_arbitration_max_per_round", 3),
+            "tiebreaker_gamma": getattr(
+                cfg, "merge_arbitration_tiebreaker_gamma", 0.05),
+            "majority": 3,
+            "used_this_round": 0,
+            "log": [],
+        })
+        _log(f"  G7 merge-arbitration ENABLED "
+             f"(min_defer={_merge_arb_ctx['min_defer_count']}, "
+             f"max/round={_merge_arb_ctx['max_per_round']}, "
+             f"tiebreaker_γ<{_merge_arb_ctx['tiebreaker_gamma']})")
+
     effective_max = cfg.max_rounds
     loop_cap = cfg.extension_cap
     # Burst mode: extend loop cap to accommodate all phases + integration
@@ -4114,6 +4352,10 @@ def run_experiment(
     for round_idx in range(start_round, loop_cap):
         if round_idx >= effective_max:
             break
+
+        # G7: reset the per-round arbitration dispatch budget.
+        if _merge_arb_ctx:
+            _merge_arb_ctx["used_this_round"] = 0
 
         round_start = time.monotonic()
         wall_elapsed = round_start - experiment_start
@@ -4525,8 +4767,17 @@ def run_experiment(
                 # Fall back to the pooled rho_avg when per-model history is
                 # missing (cold start, or model joined mid-run).
                 _model_rho = rho_avg_per_model.get(model_label, rho_avg)
+                # Exp 40 fix 1d: γ-regime gate. gamma_history[-1] is the
+                # last completed round's γ (this round's γ is appended
+                # later in the loop). Default 1.0 (active regime, no
+                # suppression) on cold start before any γ exists.
+                _gamma_prev = gamma_history[-1] if gamma_history else 1.0
                 _itc_adapt(model_label, classification, round_idx,
-                           rho_rolling_avg=_model_rho, rho_threshold=cfg.rho_threshold)
+                           rho_rolling_avg=_model_rho,
+                           rho_threshold=cfg.rho_threshold,
+                           gamma_current=_gamma_prev,
+                           gamma_converged_threshold=getattr(
+                               cfg, "gamma_converged_threshold", 0.10))
             elif model_label in _itc_model_state:
                 _itc_clear_adaptation(model_label)
             _update_observed_fingerprint(
@@ -4584,6 +4835,53 @@ def run_experiment(
         elif not gamma_alt_converged:
             # Log but don't promote — main gate governs until γ-alt fires.
             _log(f"  γ-alt: {gamma_alt_reason}")
+
+        # G7 round-level tie-breaker (Gemini confer input, folded into
+        # the G7 design). When the run is deep in the converged regime
+        # by γ-decay yet γ-alt is NOT met (the exact continuation
+        # pattern: γ≈0.03 but novel-CRIT bursts kept resetting the
+        # zero-CRIT streak), force arbitration across the unresolved
+        # MERGE deadlocks at round close — bounded by the remaining
+        # per-round dispatch budget. Inert unless arbitration enabled.
+        if (
+            _merge_arb_ctx
+            and _merge_arb_ctx.get("enabled")
+            and not gamma_alt_converged
+            and gamma < _merge_arb_ctx.get("tiebreaker_gamma", 0.05)
+        ):
+            _budget = (
+                _merge_arb_ctx.get("max_per_round", 3)
+                - _merge_arb_ctx.get("used_this_round", 0)
+            )
+            if _budget > 0:
+                _deadlocked = [
+                    (cid, e) for cid, e in registry.entries.items()
+                    if e.get("merge_defer_count", 0)
+                    >= _merge_arb_ctx.get("min_defer_count", 2)
+                    and e.get("status") not in (
+                        "MERGED", "CLOSED", "DUPLICATE")
+                    and not e.get("g7_kept_distinct_round")
+                ]
+                if _deadlocked:
+                    _log(f"  G7 tie-breaker: γ={gamma:.3f} < "
+                         f"{_merge_arb_ctx['tiebreaker_gamma']} and "
+                         f"γ-alt unmet — sweeping "
+                         f"{min(_budget, len(_deadlocked))} of "
+                         f"{len(_deadlocked)} deadlock(s)")
+                for _cid, _e in _deadlocked[:_budget]:
+                    _by_t: dict = {}
+                    for _v in _e.get("verdicts", []):
+                        if _v.get("verdict") != "MERGE":
+                            continue
+                        _m = re.search(
+                            r'merged_into=(C\d{4,})',
+                            _v.get("evidence", ""))
+                        _tid = _m.group(1) if _m else "__unknown__"
+                        _by_t.setdefault(_tid, []).append(_v)
+                    _try_merge_arbitration(
+                        _e, _cid, _by_t, registry, round_idx,
+                        _e.get("merge_defer_count", 0),
+                    )
 
         # Stall detector
         stall_result = _check_stall_convergence(

@@ -150,11 +150,18 @@ class TestReformatRequests:
         out = build_reformat_requests(
             [("C0001", "no SEARCH/REPLACE markers")],
         )
-        assert "REFORMAT REQUEST" in out
+        # Exp 40 fix 1e: the soft "REFORMAT REQUEST" header was
+        # replaced by an explicit STRUCTURE_VIOLATION header with
+        # mandatory framing. Pin the strengthened contract.
+        assert "STRUCTURE_VIOLATION" in out
+        assert "MANDATORY REFORMAT" in out
         assert "C0001" in out
         assert "no SEARCH/REPLACE markers" in out
         assert "<<<< SEARCH" in out  # canonical template included
         assert ">>>> REPLACE" in out
+        # The request must state that an unparseable fix is treated as
+        # no fix (the load-bearing motivation signal to the model).
+        assert "no fix at all" in out
 
     def test_multiple_findings(self):
         findings = [
@@ -182,10 +189,17 @@ class TestReformatRequests:
 
     def test_canonical_template_formatting(self):
         out = build_reformat_requests([("C0001", "test")])
-        # Canonical block template must appear in the guidance.
+        # Canonical block template must appear in the guidance. Exp 40
+        # fix 1e strengthened the placeholder wording from
+        # "<exact source text>" to "<exact verbatim source text to
+        # find>" and added explicit byte-for-byte / no-elision rules.
         assert "SEARCH <file_path>" in out
-        assert "<exact source text>" in out
+        assert "<exact verbatim source text to find>" in out
         assert "<replacement text>" in out
+        assert ">>>> REPLACE" in out
+        # Strengthened mandatory rules block.
+        assert "byte-for-byte" in out
+        assert "Do not wrap the block in backticks" in out
 
 
 class TestIntegrationWithParser:
