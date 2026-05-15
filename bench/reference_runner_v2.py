@@ -198,6 +198,16 @@ MODEL_ROSTER = {
     "ChatGPT": "GPT-5.5 (OpenAI)",
 }
 
+# Bugzilla CLOSED-loop verification cap per round (15 May 2026).
+# Bounds wall-clock impact of programmatic fix verification — each
+# attempt runs ruff + mypy + bandit + test_cmd against a sandbox copy
+# of the target file (typically 30-120s per attempt). With 5 attempts
+# per round the wall-clock impact is roughly 2.5-10 minutes per round.
+# Findings not attempted this round remain CONFIRMED and become
+# candidates next round (entry["bugzilla_attempted"] flag prevents
+# re-attempting the same finding repeatedly).
+BUGZILLA_PER_ROUND_LIMIT = 5
+
 # Operational directive — R_k(i) self-assessment equation and working protocol.
 # Appended AFTER composer phenotype transforms to bypass char caps. Models MUST
 # compute R_k on their own output (§3, §6). Without this directive, models
@@ -811,6 +821,12 @@ def _compute_rho(
 
 def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                              cfg: Optional[RunnerConfig] = None):
+    # Bugzilla close-the-loop attempt counter for this call. Reset at
+    # the start of every _update_finding_statuses invocation (i.e. once
+    # per round) so the per-round cap is enforced independently of any
+    # caller-side state.
+    _bugzilla_attempts_this_call = 0
+
     # ── Pre-pass 1: Mark/clear EXHAUSTED on critical/high findings ──
     # Derived fresh each call — not sticky. Requires review activity.
     exhausted_threshold = cfg.exhausted_round_threshold if cfg else 0
@@ -944,6 +960,63 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
         if entry["status"] == "CONFIRMED" and unresolved_challenges:
             registry.resolve(canonical_id, "CONTESTED", round_idx)
             continue
+
+        # ── Bugzilla CLOSED-loop (added 15 May 2026) ──
+        # If CONFIRMED and not yet verified, attempt to programmatically
+        # verify the proposed_fix: extract a SEARCH/REPLACE block, apply
+        # to a sandbox copy of the target file, run ruff + mypy + bandit
+        # + the experiment's test_cmd. If verification passes, mark
+        # verified=True so the next check transitions to CLOSED.
+        # Rate-limited per-round (BUGZILLA_PER_ROUND_LIMIT) to keep
+        # wall-clock bounded. Exception-safe — Bugzilla errors don't
+        # break the state machine. Module: bench/bugzilla_loop.py.
+        if (
+            entry["status"] == "CONFIRMED"
+            and not entry.get("verified")
+            and not entry.get("bugzilla_attempted")
+            and entry.get("proposed_fix", "").strip()
+        ):
+            if _bugzilla_attempts_this_call < BUGZILLA_PER_ROUND_LIMIT:
+                _bugzilla_attempts_this_call += 1
+                entry["bugzilla_attempted"] = True
+                try:
+                    target_file = (
+                        entry.get("target_file")
+                        or (cfg.test_article if cfg else None)
+                    )
+                    if target_file:
+                        from pathlib import Path as _Path
+                        target_path = _Path(target_file)
+                        if not target_path.is_absolute():
+                            target_path = REPO_ROOT / target_file
+                        if target_path.exists():
+                            from bugzilla_loop import attempt_close
+                            attempt = attempt_close(
+                                {"finding_id": canonical_id,
+                                 "proposed_fix": entry["proposed_fix"]},
+                                target_path,
+                                test_cmd=(cfg.test_cmd if cfg else None),
+                                timeout=120,
+                            )
+                            if attempt.closed:
+                                entry["verified"] = True
+                                entry["bugzilla_verified"] = True
+                                _log(
+                                    f"  BUGZILLA CLOSED-loop verified "
+                                    f"{canonical_id}: {attempt.reason[:160]}"
+                                )
+                            else:
+                                _log(
+                                    f"  BUGZILLA close-the-loop failed for "
+                                    f"{canonical_id}: {attempt.reason[:160]}"
+                                )
+                except Exception as _bz_exc:
+                    _log(
+                        f"  BUGZILLA close-the-loop error for "
+                        f"{canonical_id}: "
+                        f"{type(_bz_exc).__name__}: {str(_bz_exc)[:160]}"
+                    )
+
         if entry["status"] == "CONFIRMED" and entry.get("verified"):
             registry.resolve(canonical_id, "CLOSED", round_idx)
             _log(f"  CLOSED {canonical_id}: verified fix, no unresolved challenges")
