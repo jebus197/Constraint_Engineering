@@ -420,7 +420,15 @@ class ShadowStage6Calibrator:
 
         abstract_classes = {"design", "architecture", "framework", "protocol",
                            "specification", "model", "theory"}
-        if flaw_class.lower() in abstract_classes:
+        # Defensive: flaw_class can be int (1-8 per Finding dataclass in
+        # runner_core.py) or str. Only apply the abstract-class lift
+        # when flaw_class is a string label matching the set. Integer
+        # flaw_class values (the project's actual taxonomy) do not
+        # match these labels and produce no adjustment, which preserves
+        # the existing semantic intent for string-labelled callers
+        # without crashing on int values. Bug surfaced in Exp 40 Round 6
+        # (15 May 2026 fix): `'int' object has no attribute 'lower'`.
+        if isinstance(flaw_class, str) and flaw_class.lower() in abstract_classes:
             h_proxy = min(1.0, h_proxy + 0.2)
 
         return h_proxy

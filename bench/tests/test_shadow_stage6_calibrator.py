@@ -349,5 +349,74 @@ class TestSourceTruthPins:
         )
 
 
+class TestFlawClassTypeHandling:
+    """Regression for the Exp 40 Round 6 non-fatal bug: `'int' object
+    has no attribute 'lower'`. The Finding dataclass in runner_core.py
+    stores flaw_class as int (1-8); the calibrator's _estimate_h_ratio
+    previously called .lower() on it unconditionally."""
+
+    def test_int_flaw_class_does_not_crash(self):
+        """Integer flaw_class (the project's actual taxonomy) must not
+        crash the abstraction-proxy estimator."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class _MockFinding:
+            finding_id: str = "F001"
+            description: str = "A finding with moderate description length"
+            flaw_class: int = 1
+
+        c = ShadowStage6Calibrator()
+        # If the bug regresses this will raise AttributeError.
+        h = c._estimate_h_ratio(_MockFinding())
+        assert isinstance(h, float)
+        assert 0.0 <= h <= 1.0
+
+    def test_str_flaw_class_design_still_gets_abstract_lift(self):
+        """Backward compatibility: string flaw_class values that match
+        abstract_classes still receive the +0.2 lift."""
+        from dataclasses import dataclass
+
+        long_desc = "A finding " * 60  # > 500 chars -> base h=0.7
+
+        @dataclass
+        class _MockFindingDesign:
+            finding_id: str = "F002"
+            description: str = long_desc
+            flaw_class: str = "design"
+
+        @dataclass
+        class _MockFindingInt:
+            finding_id: str = "F003"
+            description: str = long_desc
+            flaw_class: int = 1
+
+        c = ShadowStage6Calibrator()
+        h_design = c._estimate_h_ratio(_MockFindingDesign())
+        h_int = c._estimate_h_ratio(_MockFindingInt())
+        # String "design" gets the +0.2 abstract lift; int doesn't.
+        assert h_design > h_int, (
+            f"Expected h_design > h_int with abstract lift; "
+            f"got h_design={h_design}, h_int={h_int}"
+        )
+        # h_design hits the cap-or-near-cap region.
+        assert h_design >= 0.85
+
+    def test_none_flaw_class_does_not_crash(self):
+        """Defensive: None flaw_class also handled gracefully."""
+        from dataclasses import dataclass, field
+
+        @dataclass
+        class _MockFinding:
+            finding_id: str = "F004"
+            description: str = "x"
+            flaw_class: object = None
+
+        c = ShadowStage6Calibrator()
+        h = c._estimate_h_ratio(_MockFinding())
+        assert isinstance(h, float)
+        assert 0.0 <= h <= 1.0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
