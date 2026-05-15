@@ -4335,6 +4335,40 @@ def run_experiment(
         # A3: HIL escalation
         registry.escalate_stale_contested(round_idx, max_contested_rounds=cfg.max_contested_rounds)
 
+        # ── Gamma input fix (15 May 2026) ──
+        # Post-reconciliation novelty: replace this round's novelty_count
+        # with the count of canonical entries actually registered this
+        # round whose post-reconciliation status is genuinely novel.
+        # Previously novelty_counts[-1] was the pre-reconciliation raw
+        # count (set at line ~4285 before state transitions), which
+        # systematically overstated novelty when reconciliation later
+        # merged findings into existing canonical entries.
+        #
+        # Bug surfaced in Exp 40: Round 9 had novel_this_round=58
+        # (pre-reconciliation) but reconciliation flagged 72 findings as
+        # 100% duplicates of canonical entries already in the registry —
+        # gamma reported "still novel" while reconciliation said "fully
+        # saturated". The two metrics measured the same underlying state
+        # at different layers of the pipeline. Fix: align gamma's input
+        # with the reconciliation pipeline's view of novelty.
+        _NON_NOVEL_TERMINAL = {
+            "MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",
+        }
+        post_reconciliation_novel = sum(
+            1 for e in registry.entries.values()
+            if e.get("open_since_round") == round_idx
+            and e.get("status") not in _NON_NOVEL_TERMINAL
+        )
+        pre_reconciliation_novel = novelty_counts[-1] if novelty_counts else 0
+        if pre_reconciliation_novel != post_reconciliation_novel:
+            _log(
+                f"  γ-input correction: novel pre-reconciliation="
+                f"{pre_reconciliation_novel}, "
+                f"post-reconciliation={post_reconciliation_novel} "
+                f"(replacing in novelty_counts)"
+            )
+            novelty_counts[-1] = post_reconciliation_novel
+
         # Persist round
         round_elapsed = time.monotonic() - round_start
         brain.persist(round_idx, responses, findings, duration_s=round_elapsed)
