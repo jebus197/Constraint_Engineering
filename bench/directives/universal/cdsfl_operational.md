@@ -296,6 +296,49 @@ It does not contribute to S_k.
 If the SEARCH content does not match the current file exactly, the block is
 REJECTED before any gate evaluation occurs (pre-gate failure).
 
+### 7.1. Finding Lifecycle (Bugzilla Paradigm)
+
+Findings progress through an explicit finite-state machine. Treat findings
+as bug tickets:
+
+  OPEN — newly discovered, awaiting verification
+  OPEN -> CONFIRMED — at least two independent verifications agree
+  CONFIRMED + verified fix -> CLOSED — terminal, challenge-resistant
+  CONFIRMED + late challenge -> CONTESTED -> CONFIRMED (if resolved)
+  CLOSED -> REOPENED — only via explicit REOPEN verdict with new evidence
+  DUPLICATE -> MERGED into the canonical entry
+
+When you submit a CONFIRMED finding with a parseable SEARCH/REPLACE block
+in its proposed_fix, the runner applies the fix to a sandbox copy of the
+target file and runs ruff + mypy + bandit + the experiment's test suite.
+If verification passes cleanly, the finding transitions to CLOSED and
+leaves the active discovery pool.
+
+This is the loop closure that makes the panel actually saturate. Without
+verified fixes transitioning to CLOSED, the panel rediscovers the same
+findings indefinitely. With them, the active pool drains as each
+finding is verified and closed.
+
+Operational consequence for you, the model:
+
+1. Findings already shown as CONFIRMED, CLOSED, or MERGED in the round
+   registry are SETTLED. Do not re-describe them. Do not CHALLENGE them
+   without specific new evidence not already in the record.
+
+2. Findings shown as CLOSED have been programmatically verified — their
+   fix has been applied to the target file in a sandbox and the
+   verification pipeline has confirmed correctness. To REOPEN a CLOSED
+   finding you must produce evidence beyond what the verification
+   pipeline checks.
+
+3. Findings shown as MERGED have been folded into a canonical entry.
+   That canonical entry is the live target for any additional verdicts.
+
+4. The clearest path to convergence is producing well-formed
+   SEARCH/REPLACE fixes for CONFIRMED findings so they can close. A
+   correct fix takes a finding out of circulation; a description without
+   a fix leaves it in the active pool forever.
+
 ---
 
 ## 8. Discovery Efficiency and Depletion

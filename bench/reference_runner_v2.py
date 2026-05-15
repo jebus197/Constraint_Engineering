@@ -521,11 +521,39 @@ class FindingRegistry:
         compact = [e for e in self.entries.values() if e["status"] in compact_statuses]
         hidden_count = sum(1 for e in self.entries.values() if e["status"] in hidden_statuses)
 
+        # Bugzilla paradigm header (added 15 May 2026). Make the finding
+        # state machine explicit to the panel so models understand which
+        # findings are still in play, which are settled, and how settled
+        # findings reached terminal state. Without this, models would
+        # rediscover and re-describe canonical entries indefinitely.
+        closed_count = sum(
+            1 for e in self.entries.values()
+            if e.get("status") == "CLOSED"
+        )
+        bugzilla_verified_count = sum(
+            1 for e in self.entries.values()
+            if e.get("bugzilla_verified")
+        )
         lines = [
             f"=== FINDING REGISTRY (Round {round_idx}) ===",
+            "State machine (Bugzilla paradigm):",
+            "  OPEN -> CONFIRMED (>=2 independent verifications)",
+            "  CONFIRMED + verified fix -> CLOSED (terminal, challenge-resistant)",
+            "  CONFIRMED + late challenge -> CONTESTED",
+            "  CLOSED -> REOPENED (only with new evidence via REOPEN verdict)",
+            "  DUPLICATE -> MERGED into the canonical entry",
+            "",
+            "When a CONFIRMED finding carries a parseable proposed_fix in",
+            "SEARCH/REPLACE format, the runner applies it to a sandbox copy",
+            "of the target file and runs ruff + mypy + bandit + the",
+            "experiment's test suite. On clean pass, the finding transitions",
+            "to CLOSED and is removed from the active discovery pool.",
+            "Findings already CLOSED below: do not re-describe them.",
+            "",
             f"Total: {len(self.entries)} canonical findings",
             f"Active: {len(full_detail)} | Settled: {len(compact)} | Hidden: {hidden_count}",
-            f"Open CRIT/HIGH: {self.open_crit_high_count()}",
+            f"Open CRIT/HIGH: {self.open_crit_high_count()} | "
+            f"CLOSED: {closed_count} ({bugzilla_verified_count} via programmatic fix-verification)",
             "",
         ]
         # Cap full-detail entries by severity to bound context growth.
