@@ -232,6 +232,11 @@ def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
         # RunnerConfig; passthrough lets a config tune/disable it.
         "inround_reask_enabled",
         "inround_reask_min_markers",
+        # Apply-verified-fixes-back (plan-C, 2026-05-16). Default OFF
+        # in RunnerConfig; a config opts in (e.g. the decomposed
+        # re-run) and may seed from the cleaned baseline.
+        "apply_fixes_back_enabled",
+        "apply_fixes_back_seed",
     ):
         if af in exp_cfg:
             kwargs[af] = exp_cfg[af]

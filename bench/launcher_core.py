@@ -177,6 +177,8 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         "merge_arbitration_tiebreaker_gamma",
         "inround_reask_enabled",
         "inround_reask_min_markers",
+        "apply_fixes_back_enabled",
+        "apply_fixes_back_seed",
     ):
         if af in exp_cfg:
             kwargs[af] = exp_cfg[af]

@@ -305,6 +305,19 @@ class RunnerConfig:
     # double-count). 1e (next-round reformat) remains the fallback.
     inround_reask_enabled: bool = True
     inround_reask_min_markers: int = 2
+    # Apply-verified-fixes-back (Exp 40 plan-C, 2026-05-16,
+    # founder-directed structural cure). When enabled, a finding that
+    # reaches full BUGZILLA close has its SEARCH/REPLACE patch promoted
+    # into a PER-RUN working copy that the NEXT round reviews — so the
+    # error space actually exhausts (the precondition the decay model
+    # needs to terminate). Promotion is gated on the FULL canonical
+    # test suite passing cumulatively (NOT the run-time S_k score,
+    # which the C0001 collation finding showed tolerates regressions).
+    # The repo file is never written; the pristine original is kept.
+    # Changes Exp 40 from static-stimulus to iterative repair-and-
+    # reconverge — an intended, recorded design change. Default OFF.
+    apply_fixes_back_enabled: bool = False
+    apply_fixes_back_seed: str = ""  # optional cleaned-baseline seed path
     # Round-context helpers (Exp 40 1D.1, 1D.2, 1D.4).
     prior_fix_summary_enabled: bool = True
     prior_fix_summary_max_entries: int = 20
@@ -2136,6 +2149,140 @@ def _inround_reask(
     _log(f"  in-round re-ask [{mc.label}]: still 0 parsed after retry — "
          f"1e next-round reformat remains the fallback")
     return model_findings, text, True
+
+
+# Apply-verified-fixes-back (Exp 40 plan-C, 2026-05-16). Module-level
+# ctx set at experiment start (mirrors _merge_arb_ctx / _INROUND_REASK).
+_APPLY_BACK_CTX: Dict[str, Any] = {}
+
+
+def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
+    """If enabled, create a per-run working copy of the target article
+    (seeded from cfg.apply_fixes_back_seed if given, else the pristine
+    target) and return its path so all rounds read the working copy.
+    The repo file is never modified; the pristine original is recorded
+    for provenance. Returns the original path when disabled."""
+    _APPLY_BACK_CTX.clear()
+    if not getattr(cfg, "apply_fixes_back_enabled", False):
+        return target_path
+    work_dir = logs_dir / "working"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    working_path = work_dir / target_path.name
+    seed = getattr(cfg, "apply_fixes_back_seed", "") or ""
+    if seed:
+        seed_path = Path(seed)
+        if not seed_path.is_absolute():
+            seed_path = REPO_ROOT / seed_path
+        src_text = seed_path.read_text(encoding="utf-8")
+        seed_desc = str(seed_path)
+    else:
+        src_text = target_path.read_text(encoding="utf-8")
+        seed_desc = f"pristine {target_path}"
+    working_path.write_text(src_text, encoding="utf-8")
+    _APPLY_BACK_CTX.update({
+        "enabled": True,
+        "working_path": working_path,
+        "pristine_path": target_path,
+        "rel_target": _rel_to_repo(target_path),
+        "cumulative_source": src_text,
+        "test_cmd": getattr(cfg, "test_cmd", "") or "",
+        "applied": [],   # canonical_ids promoted into the working copy
+        "rejected": [],   # (canonical_id, reason) — gate/apply failures
+    })
+    _log(f"  apply-fixes-back ENABLED — working copy {working_path} "
+         f"(seed: {seed_desc})")
+    return working_path
+
+
+def _rel_to_repo(p: "Path") -> str:
+    try:
+        return str(p.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(p)
+
+
+def _apply_back_gate(candidate_source: str, rel_target: str,
+                     test_cmd: str) -> Tuple[bool, str]:
+    """Full canonical-suite gate: overlay candidate_source at rel_target
+    in a sandbox repo copy and run test_cmd. Green-only promotion (the
+    C0001 lesson: the run-time S_k score tolerates regressions)."""
+    try:
+        ast.parse(candidate_source)
+    except (SyntaxError, ValueError) as e:
+        return False, f"ast:{e}"
+    if not test_cmd:
+        return False, "no test_cmd configured (cannot gate)"
+    with tempfile.TemporaryDirectory() as td:
+        sb = Path(td) / "sb"
+        shutil.copytree(
+            REPO_ROOT, sb, symlinks=True,
+            ignore=shutil.ignore_patterns(
+                ".git", "__pycache__", ".pytest_cache", "*.pyc", "logs"),
+        )
+        tgt = sb / rel_target
+        tgt.parent.mkdir(parents=True, exist_ok=True)
+        tgt.write_text(candidate_source, encoding="utf-8")
+        try:
+            r = subprocess.run(
+                shlex.split(test_cmd), capture_output=True, text=True,
+                cwd=str(sb), timeout=300,
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+        except (subprocess.TimeoutExpired, Exception) as e:
+            return False, f"gate_exec:{type(e).__name__}"
+        if r.returncode != 0:
+            out = (r.stdout + r.stderr).strip().splitlines()
+            tail = next((ln for ln in reversed(out) if "failed" in ln),
+                        out[-1] if out else "")
+            return False, f"suite_fail:{tail[:120]}"
+    return True, "ok"
+
+
+def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
+    """Promote not-yet-applied CLOSED fixes into the working copy,
+    cumulatively, each gated on the full canonical suite. Idempotent
+    across rounds (tracks applied/rejected). Returns the new working
+    source if anything was promoted this call, else None."""
+    if not _APPLY_BACK_CTX.get("enabled"):
+        return None
+    applied = _APPLY_BACK_CTX["applied"]
+    rejected_ids = {cid for cid, _ in _APPLY_BACK_CTX["rejected"]}
+    seen = set(applied) | rejected_ids
+    src = _APPLY_BACK_CTX["cumulative_source"]
+    rel = _APPLY_BACK_CTX["rel_target"]
+    test_cmd = _APPLY_BACK_CTX["test_cmd"]
+    changed = False
+    for cid, entry in sorted(registry.entries.items()):
+        if cid in seen or entry.get("status") != "CLOSED":
+            continue
+        pf = entry.get("proposed_fix") or ""
+        if not pf:
+            continue
+        blocks = parse_search_replace_blocks(pf)
+        if not blocks:
+            _APPLY_BACK_CTX["rejected"].append((cid, "no_parseable_block"))
+            continue
+        mod, n, err = apply_fix_blocks(src, blocks, str(rel))
+        if mod is None:
+            _APPLY_BACK_CTX["rejected"].append(
+                (cid, f"apply:{err or 'failed'}"))
+            continue
+        ok, detail = _apply_back_gate(mod, rel, test_cmd)
+        if not ok:
+            _APPLY_BACK_CTX["rejected"].append((cid, detail))
+            _log(f"  apply-back REJECT {cid}: {detail} "
+                 f"(stays CLOSED in registry; not applied to artefact)")
+            continue
+        src = mod
+        applied.append(cid)
+        changed = True
+        _log(f"  apply-back PROMOTE {cid} (round {round_idx}): "
+             f"{n} block(s) applied + full suite green")
+    if not changed:
+        return None
+    _APPLY_BACK_CTX["cumulative_source"] = src
+    _APPLY_BACK_CTX["working_path"].write_text(src, encoding="utf-8")
+    return src
 
 
 def _dispatch_single_model(
@@ -4045,6 +4192,10 @@ def run_experiment(
     target_path = Path(cfg.test_article)
     if not target_path.is_absolute():
         target_path = REPO_ROOT / target_path
+    # plan-C: swap to a per-run working copy (seeded if configured) so
+    # promoted fixes accumulate and the error space can exhaust. No-op
+    # (returns the same path) when apply_fixes_back_enabled is False.
+    target_path = _apply_back_setup(cfg, target_path, logs_dir)
     target_text = target_path.read_text(encoding="utf-8")
     try:
         target_rel = target_path.relative_to(REPO_ROOT)
@@ -4473,6 +4624,23 @@ def run_experiment(
         round_type = "blind" if round_idx == 0 else "adaptive"
         _log(f"Round {round_idx}/{effective_max - 1} ({round_type})")
         _log(f"{'---' * 20}")
+
+        # plan-C: promote the prior round's fully-closed fixes into the
+        # working copy (full-suite gated, cumulative, idempotent) and
+        # rebuild full_code so THIS round reviews the repaired artefact.
+        # Loop-top placement avoids the many mid-body exit paths.
+        if _APPLY_BACK_CTX.get("enabled") and round_idx > start_round:
+            _new_src = _apply_back_promote(registry, round_idx - 1)
+            if _new_src is not None:
+                full_code = (
+                    f"=== TARGET FILE (REVIEW THIS): {target_rel} "
+                    f"({len(_new_src):,} chars) ===\n{_new_src}\n\n"
+                    + "\n\n".join(context_parts)
+                )
+                _log(f"  apply-back: artefact repaired — "
+                     f"{len(_APPLY_BACK_CTX['applied'])} fix(es) applied, "
+                     f"{len(_APPLY_BACK_CTX['rejected'])} rejected; "
+                     f"full_code rebuilt for round {round_idx}")
 
         # Update relay budgets from fingerprint data before dispatch.
         # Each model's budget adapts to its measured prompt performance.
