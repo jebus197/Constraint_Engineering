@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 16 May 2026 19:38 BST
+Last updated: 16 May 2026 23:45 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,46 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 REMEDIATION BUILD E→F — ROOT CAUSE FIXED, CONVERGENCE RE-RUN LAUNCHED (2026-05-16, autonomous):**
+
+  Root cause of Exp 40's intermittent non-convergence, confirmed by
+  code + git + the Exp 36 audit: verified fixes were only ever applied
+  in a throwaway sandbox; the reviewed artefact was never patched, so
+  the panel re-reviewed the same defects every round (re-injection
+  dominated, the regime the decay model predicts). The founder-approved
+  six-item plan was built and milestone-committed in one autonomous
+  session. **E** (`6838e58`): collated all 44 CLOSED fixes (40 artefact
+  / 0 runner / 4 stale) into a strict full-suite-gated cleaned baseline
+  `bench/exp40_baseline/_feedback_cleaned.py` (11 accepted, passes
+  40/40). **Key methodological finding: `C0001` was marked CLOSED at
+  run time (sk=0.9897) despite its own `e2_regression` scoring 0.974 =
+  "38/39 passed" — CLOSED means "scored above the S_k threshold", which
+  tolerates a regression; CLOSED ≠ correct.** **A** (`6e63169`): the
+  silent `{f.finding_id: f for f in findings}` collision-overwrite in
+  `build_feedback_records` (which mis-routed a model's corrective
+  feedback to another model — a churn driver) replaced with
+  collision-safe `(finding_id, model_origin)` keying; 106 tests pass.
+  **B** (`c2dd4ef`): in-round re-ask (dispatch-phase, bounded,
+  idempotent; 8 tests). **C** (`58a4efa`): the structural cure —
+  verified fixes are promoted into a per-run working copy the next
+  round reviews, gated on the FULL canonical suite (the C0001 lesson),
+  default-off, repo file never written; 5 tests. **D**
+  (`42da873`/`654a4c8`): decomposition slice
+  `bench/exp40_baseline/_feedback_slice.py` (~110-line admissibility
+  parser) + `40_slice_admissibility.json` + launcher `--config`.
+  **F** launched: `launch_exp40.py --config
+  40_slice_admissibility.json` with apply-back + in-round re-ask + G7 +
+  collision-fix all live, Gate C PASS, 20-round cap — the first run
+  whose error space can actually exhaust, i.e. the first fair test of
+  whether the system converges once the root cause is removed. F was
+  running under a 60-second FFAFP guard at session end; its outcome is
+  the founder's core question and is reported in the F-results
+  post-mortem when it lands. Zero new ruff errors introduced across all
+  items (pre-existing import debt out of scope). Paired build
+  post-mortem: `experimental_notes/Exp40_Remediation_Build_E_to_F_
+  2026-05-16.md` (+ plain-English + TTS). Maths re-audit declined by
+  founder; convergence taken as real and bounded.
+
 - **EXP 40 COMPLETE — R24–R28 CLEAN CONVERGENCE TEST, G7 ENABLED (2026-05-16):**
 
   **Headline: the mechanical-blocker hypothesis is FALSIFIED for this target.**

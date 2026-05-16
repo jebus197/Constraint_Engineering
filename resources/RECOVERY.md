@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 16 May 2026 19:38 BST
+Last updated: 16 May 2026 23:45 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -86,6 +86,18 @@ context" regain had compressed five confer-round combined logs into a
 
 <!-- SV:PENDING_START -->
 ## Current Pending Work (20 April – 16 May 2026)
+
+**SESSION 2026-05-16 (PM/overnight, autonomous) — EXP 40 REMEDIATION BUILD E→F ("just do it all"):**
+
+Branch `exp39-experimental`. Root cause confirmed (code+git+Exp36): verified fixes were only ever sandbox-applied, never written back to the reviewed artefact → panel re-reviews the same defects → re-injection-dominated non-convergence (the regime the decay model predicts). Six items built + milestone-committed this session:
+- **E** `6838e58` — collate all 44 CLOSED fixes (40 artefact / 0 runner / 4 stale); strict-gated cleaned baseline `bench/exp40_baseline/_feedback_cleaned.py` (11 accepted, 40/40 tests). **Key finding: C0001 was CLOSED at run time despite its own e2_regression scoring 0.974 (38/39) — CLOSED≠correct; the S_k threshold over-counts regressing fixes as fixed.**
+- **A** `6e63169` — silent collision-overwrite fixed (collision-safe `(finding_id, model_origin)` keying; 106 tests pass across all `_feedback` consumers).
+- **B** `c2dd4ef` — in-round re-ask (dispatch-phase, bounded 1 retry/model/round, idempotent; 8 tests).
+- **C** `58a4efa` — apply-verified-fixes-back to a per-run working copy, gated on the FULL canonical suite (the C0001 lesson), default-off, repo file never written; 5 tests. The structural cure.
+- **D** `42da873` + `654a4c8` — decomposition slice `bench/exp40_baseline/_feedback_slice.py` (~110 lines) + `40_slice_admissibility.json` + launcher `--config`.
+- **F** RUNNING — `python3 bench/launch_exp40.py --config 40_slice_admissibility.json`. apply-back ON (seed=pristine slice), in-round re-ask ON, G7 ON, Gate C PASS, target 5,596 chars, cap R0–R19. PID/log in `/tmp/exp40_slice_pid`/`/tmp/exp40_slice_logpath`; guard bg task `b5mjsuyig` (`/tmp/exp40_slice_guard.sh`, 60s, freeze only on unambiguous corruption else alert-only); Terminal open.
+
+**Morning review:** read `/tmp/exp40_slice_DONE` (terminal) or `/tmp/exp40_slice_ALERT` (anomaly; frozen only if corruption) + `/tmp/exp40_slice_ffafp.log` + the run log; report F's convergence result straight, converged or not (the founder's core question). Maths re-audit (old plan item 1) declined by founder; no convergence-doubt carried. Paired post-mortem `experimental_notes/Exp40_Remediation_Build_E_to_F_2026-05-16.md` (+ plain-English + TTS). Nothing left unresolved or escalated; the one surprise (C0001) was handled in-design, not deferred.
 
 **SESSION 2026-05-16 (PM) — EXP 40 R24–R28 CLEAN CONVERGENCE TEST (G7 ON) — COMPLETE; MECHANICAL-BLOCKER HYPOTHESIS FALSIFIED:**
 

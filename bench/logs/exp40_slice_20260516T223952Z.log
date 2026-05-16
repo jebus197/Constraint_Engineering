@@ -1,0 +1,42 @@
+[23:39:52] ============================================================
+[23:39:52] EXPERIMENT: exp40_slice_admissibility
+[23:39:52]   Topology: star/blackboard
+[23:39:52]   Pattern: four_layer
+[23:39:52]   Max rounds: 20 (extension to 20)
+[23:39:52]   Convergence: state-based, earliest R3
+[23:39:52]   Target: bench/exp40_baseline/_feedback_slice.py
+[23:39:52]   Context: []
+[23:39:52]   Models: ['CC2', 'ChatGPT', 'Codex', 'DeepSeek', 'Gemini']
+[23:39:52]   Domain: software
+[23:39:52]   Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z
+[23:39:52] ============================================================
+[23:39:52]   apply-fixes-back ENABLED — working copy /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py (seed: pristine /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/exp40_baseline/_feedback_slice.py)
+[23:39:52]   Target: 5,596 chars
+[23:39:52]   Context: 0 files
+[23:39:52]   Total: 5,728 chars with headers
+[23:39:52]   in-round re-ask ENABLED (min_markers=2)
+[23:39:52]   G7 merge-arbitration ENABLED (min_defer=2, max/round=3, tiebreaker_γ<0.05)
+[23:39:52]   S_k pipeline: capturing baseline gate scores...
+[23:39:53]   S_k baseline: ruff=0, bandit={'high': 0, 'medium': 0}
+[23:39:53] 
+------------------------------------------------------------
+[23:39:53] Round 0/19 (blind)
+[23:39:53] ------------------------------------------------------------
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2054: UserWarning: Composer: deepseek_v3 over coherence budget (density=0.0208, budget=0.01). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: ['software_distributed::intra', 'software_distributed'].
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v2.py:2054: UserWarning: Composer: codex_5_3 over coherence budget (density=0.0139, budget=0.012). Coherence penalty κ(m,g) < 1 applies to effective detection. Pruned: nothing further prunable.
+  return compose(task_domain=domain, model=composer_model, situation=situation)
+Gate C preflight: PASS (5 canonical cases, 5 gates verified)
+[23:39:53] Dispatching to CC2 (opus) via claude_cli...
+[23:39:53] Dispatching to Gemini (google/gemini-3.1-pro-preview) via openrouter...
+[23:39:53] Dispatching to Codex (openai/gpt-5.5) via openrouter...
+[23:39:53] Dispatching to ChatGPT (openai/gpt-5.5) via openrouter...
+[23:39:53] Dispatching to DeepSeek (deepseek/deepseek-v4-pro) via openrouter...
+[23:41:05]   [openrouter:openai/gpt-5.5] done (71.4s, 7975 chars)
+[23:41:05]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z/r0_codex_20260516T224105Z.json
+[23:41:23]   [openrouter:openai/gpt-5.5] done (90.0s, 12250 chars)
+[23:41:24]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z/r0_chatgpt_20260516T224124Z.json
+[23:43:23]   [claude-cli:opus] done (210.1s, 8819 chars)
+[23:43:23]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z/r0_cc2_20260516T224323Z.json
+[23:43:54]   [openrouter:google/gemini-3.1-pro-preview] done (240.9s, 4115 chars)
+[23:43:55]   Saved: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_slice_admissibility_20260516T223952Z/r0_gemini_20260516T224355Z.json

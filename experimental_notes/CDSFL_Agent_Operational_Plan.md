@@ -250,6 +250,83 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — MORNING REVIEW of plan-F outcome. Remediation build E→D COMPLETE + committed; F (decomposed convergence re-run) RUNNING under live guard (2026-05-16 ~23:40 BST, autonomous).**
+
+Founder directive "just do it all" discharged. Root cause (confirmed
+code+git+Exp36): verified fixes only ever sandbox-applied, never written
+back → panel re-reviews same defects → re-injection-dominated
+non-convergence. Six items built this session, milestone-committed:
+
+- **E** `6838e58` — collation of all 44 CLOSED fixes (40 artefact / 0
+  runner / 4 stale); strict-gated cleaned baseline
+  `bench/exp40_baseline/_feedback_cleaned.py` (11 accepted, 40/40 tests).
+  **Key finding: C0001 was CLOSED at run time despite e2_regression
+  0.974 (38/39) — CLOSED≠correct; S_k threshold tolerates regressions.**
+- **A** `6e63169` — collision-overwrite fixed (collision-safe
+  (fid,model) keying; 106 tests pass).
+- **B** `c2dd4ef` — in-round re-ask (dispatch-phase, bounded, 8 tests).
+- **C** `58a4efa` — apply-fixes-back to per-run working copy, FULL-suite
+  gated (the C0001 lesson), default-off, 5 tests. Structural cure.
+- **D** `42da873` + `654a4c8` — slice `_feedback_slice.py` (~110 lines)
+  + `40_slice_admissibility.json` + launcher `--config`.
+- **F** RUNNING — `python3 bench/launch_exp40.py --config
+  40_slice_admissibility.json`. Confirmed at start: apply-back ON
+  (seed=pristine slice), in-round re-ask ON, G7 ON, Gate C PASS, target
+  5,596 chars, cap R0–R19. PID file `/tmp/exp40_slice_pid`; log path in
+  `/tmp/exp40_slice_logpath`; guard `/tmp/exp40_slice_guard.sh` (bg
+  task `b5mjsuyig`, 60s, freeze only on unambiguous corruption,
+  alert-only otherwise). Terminal window open.
+
+**MORNING: check `/tmp/exp40_slice_DONE` (terminal: convergence /
+STALL_CONVERGED / R19-complete) or `/tmp/exp40_slice_ALERT` (anomaly;
+frozen only if corruption) + `/tmp/exp40_slice_ffafp.log` + the
+Terminal + the run log. Report F's convergence result straight,
+converged or not — that is the founder's core question.** Maths
+re-audit (old plan item 1) declined by founder; no doubt carried.
+Paired post-mortem: `experimental_notes/
+Exp40_Remediation_Build_E_to_F_2026-05-16.md` (+ plain-English + TTS).
+If F finished while the session was alive, an F-results post-mortem +
+sv supersedes this pointer.
+
+### Superseded resume pointer (plan approved, pre-build — retained for trail)
+
+**Next action — EXECUTE the approved Exp 40 root-cause remediation plan (founder-approved 2026-05-16, MC `d, t` discharged). Begin with E, then A+B, then C, D, F.**
+
+Root cause confirmed (code + git + Exp 36 audit): verified fixes are applied
+only in a throwaway sandbox (`reference_runner_v2._run_regression_suite`
+~L3088–3116); the real `bench/dm/_feedback.py` (621 lines) is never patched,
+so the panel re-reviews the same defects every round → re-injection-dominated
+non-convergence (γ peaked 0.2967@R3 then flat ≈0.05 for 25 rounds; the maths
+model predicts exactly this, no metric doubt). Approved plan (paired note
+`experimental_notes/Exp40_RootCause_Remediation_Plan_2026-05-16.md` + plain-
+English + TTS):
+
+- **E.** Collate + `sy` + `f` all past Exp 40 fixes (296 canonical / 44
+  CLOSED, 4 legs): runner fixes → fold into `reference_runner_v2`; artefact
+  fixes → cumulative-gated baseline for C; stale → discard+log. **First.**
+- **A.** Collision-overwrite fix at `_feedback.py:228` (collision-safe
+  accumulation, retain+log both; 5 `.get(fid)` consumers FFAFP'd; UUID-
+  namespace only if a consumer can't be satisfied — report, don't switch
+  silently). Replaces the detector-gated deferral with a real fix.
+- **B.** In-round re-ask (dispatch phase, not reconciliation close; 1 retry/
+  model/round, idempotent, logged; 1e stays fallback).
+- **C.** Apply verified fixes back → per-run working copy under run log dir
+  (NOT repo file); next run seeded from all prior CLOSED patches; promote
+  only if cumulative working copy still passes all gates. **Changes Exp 40
+  from static-stimulus → iterative repair-and-reconverge — intended,
+  recorded.**
+- **D.** Decompose target; first slice = admissibility/parse group (seam
+  shown before run).
+- **F.** Re-run: decomposed + seeded baseline + apply-back + A + B + G7 on;
+  generous cap (≤~20 rounds OK now design is fixed); live 60 s monitor,
+  pause/fix-on-the-fly.
+
+Maths re-audit (old plan item 1) **declined** by founder — convergence taken
+as real/bounded; no doubt carried forward. Notes written, uncommitted (next
+sv folds them). On execution: implement, do not re-litigate or re-defer.
+
+### Superseded resume pointer (R24–R28 result — retained for trail)
+
 **Next action — founder review of the Exp 40 R24–R28 result. Exp 40 COMPLETE (R0–R28).**
 
 **Headline result: the mechanical-blocker hypothesis is FALSIFIED for this
