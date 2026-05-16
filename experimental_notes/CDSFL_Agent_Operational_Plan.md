@@ -250,6 +250,31 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — Exp 40 R24–R28 LAUNCHING (2026-05-16, founder-directed clean convergence test, G7 ON).**
+
+Founder rejected the "convergence never cleanly tested" framing (correctly —
+Exp 37 = clean STATE_CONVERGED two consecutive gate passes; Exp 31 = convergence
+occurred but bug-closed-gate dead-code masked it, per Exp 32 unanimous). Founder
+directed a 5-round extension with all previously-agreed fixes ON to test whether
+Exp-40-target convergence is real once the mechanical blocker is removed.
+
+Config (`bench/exp40_configs/40_gate.json`): `merge_arbitration_enabled=true`
+(G7 ON — reverses the §6c deferral, per founder directive), `max_rounds=29`,
+`extension_cap=29` (set EQUAL per standing corrective — simulation-verified
+exactly R24–R28 = 5 rounds, no overrun even if budget-extension fires every
+round). Target `_feedback.py` held stable this leg (no edits → modified-target
+confound removed). In-round re-ask NOT bundled (unbuilt; would confound the
+signal; Fix 1e covers the load per R17–R23). 114 G7+tranche+feedback tests
+pass with G7 enabled; config→RunnerConfig→`_try_merge_arbitration` wiring
+confirmed (`reference_runner_v2.py` :294/:1052/:4189). Launch:
+`python3 bench/launch_exp40.py --resume` (resumes R23 checkpoint, start_round=24).
+Monitor 60 s, FFAFP; **stop + escalate to founder if convergence becomes
+structurally impossible (e.g. G7 producing wrong merges that corrupt the
+novelty count) — do not run to a foregone end.** No confer (founder directive,
+executed not re-litigated).
+
+### Superseded resume pointer (R17–R23 morning review — retained for trail)
+
 **Next action — founder morning review (2026-05-16). Exp 40 R17–R23 COMPLETE; full overnight delegation discharged.**
 
 Exp 40 resume ran 03:32:53 → 05:45:27 BST, 7,954 s, exit 0, clean stop on
