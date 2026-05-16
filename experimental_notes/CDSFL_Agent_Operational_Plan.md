@@ -250,6 +250,47 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — founder morning review (2026-05-16). Exp 40 R17–R23 COMPLETE; full overnight delegation discharged.**
+
+Exp 40 resume ran 03:32:53 → 05:45:27 BST, 7,954 s, exit 0, clean stop on
+the round-cap boundary. **Executed R17–R23 (7 rounds)** — see Caveat 1.
+Final γ 0.048 (deep converged-by-decay; γ-alt not met). Registry 260
+canonical (CONFIRMED 95 / OPEN 64 / CLOSED 40 / MERGED 32 / UNCONFIRMED 29).
+
+**All fixes validated in production:** 16 DeepSeek/Gemini reasoning-trace
+recoveries; Fix-1b honest logs every round; Fix-1c windowing fired
+AUTOIMMUNE correctly at 3/3 and tracked sustained bias to 6 rounds (both
+halves proven); Fix-1e REFORMAT path active each round; Fix-1a — no
+mangled IDs in 370 findings; 12 BUGZILLA verified CLOSED. **Collision
+detector: ZERO collisions in 7 rounds → §6c Q2 UUID-namespace deferral is
+now EVIDENCE-JUSTIFIED.** G7 stayed disabled (§6c); D4 deadlocks recurred
+as predicted (C0023 = 21 rounds, longest in project history) — the Exp 41
+enablement evidence.
+
+**Caveat 1 (operator config error):** founder requested R17–R21 (5);
+config (max_rounds=22/extension_cap=24) + the runner's active
+budget-extension mechanism yielded R17–R23 (7). Not a runaway (investigated
+before acting; loop_cap ceiling held; ran to clean completion). Standing
+corrective in §6c: for a bounded N-round resume set extension_cap ==
+max_rounds.
+
+**Caveat 2 (confound):** target `_feedback.py` was modified this session
+(collision detector); panel reviewed changed source → rising novel-CRIT
+[2→15] is largely artefact, not pure convergence. Any R17–R23 vs R10–R16
+comparison must carry this caveat.
+
+Post-mortem: `experimental_notes/Exp40_R17_R23_Resume_Postmortem_2026-05-16.md`
+(+ plain-English + TTS). No FFAFP pause was needed across ~135
+monitor events.
+
+**Exp 41 entry actions (now evidence-backed, §6c + Exp 41 matrix row):**
+enable G7; UUID-namespace stays deferred (detector proved zero collisions);
+in-round dispatch deferred (1e handled load). All pending founder review.
+
+---
+
+### Superseded resume pointer (R17–R21 launch — retained for trail)
+
 **Next action — Exp 40 R17–R21 running (2026-05-16, founder asleep, autonomous).**
 
 Neutral timing re-confer complete (the 2026-05-15 biased round is superseded).

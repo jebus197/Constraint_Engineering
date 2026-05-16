@@ -1,28 +1,33 @@
 # CDSFL Current State
 
-Generated: 16 May 2026 03:31 BST (2026-05-16T03:31:35+01:00)
+Generated: 16 May 2026 05:49 BST (2026-05-16T05:49:37+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `9071025` sv-followup: tracker HEAD -> b13dd6d (confer-closed terminal state)
-- **Committed:** 2026-05-15 23:24:40 +0100
-- **Remote:** ahead by 101
+- **Last commit:** `626f5e4` sv: neutral timing re-confer (no presupposed answer) — G7 enablement DEFER to Exp 41 (reverses CC1), UUID-namespace DEFER+collision-detector-evidence-gate, in-round dispatch DEFER; observation-only collision detector implemented (10 tests); canonical plan §6c binding timing decisions + Exp 41 actions; 210 tests pass; paired confer notes
+- **Committed:** 2026-05-16 03:31:35 +0100
+- **Remote:** ahead by 102
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/dm/_feedback.py`
+- `M bench/exp40_configs/40_gate.json`
+- `M bench/fingerprints/CC2.json`
+- `M bench/fingerprints/ChatGPT.json`
+- `M bench/fingerprints/Codex.json`
+- `M bench/fingerprints/DeepSeek.json`
+- `M bench/fingerprints/Gemini.json`
+- `M bench/logs/exp40_gate_20260514T020550Z/checkpoint.json`
+- `M bench/logs/exp40_gate_20260514T020550Z/completion_signal.json`
+- `M bench/logs/exp40_gate_20260514T020550Z/exp40_gate_report.json`
+- `M bench/logs/exp40_gate_20260514T020550Z/runner_state.json`
+- `M bench/logs/exp40_gate_20260514T020550Z/stage6_calibration_summary.json`
 - `M bench/logs/immune_pipeline.log`
-- `M bench/reference_runner_v2.py`
 - `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
-- `M experimental_notes/Exp40_to_54_Consolidated_Plan_2026-04-21.md`
-- `?? bench/confer_exp40_timing_neutral_2026-05-16.py`
-- `?? bench/logs/confer_exp40_timing_neutral_2026-05-16/`
-- `?? bench/tests/test_finding_id_collision_detector.py`
-- `?? experimental_notes/Exp40_Timing_Reconfer_Outcome_2026-05-16.md`
-- `?? experimental_notes/Exp40_Timing_Reconfer_Outcome_Plain_English_2026-05-16.md`
+- `?? bench/logs/exp40_R17R21_20260516T023253Z.log`
+- `?? bench/logs/exp40_gate_20260514T020550Z/macrophage_shadow_r17.json`
 
 ---
 
@@ -35,25 +40,26 @@ Uncommitted files:
 ## Latest Experiment
 
 - **Experiment:** exp40_gate (#40)
-- **Status:** INCOMPLETE
+- **Status:** CONVERGED
 - **Topology:** star
 - **Target:** `bench/dm/_feedback.py`
-- **Rounds:** 17
-- **Total findings:** 280
-- **Gamma:** 0.0342
+- **Rounds:** 24
+- **Total findings:** 370
+- **Gamma:** 0.0477
 - **Models:** CC2, ChatGPT, Codex, DeepSeek, Gemini
 - **Per model:**
-  - Gemini: 94
-  - DeepSeek: 86
-  - ChatGPT: 45
-  - CC2: 33
-  - Codex: 22
+  - Gemini: 140
+  - DeepSeek: 100
+  - ChatGPT: 54
+  - CC2: 46
+  - Codex: 30
 - **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp40_gate_20260514T020550Z`
 
 ---
 
 ## Recent Commits
 
+- `626f5e4 sv: neutral timing re-confer (no presupposed answer) — G7 enablement DEFER to Exp 41 (reverses CC1), UUID-namespace DEFER+collision-detector-evidence-gate, in-round dispatch DEFER; observation-only collision detector implemented (10 tests); canonical plan §6c binding timing decisions + Exp 41 actions; 210 tests pass; paired confer notes`
 - `9071025 sv-followup: tracker HEAD -> b13dd6d (confer-closed terminal state)`
 - `b13dd6d sv: live 5-model architectural confer CLOSED — 5/5 unanimous YES (resume R17-R21 G7-disabled + enable G7 at Exp 41 as designed, no blockers); confer script + logs + paired outcome notes; ONBOARDING/RECOVERY/tracker updated`
 - `553d41d sv-followup: operational tracker HEAD 3bbf2c7->7ecbf26 post-sv`
@@ -63,4 +69,3 @@ Uncommitted files:
 - `a8a33c2 feat: make Bugzilla paradigm explicit to the panel`
 - `b2f3444 fix: parse_admissibility_block — FINDING_ID terminator regression`
 - `9891bda fix: Stage 6 calibrator int-flaw_class crash + regression tests`
-- `26b28f8 fix: gamma input — use post-reconciliation novelty, not pre-`
