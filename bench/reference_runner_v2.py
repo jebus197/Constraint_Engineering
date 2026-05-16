@@ -295,6 +295,16 @@ class RunnerConfig:
     merge_arbitration_min_defer_count: int = 2
     merge_arbitration_max_per_round: int = 3
     merge_arbitration_tiebreaker_gamma: float = 0.05
+    # In-round re-ask (Exp 40 plan-B, 2026-05-16, founder-directed —
+    # supersedes the 1e next-round-only deferral). When a model returns
+    # finding-declaration content that fails to parse (>= min_markers
+    # raw markers, 0 parsed findings), re-dispatch ONCE to that model in
+    # the dispatch phase with a STRUCTURE_VIOLATION corrective prompt,
+    # before reconciliation. Bounded (1 retry/model/round), idempotent
+    # (replaces the round's output for that model on success; no
+    # double-count). 1e (next-round reformat) remains the fallback.
+    inround_reask_enabled: bool = True
+    inround_reask_min_markers: int = 2
     # Round-context helpers (Exp 40 1D.1, 1D.2, 1D.4).
     prior_fix_summary_enabled: bool = True
     prior_fix_summary_max_entries: int = 20
@@ -2059,6 +2069,75 @@ def _multiturn_fallback(
         return None
 
 
+# In-round re-ask (Exp 40 plan-B, 2026-05-16). Module-level config
+# mirror set at experiment start from RunnerConfig (mirrors the
+# _merge_arb_ctx pattern) so the dispatch-call chain need not be
+# re-threaded. Safe default OFF until experiment start populates it.
+_INROUND_REASK: Dict[str, Any] = {"enabled": False, "min_markers": 2}
+
+
+def _build_inround_reask_prompt(original_prompt: str) -> str:
+    """Prepend a STRUCTURE_VIOLATION corrective header to the original
+    prompt (mirrors the 1e next-round wording for tone consistency,
+    but acts in-round). The model is asked to re-emit the SAME analysis
+    in the canonical finding format — no new analysis is requested."""
+    header = (
+        "=== STRUCTURE_VIOLATION — MANDATORY REFORMAT (in-round) ===\n\n"
+        "Your previous response contained finding-style content but did "
+        "NOT parse into a single valid finding. Unparseable output is "
+        "treated as no output at all. Re-emit your SAME analysis now, "
+        "in EXACTLY the canonical format — each finding declared as "
+        "`FINDING_ID: <id>` with the required fields, no prose wrapper, "
+        "no markdown fences around the finding block. Do not add new "
+        "analysis; reformat what you already produced.\n\n"
+        "=== ORIGINAL TASK (unchanged) ===\n\n"
+    )
+    return header + original_prompt
+
+
+def _inround_reask(
+    mc: ModelConfig, prompt: str, model_cdsfl: str, round_idx: int,
+    text: str, model_findings: List[Finding], wall_limit: float,
+) -> Tuple[List[Finding], str, bool]:
+    """One bounded in-round re-dispatch on a structural parse failure.
+
+    Trigger: enabled AND 0 findings parsed AND the raw text carried
+    >= min_markers finding-declaration markers AND the text is a real
+    model response (not a dispatch-failure sentinel). Returns
+    (findings, text, did_reask). On a successful retry the retry's
+    output REPLACES the round's output for this model (idempotent, no
+    double-count); on failure the original is returned unchanged.
+    """
+    if not _INROUND_REASK.get("enabled"):
+        return model_findings, text, False
+    if model_findings:
+        return model_findings, text, False
+    if not text or text.startswith("__DISPATCH_FAILED__"):
+        return model_findings, text, False
+    markers = len(_FINDING_DECL_RE.findall(text))
+    if markers < int(_INROUND_REASK.get("min_markers", 2)):
+        return model_findings, text, False
+    _log(f"  in-round re-ask [{mc.label}]: {markers} finding markers, "
+         f"0 parsed — re-dispatching once (STRUCTURE_VIOLATION)")
+    try:
+        reask_prompt = _build_inround_reask_prompt(prompt)
+        rtext, relapsed = dispatch_to_model(
+            mc, reask_prompt, model_cdsfl, wall_clock_limit=wall_limit)
+        _record_throughput(mc.label, len(reask_prompt), relapsed)
+        rfindings = parse_findings(mc.label, round_idx, rtext)
+    except (CircuitBreakerTripped, TimeoutError, Exception) as e:
+        _log(f"  in-round re-ask [{mc.label}]: retry dispatch failed "
+             f"({type(e).__name__}) — keeping original output")
+        return model_findings, text, True
+    if rfindings:
+        _log(f"  in-round re-ask [{mc.label}]: RECOVERED "
+             f"{len(rfindings)} findings on retry")
+        return rfindings, rtext, True
+    _log(f"  in-round re-ask [{mc.label}]: still 0 parsed after retry — "
+         f"1e next-round reformat remains the fallback")
+    return model_findings, text, True
+
+
 def _dispatch_single_model(
     mc: ModelConfig, mgr: DynamicManager, prompt: str,
     cdsfl_text: str, full_code: str, round_idx: int,
@@ -2104,12 +2183,15 @@ def _dispatch_single_model(
         text, elapsed = dispatch_to_model(mc, prompt, model_cdsfl, wall_clock_limit=wall_limit)
         _record_throughput(mc.label, len(prompt), elapsed)
         model_findings = parse_findings(mc.label, round_idx, text)
+        model_findings, text, _reasked = _inround_reask(
+            mc, prompt, model_cdsfl, round_idx, text, model_findings,
+            wall_limit)
         logs_dir.mkdir(parents=True, exist_ok=True)
         save_output(
             logs_dir, f"r{round_idx}", mc.label, prompt[:200] + "...", text,
             metadata={"round": round_idx, "elapsed": round(elapsed, 1),
                       "chars": len(text), "findings_count": len(model_findings),
-                      "decomposed": False})
+                      "decomposed": False, "inround_reask": _reasked})
         return model_findings, text
     except (CircuitBreakerTripped, TimeoutError, Exception) as e:
         _log(f"  {mc.label}: {type(e).__name__} — {e}")
@@ -4185,6 +4267,16 @@ def run_experiment(
     # _try_merge_arbitration (called from _update_finding_statuses) and
     # the round-level tie-breaker can reach the models without
     # threading dispatch infra through the status-updater signature.
+    # In-round re-ask (plan-B): set the module mirror from cfg at
+    # experiment start (mirrors the _merge_arb_ctx pattern below).
+    _INROUND_REASK["enabled"] = bool(
+        getattr(cfg, "inround_reask_enabled", False))
+    _INROUND_REASK["min_markers"] = int(
+        getattr(cfg, "inround_reask_min_markers", 2))
+    if _INROUND_REASK["enabled"]:
+        _log(f"  in-round re-ask ENABLED (min_markers="
+             f"{_INROUND_REASK['min_markers']})")
+
     _merge_arb_ctx.clear()
     if getattr(cfg, "merge_arbitration_enabled", False):
         def _arb_dispatch(mc, prompt: str):

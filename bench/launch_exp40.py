@@ -228,6 +228,10 @@ def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
         "merge_arbitration_min_defer_count",
         "merge_arbitration_max_per_round",
         "merge_arbitration_tiebreaker_gamma",
+        # In-round re-ask (plan-B, 2026-05-16). Default-on in
+        # RunnerConfig; passthrough lets a config tune/disable it.
+        "inround_reask_enabled",
+        "inround_reask_min_markers",
     ):
         if af in exp_cfg:
             kwargs[af] = exp_cfg[af]

@@ -175,6 +175,8 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         "merge_arbitration_min_defer_count",
         "merge_arbitration_max_per_round",
         "merge_arbitration_tiebreaker_gamma",
+        "inround_reask_enabled",
+        "inround_reask_min_markers",
     ):
         if af in exp_cfg:
             kwargs[af] = exp_cfg[af]
