@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260516T171732Z",
+  "phase": "r25",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 1770,
+  "response": "SCHEMA_FEEDBACK_RESPONSE:\n- WITHDRAW ChatGPT_UNSTRUCTURED — schema marked it DUPLICATE with near-duplicate similarity to Gemini_F007 and ADMISSIBILITY failures for `d_tool` and `σ_measured`. I am not resubmitting it.\n\nGLOBAL_SYNTHESIS_RESULT:\n- target_0 findings were checked against the Round 25 registry.\n- The three independently reviewed issues are already present in the registry:\n  - `final_verdict == \"REJECTED\"` rendering/action issue: covered by settled entries including C0023/C0238/C0245.\n  - `parse_admissibility_block()` accepting `PASSIVE`/`FAILURE` prefixes: covered by closed parser permissiveness entries including C0006/C0007.\n  - `max_chars_per_model` not being a true hard cap: covered by entries including C0031/C0181/C0215/C0251.\n- target_1 contained only `bench/dm/_types.py` marked read-only context; no reviewable code was available there.\n- I am therefore not filing those as new DISCOVERY findings, because that would duplicate settled or active registry content.\n\nGLOBAL_P_PASS:\n- Pass 1: Compared each target_0 finding against the active and settled registry. All three matched existing canonical issues.\n- Pass 2: Checked whether any finding had a distinct mechanism, file, or downstream consequence. None did; all share the same root causes already registered.\n- Pass 3: Checked cross-section interaction with `bench/dm/_types.py`. The context file is read-only and does not change the `_feedback.py` mechanisms.\n- Pass 4: Checked whether a REOPEN or CHALLENGE was warranted. No new evidence beyond the current source text was available against closed programmatically verified entries.\n- Pass 5: No new admissible high/critical issue survived novelty filtering.\n\nVERIFIED: TRUE — no new DISCOVERY findings are submitted in this synthesis.",
+  "metadata": {
+    "round": 25,
+    "elapsed": 199.2,
+    "chars": 1770,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

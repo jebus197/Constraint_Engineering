@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 16 May 2026 05:49 BST
+Last updated: 16 May 2026 19:38 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,46 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 COMPLETE — R24–R28 CLEAN CONVERGENCE TEST, G7 ENABLED (2026-05-16):**
+
+  **Headline: the mechanical-blocker hypothesis is FALSIFIED for this target.**
+  The R24–R28 leg was the founder-directed clean test of "remove the
+  merge-deadlock blocker (G7 = the ≥3/5 panel-majority merge-deadlock
+  resolver) → convergence follows". Config `merge_arbitration_enabled=true`,
+  `max_rounds=extension_cap=29`, target `bench/dm/_feedback.py` held stable
+  (modified-target confound of R17–R23 absent here). Resumed from R23
+  checkpoint; ran 5,533 s; **exactly R24–R28 (5 rounds)** — the R17–R23
+  round-count overrun corrective (`extension_cap == max_rounds`) is confirmed
+  working (`budget_extended=true` fired but created no runway). G7 worked
+  perfectly: 8–10 deadlocks resolved by ≥3/5 majority, **C0023 (stuck 21
+  rounds, the project-record longest) resolved 5/5**, zero merge cycles, 53
+  entries reached MERGED. **Convergence still did not occur.** γ (gamma,
+  the depletion estimate; gate threshold 0.30) flat ≈0.0472–0.0507 across the
+  G7-on leg vs ≈0.0477 at G7-off R23 — no convergence effect. Full γ R0–R28:
+  `0,0,0.256,0.2967,0.289,0.284,0.275,0.261,0.232,0.143,0.094,0.063,0.045,
+  0.035,0.032,0.031,0.034,0.040,0.045,0.049,0.049,0.050,0.050,0.048,0.047,
+  0.048,0.049,0.050,0.051` — **peak 0.2967 at R3 (≈1.1% below the 0.30
+  gate), then monotonic decline to a ≈0.05 plateau for 25 rounds.** The
+  system approaches the gate early then diverges; the divergence is NOT the
+  deadlocks. Convergence remains real in general (Exp 37 clean
+  STATE_CONVERGED; this run touched the threshold at R3) — this is a
+  target-specific divergence. Candidate [SPECULATIVE]: novelty-regeneration
+  dynamics and/or γ-metric+gate mis-calibration — supported by the Exp 36
+  audit ("γ classifies wrong at system level … reports convergence during
+  churn") and this run's own log line "gamma: 0.051 (hard, BLOCKED) — Gamma
+  disagrees with state closure — recommend HIL audit". Final: 417 findings,
+  296 canonical (UNCONFIRMED 108 / CONFIRMED 91 / MERGED 53 / CLOSED 44),
+  33 HIL flags. Monitoring (FFAFP, monitor-side only): a 60 s guard needed
+  3 iterations, all corrections to the guard never the experiment (healthy
+  throughout) — incl. a false G7-storm freeze of a healthy run (unfrozen via
+  SIGCONT, no loss) → guard redesigned so brittle heuristics cannot take
+  autonomous destructive action. Paired post-mortem:
+  `experimental_notes/Exp40_R24_R28_Convergence_Test_Postmortem_2026-05-16.md`
+  (+ plain-English + TTS). **Next-work (recommendation, not yet
+  founder-approved):** instrument raw-vs-novel divergence and re-examine the
+  γ definition + gate threshold on a rich target before any further
+  single-mechanism fix; G7 stays enabled (validated correct).
+
 - **EXP 40 CONTINUATION + POST-CONTINUATION FIX TRANCHE (2026-05-15):**
   Branch `exp39-experimental`, HEAD `3bbf2c7` at session start; this sv is the next commit.
 

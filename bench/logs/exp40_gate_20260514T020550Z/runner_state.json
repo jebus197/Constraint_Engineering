@@ -79,6 +79,18 @@
             "verdict": "CONFIRM",
             "round": 16,
             "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 24,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -261,9 +273,9 @@
         "severity": 0.62,
         "description": "`parse_admissibility_block()` treats valid `\u03c3_measured: N/A` as a failed gate.\n\nLocation: `bench/dm/_feedback.py`, function `parse_admissibility_block`.\n\nThe operational directive allows `\u03c3_measured` to be `PASS | FAIL | N/A`, because findings without a proposed fix may validly have no post-fix efficacy measurement. The parser only accepts `PASS` or `FAIL`.\n\nCurrent parser logic:\nmatch = re.search(\n    pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL)\",\n    block,\n    re.IGNORECASE,\n)\nConcrete trace:",
         "proposed_fix": "",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 0,
-        "last_status_change_round": 7,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "Gemini",
@@ -317,9 +329,10 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "merge_defer_count": 5,
+        "merge_defer_count": 6,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 5 rounds, targets: C0007, C0184"
+        "hil_reason": "MERGE deadlock for 5 rounds, targets: C0007, C0184",
+        "merged_into": "C0007"
       },
       "C0004": {
         "canonical_id": "C0004",
@@ -416,6 +429,12 @@
             "model": "DeepSeek",
             "verdict": "CONFIRM",
             "round": 7,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 27,
             "evidence": ""
           }
         ],
@@ -651,6 +670,12 @@
             "verdict": "CONFIRM",
             "round": 13,
             "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -708,9 +733,9 @@
         "severity": 0.9,
         "description": "The `section_terminator` regex in `parse_admissibility_block` attempts to list all valid finding keys to handle out-of-order sections, but it includes `FINDING` instead of the actual key `FINDING_ID`.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n==== REPLACE\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n>>>>",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 0,
-        "last_status_change_round": 6,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "Gemini",
@@ -1515,6 +1540,162 @@
             "verdict": "MERGE",
             "round": 16,
             "evidence": "merged_into=C0165"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0121"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0123"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0124"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0125"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0126"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0127"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0128"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0130"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0131"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0132"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0133"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0134"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0135"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0136"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0137"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0138"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0139"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0140"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0141"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0142"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0143"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0145"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0146"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0160"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0165"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0266"
           }
         ],
         "verified": false,
@@ -1537,10 +1718,11 @@
             "error": "search_not_found"
           }
         },
-        "merge_defer_count": 15,
+        "merge_defer_count": 16,
         "bugzilla_attempted": true,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 15 rounds, targets: C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053, C0089, C0090, C0091, C0097, C0098, C0099, C0106, C0110, C0111, C0113, C0114, C0117, C0119, C0120, C0121, C0123, C0124, C0125, C0126, C0127, C0128, C0130, C0132, C0133, C0134, C0135, C0136, C0137, C0138, C0139, C0140, C0141, C0142, C0145, C0146, C0160, C0165, C0101, C0096, C0143"
+        "hil_reason": "MERGE deadlock for 15 rounds, targets: C0040, C0042, C0050, C0051, C0054, C0056, C0057, C0063, C0064, C0065, C0066, C0076, C0082, C0084, C0043, C0074, C0053, C0089, C0090, C0091, C0097, C0098, C0099, C0106, C0110, C0111, C0113, C0114, C0117, C0119, C0120, C0121, C0123, C0124, C0125, C0126, C0127, C0128, C0130, C0132, C0133, C0134, C0135, C0136, C0137, C0138, C0139, C0140, C0141, C0142, C0145, C0146, C0160, C0165, C0101, C0096, C0143",
+        "merged_into": "C0040"
       },
       "C0009": {
         "canonical_id": "C0009",
@@ -1734,6 +1916,12 @@
             "verdict": "CONFIRM",
             "round": 18,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": ""
           }
         ],
         "verified": false,
@@ -1890,6 +2078,12 @@
             "verdict": "CONFIRM",
             "round": 18,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": ""
           }
         ],
         "verified": false,
@@ -2003,6 +2197,12 @@
             "verdict": "CONFIRM",
             "round": 21,
             "evidence": "The finding is correct: the `__post_init__` validator omits bounds checks for similarity thresholds, cost multipliers, loop counters, and baseline arrays. The proposed fix (adding the block of `ValueE"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "The fix (validation for `suppression_k` in `DynamicManagementConfig.__post_init__`) is already present in the current `bench/dm/_types.py` (line: `if self.suppression_k < 1: raise ValueError(...)`). C"
           }
         ],
         "verified": false,
@@ -2993,9 +3193,9 @@
         "severity": 0.88,
         "description": "`FindingFeedback.action` (line ~77) returns `\"RECALCULATE\"` only when\n`self.refutations` is non\u2011empty.  If a finding reaches `final_verdict == \"REJECTED\"`\nwithout a per\u2011cell tool refutation (possible when the immune pipeline rejects\nby consensus or PM verdict), the `refutations` list is empty, and `action`\nfalls through to `\"ADD_ADMISSIBILITY_OR_WITHDRAW\"`.  The model would then receive\nfeedback telling it to supply missing admissibility gates, rather than to address\nthe rejection.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\ndef action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\"\"\"\n        if self.refutations:\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n==== REPLACE\ndef action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\"\"\"\n        # blanket REJECTED by the immune pipeline requires re-evaluation,\n        # even if no specific tool refutation exists.\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n>>>>",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 1,
-        "last_status_change_round": 6,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "Codex",
@@ -3180,10 +3380,11 @@
             "error": "search_not_found"
           }
         },
-        "merge_defer_count": 21,
+        "merge_defer_count": 22,
         "hil_escalated": true,
         "hil_reason": "MERGE deadlock for 21 rounds, targets: C0002, C0033, C0057",
-        "bugzilla_attempted": true
+        "bugzilla_attempted": true,
+        "merged_into": "C0002"
       },
       "C0024": {
         "canonical_id": "C0024",
@@ -3406,6 +3607,12 @@
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 23,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 24,
             "evidence": ""
           }
         ],
@@ -4081,9 +4288,9 @@
         "severity": 0.5,
         "description": "finding_id: f for f in findings}\nThis is unsafe because `Finding` has both `finding_id` and `model_id`, and the review protocol explicitly allows model-local stable IDs such as `F001`, `F002`, etc. Ac",
         "proposed_fix": "",
-        "status": "UNCONFIRMED",
+        "status": "MERGED",
         "open_since_round": 3,
-        "last_status_change_round": 20,
+        "last_status_change_round": 26,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -4672,6 +4879,18 @@
             "verdict": "MERGE",
             "round": 16,
             "evidence": "merged_into=C0172"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0122"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0129"
           }
         ],
         "verified": false,
@@ -4683,9 +4902,10 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "merge_defer_count": 16,
+        "merge_defer_count": 19,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 16 rounds, targets: C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071, C0073, C0077, C0079, C0085, C0086, C0087, C0088, C0092, C0100, C0103, C0105, C0112, C0118, C0122, C0129, C0131, C0159, C0162, C0166, C0104, C0107, C0108, C0109, C0111, C0115, C0116, C0172"
+        "hil_reason": "MERGE deadlock for 18 rounds, targets: C0041, C0068, C0069, C0072, C0036, C0037, C0038, C0067, C0071, C0073, C0077, C0079, C0085, C0086, C0087, C0088, C0092, C0100, C0103, C0105, C0112, C0118, C0122, C0129, C0131, C0159, C0162, C0166, C0104, C0107, C0108, C0109, C0111, C0115, C0116, C0172",
+        "merged_into": "C0041"
       },
       "C0036": {
         "canonical_id": "C0036",
@@ -5005,9 +5225,9 @@
         "severity": 0.5,
         "description": "finding_id={finding.finding_id!r}` inside a `from` clause used to build an error message.  That line might be in `_rebuild_section` or `build_feedback_sections`.  I will use the exact text from the cu",
         "proposed_fix": "",
-        "status": "UNCONFIRMED",
+        "status": "MERGED",
         "open_since_round": 4,
-        "last_status_change_round": 16,
+        "last_status_change_round": 25,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -5121,9 +5341,10 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "merge_defer_count": 8,
+        "merge_defer_count": 10,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 8 rounds, targets: C0093, C0094, C0095, C0102, C0104, C0107, C0108, C0109, C0115, C0116"
+        "hil_reason": "MERGE deadlock for 9 rounds, targets: C0093, C0094, C0095, C0102, C0104, C0107, C0108, C0109, C0115, C0116",
+        "merged_into": "C0093"
       },
       "C0045": {
         "canonical_id": "C0045",
@@ -8061,6 +8282,12 @@
             "verdict": "CONFIRM",
             "round": 20,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Already CONFIRMED; no further action."
           }
         ],
         "verified": false,
@@ -8091,6 +8318,12 @@
             "verdict": "CONFIRM",
             "round": 20,
             "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Already CONFIRMED; no further action."
           }
         ],
         "verified": false,
@@ -9004,9 +9237,9 @@
         "severity": 0.55,
         "description": "`build_feedback_sections()` accepts `top_k <= 0`, which can render a feedback section with zero detailed flagged findings while still telling the model it \u201cMUST address each flagged item\u201d.\n\nLocation: `bench/dm/_feedback.py`, function `build_feedback_sections`.\n\nEvidence from code:\ntop_items = model_recs[:top_k]\noverflow_count = len(model_recs) - len(top_items)\nIf `top_k == 0`, then:\ntop_items = []\noverflow_count = len(model_recs)\nThe loop that renders individual records is skipped:\nfor rec in to",
         "proposed_fix": "",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 10,
-        "last_status_change_round": 10,
+        "last_status_change_round": 25,
         "verdicts": [
           {
             "model": "CC2",
@@ -9042,9 +9275,10 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "merge_defer_count": 9,
+        "merge_defer_count": 11,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 9 rounds, targets: C0158, C0167"
+        "hil_reason": "MERGE deadlock for 10 rounds, targets: C0158, C0167",
+        "merged_into": "C0158"
       },
       "C0148": {
         "canonical_id": "C0148",
@@ -9075,6 +9309,24 @@
             "model": "DeepSeek",
             "verdict": "CONFIRM",
             "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 24,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 28,
             "evidence": ""
           }
         ],
@@ -9111,6 +9363,12 @@
             "model": "DeepSeek",
             "verdict": "CONFIRM",
             "round": 20,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 24,
             "evidence": ""
           }
         ],
@@ -9899,6 +10157,18 @@
             "verdict": "CONFIRM",
             "round": 23,
             "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": "`build_feedback_records()` section 1 only iterates `cell_verdicts.items()`, missing pipeline-level REJECTED findings with no cell-level entry. Root cause verified in supplied artifact lines 231-256. T"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "The finding is correct: `build_feedback_records` section 1 only iterates `cell_verdicts`, missing findings that are REJECTED by `final_verdicts` but have no specialist refutation. The fix proposed in "
           }
         ],
         "verified": false,
@@ -10708,19 +10978,25 @@
         "severity": 0.88,
         "description": "`FindingFeedback.action` and `priority_score` ignore `final_verdict == \"REJECTED\"` if `refutations` is empty.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n@property\n    def action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\n\n        Ordered by precedence: refutation beats admissibility beats duplicate\n        beats R_k discrepancy. This mirrors the priority of the underlying\n        schema checks \u2014 a refuted finding is wrong about its claim; an\n        inadmissible one may be right but cannot be verified; a duplicate\n        wastes compute; an R_k discrepancy is a calibration issue.\n        \"\"\"\n        if self.refutations:\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n\n    def priority_score(self) -> float:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale:\n          * REFUTED by a specialist tool: +3.0 (tool contradicts the claim)\n          * Admissibility failure count: +0.8 per failed gate (max 4.0)\n          * Near-duplicate (max similarity \u00d7 2.0): up to +2.0\n          * R_k discrepancy (|delta|): up to +1.0\n\n        Severity acts as a tie-breaker \u2014 a high-severity flagged finding is\n        more important to correct than a low-severity one.\n        \"\"\"\n        score = 0.0\n        if self.refutations:\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n==== REPLACE\n@property\n    def action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\n\n        Ordered by precedence: refutation beats admissibility beats duplicate\n        beats R_k discrepancy. This mirrors the priority of the underlying\n        schema checks \u2014 a refuted finding is wrong about its claim; an\n        inadmissible one may be right but cannot be verified; a duplicate\n        wastes compute; an R_k discrepancy is a calibration issue.\n        \"\"\"\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n\n    def priority_score(self) -> float:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale:\n          * REFUTED by a specialist tool: +3.0 (tool contradicts the claim)\n          * Admissibility failure count: +0.8 per failed gate (max 4.0)\n          * Near-duplicate (max similarity \u00d7 2.0): up to +2.0\n          * R_k discrepancy (|delta|): up to +1.0\n\n        Severity acts as a tie-breaker \u2014 a high-severity flagged finding is\n        more important to correct than a low-severity one.\n        \"\"\"\n        score = 0.0\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n>>>>",
-        "status": "CLOSED",
+        "status": "CONFIRMED",
         "open_since_round": 18,
-        "last_status_change_round": 19,
+        "last_status_change_round": 28,
         "verdicts": [
           {
             "model": "Codex",
             "verdict": "CONFIRM",
             "round": 19,
             "evidence": "`FindingFeedback.action` and `FindingFeedback.priority_score()` ignore `final_verdict == \"REJECTED\"` when `refutations` is empty."
+          },
+          {
+            "model": "Codex",
+            "verdict": "REOPEN",
+            "round": 27,
+            "evidence": "current `bench/dm/_feedback.py` still renders pipeline-level `final_verdict == \"REJECTED\"` records as `action: NONE` when no individual specialist refutation is attached."
           }
         ],
         "verified": true,
-        "escalated": false,
+        "escalated": true,
         "flaw_class": 5,
         "origin_type": "model",
         "source_ref": "",
@@ -10988,9 +11264,9 @@
         "severity": 0.72,
         "description": "`build_feedback_records()` only iterates `cell_verdicts.items()` in section 1. If `immune_result.final_verdicts` contains a REJECTED finding that had no cell verdicts, it is silently omitted.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 1. Specialist refutations + immune pipeline verdicts\n    final_verdicts = immune_result.final_verdicts if immune_result else {}\n    cell_verdicts = immune_result.cell_verdicts if immune_result else {}\n\n    for fid, verdict_list in cell_verdicts.items():",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 18,
-        "last_status_change_round": 18,
+        "last_status_change_round": 26,
         "verdicts": [
           {
             "model": "CC2",
@@ -11043,10 +11319,11 @@
             "error": "no SEARCH/REPLACE blocks found"
           }
         },
-        "merge_defer_count": 5,
+        "merge_defer_count": 8,
         "bugzilla_attempted": true,
         "hil_escalated": true,
-        "hil_reason": "MERGE deadlock for 5 rounds, targets: C0163, C0171, C0178"
+        "hil_reason": "MERGE deadlock for 7 rounds, targets: C0163, C0171, C0178",
+        "merged_into": "C0178"
       },
       "C0188": {
         "canonical_id": "C0188",
@@ -11078,6 +11355,12 @@
             "verdict": "MERGE",
             "round": 21,
             "evidence": "merged_into=C0163"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "`build_feedback_records()` still processes near-duplicate pairs one-sidedly. It creates or updates feedback only for `fid_a`, never for `fid_b`."
           }
         ],
         "verified": false,
@@ -11162,6 +11445,24 @@
             "verdict": "CONFIRM",
             "round": 23,
             "evidence": "`detect_finding_id_collisions` at line 78 uses `getattr(f, \"finding_id\", None)` which returns `None` for objects lacking the attribute, filtering them out at line 79. The function is observation-only "
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 24,
+            "evidence": "`detect_finding_id_collisions` accumulates to `_finding_id_collisions` module-level list but provides no public API to clear or read it. The runner comment says \"The runner clears it at experiment sta"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": "`detect_finding_id_collisions` uses `getattr(f, \"model_id\", \"?\")` but `Finding` is a frozen dataclass with `model_id` as a required field. The fallback `\"?\"` is unreachable for well-typed inputs but h"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "The fix (calling `detect_finding_id_collisions` in `build_feedback_records`) is present in the current `bench/dm/_feedback.py`. CONFIRMED."
           }
         ],
         "verified": false,
@@ -11173,7 +11474,7 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
+        "exhausted": true,
         "cc2v_escalated": true
       },
       "C0190": {
@@ -11249,9 +11550,9 @@
         "severity": 0.72,
         "description": "`build_feedback_records()` section 1 only iterates `cell_verdicts.items()`. A finding present in `final_verdicts` as `\"REJECTED\"` but absent from `cell_verdicts` (e.g., rejected by aggregate vote without any individual cell issuing REJECTED) is never processed. The model receives no corrective feedback for a pipeline-rejected finding.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 2. Admissibility failures\n    if admissibility_failures:\n====\n    # 1b. Pipeline-level REJECTED without cell-level refutations\n    #     (C0187: findings in final_verdicts but absent from cell_verdicts)\n    for fid, fv in final_verdicts.items():\n        if fv == \"REJECTED\" and fid not in records_by_id:",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 19,
-        "last_status_change_round": 21,
+        "last_status_change_round": 26,
         "verdicts": [
           {
             "model": "CC2",
@@ -11334,8 +11635,11 @@
             "error": "no SEARCH/REPLACE blocks found"
           }
         },
-        "merge_defer_count": 3,
-        "bugzilla_attempted": true
+        "merge_defer_count": 6,
+        "bugzilla_attempted": true,
+        "hil_escalated": true,
+        "hil_reason": "MERGE deadlock for 5 rounds, targets: C0197, C0204, C0209, C0224, C0230, C0234, C0237",
+        "merged_into": "C0204"
       },
       "C0192": {
         "canonical_id": "C0192",
@@ -11346,9 +11650,9 @@
         "severity": 0.75,
         "description": "`build_feedback_records()` section 3 iterates `duplicate_pairs` as `(fid_a, fid_b, sim)` but only creates/updates a record for `fid_a`. `fid_b` receives no near-duplicate feedback. The duplicate relationship is symmetric (if A is near-duplicate of B, B is near-duplicate of A), so both models should be told.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 3. Near-duplicates\n    if duplicate_pairs:\n        for fid_a, fid_b, sim in duplicate_pairs:",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 19,
-        "last_status_change_round": 20,
+        "last_status_change_round": 27,
         "verdicts": [
           {
             "model": "CC2",
@@ -11389,8 +11693,11 @@
             "error": "no SEARCH/REPLACE blocks found"
           }
         },
-        "merge_defer_count": 4,
-        "bugzilla_attempted": true
+        "merge_defer_count": 8,
+        "bugzilla_attempted": true,
+        "hil_escalated": true,
+        "hil_reason": "MERGE deadlock for 7 rounds, targets: C0198, C0194",
+        "merged_into": "C0194"
       },
       "C0193": {
         "canonical_id": "C0193",
@@ -11731,9 +12038,9 @@
         "severity": 0.7,
         "description": "Confirming C0185. `build_feedback_records()` ignores the `model_id` key of `rk_validation`, applying R_k discrepancies to whichever model's finding matches the `fid`.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 19,
-        "last_status_change_round": 21,
+        "last_status_change_round": 27,
         "verdicts": [
           {
             "model": "ChatGPT",
@@ -11780,8 +12087,11 @@
             "error": "no SEARCH/REPLACE blocks found"
           }
         },
-        "merge_defer_count": 3,
-        "bugzilla_attempted": true
+        "merge_defer_count": 7,
+        "bugzilla_attempted": true,
+        "hil_escalated": true,
+        "hil_reason": "MERGE deadlock for 6 rounds, targets: C0206, C0211",
+        "merged_into": "C0206"
       },
       "C0202": {
         "canonical_id": "C0202",
@@ -11903,7 +12213,14 @@
         "status": "CONFIRMED",
         "open_since_round": 20,
         "last_status_change_round": 21,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_records()` section 1 only iterates `cell_verdicts.items()`. If `immune_result.final_verdicts` has a `REJECTED` verdict for a finding not in `cell_verdicts`, it is silently ignored and "
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -11947,9 +12264,9 @@
         "severity": 0.7,
         "description": "`build_feedback_records()` section 4 (lines 295-317) iterates `rk_validation` as `for model_id, validation_records in rk_validation.items()` but never uses `model_id` to verify ownership. If model A's validation record references finding \"F001\" (which belongs to model B due to finding_id collision or validator bug), the R_k discrepancy is silently attributed to model B via `finding.model_id`.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n# 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue\n                finding = finding_by_id.get(fid)\n                if finding is None:\n                    continue\n                try:\n==== REPLACE\n# 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue\n                finding = finding_by_id.get(fid)\n                if finding is None:\n                    continue\n                if finding.model_id != model_id:\n                    continue  # skip cross-model R_k entries\n                try:\n>>>>",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 20,
-        "last_status_change_round": 20,
+        "last_status_change_round": 27,
         "verdicts": [
           {
             "model": "CC2",
@@ -12010,6 +12327,96 @@
             "verdict": "MERGE",
             "round": 23,
             "evidence": "merged_into=C0239"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_records()` section 4 iterates `rk_validation` as `for model_id, validation_records` but then does `finding = finding_by_id.get(fid)` without checking that the finding's `model_id` matc"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0211"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0220"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0225"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0235"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0239"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0244"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0248"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0256"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": "canonical entry for the section-4 `model_id` discard bug. Providing properly formatted fix below."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "The fix adds `finding.model_id == model_id` check in section 4 of `build_feedback_records` so R_k discrepancies are attributed to the correct model. CONFIRMED."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0211"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0225"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0239"
           }
         ],
         "verified": false,
@@ -12021,7 +12428,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 1.0,
           "A": 1,
@@ -12056,7 +12462,10 @@
           "R_old": 0.5,
           "R_new": 0.3666666666666667
         },
-        "merge_defer_count": 2
+        "merge_defer_count": 5,
+        "hil_escalated": true,
+        "hil_reason": "MERGE deadlock for 5 rounds, targets: C0220, C0225, C0211, C0235, C0239, C0244, C0248, C0256",
+        "merged_into": "C0225"
       },
       "C0207": {
         "canonical_id": "C0207",
@@ -12206,7 +12615,7 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
+        "exhausted": true,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -12531,9 +12940,9 @@
         "severity": 0.82,
         "description": "`_render_single_record` does not indent newlines in tool `evidence`, which can break the prompt formatting if the evidence contains newlines.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nif rec.refutations:\n        body_lines.append(\"  REFUTED by:\")\n        for tool, _verdict, evidence in rec.refutations[:3]:\n            # Truncate evidence \u2014 one long tool output shouldn't dominate\n            evidence_snip = (evidence[:400] + \"\u2026\") if len(evidence) > 400 else evidence\n            body_lines.append(f\"    {tool}: {evidence_snip}\")\n==== REPLACE\nif rec.refutations:\n        body_lines.append(\"  REFUTED by:\")\n        for tool, _verdict, evidence in rec.refutations[:3]:\n            # Truncate evidence \u2014 one long tool output shouldn't dominate\n            evidence_snip = (evidence[:400] + \"\u2026\") if len(evidence) > 400 else evidence\n            evidence_snip = evidence_snip.replace(\"\\n\", \"\\n      \")\n            body_lines.append(f\"    {tool}: {evidence_snip}\")\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CLOSED",
         "open_since_round": 20,
-        "last_status_change_round": 20,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "DeepSeek",
@@ -12542,7 +12951,7 @@
             "evidence": "`_render_single_record` does not indent newlines in tool evidence (already confirmed by C0229). The fix is pending; no new SEARCH/REPLACE required from me."
           }
         ],
-        "verified": false,
+        "verified": true,
         "escalated": false,
         "flaw_class": 5,
         "origin_type": "model",
@@ -12584,7 +12993,9 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
       },
       "C0218": {
         "canonical_id": "C0218",
@@ -12655,7 +13066,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "bugzilla_attempted": true
       },
       "C0220": {
         "canonical_id": "C0220",
@@ -12666,9 +13078,9 @@
         "severity": 0.7,
         "description": "`build_feedback_records()` section 4 (lines 294-317) iterates `rk_validation` as `for model_id, validation_records in rk_validation.items()` but never uses the `model_id` outer key to verify the finding actually belongs to that model. It looks up the finding via `finding_by_id.get(fid)` and uses that finding's `model_id` as `model_origin`. If `rk_validation` contains a cross-model R_k entry (validator flagging model A's finding under model B's key), the feedback record uses the finding's actual ",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n# 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue\n                finding = finding_by_id.get(fid)\n                if finding is None:\n                    continue\n==== REPLACE\n# 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for _model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue\n                finding = finding_by_id.get(fid)\n                if finding is None:\n                    continue\n>>>>",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 21,
-        "last_status_change_round": 21,
+        "last_status_change_round": 26,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -12679,7 +13091,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 1.0,
           "A": 1,
@@ -12713,7 +13124,8 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "merged_into": "C0211"
       },
       "C0221": {
         "canonical_id": "C0221",
@@ -12801,9 +13213,9 @@
         "severity": 0.72,
         "description": "Reformatting C0209 to fix the missing SEARCH/REPLACE markers. `build_feedback_records()` section 1 only iterates `cell_verdicts.items()`. If `immune_result.final_verdicts` contains a REJECTED finding that is not in `cell_verdicts` (e.g., rejected by FFAFP admissibility gates rather than a specialist tool), it is silently omitted from feedback.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    for fid, verdict_list in cell_verdicts.items():",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 21,
-        "last_status_change_round": 21,
+        "last_status_change_round": 24,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -12814,7 +13226,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -12825,7 +13236,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "merged_into": "C0263"
       },
       "C0225": {
         "canonical_id": "C0225",
@@ -12917,7 +13329,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "bugzilla_attempted": true
       },
       "C0227": {
         "canonical_id": "C0227",
@@ -12928,9 +13341,9 @@
         "severity": 0.62,
         "description": "Confirming C0213. `parse_admissibility_block()` treats valid `\u03c3_measured: N/A` as a failed gate because the regex only matches `PASS` or `FAIL`.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nfound_pass = False\n        found_any = False\n        for pat in gate_patterns:\n            # Find \"gate_name [:|-|=] PASS|FAIL\"\n            match = re.search(\n                pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL)\",\n                block,\n                re.IGNORECASE,\n            )\n            if match:\n                found_any = True\n                if match.group(1).upper() == \"PASS\":\n                    found_pass = True\n                break\n==== REPLACE\nfound_pass = False\n        found_any = False\n        for pat in gate_patterns:\n            # Find \"gate_name [:|-|=] PASS|FAIL|N/A\"\n            match = re.search(\n                pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL|N/A)\",\n                block,\n                re.IGNORECASE,\n            )\n            if match:\n                found_any = True\n                val = match.group(1).upper()\n                if val in (\"PASS\", \"N/A\"):\n                    found_pass = True\n                break\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CLOSED",
         "open_since_round": 21,
-        "last_status_change_round": 22,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "CC2",
@@ -12939,7 +13352,7 @@
             "evidence": "`parse_admissibility_block()` regex `(PASS|FAIL)` does not match `N/A`, treating legitimate `\u03c3_measured: N/A` as a failed gate. Fix in C0227's SEARCH/REPLACE is correct."
           }
         ],
-        "verified": false,
+        "verified": true,
         "escalated": false,
         "flaw_class": 5,
         "origin_type": "model",
@@ -12981,7 +13394,9 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
       },
       "C0228": {
         "canonical_id": "C0228",
@@ -12992,9 +13407,9 @@
         "severity": 0.55,
         "description": "Confirming C0214. `build_feedback_sections()` accepts `top_k <= 0`, which renders a feedback section with zero detailed items.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nfor model_id, model_recs in by_model.items():\n        # Sort by priority descending\n        model_recs.sort(key=lambda r: r.priority_score(), reverse=True)\n\n        top_items = model_recs[:top_k]\n        overflow_count = len(model_recs) - len(top_items)\n==== REPLACE\nfor model_id, model_recs in by_model.items():\n        # Sort by priority descending\n        model_recs.sort(key=lambda r: r.priority_score(), reverse=True)\n\n        safe_top_k = max(1, top_k)\n        top_items = model_recs[:safe_top_k]\n        overflow_count = len(model_recs) - len(top_items)\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CLOSED",
         "open_since_round": 21,
-        "last_status_change_round": 22,
+        "last_status_change_round": 24,
         "verdicts": [
           {
             "model": "CC2",
@@ -13003,7 +13418,7 @@
             "evidence": "`build_feedback_sections()` accepts `top_k <= 0`, producing a section with zero detailed items but full boilerplate. Fix in C0228's SEARCH/REPLACE (clamping `top_k` to at least 1) is correct."
           }
         ],
-        "verified": false,
+        "verified": true,
         "escalated": false,
         "flaw_class": 6,
         "origin_type": "model",
@@ -13045,7 +13460,9 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
       },
       "C0229": {
         "canonical_id": "C0229",
@@ -13123,7 +13540,38 @@
         "status": "OPEN",
         "open_since_round": 22,
         "last_status_change_round": 22,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 24,
+            "evidence": "merged_into=C0254"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_records()` section 1 only iterates `cell_verdicts.items()`. A finding present in `final_verdicts` as REJECTED but absent from `cell_verdicts` (no cell evaluated it, or cells returned o"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": "canonical entry for the section-1 gap (pipeline REJECTED without cell_verdicts entry). Providing properly formatted fix below."
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "The fix adds a separate loop over `final_verdicts` for REJECTED findings not covered by `cell_verdicts`. The SEARCH/REPLACE block in the registry is correct. CONFIRMED."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13181,7 +13629,26 @@
         "status": "CONFIRMED",
         "open_since_round": 22,
         "last_status_change_round": 22,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 24,
+            "evidence": "merged_into=C0255"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_records()` section 3 iterates `duplicate_pairs` as `(fid_a, fid_b, sim)` but only creates/updates a `FindingFeedback` for `fid_a`. `fid_b` is ignored, meaning the model that produced `"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 26,
+            "evidence": "merged_into=C0257"
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13201,7 +13668,9 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "bugzilla_attempted": true,
+        "merge_defer_count": 3
       },
       "C0233": {
         "canonical_id": "C0233",
@@ -13235,9 +13704,9 @@
         "severity": 0.72,
         "description": "FINDING_ID: VERDICT_C0204_C0219_C0224_CONFIRM_FIX_R22  \nSEVERITY: 0.72  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.40  \n\nFIND: CONFIRM C0204 / C0219 / C0224 \u2014 `build_feedback_records()` only iterates `cell",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 22,
-        "last_status_change_round": 22,
+        "last_status_change_round": 25,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -13247,8 +13716,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0235": {
         "canonical_id": "C0235",
@@ -13262,7 +13730,14 @@
         "status": "OPEN",
         "open_since_round": 22,
         "last_status_change_round": 22,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Verdict confirming C0206/C0211/C0225. CONFIRMED."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13306,10 +13781,17 @@
         "severity": 0.72,
         "description": "`build_feedback_records()` section 1 only iterates `cell_verdicts.items()`. If `immune_result.final_verdicts` has a REJECTED finding not in `cell_verdicts`, it is missed.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    for fid, verdict_list in cell_verdicts.items():",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 22,
-        "last_status_change_round": 22,
-        "verdicts": [],
+        "last_status_change_round": 25,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 24,
+            "evidence": "merged_into=C0247"
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13319,7 +13801,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -13330,7 +13811,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "merged_into": "C0234"
       },
       "C0238": {
         "canonical_id": "C0238",
@@ -13341,12 +13823,25 @@
         "severity": 0.88,
         "description": "`FindingFeedback.action` and `priority_score` ignore `final_verdict == \"REJECTED\"` if `refutations` is empty.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n@property\n    def action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\n\n        Ordered by precedence: refutation beats admissibility beats duplicate\n        beats R_k discrepancy. This mirrors the priority of the underlying\n        schema checks \u2014 a refuted finding is wrong about its claim; an\n        inadmissible one may be right but cannot be verified; a duplicate\n        wastes compute; an R_k discrepancy is a calibration issue.\n        \"\"\"\n        if self.refutations:\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n==== REPLACE\n@property\n    def action(self) -> str:\n        \"\"\"Imperative action the model must take on this finding.\n\n        Ordered by precedence: refutation beats admissibility beats duplicate\n        beats R_k discrepancy. This mirrors the priority of the underlying\n        schema checks \u2014 a refuted finding is wrong about its claim; an\n        inadmissible one may be right but cannot be verified; a duplicate\n        wastes compute; an R_k discrepancy is a calibration issue.\n        \"\"\"\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n>>>>",
-        "status": "CONFIRMED",
+        "status": "MERGED",
         "open_since_round": 22,
-        "last_status_change_round": 22,
-        "verdicts": [],
-        "verified": false,
-        "escalated": false,
+        "last_status_change_round": 28,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`FindingFeedback.action` and `priority_score` ignore `final_verdict == \"REJECTED\"` if `refutations` is empty. This results in an action of `\"NONE\"` and a priority score of `0.0` for findings that were"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "REOPEN",
+            "round": 27,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": true,
         "flaw_class": 5,
         "origin_type": "model",
         "source_ref": "",
@@ -13387,7 +13882,10 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true,
+        "merged_into": "C0183"
       },
       "C0239": {
         "canonical_id": "C0239",
@@ -13398,10 +13896,35 @@
         "severity": 0.7,
         "description": "`build_feedback_records()` section 4 ignores the `model_id` key of `rk_validation`, applying discrepancies to findings regardless of which model produced them.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 22,
-        "last_status_change_round": 22,
-        "verdicts": [],
+        "last_status_change_round": 27,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 24,
+            "evidence": "merged_into=C0256"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 24,
+            "evidence": "merged_into=C0248"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_records()` section 4 ignores the `model_id` key of `rk_validation`, applying discrepancies to findings retrieved solely by `fid`. If `fid` is not globally unique, the discrepancy may b"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0248"
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13411,7 +13934,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -13422,7 +13944,9 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "merge_defer_count": 3,
+        "merged_into": "C0248"
       },
       "C0240": {
         "canonical_id": "C0240",
@@ -13457,18 +13981,24 @@
         "severity": 0.62,
         "description": "`parse_admissibility_block()` treats valid `\u03c3_measured: N/A` as a failed gate because the regex only matches `(PASS|FAIL)`.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nfound_pass = False\n        found_any = False\n        for pat in gate_patterns:\n            # Find \"gate_name [:|-|=] PASS|FAIL\"\n            match = re.search(\n                pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL)\",\n                block,\n                re.IGNORECASE,\n            )\n            if match:\n                found_any = True\n                if match.group(1).upper() == \"PASS\":\n                    found_pass = True\n                break\n==== REPLACE\nfound_pass = False\n        found_any = False\n        for pat in gate_patterns:\n            # Find \"gate_name [:|-|=] PASS|FAIL|N/A\"\n            match = re.search(\n                pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL|N/A)\",\n                block,\n                re.IGNORECASE,\n            )\n            if match:\n                found_any = True\n                val = match.group(1).upper()\n                if val == \"PASS\" or (gate == \"\u03c3_measured\" and val == \"N/A\"):\n                    found_pass = True\n                break\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CLOSED",
         "open_since_round": 22,
-        "last_status_change_round": 23,
+        "last_status_change_round": 25,
         "verdicts": [
           {
             "model": "CC2",
             "verdict": "CONFIRM",
             "round": 23,
             "evidence": "`parse_admissibility_block()` regex `(PASS|FAIL)` does not match `N/A`. Verified at line 604: the pattern is `pat + r\"\\s*[:\\-=]?\\s*(PASS|FAIL)\"`. A model reporting `sigma_measured: N/A` will have `fou"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 27,
+            "evidence": "merged_into=C0250"
           }
         ],
-        "verified": false,
+        "verified": true,
         "escalated": false,
         "flaw_class": 5,
         "origin_type": "model",
@@ -13510,7 +14040,9 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
       },
       "C0242": {
         "canonical_id": "C0242",
@@ -13521,9 +14053,9 @@
         "severity": 0.72,
         "description": "`build_feedback_records()` section 1 (lines 234-256) only iterates `cell_verdicts.items()`. If `immune_result.final_verdicts` has a REJECTED entry for a finding_id that is absent from `cell_verdicts` (pipeline-level rejection without per-cell data), no feedback record is created. The model never learns its finding was rejected.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    # 2. Admissibility failures\n    if admissibility_failures:\n====\n    # 1b. Pipeline-level REJECTED findings not covered by cell_verdicts\n    for fid, fv in final_verdicts.items():\n        if fv == \"REJECTED\" and fid not in records_by_id:",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 23,
-        "last_status_change_round": 23,
+        "last_status_change_round": 25,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -13534,7 +14066,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -13545,7 +14076,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "merged_into": "C0234"
       },
       "C0243": {
         "canonical_id": "C0243",
@@ -13569,7 +14101,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -13580,7 +14111,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "bugzilla_attempted": true
       },
       "C0244": {
         "canonical_id": "C0244",
@@ -13594,7 +14126,14 @@
         "status": "OPEN",
         "open_since_round": 23,
         "last_status_change_round": 23,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Fix for C0239 (same as C0206). CONFIRMED."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -13638,8 +14177,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0246": {
         "canonical_id": "C0246",
@@ -13673,9 +14211,9 @@
         "severity": 0.72,
         "description": "Reformatting C0237 to fix the missing SEARCH/REPLACE markers.",
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n    for fid, verdict_list in cell_verdicts.items():",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 23,
-        "last_status_change_round": 23,
+        "last_status_change_round": 25,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -13686,7 +14224,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -13697,7 +14234,8 @@
           "gate_details": {
             "error": "no SEARCH/REPLACE blocks found"
           }
-        }
+        },
+        "merged_into": "C0237"
       },
       "C0248": {
         "canonical_id": "C0248",
@@ -13755,8 +14293,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0250": {
         "canonical_id": "C0250",
@@ -13826,10 +14363,35 @@
         "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n# Hard cap \u2014 if we're still over, drop bottom items until we fit.\n        # This is belt-and-braces; the top_k cap should normally suffice.\n        while len(section) > max_chars_per_model and len(top_items) > 1:\n            top_items = top_items[:-1]\n            # Rebuild with one fewer item\n            section = _rebuild_section(\n                top_items,\n                model_recs,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n==== REPLACE\n# Hard cap \u2014 if we're still over, drop bottom items until we fit.\n        # This is belt-and-braces; the top_k cap should normally suffice.\n        while len(section) > max_chars_per_model and len(top_items) > 0:\n            top_items = top_items[:-1]\n            # Rebuild with one fewer item\n            section = _rebuild_section(\n                top_items,\n                model_recs,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n>>>>",
         "status": "OPEN",
         "open_since_round": 23,
-        "last_status_change_round": 23,
-        "verdicts": [],
-        "verified": false,
-        "escalated": false,
+        "last_status_change_round": 28,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 24,
+            "evidence": "`build_feedback_sections` exits the while loop when `len(top_items) == 1`, storing a section that may still exceed `max_chars_per_model`. The proposed fix (adding a post-loop single-item truncation) i"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 25,
+            "evidence": "`build_feedback_sections()` while loop guard `len(top_items) > 1` means a single record whose rendered section exceeds `max_chars_per_model` is emitted untruncated. The `max_chars_per_model` cap is de"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "REOPEN",
+            "round": 27,
+            "evidence": "equivalent regression evidence \u2014 current `bench/dm/_feedback.py` still does not enforce `max_chars_per_model` as a true hard cap when the rendered section remains oversized with one item."
+          },
+          {
+            "model": "Codex",
+            "verdict": "REOPEN",
+            "round": 27,
+            "evidence": "current `build_feedback_sections()` still does not enforce the documented hard cap when one remaining item exceeds `max_chars_per_model`."
+          }
+        ],
+        "verified": true,
+        "escalated": true,
         "flaw_class": 6,
         "origin_type": "model",
         "source_ref": "",
@@ -13837,7 +14399,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 1.0,
           "A": 1,
@@ -13871,7 +14432,9 @@
           "passes_threshold": true,
           "R_old": 0.5,
           "R_new": 0.3666666666666667
-        }
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
       },
       "C0252": {
         "canonical_id": "C0252",
@@ -13895,7 +14458,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "merged_into": "C0245"
       },
       "C0253": {
@@ -13930,9 +14492,9 @@
         "severity": 0.72,
         "description": "FINDING_ID: V023_FIX_C0230\nCANONICAL: C0230\nSEVERITY: 0.72\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.40\n\nFIND\nC0230 correctly reports that `build_feedback_records()` section 1 iterates only `cell_verdicts.it",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 23,
-        "last_status_change_round": 23,
+        "last_status_change_round": 25,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -13943,7 +14505,7 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false
+        "merged_into": "C0234"
       },
       "C0255": {
         "canonical_id": "C0255",
@@ -13954,9 +14516,9 @@
         "severity": 0.72,
         "description": "FINDING_ID: V023_FIX_C0232\nCANONICAL: C0232\nSEVERITY: 0.72\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.40\n\nFIND\nC0232 correctly identifies that `build_feedback_records()` section 3 processes `duplicate_pairs` ",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 23,
-        "last_status_change_round": 23,
+        "last_status_change_round": 25,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -13966,8 +14528,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0256": {
         "canonical_id": "C0256",
@@ -13981,7 +14542,14 @@
         "status": "OPEN",
         "open_since_round": 23,
         "last_status_change_round": 23,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Fix for C0239. CONFIRMED."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -14002,9 +14570,9 @@
         "severity": 0.72,
         "description": "FINDING_ID: V023_FIX_C0240\nCANONICAL: C0240\nSEVERITY: 0.72\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.40\n\nFIND\nC0240 is the same root cause as C0232: section 3 of `build_feedback_records()` only notifies `fid",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 23,
-        "last_status_change_round": 23,
+        "last_status_change_round": 26,
         "verdicts": [],
         "verified": false,
         "escalated": false,
@@ -14014,8 +14582,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0258": {
         "canonical_id": "C0258",
@@ -14039,7 +14606,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "merged_into": "C0245"
       },
       "C0259": {
@@ -14064,7 +14630,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -14075,7 +14640,8 @@
           "gate_details": {
             "error": "no_blocks_for_target"
           }
-        }
+        },
+        "bugzilla_attempted": true
       },
       "C0260": {
         "canonical_id": "C0260",
@@ -14089,7 +14655,14 @@
         "status": "OPEN",
         "open_since_round": 23,
         "last_status_change_round": 23,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Fix for C0241 (adds `re.search` with proper pattern for gate matching). CONFIRMED."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 6,
@@ -14133,9 +14706,1206 @@
           "R_old": 0.5,
           "R_new": 0.3666666666666667
         }
+      },
+      "C0261": {
+        "canonical_id": "C0261",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_V024_C0238_CONFIRM"
+        ],
+        "severity": 0.88,
+        "description": "FINDING_ID: V024_C0238_CONFIRM  \nSEVERITY: 0.88  \nFLAW_CLASS: 5 (correctness)  \nABSTRACTION_INDEX: 0.40  \n\n#### FIND\n`FindingFeedback.action` (line ~78) and `priority_score` (line ~94) ignore `final_v",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n@property\n    def action(self) -> str:\n        if self.refutations:\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n    def priority_score(self) -> float:\n        score = 0.0\n        if self.refutations:\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n        if self.duplicates:\n            score += 2.0 * max(s for _, s in self.duplicates)\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            score += min(1.0, abs(claimed - aggregate))\n        score += 0.1 * self.severity_claimed\n        return score\n==== REPLACE\n@property\n    def action(self) -> str:\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            return \"RECALCULATE\"\n        if self.admissibility_failures:\n            return \"ADD_ADMISSIBILITY_OR_WITHDRAW\"\n        if self.duplicates:\n            return \"DIFFERENTIATE_OR_WITHDRAW\"\n        if self.rk_discrepancy is not None:\n            return \"RECALIBRATE_RK\"\n        return \"NONE\"\n    def priority_score(self) -> float:\n        score = 0.0\n        if self.refutations or self.final_verdict == \"REJECTED\":\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n        if self.duplicates:\n            score += 2.0 * max(s for _, s in self.duplicates)\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            score += min(1.0, abs(claimed - aggregate))\n        score += 0.1 * self.severity_claimed\n        return score\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 24,
+        "last_status_change_round": 24,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0262": {
+        "canonical_id": "C0262",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_V024_C0179_CONFIRM"
+        ],
+        "severity": 0.85,
+        "description": "FINDING_ID: V024_C0179_CONFIRM  \nSEVERITY: 0.85  \nFLAW_CLASS: 5 (correctness)  \nABSTRACTION_INDEX: 0.45  \n\n#### FIND\n`build_feedback_records` section 3 iterates `duplicate_pairs` as `(fid_a, fid_b, si",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 24,
+        "last_status_change_round": 24,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0263": {
+        "canonical_id": "C0263",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_V024_C0055_CONFIRM"
+        ],
+        "severity": 0.82,
+        "description": "FINDING_ID: V024_C0055_CONFIRM  \nSEVERITY: 0.82  \nFLAW_CLASS: 5 (correctness)  \nABSTRACTION_INDEX: 0.40  \n\n#### FIND\n`build_feedback_records` section 1 only iterates `cell_verdicts.items()`. If `final",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 24,
+        "last_status_change_round": 24,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0264": {
+        "canonical_id": "C0264",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_V024_C0014_CONFIRM"
+        ],
+        "severity": 0.75,
+        "description": "FINDING_ID: V024_C0014_CONFIRM  \nSEVERITY: 0.75  \nFLAW_CLASS: 6 (edge\u2011case)  \nABSTRACTION_INDEX: 0.30  \n\n#### FIND\n`build_feedback_sections` contains a while loop that drops `top_items` as long as the",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n# Hard cap \u2014 if we're still over, drop bottom items until we fit.\n        # This is belt-and-braces; the top_k cap should normally suffice.\n        while len(section) > max_chars_per_model and len(top_items) > 1:\n            top_items = top_items[:-1]\n            # Rebuild with one fewer item\n            section = _rebuild_section(\n                top_items,\n                model_recs,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n\n        sections[model_id] = section\n==== REPLACE\n# Hard cap \u2014 if we're still over, drop bottom items until we fit.\n        # Belt-and-braces; the top_k cap should normally suffice. If even one\n        # item is too large, truncate the rendered section at the cap.\n        while len(section) > max_chars_per_model and len(top_items) > 1:\n            top_items = top_items[:-1]\n            section = _rebuild_section(\n                top_items,\n                model_recs,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n        # Last resort: if a single item still exceeds the cap, hard\u2011truncate\n        if len(section) > max_chars_per_model:\n            section = section[: max_chars_per_model - 3] + \"...\"\n\n        sections[model_id] = section\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 24,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0265": {
+        "canonical_id": "C0265",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: F004\n\nSEVERITY: 0.72\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.35\n\nFIND: REOPEN C0006 | `parse_admissibility_block()` still treats prose mentions of `ADMISSIBILITY` as the start of an admissibi",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 25,
+        "last_status_change_round": 26,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 26,
+            "evidence": "REOPEN of C0006 is valid. `parse_admissibility_block` treats any non-PASS status (including legitimate values like `N/A`, `PARTIAL`, `PENDING`) as FAIL because the regex captures only `(PASS|FAIL)`. W"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0266": {
+        "canonical_id": "C0266",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F_BAD"
+        ],
+        "severity": 0.5,
+        "description": "This finding has no ADMISSIBILITY block. Example of what should have been supplied:\n  S_min: PASS\n  G-completeness: PASS\n  d_tool: PASS\n  \u03c3_measured: PASS\n  q_retest: PASS\n\nNOVELTY:\n  \u03bd_k: 0.00\nExpected result:\n[\"S_min\", \"G-completeness\", \"d_tool\", \"\u03c3_measured\", \"q_retest\"]\nbecause no actual `ADMISSIBILITY:` section header exists.\n\nActual result by code trace:\n\n1. `re.search(r\"ADMISSIBILITY\\s*:?\", finding_text, re.IGNORECASE)` matches the prose phrase `no ADMISSIBILITY block`.\n2. `tail = finding",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nmarker_match = re.search(r\"ADMISSIBILITY\\s*:?\", finding_text, re.IGNORECASE)\n    if not marker_match:\n        return list(ADMISSIBILITY_GATES)\n==== REPLACE\nmarker_match = re.search(\n        r\"^\\s*(?:#+\\s*)?ADMISSIBILITY\\s*:?\\s*$\",\n        finding_text,\n        re.IGNORECASE | re.MULTILINE,\n    )\n    if not marker_match:\n        return list(ADMISSIBILITY_GATES)\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 25,
+        "last_status_change_round": 25,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0267": {
+        "canonical_id": "C0267",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V_WITHDRAW_GEMINI_UNSTRUCTURED"
+        ],
+        "severity": 0.0,
+        "description": "Withdrawing `Gemini_UNSTRUCTURED` per schema feedback (ADMISSIBILITY FAIL, NEAR-DUPLICATE, R_k INCONSISTENT).",
+        "proposed_fix": "N/A \u2014 withdrawal requires no code change.",
+        "status": "OPEN",
+        "open_since_round": 25,
+        "last_status_change_round": 25,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0268": {
+        "canonical_id": "C0268",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_WITHDRAW_C0179_C0014_C0055_C0238_R25"
+        ],
+        "severity": 0.0,
+        "description": "Schema feedback marked DeepSeek_V024_C0179_CONFIRM,\n  DeepSeek_V024_C0014_CONFIRM, DeepSeek_V024_C0055_CONFIRM, and\n  DeepSeek_V024_C0238_CONFIRM as DUPLICATE (near\u2011duplicate to existing\n  CONFIRMED entries) and ADMISSIBILITY FAIL (\u03c3_measured). Per \u00a717, all\n  four are withdrawn.",
+        "proposed_fix": "No code change. This finding is a withdrawal.",
+        "status": "OPEN",
+        "open_since_round": 25,
+        "last_status_change_round": 25,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0269": {
+        "canonical_id": "C0269",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_V026_C0189_CONFIRM_FIX"
+        ],
+        "severity": 0.82,
+        "description": "FINDING_ID: Codex_V026_C0189_CONFIRM_FIX\nSEVERITY: 0.82\nFLAW_CLASS: 6\nABSTRACTION_INDEX: 0.35\nFIND: CONFIRM C0189 \u2014 `detect_finding_id_collisions()` can crash while sorting mixed-type `model_id` value",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Verdict confirming C0189. CONFIRMED."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0270": {
+        "canonical_id": "C0270",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_VERDICT_026_C0230_CONFIRM_FIX"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: VERDICT_026_C0230_CONFIRM_FIX\n\nSEVERITY: 0.72\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.40\n\nFIND: CONFIRM C0230 \u2014 `build_feedback_records()` can omit a final pipeline `REJECTED` finding when th",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0271": {
+        "canonical_id": "C0271",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_VERDICT_026_C0206_CONFIRM_FIX"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: VERDICT_026_C0206_CONFIRM_FIX\n\nSEVERITY: 0.70\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.40\n\nFIND: CONFIRM C0206/C0239 \u2014 `build_feedback_records()` ignores the `model_id` key of `rk_validation`,",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Verdict confirming C0206. CONFIRMED."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0272": {
+        "canonical_id": "C0272",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_V_WITHDRAW_R25_FLAGS"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAW `Gemini_F001` and `Gemini_V_WITHDRAW_GEMINI_UNSTRUCTURED` per schema feedback.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nfrom collections import Counter\n==== REPLACE\nfrom collections import Counter\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0273": {
+        "canonical_id": "C0273",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0267_REFORMAT"
+        ],
+        "severity": 0.0,
+        "description": "Reformatting C0267 to include a valid SEARCH/REPLACE block as mandated by the system.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nimport logging\n==== REPLACE\nimport logging\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0274": {
+        "canonical_id": "C0274",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0268_REFORMAT"
+        ],
+        "severity": 0.0,
+        "description": "Reformatting C0268 to include a valid SEARCH/REPLACE block as mandated by the system.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nfrom dataclasses import dataclass, field\n==== REPLACE\nfrom dataclasses import dataclass, field\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0275": {
+        "canonical_id": "C0275",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F026"
+        ],
+        "severity": 0.65,
+        "description": "FINDING_ID: F026\nSEVERITY: 0.65\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.35\n\n#### FIND\nThe fix for C0206 (and its merged variants) correctly uses `model_id` from `rk_validation.items()` to fil",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 27,
+            "evidence": "Fix for C0206 (handles the edge case where the fix for C0206 left a residual issue). CONFIRMED."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0276": {
+        "canonical_id": "C0276",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F027"
+        ],
+        "severity": 0.55,
+        "description": "FINDING_ID: F027\nSEVERITY: 0.55\nFLAW_CLASS: 4 (completeness)\nABSTRACTION_INDEX: 0.30\n\n#### FIND\n`_rebuild_section` is called when `build_feedback_sections` exceeds `max_chars_per_model` and needs to t",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nlines = [\n        f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\",\n        \"\",\n        \"The schema has flagged the items below. Address each in this round.\",\n        \"\",\n    ]\n==== REPLACE\nlines = [\n        f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\",\n        \"\",\n        \"The schema has flagged the items below. You MUST address each:\",\n        \"  REFUTED \u2192 agree with tool or provide counter-receipts.\",\n        \"  ADMISSIBILITY FAIL \u2192 supply missing block or withdraw.\",\n        \"  NEAR-DUPLICATE \u2192 differentiate or withdraw.\",\n        \"  R_k INCONSISTENT \u2192 recompute or justify.\",\n        \"Do NOT resubmit unchanged (\u00a717).\",\n        \"\",\n    ]\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 26,
+        "last_status_change_round": 26,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0277": {
+        "canonical_id": "C0277",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F028"
+        ],
+        "severity": 0.65,
+        "description": "FINDING_ID: F028\nSEVERITY: 0.65\nFLAW_CLASS: 5 (correctness)\nABSTRACTION_INDEX: 0.35\n\n#### FIND\n\nC0275 raises a valid concern about the C0206 fix interaction with the UUID collision problem. When `find",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0278": {
+        "canonical_id": "C0278",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F029"
+        ],
+        "severity": 0.6,
+        "description": "FINDING_ID: F029\nSEVERITY: 0.60\nFLAW_CLASS: 6 (edge-case)\nABSTRACTION_INDEX: 0.30\n\n#### FIND\n\nIn `build_feedback_sections`, the `while` loop that enforces `max_chars_per_model` mutates the local `top_",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0279": {
+        "canonical_id": "C0279",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_R27_REOPEN_C0183"
+        ],
+        "severity": 0.88,
+        "description": "FINDING_ID: Codex_R27_REOPEN_C0183\n\nSEVERITY: 0.88\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.40\n\nFIND:  \nREOPEN C0183 \u2014 current `bench/dm/_feedback.py` still renders pipeline-level `final_verdict == \"REJEC",
+        "proposed_fix": "",
+        "status": "MERGED",
+        "open_since_round": 27,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "merged_into": "C0183"
+      },
+      "C0280": {
+        "canonical_id": "C0280",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_R27_WITHDRAW_C0269"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAW C0269 / `Codex_V026_C0189_CONFIRM_FIX`.\n\nSchema feedback marked my prior-round item as:\npipeline verdict: DUPLICATE\nADMISSIBILITY FAIL: S_min, G-completeness, d_tool, \u03c3_measured, q_retest\nNEAR-DUPLICATE: cosine 0.77 to DeepSeek_F001\nI am not resubmitting that item unchanged. It is withdrawn rather than repaired because the registry already contains the canonical underlying finding path for C0189, and repeating it would waste convergence compute.",
+        "proposed_fix": "No code fix. This is a withdrawal of a prior duplicate registry payload.",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0281": {
+        "canonical_id": "C0281",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_WITHDRAW_R26_FLAGS"
+        ],
+        "severity": 0.0,
+        "description": "Withdrawing Gemini_V_WITHDRAW_R25_FLAGS, Gemini_C0267_REFORMAT, and Gemini_C0268_REFORMAT per schema feedback (NEAR-DUPLICATE).",
+        "proposed_fix": "None required.",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0282": {
+        "canonical_id": "C0282",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_D001_ADMISSIBILITY_TERMINATOR"
+        ],
+        "severity": 0.6,
+        "description": "`parse_admissibility_block` uses a `section_terminator` regex to find the end of the ADMISSIBILITY block. The regex is missing `ADMISSIBILITY` itself.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n==== REPLACE\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING|ADMISSIBILITY)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0283": {
+        "canonical_id": "C0283",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F028"
+        ],
+        "severity": 0.2,
+        "description": "In `build_feedback_records`, the docstring for parameter `duplicate_pairs` says `List[(finding_id_a, finding_id_b, similarity)]` but the code only flags `fid_a`. The asymmetry is a known bug (C0188) but the docstring does not warn that `fid_b` is not surfaced. This could mislead maintainers.",
+        "proposed_fix": "Add a note to the docstring. Not worth a SEARCH/REPLACE block at this severity.",
+        "status": "OPEN",
+        "open_since_round": 27,
+        "last_status_change_round": 27,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0284": {
+        "canonical_id": "C0284",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_R28_CONFIRM_C0230_FIX"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: Codex_R28_CONFIRM_C0230_FIX  \nSEVERITY: 0.72  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.40  \n\nFIND: CONFIRM C0230 \u2014 `build_feedback_records()` can omit pipeline-level rejected findings when `i",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0285": {
+        "canonical_id": "C0285",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_R28_CONFIRM_C0183_C0238_FIX"
+        ],
+        "severity": 0.88,
+        "description": "FINDING_ID: Codex_R28_CONFIRM_C0183_C0238_FIX  \nSEVERITY: 0.88  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.40  \n\nFIND: CONFIRM C0183 and C0238; MERGE C0238 -> C0183 \u2014 `FindingFeedback.action` and `priority",
+        "proposed_fix": "",
+        "status": "MERGED",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "merged_into": "C0183"
+      },
+      "C0286": {
+        "canonical_id": "C0286",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_WITHDRAW_R27_FLAGS"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAW `Gemini_D001_ADMISSIBILITY_TERMINATOR` and `Gemini_WITHDRAW_R26_FLAGS` per schema feedback. Both were flagged as NEAR-DUPLICATE and ADMISSIBILITY FAIL. I am withdrawing them to clear the flags and comply with \u00a717.",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0287": {
+        "canonical_id": "C0287",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0280_REFORMAT"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAW C0269 / `Codex_V026_C0189_CONFIRM_FIX`. Re-emitting this withdrawal to satisfy the mandatory reformat directive.",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0288": {
+        "canonical_id": "C0288",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0281_REFORMAT"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAW `Gemini_V_WITHDRAW_R25_FLAGS`, `Gemini_C0267_REFORMAT`, and `Gemini_C0268_REFORMAT`. Re-emitting this withdrawal to satisfy the mandatory reformat directive.",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0289": {
+        "canonical_id": "C0289",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0283_REFORMAT"
+        ],
+        "severity": 0.2,
+        "description": "In `build_feedback_records`, the docstring for parameter `duplicate_pairs` says `List[(finding_id_a, finding_id_b, similarity)]` which is not valid Sphinx/NumPy style. It should be `List[Tuple[str, str, float]]`. Re-emitting to satisfy the mandatory reformat directive.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\nduplicate_pairs : List[(finding_id_a, finding_id_b, similarity)]\n==== REPLACE\nduplicate_pairs : List[Tuple[str, str, float]]\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "40/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0290": {
+        "canonical_id": "C0290",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F030"
+        ],
+        "severity": 0.3,
+        "description": "In `_rebuild_section`, the `all_recs` argument is completely unused.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_feedback.py\n# Rebuild with one fewer item\n            section = _rebuild_section(\n                top_items,\n                model_recs,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n==== REPLACE\n# Rebuild with one fewer item\n            section = _rebuild_section(\n                top_items,\n                round_idx,\n                len(model_recs) - len(top_items),\n            )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.99,
+          "A": 1,
+          "E": 0.99,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 0.975,
+              "detail": "39/40 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3695135
+        }
+      },
+      "C0291": {
+        "canonical_id": "C0291",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_VERDICT_C0163_CONFIRM_R28"
+        ],
+        "severity": 0.88,
+        "description": "C0163 correctly identifies that `build_feedback_records` section 3 (near-duplicates) only creates/updates a `FindingFeedback` record for `fid_a` in each `(fid_a, fid_b, sim)` pair. The current source at lines 277-292 confirms this \u2014 `fid_b` is never looked up in `finding_by_id` or `records_by_id`. This is the same root cause as C0032, C0188, C0194, C0232, C0243.",
+        "proposed_fix": "No new fix needed \u2014 C0188/C0226 already provides the correct SEARCH/REPLACE block. This verdict confirms it.",
+        "status": "CONFIRMED",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0292": {
+        "canonical_id": "C0292",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_VERDICT_C0279_CONFIRM_R28"
+        ],
+        "severity": 0.88,
+        "description": "C0279 reopens C0183, which reports that `FindingFeedback.action` and `priority_score` ignore `final_verdict == \"REJECTED\"` when `refutations` is empty. The current source confirms this: `action` checks `self.refutations` first (line ~108), and `priority_score` adds 3.0 only when `self.refutations` is truthy (line ~127). A finding with `final_verdict == \"REJECTED\"` but empty `refutations` gets `action = \"NONE\"` and `priority_score` based only on other flags.",
+        "proposed_fix": "No new fix needed \u2014 C0183 already provides the correct SEARCH/REPLACE block. This verdict confirms the REOPEN is warranted and the fix should be applied.",
+        "status": "CONFIRMED",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0293": {
+        "canonical_id": "C0293",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_VERDICT_C0275_CONFIRM_R28"
+        ],
+        "severity": 0.65,
+        "description": "C0275 reports that the fix for C0206 (which added `model_id` iteration to the R_k validation loop) introduced a variable shadowing issue. The loop variable `model_id` in `for model_id, validation_records in rk_validation.items()` shadows the `model_id` parameter that could be used elsewhere in the function scope. Reviewing the current source at lines 295-317, the loop uses `model_id` as the iteration variable. This is a genuine shadowing concern \u2014 if `model_id` were referenced after the loop (it",
+        "proposed_fix": "Rename the loop variable to `rk_model_id` to avoid shadowing. This is a one-line change.\n\n<<<< SEARCH bench/dm/_feedback.py\n    # 4. R_k discrepancies \u2014 only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0294": {
+        "canonical_id": "C0294",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_VERDICT_C0277_CONFIRM_R28"
+        ],
+        "severity": 0.65,
+        "description": "C0277 confirms that C0275 raises a valid concern. I agree \u2014 the `model_id` loop variable in section 4 of `build_feedback_records` is poorly named and creates confusion, even if it doesn't shadow a function parameter. The rename to `rk_model_id` is a clean improvement.\n\nANALYSE: CONFIRMED. See my analysis under C0275 above. The shadowing is cosmetic (no function parameter named `model_id` exists), but the rename improves clarity.",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0295": {
+        "canonical_id": "C0295",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_VERDICT_C0269_CONFIRM_R28"
+        ],
+        "severity": 0.82,
+        "description": "C0269 confirms C0189, which reports that `detect_finding_id_collisions` is called but its return value is discarded. The current source at line 234 confirms: `detect_finding_id_collisions(findings, round_idx)` is called without capturing the return value. The function is observation-only by design (per the docstring: \"Observation-only: callers must NOT change behaviour based on this\"), so discarding the return value is intentional.",
+        "proposed_fix": "No fix needed \u2014 this is by design. The finding should be CLOSED as \"working as intended\" rather than fixed.",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0296": {
+        "canonical_id": "C0296",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F029"
+        ],
+        "severity": 0.72,
+        "description": "In `build_feedback_records` section 1 (lines 234-256), a `FindingFeedback` record is created only when `refutations` is non-empty OR `final_v == \"REJECTED\"`. However, `refutations` is populated only from `cell_verdicts` \u2014 individual B-cell verdicts. If the immune pipeline's `final_verdicts` marks a finding as `\"REJECTED\"` but no individual B-cell returned a `\"REJECTED\"` verdict (e.g., the aggregate overrides), the condition `if refutations or final_v == \"REJECTED\"` still fires. This part is corr",
+        "proposed_fix": "After processing `cell_verdicts`, iterate over `final_verdicts` and create records for any REJECTED findings not already processed.\n\n<<<< SEARCH bench/dm/_feedback.py\n    # 1. Specialist refutations + immune pipeline verdicts\n    final_verdicts = immune_result.final_verdicts if immune_result else {}\n    cell_verdicts = immune_result.cell_verdicts if immune_result else {}\n\n    for fid, verdict_list in cell_verdicts.items():",
+        "status": "OPEN",
+        "open_since_round": 28,
+        "last_status_change_round": 28,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
       }
     },
-    "next_id": 261,
+    "next_id": 297,
     "alias_map": {
       "CC2:CC2_F001": "C0001",
       "Codex:Codex_F001": "C0002",
@@ -14396,7 +16166,43 @@
       "DeepSeek:DeepSeek_V023_FIX_C0240": "C0257",
       "DeepSeek:DeepSeek_V023_FIX_C0163": "C0258",
       "DeepSeek:DeepSeek_V023_FIX_C0015": "C0259",
-      "DeepSeek:DeepSeek_V023_FIX_C0241": "C0260"
+      "DeepSeek:DeepSeek_V023_FIX_C0241": "C0260",
+      "DeepSeek:DeepSeek_V024_C0238_CONFIRM": "C0261",
+      "DeepSeek:DeepSeek_V024_C0179_CONFIRM": "C0262",
+      "DeepSeek:DeepSeek_V024_C0055_CONFIRM": "C0263",
+      "DeepSeek:DeepSeek_V024_C0014_CONFIRM": "C0264",
+      "Codex:Codex_F004": "C0265",
+      "Codex:Codex_F_BAD": "C0266",
+      "Gemini:Gemini_V_WITHDRAW_GEMINI_UNSTRUCTURED": "C0267",
+      "DeepSeek:DeepSeek_WITHDRAW_C0179_C0014_C0055_C0238_R25": "C0268",
+      "Codex:Codex_V026_C0189_CONFIRM_FIX": "C0269",
+      "ChatGPT:ChatGPT_VERDICT_026_C0230_CONFIRM_FIX": "C0270",
+      "ChatGPT:ChatGPT_VERDICT_026_C0206_CONFIRM_FIX": "C0271",
+      "Gemini:Gemini_V_WITHDRAW_R25_FLAGS": "C0272",
+      "Gemini:Gemini_C0267_REFORMAT": "C0273",
+      "Gemini:Gemini_C0268_REFORMAT": "C0274",
+      "DeepSeek:DeepSeek_F026": "C0275",
+      "DeepSeek:DeepSeek_F027": "C0276",
+      "CC2:CC2_F028": "C0277",
+      "CC2:CC2_F029": "C0278",
+      "Codex:Codex_R27_REOPEN_C0183": "C0279",
+      "Codex:Codex_R27_WITHDRAW_C0269": "C0280",
+      "Gemini:Gemini_WITHDRAW_R26_FLAGS": "C0281",
+      "Gemini:Gemini_D001_ADMISSIBILITY_TERMINATOR": "C0282",
+      "DeepSeek:DeepSeek_F028": "C0283",
+      "Codex:Codex_R28_CONFIRM_C0230_FIX": "C0284",
+      "Codex:Codex_R28_CONFIRM_C0183_C0238_FIX": "C0285",
+      "Gemini:Gemini_WITHDRAW_R27_FLAGS": "C0286",
+      "Gemini:Gemini_C0280_REFORMAT": "C0287",
+      "Gemini:Gemini_C0281_REFORMAT": "C0288",
+      "Gemini:Gemini_C0283_REFORMAT": "C0289",
+      "Gemini:Gemini_F030": "C0290",
+      "DeepSeek:DeepSeek_VERDICT_C0163_CONFIRM_R28": "C0291",
+      "DeepSeek:DeepSeek_VERDICT_C0279_CONFIRM_R28": "C0292",
+      "DeepSeek:DeepSeek_VERDICT_C0275_CONFIRM_R28": "C0293",
+      "DeepSeek:DeepSeek_VERDICT_C0277_CONFIRM_R28": "C0294",
+      "DeepSeek:DeepSeek_VERDICT_C0269_CONFIRM_R28": "C0295",
+      "DeepSeek:DeepSeek_F029": "C0296"
     }
   },
   "novelty_counts": [
@@ -14423,7 +16229,12 @@
     15,
     11,
     12,
-    19
+    19,
+    4,
+    4,
+    8,
+    7,
+    13
   ],
   "raw_counts": [
     15,
@@ -14449,7 +16260,12 @@
     15,
     11,
     13,
-    21
+    21,
+    8,
+    7,
+    10,
+    8,
+    14
   ],
   "novelty_counts_per_model": {
     "ChatGPT": [
@@ -14476,7 +16292,12 @@
       1,
       1,
       1,
-      1
+      1,
+      0,
+      0,
+      2,
+      0,
+      0
     ],
     "Codex": [
       3,
@@ -14502,7 +16323,12 @@
       0,
       1,
       3,
-      0
+      0,
+      0,
+      2,
+      1,
+      2,
+      2
     ],
     "CC2": [
       1,
@@ -14528,7 +16354,12 @@
       3,
       2,
       3,
-      3
+      3,
+      0,
+      0,
+      0,
+      2,
+      0
     ],
     "Gemini": [
       5,
@@ -14554,7 +16385,12 @@
       10,
       7,
       5,
-      7
+      7,
+      0,
+      1,
+      3,
+      2,
+      5
     ],
     "DeepSeek": [
       4,
@@ -14580,7 +16416,12 @@
       1,
       0,
       0,
-      8
+      8,
+      4,
+      1,
+      2,
+      1,
+      6
     ]
   },
   "raw_counts_per_model": {
@@ -14608,6 +16449,11 @@
       1,
       1,
       1,
+      1,
+      1,
+      1,
+      2,
+      1,
       1
     ],
     "Codex": [
@@ -14634,7 +16480,12 @@
       0,
       1,
       3,
-      1
+      1,
+      1,
+      2,
+      1,
+      2,
+      2
     ],
     "CC2": [
       1,
@@ -14660,7 +16511,12 @@
       3,
       2,
       3,
-      3
+      3,
+      1,
+      1,
+      0,
+      2,
+      0
     ],
     "Gemini": [
       5,
@@ -14686,7 +16542,12 @@
       10,
       7,
       5,
-      8
+      8,
+      1,
+      2,
+      3,
+      2,
+      5
     ],
     "DeepSeek": [
       4,
@@ -14712,7 +16573,12 @@
       1,
       0,
       1,
-      8
+      8,
+      4,
+      1,
+      4,
+      1,
+      6
     ]
   },
   "rho_history": [
@@ -14739,7 +16605,12 @@
     1.0,
     1.0,
     0.923077,
-    0.904762
+    0.904762,
+    0.5,
+    0.571429,
+    0.8,
+    0.875,
+    0.928571
   ],
   "gamma_history": [
     0.0,
@@ -14765,9 +16636,19 @@
     0.04943,
     0.049928,
     0.049829,
-    0.047742
+    0.047742,
+    0.047207,
+    0.047888,
+    0.048805,
+    0.050063,
+    0.050651
   ],
   "gate_history": [
+    false,
+    false,
+    false,
+    false,
+    false,
     false,
     false,
     false,
@@ -14810,7 +16691,12 @@
     10,
     8,
     11,
-    20
+    20,
+    18,
+    13,
+    11,
+    13,
+    12
   ],
   "stall_history": [
     {
@@ -14908,6 +16794,26 @@
     {
       "open_ch": 20,
       "contested": 2
+    },
+    {
+      "open_ch": 18,
+      "contested": 3
+    },
+    {
+      "open_ch": 13,
+      "contested": 2
+    },
+    {
+      "open_ch": 11,
+      "contested": 0
+    },
+    {
+      "open_ch": 13,
+      "contested": 0
+    },
+    {
+      "open_ch": 12,
+      "contested": 0
     }
   ],
   "novel_critical_history": [
@@ -14934,9 +16840,14 @@
     10,
     8,
     9,
-    15
+    15,
+    4,
+    1,
+    3,
+    1,
+    6
   ],
-  "cumulative_context_chars": 1598412,
+  "cumulative_context_chars": 1972796,
   "consecutive_churn_rounds": 0,
   "itc_model_state": {
     "ChatGPT": {
@@ -15015,15 +16926,30 @@
           "classification": null,
           "suppressed": "DEGRADATION",
           "findings": 0
+        },
+        {
+          "round": 25,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 26,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 28,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
         }
       ],
       "adaptation": null,
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
-        0.25,
-        0.75,
-        0.16666666666666666,
         0.8,
         2.6666666666666665,
         9.0,
@@ -15039,7 +16965,11 @@
         0.3333333333333333,
         0.42857142857142855,
         0.05555555555555555,
-        0.25
+        0.25,
+        0.5,
+        0.2857142857142857,
+        0.5,
+        0.2
       ],
       "last_adaptive_threshold": 0.5
     },
@@ -15119,6 +17049,24 @@
           "classification": null,
           "suppressed": "DEGRADATION",
           "findings": 0
+        },
+        {
+          "round": 24,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 26,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 28,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
         }
       ],
       "adaptation": null,
@@ -15138,7 +17086,12 @@
         0.4,
         0.09090909090909091,
         0.125,
-        0.08333333333333333
+        0.08333333333333333,
+        0.16666666666666666,
+        1.0,
+        0.25,
+        0.5,
+        0.25
       ],
       "last_adaptive_threshold": 0.5
     },
@@ -15228,17 +17181,36 @@
           "classification": null,
           "suppressed": "DEGRADATION",
           "findings": 0
+        },
+        {
+          "round": 24,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 26,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 27,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 28,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
         }
       ],
       "adaptation": null,
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
-        0.7142857142857143,
-        1.3636363636363635,
-        1.2857142857142858,
-        3.4166666666666665,
-        0.2,
         0.6666666666666666,
         3.5833333333333335,
         1.8,
@@ -15253,7 +17225,12 @@
         0.625,
         0.6363636363636364,
         0.45454545454545453,
-        0.5714285714285714
+        0.5714285714285714,
+        0.09090909090909091,
+        0.5,
+        0.21428571428571427,
+        0.14285714285714285,
+        0.29411764705882354
       ],
       "last_adaptive_threshold": 0.5
     },
@@ -15333,16 +17310,24 @@
           "classification": null,
           "suppressed": "DEGRADATION",
           "findings": 0
+        },
+        {
+          "round": 24,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 25,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
         }
       ],
       "adaptation": null,
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
-        2.6666666666666665,
-        1.25,
-        1.0,
-        1.25,
         0.5,
         3.1666666666666665,
         4.363636363636363,
@@ -15358,9 +17343,13 @@
         1.2,
         5.538461538461538,
         0.625,
-        0.5625
+        0.5625,
+        0.4444444444444444,
+        0.42857142857142855,
+        0.8,
+        0.5
       ],
-      "last_adaptive_threshold": 2.4405982905982904
+      "last_adaptive_threshold": 0.5
     },
     "CC2": {
       "history": [
@@ -15412,10 +17401,28 @@
           "classification": null,
           "suppressed": "DEGRADATION",
           "findings": 0
+        },
+        {
+          "round": 25,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 27,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 28,
+          "classification": "TRANSIENT_FAILURE",
+          "suppressed": null,
+          "findings": 0
         }
       ],
-      "adaptation": null,
-      "retry_count": 0,
+      "adaptation": "retry",
+      "retry_count": 1,
       "escalation_level": 0,
       "parse_yield_history": [
         1.25,
@@ -15428,9 +17435,12 @@
         1.5,
         3.3333333333333335,
         1.7142857142857142,
-        2.0
+        2.0,
+        2.0,
+        4.666666666666667,
+        0.6666666666666666
       ],
-      "last_adaptive_threshold": 2.25
+      "last_adaptive_threshold": 2.6388888888888893
     }
   },
   "itc_hil_flags": [

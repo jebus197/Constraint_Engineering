@@ -250,28 +250,43 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
-**Next action — Exp 40 R24–R28 LAUNCHING (2026-05-16, founder-directed clean convergence test, G7 ON).**
+**Next action — founder review of the Exp 40 R24–R28 result. Exp 40 COMPLETE (R0–R28).**
 
-Founder rejected the "convergence never cleanly tested" framing (correctly —
-Exp 37 = clean STATE_CONVERGED two consecutive gate passes; Exp 31 = convergence
-occurred but bug-closed-gate dead-code masked it, per Exp 32 unanimous). Founder
-directed a 5-round extension with all previously-agreed fixes ON to test whether
-Exp-40-target convergence is real once the mechanical blocker is removed.
+**Headline result: the mechanical-blocker hypothesis is FALSIFIED for this
+target.** The G7-enabled 5-round leg (R24–R28) was the clean test of "remove
+the merge-deadlock blocker → convergence follows". G7 removed the blocker
+completely and correctly (8–10 deadlocks resolved by ≥3/5 majority; C0023 at
+21 rounds — project record — resolved 5/5; zero merge cycles). Convergence
+still did NOT occur: γ flat ≈0.047–0.051 (G7-on) vs ≈0.048 (G7-off R17–R23) —
+no convergence effect. Full γ R0–R28 peaked **0.2967 at R3** (≈1.1% below the
+0.30 gate) then declined and plateaued ≈0.05 for 25 rounds. The system
+approaches the gate early then diverges; the divergence is NOT the deadlocks.
+Convergence remains real in general (Exp 37 clean; this run touched the
+threshold at R3) — this is a target-specific divergence. Candidate
+[SPECULATIVE]: novelty-regeneration dynamics and/or γ-metric/gate
+mis-calibration (Exp 36 audit: "γ classifies wrong at system level during
+churn"; this run logged "Gamma disagrees with state closure — recommend HIL
+audit"). Final: 417 findings, 296 canonical (UNCONFIRMED 108 / CONFIRMED 91 /
+MERGED 53 / CLOSED 44), 33 HIL flags. Bounded exactly R24–R28 — the R17–R23
+overrun corrective (`extension_cap == max_rounds`) is confirmed working.
 
-Config (`bench/exp40_configs/40_gate.json`): `merge_arbitration_enabled=true`
-(G7 ON — reverses the §6c deferral, per founder directive), `max_rounds=29`,
-`extension_cap=29` (set EQUAL per standing corrective — simulation-verified
-exactly R24–R28 = 5 rounds, no overrun even if budget-extension fires every
-round). Target `_feedback.py` held stable this leg (no edits → modified-target
-confound removed). In-round re-ask NOT bundled (unbuilt; would confound the
-signal; Fix 1e covers the load per R17–R23). 114 G7+tranche+feedback tests
-pass with G7 enabled; config→RunnerConfig→`_try_merge_arbitration` wiring
-confirmed (`reference_runner_v2.py` :294/:1052/:4189). Launch:
-`python3 bench/launch_exp40.py --resume` (resumes R23 checkpoint, start_round=24).
-Monitor 60 s, FFAFP; **stop + escalate to founder if convergence becomes
-structurally impossible (e.g. G7 producing wrong merges that corrupt the
-novelty count) — do not run to a foregone end.** No confer (founder directive,
-executed not re-litigated).
+Paired post-mortem written: technical `experimental_notes/
+Exp40_R24_R28_Convergence_Test_Postmortem_2026-05-16.md`, plain-English
+`..._Plain_English_2026-05-16.md`, TTS `~/Desktop/CDSFL_tts/
+Exp40_R24_R28_Convergence_Test_Postmortem_2026-05-16.txt`.
+
+**Next-work pointer (recommendation, not yet founder-approved):** the open
+question has moved off the deadlocks. A targeted study instrumenting
+raw-vs-novel divergence and re-examining the γ definition + gate threshold on
+a rich target is the indicated next step before any further single-mechanism
+fix. G7 stays enabled (validated, correct). Awaiting founder direction.
+
+### Superseded resume pointer (R24–R28 launch — retained for trail)
+
+**Exp 40 R24–R28 was launched 2026-05-16 ~17:56 BST** (founder-directed clean
+convergence test, G7 ON, `merge_arbitration_enabled=true`, `max_rounds=
+extension_cap=29`, target `_feedback.py` held stable, in-round re-ask not
+bundled). Ran 5,533 s, exactly R24–R28, clean stop. Result above.
 
 ### Superseded resume pointer (R17–R23 morning review — retained for trail)
 

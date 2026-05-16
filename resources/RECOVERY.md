@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 16 May 2026 05:49 BST
+Last updated: 16 May 2026 19:38 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,7 +85,23 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20 April – 15 May 2026)
+## Current Pending Work (20 April – 16 May 2026)
+
+**SESSION 2026-05-16 (PM) — EXP 40 R24–R28 CLEAN CONVERGENCE TEST (G7 ON) — COMPLETE; MECHANICAL-BLOCKER HYPOTHESIS FALSIFIED:**
+
+Branch `exp39-experimental`. HEAD at session start `3152f6e`; pre-launch commit `c304032`; this sv is the next commit.
+
+1. **Convergence-history context recovered.** The founder corrected the prior-session claim that convergence "was never cleanly tested". The record confirms the founder: Exp 37 = clean STATE_CONVERGED (gate passed R14+R15); Exp 31 = convergence occurred but bug-closed-gate dead code masked it (Exp 32 panel unanimous); Exp 30/36/40 non-convergence traces to mechanics. Convergence is real and instrument-sensitive.
+
+2. **Exp 40 R24–R28 run (founder-directed clean test).** Config: `merge_arbitration_enabled=true` (G7 ON — reverses §6c deferral per explicit founder directive, executed not re-litigated), `max_rounds=extension_cap=29`, target `bench/dm/_feedback.py` held stable. Ran `python3 bench/launch_exp40.py --resume` from R23 checkpoint, 5,533 s, exactly R24–R28 (5 rounds), clean stop. The R17–R23 round-count overrun corrective is confirmed working.
+
+3. **Result — hypothesis FALSIFIED for this target.** G7 cleared 8–10 deadlocks by ≥3/5 majority incl. C0023 (21-round project record) 5/5, zero cycles. Convergence still did not occur: γ flat ≈0.047–0.051 (G7-on) vs ≈0.048 (G7-off R17–R23). Full γ R0–R28 peaked **0.2967 @ R3** (≈1.1% below the 0.30 gate) then declined to a ≈0.05 plateau for 25 rounds. Late-round non-convergence on this target is NOT the deadlocks. Candidate [SPECULATIVE]: novelty-regeneration / γ-metric+gate mis-calibration (Exp 36 audit + this run's "Gamma disagrees with state closure — recommend HIL audit"). Final: 417 findings, 296 canonical (UNCONFIRMED 108 / CONFIRMED 91 / MERGED 53 / CLOSED 44), 33 HIL flags.
+
+4. **Monitoring (FFAFP, monitor-side only).** A 60 s guard required 3 iterations; all corrections were to the guard, never the experiment (healthy throughout). v2 negation-blind regex fixed (source-grounded tokens); v3→v4 G7 line-count heuristic false-froze a healthy run (unfrozen via SIGCONT, no loss) → structural redesign: brittle heuristics no longer take autonomous destructive action (freeze only on unambiguous corruption, alert-only otherwise). Disclosed, not buried.
+
+5. **Paired post-mortem written** (note standard v1.2): technical `experimental_notes/Exp40_R24_R28_Convergence_Test_Postmortem_2026-05-16.md`, plain-English `..._Plain_English_2026-05-16.md`, TTS `~/Desktop/CDSFL_tts/Exp40_R24_R28_Convergence_Test_Postmortem_2026-05-16.txt`.
+
+**Open (founder decision, not unfinished work):** the next-work direction. Recommendation (not yet founder-approved): a targeted study instrumenting raw-vs-novel divergence and re-examining the γ definition + gate threshold on a rich target, before any further single-mechanism fix. G7 stays enabled (validated correct).
 
 **SESSION 2026-05-15 — EXP 40 CONTINUATION + POST-CONTINUATION FIX TRANCHE + CODEX FALSE-POSITIVE:**
 
