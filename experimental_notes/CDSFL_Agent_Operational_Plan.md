@@ -250,6 +250,34 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — Exp 40 R17–R21 running (2026-05-16, founder asleep, autonomous).**
+
+Neutral timing re-confer complete (the 2026-05-15 biased round is superseded).
+5-model, no presupposed answer, panel falsified CC1 reasoning. Outcome
+(binding, recorded in consolidated plan §6c + Exp 41 matrix row):
+- **G7 enablement → DEFER to Exp 41.** Reverses CC1's prior enable-now
+  position. Reason: candidate-set construction in `_try_merge_arbitration`
+  never live-tested → silent-wrong-merge risk corrupts the R17–R21
+  convergence signal. G7 stays config-disabled for R17–R21.
+- **UUID-namespace → DEFER pre-Exp 41, collision-evidence-gated.**
+  Observation-only collision detector implemented now
+  (`_feedback.detect_finding_id_collisions`, 10 tests) as the evidence
+  gate. Exp 41 reads the R17–R21 accumulator; any cross_model collision
+  ⇒ implement before Exp 41.
+- **In-round reformat dispatch → DEFER to Exp 41**, R17–R21-evidence-gated.
+- Standing methodology adopted: fix-timing confers never present deferral
+  as the baseline (§6c methodology note).
+
+Outcome notes: `experimental_notes/Exp40_Timing_Reconfer_Outcome_2026-05-16.md`
+(+ plain-English + TTS). 210 regression tests pass. R17–R21 restarting on
+the fix tranche + collision detector, G7 disabled — founder-authorised this
+turn ("implement all fixes present and then restart experiment 40").
+Monitoring at 60 s with FFAFP discipline; paired post-mortem at close.
+
+---
+
+### Superseded resume pointer (fix-tranche post-mortem review — retained for trail)
+
 **Next action — founder review of the fix-tranche post-mortem (15 May 2026, evening).**
 
 The post-continuation 12-item fix tranche is complete (9 engineering items

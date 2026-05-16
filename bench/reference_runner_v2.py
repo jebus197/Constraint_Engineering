@@ -132,6 +132,11 @@ from bench.dm._feedback import (
     build_feedback_sections,
     parse_admissibility_block,
 )
+# Exp 40 timing re-confer (2026-05-16): observation-only finding-ID
+# collision detector accumulator. Cleared at experiment start (mirrors
+# _itc_hil_flags) so the post-mortem reads only this run's collisions —
+# the evidence gate for the deferred UUID-namespace decision (Exp 41).
+from bench.dm import _feedback as _feedback_mod
 # Exp 40 fix 1D.1, 1D.2, 1D.4: round-context helpers.
 from bench.dm._round_context import (
     build_prior_fix_summary,
@@ -4164,6 +4169,15 @@ def run_experiment(
             _log(f"  Registry restored: {len(registry.entries)} entries")
 
     experiment_start = time.monotonic()
+
+    # Exp 40 timing re-confer (2026-05-16): reset the observation-only
+    # finding-ID collision accumulator at experiment start so the
+    # post-mortem reads only this run's collisions. This is the
+    # evidence gate for the deferred UUID-namespace decision (Q2,
+    # 2026-05-16 neutral confer → Exp 41). Not restored from
+    # checkpoint: a --resume should report the resumed leg's
+    # collisions, not stale ones.
+    _feedback_mod._finding_id_collisions.clear()
 
     # G7 merge-arbitration context setup (Exp 40 continuation). Inert
     # unless cfg.merge_arbitration_enabled. When enabled, the panel +

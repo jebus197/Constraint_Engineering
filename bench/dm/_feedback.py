@@ -29,8 +29,79 @@ Design notes:
 
 from __future__ import annotations
 
+import logging
+from collections import Counter
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+_LOG = logging.getLogger("cdsfl.feedback")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Finding-ID collision detector (Exp 40 timing re-confer, 2026-05-16)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The 2026-05-16 neutral confer converged that the UUID-namespace
+# architectural change is real but unobserved, and deferred it to
+# pre-Exp-41 ON CONDITION that R17-R21 is instrumented to convert the
+# theoretical collision-overwrite risk into an observable. This
+# detector is that instrument: it is OBSERVATION-ONLY. It does NOT
+# alter the `{f.finding_id: f for f in findings}` comprehension or any
+# dedup/merge behaviour — changing reconciliation behaviour pre-resume
+# is precisely the risky work being deferred. It only detects and
+# records when two findings in the same round share a finding_id (the
+# silent-overwrite condition the panel diagnosed) so the Exp 40-54
+# canonical plan's Q2/UUID deferral is evidence-gated, not blind.
+#
+# Module-level accumulator mirrors the established `_itc_hil_flags`
+# pattern so post-mortem tooling can quantify collisions across a run.
+# The runner clears it at experiment start.
+_finding_id_collisions: List[Dict[str, Any]] = []
+
+
+def detect_finding_id_collisions(
+    findings: List[Any], round_idx: int = -1,
+) -> List[Dict[str, Any]]:
+    """Detect (do not repair) duplicate finding_id within one round.
+
+    Returns a list of collision records; each record is
+    ``{"round", "finding_id", "count", "model_ids"}``. A non-empty
+    return means the `{f.finding_id: f for f in findings}` map would
+    silently drop ``count - 1`` finding(s) for that id. model_ids
+    distinguishes the cross-model case (two different models, the
+    case UUID-namespace specifically targets) from the same-model
+    case (one model emitting a duplicate id), which informs the
+    Exp 41 UUID-namespace go/no-go.
+
+    Observation-only: callers must NOT change behaviour based on this;
+    it exists to gather the evidence the deferred UUID decision needs.
+    """
+    ids = [getattr(f, "finding_id", None) for f in findings]
+    counts = Counter(i for i in ids if i is not None)
+    collisions: List[Dict[str, Any]] = []
+    for fid, n in counts.items():
+        if n > 1:
+            model_ids = sorted({
+                getattr(f, "model_id", "?")
+                for f in findings
+                if getattr(f, "finding_id", None) == fid
+            })
+            rec = {
+                "round": round_idx,
+                "finding_id": fid,
+                "count": n,
+                "model_ids": model_ids,
+                "cross_model": len(model_ids) > 1,
+            }
+            collisions.append(rec)
+            _finding_id_collisions.append(rec)
+            _LOG.warning(
+                "FINDING_ID_COLLISION round=%s id=%r count=%d "
+                "model_ids=%s cross_model=%s — silent-overwrite "
+                "condition (UUID-namespace evidence gate, Q2 confer "
+                "2026-05-16)",
+                round_idx, fid, n, model_ids, len(model_ids) > 1,
+            )
+    return collisions
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -148,6 +219,12 @@ def build_feedback_records(
         flags are omitted (no feedback needed).
     """
     records_by_id: Dict[str, FindingFeedback] = {}
+    # Exp 40 timing re-confer (2026-05-16): observation-only collision
+    # detection — the next line's comprehension silently drops a
+    # finding when two share a finding_id. The detector records the
+    # event so the deferred UUID-namespace decision (Exp 41) is
+    # evidence-gated; it deliberately does NOT change the comprehension.
+    detect_finding_id_collisions(findings, round_idx)
     finding_by_id = {f.finding_id: f for f in findings}
 
     # 1. Specialist refutations + immune pipeline verdicts
