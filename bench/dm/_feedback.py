@@ -218,22 +218,50 @@ def build_feedback_records(
         One record per finding that has any flag raised. Findings with no
         flags are omitted (no feedback needed).
     """
-    records_by_id: Dict[str, FindingFeedback] = {}
-    # Exp 40 timing re-confer (2026-05-16): observation-only collision
-    # detection — the next line's comprehension silently drops a
-    # finding when two share a finding_id. The detector records the
-    # event so the deferred UUID-namespace decision (Exp 41) is
-    # evidence-gated; it deliberately does NOT change the comprehension.
+    records: Dict[Tuple[str, str], FindingFeedback] = {}
+    # Exp 40 (2026-05-16, founder-directed fix — supersedes the prior
+    # observation-only deferral). Collision-SAFE accumulation: two
+    # findings sharing a finding_id (typically different models) must
+    # EACH still receive corrective feedback. The prior
+    # `{f.finding_id: f for f in findings}` comprehension was last-wins
+    # and silently dropped the other finding, so its model's feedback
+    # was mis-routed to the surviving model and the dropped model kept
+    # re-asserting the finding — a direct churn / non-convergence
+    # driver. Records are now keyed by (finding_id, model_origin) and a
+    # per-id finding list is retained. The detector still records the
+    # event for the run post-mortem.
     detect_finding_id_collisions(findings, round_idx)
-    finding_by_id = {f.finding_id: f for f in findings}
+    findings_by_id: Dict[str, List[Any]] = {}
+    for _f in findings:
+        findings_by_id.setdefault(_f.finding_id, []).append(_f)
 
     # 1. Specialist refutations + immune pipeline verdicts
     final_verdicts = immune_result.final_verdicts if immune_result else {}
     cell_verdicts = immune_result.cell_verdicts if immune_result else {}
 
+    def _record_for(fid: str, finding: Any) -> FindingFeedback:
+        """Get/create the feedback record for (fid, finding.model_id).
+
+        Keying by model_origin (not fid alone) is what makes the
+        collision safe: every model that emitted a colliding id gets
+        its own correctly-routed record instead of one silently
+        overwriting another.
+        """
+        key = (fid, finding.model_id)
+        rec = records.get(key)
+        if rec is None:
+            rec = FindingFeedback(
+                finding_id=fid,
+                model_origin=finding.model_id,
+                severity_claimed=finding.severity,
+                final_verdict=final_verdicts.get(fid, "UNCERTAIN"),
+            )
+            records[key] = rec
+        return rec
+
     for fid, verdict_list in cell_verdicts.items():
-        finding = finding_by_id.get(fid)
-        if finding is None:
+        flist = findings_by_id.get(fid)
+        if not flist:
             continue
 
         refutations: List[Tuple[str, str, str]] = []
@@ -247,49 +275,26 @@ def build_feedback_records(
         final_v = final_verdicts.get(fid, "UNCERTAIN")
 
         if refutations or final_v == "REJECTED":
-            records_by_id[fid] = FindingFeedback(
-                finding_id=fid,
-                model_origin=finding.model_id,
-                severity_claimed=finding.severity,
-                final_verdict=final_v,
-                refutations=refutations,
-            )
+            for finding in flist:
+                rec = _record_for(fid, finding)
+                rec.final_verdict = final_v
+                rec.refutations = refutations
 
     # 2. Admissibility failures
     if admissibility_failures:
         for fid, failed_gates in admissibility_failures.items():
             if not failed_gates:
                 continue
-            finding = finding_by_id.get(fid)
-            if finding is None:
-                continue
-            rec = records_by_id.get(fid)
-            if rec is None:
-                rec = FindingFeedback(
-                    finding_id=fid,
-                    model_origin=finding.model_id,
-                    severity_claimed=finding.severity,
-                    final_verdict=final_verdicts.get(fid, "UNCERTAIN"),
-                )
-                records_by_id[fid] = rec
-            rec.admissibility_failures = list(failed_gates)
+            for finding in findings_by_id.get(fid, []):
+                rec = _record_for(fid, finding)
+                rec.admissibility_failures = list(failed_gates)
 
     # 3. Near-duplicates
     if duplicate_pairs:
         for fid_a, fid_b, sim in duplicate_pairs:
-            finding = finding_by_id.get(fid_a)
-            if finding is None:
-                continue
-            rec = records_by_id.get(fid_a)
-            if rec is None:
-                rec = FindingFeedback(
-                    finding_id=fid_a,
-                    model_origin=finding.model_id,
-                    severity_claimed=finding.severity,
-                    final_verdict=final_verdicts.get(fid_a, "UNCERTAIN"),
-                )
-                records_by_id[fid_a] = rec
-            rec.duplicates.append((fid_b, sim))
+            for finding in findings_by_id.get(fid_a, []):
+                rec = _record_for(fid_a, finding)
+                rec.duplicates.append((fid_b, sim))
 
     # 4. R_k discrepancies — only flag WARN or FAIL from validator
     if rk_validation:
@@ -297,26 +302,23 @@ def build_feedback_records(
             for fid, status, claimed_str, aggregate_str in validation_records:
                 if status not in ("WARN", "FAIL"):
                     continue
-                finding = finding_by_id.get(fid)
-                if finding is None:
+                flist = findings_by_id.get(fid, [])
+                # Prefer the finding from the model the validator keyed;
+                # fall back to all findings for the id so none is dropped.
+                targets = [x for x in flist
+                           if x.model_id == model_id] or flist
+                if not targets:
                     continue
                 try:
                     claimed = float(claimed_str)
                     aggregate = float(aggregate_str)
                 except (ValueError, TypeError):
                     continue  # skip if numbers don't parse
-                rec = records_by_id.get(fid)
-                if rec is None:
-                    rec = FindingFeedback(
-                        finding_id=fid,
-                        model_origin=finding.model_id,
-                        severity_claimed=finding.severity,
-                        final_verdict=final_verdicts.get(fid, "UNCERTAIN"),
-                    )
-                    records_by_id[fid] = rec
-                rec.rk_discrepancy = (claimed, aggregate)
+                for finding in targets:
+                    rec = _record_for(fid, finding)
+                    rec.rk_discrepancy = (claimed, aggregate)
 
-    return list(records_by_id.values())
+    return list(records.values())
 
 
 # ─────────────────────────────────────────────────────────────────────────────
