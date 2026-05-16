@@ -55,8 +55,14 @@ if _ENV_FILE.exists():
             os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
 
 
-def _load_exp40_config() -> dict:
-    config_path = _HERE / "exp40_configs" / "40_gate.json"
+def _load_exp40_config(config_name: str = "40_gate.json") -> dict:
+    # `config_name` may be a bare file name (resolved under
+    # exp40_configs/) or an explicit path. Defaults to 40_gate.json so
+    # existing invocations are unchanged; --config selects another
+    # (e.g. the plan-F slice config).
+    cand = Path(config_name)
+    config_path = cand if cand.is_absolute() else (
+        _HERE / "exp40_configs" / config_name)
     if not config_path.exists():
         raise FileNotFoundError(
             f"Expected Exp 40 config at {config_path}"
@@ -280,9 +286,13 @@ def main() -> int:
     parser.add_argument("--skip-gate-c", action="store_true",
                         help="Skip Gate C admissibility-parser preflight "
                              "(debug only; NOT recommended).")
+    parser.add_argument("--config", default="40_gate.json",
+                        help="Config file under exp40_configs/ (or an "
+                             "absolute path). Default 40_gate.json; "
+                             "plan-F uses 40_slice_admissibility.json.")
     args = parser.parse_args()
 
-    exp_cfg = _load_exp40_config()
+    exp_cfg = _load_exp40_config(args.config)
 
     if args.dry_run:
         print("=" * 60)
