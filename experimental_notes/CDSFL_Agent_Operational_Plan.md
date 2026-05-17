@@ -250,6 +250,35 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — FOUNDER RULING on the γ-hardening confer outcome, then implement steps 1-2+5.**
+
+5-model neutral confer (gemini/codex/cc2/chatgpt/deepseek, compelled
+convergence, γ-demotion excluded as founder HARD constraint) ran clean
+2026-05-17 (logs `bench/logs/confer_exp40_gamma_hardening_2026-05-17/`).
+**5/5: harden γ, do NOT demote (all argued demotion technically
+unnecessary).** 4/5 unprompted: the hardening IS book-cooking unless
+anti-cooking controls enforced. Converged core: feed γ the
+post-reconciliation **critical/structural severity-gated** series as
+the gate, all-novelty logged as diagnostic (dual-series); regime-aware
+recalibration pre-registered NOT fitted to plan-F; keep apply-back
+(reverting = the documented non-convergence cause); offline ≈0.60 /
+`[8,4,0,3,1,1,1]` NOT production truth — must recompute through
+production pipeline (mismatches the post-mortem zero-critical tail; 3
+models caught it). Splits resolved on the anti-cooking constraint
+(CC1 synthesis, not vote): keep frozen calibration leg (P3); defer
+λ_ext/P4 to instrumented-not-gating until ν/Δ data-fixed; severity cut
+= project HARD/SOFT-constraint class not bare 0.7 (DeepSeek's "0.7
+already sound" flagged unverified); CC2 sparsity guard
+(count-based zero-crit fallback below min cumulative-critical) is
+non-optional. Synthesised 7-step position + CC1 independent read in
+`experimental_notes/Exp40_Gamma_Hardening_Confer_Outcome_2026-05-17.md`
+(+ plain-English + TTS). **No code changed — decision-grade, awaiting
+founder ruling.** Standing caution: production recompute may show γ
+does not clear a properly recalibrated bar; if so the bar holds and it
+is reported, not engineered around.
+
+### Superseded resume pointer (plan-F result — retained for trail)
+
 **Next action — FOUNDER REVIEW. Plan-F CONVERGED (qualified) — FIRST convergence in the Exp 40 arc. Remediation build E→F COMPLETE, validated, committed, sv'd.**
 
 Plan-F (`exp40_slice_admissibility`) reached **γ-alt convergence at
