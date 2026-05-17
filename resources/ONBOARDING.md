@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 16 May 2026 23:45 BST
+Last updated: 17 May 2026 01:22 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,48 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 40 plan-F — FIRST CONVERGENCE IN THE ARC (qualified) (2026-05-17, autonomous):**
+
+  The decomposed-slice re-run (`exp40_slice_admissibility`: ~110-line
+  admissibility parser, apply-back + in-round re-ask + G7 +
+  collision-fix all live) reached **γ-alt convergence at round 6** —
+  `converged_at=6`, reason "GAMMA_ALT_CONVERGED: 3 consecutive rounds
+  with zero novel CRITICAL" — and stopped early (7 of a 20-round cap,
+  5,808 s). This is the first convergence in the entire Exp 40 arc.
+  Falsified hard against the authoritative report (the R24–R28 leg had
+  produced two monitoring false positives): it survives every check
+  those failed — the runner stopped itself early; `gamma_history =
+  [0, 0, 0.156, 0.135, 0.172, 0.219, 0.267]` rose monotonically (vs
+  R24–R28 flat ≈0.05 for 25 rounds); the apply-back cure was actively
+  exercised — 4 verified fixes promoted into the working copy
+  (`C0001`,`C0005`@r2; `C0012`,`C0019`@r3), each full-suite-green, 0
+  rejected, working copy 132→135 lines; the in-round re-ask recovered
+  one Gemini output. Final registry 40 canonical (CLOSED 16,
+  UNCONFIRMED 21, CONFIRMED 2, MERGED 1, CONTESTED 0).
+  **Qualifications (recorded, not buried):** (1) converged via the
+  zero-novel-CRITICAL γ-alt path, NOT γ ≥ 0.30 — γ final 0.267, runner
+  logged "weak depletion — state closure may be premature"; genuine by
+  the gate wired for Exp 40 but modest, not saturation. (2) One run,
+  smallest slice, several variables changed together (decomposition +
+  apply-back + in-round re-ask + cleaned baseline) — validates the
+  root-cause hypothesis and the cure; does NOT isolate the dominant
+  factor or prove scaling to larger targets; the consolidated plan's
+  factorial is the isolation step. (3) Convergence = no new CRITICAL
+  for 3 rounds, not all-findings-resolved (21 UNCONFIRMED). (4) The
+  trailing "ended without convergence (likely wall-clock)" log line is
+  the documented inaccurate generic string; authoritative is
+  `converged_at=6`, elapsed ≪ wall cap. **Significance:** large
+  differential vs the non-converged R24–R28 comparator
+  (full unfixed 621-line artefact, flat γ, no convergence) in exactly
+  the predicted direction — strong support for the long-held position
+  that convergence is real and was being blocked mechanically because
+  verified fixes were never written back to the reviewed artefact, now
+  with that mechanism identified, fixed (plan-C), and demonstrated.
+  Does not close the programme; establishes the diagnosis + cure on a
+  controlled small target. Paired result post-mortem
+  `experimental_notes/Exp40_Slice_F_Convergence_Result_2026-05-17.md`
+  (+ plain-English + TTS).
+
 - **EXP 40 REMEDIATION BUILD E→F — ROOT CAUSE FIXED, CONVERGENCE RE-RUN LAUNCHED (2026-05-16, autonomous):**
 
   Root cause of Exp 40's intermittent non-convergence, confirmed by

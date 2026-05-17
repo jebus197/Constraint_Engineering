@@ -250,6 +250,49 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — FOUNDER REVIEW. Plan-F CONVERGED (qualified) — FIRST convergence in the Exp 40 arc. Remediation build E→F COMPLETE, validated, committed, sv'd.**
+
+Plan-F (`exp40_slice_admissibility`) reached **γ-alt convergence at
+round 6** (`converged_at=6`, reason `GAMMA_ALT_CONVERGED: 3 consecutive
+rounds zero novel CRITICAL`), stopped early (7 of 20 rounds, 5,808 s).
+Falsified hard vs the report (two R24–R28 false positives demanded it):
+survives — early stop, `gamma_history=[0,0,.156,.135,.172,.219,.267]`
+rising (vs R24–R28 flat ~.05/25r), apply-back exercised (4 promotions
+C0001/C0005@r2, C0012/C0019@r3, full-suite-green, 0 rejected; working
+copy 132→135 lines), in-round re-ask recovered 1 (Gemini). Registry 40
+canonical (CLOSED 16 / UNCONFIRMED 21 / CONFIRMED 2 / MERGED 1 /
+CONTESTED 0).
+
+**QUALIFICATIONS (not buried):** (1) converged via zero-novel-CRIT
+γ-alt path, NOT γ≥0.30 — γ final 0.267, runner flagged "weak depletion,
+state closure may be premature"; genuine by the defined gate but
+modest. (2) ONE run, smallest slice, multiple variables changed at once
+(decomp + apply-back + reask + cleaned baseline) — validates root cause
++ cure, does NOT isolate the dominant factor nor prove general
+scaling; factorial follow-up needed. (3) convergence = no new CRIT 3
+rounds, not all-resolved (21 UNCONFIRMED). (4) trailing "ended without
+convergence (likely wall-clock)" is the known-inaccurate generic
+string — false here; authoritative = converged_at=6.
+
+**Significance:** first arc convergence; large differential vs the
+non-converged R24–R28 comparator, in the predicted direction →
+supports the founder's thesis (convergence real, was mechanically
+blocked) with the mechanism now identified, fixed, demonstrated.
+
+**Recommended next (NOT founder-approved):** re-run on progressively
+larger slices then full `_feedback.py`; run the factorial isolating
+apply-back vs decomposition; fold the C0001/"CLOSED≠correct" lesson
+(S_k tolerates regressions) into methodology via the plan-C full-suite
+gate template.
+
+Paired result post-mortem: `experimental_notes/
+Exp40_Slice_F_Convergence_Result_2026-05-17.md` (+ plain-English +
+TTS). Build trail commits `6838e58 6e63169 c2dd4ef 58a4efa 42da873
+654a4c8 111a098` + the F-result sv. Guard `b5mjsuyig` exited clean
+(TRUE convergence); no ALERT; run process ended normally.
+
+### Superseded resume pointer (build running — retained for trail)
+
 **Next action — MORNING REVIEW of plan-F outcome. Remediation build E→D COMPLETE + committed; F (decomposed convergence re-run) RUNNING under live guard (2026-05-16 ~23:40 BST, autonomous).**
 
 Founder directive "just do it all" discharged. Root cause (confirmed

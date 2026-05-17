@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 16 May 2026 23:45 BST
+Last updated: 17 May 2026 01:22 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,7 +85,11 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
-## Current Pending Work (20 April – 16 May 2026)
+## Current Pending Work (20 April – 17 May 2026)
+
+**RESULT 2026-05-17 (autonomous) — PLAN-F CONVERGED (qualified): FIRST convergence in the Exp 40 arc.**
+
+`exp40_slice_admissibility` reached γ-alt convergence at round 6 (`converged_at=6`, `GAMMA_ALT_CONVERGED: 3 consecutive rounds zero novel CRITICAL`), stopped early (7/20 rounds, 5,808 s). Falsified vs the report (two R24–R28 false positives demanded rigour) and survives: early stop; `gamma_history=[0,0,.156,.135,.172,.219,.267]` rising vs R24–R28 flat ~.05/25r; apply-back exercised (4 promotions C0001/C0005@r2, C0012/C0019@r3, full-suite-green, 0 rejected; working copy 132→135 lines); in-round re-ask recovered 1 (Gemini). Registry 40 canonical (CLOSED 16 / UNCONFIRMED 21 / CONFIRMED 2 / MERGED 1 / CONTESTED 0). **Qualifications (recorded, not buried):** converged via zero-novel-CRIT path NOT γ≥0.30 (γ final 0.267; runner flagged "weak depletion, state closure may be premature"); one run, smallest slice, multiple variables changed at once → validates root cause + cure, does not isolate dominant factor or prove scaling (factorial follow-up needed); convergence = no-new-CRIT-3-rounds not all-resolved; trailing "ended without convergence (likely wall-clock)" is the known-inaccurate generic string (false here). Significance: large differential vs the non-converged R24–R28 comparator in the predicted direction → supports the founder's thesis with the mechanism now identified, fixed, demonstrated. Recommended next (NOT approved): larger slices → full `_feedback.py`; factorial isolating apply-back vs decomposition; fold the C0001/"CLOSED≠correct" lesson into methodology. Paired post-mortem `experimental_notes/Exp40_Slice_F_Convergence_Result_2026-05-17.md` (+ plain-English + TTS). Guard `b5mjsuyig` exited clean (TRUE convergence), no ALERT, process ended normally.
 
 **SESSION 2026-05-16 (PM/overnight, autonomous) — EXP 40 REMEDIATION BUILD E→F ("just do it all"):**
 
