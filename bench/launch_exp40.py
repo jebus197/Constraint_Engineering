@@ -407,9 +407,31 @@ def main() -> int:
         print(f"\nExperiment terminated: {result['terminated']}")
         return 1
 
-    converged = any(r.get("converged") for r in result.get("rounds", []))
+    # Authoritative convergence signal is the runner's top-level
+    # result["converged_at"] / result["convergence_reason"] (set by the
+    # state / hardened / gamma-alt gate at reference_runner_v2.py
+    # ~5602/5609). The per-round dicts do NOT carry a `converged` flag
+    # (always None), so the old any(r.get("converged")...) check
+    # misreported every hardened convergence as "ended without
+    # convergence" with exit 1 — e.g. Exp 40 Unit B HARDENED_CONVERGED
+    # at R3 was reported as a non-convergence. The per-round any(...) is
+    # kept as a defensive fallback for older result structures.
+    # (Exp 40 Unit B->C seam, 2026-05-18.)
+    converged = (
+        result.get("converged_at") is not None
+        or bool(result.get("convergence_reason"))
+        or any(r.get("converged") for r in result.get("rounds", []))
+    )
     if converged:
-        print("\nExperiment 40 converged cleanly.")
+        # Print the runner's verbatim verdict rather than editorialising
+        # — converged_at is also set for STALL_CONVERGED / CHURN_EXHAUSTED
+        # terminal stops, so the reason string is the honest signal of
+        # what kind of convergence occurred (e.g. "HARDENED_CONVERGED
+        # (sparsity fallback)..." vs "stall: ...").
+        reason = result.get("convergence_reason", "") or "converged"
+        at = result.get("converged_at")
+        print(f"\nExperiment 40 reached a terminal verdict"
+              f"{f' at round {at}' if at is not None else ''}: {reason}")
         return 0
 
     print("\nExperiment 40 ended without convergence (likely wall-clock).")

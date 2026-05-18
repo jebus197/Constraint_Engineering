@@ -192,6 +192,20 @@ class CircuitBreakerTripped(Exception):
         self.detail = detail
         super().__init__(f"HALT [{condition}] model={model} phase={phase}: {detail}")
 
+    def __reduce__(self):
+        # Pickle-safe across the multiprocessing.Queue boundary in
+        # runner_core.dispatch_to_model. Default Exception pickling
+        # reconstructs from self.args (the single super().__init__()
+        # string) -> a 1-arg __init__ call -> "TypeError: missing 2
+        # required positional arguments: 'model' and 'phase'", which the
+        # runner's broad except then masked as a generic failure and the
+        # circuit breaker became silently inoperative arc-wide.
+        # Reconstruct from the 4 original args instead. (Exp 40 Unit
+        # B->C seam, 2026-05-18; root-caused + P-passed via real
+        # multiprocessing.Queue round-trip.)
+        return (self.__class__,
+                (self.condition, self.model, self.phase, self.detail))
+
 
 def call_openrouter(
     model_id: str,

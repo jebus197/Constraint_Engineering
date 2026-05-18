@@ -5602,12 +5602,31 @@ def run_experiment(
                     result["converged_at"] = round_idx
                     result["convergence_reason"] = f"BURST_{reason_type}"
                     result["burst_phases"] = len(burst_plan.phases)
+                    # Propagate genuine convergence to brain.state so
+                    # signal_complete() writes completion_signal.json
+                    # status=CONVERGED (not INCOMPLETE). The hardened /
+                    # gamma-alt gate previously set only the result dict,
+                    # so post-mortem tooling read every hardened
+                    # convergence as INCOMPLETE. Guarded on `converged`
+                    # so churn/stall stops keep their own status.
+                    # (Exp 40 Unit B->C seam, 2026-05-18.)
+                    if converged:
+                        brain.state.converged = True
+                        brain.state.convergence_reason = f"BURST_{reason_type}"
                     break
             else:
                 # Non-burst mode or integration done: final convergence
                 _log(f"\n  {reason_type} at round {round_idx}: {reason_str}")
                 result["converged_at"] = round_idx
                 result["convergence_reason"] = reason_str
+                # Propagate genuine convergence to brain.state so
+                # signal_complete() writes completion_signal.json
+                # status=CONVERGED (not INCOMPLETE). Guarded on
+                # `converged` so churn/stall stops keep their own
+                # status. (Exp 40 Unit B->C seam, 2026-05-18.)
+                if converged:
+                    brain.state.converged = True
+                    brain.state.convergence_reason = reason_str
                 break
 
         if not phase_transition:
