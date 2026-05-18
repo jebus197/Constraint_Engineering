@@ -250,6 +250,55 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
+**Next action — MORNING REVIEW of the plan-F FULL-BUDGET RESUME (running) + the corpus finding. Then founder ruling on γ-hardening.**
+
+**Record fact (founder asked):** the zero-novel-CRITICAL trigger WAS
+ratified — Consolidated Plan §S10 "Enforced": Exp 40 sole acceptance
+gate = `γ≥0.30 OR 3 consecutive zero-novel-CRITICAL`. plan-F's R6
+convergence was within the ratified OR gate (not invented, not
+cooking). Honest nuance: the OR never required the two arms to agree.
+
+**Running (autonomous, 2026-05-18 ~01:06 BST):** plan-F FULL-BUDGET
+RESUME — `python3 bench/launch_exp40.py --resume --config
+40_slice_admissibility.json`. Resumed R7→R19 (full 20-round budget;
+checkpoint R6→start 7, verified). INSTRUMENTATION-ONLY config change
+(NOT γ change, NOT cooking, documented in the config _comment):
+`gamma_alt_consecutive_zero_crit 3→999` (zero-crit early-stop arm
+disabled — the trigger that pre-empted plan-F at R6),
+`earliest_stop_round 3→20` (main state gate can't pre-empt).
+`gamma_alt_threshold` stays 0.30 UNCHANGED → a legit γ≥0.30 still
+stops/▸detected. Non-cooking agreed fixes intact (apply-back, in-round
+re-ask, G7, collision-fix). NO γ-hardening applied (awaits ruling).
+Question: how far does γ depletion actually get over the full budget if
+not pre-empted. PID `/tmp/exp40_sliceR_pid`; log `/tmp/exp40_sliceR_logpath`;
+guard bg `bc7903e7l` (`/tmp/exp40_sliceR_guard.sh`, 60s, freeze only on
+unambiguous corruption); Terminal open. **Known caveat (disclosed):**
+resume re-seeds the working copy pristine; R0-R6 repairs reconstructed
+from the restored CLOSED registry at the R8 loop-top → R7 reviews
+pristine, R8+ reconstructed-repaired (minor 1-round artefact, does not
+invalidate the γ-trajectory question; registry/γ-history continuity
+preserved). MORNING: read `/tmp/exp40_sliceR_DONE` (terminal:
+GAMMA_THRESHOLD_REACHED = γ≥0.30 win, or FULL_BUDGET_R19 = γ did NOT
+reach 0.30 in 20 rounds) or `/tmp/exp40_sliceR_ALERT` + the run log.
+Report the γ trajectory straight, win or not.
+
+**Corpus recalibration finding (the other half of "both"):**
+production-faithful γ via the runner's own post-reconciliation rule +
+real `_estimate_gamma` (`bench/exp40_gamma_findings_audit.py`):
+plan-F all=0.222 / crit=0.510 (57% substantive, ~0% residual dup);
+Exp40 R0-R28 all=0.102 / crit=0.329 (41% substantive, ~10% residual
+dup, offline proxy). Consistent 2-point ordering crit-γ ≫ all-γ
+corroborates the severity-granularity reading on independent runs —
+**but corpus = 2 regime points, far too thin to SET a recalibrated
+threshold; doing so now would be the book-cooking risk. Pre-register
+the method; derive the number only once enough regime-stratified runs
+exist (this resume adds a long-budget point; Bench Run 2 adds many).**
+The residual-churn question is answered: de-churn largely held;
+findings are substantive — γ's low all-novelty value is severity-mix,
+not churn.
+
+### Superseded resume pointer (γ-confer outcome — retained for trail)
+
 **Next action — FOUNDER RULING on the γ-hardening confer outcome, then implement steps 1-2+5.**
 
 5-model neutral confer (gemini/codex/cc2/chatgpt/deepseek, compelled

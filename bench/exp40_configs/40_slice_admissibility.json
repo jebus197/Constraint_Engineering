@@ -1,5 +1,5 @@
 {
-  "_comment": "Exp 40 plan-F convergence re-run on the plan-D decomposition slice. Small finite self-contained target (the admissibility parser, ~110 lines) so the error space can actually exhaust. All remediation enabled: A (collision-overwrite fix, runner-pipeline, always active), B (in-round re-ask), C (apply-verified-fixes-back to a per-run working copy, full-suite gated), G7 (merge-deadlock arbitration). Fresh experiment (not a resume). max_rounds == extension_cap per the standing bounded-run corrective.",
+  "_comment": "Exp 40 plan-F FULL-BUDGET RESUME (2026-05-18, founder-directed). Resumes the converged plan-F run from its round-6 checkpoint and runs the FULL 20-round budget to observe how far gamma depletion actually gets if the run is NOT stopped early by the zero-critical arm. INSTRUMENTATION-ONLY changes vs the original plan-F config, NOT gamma changes and NOT cooking: (1) gamma_alt_consecutive_zero_crit 3 -> 999 disables ONLY the zero-novel-CRITICAL early-stop arm (the exact trigger that pre-empted plan-F at R6; the founder is testing whether it stopped the run prematurely). (2) earliest_stop_round 3 -> 20 prevents the main state-convergence gate from pre-empting the gamma observation before budget. gamma_alt_threshold stays 0.30 UNCHANGED so a legitimate gamma>=0.30 success is still detected and stops the run (that is the win condition we WANT to observe). The gamma estimator and threshold are untouched -> the measure remains real and falsifiable; only competing early-stops are removed so gamma's full 20-round trajectory is visible. All previously-agreed non-cooking fixes remain in place unchanged (A collision-overwrite fix in code; B in-round re-ask; C apply-fixes-back full-suite-gated; G7). NO gamma-hardening (dual-series/critical-gate) is applied here -- that awaits the founder ruling and would be the cooking-risk change; deliberately excluded.",
   "test_article": "bench/exp40_baseline/_feedback_slice.py",
   "context_files": [],
   "topology": "star",
@@ -7,7 +7,7 @@
   "max_rounds": 20,
   "extension_cap": 20,
   "wall_clock_cap_s": 28800,
-  "earliest_stop_round": 3,
+  "earliest_stop_round": 20,
   "models": [
     "CC2",
     "Codex",
@@ -21,7 +21,7 @@
   "rho_rolling_window": 3,
   "consecutive_rounds_required": 2,
   "gamma_alt_threshold": 0.3,
-  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_consecutive_zero_crit": 999,
   "gamma_alt_earliest_round": 3,
   "merge_arbitration_enabled": true,
   "merge_arbitration_min_defer_count": 2,
