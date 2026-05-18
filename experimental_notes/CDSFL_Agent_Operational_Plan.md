@@ -75,6 +75,7 @@ Do **not** re-read the consolidated plan before this file; the consolidated plan
 5. **Note standard v1.** Every TTS and experimental-notes markdown ends with the foot-line `Written under CDSFL note standard v1 (21 April 2026).` 10 rules summarised in project CLAUDE.md; full text in `cdsfl_note_standard_v1.md`.
 6. **FFAFP for any untested claim.** Find → Follow → Analyse (with available tools) → Fix → P-pass. Applies to every proposed fold-in of an Exp 39 / confer-round outstanding item.
 7. **Multi-tool is for computational claims specifically.** Rhetorical or stylistic choices do not get tool-verified; aesthetic fitness review, prose precision review, or design review applies (per user CLAUDE.md `rigour-universal`).
+8. **`cy` monitoring contract (standing directive 2026-05-18).** `cy` is no longer bare "continue". It means: continue the work AND, whenever an experiment/process is running, monitor it at ~60-second cadence; on anything screwy or off, pause the process, FFAFP it (analyse fully with all available/relevant tools), apply the fix, then resume; and always keep a terminal window open pointing to the full current tail output of the running experiment for the founder to review. Recorded in global CLAUDE.md, project CLAUDE.md MC table, MEMORY.md shorthand.
 
 ---
 

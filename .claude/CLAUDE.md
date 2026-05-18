@@ -48,7 +48,7 @@ Single-letter and short commands that direct model behaviour. Combinable
 | Cmd | Action |
 |-----|--------|
 | `y` | Yes / approved |
-| `cy` | Continue |
+| `cy` | Continue the work AND apply live-experiment monitoring discipline: while any experiment/process runs, monitor ~every 60 s; on anything screwy/off, pause it, FFAFP (analyse with all tools), fix, then resume; always keep a terminal window open tailing the running experiment's full current output for the founder. (Standing directive 2026-05-18.) |
 | `d` | Discuss before proceeding |
 | `p` | P-pass — Popperian falsification (iterative: identify, fix, falsify, repeat) |
 | `a` | Analyse dispassionately |
