@@ -256,7 +256,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 0.0,
           "A": 0.0,
@@ -427,7 +426,14 @@
         "status": "OPEN",
         "open_since_round": 0,
         "last_status_change_round": 0,
-        "verdicts": [],
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Registry text is malformed/truncated and does not expose a reproducible location, mechanism, or evidence trail. It fails S_min and G-completeness as an actionable code finding."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 1,
@@ -472,8 +478,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0008": {
         "canonical_id": "C0008",
@@ -607,8 +612,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0011": {
         "canonical_id": "C0011",
@@ -633,6 +637,12 @@
             "model": "ChatGPT",
             "verdict": "CONFIRM",
             "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
             "evidence": ""
           }
         ],
@@ -840,6 +850,12 @@
             "verdict": "CONFIRM",
             "round": 4,
             "evidence": "The `marker_match` regex ending with `\\s*$` fails when trailing content follows on the same line (e.g., `ADMISSIBILITY: (per \u00a715)`). The `$` in MULTILINE mode requires end-of-line, so any inline trail"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": ""
           }
         ],
         "verified": true,
@@ -923,7 +939,6 @@
         "retrieved_at": "",
         "source_hash": "",
         "source_diversity": 0.0,
-        "exhausted": false,
         "sk_result": {
           "sk": 1.0,
           "A": 1,
@@ -1076,9 +1091,9 @@
         "severity": 0.6,
         "description": "The `section_terminator` regex omits `ADMISSIBILITY` from its list of section headers. As noted in the comments, `finding_text` can contain text from subsequent findings. If a finding omits the trailing sections (NOVELTY, VERIFIED, etc.) and the next finding starts directly with `ADMISSIBILITY:` (omitting FINDING_ID), the first finding's block will consume the second finding's block.",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n==== REPLACE\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING|ADMISSIBILITY)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 1,
-        "last_status_change_round": 1,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Gemini",
@@ -1091,6 +1106,12 @@
             "verdict": "CONFIRM",
             "round": 4,
             "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": "The `section_terminator` still omits `ADMISSIBILITY`, so a following `ADMISSIBILITY:` block is consumed as part of the current block."
           }
         ],
         "verified": true,
@@ -1146,9 +1167,9 @@
         "severity": 0.4,
         "description": "The `gate_patterns` for `S_min`, `d_tool`, `q_retest`, and `\u03c3_measured` use `[_\\s]*` to allow spaces or underscores, but they do not allow hyphens (e.g., `S-min`, `d-tool`). Given that `G-completeness` uses a hyphen, models may mistakenly use hyphens for the other gates.",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nif gate == \"\u03c3_measured\":\n            gate_patterns.append(r\"sigma[_\\s]*measured\")\n        elif gate == \"G-completeness\":\n            gate_patterns.extend([r\"G[-_\\s]+completeness\", r\"G completeness\"])\n        elif gate == \"d_tool\":\n            gate_patterns.append(r\"d[_\\s]*tool\")\n        elif gate == \"q_retest\":\n            gate_patterns.append(r\"q[_\\s]*retest\")\n        elif gate == \"S_min\":\n            gate_patterns.append(r\"S[_\\s]*min\")\n==== REPLACE\nif gate == \"\u03c3_measured\":\n            gate_patterns.append(r\"sigma[-_\\s]*measured\")\n        elif gate == \"G-completeness\":\n            gate_patterns.extend([r\"G[-_\\s]+completeness\", r\"G completeness\"])\n        elif gate == \"d_tool\":\n            gate_patterns.append(r\"d[-_\\s]*tool\")\n        elif gate == \"q_retest\":\n            gate_patterns.append(r\"q[-_\\s]*retest\")\n        elif gate == \"S_min\":\n            gate_patterns.append(r\"S[-_\\s]*min\")\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CONTESTED",
         "open_since_round": 1,
-        "last_status_change_round": 6,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Gemini",
@@ -1179,6 +1200,12 @@
             "verdict": "CONFIRM",
             "round": 6,
             "evidence": "Evidence: for `S_min`, `d_tool`, and `q_retest`, the alternate patterns use `[_\\s]*`, so malformed gate names such as `Smin: PASS`, `dtool: PASS`, and `qretest: PASS` are accepted because the separato"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Finding is correct, but the prior/applied fix is incomplete or absent in the current artifact."
           }
         ],
         "verified": false,
@@ -1336,9 +1363,9 @@
         "severity": 0.5,
         "description": "The reproducer includes this literal line:\nADMISSIBILITY:\n  not the real block",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nmarker_match = re.search(\n        r\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\",\n        finding_text,\n        re.IGNORECASE | re.MULTILINE,\n    )\n    if not marker_match:\n        return list(ADMISSIBILITY_GATES)\n==== REPLACE\nmarker_matches = list(\n        re.finditer(\n            r\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\",\n            finding_text,\n            re.IGNORECASE | re.MULTILINE,\n        )\n    )\n    if not marker_matches:\n        return list(ADMISSIBILITY_GATES)\n\n    marker_match = marker_matches[-1]\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 2,
-        "last_status_change_round": 2,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Gemini",
@@ -1351,6 +1378,12 @@
             "verdict": "EXTEND",
             "round": 3,
             "evidence": "Code fences (triple-backtick blocks) create the same first-match vulnerability. A finding's FIND or FOLLOW section may include a formatted example containing `ADMISSIBILITY:\\n  S_min: PASS\\n  ...` ins"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": "Concrete trace: if `finding_text` contains an earlier standalone line `ADMISSIBILITY:` inside a reproducer before the real block, `re.search(...)` selects that first marker. If a later line such as `F"
           }
         ],
         "verified": false,
@@ -1557,6 +1590,12 @@
             "verdict": "CHALLENGE",
             "round": 6,
             "evidence": "Evidence: same root as C0033. The return value intentionally represents failed gates, not a typed diagnostic enum. For this proof-of-concept slice, conflating empty input and missing ADMISSIBILITY blo"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "The claimed distinction between \u201cmissing block\u201d and \u201call gates failed\u201d is intentionally collapsed by the function contract."
           }
         ],
         "verified": false,
@@ -1612,15 +1651,21 @@
         "severity": 0.45,
         "description": "The `section_terminator` regex (lines 80\u201185) matches lines that start with a known section\u2011header keyword followed by a colon, but does not require the line to end after the colon. Consequently, a line inside the ADMISSIBILITY block that begins with one of those keywords (e.g., `FIND: some note`) will be matched, truncating the block prematurely. Any gates listed after that line are never scanned, producing false FAIL reports for those gates.\n\nConcrete example:\nADMISSIBILITY:\n  S_min: PASS (loca",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n==== REPLACE\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING)\\s*:\\s*$\",\n        tail,\n        re.MULTILINE,\n    )\n>>>>",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 2,
-        "last_status_change_round": 2,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "DeepSeek",
             "verdict": "EXTEND",
             "round": 3,
             "evidence": "My F008 identifies a specific mechanism (zero-whitespace `\\s*:` before colon) that exacerbates the premature termination issue. The fix in F008 (requiring `\\s+` after colon) complements C0025's broade"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 7,
+            "evidence": "Concrete trace: inside the ADMISSIBILITY rationale, a multiline explanation line beginning with `FIX:` or `FIND:` satisfies `section_terminator`, because the regex permits `^\\s*` before section names."
           }
         ],
         "verified": false,
@@ -1676,9 +1721,9 @@
         "severity": 0.62,
         "description": "`parse_admissibility_block()` accepts a gate as passing when the first occurrence of that gate is `PASS`, even if the same ADMISSIBILITY block later states the same gate is `FAIL`. Location: `bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py`, inside the `for gate in ADMISSIBILITY_GATES:` loop. Evidence: the parser uses `re.search(...)`, which returns only the first match for each gate pattern, then breaks immediately. Concrete input:\n\n`ADMISSIBILITY:\n  S_min: PASS",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nfound_pass = False\n        found_any = False\n        status_pattern = r\"(PASS|FAIL|N/A|NA)\" if gate == \"\u03c3_measured\" else r\"(PASS|FAIL)\"\n        for pat in gate_patterns:\n            # Find \"gate_name [:|-|=] PASS|FAIL\"; \u03c3_measured may also be N/A\n            # when no fix was proposed and no post-fix measurement is applicable.\n            match = re.search(\n                pat + r\"\\s*[:\\-=]?\\s*\" + status_pattern,\n                block,\n                re.IGNORECASE,\n            )\n            if match:\n                found_any = True\n                status = match.group(1).upper()\n                if status == \"PASS\" or (\n                    gate == \"\u03c3_measured\" and status in (\"N/A\", \"NA\")\n                ):\n                    found_pass = True\n                break\n\n        if not found_pass:\n==== REPLACE\nfound_statuses: List[str] = []\n        seen_spans = set()\n        status_pattern = r\"(PASS|FAIL|N/A|NA)\" if gate == \"\u03c3_measured\" else r\"(PASS|FAIL)\"\n        for pat in gate_patterns:\n            # Find all \"gate_name [:|-|=] PASS|FAIL\" statuses. A later explicit\n            # FAIL must not be hidden by an earlier PASS for the same gate.\n            for match in re.finditer(\n                pat + r\"\\s*[:\\-=]?\\s*\" + status_pattern,\n                block,\n                re.IGNORECASE,\n            ):\n                if match.span() in seen_spans:\n                    continue\n                seen_spans.add(match.span())\n                found_statuses.append(match.group(1).upper())\n\n        found_any = bool(found_statuses)\n        found_pass = found_any and all(\n            status == \"PASS\" or (\n                gate == \"\u03c3_measured\" and status in (\"N/A\", \"NA\")\n            )\n            for status in found_statuses\n        )\n\n        if not found_pass:\n>>>>",
-        "status": "CONFIRMED",
+        "status": "CONTESTED",
         "open_since_round": 3,
-        "last_status_change_round": 6,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Codex",
@@ -1697,6 +1742,12 @@
             "verdict": "CONFIRM",
             "round": 6,
             "evidence": "The parser stops at the first match for a gate (break after match), ignoring later occurrences. If a model writes contradictory statuses for the same gate (e.g. `d_tool: PASS \u2026 d_tool: FAIL`), the par"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Finding is correct, but the prior/applied fix is incomplete or absent in the current artifact."
           }
         ],
         "verified": false,
@@ -2075,8 +2126,7 @@
         "retrieval_query": "",
         "retrieved_at": "",
         "source_hash": "",
-        "source_diversity": 0.0,
-        "exhausted": false
+        "source_diversity": 0.0
       },
       "C0032": {
         "canonical_id": "C0032",
@@ -2111,9 +2161,9 @@
         "severity": 0.55,
         "description": "The `parse_admissibility_block` function returns `list(ADMISSIBILITY_GATES)` (all five gates) when `finding_text` is empty OR when the ADMISSIBILITY marker is not found. These two cases are semantically distinct: (1) the finding text is empty (no finding submitted at all), vs (2) the finding text exists but lacks an ADMISSIBILITY block (the model forgot to include it). The function conflates them, returning the same result. The feedback channel cannot distinguish \"you submitted nothing\" from \"yo",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nif not finding_text:\n        return list(ADMISSIBILITY_GATES)\n==== REPLACE\nif not finding_text:\n        # Empty submission: no finding text at all. Return empty list \u2014\n        # there are no gates to report as failed because there is no\n        # finding to evaluate. Distinct from a finding that exists but\n        # omits the ADMISSIBILITY block (which returns all gates).\n        return []\n>>>>",
-        "status": "OPEN",
+        "status": "UNCONFIRMED",
         "open_since_round": 3,
-        "last_status_change_round": 3,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Codex",
@@ -2162,6 +2212,12 @@
             "verdict": "CHALLENGE",
             "round": 6,
             "evidence": "The function returning all gates when `finding_text` is empty is correct behaviour: no text implies no ADMISSIBILITY block, therefore all gates are failed. This is intentional design and does not cons"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Empty `finding_text` returning all gates is intentional per the function contract, not a parser defect."
           }
         ],
         "verified": false,
@@ -2283,10 +2339,17 @@
         "severity": 0.55,
         "description": "FINDING_ID: F011\nSEVERITY: 0.55\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.30\nFIND: The `section_terminator` regex (lines 80\u201185) is case\u2011sensitive \u2014 it uses only `re.MULTILINE` \u2014 while the `marker_match` rege",
         "proposed_fix": "",
-        "status": "OPEN",
+        "status": "CONFIRMED",
         "open_since_round": 4,
-        "last_status_change_round": 4,
-        "verdicts": [],
+        "last_status_change_round": 7,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "MERGE",
+            "round": 7,
+            "evidence": "merged_into=C0025"
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 5,
@@ -2378,15 +2441,21 @@
         "severity": 0.58,
         "description": "The function's return type `List[str]` loses the distinction between three semantically different gate states: (1) gate explicitly PASS, (2) gate is \u03c3_measured with N/A status, (3) gate not mentioned at all. States (1) and (2) both result in the gate being ABSENT from the returned list. State (3) results in the gate being PRESENT in the list (same as explicit FAIL). The caller \u2014 specifically the feedback channel dispatcher in `_feedback.py` \u2014 cannot distinguish \"\u03c3_measured was verified and passe",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\ndef parse_admissibility_block(finding_text: str) -> List[str]:\n==== REPLACE\ndef parse_admissibility_block(finding_text: str, has_fix: bool = False) -> List[str]:\n>>>>",
-        "status": "OPEN",
+        "status": "UNCONFIRMED",
         "open_since_round": 4,
-        "last_status_change_round": 4,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "ChatGPT",
             "verdict": "CHALLENGE",
             "round": 5,
             "evidence": "Evidence: the function contract is `str -> List[str]` of \u201cgate names whose status is not PASS.\u201d Under that contract, explicit `FAIL`, omitted gate, malformed status, and missing block are all intentio"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Returning `List[str]` is consistent with the function contract: \u201cExtract failed gate names.\u201d Missing block, missing gates, and explicit non-PASS gates all intentionally map to failed gate names for \u00a71"
           }
         ],
         "verified": false,
@@ -2472,9 +2541,9 @@
         "severity": 0.55,
         "description": "The `gate_line_pattern` (line 112\u2013118) handles bullet-prefixed gates via `(?:[-*]\\s*)?` but does not handle numbered-list prefixes (`1.`, `2)`, `(a)`, etc.). When a model formats its ADMISSIBILITY block as a numbered list (e.g., `1. S_min: PASS`), no gate matches because the numeric prefix `1.` is not consumed by the optional bullet group, and the gate name pattern cannot match starting at a digit. All five gates are falsely reported as FAIL.\n\nFile: `bench/logs/exp40_slice_admissibility_20260516",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\ngate_line_pattern = (\n            r\"^\\s*(?:[-*]\\s*)?(?:\"\n            + \"|\".join(gate_patterns)\n            + r\")\\s*[:\\-=]?\\s*\"\n            + status_pattern\n            + r\"\\b\"\n        )\n==== REPLACE\ngate_line_pattern = (\n            r\"^\\s*(?:[-*]|\\d+[.):]|[a-z][.):])\\s*(?:\"\n            + \"|\".join(gate_patterns)\n            + r\")\\s*[:\\-=]?\\s*\"\n            + status_pattern\n            + r\"\\b\"\n        )\n>>>>",
-        "status": "OPEN",
+        "status": "UNCONFIRMED",
         "open_since_round": 5,
-        "last_status_change_round": 5,
+        "last_status_change_round": 7,
         "verdicts": [
           {
             "model": "Codex",
@@ -2493,6 +2562,18 @@
             "verdict": "CHALLENGE",
             "round": 6,
             "evidence": "The current code does not define or use a `gate_line_pattern`; gate matching is performed with `re.search()` over the entire block without line anchoring. Therefore a numbered\u2011list prefix (e.g. `1. S_"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Numbered-list gate prefixes do not prevent parsing because gate matching is unanchored."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "The claimed numbered-list miss is not reproduced by the actual code. For input line `1. S_min: PASS`, the unanchored `re.search(pat + r\"\\s*[:\\-=]?\\s*\" + status_pattern, block, ...)` matches the substr"
           }
         ],
         "verified": false,
@@ -2525,10 +2606,29 @@
         "severity": 0.55,
         "description": "The `gate_line_pattern` (line 112\u2013118) handles bullet-prefixed gate lines via `(?:[-*]\\s*)?` but does not handle numbered-list prefixes (`1.`, `2)`, `(a)`, etc.). A model producing:\nADMISSIBILITY:\n  1. S_min: PASS (location=...)\n  2. G-completeness: PASS (verifier can reproduce)\n  3. d_tool: FAIL (no tool ran)\nwill fail to match ANY gate because `^\\s*(?:[-*]\\s*)?` cannot consume `1. ` \u2014 the `1` is not `-` or `*`, so the optional bullet group matches nothing, and the gate-name pattern then tries ",
         "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\ngate_line_pattern = (\n            r\"^\\s*(?:[-*]\\s*)?(?:\"\n            + \"|\".join(gate_patterns)\n            + r\")\\s*[:\\-=]?\\s*\"\n            + status_pattern\n            + r\"\\b\"\n        )\n==== REPLACE\ngate_line_pattern = (\n            r\"^\\s*(?:[-*]\\s*|\\d+[.)]\\s*|\\([a-z]\\)\\s*)?(?:\"\n            + \"|\".join(gate_patterns)\n            + r\")\\s*[:\\-=]?\\s*\"\n            + status_pattern\n            + r\"\\b\"\n        )\n>>>>",
-        "status": "OPEN",
+        "status": "MERGED",
         "open_since_round": 6,
-        "last_status_change_round": 6,
-        "verdicts": [],
+        "last_status_change_round": 7,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Same root cause as C0039; numbered prefixes are accepted by current unanchored `re.search`."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "MERGE",
+            "round": 7,
+            "evidence": "merged_into=C0039"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 7,
+            "evidence": "Same evidence as C0039: numbered-list prefixes do not block matching because the gate regex is unanchored and matches the gate substring."
+          }
+        ],
         "verified": false,
         "escalated": false,
         "flaw_class": 6,
@@ -2548,10 +2648,92 @@
           "gate_details": {
             "error": "search_not_found"
           }
+        },
+        "merged_into": "C0039"
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "Based on my thorough review of the code and the registry state (\u03c1=0.167, indicating most new findings are redundant), I'm issuing verdicts on open findings and reporting the depletion state honestly.\n\n---\n\nVERDICT: CONFIRM C0017\n\nThe `section_terminator` regex (lines 80\u201385) omits `ADMISSIBILITY` from its alternation. When two findings are concatenated and the second contains an `ADMISSIBILITY:` header, the first finding's block will not terminate there and will consume the second finding's admis",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_C0041"
+        ],
+        "severity": 0.5,
+        "description": "FINDING_ID: C0041  \nSEVERITY: 0.50  \nFLAW_CLASS: 4 (completeness)  \nABSTRACTION_INDEX: 0.35  \n\n\n#### FIND\n\nThe `section_terminator` regex (line 80\u201185) lists canonical section headers that mark the bou",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n==== REPLACE\nsection_terminator = re.search(\n        r\"^\\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|\"\n        r\"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|\"\n        r\"DIVERGENCE|FINDING_ID|FINDING)\\s*:\",\n        tail,\n        re.MULTILINE,\n    )\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 7,
+        "last_status_change_round": 7,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "cc2v_escalated": true,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "11/11 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
         }
       }
     },
-    "next_id": 41,
+    "next_id": 43,
     "alias_map": {
       "Codex:Codex_F001": "C0001",
       "ChatGPT:ChatGPT_F001": "C0002",
@@ -2592,7 +2774,9 @@
       "CC2:CC2_F007": "C0037",
       "Codex:Codex_UNSTRUCTURED": "C0038",
       "CC2:CC2_F008": "C0039",
-      "CC2:CC2_F009": "C0040"
+      "CC2:CC2_F009": "C0040",
+      "CC2:CC2_UNSTRUCTURED": "C0041",
+      "DeepSeek:DeepSeek_C0041": "C0042"
     }
   },
   "novelty_counts": [
@@ -2602,7 +2786,8 @@
     9,
     3,
     2,
-    1
+    1,
+    2
   ],
   "raw_counts": [
     16,
@@ -2611,7 +2796,8 @@
     10,
     7,
     4,
-    6
+    6,
+    4
   ],
   "novelty_counts_per_model": {
     "Codex": [
@@ -2621,6 +2807,7 @@
       1,
       0,
       1,
+      0,
       0
     ],
     "DeepSeek": [
@@ -2630,13 +2817,15 @@
       4,
       1,
       0,
-      0
+      0,
+      1
     ],
     "ChatGPT": [
       2,
       1,
       1,
       1,
+      0,
       0,
       0,
       0
@@ -2648,6 +2837,7 @@
       1,
       2,
       1,
+      1,
       1
     ],
     "Gemini": [
@@ -2655,6 +2845,7 @@
       5,
       1,
       2,
+      0,
       0,
       0,
       0
@@ -2668,7 +2859,8 @@
       1,
       3,
       1,
-      1
+      1,
+      0
     ],
     "DeepSeek": [
       10,
@@ -2677,6 +2869,7 @@
       5,
       1,
       0,
+      1,
       1
     ],
     "ChatGPT": [
@@ -2685,6 +2878,7 @@
       1,
       1,
       0,
+      1,
       1,
       1
     ],
@@ -2695,6 +2889,7 @@
       1,
       2,
       1,
+      1,
       1
     ],
     "Gemini": [
@@ -2704,7 +2899,8 @@
       2,
       1,
       1,
-      2
+      2,
+      1
     ]
   },
   "rho_history": [
@@ -2714,7 +2910,8 @@
     0.9,
     0.428571,
     0.5,
-    0.166667
+    0.166667,
+    0.5
   ],
   "gamma_history": [
     0.0,
@@ -2723,9 +2920,11 @@
     0.135048,
     0.172182,
     0.21895,
-    0.266981
+    0.266981,
+    0.304691
   ],
   "gate_history": [
+    false,
     false,
     false,
     false,
@@ -2768,6 +2967,10 @@
     {
       "open_ch": 0,
       "contested": 11
+    },
+    {
+      "open_ch": 0,
+      "contested": 12
     }
   ],
   "novel_critical_history": [
@@ -2777,9 +2980,10 @@
     3,
     0,
     0,
+    0,
     0
   ],
-  "cumulative_context_chars": 284678,
+  "cumulative_context_chars": 311357,
   "consecutive_churn_rounds": 0,
   "itc_model_state": {
     "DeepSeek": {
@@ -2808,9 +3012,15 @@
           "classification": "DEGRADATION",
           "suppressed": null,
           "findings": 0
+        },
+        {
+          "round": 7,
+          "classification": "DEGRADATION",
+          "suppressed": null,
+          "findings": 0
         }
       ],
-      "adaptation": "change_focus",
+      "adaptation": "restart_fresh",
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [
@@ -2838,7 +3048,7 @@
           "findings": 0
         }
       ],
-      "adaptation": "change_focus",
+      "adaptation": null,
       "retry_count": 0,
       "escalation_level": 0,
       "parse_yield_history": [

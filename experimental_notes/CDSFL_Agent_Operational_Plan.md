@@ -250,7 +250,9 @@ Top item = resume point after compaction.
 
 ## Resume point (update after each task)
 
-**Next action — MORNING REVIEW of the plan-F FULL-BUDGET RESUME (running) + the corpus finding. Then founder ruling on γ-hardening.**
+**Next action — MORNING DISCUSSION (founder-deferred): OR-vs-complementary gate + γ-input hardening. The full-budget resume DID NOT answer the question — artefactual stop, reported as such.**
+
+**Resume outcome (FALSIFIED, do NOT read as a win):** the resume stopped at R7 — the FIRST resumed round — because the γ≥0.30 arm (kept active as the legit win condition) fired: runner LIVE novelty_counts [10,9,6,9,3,2,1,2] → γ=0.3047 (correctly computed; NOT a guard/arith error). It does NOT hold: production-faithful recompute from the SETTLED registry gives all-novelty γ=0.231 (below 0.30). The convergence verdict flips on live-vs-settled novelty accounting. Crossed by only 0.0047, single round, run-length-sensitive (demonstrated twice). Confound: R7 reviewed the RE-SEEDED PRISTINE slice (0 apply-back promotions; R8 repair reconstruction never reached). The full-budget γ trajectory question is STILL unanswered. Robust signal unchanged: settled critical-γ=0.553 (strong) vs all-novelty 0.231 (weak) — same severity-granularity ordering as every prior run. Verdict: the all-novelty γ≥0.30 OR-arm is not a trustworthy sole convergence certificate — concrete input for the OR-vs-complementary-gate decision; supports the founder's distrust of a single-signal γ crossing. Run report: bench/logs/exp40_slice_admissibility_20260516T223952Z/. Audit tool: bench/exp40_gamma_findings_audit.py.
 
 **Record fact (founder asked):** the zero-novel-CRITICAL trigger WAS
 ratified — Consolidated Plan §S10 "Enforced": Exp 40 sole acceptance
