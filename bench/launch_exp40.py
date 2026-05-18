@@ -243,6 +243,12 @@ def _build_runner_config(exp_cfg: dict, args: argparse.Namespace):
         # re-run) and may seed from the cleaned baseline.
         "apply_fixes_back_enabled",
         "apply_fixes_back_seed",
+        # Hardened convergence gate (F4/F6/conjunction, 2026-05-18).
+        # Default OFF in RunnerConfig; Exp 40 slice configs opt in.
+        "hardened_gate_enabled",
+        "gamma_crit_sustain_rounds",
+        "gamma_crit_min_cumulative",
+        "gamma_crit_loo_tol",
     ):
         if af in exp_cfg:
             kwargs[af] = exp_cfg[af]

@@ -279,6 +279,23 @@ class RunnerConfig:
     gamma_alt_threshold: float = 0.30
     gamma_alt_consecutive_zero_crit: int = 3
     gamma_alt_earliest_round: int = 3
+    # Hardened convergence gate (F4/F6/conjunction, 2026-05-18,
+    # founder-directed; pre-reg
+    # bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md).
+    # Default OFF — existing experiments keep the legacy γ-alt OR gate
+    # unchanged; Exp 40 slice configs opt in. When ON: γ is computed on
+    # the SETTLED post-reconciliation registry (not the live-at-round
+    # transient that flipped 0.305→0.231); the gate is the CONJUNCTION
+    # (γ_critical ≥ threshold, sustained, leave-one-round-out robust)
+    # AND (N consecutive zero-novel-critical rounds, settled);
+    # all-novelty γ is logged as a diagnostic only; if the critical
+    # pool is too small for a stable slope the gate falls back to the
+    # count-based zero-novel-critical criterion alone (γ reported, not
+    # gated).
+    hardened_gate_enabled: bool = False
+    gamma_crit_sustain_rounds: int = 2
+    gamma_crit_min_cumulative: int = 8
+    gamma_crit_loo_tol: float = 0.05
     # G7 merge-deadlock arbitration (Exp 40 continuation, 15 May 2026).
     # Design: experimental_notes/G7_Merge_Deadlock_Resolution_Design_2026-05-15.md.
     # Default DISABLED — the design stages enablement for Exp 41
@@ -1370,6 +1387,134 @@ def _check_gamma_alt_convergence(
         f"γ-alt not met: gamma={gamma:.3f} < {cfg.gamma_alt_threshold}; "
         f"novel_crit_recent={recent_tail}"
     )
+
+
+# F6 (pre-registered 2026-05-18): the critical/structural severity
+# boundary. The AUTHORITATIVE definition is consequence-based, in
+# bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md; this
+# numeric is the operational proxy for that rubric. Legacy scattered
+# `0.7` critical-severity literals remain a tracked migration item; the
+# hardened gate uses this named constant.
+CRITICAL_SEVERITY_THRESHOLD = 0.7
+
+# F4: post-reconciliation statuses that are NOT genuine novelty —
+# stripped before γ sees them (mirrors the runner's existing per-round
+# γ-input correction and bench/exp40_gamma_findings_audit.py).
+_NON_NOVEL_TERMINAL_STATUSES = {
+    "MERGED", "DUPLICATE", "UNCONFIRMED", "REFUTED",
+}
+
+
+def _settled_novelty_series(
+    registry, max_round: int,
+) -> Tuple[List[int], List[int]]:
+    """Production-faithful per-round novelty from the SETTLED registry.
+
+    For each round r in 0..max_round, count canonical entries whose
+    open_since_round == r and whose FINAL (post-reconciliation) status
+    is genuinely novel. Returns (all_per_round, critical_per_round),
+    critical = severity >= CRITICAL_SEVERITY_THRESHOLD. This is the F4
+    fix: the gate reads the settled registry, not the live-at-round
+    accumulator that produced the 0.305-vs-0.231 flip.
+    """
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    vals = (list(entries.values())
+            if isinstance(entries, dict) else list(entries))
+    all_s = [0] * (max_round + 1)
+    crit_s = [0] * (max_round + 1)
+    for e in vals:
+        r = e.get("open_since_round")
+        if r is None or r < 0 or r > max_round:
+            continue
+        if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+            continue
+        all_s[r] += 1
+        if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+            crit_s[r] += 1
+    return all_s, crit_s
+
+
+def _check_hardened_convergence(
+    round_idx: int, registry, cfg: RunnerConfig,
+) -> Tuple[bool, str, Dict[str, Any]]:
+    """Hardened gate (F4 + F6 + conjunction + dual-series + sparsity).
+
+    Converged iff, on the SETTLED critical/structural series:
+      (A) γ_critical >= gamma_alt_threshold, AND
+      (B) that crossing is SUSTAINED over gamma_crit_sustain_rounds
+          consecutive settled recomputes (no single-round knife-edge),
+          AND robust to leave-one-round-out within gamma_crit_loo_tol,
+      AND
+      (C) gamma_alt_consecutive_zero_crit consecutive settled rounds
+          have zero novel critical findings.
+    Sparsity fallback: if the cumulative critical count is below
+    gamma_crit_min_cumulative the slope is unreliable, so γ_critical is
+    reported but NOT gated and closure rests on (C) alone (the
+    count-based criterion is robust to sparsity). All-novelty γ is
+    computed and returned as a DIAGNOSTIC only — never gates.
+    """
+    telem: Dict[str, Any] = {}
+    if round_idx < cfg.gamma_alt_earliest_round:
+        return False, (f"hardened-gate too early (round {round_idx} < "
+                       f"{cfg.gamma_alt_earliest_round})"), telem
+
+    all_s, crit_s = _settled_novelty_series(registry, round_idx)
+    g_all = _estimate_gamma(all_s)
+    g_crit = _estimate_gamma(crit_s)
+    cum_crit = sum(crit_s)
+    theta = cfg.gamma_alt_threshold
+    W = cfg.gamma_alt_consecutive_zero_crit
+    zero_crit_ok = (len(crit_s) >= W and all(c == 0 for c in crit_s[-W:]))
+    telem.update(gamma_all_settled=round(g_all, 4),
+                 gamma_crit_settled=round(g_crit, 4),
+                 cum_critical=cum_crit, zero_crit_ok=zero_crit_ok)
+
+    # Sparsity fallback — critical pool too small for a stable slope.
+    if cum_crit < cfg.gamma_crit_min_cumulative:
+        telem["mode"] = "sparsity_fallback"
+        if zero_crit_ok:
+            return True, (
+                f"HARDENED_CONVERGED (sparsity fallback): cum_critical="
+                f"{cum_crit} < {cfg.gamma_crit_min_cumulative}; "
+                f"γ_crit={g_crit:.3f} reported-not-gated; {W} consecutive "
+                f"settled zero-novel-critical rounds met at R{round_idx} "
+                f"[γ_all diag={g_all:.3f}]"), telem
+        return False, (
+            f"hardened not met (sparsity, cum_crit={cum_crit}): "
+            f"zero-crit window not satisfied; γ_crit={g_crit:.3f} "
+            f"reported-not-gated [γ_all diag={g_all:.3f}]"), telem
+
+    telem["mode"] = "full"
+    # (B) sustained over consecutive prior settled recomputes
+    sustained = g_crit >= theta
+    for k in range(1, max(1, cfg.gamma_crit_sustain_rounds)):
+        prior = crit_s[: len(crit_s) - k]
+        if len(prior) < 2 or _estimate_gamma(prior) < theta:
+            sustained = False
+            break
+    # (B) leave-one-round-out robustness
+    loo_min = g_crit
+    for i in range(len(crit_s)):
+        loo = crit_s[:i] + crit_s[i + 1:]
+        if len(loo) >= 2:
+            loo_min = min(loo_min, _estimate_gamma(loo))
+    loo_ok = loo_min >= (theta - cfg.gamma_crit_loo_tol)
+    gamma_crit_ok = (g_crit >= theta) and sustained and loo_ok
+    telem.update(sustained=sustained, loo_min=round(loo_min, 4),
+                 loo_ok=loo_ok, gamma_crit_ok=gamma_crit_ok)
+
+    if gamma_crit_ok and zero_crit_ok:
+        return True, (
+            f"HARDENED_CONVERGED: γ_crit={g_crit:.3f} ≥ {theta} "
+            f"(sustained {cfg.gamma_crit_sustain_rounds}r, loo_min="
+            f"{loo_min:.3f}) AND {W} consecutive settled "
+            f"zero-novel-critical at R{round_idx} "
+            f"[γ_all diag={g_all:.3f}, cum_crit={cum_crit}]"), telem
+    return False, (
+        f"hardened not met: γ_crit={g_crit:.3f} (≥{theta}? "
+        f"{g_crit >= theta}; sustained={sustained}; loo_ok={loo_ok}) "
+        f"AND zero_crit_ok={zero_crit_ok} "
+        f"[γ_all diag={g_all:.3f}, cum_crit={cum_crit}]"), telem
 
 
 def _check_stall_convergence(
@@ -5099,9 +5244,20 @@ def run_experiment(
         # Documented in Exp 39 sub-experiment configs but previously
         # never implemented. Fires when cumulative depletion (γ ≥ 0.30)
         # or critical-severity exhaustion (3r zero novel CRIT) is reached.
-        gamma_alt_converged, gamma_alt_reason = _check_gamma_alt_convergence(
-            round_idx, gamma, novel_critical_history, cfg,
-        )
+        if getattr(cfg, "hardened_gate_enabled", False):
+            # F4/F6/conjunction hardened gate: settled-registry γ,
+            # critical/structural conjunction, all-novelty γ as
+            # diagnostic only. Legacy γ-alt is bypassed entirely.
+            gamma_alt_converged, gamma_alt_reason, _hg_telem = (
+                _check_hardened_convergence(round_idx, registry, cfg)
+            )
+            _log(f"  hardened-gate telemetry: {_hg_telem}")
+        else:
+            gamma_alt_converged, gamma_alt_reason = (
+                _check_gamma_alt_convergence(
+                    round_idx, gamma, novel_critical_history, cfg,
+                )
+            )
         if gamma_alt_converged and not converged:
             _log(f"  γ-alt: {gamma_alt_reason}")
             converged = True
