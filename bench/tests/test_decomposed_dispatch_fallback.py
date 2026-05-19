@@ -1,16 +1,26 @@
-"""Regression tests for the Phase-2-empty-synthesis fallback in
-decomposed_dispatch.
+"""Regression test: the Phase-2 synthesis chunk-analyses reconstruction
+in `_decomposed_openrouter` / `_decomposed_deepseek` is removed
+(founder-directed, 2026-05-20).
 
-Bug class: when Phase 2 synthesis returns empty content (model produces
-zero characters despite Phase 1 chunks returning real analyses), the
-runner previously recorded the empty as the canonical response and
-discarded all Phase 1 content. Fix (15 May 2026): if synthesis is empty,
-reconstruct the response from per_chunk_analyses.
+History. Commit 35c44b6 (15 May 2026) added a fallback in both
+dispatchers: when Phase 2 synthesis came back with empty `content`, the
+dispatcher concatenated the Phase-1 per-chunk analyses into a synthetic
+`result_text` and returned it as the model's answer. The premise was
+that this preserved real chunk content rather than losing it to an
+empty synthesis. The founder rejected this on the same grounds as the
+reasoning-trace bypass: the per-chunk analyses are intermediate working
+output, not the model's actual synthesised conclusion, and substituting
+them silently bypassed the ITC retry / restart-fresh protocol that
+exists for empty responses (see `memory/feedback_no_benching.md`).
 
-Surfaced in Exp 40 Rounds 3 and 7 via Gemini-via-OpenRouter. Same fix
-applied across `_decomposed_openrouter` and `_decomposed_deepseek` — both
-dispatchers use the same Phase 1 (independent per-chunk analysis) + Phase
-2 (synthesis) pattern with `per_chunk_analyses` aggregation.
+These tests pin the corrected behaviour:
+  - Empty Phase-2 synthesis → `result.text == ""` (no reconstruction
+    from chunk analyses). Empty propagates to the runner, which
+    classifies it via ITC and adapts via restart_fresh on the next
+    round.
+  - Non-empty synthesis is returned unchanged.
+  - Whitespace-only synthesis is treated as empty (after .strip()).
+  - The reconstruction code paths are absent from source.
 """
 
 from __future__ import annotations
@@ -27,23 +37,26 @@ sys.path.insert(0, str(REPO_ROOT / "bench"))
 
 
 def _make_chunk(label: str, content: str):
-    """Construct a DecomposedChunk for testing. `chars` is a property,
-    not a constructor argument."""
     from decomposed_dispatch import DecomposedChunk
     return DecomposedChunk(content=content, label=label)
 
 
 def _make_response(content: str):
-    """Construct a mock OpenAI ChatCompletion response with given content."""
     resp = MagicMock()
     choice = MagicMock()
     choice.message.content = content
+    # Ensure mock doesn't auto-populate reasoning_content / reasoning;
+    # the new helper is content-only but the mock shouldn't accidentally
+    # supply attributes that would trip future re-checks.
+    choice.message.reasoning_content = None
+    choice.message.reasoning = None
     resp.choices = [choice]
     return resp
 
 
-class TestOpenRouterSynthesisFallback:
-    """OpenRouter dispatcher: Phase 2 empty → fallback to Phase 1 analyses."""
+class TestOpenRouterSynthesisNoReconstruction:
+    """OpenRouter dispatcher: empty Phase-2 → empty result.text (no
+    chunk-analyses reconstruction)."""
 
     def _setup_env_and_chunks(self):
         os.environ["OPENROUTER_API_KEY"] = "test_key_dummy"
@@ -53,31 +66,18 @@ class TestOpenRouterSynthesisFallback:
         ]
         return chunks
 
-    def test_empty_synthesis_falls_back_to_chunk_analyses(self):
-        """When Phase 2 returns empty content but Phase 1 chunks had real
-        analyses, the result_text is reconstructed from the chunks."""
+    def test_empty_synthesis_returns_empty_text(self):
+        """The crucial regression: empty Phase-2 synthesis must NOT be
+        silently replaced by concatenated Phase-1 chunk analyses. The
+        empty must propagate so the runner's ITC protocol can engage."""
         from decomposed_dispatch import _decomposed_openrouter
 
         chunks = self._setup_env_and_chunks()
-
-        chunk1_analysis = (
-            "**CODE REVIEW — SECTION 1 OF 2**\n\n"
-            "### FINDING 1: Hypothetical issue in foo\n"
-            "Detailed analysis content here for chunk 1."
-        )
-        chunk2_analysis = (
-            "**CODE REVIEW — SECTION 2 OF 2**\n\n"
-            "### FINDING 2: Hypothetical issue in bar\n"
-            "Detailed analysis content here for chunk 2."
-        )
-
-        # Phase 1 responses (per chunk) then Phase 2 synthesis (empty).
         responses = [
-            _make_response(chunk1_analysis),
-            _make_response(chunk2_analysis),
+            _make_response("Phase 1 chunk-0 analysis content here."),
+            _make_response("Phase 1 chunk-1 analysis content here."),
             _make_response(""),  # Phase 2 synthesis returns empty
         ]
-
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = responses
 
@@ -91,39 +91,27 @@ class TestOpenRouterSynthesisFallback:
                 timeout=30,
             )
 
-        # Result must NOT be empty — fallback should have triggered.
-        assert result.text, (
-            "Phase 2 returned empty content but result.text is empty. "
-            "Fallback to per_chunk_analyses did not trigger."
+        assert result.text == "", (
+            "empty Phase-2 synthesis must propagate as empty result.text "
+            "— the chunk-analyses reconstruction was removed because it "
+            "silently bypassed ITC"
         )
-        # Result must contain both chunk analyses.
-        assert "target_0" in result.text
-        assert "target_1" in result.text
-        assert "FINDING 1: Hypothetical issue in foo" in result.text
-        assert "FINDING 2: Hypothetical issue in bar" in result.text
-        # Result should indicate fallback occurred.
-        assert "synthesis returned empty" in result.text
+        # And the fabricated "synthesis returned empty, chunk content
+        # preserved" marker must NOT appear:
+        assert "chunk content preserved" not in result.text
 
-    def test_non_empty_synthesis_uses_synthesis_content(self):
-        """When Phase 2 returns real content, it is used as-is (no fallback
-        triggered, no chunk-analysis concatenation)."""
+    def test_non_empty_synthesis_returned_unchanged(self):
         from decomposed_dispatch import _decomposed_openrouter
 
         chunks = self._setup_env_and_chunks()
-
-        chunk1_analysis = "Chunk 1 analysis"
-        chunk2_analysis = "Chunk 2 analysis"
         synthesis_output = (
-            "## Combined Review\n\n"
-            "Consolidated synthesis across both sections."
+            "## Combined Review\n\nConsolidated synthesis output."
         )
-
         responses = [
-            _make_response(chunk1_analysis),
-            _make_response(chunk2_analysis),
+            _make_response("Chunk 1 analysis"),
+            _make_response("Chunk 2 analysis"),
             _make_response(synthesis_output),
         ]
-
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = responses
 
@@ -137,26 +125,18 @@ class TestOpenRouterSynthesisFallback:
                 timeout=30,
             )
 
-        # Result should be exactly the synthesis output (no fallback).
         assert result.text == synthesis_output
-        # Should NOT contain the fallback marker.
-        assert "synthesis returned empty" not in result.text
+        assert "chunk content preserved" not in result.text
 
     def test_whitespace_only_synthesis_treated_as_empty(self):
-        """Whitespace-only synthesis output should trigger fallback the same
-        as a truly empty response."""
         from decomposed_dispatch import _decomposed_openrouter
 
         chunks = self._setup_env_and_chunks()
-
-        chunk1_analysis = "Real chunk 1 content"
-
         responses = [
-            _make_response(chunk1_analysis),
-            _make_response("Real chunk 2 content"),
+            _make_response("Chunk 1 content"),
+            _make_response("Chunk 2 content"),
             _make_response("   \n\n  \t  \n"),  # whitespace only
         ]
-
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = responses
 
@@ -170,26 +150,19 @@ class TestOpenRouterSynthesisFallback:
                 timeout=30,
             )
 
-        # Result.text should NOT be just whitespace; fallback should have
-        # populated it.
-        assert result.text.strip(), (
-            "Whitespace-only synthesis did not trigger fallback."
-        )
-        assert "Real chunk 1 content" in result.text
+        # After .strip(), whitespace-only is empty — no reconstruction.
+        assert result.text == ""
+        assert "Chunk 1 content" not in result.text
 
-    def test_no_phase1_content_means_no_fallback_to_apply(self):
-        """If Phase 1 chunks also returned empty AND synthesis returns
-        empty, result.text stays empty (nothing to fall back to)."""
+    def test_all_empty_returns_empty(self):
         from decomposed_dispatch import _decomposed_openrouter
 
         chunks = self._setup_env_and_chunks()
-
         responses = [
-            _make_response(""),  # chunk 1 empty
-            _make_response(""),  # chunk 2 empty
-            _make_response(""),  # synthesis empty
+            _make_response(""),
+            _make_response(""),
+            _make_response(""),
         ]
-
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = responses
 
@@ -203,28 +176,21 @@ class TestOpenRouterSynthesisFallback:
                 timeout=30,
             )
 
-        # Genuine empty result is preserved when nothing to reconstruct.
         assert result.text == ""
 
 
-class TestDeepSeekSynthesisFallback:
-    """DeepSeek dispatcher: same fallback pattern across providers."""
+class TestDeepSeekSynthesisNoReconstruction:
+    """DeepSeek dispatcher mirror: empty synthesis → empty result.text."""
 
-    def test_empty_synthesis_falls_back_to_chunk_analyses(self):
-        """Mirror of the openrouter test for the deepseek dispatcher."""
+    def test_empty_synthesis_returns_empty_text(self):
         from decomposed_dispatch import _decomposed_deepseek
 
         os.environ["DEEPSEEK_API_KEY"] = "test_key_dummy"
-        chunks = [
-            _make_chunk("target_0", "def foo(): pass"),
-        ]
-
-        chunk1_analysis = "DeepSeek analysis content for chunk 1"
+        chunks = [_make_chunk("target_0", "def foo(): pass")]
         responses = [
-            _make_response(chunk1_analysis),
-            _make_response(""),  # Phase 2 synthesis returns empty
+            _make_response("DeepSeek chunk 1 analysis"),
+            _make_response(""),  # Phase 2 synthesis empty
         ]
-
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = responses
 
@@ -238,8 +204,27 @@ class TestDeepSeekSynthesisFallback:
                 timeout=30,
             )
 
-        assert result.text, (
-            "DeepSeek dispatcher did not apply fallback when synthesis empty."
-        )
-        assert "DeepSeek analysis content for chunk 1" in result.text
-        assert "synthesis returned empty" in result.text
+        assert result.text == ""
+        assert "chunk content preserved" not in result.text
+
+
+class TestNoReconstructionInSource:
+    """Source-truth pin: the synthesis-layer reconstruction must not be
+    silently reintroduced."""
+
+    def test_no_chunk_analyses_reconstruction_in_source(self):
+        src = Path(REPO_ROOT / "bench" / "decomposed_dispatch.py").read_text()
+        # The reconstruction wrote a "synthesis returned empty, chunk
+        # content preserved" marker — pin its absence.
+        assert "synthesis returned empty, chunk content preserved" not in src
+        # The "reconstructed from N chunk analyses" log line was the
+        # reconstruction's signature — also pin its absence.
+        assert "reconstructed from" not in src or \
+            "chunk analyses" not in src, (
+                "the chunk-analyses reconstruction (commit 35c44b6) "
+                "must not be reintroduced — it silently bypassed ITC"
+            )
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

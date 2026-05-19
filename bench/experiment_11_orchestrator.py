@@ -152,17 +152,23 @@ def load_default_config() -> ExperimentConfig:
         ),
         ModelConfig(
             label="DeepSeek",
-            model_id="deepseek/deepseek-v4-pro",
-            api="openrouter",
+            model_id="deepseek-v4-pro",
+            api="deepseek",
             role="participant",
             system_prompt_path=str(cdsfl_path),
-            max_tokens=16384,
-            timeout=300,  # R1-0528 via OpenRouter: 25s smoke test (vs 121s direct)
+            max_tokens=32768,
+            timeout=300,
             max_retries=3,
-            # Routing change 13 April 2026: switched from direct API
-            # (deepseek-reasoner) to OpenRouter (deepseek-r1-0528).
-            # Smoke test showed: 2x+ output, 5x faster, R_k adoption intact.
-            # Direct API reserved for specialist deep-verification role.
+            # Routing change 2026-05-20 (founder-directed): reverted
+            # from OpenRouter slug `deepseek/deepseek-v4-pro` back to
+            # the direct DeepSeek API (`deepseek-v4-pro`, base_url
+            # api.deepseek.com). The direct path has reasoning-budget
+            # mitigation (max_tokens halving on empty + reasoning_content
+            # diagnostic logging, see call_deepseek) that the OpenRouter
+            # path lacks; the confers already use this route and it
+            # works. Cheaper than OpenRouter for DeepSeek. max_tokens
+            # raised from 16384 to match the call_deepseek default
+            # (which is what the confers use successfully).
         ),
     ]
 

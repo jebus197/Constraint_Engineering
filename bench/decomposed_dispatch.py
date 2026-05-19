@@ -112,46 +112,42 @@ def _is_waiting(response: str) -> bool:
     return "WAITING" in cleaned and len(cleaned) < 200
 
 
-# Exp 40 continuation fix (15 May 2026): Phase-1 chunk budget +
-# reasoning-content fallback. Root cause of the DeepSeek/Gemini
-# "section N analysis complete (0 chars)" anomaly (continuation
-# Anomaly 1): Phase-1 per-chunk calls capped max_tokens at 4096.
-# DeepSeek V4 Pro and Gemini 3.1 Pro are REASONING models — they emit
-# a chain-of-thought (`reasoning_content`) before the final answer
-# (`content`). A large chunk + the full 4-Layer protocol prompt
-# induces a long reasoning trace; the 4096 budget is exhausted before
-# any `content` is produced, so `content` is empty and the actual
-# review — which lives in `reasoning_content` — was silently
-# discarded (the dispatchers only read `.content`). The 35c44b6
-# synthesis fallback rescued the *synthesis* layer but not the
-# Phase-1 layer where the loss originates.
+# Phase-1 chunk budget cap for reasoning models.
 #
-# Two-part fix: (i) raise the Phase-1 cap so reasoning models have
-# room to emit final content after the trace; (ii) when `content` is
-# still empty, fall back to `reasoning_content` — a code-review
-# reasoning trace IS substantive analysis and is far better than an
-# empty section. Bounded: the cap rise is modest (cost-aware) and the
-# fallback only triggers on otherwise-empty content.
+# Reasoning models (DeepSeek V4 Pro, Gemini 3.1 Pro) emit a
+# chain-of-thought into a separate channel before the final answer.
+# With a 4096 max_tokens cap, the reasoning consumed the budget and
+# the visible `content` came back empty (continuation Anomaly 1,
+# 15 May 2026). The cap was raised to 8192 to give reasoning models
+# room to emit final content after the trace. The cap is retained.
+#
+# UPDATE 2026-05-20 (founder-directed): the prior session also added
+# a `reasoning_content` fallback in `_extract_message_text` so the
+# trace would be returned when `content` came back empty. That fallback
+# silently substituted the model's chain-of-thought for its actual
+# answer (the two are often weakly coupled — visible reasoning traces
+# are partly performative and unfaithful to the answer-generating
+# computation), and it short-circuited the established ITC retry /
+# restart-fresh protocol that exists for exactly this failure class.
+# REMOVED. Content is now content-only; empty propagates honestly to
+# the runner's CircuitBreakerTripped handler and engages ITC as the
+# protocol was designed to do.
 _PHASE1_MAX_TOKENS = 8192
 
 
 def _extract_message_text(message) -> str:
-    """Return the usable text from a chat completion message.
+    """Return `content` from a chat completion message — content only.
 
-    Prefers `content`. Falls back to `reasoning_content` (the
-    reasoning trace of a reasoning model) when `content` is empty —
-    for a code-review prompt the trace contains the actual findings,
-    so preserving it prevents the silent zero-char data loss.
+    Empty content is honestly empty. Prior versions fell back to
+    `reasoning_content` / `reasoning` to "recover" an answer from the
+    model's chain-of-thought; that substitution is methodologically
+    unsound (reasoning traces are often weakly coupled to conclusions)
+    and bypassed the ITC protocol that handles empty responses by
+    design. Removed 2026-05-20. Empty `content` returns "" and
+    propagates to the runner, which classifies it via ITC as a
+    TRANSIENT_FAILURE → restart_fresh adaptation.
     """
-    content = (getattr(message, "content", None) or "").strip()
-    if content:
-        return content
-    reasoning = (getattr(message, "reasoning_content", None) or "").strip()
-    if reasoning:
-        return reasoning
-    # Some OpenAI-compatible routes expose the trace as `reasoning`.
-    reasoning_alt = (getattr(message, "reasoning", None) or "").strip()
-    return reasoning_alt
+    return (getattr(message, "content", None) or "").strip()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -359,11 +355,8 @@ def _decomposed_openrouter(
                 f"(possible upstream 500 error)"
             )
         resp_text = _extract_message_text(response.choices[0].message)
-        if resp_text and not (
-            response.choices[0].message.content or "").strip():
-            _log(f"  [openrouter:{model_id}] section {n}: content "
-                 f"empty, recovered {len(resp_text):,} chars from "
-                 f"reasoning trace")
+        # Empty resp_text propagates honestly — runner-level ITC will
+        # classify it as TRANSIENT_FAILURE on round close and adapt.
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})
@@ -425,30 +418,19 @@ def _decomposed_openrouter(
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
 
-    # Fallback: if Phase 2 synthesis returned empty content but Phase 1
-    # produced real chunk analyses, reconstruct the response from those
-    # analyses rather than losing the model's actual output. This bug
-    # surfaced in Exp 40 Rounds 3 and 7 (Gemini via OpenRouter): chunk 2
-    # returned partial/truncated content (hitting max_tokens=4096),
-    # synthesis prompt got messy input, Phase 2 returned empty content,
-    # the runner recorded that empty as the canonical response and
-    # discarded ~50K chars of real Phase 1 content. Fix landed 15 May
-    # 2026 — preserve chunk analyses as the fallback response.
+    # 2026-05-20 (founder-directed): the synthesis-layer chunk-analyses
+    # reconstruction (commit 35c44b6) was removed. It concatenated the
+    # Phase-1 per-chunk analyses when Phase 2 synthesis came back empty
+    # and presented the result as the model's answer. That was a
+    # methodologically unsound salvage (it returned the model's
+    # intermediate per-chunk thinking, not its actual synthesis) and it
+    # bypassed the runner's ITC protocol which is designed to handle
+    # exactly this failure (retry → restart-fresh → HIL-flag). Empty
+    # synthesis now propagates honestly and engages ITC as designed.
     if not result_text:
-        fallback_parts = [
-            f"=== ANALYSIS OF {a['label']} "
-            f"(synthesis returned empty, chunk content preserved) ===\n"
-            f"{a['analysis']}"
-            for a in per_chunk_analyses
-            if a.get('analysis', '').strip()
-        ]
-        if fallback_parts:
-            result_text = "\n\n".join(fallback_parts)
-            _log(
-                f"  [openrouter:{model_id}] WARN: synthesis returned 0 chars; "
-                f"reconstructed from {len(fallback_parts)} chunk analyses "
-                f"({len(result_text):,} chars)"
-            )
+        _log(f"  [openrouter:{model_id}] WARN: synthesis returned 0 chars "
+             f"(propagating empty — runner ITC will classify as "
+             f"TRANSIENT_FAILURE and adapt next round)")
 
     turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
@@ -564,11 +546,8 @@ def _decomposed_deepseek(
                 f"(possible upstream 500 error)"
             )
         resp_text = _extract_message_text(response.choices[0].message)
-        if resp_text and not (
-            response.choices[0].message.content or "").strip():
-            _log(f"  [deepseek:{model_id}] section {n}: content "
-                 f"empty, recovered {len(resp_text):,} chars from "
-                 f"reasoning trace")
+        # Empty resp_text propagates honestly — runner-level ITC will
+        # classify it as TRANSIENT_FAILURE on round close and adapt.
         wait_responses.append(resp_text)
         turns.append({"role": "user", "content": chunk_prompt})
         turns.append({"role": "assistant", "content": resp_text})
@@ -629,26 +608,14 @@ def _decomposed_deepseek(
     result_text = (response.choices[0].message.content or "").strip()
     elapsed = time.monotonic() - t0
 
-    # Fallback: same defensive pattern as _decomposed_openrouter — if
-    # Phase 2 synthesis returns empty content but Phase 1 produced
-    # chunk analyses, reconstruct the response from those analyses.
-    # Closes the same bug class across all per-chunk-analysis
-    # dispatchers (15 May 2026 fix).
+    # 2026-05-20 (founder-directed): synthesis-layer chunk-analyses
+    # reconstruction removed (see _decomposed_openrouter comment for
+    # rationale). Empty synthesis now propagates honestly so the
+    # runner's ITC protocol can classify and adapt as designed.
     if not result_text:
-        fallback_parts = [
-            f"=== ANALYSIS OF {a['label']} "
-            f"(synthesis returned empty, chunk content preserved) ===\n"
-            f"{a['analysis']}"
-            for a in per_chunk_analyses
-            if a.get('analysis', '').strip()
-        ]
-        if fallback_parts:
-            result_text = "\n\n".join(fallback_parts)
-            _log(
-                f"  [deepseek:{model_id}] WARN: synthesis returned 0 chars; "
-                f"reconstructed from {len(fallback_parts)} chunk analyses "
-                f"({len(result_text):,} chars)"
-            )
+        _log(f"  [deepseek:{model_id}] WARN: synthesis returned 0 chars "
+             f"(propagating empty — runner ITC will classify as "
+             f"TRANSIENT_FAILURE and adapt next round)")
 
     turns.append({"role": "user", "content": synthesis_prompt})
     turns.append({"role": "assistant", "content": result_text})
