@@ -59,12 +59,13 @@ _finding_id_collisions: List[Dict[str, Any]] = []
 
 
 def detect_finding_id_collisions(
-    findings: List[Any], round_idx: int = -1,
+    findings: List[Any], round_idx: int,
 ) -> List[Dict[str, Any]]:
     """Detect (do not repair) duplicate finding_id within one round.
 
     Returns a list of collision records; each record is
-    ``{"round", "finding_id", "count", "model_ids"}``. A non-empty
+    ``{"round", "finding_id", "count", "model_ids", "cross_model"}``.
+    A non-empty
     return means the `{f.finding_id: f for f in findings}` map would
     silently drop ``count - 1`` finding(s) for that id. model_ids
     distinguishes the cross-model case (two different models, the
@@ -75,13 +76,14 @@ def detect_finding_id_collisions(
     Observation-only: callers must NOT change behaviour based on this;
     it exists to gather the evidence the deferred UUID decision needs.
     """
+    findings = list(findings)
     ids = [getattr(f, "finding_id", None) for f in findings]
     counts = Counter(i for i in ids if i is not None)
     collisions: List[Dict[str, Any]] = []
     for fid, n in counts.items():
         if n > 1:
             model_ids = sorted({
-                getattr(f, "model_id", "?")
+                str(getattr(f, "model_id", "?") or "?")
                 for f in findings
                 if getattr(f, "finding_id", None) == fid
             })
@@ -93,7 +95,7 @@ def detect_finding_id_collisions(
                 "cross_model": len(model_ids) > 1,
             }
             collisions.append(rec)
-            _finding_id_collisions.append(rec)
+            _finding_id_collisions.append(dict(rec))
             _LOG.warning(
                 "FINDING_ID_COLLISION round=%s id=%r count=%d "
                 "model_ids=%s cross_model=%s — silent-overwrite "
@@ -163,7 +165,7 @@ class FindingFeedback:
         more important to correct than a low-severity one.
         """
         score = 0.0
-        if self.refutations:
+        if self.refutations or self.final_verdict == "REJECTED":
             score += 3.0
         score += 0.8 * len(self.admissibility_failures)
         if self.duplicates:
@@ -171,7 +173,8 @@ class FindingFeedback:
         if self.rk_discrepancy is not None:
             claimed, aggregate = self.rk_discrepancy
             score += min(1.0, abs(claimed - aggregate))
-        score += 0.1 * self.severity_claimed  # tie-breaker
+        severity = self.severity_claimed if self.severity_claimed is not None else 0.0
+        score += 0.1 * severity  # tie-breaker
         return score
 
 
@@ -289,7 +292,9 @@ def build_feedback_records(
                 rec = _record_for(fid, finding)
                 rec.admissibility_failures = list(failed_gates)
 
-    # 3. Near-duplicates
+    # 3. Near-duplicates — fid_a is the flagged (newer) finding,
+    #    fid_b is the prior/canonical finding it duplicates.
+    #    Only fid_a receives feedback (it must differentiate or withdraw).
     if duplicate_pairs:
         for fid_a, fid_b, sim in duplicate_pairs:
             for finding in findings_by_id.get(fid_a, []):
@@ -316,6 +321,8 @@ def build_feedback_records(
                     continue  # skip if numbers don't parse
                 for finding in targets:
                     rec = _record_for(fid, finding)
+                    # Keep the worst (largest delta) R_k discrepancy
+                if rec.rk_discrepancy is None or abs(claimed - aggregate) > abs(rec.rk_discrepancy[0] - rec.rk_discrepancy[1]):
                     rec.rk_discrepancy = (claimed, aggregate)
 
     return list(records.values())
@@ -422,6 +429,9 @@ def build_feedback_sections(
                 len(model_recs) - len(top_items),
             )
 
+        if len(section) > max_chars_per_model:
+            section = section[: max(0, max_chars_per_model)]
+
         sections[model_id] = section
 
     return sections
@@ -429,7 +439,7 @@ def build_feedback_sections(
 
 def _render_single_record(rec: FindingFeedback) -> str:
     """Format one feedback record as a prompt sub-block."""
-    severity = f"{rec.severity_claimed:.2f}"
+    severity = f"{rec.severity_claimed:.2f}" if rec.severity_claimed is not None else "N/A"
     header = (
         f"{rec.finding_id} (your severity {severity}, "
         f"pipeline verdict: {rec.final_verdict}) — action: {rec.action}"
@@ -574,13 +584,14 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
     # 'Gemini_` has `_ID` before the colon...'). Reconciliation
     # canonical: C0008.
     section_terminator = re.search(
-        r"^\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|"
+        r"^\s*(?:#{1,6}\s*)?[\*\_]*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|"
         r"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|"
-        r"FINDING_ID|FINDING)\s*:",
+        r"FINDING_ID|FINDING|ADMISSIBILITY)\b[\*\_]*\s*(?::\s*(?:\([^)]*\))?|(?:\([^)]*\))?\s*:)",
         tail,
-        re.MULTILINE,
+        re.IGNORECASE | re.MULTILINE,
     )
     block = tail[: section_terminator.start()] if section_terminator else tail
+    block = block.replace("", "").replace("__", "")
 
     failed: List[str] = []
     for gate in ADMISSIBILITY_GATES:
@@ -588,7 +599,7 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
         # σ_measured has a unicode char; treat both σ and 'sigma' forms.
         gate_patterns = [re.escape(gate)]
         if gate == "σ_measured":
-            gate_patterns.append(r"sigma[_\s]*measured")
+            gate_patterns.append(r"sigma[_ \t]*measured")
         elif gate == "G-completeness":
             gate_patterns.extend([r"G[_\s]*completeness", r"G completeness"])
         elif gate == "d_tool":

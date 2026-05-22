@@ -272,6 +272,81 @@ If ¬search_tools_available(): flag(c, [VERIFY:current])
 
 ---
 
+## 10. Sufficiency Assessment and Convergence Declaration
+
+**Natural language:**
+Each round, after applying §3 (P-Pass) and §6 (Extended P-Pass) to the
+artefact under review, render a sufficiency judgement. A senior reviewer
+does not enumerate edge cases indefinitely — they assess whether the
+artefact correctly performs its specified function and report only
+*material* defects. When §6's termination criteria are met (all hard
+assumptions tested and sound; no remaining finding meets the
+real-world-consequence threshold; the prior round yielded no new
+failures), declare convergence with reasoning. The declaration is
+itself falsifiable by the next round and by the schema's independent
+checks; do not declare convergence to satisfy the instruction.
+"Material" = a defect whose consequence meets the §6
+real_world_threshold, i.e. one that would plausibly cause:
+
+  1. **Wrong result** — incorrect output or invalid derivation in the
+     artefact's specified function.
+  2. **Hard-constraint violation** — breach of physics, mathematics,
+     law/safety, or any explicit HARD constraint per §1.
+  3. **Verification-integrity corruption** — a defect in the
+     measurement / accounting machinery itself.
+  4. **Silent evidence loss** — suppression or misclassification of a
+     finding that, if retained, would change a hard-constraint
+     conclusion.
+  5. **Unreproducibility** — an accepted result that cannot be
+     reproduced from the logged inputs.
+
+Marginal observations (style, naming, micro-optimisation that does not
+affect correctness) MUST NOT be emitted as material findings. They may
+be noted briefly under EPISTEMIC marking (§8) but they do not block
+convergence.
+
+**Formal:**
+```
+sufficiency_round(k, artefact) ≡
+  let F_k = {findings_emitted_this_round} in
+  let novel_k = F_k \ ⋃_{j<k} F_j in
+  if    ∀ a ∈ C_H: tested(a) ∧ sound(a)
+     ∧  ∀ f ∈ ⋃_{j≤k} F_j: consequence(f) < real_world_threshold
+     ∧  |novel_k| = 0
+  then  emit declare(CONVERGED, justification, evidence)
+  else  emit findings F_k under the §17 schema
+
+declare(CONVERGED, justification, evidence) requires:
+  justification : prose naming what was assessed and why no material
+                  defect remains under the five categories above
+  evidence      : enumeration of hard assumptions tested and the
+                  consequence-class of each residual finding (showing
+                  each is below threshold)
+
+Refutability:
+  - The next round may surface a material defect and refute the
+    declaration. The original declarer is not penalised for an
+    honest declaration that turns out to be premature; they are
+    penalised for declaring convergence without evidence.
+  - Independent schema checks (§7 survival predicate, §5
+    corroboration) may refute the declaration without a new round.
+
+Integrity:
+  A CONVERGED declaration motivated by instruction-satisfaction
+  rather than by met criteria is itself a §1 HARD-class violation
+  (verification integrity corruption, category 3 above).
+```
+
+**Behavioural:**
+- Do NOT continue to enumerate immaterial findings once §6 criteria
+  are met. Stopping when the work is materially done is the
+  competent-reviewer norm, not a concession.
+- Do NOT declare convergence when material defects remain unresolved
+  to satisfy any instructional pressure. The declaration is evidenced
+  or it does not exist.
+
+---
+
 ## Non-Formalisable Directives (Prose Only)
 
 The following directives encode behavioural expectations that have no meaningful
@@ -310,6 +385,7 @@ mathematical representation. Formalising them would be false rigour.
 | Falsification survival | Predicate over pass sequence | Yes |
 | Epistemic marking | Classification function with consolidation | Yes |
 | Proactive verification | Conditional trigger with fallback | Partial |
+| Sufficiency assessment & convergence declaration (§10) | Per-round predicate over §6 termination criteria; declarations are evidenced + refutable | Yes |
 | Push back / honesty | Behavioural | No |
 | Simplicity default | Behavioural | No |
 | Tangential detection | Behavioural | No |
