@@ -203,6 +203,34 @@ def finding_similarity(f1: Finding, f2: Finding) -> float:
     return jaccard_similarity(f1, f2)
 
 
+def effective_tau_sim(config) -> float:
+    """Similarity threshold matched to the active similarity backend.
+
+    The embedding backend maps cosine to [0, 1] via cos01 = (cos + 1) / 2.
+    Because sentence-transformer embeddings are anisotropic, *unrelated*
+    findings have cosine ~0.1-0.3, so cos01 ~0.55-0.65 and the combined
+    score floors near ~0.48. The lexical-Jaccard threshold
+    (config.tau_sim, ~0.33) therefore merges *everything* in embedding
+    mode; config.tau_sim_embed (~0.55) is calibrated for that floor. This
+    selector returns whichever threshold matches the backend that
+    finding_similarity() is actually using.
+
+    Fix 2026-05-22 (Exp 41 materiality review; panel findings C0014/C0044
+    "_novel_classes novelty flaw" + C0019/C0023 "clustering threshold",
+    founder-approved): tau_sim_embed was defined in the config but never
+    wired in, so the ConvergenceDetector used tau_sim (0.33) even under
+    the embedding backend — merging genuinely-novel findings (including
+    critical-severity ones) as "already seen", so novelty was undercounted
+    and the severity veto never fired (false convergence). The runner's
+    immune pipeline had already independently worked around this by
+    hardcoding tau_sim=0.50, so live experiments were unaffected; this
+    aligns the module with that reality using the config's own value.
+    """
+    if _get_embedding_model() is not None:
+        return getattr(config, "tau_sim_embed", config.tau_sim)
+    return config.tau_sim
+
+
 def clear_cache() -> None:
     """Clear the embedding cache (useful for testing)."""
     _EMBEDDING_CACHE.clear()

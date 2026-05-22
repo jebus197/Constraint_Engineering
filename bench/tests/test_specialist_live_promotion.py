@@ -77,9 +77,17 @@ class TestLiveSpecialistDomainsConstant:
     def test_cross_domain_remains_shadow(self):
         assert "cross_domain" not in LIVE_SPECIALIST_DOMAINS
 
+    def test_software_is_live(self):
+        # 2026-05-22 (founder-directed, exp41b return-to-first-principles):
+        # the software specialist (z3/mypy vs source AST) is promoted from
+        # shadow to LIVE so it filters noise and gates genuine novelty.
+        assert "software" in LIVE_SPECIALIST_DOMAINS
+
     def test_set_size_matches_spec(self):
-        # Exactly 4 domains per the plan.
-        assert len(LIVE_SPECIALIST_DOMAINS) == 4
+        # Five domains: math/stats/bio/info-sci (Exp 40 1E.3) + software
+        # (exp41b promotion, 2026-05-22). physics/chemistry/engineering/code/
+        # cross_domain remain shadow.
+        assert len(LIVE_SPECIALIST_DOMAINS) == 5
 
     def test_is_immutable(self):
         # frozenset prevents accidental mutation from test or runtime code.

@@ -331,11 +331,21 @@ _DOMAIN_ALIAS = {
 # specialist verdicts are appended to `all_verdicts` and flow through to
 # Helper T synthesis; otherwise they are logged under
 # `b_cell_specialist_shadow` and discarded.
+#
+# 2026-05-22 (founder-directed, exp41b return-to-first-principles): "software"
+# promoted from shadow to LIVE. The software specialist (z3/mypy verification
+# against the source AST) is the noise filter that lets the simple decay-curve
+# convergence work — only verifier-surviving findings count as genuine
+# discoveries. Per founder direction the verifier runs fully enabled and its
+# behaviour is examined from the full post-run results, not pre-emptively
+# hedged. The shadow-promotion-now non-distortion check is performed
+# empirically on the completed run.
 LIVE_SPECIALIST_DOMAINS: frozenset = frozenset({
     "mathematics",
     "statistics",
     "biology",
     "information_science",
+    "software",
 })
 
 

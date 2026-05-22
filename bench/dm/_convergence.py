@@ -9,8 +9,6 @@ from __future__ import annotations
 import math
 from typing import Callable, Dict, List, Optional, Sequence
 
-import numpy as np
-
 from bench.dm._types import (
     DynamicManagementConfig,
     Finding,
@@ -19,6 +17,7 @@ from bench.dm._types import (
 
 
 from bench.dm._similarity import finding_similarity as _finding_similarity
+from bench.dm._similarity import effective_tau_sim as _effective_tau_sim
 # Backward-compat re-exports (used by dynamic_management.py shim and _diminishing_returns.py)
 from bench.dm._similarity import _tokenize as _tokenize_for_similarity  # noqa: F401
 from bench.dm._similarity import _bigrams  # noqa: F401
@@ -61,6 +60,28 @@ class ConvergenceDetector:
         self._round_durations: Dict[int, float] = {}
         # Adoption deltas (from external source)
         self._adoption_deltas: Dict[int, float] = {}
+
+    def _tau_sim(self) -> float:
+        """Equivalence-merge threshold matched to THIS detector's similarity
+        function — not to global package state.
+
+        For the default embedding-backed similarity (_finding_similarity), use
+        the embedding-calibrated threshold (tau_sim_embed) when the embedding
+        backend is active, else the lexical tau_sim — via effective_tau_sim().
+        For a CUSTOM similarity_fn the caller owns its calibration, so use
+        config.tau_sim directly.
+
+        Confer condition (2026-05-22, 5-model fix-verification): bind the
+        threshold to the function actually in use. A custom lexical
+        similarity_fn run while sentence-transformers happens to be installed
+        must NOT silently inherit the 0.55 embedding threshold (which would
+        stop identical lexical findings from merging -> infinite false
+        novelty -> non-convergence). This keeps threshold and similarity
+        scale coupled.
+        """
+        if self.similarity_fn is _finding_similarity:
+            return _effective_tau_sim(self.config)
+        return self.config.tau_sim
 
     def add_round_findings(
         self,
@@ -114,7 +135,7 @@ class ConvergenceDetector:
 
         for i in range(n):
             for j in range(i + 1, n):
-                if self.similarity_fn(findings[i], findings[j]) >= self.config.tau_sim:
+                if self.similarity_fn(findings[i], findings[j]) >= self._tau_sim():
                     union(i, j)
 
         # Group by root
@@ -187,7 +208,7 @@ class ConvergenceDetector:
             is_novel = True
             for member in ec.members:
                 for prev_f in prev_findings:
-                    if self.similarity_fn(member, prev_f) >= self.config.tau_sim:
+                    if self.similarity_fn(member, prev_f) >= self._tau_sim():
                         is_novel = False
                         break
                 if not is_novel:
@@ -286,33 +307,43 @@ class ConvergenceDetector:
     def kappa_rate(self, round_idx: int) -> float:
         """Rate-based stability (Duane connection).
 
-        kappa_rate(r) = 1 - lambda_hat(r) / (lambda_hat(1) + eps)
+        kappa_rate(r) = clamp(1 - lambda_novel(r) / lambda_peak, 0, 1)
 
-        where lambda_hat(r) = |F^(r)| / delta_t_r.
+        where lambda_novel(r) = |novel classes at r| / delta_t_r is the
+        NOVEL discovery intensity (new equivalence classes per unit time),
+        and lambda_peak is the maximum novel intensity over rounds 0..r
+        (the initial discovery burst). As the novel rate decays from its
+        peak the metric rises toward 1; a genuinely quiet state (no new
+        discoveries) reads converged. When no novelty has ever appeared
+        there is no decline signal, so the metric returns 1.0 and does
+        not veto (kappa_set / kappa_adopt govern).
 
-        Returns value in (-inf, 1]. Clamped to [0, 1] in combined metric.
+        2026-05-22 (Exp 41 materiality review, founder-approved fold of the
+        three material kappa_rate findings; the other findings were
+        non-material footnotes deferred to the iteration backlog):
+        - C1 (DS_R7_001 etc.): count NOVEL classes, not all round classes,
+          so repeated findings no longer register as ongoing discovery and
+          wrongly block convergence. This is the Duane-correct quantity
+          (new failures/discoveries per round), not raw round volume.
+        - C2/C3 (kappa_rate baseline + quiet-state): use the PEAK novel
+          rate as the baseline (robust to a quiet round 1) and treat a
+          genuinely quiet state as converged, not 0.0/-1.0. Replaces the
+          brittle "no-baseline" special case with one clear rule.
+
+        Returns value in [0, 1]. Higher = more converged.
         """
         if round_idx < 1:
             return 0.0
 
-        def _rate(r: int) -> float:
-            classes = self.get_round_classes(r)
+        def _novel_rate(r: int) -> float:
             dt = self._round_durations.get(r, 1.0)
-            return len(classes) / max(dt, 1e-10)
+            return len(self._novel_classes(r)) / max(dt, 1e-10)
 
-        rate_r = _rate(round_idx)
-        rate_1 = _rate(1) if 1 in self._round_findings else _rate(0)
-
-        # MM_F006 + GEM_FFF_002: When rate_1 is near zero (no baseline
-        # established), check if rate_r is also near zero. If both are
-        # near zero, return 0.0 (no data). If rate_r > 0 with rate_1 ≈ 0,
-        # the system is diverging — return -1.0 (bounded minimum).
-        if rate_1 < self.config.epsilon_conv:
-            if rate_r < self.config.epsilon_conv:
-                return 0.0  # No baseline, no current activity
-            return -1.0  # Diverging: new findings with no baseline
-        result = 1.0 - (rate_r / (rate_1 + self.config.epsilon_conv))
-        return max(-1.0, min(1.0, result))
+        rate_r = _novel_rate(round_idx)
+        peak = max((_novel_rate(r) for r in range(round_idx + 1)), default=0.0)
+        if peak < self.config.epsilon_conv:
+            return 1.0  # no novelty ever -> no decline signal; do not veto
+        return max(0.0, min(1.0, 1.0 - rate_r / (peak + self.config.epsilon_conv)))
 
     def kappa_adopt(self, round_idx: int) -> float:
         """Adoption stabilisation metric.

@@ -54,6 +54,7 @@ from bench.dm._events import ManagerEventStream
 # ---------------------------------------------------------------------------
 
 from bench.dm._similarity import finding_similarity as _finding_similarity
+from bench.dm._similarity import effective_tau_sim as _effective_tau_sim
 
 
 class DynamicManager:
@@ -687,9 +688,22 @@ class DynamicManager:
                 # coincidental label reuse, not actual content duplication).
                 if prior_findings:
                     duplicates = 0
+                    # Backend-aware threshold (confer fix 2026-05-22): this
+                    # uses the default _finding_similarity, so under the
+                    # embedding backend the merge floor (~0.48) requires
+                    # tau_sim_embed (0.55), not the lexical tau_sim (0.33),
+                    # else unrelated findings are miscounted as duplicates and
+                    # the D_decay fingerprint is biased. NOTE: the adaptive
+                    # remediation transforms (_apply_transform) mutate
+                    # config.tau_sim; effective_tau_sim reads tau_sim_embed in
+                    # embedding mode, so those transforms have no effect on
+                    # this metric while embedding is active — acceptable for a
+                    # load-balancing metric, but revisit if remediation is
+                    # exercised under embedding mode.
+                    _tau = _effective_tau_sim(self.config)
                     for f in model_findings:
                         for pf in prior_findings:
-                            if _finding_similarity(f, pf) >= self.config.tau_sim:
+                            if _finding_similarity(f, pf) >= _tau:
                                 duplicates += 1
                                 break
                     obs_d = duplicates / len(model_findings)
