@@ -5317,7 +5317,35 @@ def run_experiment(
                 if text:
                     brain.extract_directed_messages(label, text, round_idx)
 
-        # Gamma
+        # Step 3 return-to-first-principles (founder-directed 2026-05-22):
+        # the gate AND the gamma diagnostic must see GENUINE novelty, not raw
+        # registrations. novel_this_round / novel_critical_this_round are
+        # appended pre-verifier (registry.register runs before
+        # run_immune_pipeline), so panel over-production and noise inflate them
+        # — Exp 41 late-round raw novelty was 10/6/3, all unverifiable. Recompute
+        # this round's novelty from the SETTLED series (open_since_round==r and
+        # final status not in MERGED/DUPLICATE/UNCONFIRMED/REFUTED) and overwrite
+        # the round's history entries so that: (a) gamma is a genuine decay-curve
+        # DIAGNOSTIC; (b) the state gate's novel_this_round is genuine; (c) the
+        # gamma-alt count path (novel_critical_history) sees GENUINE novel
+        # criticals, so its "K consecutive zero-novel-critical" criterion can
+        # actually reach zero and converge. "No new discoveries" therefore means
+        # "no new GENUINE discoveries that survived reconciliation + the
+        # (now-live) specialist verifier."
+        _settled_all, _settled_crit = _settled_novelty_series(registry, round_idx)
+        if round_idx < len(_settled_all):
+            _raw_novel = novel_this_round
+            novel_this_round = _settled_all[round_idx]
+            if novelty_counts:
+                novelty_counts[-1] = _settled_all[round_idx]
+            if novel_critical_history and round_idx < len(_settled_crit):
+                novel_critical_history[-1] = _settled_crit[round_idx]
+            if novel_this_round != _raw_novel:
+                _log(f"  novelty (settled/genuine): all={_settled_all[round_idx]} "
+                     f"crit={_settled_crit[round_idx]} (raw all={_raw_novel})")
+
+        # Gamma — diagnostic decay curve only; never gates (config:
+        # gamma_alt_threshold unreachable + gamma_telemetry_only_until >= max_rounds)
         gamma = _estimate_gamma(novelty_counts, cfg.min_rounds_for_gamma)
         gamma_history.append(gamma)
         gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
