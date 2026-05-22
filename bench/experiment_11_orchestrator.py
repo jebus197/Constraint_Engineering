@@ -59,10 +59,19 @@ Role = Literal["collator", "player_manager", "participant"]
 
 @dataclass
 class ModelConfig:
-    """Configuration for a single model participant."""
+    """Configuration for a single model participant.
+
+    Primary/secondary routing (2026-05-22, founder-directed): every model
+    may carry a secondary route (`secondary_api` + `secondary_model_id`)
+    used as a one-shot fallback when the primary route returns empty
+    content for a given turn. The fallback is in-round (the model never
+    misses a round per `feedback_no_benching.md`), and the next turn
+    reverts to primary unless empty again. Secondary fields are optional
+    — models without a secondary fail honestly when the primary fails.
+    """
     label: str
     model_id: str
-    api: str  # "openrouter", "codex_exec", "deepseek"
+    api: str  # "openrouter", "claude_cli", "codex_exec", "google", "deepseek"
     role: Role
     system_prompt_path: str | None  # None for collator
     max_tokens: int = 32768
@@ -70,6 +79,8 @@ class ModelConfig:
     max_retries: int = 3
     backoff_base: float = 3.0
     extra_body: dict | None = None  # Model-specific API params (e.g. reasoning.effort)
+    secondary_api: str | None = None  # Fallback route on primary empty
+    secondary_model_id: str | None = None  # Fallback model id (route-specific)
 
 
 @dataclass
@@ -104,6 +115,14 @@ def load_default_config() -> ExperimentConfig:
 
     cdsfl_text = cdsfl_path.read_text(encoding="utf-8")
 
+    # Primary/secondary routing (2026-05-22, founder-directed): every
+    # model carries a secondary route used as a one-shot in-round
+    # fallback when its primary route returns empty / raises after
+    # retries. The secondary is selected to (a) hit the same underlying
+    # model where possible (consistency), (b) keep billing consolidated
+    # (founder is intentionally limiting multi-vendor subscriptions).
+    # ChatGPT and Codex both share `codex_exec` as secondary — both
+    # target GPT-5.5 and `codex` CLI is already subscribed and auth-ed.
     models = [
         ModelConfig(
             label="CC2",
@@ -114,6 +133,8 @@ def load_default_config() -> ExperimentConfig:
             max_tokens=32768,
             timeout=900,       # WP4a: 300→900s to prevent CC2 timeout cascade
             max_retries=1,     # WP4a: 3→1 to avoid 3× timeout cascade
+            secondary_api="openrouter",
+            secondary_model_id="anthropic/claude-opus-4.7",
         ),
         ModelConfig(
             label="Codex",
@@ -127,6 +148,8 @@ def load_default_config() -> ExperimentConfig:
             # Run 6: switched from codex_exec to openrouter. Eliminates the
             # catastrophic decomposed fallback (45-80 min/round) and the
             # brittle CLI auth dependency. Same model, direct API.
+            secondary_api="codex_exec",
+            secondary_model_id="gpt-5.5",
         ),
         ModelConfig(
             label="ChatGPT",
@@ -137,6 +160,8 @@ def load_default_config() -> ExperimentConfig:
             max_tokens=32768,
             timeout=300,
             max_retries=3,
+            secondary_api="codex_exec",
+            secondary_model_id="gpt-5.5",
         ),
         ModelConfig(
             label="Gemini",
@@ -149,6 +174,8 @@ def load_default_config() -> ExperimentConfig:
             max_retries=5,
             backoff_base=3.0,
             extra_body={"reasoning": {"effort": "high"}},
+            secondary_api="google",
+            secondary_model_id="gemini-3.1-pro-preview",
         ),
         ModelConfig(
             label="DeepSeek",
@@ -159,6 +186,8 @@ def load_default_config() -> ExperimentConfig:
             max_tokens=32768,
             timeout=300,
             max_retries=3,
+            secondary_api="openrouter",
+            secondary_model_id="deepseek/deepseek-v4-pro",
             # Routing change 2026-05-20 (founder-directed): reverted
             # from OpenRouter slug `deepseek/deepseek-v4-pro` back to
             # the direct DeepSeek API (`deepseek-v4-pro`, base_url
@@ -721,14 +750,40 @@ def dispatch(
     user_prompt: str,
     cdsfl_system_prompt: str,
     use_output_schema: bool = False,
+    use_secondary: bool = False,
 ) -> str:
     """Dispatch a prompt to any model based on its config. Returns response text.
 
     Args:
         use_output_schema: If True and model is Codex, use --output-schema
             to force structured CDSFL findings JSON output.
+        use_secondary: If True, route via config.secondary_api +
+            config.secondary_model_id (the model's one-shot fallback
+            route). Raises RuntimeError if no secondary is configured.
+            Used by the runner's in-round fallback path
+            (2026-05-22, founder-directed: "every model has a
+            secondary; no model misses a round").
     """
-    _log(f"Dispatching to {config.label} ({config.model_id}) via {config.api}...")
+    if use_secondary:
+        if not (config.secondary_api and config.secondary_model_id):
+            raise RuntimeError(
+                f"No secondary route configured for {config.label}; "
+                f"cannot dispatch with use_secondary=True"
+            )
+        # Swap primary fields for secondary; primary extra_body is
+        # route-specific (e.g. reasoning.effort for openrouter) so it
+        # does not carry over.
+        import dataclasses
+        config = dataclasses.replace(
+            config,
+            api=config.secondary_api,
+            model_id=config.secondary_model_id,
+            extra_body=None,
+        )
+        _log(f"Dispatching to {config.label} ({config.model_id}) via "
+             f"{config.api} [SECONDARY]...")
+    else:
+        _log(f"Dispatching to {config.label} ({config.model_id}) via {config.api}...")
 
     if config.api == "claude_cli":
         return call_claude_cli(

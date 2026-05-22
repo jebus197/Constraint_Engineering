@@ -1625,6 +1625,18 @@ ITC_DEGRADATION = "DEGRADATION"
 _itc_model_state: Dict[str, Dict[str, Any]] = {}
 _itc_hil_flags: List[Dict[str, Any]] = []
 
+# Secondary-route fallback accumulators (2026-05-22, founder-directed).
+# Populated by _dispatch_single_model's in-round fallback path when a
+# model's primary route fails/empties and its secondary route is used.
+# `_secondary_route_usage` logs each successful secondary dispatch (one
+# entry per turn that used the secondary); `_persistent_empty_flags`
+# logs turns where BOTH primary and secondary failed (the genuine
+# "this round, this model contributed nothing" signal — never benched,
+# raised to HIL at end of run). Cleared at experiment start (mirrors
+# _itc_hil_flags pattern).
+_secondary_route_usage: List[Dict[str, Any]] = []
+_persistent_empty_flags: List[Dict[str, Any]] = []
+
 # G7 merge-arbitration context (Exp 40 continuation, 15 May 2026).
 # Follows the established module-state pattern (_itc_*) so
 # _update_finding_statuses keeps a stable signature — its other
@@ -2491,15 +2503,90 @@ def _dispatch_single_model(
             mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)
         if fallback is not None:
             text, elapsed = fallback
-            _record_throughput(mc.label, len(prompt), elapsed)
-            model_findings = parse_findings(mc.label, round_idx, text)
-            logs_dir.mkdir(parents=True, exist_ok=True)
-            save_output(
-                logs_dir, f"r{round_idx}", mc.label, prompt[:200] + "...", text,
-                metadata={"round": round_idx, "elapsed": round(elapsed, 1),
-                          "chars": len(text), "findings_count": len(model_findings),
-                          "decomposed": True, "multiturn": True})
-            return model_findings, text
+            # Post-bypass-removal (commit 86470a5, 2026-05-20): decomposed
+            # dispatch can return DecomposedResult.text="" when the
+            # underlying model genuinely produces no usable content.
+            # Treat that as primary-route failure and fall through to
+            # the secondary route, not as a successful response.
+            if text and text.strip():
+                _record_throughput(mc.label, len(prompt), elapsed)
+                model_findings = parse_findings(mc.label, round_idx, text)
+                logs_dir.mkdir(parents=True, exist_ok=True)
+                save_output(
+                    logs_dir, f"r{round_idx}", mc.label, prompt[:200] + "...", text,
+                    metadata={"round": round_idx, "elapsed": round(elapsed, 1),
+                              "chars": len(text), "findings_count": len(model_findings),
+                              "decomposed": True, "multiturn": True,
+                              "route_used": "primary"})
+                return model_findings, text
+            _log(f"  {mc.label}: decomposed fallback returned empty content "
+                 f"— escalating to secondary route")
+
+        # Primary route (direct + decomposed) exhausted. Try secondary
+        # if configured. (2026-05-22, founder-directed: "every model
+        # has a secondary; no model misses a round" per
+        # feedback_no_benching.md.)
+        if mc.secondary_api and mc.secondary_model_id:
+            import dataclasses as _dc
+            secondary_mc = _dc.replace(
+                mc,
+                api=mc.secondary_api,
+                model_id=mc.secondary_model_id,
+                extra_body=None,
+                secondary_api=None,
+                secondary_model_id=None,
+            )
+            _log(f"  {mc.label}: SECONDARY ROUTE — primary "
+                 f"{mc.api}/{mc.model_id} failed/empty; trying "
+                 f"{mc.secondary_api}/{mc.secondary_model_id}")
+            try:
+                text2, elapsed2 = dispatch_to_model(
+                    secondary_mc, prompt, model_cdsfl,
+                    wall_clock_limit=wall_limit,
+                )
+                if text2 and text2.strip():
+                    _record_throughput(mc.label, len(prompt), elapsed2)
+                    model_findings = parse_findings(mc.label, round_idx, text2)
+                    logs_dir.mkdir(parents=True, exist_ok=True)
+                    save_output(
+                        logs_dir, f"r{round_idx}", mc.label,
+                        prompt[:200] + "...", text2,
+                        metadata={"round": round_idx,
+                                  "elapsed": round(elapsed2, 1),
+                                  "chars": len(text2),
+                                  "findings_count": len(model_findings),
+                                  "route_used": "secondary",
+                                  "primary_api": mc.api,
+                                  "primary_model_id": mc.model_id,
+                                  "secondary_api": mc.secondary_api,
+                                  "secondary_model_id": mc.secondary_model_id})
+                    _secondary_route_usage.append({
+                        "round": round_idx, "model": mc.label,
+                        "primary_api": mc.api,
+                        "primary_model_id": mc.model_id,
+                        "secondary_api": mc.secondary_api,
+                        "secondary_model_id": mc.secondary_model_id,
+                        "primary_error": f"{type(e).__name__}: {str(e)[:120]}",
+                    })
+                    return model_findings, text2
+                _log(f"  {mc.label}: SECONDARY ROUTE also returned empty")
+            except Exception as e2:
+                _log(f"  {mc.label}: SECONDARY ROUTE failed — "
+                     f"{type(e2).__name__}: {str(e2)[:120]}")
+
+        # Both routes exhausted (or no secondary configured). Record an
+        # HIL flag — the model did not produce content this round. The
+        # model is NOT excluded from subsequent rounds; this is a per-
+        # turn outcome, not benching. Persistent empties across rounds
+        # raise the HIL signal at end-of-run review.
+        _persistent_empty_flags.append({
+            "round": round_idx, "model": mc.label,
+            "primary_api": mc.api, "primary_model_id": mc.model_id,
+            "primary_error": f"{type(e).__name__}: {str(e)[:120]}",
+            "secondary_attempted": bool(mc.secondary_api),
+            "secondary_api": mc.secondary_api,
+            "secondary_model_id": mc.secondary_model_id,
+        })
         return [], f"__DISPATCH_FAILED__:{type(e).__name__}: {e}"
 
 
@@ -4557,6 +4644,13 @@ def run_experiment(
     # collisions, not stale ones.
     _feedback_mod._finding_id_collisions.clear()
 
+    # Secondary-route fallback accumulators cleared at experiment start
+    # (mirrors _finding_id_collisions: per-run scope, not restored from
+    # checkpoint — a --resume should report only the resumed leg's
+    # fallback usage). 2026-05-22, founder-directed.
+    _secondary_route_usage.clear()
+    _persistent_empty_flags.clear()
+
     # G7 merge-arbitration context setup (Exp 40 continuation). Inert
     # unless cfg.merge_arbitration_enabled. When enabled, the panel +
     # a short-prompt dispatch wrapper are registered in module state so
@@ -5676,6 +5770,14 @@ def run_experiment(
     result["gamma_history"] = [round(g, 4) for g in gamma_history]
     result["registry"] = registry.to_dict()
     result["hil_flags"] = _itc_hil_flags[:]
+    # Secondary-route fallback accumulators (2026-05-22). Surfaced in
+    # the report so end-of-run review can see per-turn fallback usage
+    # (a successful secondary dispatch) and the persistent-empty events
+    # (both primary and secondary failed — the model contributed
+    # nothing this round, but was NOT excluded). These are the genuine
+    # HIL signals for route-degradation review.
+    result["secondary_route_usage"] = _secondary_route_usage[:]
+    result["persistent_empty_flags"] = _persistent_empty_flags[:]
 
     # Save report
     report_path = logs_dir / f"{cfg.experiment_name}_report.json"

@@ -1239,11 +1239,25 @@ class TestFailureHandler:
         action = fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
         assert action == RecoveryAction.RETRY
 
-    def test_recovery_exclude_on_repeated_empty(self, fh_setup, config):
+    def test_recovery_retry_on_repeated_empty_never_excludes(self, fh_setup, config):
+        """2026-05-22 (founder-directed): EMPTY never produces EXCLUDE.
+        Excluding a model from subsequent rounds is benching, which
+        feedback_no_benching.md explicitly forbids. The in-round
+        secondary route in _dispatch_single_model handles the per-turn
+        response; FailureHandler returns RETRY so the model keeps
+        participating. Persistent both-routes-failed is HIL-flagged via
+        the runner's _persistent_empty_flags, not via EXCLUDE here."""
         for _ in range(config.n_fail):
             fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
         action = fh_setup.get_recovery("m_low", 1, FailureType.EMPTY)
-        assert action == RecoveryAction.EXCLUDE
+        assert action == RecoveryAction.RETRY, (
+            "EMPTY must not produce EXCLUDE — that is benching, forbidden "
+            "by feedback_no_benching.md. The model keeps participating; "
+            "HIL flagging happens via _persistent_empty_flags in the runner."
+        )
+        assert "m_low" in fh_setup.active_models, (
+            "model must remain active after repeated EMPTY (no benching)"
+        )
 
     def test_recovery_timeout_first_is_retry_extended(self, fh_setup):
         action = fh_setup.get_recovery("m_low", 0, FailureType.TIMEOUT)
@@ -1298,9 +1312,12 @@ class TestFailureHandler:
         assert action_final == RecoveryAction.ABORT
 
     def test_exclude_removes_from_active(self, fh_setup, config):
+        """EXCLUDE still removes from active for failure types that
+        produce it (TIMEOUT, MALFORMED) — EMPTY no longer does after
+        the 2026-05-22 no-benching change, so this test uses TIMEOUT."""
         for _ in range(config.n_fail):
-            fh_setup.get_recovery("m_low", 0, FailureType.EMPTY)
-        fh_setup.get_recovery("m_low", 1, FailureType.EMPTY)
+            fh_setup.get_recovery("m_low", 0, FailureType.TIMEOUT)
+        fh_setup.get_recovery("m_low", 1, FailureType.TIMEOUT)
         assert "m_low" not in fh_setup.active_models
 
     def test_should_abort_when_below_k_min(self, config):
