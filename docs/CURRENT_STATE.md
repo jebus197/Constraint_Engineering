@@ -1,33 +1,19 @@
 # CDSFL Current State
 
-Generated: 23 May 2026 01:39 BST (2026-05-23T01:39:33+01:00)
+Generated: 23 May 2026 02:24 BST (2026-05-23T02:24:22+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `4b97be0` fix: restore gamma as load-bearing convergence trigger (not demoted)
-- **Committed:** 2026-05-22 20:48:07 +0100
-- **Remote:** ahead by 128
+- **Last commit:** `985a27c` sv: Exp 41 converged cleanly at round 6 (gamma-alt count path); convergence-detector fixes + first-principles runner gate + gamma restored load-bearing; two 5-model confers verify; gamma-unification implementation pending founder go-ahead
+- **Committed:** 2026-05-23 01:39:46 +0100
+- **Remote:** ahead by 129
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/exp41_configs/41_convergence.json`
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Gemini.json`
-- `M bench/logs/exp40_slice_admissibility_20260516T223952Z/checkpoint.json`
-- `M bench/logs/exp40_slice_admissibility_20260516T223952Z/completion_signal.json`
-- `M bench/logs/exp40_slice_admissibility_20260516T223952Z/stage6_calibration_summary.json`
-- `M bench/logs/exp40_slice_admissibility_20260516T223952Z/working/_feedback_slice.py`
-- `M bench/logs/immune_pipeline.log`
-- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
-- `M resources/ONBOARDING.md`
-- `M resources/RECOVERY.md`
-- `M scripts/cdsfl_sv.py`
+- `M scripts/cdsfl_utils.py`
 
 ---
 
@@ -39,26 +25,27 @@ Uncommitted files:
 
 ## Latest Experiment
 
-- **Experiment:** exp41_convergence (#41)
-- **Status:** INCOMPLETE
+- **Experiment:** exp41c_first_principles (#41)
+- **Status:** CONVERGED
 - **Topology:** star
 - **Target:** `bench/dm/_convergence.py`
-- **Rounds:** 12
-- **Total findings:** 115
-- **Gamma:** 0.0000
+- **Rounds:** 7
+- **Total findings:** 31
+- **Gamma:** 0.2397
 - **Models:** CC2, ChatGPT, Codex, DeepSeek, Gemini
 - **Per model:**
-  - Gemini: 54
-  - DeepSeek: 24
-  - ChatGPT: 15
-  - CC2: 12
-  - Codex: 10
-- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp41_convergence_20260522T021030Z`
+  - DeepSeek: 9
+  - ChatGPT: 6
+  - Gemini: 6
+  - Codex: 5
+  - CC2: 5
+- **Logs:** `/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/exp41c_first_principles_20260522T194836Z`
 
 ---
 
 ## Recent Commits
 
+- `985a27c sv: Exp 41 converged cleanly at round 6 (gamma-alt count path); convergence-detector fixes + first-principles runner gate + gamma restored load-bearing; two 5-model confers verify; gamma-unification implementation pending founder go-ahead`
 - `4b97be0 fix: restore gamma as load-bearing convergence trigger (not demoted)`
 - `86587f4 Step 3: first-principles runner gate (gamma diagnostic; genuine novelty)`
 - `0901fd5 convergence-detector fixes + 5-model confer verification (founder-directed)`
@@ -68,4 +55,3 @@ Uncommitted files:
 - `86234b3 exp40 hardened-gate campaign: synthesis + paired notes (3-unit complete)`
 - `5fe9101 exp40 Unit B->C seam: 3 runner-class verification-integrity fixes`
 - `a302a2a exp40 plan-D faithful decomposition: Units B + C slices + hardened configs`
-- `ffc88fe exp40 gate-hardening: F6 pre-reg + F4 settled-registry + conjunction gate`

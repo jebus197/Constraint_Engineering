@@ -119,7 +119,10 @@ def latest_experiment() -> Optional[dict[str, Any]]:
     exp_dirs: list[tuple[int, Path]] = []
     for d in logs_dir.iterdir():
         if d.is_dir():
-            m = re.match(r"exp(\d+)_", d.name)
+            # Capture the leading experiment number; allow a letter/variant
+            # suffix (e.g. exp41c_first_principles) before the underscore, so
+            # suffixed re-runs are not silently excluded from "latest".
+            m = re.match(r"exp(\d+)", d.name)
             if m:
                 exp_dirs.append((int(m.group(1)), d))
 
