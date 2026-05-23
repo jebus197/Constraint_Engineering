@@ -1,0 +1,1242 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.82,
+        "description": "FINDING_ID: F001\n\nSEVERITY: 0.82\n\nFLAW_CLASS: 6\n\nABSTRACTION_INDEX: 0.25\n\nFIND: `detect_finding_id_collisions()` in `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "ChatGPT_F001 from Round 0 is withdrawn as submitted. The schema feedback is correct: I did not provide tool-grounded `d_tool` or post-fix `\u03c3_measured`, and I do not have fresh tool receipts in this ro"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Edge-case finding on collision detection logic is valid. The detection function's behaviour under adversarial or malformed inputs is under-specified."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "The edge case where all findings lack `finding_id` (all `None`) means `counts` is empty, function returns `[]`, and the silent-overwrite in the caller's `{f.finding_id: f}` dict goes undetected. Genui"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The edge-case concern about `detect_finding_id_collisions` is valid. The function's behaviour on adversarial or malformed input has genuine gaps (empty-string finding_ids pass the `is not None` filter"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.72,
+        "description": "FINDING_ID: F001\n\nSEVERITY: 0.72\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `detect_finding_id_collisions` can turn an observation-only collision detector into a blocking failure and can overcount",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 0,
+        "last_status_change_round": 0,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Codex's finding on detection correctness is valid and complements C0001."
+          },
+          {
+            "model": "Codex",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0001"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "A finding with `finding_id` attribute missing entirely gets `None` from `getattr`, is filtered out of `Counter`, and silently excluded from collision detection. Same root cause as C0001 \u2014 findings inv"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The silent-drop semantics are correctly identified. The function documents this but does not prevent it."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.45,
+        "description": "`detect_finding_id_collisions` (line 79\u201387) appends the same `rec` dict object to both the local `collisions` return list and the module-level `_finding_id_collisions` accumulator. The two references alias the same mutable object. Any caller that mutates a record from the returned list silently corrupts the post-mortem accumulator \u2014 the evidence trail this function exists to produce.\n\nFile: `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py`, lines 79\u201387.\n\nEv",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\nrec = {\n                \"round\": round_idx,\n                \"finding_id\": fid,\n                \"count\": n,\n                \"model_ids\": model_ids,\n                \"cross_model\": len(model_ids) > 1,\n            }\n            collisions.append(rec)\n            _finding_id_collisions.append(rec)\n==== REPLACE\nrec = {\n                \"round\": round_idx,\n                \"finding_id\": fid,\n                \"count\": n,\n                \"model_ids\": model_ids,\n                \"cross_model\": len(model_ids) > 1,\n            }\n            collisions.append(rec)\n            _finding_id_collisions.append(dict(rec))\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.2,
+        "description": "The docstring at line 57\u201358 specifies the record schema as `{\"round\", \"finding_id\", \"count\", \"model_ids\"}` but the actual dict (lines 79\u201385) also contains `\"cross_model\"`. The docstring omits a field that is load-bearing for the Exp 41 go/no-go decision (it distinguishes same-model duplicates from cross-model collisions, which is the entire point of the UUID-namespace evidence gate).\n\nFile: `_feedback_collision_slice.py`, line 57\u201358.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\nReturns a list of collision records; each record is\n    ``{\"round\", \"finding_id\", \"count\", \"model_ids\"}``. A non-empty\n==== REPLACE\nReturns a list of collision records; each record is\n    ``{\"round\", \"finding_id\", \"count\", \"model_ids\", \"cross_model\"}``.\n    A non-empty\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "(My own resubmitted finding above, with corrected admissibility.)"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 8,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 1.0,
+        "description": "`sorted()` will raise a `TypeError` if `model_id` is explicitly `None` on any finding involved in a collision. `getattr(f, \"model_id\", \"?\")` returns `None` if the attribute exists but its value is `None`. Mixing `None` and `str` in a set passed to `sorted()` causes a runtime crash in Python 3.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\nmodel_ids = sorted({\n                getattr(f, \"model_id\", \"?\")\n                for f in findings\n                if getattr(f, \"finding_id\", None) == fid\n            })\n==== REPLACE\nmodel_ids = sorted({\n                str(getattr(f, \"model_id\", \"?\") or \"?\")\n                for f in findings\n                if getattr(f, \"finding_id\", None) == fid\n            })\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Premises: `model_ids = sorted({...})` builds a set from raw `model_id` values and then orders them. Concrete trace: two colliding findings with the same `finding_id=\"F001\"` and `model_id=\"CC2\"` / `mod"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "Same root cause, additional edge cases: raw `model_id` values are neither normalized nor constrained before set/sort."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`sorted()` raises `TypeError` when `model_id` is explicitly set to `None`. `getattr(f, \"model_id\", \"?\")` returns `\"?\"` only when the attribute is **absent**; if it exists with value `None`, `getattr` "
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.7,
+        "description": "The dictionary `rec` is appended to both the local `collisions` list (which is returned) and the global `_finding_id_collisions` accumulator.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\ncollisions.append(rec)\n            _finding_id_collisions.append(rec)\n==== REPLACE\ncollisions.append(rec)\n            _finding_id_collisions.append(dict(rec))\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Premises: the same mutable `rec` dict object is appended to both `collisions` and `_finding_id_collisions`. Concrete trace: after return, caller mutates `collisions[0][\"model_ids\"].append(\"X\")` or `co"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0003"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Shared mutable `rec` dict between return value and module-level accumulator. Caller mutation of returned records silently corrupts the global accumulator. Gemini's `rec.copy()` fix for the module-leve"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.6,
+        "description": "The function iterates over the `findings` argument multiple times (once to build `ids`, and again inside the loop for each collision to build `model_ids`). If the caller passes an iterator or generator instead of a concrete list, the first pass exhausts it, causing subsequent passes to see an empty sequence.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\nids = [getattr(f, \"finding_id\", None) for f in findings]\n==== REPLACE\nfindings = list(findings)\n    ids = [getattr(f, \"finding_id\", None) for f in findings]\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Premises: `findings` is annotated as `List[Any]`, but the function logic iterates it once to build `ids`, then again inside the collision loop for each duplicated `fid`. Concrete trace with `k` duplic"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.4,
+        "description": "In `detect_finding_id_collisions`, the model\u2011id collection line\nmodel_ids = sorted({\n    getattr(f, \"model_id\", \"?\")\n    for f in findings\n    if getattr(f, \"finding_id\", None) == fid\n})\nuses a bare string `\"?\"` as the default when `model_id` is missing. The `cross_model` flag is later computed as `len(model_ids) > 1`. If any finding in a collision set lacks `model_id`, the set will contain `\"?\"` alongside real model IDs, causing `cross_model` to be `True` even when all the colliding findings co",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "DeepSeek's finding on None model_id is the same root cause as C0005. Recommend MERGE C0008 <- C0005."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.3,
+        "description": "The function signature `def detect_finding_id_collisions(findings: List[Any], round_idx: int = -1) -> ...` provides a default value of `-1` for the round index. If a caller omits the round index (by accident or incomplete integration), every collision record produced in that call will have `\"round\": -1`. This can silently pollute the evidence accumulator, making it impossible to distinguish missing data from a genuine round index of `-1`, and may skew post\u2011mortem statistics (e.g., collision rate",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\ndef detect_finding_id_collisions(\n    findings: List[Any], round_idx: int = -1,\n) -> List[Dict[str, Any]]:\n==== REPLACE\ndef detect_finding_id_collisions(\n    findings: List[Any], round_idx: int,\n) -> List[Dict[str, Any]]:\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "The `round_idx=-1` default is semantically misleading. A sentinel like `-1` is ambiguous in post-mortem analysis (could be misread as \"last round\"). DeepSeek's fix is proportionate."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.55,
+        "description": "The module-level accumulator `_finding_id_collisions` (line 49) has no public clearing API. The comment at line 47 states *\"The runner clears it at experiment start\"* but the module exposes no `clear` function. The runner must reach into the private `_finding_id_collisions` list directly (`_feedback_collision_slice._finding_id_collisions.clear()`), which couples the runner to the internal implementation detail \u2014 the name, the type (list), and the mutability contract. If the accumulator is ever r",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\n_finding_id_collisions: List[Dict[str, Any]] = []\n\n\ndef detect_finding_id_collisions(\n==== REPLACE\n_finding_id_collisions: List[Dict[str, Any]] = []\n\n\ndef clear_collision_accumulator() -> None:\n    \"\"\"Reset the module-level collision accumulator between experiments.\"\"\"\n    _finding_id_collisions.clear()\n\n\ndef detect_finding_id_collisions(\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "No public clearing API for `_finding_id_collisions`. The comment says \"the runner clears it at experiment start\" but the module exposes no function for that, forcing the runner to reach into a private"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.72\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.35\nFIND: MERGE C0001 <- F001 | `detect_finding_id_collisions()` in `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py` treats missing `model_id` metadata as the literal model `\"?\"` and then derives `\"cross_model\"` from `len(model_ids) > 1`. Evidence: for two findings with the same `finding_id`, where one has `model_id=\"CC2\"` and the other lacks `model_id`, the current code computes `model_ids=",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.65,
+        "description": "File: _feedback_collision_slice.py, lines ~97-101 (the `model_ids` comprehension inside `detect_finding_id_collisions`).\n  The cross\u2011model collision flag (`cross_model`) is computed as `len(model_ids) > 1`.\n  However, `model_ids` is built with:\nmodel_ids = sorted({\n      getattr(f, \"model_id\", \"?\")\n      for f in findings\n      if getattr(f, \"finding_id\", None) == fid\n  })\nIf two *different* models both lack the `model_id` attribute, the default `\"?\"` makes them indistinguishable \u2014 the set colla",
+        "proposed_fix": "Replace the ambiguous `\"?\"` fallback with a per\u2011object unique identifier when `model_id` is missing or `None`. This makes different models distinguishable even without an explicit `model_id` attribute, while also avoiding the `TypeError` that would occur if `model_id` is `None` (already noted in C0005 \u2014 the fix here is compatible and does not conflict).\n\n  <<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\n            model_ids = sorted({\n                getattr(f, \"model_id\", \"?\")\n                for f in findings\n                if getattr(f, \"finding_id\", None) == fid\n            })\n  ====\n            model_ids = sorted({\n                getattr(f, \"model_id\", None) or f\"unknown_{id(f)}\"\n                for f in findings\n                if getattr(f, \"finding_id\", None) == fid\n            })\n  >>>> REPLACE",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "the missing/ambiguous `model_id` fallback collapses distinct missing-model findings into `\"?\"`; the parseable fix is:"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Replacing `\"?\"` with a per-object unique fallback is a real improvement. The `\"?\"` sentinel causes distinct-model collisions to appear as same-model when multiple findings lack `model_id`. I re-emit t"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "FINDING_ID: V-C0012\nSEVERITY: 0.65\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.35\nFIND: CONFIRM C0012 | In `bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py`, inside `detect_finding_id_collisions`, the current `model_ids` computation still uses `getattr(f, \"model_id\", \"?\")`. Premises: (1) the detector is intended to distinguish cross-model duplicate finding IDs from same-model duplicate finding IDs; (2) if `model_id` is absent on multiple colliding findings, all such",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.62,
+        "description": "FINDING_ID: F002\n\nSEVERITY: 0.62\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.25\n\nFIND: `detect_finding_id_collisions()` ignores explicit `",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Codex's finding about ignored cases is sound; findings lacking `finding_id` are silently excluded from collision detection with no logging."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.1,
+        "description": "VERDICT: CHALLENGE C0009. The default argument `round_idx: int = -1` is a standard sentinel value and does not cause any logical errors.",
+        "proposed_fix": "N/A\nAlternative (Scope):\nDiffers from primary: No alternative fix is proposed because the finding is a CHALLENGE rejecting the premise of the original bug report. The search space considered was alternative sentinel values (e.g., `None`), but since `-1` is safe and idiomatic, no code change is required.",
+        "status": "OPEN",
+        "open_since_round": 2,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "C0009's default `round_idx=-1` is a valid sentinel, but Gemini's challenge misses that the *docstring* does not document this sentinel convention. C0009 is correctly CONFIRMED \u2014 the issue is documenta"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0015"
+        ],
+        "severity": 0.1,
+        "description": "REFORMAT C0015 | Re-emitting C0015 with valid SEARCH/REPLACE block as requested by schema.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_collision_20260518T130744Z/working/_feedback_collision_slice.py\ndef detect_finding_id_collisions(\n    findings: List[Any], round_idx: int = -1,\n) -> List[Dict[str, Any]]:\n==== REPLACE\ndef detect_finding_id_collisions(\n    findings: List[Any], round_idx: int | None = None,\n) -> List[Dict[str, Any]]:\n>>>>",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "8/8 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.58,
+        "description": "In `detect_finding_id_collisions`, line 88\u201396:\nmodel_ids = sorted({\n    getattr(f, \"model_id\", \"?\")\n    for f in findings\n    if getattr(f, \"finding_id\", None) == fid\n})\nrec = {\n    ...\n    \"model_ids\": model_ids,\n    \"cross_model\": len(model_ids) > 1,\n}\nThe use of `\"?\"` as a default for missing `model_id` collapses all unknown model identities into a single sentinel. This makes the `cross_model` flag unreliable:\n\n* False negative (missed cross\u2011model collision): Two findings from *different* mod",
+        "proposed_fix": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      }
+    },
+    "next_id": 18,
+    "alias_map": {
+      "ChatGPT:ChatGPT_F001": "C0001",
+      "Codex:Codex_F001": "C0002",
+      "CC2:CC2_F001": "C0003",
+      "CC2:CC2_F002": "C0004",
+      "Gemini:Gemini_F001": "C0005",
+      "Gemini:Gemini_F002": "C0006",
+      "Gemini:Gemini_F003": "C0007",
+      "DeepSeek:DeepSeek_F001": "C0008",
+      "DeepSeek:DeepSeek_F002": "C0009",
+      "CC2:CC2_F003": "C0010",
+      "Codex:Codex_UNSTRUCTURED": "C0011",
+      "DeepSeek:DeepSeek_F003": "C0012",
+      "ChatGPT:ChatGPT_UNSTRUCTURED": "C0013",
+      "Codex:Codex_F002": "C0014",
+      "Gemini:Gemini_F004": "C0015",
+      "Gemini:Gemini_C0015": "C0016",
+      "DeepSeek:DeepSeek_F004": "C0017"
+    }
+  },
+  "novelty_counts": [
+    9,
+    3,
+    3,
+    2
+  ],
+  "raw_counts": [
+    9,
+    5,
+    9,
+    10
+  ],
+  "novelty_counts_per_model": {
+    "Codex": [
+      1,
+      1,
+      1,
+      0
+    ],
+    "Gemini": [
+      3,
+      0,
+      1,
+      1
+    ],
+    "CC2": [
+      2,
+      1,
+      0,
+      0
+    ],
+    "DeepSeek": [
+      2,
+      1,
+      0,
+      1
+    ],
+    "ChatGPT": [
+      1,
+      0,
+      1,
+      0
+    ]
+  },
+  "raw_counts_per_model": {
+    "Codex": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "Gemini": [
+      3,
+      1,
+      4,
+      5
+    ],
+    "CC2": [
+      2,
+      2,
+      2,
+      2
+    ],
+    "DeepSeek": [
+      2,
+      1,
+      1,
+      1
+    ],
+    "ChatGPT": [
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  "rho_history": [
+    1.0,
+    0.6,
+    0.333333,
+    0.2
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.540404,
+    0.536485
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [
+    2
+  ],
+  "stall_history": [
+    {
+      "open_ch": 4,
+      "contested": 0
+    },
+    {
+      "open_ch": 2,
+      "contested": 0
+    },
+    {
+      "open_ch": 2,
+      "contested": 0
+    },
+    {
+      "open_ch": 2,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    4,
+    0,
+    0,
+    0
+  ],
+  "cumulative_context_chars": 168434,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "Codex": {
+      "history": [
+        {
+          "round": 0,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.25,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.16666666666666666
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Gemini": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "DEGRADATION",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": "change_focus",
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.6,
+        1.0,
+        0.8333333333333334
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "CC2": {
+      "history": [
+        {
+          "round": 1,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": "DEGRADATION",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": "change_focus",
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        4.5,
+        1.4,
+        0.6
+      ],
+      "last_adaptive_threshold": 2.0500000000000003
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "ChatGPT": {
+      "history": [
+        {
+          "round": 0,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 2,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        },
+        {
+          "round": 3,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        0.0625,
+        0.25,
+        0.09090909090909091
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

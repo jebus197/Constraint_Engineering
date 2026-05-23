@@ -56,7 +56,7 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
     # block ends at the next all-caps section header (NOVELTY, VERIFIED,
     # CORROBORATION, etc.) or end of string.
     marker_match = re.search(
-        r"^\s*(?:#{1,6}\s*)?ADMISSIBILITY\s*:?\s*(?:\([^)]*\))?\s*:?\s*$",
+        r"^\s*(?:#{1,6}\s*)?ADMISSIBILITY\s*:?\s*(?:\([^)]*\))?\s*$",
         finding_text,
         re.IGNORECASE | re.MULTILINE,
     )
@@ -78,7 +78,7 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
     # 'Gemini_` has `_ID` before the colon...'). Reconciliation
     # canonical: C0008.
     section_terminator = re.search(
-        r"^\s*(?:#{1,6}\s*)?(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|"
+        r"^\s*(NOVELTY|VERIFIED|CORROBORATION|FALSIFICATION|FIX|ANALYSE|"
         r"FOLLOW|FIND|FLAW_CLASS|ABSTRACTION_INDEX|SEVERITY|"
         r"FINDING_ID|FINDING)\s*:",
         tail,
@@ -104,26 +104,23 @@ def parse_admissibility_block(finding_text: str) -> List[str]:
 
         found_pass = False
         found_any = False
-        status_pattern = (r"\b(PASS|FAIL|N/A|NA)\b" if gate == "σ_measured"
-                          else r"\b(PASS|FAIL)\b")
-        # Find a gate status only when it appears as its own gate line.  A
-        # mere mention such as "(q_retest: PASS)" inside another gate's
-        # rationale must not satisfy the q_retest gate.
-        gate_line_pattern = (
-            r"^\s*(?:[-*]\s*)?(?:"
-            + "|".join(gate_patterns)
-            + r")\s*[:\-=]?\s*"
-            + status_pattern
-            + r"\b"
-        )
-        match = re.search(gate_line_pattern, block, re.IGNORECASE | re.MULTILINE)
-        if match:
-            found_any = True
-            status = match.group(1).upper()
-            if status == "PASS" or (
-                gate == "σ_measured" and status in ("N/A", "NA")
-            ):
-                found_pass = True
+        status_pattern = r"(PASS|FAIL|N/A|NA)" if gate == "σ_measured" else r"(PASS|FAIL)"
+        for pat in gate_patterns:
+            # Find "gate_name [:|-|=] PASS|FAIL"; σ_measured may also be N/A
+            # when no fix was proposed and no post-fix measurement is applicable.
+            match = re.search(
+                pat + r"\s*[:\-=]?\s*" + status_pattern,
+                block,
+                re.IGNORECASE,
+            )
+            if match:
+                found_any = True
+                status = match.group(1).upper()
+                if status == "PASS" or (
+                    gate == "σ_measured" and status in ("N/A", "NA")
+                ):
+                    found_pass = True
+                break
 
         if not found_pass:
             failed.append(gate)

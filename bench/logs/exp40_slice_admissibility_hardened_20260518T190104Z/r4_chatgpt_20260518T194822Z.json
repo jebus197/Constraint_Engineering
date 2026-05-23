@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260518T194822Z",
+  "phase": "r4",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2080,
+  "response": "VERDICTS:\n\nCONFIRM C0018 | Evidence: For block line `**S_min:** PASS (...)`, the gate regex is built as `S_min\\s*[:\\-=]?\\s*(PASS|FAIL)`. Starting at the `S` inside the bold marker, it consumes `S_min`, then optionally consumes `:`, but then sees `**` before `PASS`; `\\s*` cannot consume `*`, so the status is not matched. The parser therefore treats a present PASS gate as missing/failed.\n\nCONFIRM C0019 | Evidence: The ADMISSIBILITY marker regex begins with `^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY...`. A markdown-bold header such as `**ADMISSIBILITY:**` starts with `*`, not whitespace, `#`, or `A`, so `marker_match` fails and the parser returns all gates as failed.\n\nCONFIRM C0020 | Evidence: The terminator regex begins with `^\\s*(NOVELTY|VERIFIED|...)`. A following section header `**NOVELTY:**` starts with `*`, so it is not detected as a terminator. The ADMISSIBILITY block can then consume later sections and cross-contaminate gate parsing.\n\nCONFIRM C0022 | Evidence: For `σ_measured`, `status_pattern = r\"(PASS|FAIL|N/A|NA)\"` has no word boundary. On input `σ_measured: NARRATIVE`, the regex can match the `NA` prefix, uppercases it to `NA`, and treats it as an allowed pass-like status for `σ_measured`. That accepts invalid text as satisfying the gate.\n\nDISCOVERY FINDINGS:\n\nNone.\n\nScoped null-justification: I reviewed the artifact across four areas: ADMISSIBILITY marker detection, section-boundary termination, per-gate name matching, and status interpretation. The material failure modes I found map to existing registry entries: markdown-bold marker/header handling maps to C0018/C0019/C0020; status-prefix acceptance maps to C0022/C0001; runaway section capture maps to C0006/C0009/C0015/C0021; whole-block gate scan/order issues map to C0013/C0014/C0017. Remaining unregistered observations, such as unusual Unicode dash separators or documentation/comment drift, are LOW/format-tolerance issues and are out of scope under the proof-of-concept instruction to focus on CRITICAL/HIGH and quick MEDIUM only. No genuinely novel CRITICAL/HIGH discovery is filed this round.",
+  "metadata": {
+    "round": 4,
+    "elapsed": 42.5,
+    "chars": 2080,
+    "findings_count": 0,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

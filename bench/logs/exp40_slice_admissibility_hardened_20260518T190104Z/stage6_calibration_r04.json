@@ -1,0 +1,326 @@
+{
+  "round_idx": 4,
+  "findings": [
+    {
+      "finding_id": "Gemini_F005",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6242,
+      "flaw_class": 1,
+      "encounter_count": 11,
+      "description_snippet": "The loop over `gate_patterns` checks patterns sequentially and `break`s on the first pattern that matches anywhere in th"
+    },
+    {
+      "finding_id": "Gemini_F006",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.604,
+      "flaw_class": 2,
+      "encounter_count": 7,
+      "description_snippet": "The `marker_match` regex expects the colon to appear BEFORE the optional parenthetical: `ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*"
+    },
+    {
+      "finding_id": "Gemini_F007",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6151,
+      "flaw_class": 6,
+      "encounter_count": 9,
+      "description_snippet": "The `section_terminator` regex `r\"^\\s*(NOVELTY|...)\\s*:\"` strictly expects a colon immediately after the section name (w"
+    },
+    {
+      "finding_id": "Gemini_F003",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.5,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6199,
+      "flaw_class": 6,
+      "encounter_count": 10,
+      "description_snippet": "The `gate_patterns` for `\u03c3_measured` appends `r\"sigma[_\\s]*measured\"`, which fails to match if the model writes `sigma-m"
+    },
+    {
+      "finding_id": "DeepSeek_F006",
+      "nu_k_proxy": 0.5,
+      "c_ext_raw": 0.0,
+      "c_ext": 0.0,
+      "h_ratio": 0.7,
+      "search_status": "no_search",
+      "sources": [],
+      "eta_stage5": 0.9,
+      "eta_stage6": 0.9,
+      "delta": 0.0,
+      "shadow_c_base": 0.5,
+      "shadow_c_freq": 0.6242,
+      "flaw_class": 6,
+      "encounter_count": 11,
+      "description_snippet": "In `parse_admissibility_block` the `section_terminator` regex (line ~124\u2011130) uses only `re.MULTILINE` without `re.IGNOR"
+    }
+  ],
+  "tool_fpr": {
+    "Codex_F001": {
+      "tool_name": "Codex_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 3,
+      "total": 3,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F001": {
+      "tool_name": "DeepSeek_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 6,
+      "total": 6,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F002": {
+      "tool_name": "DeepSeek_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F003": {
+      "tool_name": "DeepSeek_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F004": {
+      "tool_name": "DeepSeek_F004",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "ChatGPT_F001": {
+      "tool_name": "ChatGPT_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F001": {
+      "tool_name": "CC2_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F002": {
+      "tool_name": "CC2_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F001": {
+      "tool_name": "Gemini_F001",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F002": {
+      "tool_name": "Gemini_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F003": {
+      "tool_name": "Gemini_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 4,
+      "total": 4,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Codex_F002": {
+      "tool_name": "Codex_F002",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F003": {
+      "tool_name": "CC2_F003",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F101": {
+      "tool_name": "DeepSeek_F101",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F102": {
+      "tool_name": "DeepSeek_F102",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F006": {
+      "tool_name": "Gemini_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 5,
+      "total": 5,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_C0013": {
+      "tool_name": "Gemini_C0013",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F008": {
+      "tool_name": "Gemini_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F009": {
+      "tool_name": "Gemini_F009",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F010": {
+      "tool_name": "Gemini_F010",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F006": {
+      "tool_name": "CC2_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "CC2_F008": {
+      "tool_name": "CC2_F008",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F005": {
+      "tool_name": "Gemini_F005",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "Gemini_F007": {
+      "tool_name": "Gemini_F007",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    },
+    "DeepSeek_F006": {
+      "tool_name": "DeepSeek_F006",
+      "passes": 0,
+      "fails": 0,
+      "inconclusive": 2,
+      "total": 2,
+      "fail_fraction": null,
+      "shadow_e_pass": null
+    }
+  },
+  "mean_nu_k_proxy": 0.5,
+  "mean_c_ext": 0.0,
+  "mean_delta": 0.0,
+  "shadow_e_values": {},
+  "shadow_e_combined": null,
+  "shadow_d_eff": null,
+  "speculative_count": 0,
+  "source_cooccurrence": {},
+  "timestamp": 1779134149.598727
+}

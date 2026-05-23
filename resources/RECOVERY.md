@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 17 May 2026 01:22 BST
+Last updated: 23 May 2026 01:39 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,6 +85,32 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+## Current Pending Work (22–23 May 2026)
+
+**RESULT 2026-05-22 → 23 (autonomous, founder-directed return to first principles) — EXPERIMENT 41 CONVERGED CLEANLY. The founder's core question — can Exp 41 now converge honestly, replicating Exp 37 — is answered YES.**
+
+Branch `exp39-experimental`. HEAD `4b97be0` (15 commits ahead of origin until this sv pushes them). Three convergence commits this arc: `0901fd5` (detector fixes + 5-model confer), `86587f4` (first-principles runner gate), `4b97be0` (gamma restored as load-bearing trigger).
+
+**What converged.** `exp41c_first_principles` (target `bench/dm/_convergence.py`, the now-fixed detector module) reached `GAMMA_ALT_CONVERGED` at round 6 via the zero-novel-critical COUNT path (settled critical tail `[0,0,0]`), gamma rising 0.000→0.010→0.098→0.187→0.240 across rounds (load-bearing, never blocking). 22 canonical entries (vs 79 in the broken run), 4 CLOSED (vs 1), zero empty responses, zero secondary-route fallbacks. Logs `bench/logs/exp41c_first_principles_20260522T194836Z/`.
+
+**Two real detector defects found, fixed, 5-model-confer-verified (commit 0901fd5).** (1) `kappa_rate` counted EVERY finding incl. repeats → a quiet, exhausted review read as unfinished and blocked convergence; rewritten to measure NOVEL-discovery decline from the early peak (`bench/dm/_convergence.py`). (2) The serious one — `_finding_similarity` embedding mode floors unrelated findings at cosine≈0.48 while `tau_sim=0.33` sat BELOW that floor → almost everything merged as a duplicate → genuinely-novel criticals hidden from the severity veto → FALSE convergence (a critical could be silently dropped). The correct `tau_sim_embed=0.55` existed in config but was never wired. Fix: `effective_tau_sim(config)` in `bench/dm/_similarity.py`, bound into `_convergence.py` (`_tau_sim()`) and the `_manager.py` rho-detector. Software verifier promoted shadow→live (`"software"` added to `LIVE_SPECIALIST_DOMAINS`, `bench/immune_agents.py`).
+
+**First-principles runner gate (commit 86587f4).** The runner now feeds the GENUINE settled, verifier-filtered novelty series to gamma + the state gate + γ-alt's `novel_critical_history` (recompute via `_settled_novelty_series` before gamma in the round loop, `bench/reference_runner_v2.py`). So "no new discoveries" means "no new GENUINE discoveries that survived reconciliation + the live software verifier". The hardened conjunction gate is OFF (`hardened_gate_enabled: false`). Convergence = gamma≥0.30 OR 3 consecutive zero-novel-critical rounds OR state gate 3 consecutive rounds.
+
+**Gamma resolution (commit 4b97be0 — founder's standing ruling honoured).** gamma is a LOAD-BEARING convergence TRIGGER, NOT demoted. `gamma_alt_threshold` corrected 1.1→0.30. The durable distinction: gamma-as-TRIGGER (high gamma → converged) is kept; gamma-as-BLOCKER (low gamma → can't converge) is what made convergence impossible post-Exp-40 and is OFF (telemetry-only for the state gate). A low gamma can no longer make convergence impossible; a high gamma can still fire it.
+
+**Two confer rounds (5 models each, compelled convergence, latest panel).** (i) Fix-verification: 5/5 SOUND / SOUND-WITH-CONDITIONS — fixes check out, scope reasonable (`bench/confer_exp41_fix_verification_2026-05-22.py`). (ii) Gamma-unification: 5/5 SOUND-WITH-CONDITIONS, IMPOSSIBILITY-RISK LOW (`bench/confer_exp41_gamma_unify_2026-05-22.py`, logs `bench/logs/confer_exp41_gamma_unify_2026-05-22/`). Finding: the two convergence measures (continuous gamma slope; discrete zero-novel-critical count) measure the SAME target — genuine-critical decay going flat. The exp41c "disagreement" (gamma 0.240) was a POPULATION mismatch: gamma was shown on the all-severity series `[3,2,1,1,1,0,1]` (footnotes still trickling) while the count judged the CRITICAL series `[3,0,0,0,0,0,0]`; gamma on the critical series = 1.000, AGREEING with the count. A "recent-window gamma" was tried and REJECTED (an all-zero window makes the estimator return 0.0 — its no-data branch — i.e. low exactly when discovery has stopped).
+
+**PENDING — gamma-unification implementation (panel-endorsed, NOT yet coded; awaiting founder go-ahead because it is maths-model-adjacent).** Report/gate the runner's HEADLINE gamma on the GENUINE-CRITICAL series so it reads ~1.0 at a genuine convergence (visibly agreeing with the count, removing the optics of disagreement). Keep convergence = `gamma_crit ≥ 0.30 OR K-consecutive-zero-novel-critical` — the count RETAINED as the safety OR guard (gamma-alone-as-trigger can lag/stick → impossibility-risk). Do NOT raise the 0.30 threshold (raise K instead if a guard ever needs tightening). Do NOT collapse to a gamma-only gate. Then verify exp41c still converges at round 6 and re-confirm reachability.
+
+**PENDING — HIL materiality confirmation (founder).** Non-distortion check on the exp41c convergence: 7 critical-severity entries (2 CLOSED, 1 CONFIRMED, remainder UNCONFIRMED). Two grounded-UNCONFIRMED footnotes await founder confirmation they are ITERATION not fundamental: C0015 (flaw_class ignored in similarity) and C0017 (non-finite control inputs). Materiality = "flips a real convergence verdict for a reachable input"; decided by HIL-in-post.
+
+**NEXT (unblocked, not started).** Step 4 / Exp 42 (target `bench/cdsfl_registry/composer.py`, S_k expert encodings) — now reachable since Exp 41 converged. Carried-forward backlog: outstanding-criticals veto (deferred), `_manager.py` adaptive-tau_sim-under-embedding interaction (flagged), the iteration-footnote backlog, 4 pre-existing `_manager.py` F401 lints, and the post-Exp-41 docx items (FFAFP+Sy the 146 Exp 40 findings; Codex capability-mismatch; Stage-6 calibrator).
+
+Paired notes this arc: `experimental_notes/Exp41_Convergence_Investigation_2026-05-22.md` (+ Plain_English), `Exp41_Convergence_Fix_Confer_2026-05-22.md` (+ Plain_English); plain-English plan-summary `Exp41_Convergence_Fix_Confer_Plain_English_2026-05-22.md`; TTS mirrors at `~/Desktop/CDSFL_tts/`.
+
+---
+
 ## Current Pending Work (20 April – 17 May 2026)
 
 **OPEN 2026-05-17 — γ-HARDENING CONFER COMPLETE; AWAITING FOUNDER RULING (no code changed).**

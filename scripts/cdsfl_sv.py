@@ -654,7 +654,7 @@ def _commit_and_push(
             )
 
     # 8. Commit
-    full_msg = f"{message}\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+    full_msg = f"{message}\n\nCo-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
     _git("commit", "-m", full_msg, root=root, timeout=60)
 
     new_hash = _git("log", "--oneline", "-1", root=root)

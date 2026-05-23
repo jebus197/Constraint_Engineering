@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 17 May 2026 01:22 BST
+Last updated: 23 May 2026 01:39 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,59 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 41 — CLEAN, HONEST CONVERGENCE ON THE FIXED DETECTOR (2026-05-22 → 23, autonomous, founder-directed return to first principles):**
+
+  Exp 41 was the controlled re-run testing whether convergence is now both
+  REACHABLE and HONEST after the convergence-detector repairs and the
+  runner-gate simplification. **`exp41c_first_principles` (target the
+  now-fixed `bench/dm/_convergence.py`) converged at round 6** —
+  `GAMMA_ALT_CONVERGED` via the zero-novel-critical COUNT path (settled
+  critical tail `[0,0,0]`), gamma rising 0.000→0.010→0.098→0.187→0.240
+  (load-bearing, never blocking). 22 canonical entries (vs 79 in the broken
+  predecessor), 4 CLOSED (vs 1), zero empty responses, zero secondary-route
+  fallbacks — replicating the clean spirit of Exp 37, the founder's stated
+  goal. Logs `bench/logs/exp41c_first_principles_20260522T194836Z/`.
+
+  **Two real detector defects fixed (commit `0901fd5`, 5-model-confer-verified).**
+  (1) `kappa_rate` counted every finding including repeats, so a quiet,
+  exhausted review read as unfinished and blocked convergence — rewritten to
+  measure novel-discovery decline from the early peak. (2) The serious one:
+  `_finding_similarity` embedding mode floors unrelated findings at
+  cosine ≈ 0.48 while `tau_sim = 0.33` sat below that floor → almost
+  everything merged as a duplicate → novel criticals hidden from the severity
+  veto → FALSE convergence. The correct `tau_sim_embed = 0.55` existed in
+  config but was never wired; fix is `effective_tau_sim(config)` in
+  `bench/dm/_similarity.py`, bound into `_convergence.py` and the
+  `_manager.py` rho-detector. Software verifier promoted shadow→live.
+
+  **First-principles runner gate (commit `86587f4`).** The runner feeds the
+  GENUINE settled, verifier-filtered novelty series to gamma + the state gate
+  + γ-alt's critical-history (recompute via `_settled_novelty_series` before
+  gamma each round). Hardened conjunction gate OFF. Convergence = γ ≥ 0.30 OR
+  3 consecutive zero-novel-critical rounds OR state gate 3 consecutive rounds.
+
+  **Gamma kept load-bearing (commit `4b97be0`, founder's standing ruling).**
+  gamma is a TRIGGER (high γ → converged), never demoted; `gamma_alt_threshold`
+  corrected 1.1 → 0.30. gamma-as-BLOCKER (low γ → cannot converge) is what
+  made convergence impossible after Exp 40 and is OFF (telemetry-only for the
+  state gate). A low gamma can no longer make convergence impossible; a high
+  gamma can still fire it.
+
+  **Gamma-unification confer (5/5 SOUND-WITH-CONDITIONS, IMPOSSIBILITY-RISK
+  LOW).** The continuous gamma slope and the discrete zero-novel-critical
+  count measure the SAME target — genuine-critical decay going flat. The
+  exp41c apparent "disagreement" (γ 0.240) was a POPULATION mismatch: γ shown
+  on the all-severity series `[3,2,1,1,1,0,1]` while the count judged the
+  critical series `[3,0,0,0,0,0,0]`; γ on the critical series = 1.000,
+  agreeing. PENDING (panel-endorsed, not yet coded, founder go-ahead required
+  because it is maths-model-adjacent): report/gate the headline gamma on the
+  genuine-critical series so it reads ~1.0 at convergence; keep the count as
+  the OR safety guard; do not raise 0.30; do not collapse to a gamma-only
+  gate. Paired notes
+  `experimental_notes/Exp41_Convergence_Investigation_2026-05-22.md`,
+  `experimental_notes/Exp41_Convergence_Fix_Confer_2026-05-22.md` (+
+  plain-English + TTS).
+
 - **EXP 40 plan-F — FIRST CONVERGENCE IN THE ARC (qualified) (2026-05-17, autonomous):**
 
   The decomposed-slice re-run (`exp40_slice_admissibility`: ~110-line

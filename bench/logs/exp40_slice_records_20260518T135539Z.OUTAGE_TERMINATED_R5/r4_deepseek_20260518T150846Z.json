@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260518T150846Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2614,
+  "response": "No new DISCOVERY findings this round. Strong depletion (γ=0.546, ρ=0.000) and thorough prior review leave no remaining critical or high-severity bugs in the feedback-records slice. The open registry items below are correct and should be advanced.\n\n### VERDICTS\n\n**CONFIRM C0018** — `priority_score()` additive components violate documented urgency precedence.  \nA finding with 5 admissibility failures (4.0) outscores a refuted finding (3.0), contradicting the stated refutation > admissibility > duplicate > Rₖ order. The fix proposed in the registry (reweighting or capping) is appropriate.\n\n**CONFIRM C0016** — `_render_single_record()` can crash on malformed tuples.  \nThe function unpacks `rec.refutations` (expects 3‑tuples), `rec.duplicates` (expects pairs), and `rec.rk_discrepancy` (expects a 2‑tuple). A single malformed entry from any upstream source causes an unhandled `ValueError`. The registry’s fix (adding validation/defaults) is correct.\n\n**CONFIRM C0017** — EXTEND of C0011 with boundary case `max_chars_per_model=1`.  \nThe fallback placeholder (“Feedback truncated…”) is ~150 characters; when the cap is set to an extreme low value the placeholder itself violates the hard cap. The extension is valid and the proposed guard (ensuring the placeholder respects the cap) is necessary.\n\n**CONFIRM C0008** — `build_feedback_records` creates a REJECTED record with empty `refutations`.  \nWhen `final_verdict == \"REJECTED\"` but no specialist tool returned REJECTED, the model receives a “RECALCULATE” action with no tool evidence, making it impossible to diagnose the rejection. The registry’s fix (omitting the record or adding a synthetic refutation) is sound.\n\n**CONFIRM C0012** — `build_feedback_sections` fallback placeholder can exceed `max_chars_per_model`.  \nSame root cause as C0011/C0017; the placeholder is not measured against the cap. The proposed fix (truncate or use a shorter placeholder) is correct.\n\n**CONFIRM C0015** — `_rebuild_section` accepts unused parameter `all_recs`.  \nThe parameter is never referenced; removing it simplifies the interface and avoids confusion. The registry’s SEARCH/REPLACE fix is minimal and safe.\n\n**MERGE C0003 → C0005** — duplicate of the known collision defect.  \nC0003 describes the same `finding_by_id` last-wins collision already covered by CONFIRMED C0005 (severity 1.0). Merge into the canonical entry.\n\n**MERGE C0006 → C0005** — duplicate of the known collision defect.  \nSame as above; C0006 is another description of the identical root cause. Merge into C0005.\n\n*C0009 is truncated in the registry and cannot be evaluated; no verdict issued.*",
+  "metadata": {
+    "round": 4,
+    "elapsed": 736.3,
+    "chars": 2614,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

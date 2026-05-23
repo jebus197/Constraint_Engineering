@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260518T194208Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2401,
+  "response": "WITHDRAW: DeepSeek_F001 — schema flagged as duplicate with missing admissibility. Withdrawing.\n\n---\n\n**VERDICT: CONFIRM C0021**  \nAgree that section_terminator regex missing re.IGNORECASE flag; matches C0015 and prevents lower/mixed-case headers from terminating the block.\n\n---\n\n**VERDICT: CONFIRM C0020**  \nAgree that section_terminator fails to match bolded headers (e.g., `**NOVELTY**:`).\n\n---\n\n**VERDICT: CONFIRM C0019**  \nAgree that marker_match regex does not handle bolded ADMISSIBILITY (`**ADMISSIBILITY**:`).\n\n---\n\n**VERDICT: CONFIRM C0018**  \nAgree that gate status regex misses bolded gate names.\n\n---\n\n**VERDICT: CONFIRM C0015**  \nAgree with the described section_terminator gap; same root as C0021/C0020.\n\n---\n\n**VERDICT: CONFIRM C0016**  \nAgree with the marker_match inline‑parenthetical limitation; same root as C0019.\n\n---\n\n**DISCOVERY — new finding**  \n\n```\nFINDING_ID: F002\nSEVERITY: 0.55\nFLAW_CLASS: 5\nABSTRACTION_INDEX: 0.20\nFIND:\n  In `parse_admissibility_block` (lines ~68‑72), the `marker_match` regex\n  is:\n    r\"^\\s*(?:#{1,6}\\s*)?ADMISSIBILITY\\s*:?\\s*(?:\\([^)]*\\))?\\s*$\"\n  The pattern requires that the line end immediately after the optional\n  parenthetical, with only whitespace allowed (`\\s*$`).  Any trailing\n  non‑whitespace text – such as an end‑of‑line comment – causes the match\n  to fail.  Example that fails:\n    ADMISSIBILITY:  # gate status below\n  When the marker match fails, the function returns all five gates as\n  failures (line 50), incorrectly flagging the finding as having no\n  admissibility block at all.\n  Evidence: manual test with a sample finding_text containing the above\n  header returns `['S_min', 'G-completeness', 'd_tool', 'σ_measured',\n  'q_retest']`, while the block is actually present and may contain valid\n  gate reports.\n\nFOLLOW:\n  Downstream consequences: the feedback channel treats the finding as if\n  the ADMISSIBILITY block were missing, generating a false §17\n  “admissibility missing” flag.  This wastes every model’s attention and\n  forces unnecessary re‑submission, undermining the admissibility\n  enforcement and potentially causing the finding to be ignored.\n\nANALYSE:\n  HARD – correctness of gate extraction.  Premises:\n  1. The function is the single gateway for admissibility evaluation.\n  2. A false negative (missing‑block despite present) leads to incorrect\n     feedback and degrades the feedback channel’s reliability.",
+  "metadata": {
+    "round": 3,
+    "elapsed": 507.0,
+    "chars": 2401,
+    "findings_count": 1,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

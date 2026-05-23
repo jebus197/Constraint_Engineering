@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260518T131718Z",
+  "phase": "r1",
+  "model_label": "ChatGPT",
+  "prompt_length": 203,
+  "response_length": 2771,
+  "response": "CHALLENGE C0001 | ChatGPT_F001 from Round 0 is withdrawn as submitted. The schema feedback is correct: I did not provide tool-grounded `d_tool` or post-fix `σ_measured`, and I do not have fresh tool receipts in this round. I am not resubmitting that finding unchanged.\n\nCONFIRM C0005 | Premises: `model_ids = sorted({...})` builds a set from raw `model_id` values and then orders them. Concrete trace: two colliding findings with the same `finding_id=\"F001\"` and `model_id=\"CC2\"` / `model_id=None` produce `{\"CC2\", None}`; Python 3 cannot compare `NoneType` and `str`, so `sorted(...)` raises `TypeError`. Conclusion: the detector can crash while trying to observe a collision. This is HIGH because the observation-only gate can block the review runner instead of recording evidence.\n\nEXTEND C0005 | Same root cause, additional edge cases: raw `model_id` values are neither normalized nor constrained before set/sort.\n\n- Concrete trace A: `model_id=[]` on a colliding finding reaches the set literal and raises `TypeError: unhashable type: 'list'`.\n- Concrete trace B: `model_id=1` and `model_id=\"1\"` both hash successfully but `sorted({1, \"1\"})` raises `TypeError` because `int` and `str` are not orderable together in Python 3.\n\nDownstream consequence: the detector fails before appending to local `collisions`, before appending to `_finding_id_collisions`, and before logging `FINDING_ID_COLLISION`. The UUID-namespace evidence gate then loses the exact event it was designed to measure.\n\nSimplest sufficient fix remains to normalize `model_id` to a stable string representation before set construction/sorting.\n\nCONFIRM C0006 | Premises: the same mutable `rec` dict object is appended to both `collisions` and `_finding_id_collisions`. Concrete trace: after return, caller mutates `collisions[0][\"model_ids\"].append(\"X\")` or `collisions[0][\"count\"] = 999`; because `_finding_id_collisions[-1] is collisions[0]`, the module-level accumulator is also mutated. Conclusion: returned observation records are aliased into the global post-mortem accumulator. This silently corrupts accumulated evidence.\n\nCONFIRM C0007 | Premises: `findings` is annotated as `List[Any]`, but the function logic iterates it once to build `ids`, then again inside the collision loop for each duplicated `fid`. Concrete trace with `k` duplicate IDs and `n` findings: the second phase scans `findings` `k` times, giving `O(n*k)` behavior. For the intended small PoC slice this is not critical, but the finding is mechanically correct. Severity should remain below the CRITICAL/HIGH threshold unless the runner can pass large batches.\n\nNo additional CRITICAL or HIGH discovery finding survives registry de-duplication. The new edge cases I found are extensions of C0005, not separate root causes.",
+  "metadata": {
+    "round": 1,
+    "elapsed": 95.9,
+    "chars": 2771,
+    "findings_count": 0,
+    "decomposed": false,
+    "inround_reask": false
+  }
+}

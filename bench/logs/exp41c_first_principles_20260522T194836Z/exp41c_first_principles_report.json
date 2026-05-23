@@ -1,0 +1,3506 @@
+{
+  "experiment": "exp41c_first_principles",
+  "topology": "star",
+  "relay_mode": null,
+  "start_time": "2026-05-22T19:48:36.464363+00:00",
+  "pattern": "four_layer",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/dm/_convergence.py",
+  "context_files": [],
+  "max_rounds": 12,
+  "extension_cap": 12,
+  "domain": "software",
+  "convergence_config": {
+    "earliest_stop": 3,
+    "consecutive_required": 3,
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 5,
+      "findings": [
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 1,
+          "severity": 0.85,
+          "description": "`ConvergenceDetector.converged()` can return `True` when every reviewed round contains zero findings, despite the file’s own validator documenting “not converged unless null_expected.”\n\nLocation: `bench/dm/_convergence.py`, `converged()` and `validate_no_findings()`.\n\nEvidence from the target file:\ndef validate_no_findings(config: DynamicManagementConfig) -> bool:\n    \"\"\"Edge case: F^(<=r) = empty. Convention: not converged unless null_expected.\"\"\"\nBut `converged()` only checks:\nif round_idx < s",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "def"
+        },
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.86,
+          "description": "`ConvergenceDetector.converged()` can return `True` when the requested round has no registered findings, and can also return `True` after only registered empty rounds. Location: `bench/dm/_convergence.py`, method `converged()`.\n\nEvidence from source:\ndef converged(self, round_idx: int) -> bool:\n    \"\"\"Convergence predicate.\n\n    converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n    Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n    \"\"\"\n    if round_idx ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "DeepSeek_F001",
+          "model_id": "DeepSeek",
+          "flaw_class": 5,
+          "severity": 1.0,
+          "description": "In `ConvergenceDetector._novel_classes`, the condition for an equivalence class to be considered novel is that all members are not similar to any prior cumulative finding. This is too strict: if a class contains a truly novel finding clustered with a duplicate one because of high pairwise similarity, the entire class is classified as non‑novel. The novel finding is hidden, causing kappa_set, kappa_rate, and the severity veto to under‑report discovery. Location: `_novel_classes`, lines 160‑180.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "Gemini_UNSTRUCTURED",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.5,\n    \"FLAW_CLASS\": 7,\n    \"ABSTRACTION_INDEX\": 0.2,\n    \"FIND\": \"`self._tau_sim()` is called inside the inner loops of `_compute_equivalence_classes` (O(N^2)) and `_novel_classes` (O(N*M)). `_tau_sim()` calls `_effective_tau_sim()`, which may perform dictionary lookups or module checks. This causes unnecessary overhead.\",\n    \"FOLLOW\": \"As the number of findings grows, the O(N^2) and O(N*M) loops will call `_tau_sim()` millions of times. This d",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "CC2_UNSTRUCTURED",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "I've completed a thorough review of `bench/dm/_convergence.py`. Let me trace the key logic paths to verify correctness.\n\nSummary: No CRITICAL or HIGH severity findings. The code has been through extensive multi-round review and the prior fixes (Corroboration Collapse, kappa_rate novel-class counting, quiet-state handling, tau_sim binding) are correctly implemented. I traced through the key computation chains and edge cases; the invariants hold.\n\nHere is my verification work:\n\n---\n\n## Verificatio",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 5,
+      "registry_total": 5,
+      "open_crit_high": 3,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 288.7,
+      "gamma": 0.0,
+      "rho": 1.0,
+      "rho_avg": 1.0,
+      "verification": {
+        "skipped": true,
+        "reason": "round 0 < 6"
+      },
+      "sk_pipeline": {
+        "round": 0,
+        "evaluated": 3,
+        "admissible": 3,
+        "rejected": 0,
+        "escalated": 0,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 0,
+        "open_ch": 3,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 0 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 15,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 5,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 6,
+      "findings": [
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 1,
+          "severity": 0.85,
+          "description": "`bench/dm/_convergence.py:converged()` decides convergence using only:\n\n1. `round_idx >= min_rounds_for_convergence`\n2. no high-severity novelty veto\n3. `kappa(round_idx) >= tau_kappa`\n\nIt does not require that `round_idx` was actually registered in `_round_findings`, and it does not require any cumulative finding evidence.\n\nConcrete trace:\n\n- Premises:\n  - `_round_findings` is empty, or all registered rounds contain `[]`.\n  - `round_idx >= config.min_rounds_for_convergence`.\n  - No findings exi",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.6,
+          "description": "C0003 should not be accepted as confirmed from the visible registry text alone. The code and docstring agree on class-level novelty semantics. A mixed class containing both prior-similar and prior-dissimilar members is not necessarily a new equivalence class under single-linkage clustering.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F002",
+          "model_id": "DeepSeek",
+          "flaw_class": 2,
+          "severity": 0.7,
+          "description": "In `ConvergenceDetector.kappa_set()` at lines 195‑198, `prior_findings` is built by extending all members from each equivalence class in `get_cumulative_classes(round_idx - 1)`. Because `get_cumulative_classes` clusters the entire multi‑round union and identical findings from different rounds land in the same class, the member list of that class contains multiple copies of substantively identical findings. Consequently `prior_findings` becomes a multiset.\n\n  In `_suppression_weight`, similaritie",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "CC2_F001",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "`_compute_equivalence_classes` (line 136–139) merges findings based solely on `similarity_fn() >= tau_sim`, ignoring `flaw_class`. The `FindingEquivalenceClass` docstring (line 489 of `_types.py`) specifies equivalence requires BOTH shared `flaw_class` AND similarity >= `tau_sim`. The implementation violates this documented invariant. Verified by tool: two findings with identical descriptions but `flaw_class=1` and `flaw_class=7` merge into a single equivalence class labeled `flaw_class=1` (the ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "Gemini_F002",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.4,
+          "description": "",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F003",
+          "model_id": "Gemini",
+          "flaw_class": 7,
+          "severity": 0.5,
+          "description": "",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 5,
+      "registry_total": 10,
+      "open_crit_high": 4,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "DeepSeek",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 714.1,
+      "gamma": 0.0,
+      "rho": 0.8333,
+      "rho_avg": 0.9167,
+      "verification": {
+        "skipped": true,
+        "reason": "round 1 < 6"
+      },
+      "sk_pipeline": {
+        "round": 1,
+        "evaluated": 5,
+        "admissible": 4,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 1,
+        "open_ch": 4,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 1 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 13,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 6,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 8,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_C0007",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.7,
+          "description": "In bench/dm/_convergence.py, ConvergenceDetector.kappa_set() builds prior_findings by extending every member of each prior cumulative equivalence class. Evidence location: the block `for ec in self.get_cumulative_classes(round_idx - 1): prior_findings.extend(ec.members)`. Because the denominator counts each prior equivalence class once via aggregated_severity, but the numerator suppression can count multiple members from the same prior equivalence class through TopK similarity, duplicate or near",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "DeepSeek_F001",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F002",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F003",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F004",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_C0007",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.5,
+          "description": "",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F004",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.8,
+          "description": "The `flaw_class` attribute is ignored during similarity comparisons across the entire convergence detector. This causes findings with completely different flaw classes (e.g., a performance issue and a security vulnerability) to be clustered together, suppressed by each other, and falsely marked as non-novel if their text happens to be lexically or semantically similar.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "CC2_F003",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.55,
+          "description": "`kappa_rate` at line 304 computes the peak novel rate over `range(round_idx + 1)`, which includes `round_idx` itself. This means if the CURRENT round has the highest novel rate ever, `peak == rate_r` and `kappa_rate ≈ 1 - rate_r / (rate_r + ε) ≈ 0`. This is correct for the current round. BUT: it also means that a single anomalous late-round burst (e.g., a model hallucinates many \"novel\" findings in round 7) permanently resets the peak for ALL future rounds. In round 8 with zero novelty, kappa_ra",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 6,
+      "registry_total": 16,
+      "open_crit_high": 4,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini",
+        "CC2"
+      ],
+      "elapsed_s": 860.2,
+      "gamma": 0.0,
+      "rho": 0.75,
+      "rho_avg": 0.8611,
+      "verification": {
+        "skipped": true,
+        "reason": "round 2 < 6"
+      },
+      "sk_pipeline": {
+        "round": 2,
+        "evaluated": 7,
+        "admissible": 6,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0011": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 2,
+        "open_ch": 4,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 2 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 20,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 8,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 3,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.72,
+          "description": "`ConvergenceDetector.add_round_findings()` accepts invalid control inputs and stores them directly:\n\n- negative `round_idx`\n- zero, negative, `NaN`, or infinite `duration`\n- `NaN` or infinite `adoption_delta`\n\nLocation: `bench/dm/_convergence.py`, method `add_round_findings()`.\n\nCurrent code:\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\nConcrete evidence:\n\nCase A — negative round ind",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "Gemini_F004_WITHDRAW",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.0,
+          "description": "WITHDRAWN. The schema flagged Gemini_F004 as a near-duplicate of CC2_F001 (cosine 0.71). I agree they describe the same underlying issue.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_DS_F005",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.6,
+          "description": "In `_weighted_novel_severity` (line 261), the class weight is computed as `max(member weights)`. The class’s contribution to novel severity is then `class_weight * aggregated_severity`, where `aggregated_severity` is the maximum severity among members. The member with the highest weight may not be the same member that supplied the `aggregated_severity`. Consequently, a high‑severity finding that is heavily suppressed (low weight) can still contribute almost its full raw severity if another membe",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        }
+      ],
+      "novel_this_round": 3,
+      "registry_total": 19,
+      "open_crit_high": 4,
+      "models_responded": [
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 288.7,
+      "gamma": 0.0099,
+      "rho": 1.0,
+      "rho_avg": 0.8611,
+      "verification": {
+        "skipped": true,
+        "reason": "round 3 < 6"
+      },
+      "sk_pipeline": {
+        "round": 3,
+        "evaluated": 5,
+        "admissible": 4,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 3,
+        "open_ch": 4,
+        "contested": 0,
+        "gamma": 0.0099,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 3 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 6,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 3,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": {
+        "per_model_count": {
+          "Gemini": 1
+        },
+        "stats": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        },
+        "cross_model_only": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        }
+      },
+      "recidivism_hits": []
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 1,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_F004",
+          "model_id": "ChatGPT",
+          "flaw_class": 2,
+          "severity": 0.58,
+          "description": "`ConvergenceDetector._suppression_weight()` documents that it returns a weight in `[w_floor, 1.0]`, but the implementation can return values greater than `1.0` when a custom `similarity_fn` returns negative values.\n\nLocation: `bench/dm/_convergence.py`, method `_suppression_weight()`.\n\nRelevant current code:\n# Compute similarity to all prior findings\n        sims = sorted(\n            (self.similarity_fn(finding, g) for g in prior_findings),\n            reverse=True,\n        )\nand:\n# Exponential",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        }
+      ],
+      "novel_this_round": 1,
+      "registry_total": 20,
+      "open_crit_high": 4,
+      "models_responded": [
+        "Codex",
+        "DeepSeek",
+        "ChatGPT",
+        "CC2"
+      ],
+      "elapsed_s": 371.2,
+      "gamma": 0.098,
+      "rho": 1.0,
+      "rho_avg": 0.9167,
+      "verification": {
+        "skipped": true,
+        "reason": "round 4 < 6"
+      },
+      "sk_pipeline": {
+        "round": 4,
+        "evaluated": 6,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0020": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 4,
+        "open_ch": 4,
+        "contested": 1,
+        "gamma": 0.098,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 4 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 2,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 1,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": {
+        "per_model_count": {
+          "ChatGPT": 1
+        },
+        "stats": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        },
+        "cross_model_only": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        }
+      },
+      "recidivism_hits": []
+    },
+    {
+      "round": 5,
+      "type": "adaptive",
+      "findings_count": 3,
+      "findings": [
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.62,
+          "description": "`ConvergenceDetector.estimate_gamma()` ignores `_round_durations` even though the detector records per-round durations and the docstring states it is estimating the Duane parameter for `N(t) = (t/η)^β`.\n\nLocation: `bench/dm/_convergence.py`, method `estimate_gamma()`.\n\nEvidence: the method computes:\nlog_r = math.log(round_idx)\nbeta = (math.log(cum_r) - math.log(cum_1)) / log_r\nreturn 1.0 - beta\nThis treats elapsed time as the integer round index. That is only correct when rounds after baseline a",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 6,
+          "severity": 0.72,
+          "description": "`EXTEND C0017 | ConvergenceDetector.add_round_findings()` accepts non-finite numeric control inputs and stores them directly. This allows `adoption_delta=NaN` and `duration=inf` / `duration=NaN` to silently corrupt convergence metrics.\n\nLocation: `bench/dm/_convergence.py`, method `add_round_findings()` and downstream consumers `kappa_rate()` / `kappa_adopt()`.\n\nCurrent ingestion code:\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        se",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "CC2_F001",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.45,
+          "description": "In `estimate_gamma` (line 422–423), when `cum_r < cum_1` (cumulative equivalence\nclass count DECREASED from round 1 to round r), the method returns 0.0 —\nsignalling \"no convergence data\". This is logically inverted.\n\nA decreasing cumulative class count means a new \"bridge\" finding arrived that\nmerged previously separate equivalence classes via single-linkage transitivity.\nThis is a convergence signal: new findings are being recognised as variants of\nknown issues, not genuinely novel discoveries.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        }
+      ],
+      "novel_this_round": 0,
+      "registry_total": 20,
+      "open_crit_high": 4,
+      "models_responded": [
+        "Codex",
+        "DeepSeek",
+        "ChatGPT",
+        "CC2",
+        "Gemini"
+      ],
+      "elapsed_s": 650.6,
+      "gamma": 0.1872,
+      "rho": 0.0,
+      "rho_avg": 0.6667,
+      "verification": {
+        "skipped": true,
+        "reason": "round 5 < 6"
+      },
+      "sk_pipeline": {
+        "round": 5,
+        "evaluated": 6,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0020": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 5,
+        "open_ch": 4,
+        "contested": 2,
+        "gamma": 0.1872,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 5 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 8,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 3,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 6,
+      "type": "adaptive",
+      "findings_count": 5,
+      "findings": [
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 6,
+          "severity": 0.74,
+          "description": "`bench/dm/_convergence.py:add_round_findings()` stores `Finding` objects without validating `severity`. Downstream, `_compute_equivalence_classes()` uses `max(f.severity for f in members)`, and `kappa_set()` computes `1.0 - (novel_sev / total_sev)` without guarding against non-finite or out-of-range severity values. Evidence from the visible code path: `add_round_findings()` directly assigns `self._round_findings[round_idx] = list(findings)`; `_compute_equivalence_classes()` directly computes `a",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "CC2_UNSTRUCTURED",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "## CC2 Round 6 — Convergence Detector Review\n\n### Schema Feedback Response\n\nCC2_F001: WITHDRAWN.\n\nThe schema flagged CC2_F001 as a near-duplicate (cosine 0.70, self-referential) with R_k inconsistency (Δ=0.67). The finding does not meet the differentiation threshold. Withdrawn per §17.\n\n---\n\n### VERDICT: WITHDRAW C0016\n\nMy prior finding (kappa_rate peak includes current round, sev 0.55) received three independent CHALLENGEs. The challenges are correct: when the current round has the highest nove",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.72,
+          "description": "`ConvergenceDetector.add_round_findings()` accepts invalid control inputs and stores them directly:\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\nAffected downstream locations:\ndef _novel_rate(r: int) -> float:\n            dt = self._round_durations.get(r, 1.0)\n            return len(self._novel_classes(r)) / max(dt, 1e-10)\nand:\ndelta = self._adoption_deltas.get(round_idx, 0.0)\n      ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        },
+        {
+          "finding_id": "DeepSeek_UNSTRUCTURED",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "{\n  \"FINDING_ID\": \"CC2_R6_001\",\n  \"SEVERITY\": 0.75,\n  \"FLAW_CLASS\": 4,\n  \"ABSTRACTION_INDEX\": 0.5,\n  \"FIND\": \"The veto clause `_veto` only considers *novel* equivalence classes, not all high‑severity findings in the current round.  Consequently, if a high‑severity finding exists but is similar to a prior finding (similarity ≥ τ_sim), the class is marked not novel, and `_veto` returns False, allowing convergence to be declared despite a critical finding.\",\n  \"FOLLOW\": \"`converged()` calls `_veto(",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.6,
+          "description": "In `estimate_gamma`, if `cum_r < cum_1`, the function returns `0.0`. This occurs when single-linkage clustering merges previously distinct equivalence classes due to a new bridging finding, reducing the total number of unique issues. Returning `0.0` implies no reliability growth (degradation), when in fact a reduction in cumulative classes represents massive reliability growth (fewer unique issues than initially thought).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/dm/_convergence.py"
+        }
+      ],
+      "novel_this_round": 2,
+      "registry_total": 22,
+      "open_crit_high": 3,
+      "models_responded": [
+        "Codex",
+        "CC2",
+        "ChatGPT",
+        "DeepSeek",
+        "Gemini"
+      ],
+      "elapsed_s": 611.5,
+      "gamma": 0.2397,
+      "rho": 0.4,
+      "rho_avg": 0.4667,
+      "verification": {
+        "round": 6,
+        "batch_size": 6,
+        "batch_ids": [
+          "C0003",
+          "C0019",
+          "C0022",
+          "C0016",
+          "C0010",
+          "C0012"
+        ],
+        "verdicts": {
+          "C0003": {
+            "action": "CONFIRM",
+            "confidence": 0.85,
+            "evidence": "Lines 207-217: if ANY member matches a prior finding, the entire class is marked non-novel; a novel finding clustered with a duplicate is hidden, under-reporting discovery."
+          },
+          "C0019": {
+            "action": "CONFIRM",
+            "confidence": 0.8,
+            "evidence": "Lines 261-268: `max(member weights)` selects least-suppressed member while `aggregated_severity` is max-severity member; decoupled pairing lets a suppressed high-severity finding retain near-full cont"
+          },
+          "C0022": {
+            "action": "CONFIRM",
+            "confidence": 0.75,
+            "evidence": "Line ~370: `cum_r < cum_1` returns 0.0 (no growth), but bridging merges reducing class count represent genuine reliability growth; 0.0 is semantically wrong for that scenario."
+          },
+          "C0016": {
+            "action": "CONFIRM",
+            "confidence": 0.9,
+            "evidence": "Line 304: peak computed over `range(round_idx+1)` includes the current round; a single anomalous burst permanently inflates `peak`, making all subsequent rounds read near-1.0 regardless of actual nove"
+          },
+          "C0010": {
+            "action": "ESCALATE",
+            "confidence": 0.5,
+            "evidence": "empty finding body — no claim to verify"
+          },
+          "C0012": {
+            "action": "ESCALATE",
+            "confidence": 0.5,
+            "evidence": "empty finding body — no claim to verify"
+          }
+        },
+        "elapsed_s": 25.2,
+        "confirmed": 4,
+        "rejected": 0,
+        "duplicates": 0,
+        "escalated": 2,
+        "total_resolved": 4
+      },
+      "sk_pipeline": {
+        "round": 6,
+        "evaluated": 6,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0019": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0022": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "20/20 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 6,
+        "open_ch": 3,
+        "contested": 2,
+        "gamma": 0.2397,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 6 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 12,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 5,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    }
+  ],
+  "converged_at": 6,
+  "convergence_reason": "GAMMA_ALT_CONVERGED: 3 consecutive rounds with zero novel CRITICAL (history tail=[0, 0, 0]) at round 6",
+  "total_findings": 31,
+  "total_rounds": 7,
+  "total_elapsed_s": 5304.5,
+  "end_time": "2026-05-22T21:17:00.844117+00:00",
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.0,
+    0.0099,
+    0.098,
+    0.1872,
+    0.2397
+  ],
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.85,
+        "description": "`ConvergenceDetector.converged()` can return `True` when every reviewed round contains zero findings, despite the file’s own validator documenting “not converged unless null_expected.”\n\nLocation: `bench/dm/_convergence.py`, `converged()` and `validate_no_findings()`.\n\nEvidence from the target file:\ndef validate_no_findings(config: DynamicManagementConfig) -> bool:\n    \"\"\"Edge case: F^(<=r) = empty. Convention: not converged unless null_expected.\"\"\"\nBut `converged()` only checks:\nif round_idx < s",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n==== REPLACE\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Empty cumulative finding sets are not evidence of convergence; without\n        at least one finding there is no exhaustion signal to measure.\n        Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if not self.get_cumulative_classes(round_idx):\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "VERIFIED: TRUE"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "The existing `validate_no_findings()` helper currently validates only `kappa_set(2) == 1.0`, not the documented invariant “not converged unless null_expected.” This lets the exact C0001 failure mode s"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`converged()` can return true on an empty or unregistered round."
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 1,
+            "evidence": "`validate_no_findings()` currently validates only `kappa_set(2) == 1.0`, so it does not enforce its own docstring convention: “not converged unless null_expected.”"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0002"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Tool verification confirms: `converged(2)` returns `True` when all rounds have zero findings. kappa_set = 1.0, kappa_rate = 1.0, kappa_adopt = 1.0, no veto. The fix proposed by Codex (adding a zero-fi"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The assertion that `converged()` returning `True` when all rounds have zero findings is a bug is incorrect. In a discovery system, if multiple models review an artifact for the minimum required rounds"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Concrete trace: with rounds 0,1,2 registered as empty, `converged(2)` returns `True` when `min_rounds_for_convergence <= 2`, `tau_kappa <= 1.0`, and no veto exists. This contradicts `validate_no_findi"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Empty-findings convergence gap is real. Concrete trace: 3 rounds of empty findings → kappa_set = 1 - 0/(0+ε) = 1.0, kappa_rate = 1.0 (peak < epsilon_conv → no-novelty path), kappa_adopt = 1.0 (delta=0"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.86,
+        "description": "`ConvergenceDetector.converged()` can return `True` when the requested round has no registered findings, and can also return `True` after only registered empty rounds. Location: `bench/dm/_convergence.py`, method `converged()`.\n\nEvidence from source:\ndef converged(self, round_idx: int) -> bool:\n    \"\"\"Convergence predicate.\n\n    converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n    Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n    \"\"\"\n    if round_idx ",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n==== REPLACE\ndef converged(self, round_idx: int) -> bool:\n        \"\"\"Convergence predicate.\n\n        converged(r) iff kappa(r) >= tau_kappa AND r >= min_rounds AND NOT veto(r)\n\n        Note: tau_kappa is SEPARATE from gamma (founder decision §9.2).\n        \"\"\"\n        if round_idx < self.config.min_rounds_for_convergence:\n            return False\n        if round_idx not in self._round_findings:\n            return False\n        if not self.get_cumulative_classes(round_idx):\n            return False\n        if self._veto(round_idx):\n            return False\n        return self.kappa(round_idx) >= self.config.tau_kappa\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0001"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same root gate defect, broader scope: missing requested round is silently treated as empty/stable."
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Same root cause as C0001 but from a different angle (also covers the case where the *specific requested round* has no findings while prior rounds might). The fixes overlap. C0001's fix subsumes this."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "Same rationale as C0001. Returning `True` when there are no findings is the mathematically correct limit of the convergence metrics (novel rate = 0, novel severity = 0) and represents a genuinely quie"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Same root cause as C0001 plus missing requested-round guard. `get_round_classes()` and `get_cumulative_classes()` silently treat unregistered rounds as empty, so `converged(r)` can evaluate a round th"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Same root cause as C0001. Recommend MERGE C0002 <- C0001. Both identify the missing empty-findings guard in `converged()`."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 1.0,
+        "description": "In `ConvergenceDetector._novel_classes`, the condition for an equivalence class to be considered novel is that all members are not similar to any prior cumulative finding. This is too strict: if a class contains a truly novel finding clustered with a duplicate one because of high pairwise similarity, the entire class is classified as non‑novel. The novel finding is hidden, causing kappa_set, kappa_rate, and the severity veto to under‑report discovery. Location: `_novel_classes`, lines 160‑180.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nnovel = []\n        for ec in current_classes:\n            is_novel = True\n            for member in ec.members:\n                for prev_f in prev_findings:\n                    if self.similarity_fn(member, prev_f) >= self._tau_sim():\n                        is_novel = False\n                        break\n                if not is_novel:\n                    break\n            if is_novel:\n                novel.append(ec)\n        return novel\n==== REPLACE\nnovel = []\n        for ec in current_classes:\n            has_novel = False\n            for member in ec.members:\n                member_novel = True\n                for prev_f in prev_findings:\n                    if self.similarity_fn(member, prev_f) >= self._tau_sim():\n                        member_novel = False\n                        break\n                if member_novel:\n                    has_novel = True\n                    break\n            if has_novel:\n                novel.append(ec)\n        return novel\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "VERIFIED: TRUE as a challenge to the finding as summarized"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The visible registry summary is insufficient to confirm the proposed root-cause/fix as stated. The source implements its documented class-level novelty rule: “A class is novel if none of its members a"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 1,
+            "evidence": "The proposed fix alters the definition of a novel equivalence class. If ANY member of a class is similar to a prior finding, the class represents a rediscovery of that prior finding. Therefore, the en"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The visible code implements class-level novelty: a current equivalence class is novel only if none of its members are similar to prior findings. The registry summary’s claim that the code/docstring di"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The code implements class-level novelty, which is correct for single-linkage clustering. Trace: `_novel_classes` checks if ANY member of a round-r class matches ANY prior finding. If member A matches "
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The visible code implements class-level novelty consistently with the documented equivalence-class semantics. Premises: `_novel_classes()` returns a current equivalence class as novel only if none of "
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The novelty check is class-level by design and is consistent with the equivalence relation semantics. If finding Y (non-novel) and finding Z (novel) are in the same round-r equivalence class, they are"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The code correctly implements the specification: a class is novel only if none of its members are similar to any prior finding. The docstring and code match. The deliberate strictness prevents false n"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "The _novel_classes logic (line 221–246) intentionally treats an equivalence class as non‑novel if **any** member is similar to a prior finding. The docstring states “A class is novel if none of its me"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "The code matches its own docstring verbatim: \"A class is novel if none of its members are similar to any member of any class in the cumulative set.\" This is the conservative design — if ANY member mat"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The \"all members must be novel\" condition is **conservative by design**. In a convergence detector, false-positive convergence (declaring done too early) is worse than false-negative (one extra round)"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The code correctly implements class-level novelty: an equivalence class is novel if and only if ALL its members are novel (i.e., no member is similar to any previous finding). If any member is similar"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "The logic `is_novel = False` upon ANY member matching a previous finding is correct. If a class contains a member similar to a previous finding, the issue is already known. Accepting it as novel would"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "[\n  {\n    \"FINDING_ID\": \"F001\",\n    \"SEVERITY\": 0.5,\n    \"FLAW_CLASS\": 7,\n    \"ABSTRACTION_INDEX\": 0.2,\n    \"FIND\": \"`self._tau_sim()` is called inside the inner loops of `_compute_equivalence_classes` (O(N^2)) and `_novel_classes` (O(N*M)). `_tau_sim()` calls `_effective_tau_sim()`, which may perform dictionary lookups or module checks. This causes unnecessary overhead.\",\n    \"FOLLOW\": \"As the number of findings grows, the O(N^2) and O(N*M) loops will call `_tau_sim()` millions of times. This d",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "I've completed a thorough review of `bench/dm/_convergence.py`. Let me trace the key logic paths to verify correctness.\n\nSummary: No CRITICAL or HIGH severity findings. The code has been through extensive multi-round review and the prior fixes (Corroboration Collapse, kappa_rate novel-class counting, quiet-state handling, tau_sim binding) are correctly implemented. I traced through the key computation chains and edge cases; the invariants hold.\n\nHere is my verification work:\n\n---\n\n## Verificatio",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.6,
+        "description": "C0003 should not be accepted as confirmed from the visible registry text alone. The code and docstring agree on class-level novelty semantics. A mixed class containing both prior-similar and prior-dissimilar members is not necessarily a new equivalence class under single-linkage clustering.",
+        "proposed_fix": "No fix proposed for C0003. The safe next step is to require C0003 to provide a concrete failing test and exact replacement. A correct fix, if needed, likely belongs in clustering/splitting mixed classes, not in changing class novelty from universal to existential.",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 5,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "Withdrawing my prior C0006-style meta finding as a code-review finding. It was a challenge to C0003’s evidentiary basis, not a defect in `bench/dm/_convergence.py`, and no code SEARCH/REPLACE fix is a"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "C0006 is not an admissible DISCOVERY finding against bench/dm/_convergence.py. It is a process-level challenge to C0003, not a target-file defect with a code-level root cause. No truthful SEARCH/REPLA"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "C0006 is a meta-finding (procedural objection to C0003's confirmation status) rather than a code bug. It carries severity 0.60 but describes no code defect — it argues that C0003 \"should not be accept"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "C0006 correctly identifies that C0003 is invalid."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "bugzilla_attempted": true
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.7,
+        "description": "In `ConvergenceDetector.kappa_set()` at lines 195‑198, `prior_findings` is built by extending all members from each equivalence class in `get_cumulative_classes(round_idx - 1)`. Because `get_cumulative_classes` clusters the entire multi‑round union and identical findings from different rounds land in the same class, the member list of that class contains multiple copies of substantively identical findings. Consequently `prior_findings` becomes a multiset.\n\n  In `_suppression_weight`, similaritie",
+        "proposed_fix": "Deduplicate `prior_findings` so that only the first occurrence of any substantially identical finding is kept. A simple O(n²) pass using `similarity_fn(member, seen) >= 1.0` is acceptable given the small n.\n\n  <<<< SEARCH bench/dm/_convergence.py\n        prior_findings: List[Finding] = []\n        if round_idx > 0:\n            for ec in self.get_cumulative_classes(round_idx - 1):\n                prior_findings.extend(ec.members)\n  ====\n        prior_findings: List[Finding] = []\n        if round_idx > 0:\n            seen: List[Finding] = []\n            for ec in self.get_cumulative_classes(round_idx - 1):\n                for m in ec.members:\n                    # Deduplicate: don't count the same conceptual finding twice.\n                    if not any(self.similarity_fn(m, s) >= 1.0 for s in seen):\n                        seen.append(m)\n            prior_findings = seen\n  >>>> REPLACE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 2,
+            "evidence": "The stated mechanism “a finding belongs to multiple equivalence classes” is false for the current union-find implementation: each input index has exactly one root and is emitted into exactly one clust"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "The suppression-inflation mechanism is real but the severity may be overstated. Concrete trace: when the same logical finding is reported across N rounds, N Finding objects appear in one cumulative eq"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Traced the code path: `get_cumulative_classes(round_idx - 1)` uses union-find clustering, which assigns each Finding to exactly one equivalence class. Iterating over all classes and extending their me"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0011"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "In `kappa_set()`, `prior_findings` is built by extending `.members` from every equivalence class of `self.get_cumulative_classes(round_idx - 1)`. The same concrete `Finding` object can appear in multi"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "The alleged duplication in `prior_findings` does not exist. `get_cumulative_classes(round_idx - 1)` partitions all findings from rounds 0..r-1 via union-find. Each `Finding` object appears in exactly "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "Prior findings built by extending all members from cumulative classes can contain duplicates if the same Finding object is registered across multiple rounds (caller error, but undefended). Deduplicati"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "`get_cumulative_classes` partitions the findings into disjoint equivalence classes. Extending `prior_findings` with the members of these classes exactly reconstructs the set of all prior findings with"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "`_suppression_weight` uses `TopK` to intentionally count multiple prior occurrences up to `k`. Deduplicating `prior_findings` would destroy the frequency signal that the suppression mechanism relies o"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.5,
+        "description": "`_compute_equivalence_classes` (line 136–139) merges findings based solely on `similarity_fn() >= tau_sim`, ignoring `flaw_class`. The `FindingEquivalenceClass` docstring (line 489 of `_types.py`) specifies equivalence requires BOTH shared `flaw_class` AND similarity >= `tau_sim`. The implementation violates this documented invariant. Verified by tool: two findings with identical descriptions but `flaw_class=1` and `flaw_class=7` merge into a single equivalence class labeled `flaw_class=1` (the ",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nfor i in range(n):\n            for j in range(i + 1, n):\n                if self.similarity_fn(findings[i], findings[j]) >= self._tau_sim():\n                    union(i, j)\n==== REPLACE\nfor i in range(n):\n            for j in range(i + 1, n):\n                if (findings[i].flaw_class == findings[j].flaw_class\n                        and self.similarity_fn(findings[i], findings[j]) >= self._tau_sim()):\n                    union(i, j)\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "`_compute_equivalence_classes()` merges solely by similarity and then assigns `flaw_class = members[0].flaw_class`; a cross-flaw merge can silently relabel later findings and distort novelty/severity "
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0015"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.4,
+        "description": "",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 7,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "cc2v_escalated": true
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_C0007"
+        ],
+        "severity": 0.7,
+        "description": "In bench/dm/_convergence.py, ConvergenceDetector.kappa_set() builds prior_findings by extending every member of each prior cumulative equivalence class. Evidence location: the block `for ec in self.get_cumulative_classes(round_idx - 1): prior_findings.extend(ec.members)`. Because the denominator counts each prior equivalence class once via aggregated_severity, but the numerator suppression can count multiple members from the same prior equivalence class through TopK similarity, duplicate or near",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nprior_findings: List[Finding] = []\n        if round_idx > 0:\n            for ec in self.get_cumulative_classes(round_idx - 1):\n                prior_findings.extend(ec.members)\n==== REPLACE\nprior_findings: List[Finding] = []\n        if round_idx > 0:\n            for ec in self.get_cumulative_classes(round_idx - 1):\n                if ec.members:\n                    prior_findings.append(ec.members[0])\n>>>>",
+        "status": "MERGED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0007"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "MERGE",
+            "round": 3,
+            "evidence": "merged_into=C0007"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "merged_into": "C0007"
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "cc2v_escalated": true
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_C0007"
+        ],
+        "severity": 0.5,
+        "description": "",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.8,
+        "description": "The `flaw_class` attribute is ignored during similarity comparisons across the entire convergence detector. This causes findings with completely different flaw classes (e.g., a performance issue and a security vulnerability) to be clustered together, suppressed by each other, and falsely marked as non-novel if their text happens to be lexically or semantically similar.",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nfor i in range(n):\n            for j in range(i + 1, n):\n                if self.similarity_fn(findings[i], findings[j]) >= self._tau_sim():\n                    union(i, j)\n==== REPLACE\nfor i in range(n):\n            for j in range(i + 1, n):\n                if findings[i].flaw_class == findings[j].flaw_class and self.similarity_fn(findings[i], findings[j]) >= self._tau_sim():\n                    union(i, j)\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "Additional consequence: flaw-class-blind comparison is not limited to `_compute_equivalence_classes()`. `_novel_classes()` and `_suppression_weight()` also call `self.similarity_fn(...) >= self._tau_s"
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Evidence from `bench/dm/_convergence.py`: `_compute_equivalence_classes()` merges findings solely when `self.similarity_fn(findings[i], findings[j]) >= self._tau_sim()`. It then assigns `flaw_class = "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "The `_finding_similarity` function (imported from `bench.dm._similarity`) does not incorporate `flaw_class` into its similarity score. In `_compute_equivalence_classes`, two findings with different fl"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "`flaw_class` is metadata-only within `_convergence.py`. It is NOT used in any convergence metric (`kappa_set`, `kappa_rate`, `kappa_adopt`), NOT used in the veto check, NOT used in novelty detection, "
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": "** The arbitrary first‑member assignment of `flaw_class` is an additional consequence – even if similarity were constrained by flaw_class, a class containing mixed flaw classes would still pick one ar"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "Ignoring `flaw_class` during similarity is correct. If two models find the exact same bug but label it with different flaw classes, they should be merged to prevent false novelty. Enforcing `flaw_clas"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.55,
+        "description": "`kappa_rate` at line 304 computes the peak novel rate over `range(round_idx + 1)`, which includes `round_idx` itself. This means if the CURRENT round has the highest novel rate ever, `peak == rate_r` and `kappa_rate ≈ 1 - rate_r / (rate_r + ε) ≈ 0`. This is correct for the current round. BUT: it also means that a single anomalous late-round burst (e.g., a model hallucinates many \"novel\" findings in round 7) permanently resets the peak for ALL future rounds. In round 8 with zero novelty, kappa_ra",
+        "proposed_fix": "Not proposed (UNCERTAIN status; SOFT constraint in a PoC with adequate alternative guards via kappa_set and veto).",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "The claimed defect is not behaviorally material as stated. Premises: current `kappa_rate(r)` computes `rate_r = λ_r`, `peak = max(λ_0..λ_r)`, then returns `clamp(1 - λ_r / (peak + ε), 0, 1)`. If the c"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CHALLENGE",
+            "round": 3,
+            "evidence": "Including `round_idx` in the `kappa_rate()` peak baseline does not create a demonstrated HIGH/CRITICAL correctness failure from the visible code. For any current round whose novelty rate exceeds all p"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "`kappa_rate` computes the peak novel rate over `range(round_idx + 1)`, which includes the current round. The Duane‑model definition uses the historical maximum rate as the baseline; if the current rat"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "Including the current round in the peak calculation makes `kappa_rate` strictly more conservative. If round r has the highest novel rate ever, `rate_r/peak ≈ 1`, so `kappa_rate ≈ 0` — correctly signal"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "`kappa_rate` correctly includes `round_idx` in the peak calculation. If the current round has the highest discovery rate, the peak is the current rate, making `rate_r / peak = 1.0`, which correctly dr"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.72,
+        "description": "`ConvergenceDetector.add_round_findings()` accepts invalid control inputs and stores them directly:\n\n- negative `round_idx`\n- zero, negative, `NaN`, or infinite `duration`\n- `NaN` or infinite `adoption_delta`\n\nLocation: `bench/dm/_convergence.py`, method `add_round_findings()`.\n\nCurrent code:\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\nConcrete evidence:\n\nCase A — negative round ind",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nself._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\n        # Invalidate cached classes\n==== REPLACE\nif round_idx < 0:\n            raise ValueError(\"round_idx must be non-negative\")\n        if not math.isfinite(duration) or duration <= 0.0:\n            raise ValueError(\"duration must be finite and positive\")\n        if not math.isfinite(adoption_delta):\n            raise ValueError(\"adoption_delta must be finite\")\n\n        self._round_findings[round_idx] = list(findings)\n        self._round_durations[round_idx] = duration\n        self._adoption_deltas[round_idx] = adoption_delta\n        # Invalidate cached classes\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Evidence from `add_round_findings()`: `round_idx`, `duration`, and `adoption_delta` are stored directly without validation:"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "Negative round_idx is a non-issue in a PoC. The dictionary simply stores it under a negative key, which does not break the logic since rounds are accessed via `range(round_idx + 1)`."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 6,
+            "evidence": "`add_round_findings()` also accepts malformed `Finding` payload values, not only malformed control inputs. A `Finding.severity` outside `[0.0, 1.0]` or non-finite (`NaN`, `inf`) can make `kappa_set()`"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": "ChatGPT_F002 — same root cause: invalid control inputs accepted by `ConvergenceDetector.add_round_findings()` and later converted into silently wrong convergence metrics. I withdraw ChatGPT_F002 as a "
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 6,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "`round_idx` is a control input provided by the runner, not user input. Validating it for negative values adds unnecessary defensive code to a PoC where the runner guarantees valid indices."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004_WITHDRAW"
+        ],
+        "severity": 0.0,
+        "description": "WITHDRAWN. The schema flagged Gemini_F004 as a near-duplicate of CC2_F001 (cosine 0.71). I agree they describe the same underlying issue.",
+        "proposed_fix": "N/A",
+        "status": "UNCONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "Registry marks C0018 as WITHDRAWN with Fix: N/A. There is no admissible source SEARCH text in the visible registry to re-emit byte-for-byte. Reconstructing a SEARCH/REPLACE block would fabricate an un"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_DS_F005"
+        ],
+        "severity": 0.6,
+        "description": "In `_weighted_novel_severity` (line 261), the class weight is computed as `max(member weights)`. The class’s contribution to novel severity is then `class_weight * aggregated_severity`, where `aggregated_severity` is the maximum severity among members. The member with the highest weight may not be the same member that supplied the `aggregated_severity`. Consequently, a high‑severity finding that is heavily suppressed (low weight) can still contribute almost its full raw severity if another membe",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\n# Per-class weight: max of member weights (least suppressed)\n            class_weight = max(\n                self._suppression_weight(member, prior_findings)\n                for member in ec.members\n            ) if ec.members else 1.0\n==== REPLACE\n# Per-class weight: weight of the most severe member (conservative)\n            if ec.members:\n                max_sev_member = max(ec.members, key=lambda f: f.severity)\n                class_weight = self._suppression_weight(max_sev_member, prior_findings)\n            else:\n                class_weight = 1.0\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "Evidence from `_weighted_novel_severity()`: class contribution uses `class_weight = max(self._suppression_weight(member, prior_findings) for member in ec.members)` and then `total += class_weight * ec"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "The line `class_weight = max(self._suppression_weight(member, prior_findings) for member in ec.members)` (line 277) computes the *least* suppressed weight across the class’s members. The comment says "
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 4,
+            "evidence": "The `max(member weights)` design is documented and intentional: \"class weight = max member weight (conservative: least suppressed).\" Using max means if ANY member of a novel class is genuinely new (lo"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "`max(member weights)` selects the least-suppressed member as the class representative. This is intentionally conservative — it avoids over-suppressing a class when one member is genuinely novel. For a"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 5,
+            "evidence": "The code explicitly documents `max of member weights (least suppressed)` as a conservative proxy. This is an intentional design choice, not a bug."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CHALLENGE",
+            "round": 6,
+            "evidence": "The docstring explicitly states `class weight = max member weight (conservative: least suppressed)`. This is a deliberate design choice for conservative convergence, not a bug."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.58,
+        "description": "`ConvergenceDetector._suppression_weight()` documents that it returns a weight in `[w_floor, 1.0]`, but the implementation can return values greater than `1.0` when a custom `similarity_fn` returns negative values.\n\nLocation: `bench/dm/_convergence.py`, method `_suppression_weight()`.\n\nRelevant current code:\n# Compute similarity to all prior findings\n        sims = sorted(\n            (self.similarity_fn(finding, g) for g in prior_findings),\n            reverse=True,\n        )\nand:\n# Exponential",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\n# Compute similarity to all prior findings\n        sims = sorted(\n            (self.similarity_fn(finding, g) for g in prior_findings),\n            reverse=True,\n        )\n==== REPLACE\n# Compute similarity to all prior findings. Suppression weights are\n        # defined over similarity values in [0, 1]; clamp custom similarity\n        # outputs so this function preserves its documented [w_floor, 1.0]\n        # return contract even when callers provide a wider-scale function.\n        sims = sorted(\n            (\n                max(0.0, min(1.0, self.similarity_fn(finding, g)))\n                for g in prior_findings\n            ),\n            reverse=True,\n        )\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 4,
+        "last_status_change_round": 6,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "Independent evidence: `_suppression_weight()` promises `[w_floor, 1.0]`, but with `lambda_s < 0` and one prior with similarity `1.0`, `math.exp(-lambda_s * top_k_sum) > 1.0`; with `w_floor > 1.0`, `ma"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 5,
+            "evidence": "Partially. With the **default** `finding_similarity`, the return range is documented and verified as `[0, 1]`, so `top_k_sum >= 0` and `w <= 1.0` always. But with a **custom** `similarity_fn` that ret"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "{\n  \"FINDING_ID\": \"CC2_R6_001\",\n  \"SEVERITY\": 0.75,\n  \"FLAW_CLASS\": 4,\n  \"ABSTRACTION_INDEX\": 0.5,\n  \"FIND\": \"The veto clause `_veto` only considers *novel* equivalence classes, not all high‑severity findings in the current round.  Consequently, if a high‑severity finding exists but is similar to a prior finding (similarity ≥ τ_sim), the class is marked not novel, and `_veto` returns False, allowing convergence to be declared despite a critical finding.\",\n  \"FOLLOW\": \"`converged()` calls `_veto(",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 6,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.6,
+        "description": "In `estimate_gamma`, if `cum_r < cum_1`, the function returns `0.0`. This occurs when single-linkage clustering merges previously distinct equivalence classes due to a new bridging finding, reducing the total number of unique issues. Returning `0.0` implies no reliability growth (degradation), when in fact a reduction in cumulative classes represents massive reliability growth (fewer unique issues than initially thought).",
+        "proposed_fix": "<<<< SEARCH bench/dm/_convergence.py\nif cum_1 <= 0:\n            return 0.0\n        if cum_r <= cum_1:\n            return 1.0 if cum_r == cum_1 else 0.0\n\n        log_r = math.log(round_idx)\n==== REPLACE\nif cum_1 <= 0:\n            return 0.0\n        if cum_r <= cum_1:\n            return 1.0\n\n        log_r = math.log(round_idx)\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 6,
+        "last_status_change_round": 6,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "20/20 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      }
+    },
+    "next_id": 23,
+    "alias_map": {
+      "Codex:Codex_F001": "C0001",
+      "ChatGPT:ChatGPT_F001": "C0002",
+      "DeepSeek:DeepSeek_F001": "C0003",
+      "Gemini:Gemini_UNSTRUCTURED": "C0004",
+      "CC2:CC2_UNSTRUCTURED": "C0005",
+      "Codex:Codex_F002": "C0006",
+      "DeepSeek:DeepSeek_F002": "C0007",
+      "CC2:CC2_F001": "C0008",
+      "Gemini:Gemini_F002": "C0009",
+      "Gemini:Gemini_F003": "C0010",
+      "ChatGPT:ChatGPT_C0007": "C0011",
+      "DeepSeek:DeepSeek_F003": "C0012",
+      "DeepSeek:DeepSeek_F004": "C0013",
+      "DeepSeek:DeepSeek_C0007": "C0014",
+      "Gemini:Gemini_F004": "C0015",
+      "CC2:CC2_F003": "C0016",
+      "ChatGPT:ChatGPT_F002": "C0017",
+      "Gemini:Gemini_F004_WITHDRAW": "C0018",
+      "DeepSeek:DeepSeek_DS_F005": "C0019",
+      "ChatGPT:ChatGPT_F004": "C0020",
+      "DeepSeek:DeepSeek_UNSTRUCTURED": "C0021",
+      "Gemini:Gemini_F001": "C0022"
+    }
+  },
+  "hil_flags": [],
+  "secondary_route_usage": [],
+  "persistent_empty_flags": []
+}

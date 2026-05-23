@@ -1,0 +1,2824 @@
+{
+  "experiment": "exp40_slice_records",
+  "topology": "star",
+  "relay_mode": null,
+  "start_time": "2026-05-18T13:55:39.358142+00:00",
+  "pattern": "four_layer",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py",
+  "context_files": [],
+  "max_rounds": 12,
+  "extension_cap": 12,
+  "domain": "software",
+  "convergence_config": {
+    "earliest_stop": 3,
+    "consecutive_required": 2,
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 10,
+      "findings": [
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.95,
+          "description": "FINDING_ID: F001  \nSEVERITY: 0.95  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.72  \nFIND: `build_feedback_records` still keys both `finding_by_id` and `records_by_id` only by `finding_id`. Location: `bench/",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.78,
+          "description": "`FindingFeedback.priority_score()` under-prioritizes findings whose `final_verdict` is `\"REJECTED\"` but whose `refutations` list is empty. Location: `FindingFeedback.priority_score`.\n\nEvidence:\n- `action` treats either `self.refutations` or `self.final_verdict == \"REJECTED\"` as requiring `\"RECALCULATE\"`.\n- `build_feedback_records` also creates a feedback record when `final_v == \"REJECTED\"`, even if `refutations` is empty.\n- But `priority_score` only applies the +3.0 rejected/refuted priority whe",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.9,
+          "description": "FINDING_ID: F001  \nSEVERITY: 0.90  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.65  \nFIND: `build_feedback_records()` in `bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py` b",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "`bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 4,
+          "severity": 0.78,
+          "description": "FINDING_ID: F002  \nSEVERITY: 0.78  \nFLAW_CLASS: 4  \nABSTRACTION_INDEX: 0.45  \nFIND: `build_feedback_records()` only creates rejection feedback while iterating `cell_verdicts.items()`. A finding that a",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "FINDING_ID: F001\nSEVERITY: 1.0\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.8\nFIND: The `finding_by_id` dictionary comprehension in `build_feedback_records` uses a last-wins mapping (`{f.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "CC2_F001",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.9,
+          "description": "FINDING_ID: F001\nSEVERITY: 0.90\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.6\n\nFIND: `build_feedback_records` line ~178: `finding_by_id = {f.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "CC2_F002",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.65,
+          "description": "`build_feedback_records` section 3 (near-duplicates), lines ~225-237: the loop iterates `for fid_a, fid_b, sim in duplicate_pairs` and creates/updates a feedback record only for `fid_a`, appending `(fid_b, sim)` to its `.duplicates`. Finding `fid_b` receives no feedback record and no notification that it has a near-duplicate.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "CC2_F003",
+          "model_id": "CC2",
+          "flaw_class": 4,
+          "severity": 0.45,
+          "description": "`build_feedback_records` section 1 (lines ~183-200): when `final_v == \"REJECTED\"` but `refutations` is empty (no individual cell produced a REJECTED verdict — the immune pipeline's aggregation rule mapped UNCERTAIN verdicts to a final REJECTED), a `FindingFeedback` record is created with `refutations=[]` and `final_verdict=\"REJECTED\"`. The `action` property returns `\"RECALCULATE\"`. However, `_render_single_record` renders no \"REFUTED by:\" block (guarded by `if rec.refutations`), so the model see",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "DeepSeek_F001",
+          "model_id": "DeepSeek",
+          "flaw_class": 5,
+          "severity": 0.8,
+          "description": "In `build_feedback_records`, the line:",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F002",
+          "model_id": "DeepSeek",
+          "flaw_class": 4,
+          "severity": 0.65,
+          "description": "In `build_feedback_records`, the near‑duplicate handling loop processes only the first element of each duplicate pair (`fid_a`). The code:\nif duplicate_pairs:\n    for fid_a, fid_b, sim in duplicate_pairs:",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        }
+      ],
+      "novel_this_round": 10,
+      "registry_total": 10,
+      "open_crit_high": 7,
+      "models_responded": [
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "CC2",
+        "DeepSeek"
+      ],
+      "elapsed_s": 400.4,
+      "gamma": 0.0,
+      "rho": 1.0,
+      "rho_avg": 1.0,
+      "verification": {
+        "skipped": true,
+        "reason": "round 0 < 6"
+      },
+      "sk_pipeline": {
+        "round": 0,
+        "evaluated": 4,
+        "admissible": 2,
+        "rejected": 0,
+        "escalated": 2,
+        "results": {
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 0,
+        "open_ch": 7,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 0 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 21,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 10,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 7,
+      "findings": [
+        {
+          "finding_id": "Codex_F003",
+          "model_id": "Codex",
+          "flaw_class": 6,
+          "severity": 0.62,
+          "description": "`build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed the cap.\n\nLocation:\n\n`bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py`, function `build_feedback_sections`, max-character fallback block:\nwhile len(section) > max_chars_per_model and top_items:\n            top_items = top_items[:-1]\n            if not top_items:\n                section = (\n                    f\"=== SCHEMA FEEDBACK ON YOUR ROUND {ro",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "`bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "CC2_F002",
+          "model_id": "CC2",
+          "flaw_class": 4,
+          "severity": 0.65,
+          "description": "`build_feedback_records` section 3 (lines 217-231): the `duplicate_pairs` loop iterates `for fid_a, fid_b, sim` but only creates/updates a `FindingFeedback` record for `fid_a`. `fid_b` is never looked up, never gets a record, and never receives duplicate-notification feedback. NK-Cell dedup emits each pair once (a,b), not symmetrically as both (a,b) and (b,a). Consequence: one side of every duplicate pair silently resubmits unchanged in round K+1.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "CC2_F003",
+          "model_id": "CC2",
+          "flaw_class": 4,
+          "severity": 0.45,
+          "description": "`_render_single_record` (lines 380-428): when a finding has `final_verdict == \"REJECTED\"` but `refutations` is empty (no individual specialist cell returned REJECTED — the pipeline's aggregate logic promoted the finding to REJECTED), the rendered output shows `action: RECALCULATE` in the header but the body contains zero evidence lines. The `if rec.refutations:` guard at line 389 skips the \"REFUTED by:\" block entirely. The model is instructed to recalculate but given nothing to recalculate again",
+          "verified": true,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.78,
+          "description": "FINDING_ID: ChatGPT_F002\n\nSEVERITY: 0.78\n\nFLAW_CLASS: 1\n\nABSTRACTION_INDEX: 0.45\n\nFIND: CONFIRM C0002. `FindingFeedback.priority_score()` does not give aggregate final `REJECTED` verdicts the same pri",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 6,
+          "severity": 0.45,
+          "description": "New DISCOVERY. `build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed it.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Gemini_UNSTRUCTURED",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "=== ANALYSIS OF target_0 (synthesis returned empty, chunk content preserved) ===\nReviewing Python Code\n\nI am currently engaged in a code review of the `_feedback_records_slice.py` file. My focus is on applying the 4-Layer Review Protocol, ensuring each finding includes FIND, FOLLOW, ANALYSE, FIX, and FALSIFICATION elements as per operational directives.\n\nIdentifying Code Anomalies\n\nI'm currently scrutinizing `_feedback_records_slice.py`, specifically examining the `build_feedback_records` functi",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_F003",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.7,
+          "description": "In `FindingFeedback.priority_score()`, a finding that is REFUTED by a specialist tool receives a base urgency increment of `+3.0`. Admissibility failures add `0.8` per failed gate, up to a maximum of `0.8×5 = 4.0`. A finding with five failed admissibility gates (and no refutations) therefore earns a priority score of `4.0`, exceeding the `3.0` of a refuted finding. Because `priority_score` determines the top‑K ordering in `build_feedback_sections`, a refuted finding can be pushed out of the top‑",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        }
+      ],
+      "novel_this_round": 4,
+      "registry_total": 14,
+      "open_crit_high": 5,
+      "models_responded": [
+        "Codex",
+        "CC2",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 436.7,
+      "gamma": 0.0,
+      "rho": 0.5714,
+      "rho_avg": 0.7857,
+      "verification": {
+        "skipped": true,
+        "reason": "round 1 < 6"
+      },
+      "sk_pipeline": {
+        "round": 1,
+        "evaluated": 5,
+        "admissible": 4,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 1,
+        "open_ch": 5,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 1 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 14,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 7,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 2,
+      "type": "adaptive",
+      "findings_count": 5,
+      "findings": [
+        {
+          "finding_id": "CC2_F004",
+          "model_id": "CC2",
+          "flaw_class": 2,
+          "severity": 0.4,
+          "description": "`_rebuild_section` (line ~380) accepts parameter `all_recs: List[FindingFeedback]` which is never referenced in the function body. The function uses only `top_items`, `round_idx`, and `overflow_count`. The parameter is passed from `build_feedback_sections` (line ~340) as `model_recs`, creating a false interface dependency.\n\nConcrete evidence — the function body:\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    all_recs: List[FindingFeedback],   # ← never referenced\n    round_idx: ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Codex_F004",
+          "model_id": "Codex",
+          "flaw_class": 6,
+          "severity": 0.7,
+          "description": "FINDING_ID: F004\n\nSEVERITY: 0.70\n\nFLAW_CLASS: 6\n\nABSTRACTION_INDEX: 0.30\n\nFIND: `_render_single_record()` can crash when specialist refutation evidence is `None` or otherwise non-string.\n\nLocation:\nde",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_V001_ON_C0011",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.62,
+          "description": "VERDICT: CONFIRM C0011 | EXTEND C0011 with concrete boundary case `max_chars_per_model=1`.\n\n`build_feedback_sections()` documents `max_chars_per_model` as a hard cap:\nmax_chars_per_model : int\n    Hard cap on section length, to prevent prompt blow-up.\nBut the fallback path can return a section longer than the cap.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR RO",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "The `finding_by_id` dictionary comprehension in `build_feedback_records` uses `f.finding_id` as the key, which silently overwrites findings when multiple models submit the same ID (e.g., \"F001\"). This causes data loss and misroutes corrective feedback. Furthermore, `records_by_id` is also keyed by `fid`, causing further overwrites.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "DeepSeek_F004",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.75,
+          "description": "In `FindingFeedback.priority_score()`, the additive score components do not preserve the documented urgency precedence.  \nThe docstring states *“refutation beats admissibility beats duplicate beats R_k discrepancy”*, implying refutations must always rank highest. However the formula assigns:  \n\n- refutations: +3.0 (fixed)  \n- admissibility failures: +0.8 per failed gate → max 4.0 (5 gates × 0.8)  \n- duplicates: up to +2.0  \n- R_k discrepancy: up to +1.0  \n\nA finding with 5 admissibility failures",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        }
+      ],
+      "novel_this_round": 4,
+      "registry_total": 18,
+      "open_crit_high": 6,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 1118.2,
+      "gamma": 0.4703,
+      "rho": 0.8,
+      "rho_avg": 0.7905,
+      "verification": {
+        "skipped": true,
+        "reason": "round 2 < 6"
+      },
+      "sk_pipeline": {
+        "round": 2,
+        "evaluated": 6,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 2,
+        "open_ch": 6,
+        "contested": 0,
+        "gamma": 0.4703,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 2 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 11,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 5,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": {
+        "per_model_count": {
+          "Gemini": 1
+        },
+        "stats": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        },
+        "cross_model_only": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        }
+      },
+      "recidivism_hits": []
+    },
+    {
+      "round": 3,
+      "type": "adaptive",
+      "findings_count": 3,
+      "findings": [
+        {
+          "finding_id": "Codex_F004",
+          "model_id": "Codex",
+          "flaw_class": 6,
+          "severity": 0.7,
+          "description": "FINDING_ID: F004\n\nSEVERITY: 0.70\n\nFLAW_CLASS: 6\n\nABSTRACTION_INDEX: 0.30\n\nFIND: `_render_single_record()` assumes refutation evidence is a safe string and renders it directly into the next-round model",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.74,
+          "description": "FINDING_ID: F003\n\nSEVERITY: 0.74\n\nFLAW_CLASS: 5\n\nABSTRACTION_INDEX: 0.35\n\nFIND: `_render_single_record()` renders model/tool-controlled fields into the next-round prompt without neutralising prompt-st",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_UNSTRUCTURED",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "=== ANALYSIS OF target_0 (synthesis returned empty, chunk content preserved) ===\nrecords_by_id[fid_a] = rec\n            rec.duplicates.append((fid_b, sim))\n\n    # 4. R_k discrepancies — only flag WARN or FAIL from validator\n    if rk_validation:\n        for model_id, validation_records in rk_validation.items():\n            for fid, status, claimed_str, aggregate_str in validation_records:\n                if status not in (\"WARN\", \"FAIL\"):\n                    continue\n                finding = fi",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        }
+      ],
+      "novel_this_round": 0,
+      "registry_total": 18,
+      "open_crit_high": 5,
+      "models_responded": [
+        "CC2",
+        "Codex",
+        "ChatGPT",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 451.8,
+      "gamma": 0.5458,
+      "rho": 0.0,
+      "rho_avg": 0.4571,
+      "verification": {
+        "skipped": true,
+        "reason": "round 3 < 6"
+      },
+      "sk_pipeline": {
+        "round": 3,
+        "evaluated": 6,
+        "admissible": 5,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 3,
+        "open_ch": 5,
+        "contested": 0,
+        "gamma": 0.5458,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 3 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 7,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 3,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    },
+    {
+      "round": 4,
+      "type": "adaptive",
+      "findings_count": 7,
+      "findings": [
+        {
+          "finding_id": "CC2_UNSTRUCTURED",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "## Round 4 — CC1 (Claude Opus 4.6)\n\n### Registry Status Assessment\n\nThe depletion metrics are accurate. After four rounds and 18 canonical entries, the meaningful CRIT/HIGH defect space in this ~420-line slice is exhausted. I have no genuinely novel findings above MEDIUM threshold to file.\n\nBelow: verdicts on existing OPEN entries where I can add independent verification.\n\n---\n\n### VERDICT: CONFIRM C0018\n\nThe `priority_score()` method in the artifact (post-C0002-fix) checks only `if self.refutat",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_UNSTRUCTURED",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "## Schema feedback response\n\nWITHDRAW ChatGPT_F003 — duplicate of prior hard-cap finding C0011 / ChatGPT_F001. I am not resubmitting it unchanged, and I am not attempting to clear the failed admissibility gates for it because the correct action is withdrawal.\n\n## Registry-aware synthesis\n\nNo new DISCOVERY findings are admissible this round.\n\nThe two findings from my per-section analysis are already present in the registry:\n\n1. Duplicate `finding_id` / last-wins routing defect  \n   - Maps to sett",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Codex_V001",
+          "model_id": "Codex",
+          "flaw_class": 1,
+          "severity": 0.75,
+          "description": "FINDING_ID: V001  \nSEVERITY: 0.75  \nFLAW_CLASS: 1  \nABSTRACTION_INDEX: 0.45  \n\nVERDICT: CONFIRM C0018\n\nFIND: `FindingFeedback.priority_score()` does not preserve the documented urgency precedence when",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.9,
+          "description": "In `build_feedback_records`, the loop `for fid, verdict_list in cell_verdicts.items():` only processes findings that have cell verdicts. If a finding is rejected globally (present in `final_verdicts` as \"REJECTED\") but bypassed the cells (not in `cell_verdicts`), it is skipped in section 1. If it also lacks admissibility failures or duplicates, it receives NO feedback record, causing silent evidence loss.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Gemini_C0018",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.75,
+          "description": "VERDICT: CONFIRM C0018 | EXTEND C0018 to also resolve C0008. `FindingFeedback.priority_score()` uses additive float components that violate the documented strict precedence (e.g., 4 admissibility failures = 3.2, beating 1 refutation = 3.0). Furthermore, it fails to assign the refutation score to findings with `final_verdict == \"REJECTED\"` but no explicit refutations (C0008).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Gemini_C0015",
+          "model_id": "Gemini",
+          "flaw_class": 2,
+          "severity": 0.4,
+          "description": "VERDICT: CONFIRM C0015. `_rebuild_section` accepts parameter `all_recs: List[FindingFeedback]` which is never referenced in the function body.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        },
+        {
+          "finding_id": "Gemini_C0016",
+          "model_id": "Gemini",
+          "flaw_class": 6,
+          "severity": 0.7,
+          "description": "VERDICT: CONFIRM C0016. `_render_single_record()` can crash when `evidence` is `None`. The line `evidence_snip = (evidence[:400] + \"…\") if len(evidence) > 400 else evidence` assumes `evidence` is a string.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py"
+        }
+      ],
+      "novel_this_round": 6,
+      "registry_total": 24,
+      "open_crit_high": 8,
+      "models_responded": [
+        "CC2",
+        "ChatGPT",
+        "Codex",
+        "Gemini",
+        "DeepSeek"
+      ],
+      "elapsed_s": 892.3,
+      "gamma": 0.4944,
+      "rho": 0.8571,
+      "rho_avg": 0.5524,
+      "verification": {
+        "skipped": true,
+        "reason": "round 4 < 6"
+      },
+      "sk_pipeline": {
+        "round": 4,
+        "evaluated": 8,
+        "admissible": 7,
+        "rejected": 0,
+        "escalated": 1,
+        "results": {
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "ESCALATE",
+            "blocks_parsed": 0,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no SEARCH/REPLACE blocks found"
+            }
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0022": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0023": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0024": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "29/29 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "0 total, 0 new (baseline: 0)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 4,
+        "open_ch": 8,
+        "contested": 0,
+        "gamma": 0.4944,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 4 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 14,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 7,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": {
+        "per_model_count": {
+          "Gemini": 16
+        },
+        "stats": {
+          "count": 16.0,
+          "pairs": 120.0,
+          "mean_pairwise_jaccard": 0.43,
+          "max_pairwise_jaccard": 1.0,
+          "template_collapse_risk": 0.0
+        },
+        "cross_model_only": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        }
+      },
+      "recidivism_hits": []
+    }
+  ],
+  "terminated": "all_models_failed",
+  "total_findings": 32,
+  "total_rounds": 5,
+  "total_elapsed_s": 5897.2,
+  "end_time": "2026-05-18T15:33:56.411577+00:00",
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.4703,
+    0.5458,
+    0.4944
+  ],
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.95,
+        "description": "FINDING_ID: F001  \nSEVERITY: 0.95  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.72  \nFIND: `build_feedback_records` still keys both `finding_by_id` and `records_by_id` only by `finding_id`. Location: `bench/",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "duplicate `finding_id` values are still collapsed by `finding_by_id = {f.finding_id: f for f in findings}`, making provenance ambiguous and allowing feedback misrouting/loss. The source docstring expl"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The `finding_by_id` last-wins collision is real, documented as a known seed defect in the module docstring (lines 23-34), and confirmed by all five models. C0001 (ChatGPT) is the canonical entry."
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0006"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "duplicate `finding_id` last-wins map silently misroutes feedback."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.78,
+        "description": "`FindingFeedback.priority_score()` under-prioritizes findings whose `final_verdict` is `\"REJECTED\"` but whose `refutations` list is empty. Location: `FindingFeedback.priority_score`.\n\nEvidence:\n- `action` treats either `self.refutations` or `self.final_verdict == \"REJECTED\"` as requiring `\"RECALCULATE\"`.\n- `build_feedback_records` also creates a feedback record when `final_v == \"REJECTED\"`, even if `refutations` is empty.\n- But `priority_score` only applies the +3.0 rejected/refuted priority whe",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\nif self.refutations:\n            score += 3.0\n==== REPLACE\nif self.refutations or self.final_verdict == \"REJECTED\":\n            score += 3.0\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`FindingFeedback.action` treats `final_verdict == \"REJECTED\"` as recalculation-worthy, but `priority_score()` only assigns the +3.0 refutation boost when `self.refutations` is non-empty. A final rejec"
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "The `priority_score` gap for REJECTED-without-refutations is real. I traced it: `action` returns \"RECALCULATE\" at line 82-83 when `final_verdict == \"REJECTED\"` even if `refutations` is empty, but `pri"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`priority_score()` under-prioritizes aggregate `REJECTED` records without explicit `refutations`."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.9,
+        "description": "FINDING_ID: F001  \nSEVERITY: 0.90  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.65  \nFIND: `build_feedback_records()` in `bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py` b",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.78,
+        "description": "FINDING_ID: F002  \nSEVERITY: 0.78  \nFLAW_CLASS: 4  \nABSTRACTION_INDEX: 0.45  \nFIND: `build_feedback_records()` only creates rejection feedback while iterating `cell_verdicts.items()`. A finding that a",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "Codex's finding that `build_feedback_records` only creates records for findings with flags is by-design per the docstring (\"Findings with no flags are omitted\"), but the completeness concern about asy"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "final `REJECTED` verdicts absent from `cell_verdicts` can be omitted entirely."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 1.0,
+        "description": "FINDING_ID: F001\nSEVERITY: 1.0\nFLAW_CLASS: 1\nABSTRACTION_INDEX: 0.8\nFIND: The `finding_by_id` dictionary comprehension in `build_feedback_records` uses a last-wins mapping (`{f.",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "Independent verification. The `finding_by_id = {f.finding_id: f for f in findings}` comprehension is a last-wins dict. Concrete trace: given `findings = [Finding(id=\"X\", model_id=\"A\", severity=0.8), F"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.9,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.90\nFLAW_CLASS: 1 (logic)\nABSTRACTION_INDEX: 0.6\n\nFIND: `build_feedback_records` line ~178: `finding_by_id = {f.",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.65,
+        "description": "`build_feedback_records` section 3 (near-duplicates), lines ~225-237: the loop iterates `for fid_a, fid_b, sim in duplicate_pairs` and creates/updates a feedback record only for `fid_a`, appending `(fid_b, sim)` to its `.duplicates`. Finding `fid_b` receives no feedback record and no notification that it has a near-duplicate.",
+        "proposed_fix": "Add symmetric feedback — create a record for `fid_b` as well:\n\n<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\n    # 3. Near-duplicates\n    if duplicate_pairs:\n        for fid_a, fid_b, sim in duplicate_pairs:",
+        "status": "MERGED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "duplicate-pair feedback is asymmetric: `duplicate_pairs` are processed only for `fid_a`, so `fid_b` does not receive near-duplicate corrective feedback from the same pair."
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0010"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "near-duplicate feedback is emitted only for `fid_a`."
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "MERGE",
+            "round": 1,
+            "evidence": "merged_into=C0010"
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        },
+        "merged_into": "C0010"
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.45,
+        "description": "`build_feedback_records` section 1 (lines ~183-200): when `final_v == \"REJECTED\"` but `refutations` is empty (no individual cell produced a REJECTED verdict — the immune pipeline's aggregation rule mapped UNCERTAIN verdicts to a final REJECTED), a `FindingFeedback` record is created with `refutations=[]` and `final_verdict=\"REJECTED\"`. The `action` property returns `\"RECALCULATE\"`. However, `_render_single_record` renders no \"REFUTED by:\" block (guarded by `if rec.refutations`), so the model see",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\nbody_lines = [header]\n\n    if rec.refutations:\n        body_lines.append(\"  REFUTED by:\")\n==== REPLACE\nbody_lines = [header]\n\n    if rec.refutations:\n        body_lines.append(\"  REFUTED by:\")\n    elif rec.final_verdict == \"REJECTED\":\n        body_lines.append(\n            \"  REJECTED by pipeline consensus (no single tool refutation \"\n            \"— aggregate evidence led to rejection). Review the round log \"\n            \"for cell-level verdicts.\"\n        )\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "I filed this in round 1 and the evidence stands. Concrete trace:"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`build_feedback_records` creates a REJECTED record with empty `refutations`."
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.8,
+        "description": "In `build_feedback_records`, the line:",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.65,
+        "description": "In `build_feedback_records`, the near‑duplicate handling loop processes only the first element of each duplicate pair (`fid_a`). The code:\nif duplicate_pairs:\n    for fid_a, fid_b, sim in duplicate_pairs:",
+        "proposed_fix": "Add symmetric handling for `fid_b` in the same loop, reusing the existing record‑creation pattern.\n<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\n            # 3. Near-duplicates\n            if duplicate_pairs:\n                for fid_a, fid_b, sim in duplicate_pairs:",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "same root cause as C0007. It should be merged into the canonical asymmetric duplicate-pair feedback finding."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        },
+        "bugzilla_attempted": true
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.62,
+        "description": "`build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed the cap.\n\nLocation:\n\n`bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py`, function `build_feedback_sections`, max-character fallback block:\nwhile len(section) > max_chars_per_model and top_items:\n            top_items = top_items[:-1]\n            if not top_items:\n                section = (\n                    f\"=== SCHEMA FEEDBACK ON YOUR ROUND {ro",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": "The placeholder string in the `while len(section) > max_chars_per_model` fallback path:"
+          },
+          {
+            "model": "CC2",
+            "verdict": "MERGE",
+            "round": 2,
+            "evidence": "merged_into=C0012"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.45,
+        "description": "New DISCOVERY. `build_feedback_sections()` documents `max_chars_per_model` as a hard cap, but the fallback placeholder can exceed it.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR ROUND {round_idx} OUTPUT ===\\n\"\n            \"\\n\"\n            \"Feedback truncated: all items exceeded the per-model \"\n            \"character limit.\\n\"\n            \"\\n\"\n            \"=== ",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\ntop_k = max(1, top_k)\n\n    # Group by model\n==== REPLACE\ntop_k = max(1, top_k)\n    max_chars_per_model = max(0, max_chars_per_model)\n\n    # Group by model\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`build_feedback_sections` fallback placeholder can exceed `max_chars_per_model`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "=== ANALYSIS OF target_0 (synthesis returned empty, chunk content preserved) ===\nReviewing Python Code\n\nI am currently engaged in a code review of the `_feedback_records_slice.py` file. My focus is on applying the 4-Layer Review Protocol, ensuring each finding includes FIND, FOLLOW, ANALYSE, FIX, and FALSIFICATION elements as per operational directives.\n\nIdentifying Code Anomalies\n\nI'm currently scrutinizing `_feedback_records_slice.py`, specifically examining the `build_feedback_records` functi",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.7,
+        "description": "In `FindingFeedback.priority_score()`, a finding that is REFUTED by a specialist tool receives a base urgency increment of `+3.0`. Admissibility failures add `0.8` per failed gate, up to a maximum of `0.8×5 = 4.0`. A finding with five failed admissibility gates (and no refutations) therefore earns a priority score of `4.0`, exceeding the `3.0` of a refuted finding. Because `priority_score` determines the top‑K ordering in `build_feedback_sections`, a refuted finding can be pushed out of the top‑",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\ndef priority_score(self) -> float:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale:\n          * REFUTED by a specialist tool: +3.0 (tool contradicts the claim)\n          * Admissibility failure count: +0.8 per failed gate (max 4.0)\n          * Near-duplicate (max similarity × 2.0): up to +2.0\n          * R_k discrepancy (|delta|): up to +1.0\n\n        Severity acts as a tie-breaker — a high-severity flagged finding is\n        more important to correct than a low-severity one.\n        \"\"\"\n        score = 0.0\n        if self.refutations:\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n        if self.duplicates:\n            score += 2.0 * max(s for _, s in self.duplicates)\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            score += min(1.0, abs(claimed - aggregate))\n        score += 0.1 * self.severity_claimed  # tie-breaker\n        return score\n==== REPLACE\ndef priority_score(self) -> float:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale:\n          * REFUTED by a specialist tool: +5.0 (tool contradicts the claim;\n            guaranteed to outrank any admissibility‑only finding)\n          * Admissibility failure count: +0.8 per failed gate (max 4.0)\n          * Near-duplicate (max similarity × 2.0): up to +2.0\n          * R_k discrepancy (|delta|): up to +1.0\n\n        Severity acts as a tie-breaker — a high-severity flagged finding is\n        more important to correct than a low-severity one.\n        \"\"\"\n        score = 0.0\n        if self.refutations:\n            score += 5.0\n        score += 0.8 * len(self.admissibility_failures)\n        if self.duplicates:\n            score += 2.0 * max(s for _, s in self.duplicates)\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            score += min(1.0, abs(claimed - aggregate))\n        score += 0.1 * self.severity_claimed  # tie-breaker\n        return score\n>>>>",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "EXTEND",
+            "round": 2,
+            "evidence": "If C0014 addresses the `priority_score` gap where `final_verdict == \"REJECTED\"` with empty `refutations` yields +0.0 base score, this is the same root cause as C0002 (already CONFIRMED). Suggest MERGE"
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 2,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "The arithmetic is sound: 5 admissibility failures score `0.8 × 5 = 4.0`, exceeding the refutation base of `3.0`. The docstring explicitly states refutation is the highest-priority category. The propos"
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        },
+        "bugzilla_attempted": true,
+        "bugzilla_verified": true
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.4,
+        "description": "`_rebuild_section` (line ~380) accepts parameter `all_recs: List[FindingFeedback]` which is never referenced in the function body. The function uses only `top_items`, `round_idx`, and `overflow_count`. The parameter is passed from `build_feedback_sections` (line ~340) as `model_recs`, creating a false interface dependency.\n\nConcrete evidence — the function body:\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    all_recs: List[FindingFeedback],   # ← never referenced\n    round_idx: ",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    all_recs: List[FindingFeedback],\n    round_idx: int,\n    overflow_count: int,\n) -> str:\n==== REPLACE\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    round_idx: int,\n    overflow_count: int,\n) -> str:\n>>>>",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`_rebuild_section` accepts unused parameter `all_recs`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.7,
+        "description": "FINDING_ID: F004\n\nSEVERITY: 0.70\n\nFLAW_CLASS: 6\n\nABSTRACTION_INDEX: 0.30\n\nFIND: `_render_single_record()` can crash when specialist refutation evidence is `None` or otherwise non-string.\n\nLocation:\nde",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "Codex",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": "F004 is not resubmitted as a separate discovery. It is merged into the existing open canonical finding C0016 and extended with the prompt-integrity consequence for raw evidence rendering. My prior dup"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`_render_single_record()` can crash on malformed tuples."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_V001_ON_C0011"
+        ],
+        "severity": 0.62,
+        "description": "VERDICT: CONFIRM C0011 | EXTEND C0011 with concrete boundary case `max_chars_per_model=1`.\n\n`build_feedback_sections()` documents `max_chars_per_model` as a hard cap:\nmax_chars_per_model : int\n    Hard cap on section length, to prevent prompt blow-up.\nBut the fallback path can return a section longer than the cap.\n\nLocation:\nwhile len(section) > max_chars_per_model and top_items:\n    top_items = top_items[:-1]\n    if not top_items:\n        section = (\n            f\"=== SCHEMA FEEDBACK ON YOUR RO",
+        "proposed_fix": "",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "EXTEND of C0011 with boundary case `max_chars_per_model=1`."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F004"
+        ],
+        "severity": 0.75,
+        "description": "In `FindingFeedback.priority_score()`, the additive score components do not preserve the documented urgency precedence.  \nThe docstring states *“refutation beats admissibility beats duplicate beats R_k discrepancy”*, implying refutations must always rank highest. However the formula assigns:  \n\n- refutations: +3.0 (fixed)  \n- admissibility failures: +0.8 per failed gate → max 4.0 (5 gates × 0.8)  \n- duplicates: up to +2.0  \n- R_k discrepancy: up to +1.0  \n\nA finding with 5 admissibility failures",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\nscore = 0.0\n        if self.refutations:\n            score += 3.0\n==== REPLACE\nscore = 0.0\n        if self.refutations:\n            score += 10.0\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 4,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "Related to C0014 but distinct: C0014 is about refutation being outscored specifically; C0018 is about the general additive structure failing to enforce ANY documented precedence ordering. Both are val"
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "EXTEND",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 4,
+            "evidence": "`priority_score()` additive components violate documented urgency precedence."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "## Round 4 — CC1 (Claude Opus 4.6)\n\n### Registry Status Assessment\n\nThe depletion metrics are accurate. After four rounds and 18 canonical entries, the meaningful CRIT/HIGH defect space in this ~420-line slice is exhausted. I have no genuinely novel findings above MEDIUM threshold to file.\n\nBelow: verdicts on existing OPEN entries where I can add independent verification.\n\n---\n\n### VERDICT: CONFIRM C0018\n\nThe `priority_score()` method in the artifact (post-C0002-fix) checks only `if self.refutat",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "## Schema feedback response\n\nWITHDRAW ChatGPT_F003 — duplicate of prior hard-cap finding C0011 / ChatGPT_F001. I am not resubmitting it unchanged, and I am not attempting to clear the failed admissibility gates for it because the correct action is withdrawal.\n\n## Registry-aware synthesis\n\nNo new DISCOVERY findings are admissible this round.\n\nThe two findings from my per-section analysis are already present in the registry:\n\n1. Duplicate `finding_id` / last-wins routing defect  \n   - Maps to sett",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_V001"
+        ],
+        "severity": 0.75,
+        "description": "FINDING_ID: V001  \nSEVERITY: 0.75  \nFLAW_CLASS: 1  \nABSTRACTION_INDEX: 0.45  \n\nVERDICT: CONFIRM C0018\n\nFIND: `FindingFeedback.priority_score()` does not preserve the documented urgency precedence when",
+        "proposed_fix": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0018"
+        ],
+        "severity": 0.75,
+        "description": "VERDICT: CONFIRM C0018 | EXTEND C0018 to also resolve C0008. `FindingFeedback.priority_score()` uses additive float components that violate the documented strict precedence (e.g., 4 admissibility failures = 3.2, beating 1 refutation = 3.0). Furthermore, it fails to assign the refutation score to findings with `final_verdict == \"REJECTED\"` but no explicit refutations (C0008).",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\ndef priority_score(self) -> float:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale:\n          * REFUTED by a specialist tool: +3.0 (tool contradicts the claim)\n          * Admissibility failure count: +0.8 per failed gate (max 4.0)\n          * Near-duplicate (max similarity × 2.0): up to +2.0\n          * R_k discrepancy (|delta|): up to +1.0\n\n        Severity acts as a tie-breaker — a high-severity flagged finding is\n        more important to correct than a low-severity one.\n        \"\"\"\n        score = 0.0\n        if self.refutations:\n            score += 3.0\n        score += 0.8 * len(self.admissibility_failures)\n        if self.duplicates:\n            score += 2.0 * max(s for _, s in self.duplicates)\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            score += min(1.0, abs(claimed - aggregate))\n        score += 0.1 * self.severity_claimed  # tie-breaker\n        return score\n==== REPLACE\ndef priority_score(self) -> Tuple[int, int, float, float, float]:\n        \"\"\"Higher = more urgent for top-K selection.\n\n        Scoring rationale (strictly ordered by precedence via tuple):\n          * REFUTED by a specialist tool or REJECTED\n          * Admissibility failure count\n          * Near-duplicate max similarity\n          * R_k discrepancy (|delta|)\n          * Severity (tie-breaker)\n        \"\"\"\n        has_refutation = 1 if (self.refutations or self.final_verdict == \"REJECTED\") else 0\n        admissibility_count = len(self.admissibility_failures)\n        max_dup = max((s for _, s in self.duplicates), default=0.0)\n        \n        rk_delta = 0.0\n        if self.rk_discrepancy is not None:\n            claimed, aggregate = self.rk_discrepancy\n            rk_delta = min(1.0, abs(claimed - aggregate))\n            \n        return (has_refutation, admissibility_count, max_dup, rk_delta, self.severity_claimed)\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0015"
+        ],
+        "severity": 0.4,
+        "description": "VERDICT: CONFIRM C0015. `_rebuild_section` accepts parameter `all_recs: List[FindingFeedback]` which is never referenced in the function body.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    all_recs: List[FindingFeedback],\n    round_idx: int,\n    overflow_count: int,\n) -> str:\n==== REPLACE\ndef _rebuild_section(\n    top_items: List[FindingFeedback],\n    round_idx: int,\n    overflow_count: int,\n) -> str:\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0016"
+        ],
+        "severity": 0.7,
+        "description": "VERDICT: CONFIRM C0016. `_render_single_record()` can crash when `evidence` is `None`. The line `evidence_snip = (evidence[:400] + \"…\") if len(evidence) > 400 else evidence` assumes `evidence` is a string.",
+        "proposed_fix": "<<<< SEARCH bench/logs/exp40_slice_records_20260518T135539Z/working/_feedback_records_slice.py\nfor tool, _verdict, evidence in rec.refutations[:3]:\n            # Truncate evidence — one long tool output shouldn't dominate\n            evidence_snip = (evidence[:400] + \"…\") if len(evidence) > 400 else evidence\n            evidence_snip = evidence_snip.replace(\"\\n\", \"\\n      \")\n            body_lines.append(f\"    {tool}: {evidence_snip}\")\n==== REPLACE\nfor tool, _verdict, evidence in rec.refutations[:3]:\n            # Truncate evidence — one long tool output shouldn't dominate\n            safe_evidence = str(evidence) if evidence is not None else \"\"\n            evidence_snip = (safe_evidence[:400] + \"…\") if len(safe_evidence) > 400 else safe_evidence\n            evidence_snip = evidence_snip.replace(\"\\n\", \"\\n      \")\n            body_lines.append(f\"    {tool}: {evidence_snip}\")\n>>>>",
+        "status": "UNCONFIRMED",
+        "open_since_round": 4,
+        "last_status_change_round": 4,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "29/29 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "0 total, 0 new (baseline: 0)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      }
+    },
+    "next_id": 25,
+    "alias_map": {
+      "ChatGPT:ChatGPT_F001": "C0001",
+      "ChatGPT:ChatGPT_F002": "C0002",
+      "Codex:Codex_F001": "C0003",
+      "Codex:Codex_F002": "C0004",
+      "Gemini:Gemini_F001": "C0005",
+      "CC2:CC2_F001": "C0006",
+      "CC2:CC2_F002": "C0007",
+      "CC2:CC2_F003": "C0008",
+      "DeepSeek:DeepSeek_F001": "C0009",
+      "DeepSeek:DeepSeek_F002": "C0010",
+      "Codex:Codex_F003": "C0011",
+      "ChatGPT:ChatGPT_F003": "C0012",
+      "Gemini:Gemini_UNSTRUCTURED": "C0013",
+      "DeepSeek:DeepSeek_F003": "C0014",
+      "CC2:CC2_F004": "C0015",
+      "Codex:Codex_F004": "C0016",
+      "ChatGPT:ChatGPT_V001_ON_C0011": "C0017",
+      "DeepSeek:DeepSeek_F004": "C0018",
+      "CC2:CC2_UNSTRUCTURED": "C0019",
+      "ChatGPT:ChatGPT_UNSTRUCTURED": "C0020",
+      "Codex:Codex_V001": "C0021",
+      "Gemini:Gemini_C0018": "C0022",
+      "Gemini:Gemini_C0015": "C0023",
+      "Gemini:Gemini_C0016": "C0024"
+    }
+  },
+  "hil_flags": []
+}
