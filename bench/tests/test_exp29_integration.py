@@ -219,8 +219,18 @@ class TestInsectBrainConvergence:
 
         The experiment terminates (returns True) but converged is False
         because reaching the round limit is not epistemic convergence.
+
+        Convergence is made structurally unreachable within the round budget
+        (min_rounds_for_convergence=5 > max_rounds=3), so the budget-exhaustion
+        branch is exercised deterministically. The previous version relied on
+        repeated synthetic findings never converging; the corrected kappa_rate
+        (novel-discovery decline from peak, 2026-05-22) now correctly reads
+        repeated findings as kappa_converged, so this test forces
+        non-convergence via config rather than via the (now-stricter) detector.
         """
-        config = DynamicManagementConfig(max_rounds=3)
+        config = DynamicManagementConfig(
+            max_rounds=3, min_rounds_for_convergence=5,
+        )
         brain = InsectBrain(
             config=config,
             logs_dir=tmp_path / "logs",
@@ -230,7 +240,7 @@ class TestInsectBrainConvergence:
         for rnd in range(3):
             brain.persist(rnd, {m: "output" for m in MODELS}, _make_round_findings(rnd))
 
-        assert brain.check_convergence(2)  # terminates
+        assert brain.check_convergence(2)  # terminates (round budget reached)
         assert not brain.state.converged  # but NOT converged
         assert "BUDGET_EXHAUSTED" in brain.state.convergence_reason
 

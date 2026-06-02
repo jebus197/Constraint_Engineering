@@ -958,6 +958,34 @@ V̂ stop recommendations require both conditions: the count-based remaining esti
 
 (Reconciliation added 8 April 2026, based on mathematical model audit of Exp 33-36 data.)
 
+**Correction and supersession (29 May 2026).** Two issues with the C₁–C₅ runner
+gate above are recorded here for accuracy:
+
+1. **Inverted polarity in C₄.** As written, "C₄: γ(t) < γ_hard (converged)" is
+   **backwards** relative to §7.1 and the live estimator. Per §7.1, γ = 1 − β and
+   a *high* γ (cumulative novelty flattened) means convergence; the live
+   `_estimate_gamma` returns γ → 1 when discovery stops, and the operational gate
+   passes when γ **≥** threshold (see `GAMMA_BANDS` and `_check_gamma_gate` in
+   `bench/reference_runner_v2.py`). The Exp-36 reconciliation note above is itself
+   the proof: a *converging* run with γ = 0.411 (§7.1a calls 0.411 "converging")
+   **failed** C₄ because 0.411 > 0.35 — a converging run failing the convergence
+   condition. The intended condition is γ ≥ γ_hard.
+
+2. **Superseded by the Exp 41 convergence redesign (settled 23–29 May 2026).**
+   γ is no longer a convergence *gate* at all. It is computed and **reported** on
+   two populations (all-severity and genuine-critical, labelled), reading ≈1.0 at
+   a true convergence, but it does not trigger or block termination. Convergence
+   is decided on the genuine (settled, verifier-filtered) CRITICAL series:
+   state-gate clean (no unresolved critical candidate — A4 fail-safe) **and** K
+   consecutive rounds with zero new genuine criticals. The decay curve remains
+   the founding criterion; the K-consecutive-zero-critical count is its
+   lag-free discrete reading (the slope estimator lags whole-history, so it
+   confirms rather than triggers). A second hidden γ trigger in the stall
+   detector (`_check_stall_convergence` terminating on γ ≥ stall_gamma_terminate)
+   is likewise disabled by default (`stall_gamma_termination_enabled = False`); a
+   genuinely stuck run now terminates as BUDGET_EXHAUSTED, not a γ-driven
+   STALL_CONVERGED.
+
 ### 7.5 Objective Alignment O_A (Sycophancy Detection)
 
 When models confer and converge on shared findings, the convergence could be genuine (both independently found the same real issue) or sycophantic (they are agreeing to agree). This metric distinguishes them using SymPy verification as a proxy for ground truth:

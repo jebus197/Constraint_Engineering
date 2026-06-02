@@ -4733,11 +4733,43 @@ def typed_llm_classifier(
                 regex_tf.claim_type == ClaimType.MATHEMATICAL
                 and not llm_primary
             )
+            # Code-path guard (2026-05-29): in the software domain the review
+            # target IS code, and ONLY the CT (code-verifier) cell structurally
+            # checks a claim against the target source. The abstract verifiers
+            # (z3 "logical", SymPy "mathematical", statsmodels "statistical")
+            # cannot ground a claim about code — z3 returns "cannot ground claim
+            # in source AST" -> UNCERTAIN, which starves the CT cell of input and
+            # collapses resolution onto panel opinion-votes (a show of hands).
+            # The LLM classifier exists to RESCUE code bugs that the regex
+            # misroutes to math (non-code -> code, Exp 38); it must NOT do the
+            # reverse and eject a regex-identified code claim OFF the code path.
+            # Objective: tools adjudicate, not opinion. Root cause of exp41c
+            # C0007/C0015/C0017 — concrete, checkable code claims — sitting
+            # UNCONFIRMED because the LLM override demoted code_behavioral ->
+            # logical, so the CT cell saw no code claims ("CT v2: 0 verdicts")
+            # and z3 returned "cannot ground". The asymmetry is deliberate:
+            # keeping a stray non-code claim on the CT path costs an UNCERTAIN
+            # (-> HIL); demoting a true code claim off it causes false
+            # convergence. (llm_primary is True iff the domain is software.)
+            _code_types = (ClaimType.CODE_BEHAVIORAL, ClaimType.CODE_STRUCTURAL)
+            code_path_protected = (
+                llm_primary
+                and regex_tf.claim_type in _code_types
+                and llm_type not in _code_types
+                # UNCATEGORISED never overrides anyway (handled separately), so
+                # the guard only fires for a genuine demotion to a specific
+                # non-code verifier (LOGICAL / MATHEMATICAL / STATISTICAL). This
+                # preserves the honest "no valid reclass target" log for the
+                # UNCATEGORISED case.
+                and llm_type != ClaimType.UNCATEGORISED
+            )
             if llm_primary:
-                # Software domain: any valid LLM classification wins
+                # Software domain: any valid LLM classification wins, UNLESS it
+                # would eject a regex-identified code claim off the code path.
                 should_override = (
                     disagrees
                     and llm_type != ClaimType.UNCATEGORISED
+                    and not code_path_protected
                 )
             else:
                 # Non-software: confidence threshold + math guard
@@ -4756,6 +4788,7 @@ def typed_llm_classifier(
                 "llm_raw": response.strip(),
                 "match": not disagrees,
                 "overridden": should_override,
+                "code_path_protected": code_path_protected,
                 "elapsed_s": round(elapsed, 3),
             }
             comparisons.append(record)
@@ -4793,6 +4826,17 @@ def typed_llm_classifier(
                     extracted_claim=regex_tf.extracted_claim,
                 )
                 override_count += 1
+            elif disagrees and code_path_protected:
+                # Code-path guard kept a regex-identified code claim on the CT
+                # (code-verifier) path instead of letting the LLM demote it to
+                # an abstract verifier that cannot ground claims about code.
+                _shadow_log.info(
+                    "LLM classifier: %s — regex=%s llm=%s "
+                    "(conf=%.2f, BLOCKED by CODE-PATH guard — code claim stays "
+                    "on CT verifier, %.1fs)",
+                    f.finding_id, regex_tf.claim_type.value,
+                    llm_type.value, llm_confidence, elapsed,
+                )
             elif disagrees and math_guard:
                 # P5 fix: distinguish guard-blocked from threshold-blocked.
                 # Old code reported "below threshold" even when the real

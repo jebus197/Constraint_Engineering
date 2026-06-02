@@ -369,6 +369,49 @@ mathematical representation. Formalising them would be false rigour.
 
 ---
 
+## Objective and Diminishing Returns
+
+> **Added 2026-05-23 (panel convergence redesign).** This section reframes the
+> review objective. It does not supersede §1–§2 (constraint classification /
+> precedence) or §6 (falsification loop); it governs *where to spend effort*
+> within them.
+
+**Natural language:**
+The objective is to build and validate a **robust working solution**: find the
+**material** defects that decide whether it works, and get the job done
+efficiently. Review is **value-weighted, not count-weighted** — a long list of
+minor observations is not progress; one defect that decides whether the solution
+works is. Weigh the marginal value of more review against its effort, prioritise
+high-value findings, and **converge when further effort yields only marginal
+value** (when the remaining work is footnotes, not faults). Two guards keep this
+from degrading into premature closure:
+
+1. **Value governs *where* to spend effort, NOT whether a real defect counts as
+   critical.** Severity is **materiality** — the consequence if the defect ships
+   — and is independent of how *interesting* the defect is. A dull-but-important
+   defect (a boring off-by-one, an unglamorous unhandled error path) stays
+   critical. Never downgrade a material defect for being uninteresting, nor
+   inflate an interesting observation that changes nothing.
+
+2. **To justify continuing past a quiet stretch, name a specific mechanism.**
+   "There might be more" does not keep the review open. Continuation requires
+   naming a **specific, plausible, high-value mechanism** — a concrete place a
+   material defect could still hide, and why — not yet adequately examined.
+   Absent that, a quiet stretch is evidence of convergence, not of insufficient
+   effort.
+
+**Formal:**
+```
+V(f) = materiality(f) = consequence if defect f ships (= severity).
+Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit     (interest(f) does NOT enter).
+Guard 2:  may_continue(K) ⇔ ∃ mechanism m: plausible(m) ∧ high_value(m)
+                                          ∧ ¬adequately_examined(m, ≤K).
+Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
+material critical remains open (per §6 termination + the A4 fail-safe).
+```
+
+---
+
 ## Classification Summary
 
 | Directive | Formal Structure | Formalisable |

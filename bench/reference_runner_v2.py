@@ -348,6 +348,15 @@ class RunnerConfig:
     stall_earliest_round: int = 15
     stall_gamma_advisory: float = 0.30
     stall_gamma_terminate: float = 0.45
+    # Settled design (2026-05-29): gamma REPORTS, it never TRIGGERS termination.
+    # The stall detector may still flag a stall as advisory telemetry, but it
+    # must not END a run on a gamma threshold — that is a second hidden gamma
+    # gate contradicting the convergence redesign. Default OFF: a genuinely
+    # stuck run runs to max_rounds and terminates as BUDGET_EXHAUSTED (honest),
+    # rather than being reported as a gamma-driven STALL_CONVERGED. The flag
+    # exists only so the legacy behaviour can be re-enabled for a controlled
+    # ablation; do not enable it in the Exp 41+ convergence regime.
+    stall_gamma_termination_enabled: bool = False
     verification_batch_size: int = 6
     verification_min_round: int = 6
     verification_confidence_threshold: float = 0.7
@@ -530,6 +539,28 @@ class FindingRegistry:
             if e.get("exhausted"):
                 continue
             count += 1
+        return count
+
+    def unverified_critical_count(self) -> int:
+        """A4 fail-safe signal: UNCONFIRMED critical-severity candidates.
+
+        Pure reader — no state mutation. Counts entries with status
+        UNCONFIRMED and severity >= CRITICAL_SEVERITY_THRESHOLD: critical
+        candidates the system gave up on (finalize sweep / grace-period
+        reopen) WITHOUT verification. These are excluded from the settled
+        novelty series, so they would otherwise silently count as "zero
+        new critical." The convergence count path must not accrue while
+        any of these are pending. CONFIRMED/CLOSED (resolved) and
+        MERGED/DUPLICATE/REFUTED (adjudicated terminal) are NOT counted;
+        OPEN/CONTESTED/REOPENED are in-play and visible to the settled
+        series + state gate, so they are NOT counted here either.
+        """
+        count = 0
+        for e in self.entries.values():
+            if e.get("status") != "UNCONFIRMED":
+                continue
+            if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
+                count += 1
         return count
 
     def contested_count(self, current_round: int, grace_period: int = 2) -> int:
@@ -1332,60 +1363,106 @@ def _check_gamma_alt_convergence(
     gamma: float,
     novel_critical_history: List[int],
     cfg: RunnerConfig,
+    unresolved_critical: int = 0,
+    contested: int = 0,
+    rho_churn: bool = False,
 ) -> Tuple[bool, str]:
-    """γ-based alternative convergence path (Exp 40 fix, Item 1A.3).
+    """Critical-quiescence convergence path (panel redesign 2026-05-23).
 
     Documented in Exp 39 sub-experiment configs as an alternative pass
-    condition but previously never implemented in code. The Exp 39-0
-    post-mortem flagged this as P0: the main gate requires
-    ``open_ch <= max_open_crit_high`` which was structurally unreachable
-    at threshold 0; even with the threshold bumped to 5, depletion on
-    high-severity findings can be slow enough to time out on wall clock.
+    condition. The Exp 39-0 post-mortem flagged the main gate's
+    ``open_ch <= max_open_crit_high`` as effectively unreachable, so a
+    complementary count-based criterion is needed.
 
-    Fires when EITHER:
-      (1) gamma (Duane depletion estimate) >= cfg.gamma_alt_threshold, OR
-      (2) cfg.gamma_alt_consecutive_zero_crit consecutive rounds have
-          produced zero novel CRITICAL findings (severity >= 0.7).
+    Convergence on this path = critical decay flattened AND review clean.
+    It REQUIRES ALL of:
+      (a) gamma_alt_consecutive_zero_crit consecutive rounds with zero
+          NEW genuine critical findings on the SETTLED/verifier-filtered
+          series (critical decay has flattened), AND
+      (b) no unresolved/unverified critical candidate (A4 fail-safe), AND
+      (c) not contested, AND
+      (d) not churning.
+    All-severity novelty is deliberately NOT required to be low: a clean
+    critical run must not be held open by non-critical footnotes.
 
-    These conditions are OR (either is sufficient), matching the config
-    text. Condition 1 captures cumulative depletion; condition 2 captures
-    round-level critical-severity exhaustion.
+    γ IS REPORTED, NEVER A TRIGGER OR BLOCKER (panel ruling 2026-05-23).
+    The former γ-threshold trigger (condition 1) is DELETED: a Duane
+    depletion estimate rising is not, on its own, evidence that critical
+    discovery has stopped, and γ is telemetry-only everywhere. γ does NOT
+    appear in the convergence condition; it is accepted only so the reason
+    string can report it.
+
+    A4 VERIFIER FAIL-SAFE (correctness-critical): an UNVERIFIED
+    critical-severity candidate (status UNCONFIRMED, severity >= 0.7)
+    must NOT silently count as "zero new critical." Such a candidate is
+    excluded from the settled novelty series, so without this guard a
+    critical the system gave up on (finalize sweep / grace-period reopen)
+    would vanish from the count and let the streak accrue. When
+    ``unresolved_critical > 0`` the streak does NOT accrue this round and
+    convergence is blocked; the caller logs the count for HIL. OPEN /
+    CONTESTED / REOPENED criticals are still in play (the settled series
+    counts them) and are governed by the state gate's open-critical
+    machinery — they are NOT silent and are not what A4 targets.
+
+    ``contested`` and ``rho_churn`` come from the same registry / rho
+    machinery the state gate uses, so the count path enforces (c) and (d)
+    directly rather than relying on the OR with the state gate.
 
     Returns (converged, reason).
     """
     if round_idx < cfg.gamma_alt_earliest_round:
         return False, (
-            f"γ-alt too early (round {round_idx} < "
+            f"critical-quiescence too early (round {round_idx} < "
             f"{cfg.gamma_alt_earliest_round})"
         )
 
-    # Condition 1: gamma threshold
-    if gamma >= cfg.gamma_alt_threshold:
-        return True, (
-            f"GAMMA_ALT_CONVERGED: gamma={gamma:.3f} >= "
-            f"{cfg.gamma_alt_threshold} at round {round_idx}"
-        )
-
-    # Condition 2: consecutive zero novel CRITICAL
     window = cfg.gamma_alt_consecutive_zero_crit
-    if len(novel_critical_history) >= window:
-        recent = novel_critical_history[-window:]
-        if all(n == 0 for n in recent):
-            return True, (
-                f"GAMMA_ALT_CONVERGED: {window} consecutive rounds "
-                f"with zero novel CRITICAL (history tail={recent}) "
-                f"at round {round_idx}"
-            )
-
-    # Neither condition met
     recent_tail = (
         novel_critical_history[-window:]
         if len(novel_critical_history) >= window
         else novel_critical_history
     )
+
+    # A4 fail-safe (b): an unverified (UNCONFIRMED) critical candidate
+    # must not let the zero-critical streak accrue silently. Block
+    # regardless of the count tail; surface for HIL via the reason string.
+    if unresolved_critical > 0:
+        return False, (
+            f"A4 BLOCK: {unresolved_critical} unverified critical-severity "
+            f"candidate(s) (status UNCONFIRMED, sev>=0.7) pending at round "
+            f"{round_idx} — zero-critical streak does NOT accrue "
+            f"(novel_crit_recent={recent_tail}). HIL review required."
+        )
+
+    # Review-clean gates (c) not contested, (d) not churning. A clean
+    # critical tail does not mean convergence while the panel is still
+    # contesting findings or churning re-derivations.
+    if contested > 0:
+        return False, (
+            f"critical-quiescence blocked: contested={contested} at round "
+            f"{round_idx} (novel_crit_recent={recent_tail})"
+        )
+    if rho_churn:
+        return False, (
+            f"critical-quiescence blocked: churn (rho_avg below "
+            f"{cfg.rho_threshold}) at round {round_idx} "
+            f"(novel_crit_recent={recent_tail})"
+        )
+
+    # Convergence (a): K consecutive rounds with zero novel CRITICAL on
+    # the settled/genuine series — the only trigger on this path.
+    if len(novel_critical_history) >= window:
+        recent = novel_critical_history[-window:]
+        if all(n == 0 for n in recent):
+            return True, (
+                f"CRITICAL_QUIESCENCE_CONVERGED: {window} consecutive "
+                f"rounds with zero novel CRITICAL (history tail={recent}) "
+                f"at round {round_idx} [gamma={gamma:.3f}, reported only]"
+            )
+
     return False, (
-        f"γ-alt not met: gamma={gamma:.3f} < {cfg.gamma_alt_threshold}; "
-        f"novel_crit_recent={recent_tail}"
+        f"critical-quiescence not met: novel_crit_recent={recent_tail} "
+        f"[gamma={gamma:.3f}, reported only]"
     )
 
 
@@ -1546,7 +1623,8 @@ def _check_stall_convergence(
     # not genuine novelty.
     churn_stall_window = max(cfg.stall_window, 4)  # at least 4 rounds of churn
     if (consecutive_churn_rounds >= churn_stall_window
-            and gamma >= cfg.stall_gamma_terminate):
+            and gamma >= cfg.stall_gamma_terminate
+            and cfg.stall_gamma_termination_enabled):
         result["stalled"] = True
         result["tier"] = "terminate"
         result["terminate"] = True
@@ -1573,7 +1651,8 @@ def _check_stall_convergence(
         result["reason"] = f"not static — open_ch {open_values}, contested {contested_values}"
         return result
     result["stalled"] = True
-    if gamma >= cfg.stall_gamma_terminate:
+    if (gamma >= cfg.stall_gamma_terminate
+            and cfg.stall_gamma_termination_enabled):
         result["tier"] = "terminate"
         result["terminate"] = True
         result["reason"] = (
@@ -4567,6 +4646,10 @@ def run_experiment(
     cumulative_context_chars = 0
     per_model_context: Dict[str, int] = {}
     gamma_history: List[float] = []
+    # Dual-series γ report (panel redesign 2026-05-23): all-severity and
+    # critical-only decay, both reported each round, neither gates.
+    gamma_all_history: List[float] = []
+    gamma_critical_history: List[float] = []
     gate_history: List[bool] = []
     open_ch_history: List[int] = []
     stall_history: List[Dict[str, int]] = []
@@ -5344,14 +5427,27 @@ def run_experiment(
                 _log(f"  novelty (settled/genuine): all={_settled_all[round_idx]} "
                      f"crit={_settled_crit[round_idx]} (raw all={_raw_novel})")
 
-        # Gamma — diagnostic decay curve only; never gates (config:
-        # gamma_alt_threshold unreachable + gamma_telemetry_only_until >= max_rounds)
-        gamma = _estimate_gamma(novelty_counts, cfg.min_rounds_for_gamma)
+        # Gamma — REPORTED, NEVER a trigger or blocker (panel redesign
+        # 2026-05-23). Telemetry-only in the state gate (config:
+        # gamma_telemetry_only_until >= max_rounds) and deleted as a
+        # convergence trigger on the critical-quiescence path. Reported on
+        # BOTH series each round: gamma_all (all-severity decay) and
+        # gamma_critical (critical-only decay; reads ~1.0 at a clean
+        # convergence where critical discovery has stopped). Both computed
+        # from the SETTLED/genuine series via _estimate_gamma.
+        gamma_all = _estimate_gamma(_settled_all, cfg.min_rounds_for_gamma)
+        gamma_critical = _estimate_gamma(_settled_crit, cfg.min_rounds_for_gamma)
+        gamma = gamma_all  # legacy name; all-series. Reported, never gates.
         gamma_history.append(gamma)
+        gamma_all_history.append(gamma_all)
+        gamma_critical_history.append(gamma_critical)
         gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
 
-        _log(f"  gamma: {gamma:.3f} ({gate_level}, "
-             f"{'passed' if gamma_passed else 'BLOCKED'}) — {_interpret_gamma(gamma)}")
+        _log(f"  gamma_all: {gamma_all:.3f} ({gate_level}, "
+             f"{'passed' if gamma_passed else 'BLOCKED'}) — "
+             f"{_interpret_gamma(gamma_all)}")
+        _log(f"  gamma_critical: {gamma_critical:.3f} (reported only; "
+             f"~1.0 at clean critical convergence)")
         _log(f"  Round {round_idx}: {len(findings)} findings, {round_elapsed:.1f}s")
 
         # Convergence gate
@@ -5362,10 +5458,18 @@ def run_experiment(
         )
         _log(f"  Convergence: {conv_reason}")
 
-        # Exp 40 fix 1A.3: γ-based alternative convergence path.
-        # Documented in Exp 39 sub-experiment configs but previously
-        # never implemented. Fires when cumulative depletion (γ ≥ 0.30)
-        # or critical-severity exhaustion (3r zero novel CRIT) is reached.
+        # Critical-quiescence convergence path (panel redesign
+        # 2026-05-23). Fires SOLELY on K consecutive rounds with zero
+        # novel CRITICAL on the settled series — the γ-threshold trigger
+        # is deleted (γ is reported, never a trigger). A4 fail-safe: an
+        # UNCONFIRMED critical-severity candidate (excluded from the
+        # settled series) must not let the streak accrue silently, so the
+        # count of such candidates is passed in and blocks/logs.
+        _unresolved_crit = registry.unverified_critical_count()
+        if _unresolved_crit > 0:
+            _log(f"  A4: {_unresolved_crit} unverified critical-severity "
+                 f"candidate(s) (UNCONFIRMED, sev>=0.7) pending — "
+                 f"zero-critical streak blocked, HIL review required")
         if getattr(cfg, "hardened_gate_enabled", False):
             # F4/F6/conjunction hardened gate: settled-registry γ,
             # critical/structural conjunction, all-novelty γ as
@@ -5375,9 +5479,15 @@ def run_experiment(
             )
             _log(f"  hardened-gate telemetry: {_hg_telem}")
         else:
+            # Critical-quiescence path enforces review-clean (not
+            # contested, not churning) directly so it does not converge
+            # via the OR while the state gate would have blocked on them.
             gamma_alt_converged, gamma_alt_reason = (
                 _check_gamma_alt_convergence(
                     round_idx, gamma, novel_critical_history, cfg,
+                    unresolved_critical=_unresolved_crit,
+                    contested=registry.contested_count(round_idx),
+                    rho_churn=rho_churn,
                 )
             )
         if gamma_alt_converged and not converged:
@@ -5551,9 +5661,12 @@ def run_experiment(
             "novel_this_round": novel_this_round,
             "registry_total": len(registry.entries),
             "open_crit_high": registry.open_crit_high_count(),
+            "unverified_critical": _unresolved_crit,
             "models_responded": list(responses.keys()),
             "elapsed_s": round(round_elapsed, 1),
             "gamma": round(gamma, 4),
+            "gamma_all": round(gamma_all, 4),
+            "gamma_critical": round(gamma_critical, 4),
             "rho": round(rho_current, 4),
             "rho_avg": round(rho_avg, 4),
             "verification": verification_stats,
@@ -5796,6 +5909,11 @@ def run_experiment(
     result["total_elapsed_s"] = round(total_elapsed, 1)
     result["end_time"] = datetime.now(timezone.utc).isoformat()
     result["gamma_history"] = [round(g, 4) for g in gamma_history]
+    # Dual-series γ report (panel redesign 2026-05-23): reported, never gates.
+    result["gamma_all_history"] = [round(g, 4) for g in gamma_all_history]
+    result["gamma_critical_history"] = [
+        round(g, 4) for g in gamma_critical_history
+    ]
     result["registry"] = registry.to_dict()
     result["hil_flags"] = _itc_hil_flags[:]
     # Secondary-route fallback accumulators (2026-05-22). Surfaced in

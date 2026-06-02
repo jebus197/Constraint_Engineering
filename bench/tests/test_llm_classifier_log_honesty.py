@@ -153,6 +153,69 @@ class TestSkipLogHonesty:
         assert "no valid reclass target" in text
         assert "below threshold" not in text
 
+
+class TestCodePathGuard:
+    """Code-path guard (2026-05-29): in the software domain the LLM classifier
+    must not eject a regex-identified code claim (code_behavioral /
+    code_structural) onto a non-code verifier (logical / mathematical /
+    statistical). Only the CT cell structurally checks claims against the target
+    source; z3 returns "cannot ground claim in source AST" -> UNCERTAIN, which
+    starves the CT cell and collapses resolution onto panel opinion-votes. Root
+    cause of exp41c C0007/C0015/C0017 sitting UNCONFIRMED.
+    """
+
+    def test_software_code_to_logical_is_blocked(self, caplog):
+        # regex=code_behavioral, llm=logical, software domain.
+        # Must be BLOCKED (not overridden) — code claim stays on the CT path.
+        text = _run_classifier(
+            caplog,
+            regex_type=ClaimType.CODE_BEHAVIORAL,
+            llm_line="logical",
+            conf=0.80,
+            domain="software",
+        )
+        assert "BLOCKED by CODE-PATH guard" in text
+        assert "LLM classifier OVERRIDE" not in text
+
+    def test_software_code_to_mathematical_is_blocked(self, caplog):
+        # code_structural -> mathematical is also a demotion off the code path.
+        text = _run_classifier(
+            caplog,
+            regex_type=ClaimType.CODE_STRUCTURAL,
+            llm_line="mathematical",
+            conf=0.90,
+            domain="software",
+        )
+        assert "BLOCKED by CODE-PATH guard" in text
+        assert "LLM classifier OVERRIDE" not in text
+
+    def test_guard_does_not_block_rescue_to_code(self, caplog):
+        # The LLM's INTENDED job — rescuing a code bug misrouted to math
+        # (mathematical -> code_behavioral) — must STILL override. The guard
+        # only blocks the harmful direction (code -> non-code), never the
+        # rescue direction (non-code -> code).
+        text = _run_classifier(
+            caplog,
+            regex_type=ClaimType.MATHEMATICAL,
+            llm_line="code_behavioral",
+            conf=0.80,
+            domain="software",
+        )
+        assert "LLM classifier OVERRIDE" in text
+        assert "BLOCKED by CODE-PATH guard" not in text
+
+    def test_guard_is_software_only(self, caplog):
+        # In a non-software domain (llm_primary False) the code-path guard does
+        # not apply; routing follows the normal threshold/math-guard logic.
+        text = _run_classifier(
+            caplog,
+            regex_type=ClaimType.CODE_BEHAVIORAL,
+            llm_line="logical",
+            conf=0.90,
+            domain="mathematics",
+        )
+        assert "BLOCKED by CODE-PATH guard" not in text
+
     def test_genuine_below_threshold_still_labelled(self, caplog):
         # Non-software, valid llm_type, conf=0.50 (below 0.70). This
         # is the ONE case where "below threshold" is the honest
