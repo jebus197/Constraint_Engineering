@@ -375,7 +375,7 @@ def _structurally_valid_fid(fid: str) -> bool:
     return bool(_VALID_FID_STRUCTURE.match(fid))
 
 
-def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
+def _parse_findings_core(model_id: str, round_idx: int, response: str) -> List[Finding]:
     """Extract structured findings from model response.
 
     Parser priority (first match wins):
@@ -916,6 +916,115 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
             object.__setattr__(f, 'verified', False)  # Self-certification without falsification
 
     return findings
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Falsifier extraction ("tools decide" integration, 3 June 2026)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# A FALSIFIER block is a per-finding fenced Python snippet:
+#
+#   FINDING: <one-line description>            (or  FINDING_ID: <id>)
+#   FALSIFIER:
+#   ```python
+#   <runnable code that RAISES/prints FALSIFIED iff the defect is real>
+#   ```
+#
+# The runner re-runs each block independently (see bench/falsifier_verify.py);
+# the re-run result, not the model's prose, decides the verdict. Extraction is
+# additive: a response with no FALSIFIER block leaves findings byte-identical.
+_FALSIFIER_BLOCK_RE = re.compile(
+    r"FALSIFIER:\s*```(?:python|py)?\s*\n(.*?)```",
+    re.DOTALL | re.IGNORECASE,
+)
+# Captures the finding key (id or description text) that precedes a falsifier,
+# so multiple falsifiers in one response can be matched to the right finding.
+_FALSIFIER_LABELLED_RE = re.compile(
+    r"(?:FINDING_ID|FINDING)\s*[:=]\s*(?P<key>.+?)\s*?\n"
+    r".*?FALSIFIER:\s*```(?:python|py)?\s*\n(?P<code>.*?)```",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def extract_falsifiers(response: str) -> "tuple[dict, list]":
+    """Pull FALSIFIER code blocks out of a raw model response.
+
+    Returns ``(by_key, ordered)`` where:
+      * ``by_key`` maps a normalised finding key (lowercased id or the first
+        ~60 chars of the finding description) to its falsifier code, for
+        id/description-aware association.
+      * ``ordered`` is the list of falsifier code strings in document order,
+        used as a positional fallback when key matching does not resolve.
+
+    Pure text operation — no code is executed here.
+    """
+    by_key: dict = {}
+    for m in _FALSIFIER_LABELLED_RE.finditer(response):
+        key = (m.group("key") or "").strip().strip("`*\"' ").lower()
+        code = (m.group("code") or "").strip()
+        if key and code and key not in by_key:
+            by_key[key[:60]] = code
+    ordered = [m.group(1).strip() for m in _FALSIFIER_BLOCK_RE.finditer(response)]
+    return by_key, ordered
+
+
+def _attach_falsifiers(findings: List[Finding], response: str) -> List[Finding]:
+    """Return findings enriched with any falsifier code found in ``response``.
+
+    Association order: (1) exact finding-id match, (2) description-prefix match,
+    (3) positional fallback (i-th finding gets the i-th falsifier block) only
+    when block and finding counts line up well enough to be unambiguous.
+    Frozen-safe via :func:`dataclasses.replace`. No-op when no blocks exist.
+    """
+    if not findings or "FALSIFIER:" not in response.upper():
+        return findings
+
+    import dataclasses
+
+    by_key, ordered = extract_falsifiers(response)
+    if not by_key and not ordered:
+        return findings
+
+    out: List[Finding] = []
+    used_ordered = 0
+    for idx, f in enumerate(findings):
+        code = ""
+        # (1) finding-id match — strip the model_id prefix the parser may add.
+        fid = f.finding_id.lower()
+        bare_fid = fid.split(f"{f.model_id.lower()}_", 1)[-1]
+        for cand in (fid, bare_fid):
+            if cand in by_key:
+                code = by_key[cand]
+                break
+        # (2) description-prefix match.
+        if not code and f.description:
+            dkey = f.description.strip().lower()[:60]
+            if dkey in by_key:
+                code = by_key[dkey]
+        # (3) positional fallback — only if labelled matching found nothing
+        #     and the block count is not larger than the finding count (so we
+        #     do not misalign a single finding against many stray blocks).
+        if not code and not by_key and ordered and len(ordered) <= len(findings):
+            if idx < len(ordered):
+                code = ordered[idx]
+                used_ordered += 1
+        out.append(
+            dataclasses.replace(f, falsifier_code=code) if code else f
+        )
+    return out
+
+
+def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding]:
+    """Public finding parser: structured extraction plus falsifier attachment.
+
+    Thin wrapper over :func:`_parse_findings_core` (the multi-format parser).
+    After findings are parsed, any per-finding ``FALSIFIER:`` fenced Python
+    block in the response is attached to ``finding.falsifier_code``. Behaviour
+    is byte-identical to the core parser when the response carries no falsifier
+    blocks, so existing experiments are unaffected.
+    """
+    findings = _parse_findings_core(model_id, round_idx, response)
+    return _attach_falsifiers(findings, response)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

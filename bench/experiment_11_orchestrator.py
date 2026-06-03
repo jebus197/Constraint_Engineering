@@ -242,6 +242,120 @@ class CircuitBreakerTripped(Exception):
                 (self.condition, self.model, self.phase, self.detail))
 
 
+# ---------------------------------------------------------------------------
+# Tool-calling support ("tools decide" integration, 3 June 2026)
+# ---------------------------------------------------------------------------
+# GATED + DEFAULT OFF. The OpenAI-compatible routes (call_openrouter,
+# call_deepseek) gain an OPTIONAL tool-call loop so a reviewing model can run
+# Python during analysis and attach runnable falsifiers (smoke-tested in
+# bench/smoketest_toolcall_2026-06-03.py + bench/smoketest_falsifier_2026-06-03.py).
+# When tools=None (the default) the routes behave byte-identically to before:
+# none of this code executes. claude_cli already exposes tools natively via
+# --allowedTools (Bash/Read/...); see call_claude_cli.
+
+# Single execute_python tool the reviewing model calls. The executor behind it
+# (bench/falsifier_verify.execute_python) sandboxes the run: 30 s timeout, temp
+# cwd, repo importable via PYTHONPATH, read/import only.
+EXECUTE_PYTHON_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "execute_python",
+        "description": (
+            "Execute a Python 3 snippet and return its stdout/stderr. The full "
+            "local STEM toolset is importable: sympy, numpy, scipy, statsmodels, "
+            "mpmath, z3, sklearn, networkx, pandas, plus stdlib (ast, math, etc.). "
+            "The repository is importable, so you can `from bench.dm... import ...` "
+            "to test the REAL target code. Print results you want to see."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "Python source to run."}
+            },
+            "required": ["code"],
+        },
+    },
+}
+
+
+def default_tool_executor(name: str, args: dict) -> str:
+    """Default dispatcher for tool calls: maps the execute_python tool to the
+    sandboxed executor in bench/falsifier_verify. Returns the tool result text.
+
+    Imported lazily so the orchestrator has no import-time dependency on the
+    falsifier module (keeps existing non-tool dispatch unaffected).
+    """
+    if name == "execute_python":
+        from falsifier_verify import execute_python as _exec
+        code = args.get("code", "")
+        return _exec(code) if code else "[no code provided]"
+    return f"[unknown tool: {name}]"
+
+
+def _run_openai_tool_loop(
+    client,
+    model_id: str,
+    messages: list[dict],
+    tools: list[dict],
+    tool_executor,
+    max_iters: int = 6,
+    max_tokens: int = 32768,
+    timeout: int = 300,
+    extra_body: dict | None = None,
+) -> str:
+    """Run an OpenAI-compatible tool-call loop and return the model's final text.
+
+    Loop shape reused from the validated smoke tests: on each turn, if the model
+    requests tool calls, run them via ``tool_executor(name, args)``, append the
+    results, and continue; otherwise return the assistant's content. Bounded by
+    ``max_iters`` (default 6) so a model that loops on tools cannot run forever.
+
+    ``tool_executor`` is ``Callable[[str, dict], str]`` — the orchestrator's
+    sandboxed default is :func:`default_tool_executor`.
+    """
+    final = ""
+    for _ in range(max_iters):
+        create_kwargs = dict(
+            model=model_id,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+            max_tokens=max_tokens,
+            temperature=0.0,
+            timeout=timeout,
+        )
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
+        resp = client.chat.completions.create(**create_kwargs)
+        if not resp.choices:
+            raise CircuitBreakerTripped(
+                "empty_response", model_id, "dispatch",
+                "API returned no choices during tool loop",
+            )
+        msg = resp.choices[0].message
+        tcs = getattr(msg, "tool_calls", None) or []
+        if not tcs:
+            final = (msg.content or "").strip()
+            break
+        messages.append({
+            "role": "assistant",
+            "content": msg.content or "",
+            "tool_calls": [tc.model_dump() for tc in tcs],
+        })
+        for tc in tcs:
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            result = tool_executor(tc.function.name, args)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": (result or "")[:4000],
+            })
+    return final
+
+
 def call_openrouter(
     model_id: str,
     system_prompt: str | None,
@@ -251,8 +365,19 @@ def call_openrouter(
     max_retries: int = 3,
     backoff_base: float = 3.0,
     extra_body: dict | None = None,
+    tools: list[dict] | None = None,
+    tool_executor=None,
+    max_tool_iters: int = 6,
 ) -> str:
-    """Call a model via OpenRouter (bare-metal, CDSFL system prompt only)."""
+    """Call a model via OpenRouter (bare-metal, CDSFL system prompt only).
+
+    Tool-calling (GATED, default OFF): when ``tools`` is provided, the call runs
+    an OpenAI tool-call loop (max ``max_tool_iters`` iterations) so the model can
+    execute Python during analysis; tool calls are dispatched through
+    ``tool_executor(name, args)`` (defaults to :func:`default_tool_executor`,
+    which sandboxes execute_python). When ``tools`` is None the behaviour is
+    byte-identical to the original single-shot completion path.
+    """
     try:
         import openai
     except ImportError:
@@ -292,6 +417,23 @@ def call_openrouter(
             _log(f"  [openrouter:{model_id}] retry {attempt}/{max_retries}")
         t0 = time.monotonic()
         try:
+            if tools:
+                # GATED tool-call path: fresh message copy per attempt (the
+                # loop appends tool turns; a retry must restart from seed).
+                executor = tool_executor or default_tool_executor
+                text = _run_openai_tool_loop(
+                    client, model_id, list(messages), tools, executor,
+                    max_iters=max_tool_iters, max_tokens=max_tokens,
+                    timeout=timeout, extra_body=extra_body,
+                ).strip()
+                elapsed = time.monotonic() - t0
+                _log(f"  [openrouter:{model_id}] done (tools, {elapsed:.1f}s, {len(text)} chars)")
+                if not text:
+                    raise CircuitBreakerTripped(
+                        "empty_response", model_id, "dispatch",
+                        f"Empty response body after {elapsed:.1f}s (tool loop)"
+                    )
+                return text
             create_kwargs = dict(
                 model=model_id,
                 messages=messages,
@@ -347,6 +489,12 @@ def call_claude_cli(
     Uses --bare for minimal overhead (no hooks, LSP, auto-memory, CLAUDE.md).
     Uses --system-prompt for native CDSFL delivery (unlike Codex which embeds
     in prompt body). Uses stdin piping for large prompts.
+
+    Tool-calling: this route ALREADY exposes tools natively via --allowedTools
+    (Bash/Read/Write/Edit/Grep/Glob/WebFetch/WebSearch below), so a reviewing
+    model can run Python (via Bash) and import the real target during analysis.
+    No gated parameter is needed here — unlike the OpenAI-compatible routes
+    (call_openrouter, call_deepseek) which take an optional ``tools`` argument.
     """
     cli = CLAUDE_CLI
     if not cli:
@@ -582,8 +730,18 @@ def call_deepseek(
     timeout: int = 300,
     max_retries: int = 3,
     backoff_base: float = 3.0,
+    tools: list[dict] | None = None,
+    tool_executor=None,
+    max_tool_iters: int = 6,
 ) -> str:
     """Call DeepSeek via their OpenAI-compatible API.
+
+    Tool-calling (GATED, default OFF): when ``tools`` is provided the call runs
+    an OpenAI tool-call loop (max ``max_tool_iters`` iterations) via
+    ``tool_executor(name, args)`` (default :func:`default_tool_executor`,
+    sandboxed). The tool path uses the same hard per-attempt wall-clock cap as
+    the non-tool path. When ``tools`` is None the behaviour is byte-identical to
+    the original reasoning-content-salvage path below.
 
     DeepSeek Reasoner has a known failure mode: its chain-of-thought can
     consume the entire output token budget, leaving 0 tokens for the visible
@@ -645,6 +803,38 @@ def call_deepseek(
                  f"(max_tokens={current_max_tokens})")
         t0 = time.monotonic()
         try:
+            if tools:
+                # GATED tool-call path: run the whole tool loop under the same
+                # hard wall-clock cap (fresh message copy per attempt). Falls
+                # through to the standard retry/error handling below on failure.
+                import concurrent.futures
+                executor_fn = tool_executor or default_tool_executor
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
+                    _future = _pool.submit(
+                        _run_openai_tool_loop,
+                        client, model_id, list(messages), tools, executor_fn,
+                        max_tool_iters, current_max_tokens, timeout, None,
+                    )
+                    try:
+                        text = (_future.result(timeout=per_attempt_wall_cap) or "").strip()
+                    except concurrent.futures.TimeoutError:
+                        elapsed = time.monotonic() - t0
+                        _log(f"  [deepseek:{model_id}] HARD WALL CAP hit "
+                             f"({elapsed:.0f}s > {per_attempt_wall_cap:.0f}s cap, tools)")
+                        raise TimeoutError(
+                            f"DeepSeek tool attempt {attempt} exceeded hard wall "
+                            f"cap of {per_attempt_wall_cap:.0f}s"
+                        )
+                elapsed = time.monotonic() - t0
+                _log(f"  [deepseek:{model_id}] done (tools, {elapsed:.1f}s, "
+                     f"{len(text)} chars)")
+                if not text:
+                    empty_response_count += 1
+                    current_max_tokens = max(4096, current_max_tokens // 2)
+                    if attempt < max_retries and backoff_base > 0:
+                        time.sleep(backoff_base)
+                    continue
+                return text
             # Hard wall-clock cap per attempt: run the API call in a thread
             # so we can kill it if it exceeds per_attempt_wall_cap.
             # This catches the case where DeepSeek streams reasoning tokens

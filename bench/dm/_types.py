@@ -426,6 +426,13 @@ class Finding:
     retrieved_at: str = ""  # ISO 8601 timestamp of retrieval
     source_hash: str = ""  # SHA-256 of source content
     source_diversity: float = 0.0  # Source diversity metric (0-1)
+    # Falsifier fields ("tools decide" integration, 3 June 2026). The model
+    # attaches a runnable Python falsifier per critical finding; the runner
+    # independently re-runs it and the runner's result is the verdict (never
+    # the model's claim). Defaults empty so all existing call sites are
+    # unaffected and the frozen dataclass stays positional-compatible.
+    falsifier_code: str = ""  # Runnable Python that RAISES/prints FALSIFIED iff defect is real
+    falsifier_verdict: str = ""  # Runner's independent re-run verdict: CONFIRMED/REFUTED/ERROR/UNTOOLABLE
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
