@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 3 June 2026 02:56 BST
+Last updated: 3 June 2026 08:00 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,6 +85,27 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+## Current Pending Work (2026-06-03, post-divergence-study) — DECISION: AUTONOMOUS BUILD MODE
+
+**FOUNDER DECISION 2026-06-03: stop deferring, build CDSFL autonomously, replicate the working pattern with the fixes in place. After a point-update + restart, CC1's FIRST step is to bring the concrete build-out plan (no execution until that plan is presented). Founder flagged flagging health/will — the goal is to make this autonomous so they can step back.**
+
+The divergence study + 6-model panel (pr) are COMPLETE and committed (HEAD `c93a8a8`, pushed). Verdict 6/6 SOUND-WITH-CAVEATS. See `experimental_notes/Divergence_Study_Complete_2026-06-03.md` + `Divergence_Panel_Synthesis_2026-06-03.md` (+ Plain_English + TTS). Single root cause (sharpened): claims were allowed to exist without their own falsifier → forced the model-voting committee. Fix = every critical finding arrives with a runnable check; runner runs it; check decides. Tools decide the decidable; the small un-toolable set → HIL. Deliberation is for SEARCH (what to check) not TRUTH (tools decide) — keep multi-model generation, remove the truth-vote.
+
+**KEY REFRAME (founder, accepted by CC1): building CDSFL is a SMALL problem (one coding task = small-n regime, Part XIII optimal). The decomposition/DAG engine is FUTURE Global-Mind-at-scale (Riemann etc.), NOT a PoC prerequisite. CC1 had conflated future-scale with the present job. ITC = model-session recovery (not problem-decomposition); burst-phases + specialist-routing = partial decomposition; none needed for the PoC.**
+
+**What is actually left for the PoC (bounded, not infinite):**
+1. ONE real engineering piece — the falsifier-carrying / tools-decide fix (= the stalled "layer-2", task #7, now with a panel-validated spec). THE design decision to settle FIRST in the plan: (a) models call tools themselves (needs OpenRouter tool-calling wired into dispatch; variable reliability) vs (b) models WRITE the check with native intelligence + the RUNNER runs it (simpler, no model-side tool-calling, still tool-grounded; runner = failsafe). CC1 recommendation: (b). CC2-via-CLI already has the full local STEM toolset (`--allowedTools`); OpenRouter route-fallback for non-participation is in place.
+2. Framing changes — directive reframed to the OBJECTIVE (build a robust PoC, confirm it works; not endless bug-hunting); remove the truth-vote / compelled convergence; enforce participation ("don't let models crap out" → hard monitoring rule, stop+diagnose+fix, never shrug).
+3. Then replicate the working pattern autonomously: run experiment → check via MC protocols → fold results into the runner → repeat; panel-review (`pr`) any non-convergence; stay inside the brief.
+
+**Operating boundary (founder-set): stop only for genuine human-judgment items — a safety issue, a real architectural change, or a brief-divergence CC1 cannot resolve by reading the brief. Otherwise finish everything (drop the deferment bias). All work reversible via git. Models must have full project brief + docs + maths model + the experiment's target in their directive.**
+
+**RESUME (post-restart): CC1 presents the build-out plan, first item = the (a)-vs-(b) falsifier decision, then executes: falsifier-carrying fix → directive reframe → run Exp 42→54 arc under the pattern + cy monitoring + pr for hard cases. Minimal milestone check-ins, not constant attention.**
+
+Concrete carried-forward: task #7 (falsifier-carrying / tools-decide) is the first build brick. Exp 42 was stopped 2026-06-02 per the CT-0-verdicts gate (run dir `bench/logs/exp42_composer_20260602T230020Z` preserved); it relaunches after the fix. CX2 (Codex CLI) wiring into the experiment runner still deferred (was confound-avoidance for the verifier test; revisit during the build). HEAD `c93a8a8` clean + pushed.
+
+---
+
 ## Current Pending Work (2026-06-02 → 03)
 
 **FOUNDATIONAL FINDING (2026-06-03) — the project diverged from its founding paradigm in two distinct ways. See `experimental_notes/Project_Divergence_Analysis_2026-06-03.md` (+ Plain_English + TTS `~/Desktop/CDSFL_tts/`). This is the most important output of the recent arc. Pending: panel-falsification of the thesis + a git/experiment timeline trace.**
