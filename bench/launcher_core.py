@@ -200,6 +200,15 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         if cf in exp_cfg:
             kwargs[cf] = exp_cfg[cf]
 
+    # Falsifier gate ("tools decide, not votes", 2026-06-03). Default-off:
+    # if the key is absent the RunnerConfig default (False) keeps vote-based
+    # behaviour byte-identical; a config sets True to let the runner's
+    # independent falsifier re-run decide critical findings instead of the
+    # CONFIRM/CHALLENGE vote, and to give OpenAI-compatible models the
+    # execute_python tool during review.
+    if "falsifier_gate_enabled" in exp_cfg:
+        kwargs["falsifier_gate_enabled"] = exp_cfg["falsifier_gate_enabled"]
+
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}
     if "_macrophage" in exp_cfg:
