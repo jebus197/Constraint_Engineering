@@ -353,6 +353,25 @@ def _run_openai_tool_loop(
                 "tool_call_id": tc.id,
                 "content": (result or "")[:4000],
             })
+    else:
+        # max_iters exhausted while the model was STILL requesting tools (e.g.
+        # stuck retrying a bad import). Force one final answer WITHOUT tools so
+        # the model returns its synthesis from what it has gathered rather than
+        # empty text — a model must never crap out a whole round to a runaway
+        # tool loop ("don't let models crap out"). The accumulated tool results
+        # remain in `messages`, so the model answers with full context.
+        try:
+            final_kwargs = dict(
+                model=model_id, messages=messages, max_tokens=max_tokens,
+                temperature=0.0, timeout=timeout,
+            )
+            if extra_body:
+                final_kwargs["extra_body"] = extra_body
+            resp = client.chat.completions.create(**final_kwargs)
+            if resp.choices:
+                final = (resp.choices[0].message.content or "").strip()
+        except Exception:  # noqa: BLE001
+            pass  # leave final as-is; the caller's empty-handling / re-ask covers it
     return final
 
 

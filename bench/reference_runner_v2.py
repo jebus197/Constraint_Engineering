@@ -2368,8 +2368,12 @@ def _compose_for_model(
 def _multiturn_fallback(
     mc: ModelConfig, prompt: str, cdsfl_text: str,
     full_code: str, round_idx: int, pattern_text: str,
-    logs_dir: Path,
+    logs_dir: Path, enable_tools: bool = False,
 ) -> Optional[Tuple[str, float]]:
+    # enable_tools (GATED, default OFF): forwarded to decomposed_dispatch so the
+    # FINAL synthesis turn can give OpenAI-compatible / CLI models the
+    # execute_python tool loop (runnable falsifiers). Per-chunk delivery turns
+    # stay tool-less. Default OFF => byte-identical to the prior decomposed path.
     try:
         chunks = [
             DecomposedChunk(content=part, label=f"target_{i}")
@@ -2384,7 +2388,7 @@ def _multiturn_fallback(
             api=mc.api, model_id=mc.model_id, system_prompt=cdsfl_text,
             chunks=chunks, final_instruction=f"{pattern_text}\n\n{prompt}",
             max_tokens=mc.max_tokens, timeout=mc.timeout * 2,
-            cdsfl_directives=cdsfl_text,
+            cdsfl_directives=cdsfl_text, enable_tools=enable_tools,
         )
         save_decomposed_result(result, logs_dir, mc.label, round_idx)
         return result.text, result.elapsed_s
@@ -2629,7 +2633,8 @@ def _dispatch_single_model(
         mc.label, mgr, payload_chars=_total_payload_chars,
     ):
         fallback = _multiturn_fallback(
-            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text, logs_dir)
+            mc, prompt, model_cdsfl, full_code, round_idx, pattern_text,
+            logs_dir, enable_tools=enable_tools)
         if fallback is not None:
             text, elapsed = fallback
             _record_throughput(mc.label, len(prompt), elapsed)

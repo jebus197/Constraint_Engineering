@@ -47,6 +47,79 @@ from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Synthesis-turn tool loop (GATED, default OFF — "tools decide" on the
+# decomposed path, 3 June 2026)
+# ─────────────────────────────────────────────────────────────────────────────
+# Reuses the validated OpenAI tool-call loop + sandboxed executor from the
+# orchestrator. Applied ONLY to the FINAL synthesis create() of the OpenAI-
+# compatible decomposed routes (openrouter, deepseek). Per-chunk delivery
+# turns never touch this. Imported lazily so the non-tool decomposed paths
+# keep zero import-time dependency on the falsifier module.
+
+def _openai_synthesis_with_tools(
+    client,
+    model_id: str,
+    synthesis_messages: list[dict],
+    max_tokens: int,
+    timeout: int,
+) -> str:
+    """Run the synthesis turn with execute_python tool access and return the
+    model's final (no-tool-call) text.
+
+    Thin wrapper over the orchestrator's :func:`_run_openai_tool_loop`
+    (max 6 iterations, ``tool_choice="auto"``, sandboxed
+    ``default_tool_executor``). Used only when ``enable_tools=True`` on the
+    OpenAI-compatible decomposed routes; the byte-identical default path never
+    calls this.
+    """
+    from experiment_11_orchestrator import (
+        EXECUTE_PYTHON_TOOL,
+        default_tool_executor,
+        _run_openai_tool_loop,
+    )
+    return _run_openai_tool_loop(
+        client=client,
+        model_id=model_id,
+        messages=synthesis_messages,
+        tools=[EXECUTE_PYTHON_TOOL],
+        tool_executor=default_tool_executor,
+        max_iters=6,
+        max_tokens=max_tokens,
+        timeout=timeout,
+    )
+
+
+def _record_synthesis_tool_turns(
+    turns: list[dict[str, str]], synthesis_messages: list[dict],
+) -> None:
+    """Append the synthesis tool-call/result turns into the conversation log.
+
+    ``_run_openai_tool_loop`` mutates ``synthesis_messages`` in place: any
+    assistant message carrying ``tool_calls`` and any subsequent ``role:tool``
+    result message is appended during the loop. This copies those into
+    ``turns`` (the DecomposedResult conversation) so a downstream consumer —
+    the smoke test, a live-run audit — can see that the model invoked
+    execute_python during synthesis. No-op when the loop made no tool calls.
+    """
+    for m in synthesis_messages:
+        role = m.get("role")
+        if role == "assistant" and m.get("tool_calls"):
+            names = ", ".join(
+                tc.get("function", {}).get("name", "?")
+                for tc in m.get("tool_calls", [])
+            )
+            turns.append({
+                "role": "assistant_tool_call",
+                "content": f"[tool_calls: {names}] {m.get('content') or ''}",
+            })
+        elif role == "tool":
+            turns.append({
+                "role": "tool_result",
+                "content": str(m.get("content") or "")[:2000],
+            })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Data structures
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -161,8 +234,15 @@ def _decomposed_gemini(
     final_instruction: str,
     max_tokens: int,
     timeout: int,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
-    """Multi-turn decomposed delivery via Gemini chat API."""
+    """Multi-turn decomposed delivery via Gemini chat API.
+
+    enable_tools is accepted for signature consistency with the other
+    decomposed impls but is intentionally NOT acted on here: no Gemini
+    tool loop is wired for the synthesis turn, so the synthesis stays
+    tool-less regardless of the flag.
+    """
     from google import genai
     from google.genai import types as genai_types
 
@@ -258,6 +338,7 @@ def _decomposed_openrouter(
     final_instruction: str,
     max_tokens: int,
     timeout: int,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
     """Independent-session decomposed delivery via OpenRouter.
 
@@ -399,24 +480,35 @@ def _decomposed_openrouter(
     synthesis_messages.append({"role": "user", "content": synthesis_prompt})
 
     _log(f"  [openrouter:{model_id}] delivering synthesis instruction "
-         f"(chunk {total}/{total})")
+         f"(chunk {total}/{total})"
+         f"{' [tools-on]' if enable_tools else ''}")
 
-    response = client.chat.completions.create(
-        model=model_id,
-        messages=synthesis_messages,
-        max_tokens=max_tokens,
-        temperature=0.0,
-        timeout=timeout,
-    )
-    if not response.choices:
+    if enable_tools:
+        # GATED synthesis-turn tool loop: the model may run execute_python
+        # during synthesis to attach a runnable falsifier. Per-chunk turns
+        # above stayed tool-less. The loop raises CircuitBreakerTripped on an
+        # empty-choices response internally, mirroring the no-tools guard.
+        result_text = (_openai_synthesis_with_tools(
+            client, model_id, synthesis_messages, max_tokens, timeout,
+        ) or "").strip()
         elapsed = time.monotonic() - t0
-        raise CircuitBreakerTripped(
-            "empty_response", model_id, "dispatch",
-            f"API returned no choices after {elapsed:.1f}s "
-            f"(possible upstream 500 error)"
+    else:
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=synthesis_messages,
+            max_tokens=max_tokens,
+            temperature=0.0,
+            timeout=timeout,
         )
-    result_text = (response.choices[0].message.content or "").strip()
-    elapsed = time.monotonic() - t0
+        if not response.choices:
+            elapsed = time.monotonic() - t0
+            raise CircuitBreakerTripped(
+                "empty_response", model_id, "dispatch",
+                f"API returned no choices after {elapsed:.1f}s "
+                f"(possible upstream 500 error)"
+            )
+        result_text = (response.choices[0].message.content or "").strip()
+        elapsed = time.monotonic() - t0
 
     # 2026-05-20 (founder-directed): the synthesis-layer chunk-analyses
     # reconstruction (commit 35c44b6) was removed. It concatenated the
@@ -433,6 +525,13 @@ def _decomposed_openrouter(
              f"TRANSIENT_FAILURE and adapt next round)")
 
     turns.append({"role": "user", "content": synthesis_prompt})
+    # When the synthesis tool loop ran, record the intermediate tool-call
+    # turns (assistant tool_calls + tool results) so tool use is observable
+    # in DecomposedResult.turns. _openai_synthesis_with_tools mutates
+    # synthesis_messages in place; everything after the initial system/user
+    # entries is loop-appended.
+    if enable_tools:
+        _record_synthesis_tool_turns(turns, synthesis_messages)
     turns.append({"role": "assistant", "content": result_text})
 
     _log(f"  [openrouter:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
@@ -456,6 +555,7 @@ def _decomposed_deepseek(
     final_instruction: str,
     max_tokens: int,
     timeout: int,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
     """Independent-session decomposed delivery via DeepSeek API.
 
@@ -590,23 +690,33 @@ def _decomposed_deepseek(
     synthesis_messages.append({"role": "user", "content": synthesis_prompt})
 
     _log(f"  [deepseek:{model_id}] delivering synthesis instruction "
-         f"(chunk {total}/{total})")
+         f"(chunk {total}/{total})"
+         f"{' [tools-on]' if enable_tools else ''}")
 
-    response = client.chat.completions.create(
-        model=model_id,
-        messages=synthesis_messages,
-        max_tokens=max_tokens,
-        timeout=timeout,
-    )
-    if not response.choices:
+    if enable_tools:
+        # GATED synthesis-turn tool loop (see _decomposed_openrouter). Per-chunk
+        # turns above stayed tool-less. The loop raises CircuitBreakerTripped on
+        # an empty-choices response internally.
+        result_text = (_openai_synthesis_with_tools(
+            client, model_id, synthesis_messages, max_tokens, timeout,
+        ) or "").strip()
         elapsed = time.monotonic() - t0
-        raise CircuitBreakerTripped(
-            "empty_response", model_id, "dispatch",
-            f"API returned no choices after {elapsed:.1f}s "
-            f"(possible upstream 500 error)"
+    else:
+        response = client.chat.completions.create(
+            model=model_id,
+            messages=synthesis_messages,
+            max_tokens=max_tokens,
+            timeout=timeout,
         )
-    result_text = (response.choices[0].message.content or "").strip()
-    elapsed = time.monotonic() - t0
+        if not response.choices:
+            elapsed = time.monotonic() - t0
+            raise CircuitBreakerTripped(
+                "empty_response", model_id, "dispatch",
+                f"API returned no choices after {elapsed:.1f}s "
+                f"(possible upstream 500 error)"
+            )
+        result_text = (response.choices[0].message.content or "").strip()
+        elapsed = time.monotonic() - t0
 
     # 2026-05-20 (founder-directed): synthesis-layer chunk-analyses
     # reconstruction removed (see _decomposed_openrouter comment for
@@ -618,6 +728,8 @@ def _decomposed_deepseek(
              f"TRANSIENT_FAILURE and adapt next round)")
 
     turns.append({"role": "user", "content": synthesis_prompt})
+    if enable_tools:
+        _record_synthesis_tool_turns(turns, synthesis_messages)
     turns.append({"role": "assistant", "content": result_text})
 
     _log(f"  [deepseek:{model_id}] synthesis complete ({elapsed:.1f}s, {len(result_text):,} chars)")
@@ -640,6 +752,7 @@ def _decomposed_claude_cli(
     cdsfl_directives: str,
     final_instruction: str,
     timeout: int,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
     """Decomposed delivery via Claude CLI — true multi-turn via --resume.
 
@@ -741,8 +854,17 @@ def _decomposed_claude_cli(
         "--output-format", "text",
         "--resume", session_id,
     ]
+    if enable_tools:
+        # GATED: grant the SYNTHESIS turn (only) Bash + Read so the model can
+        # run python (via Bash) and import the real target to attach a runnable
+        # falsifier — mirroring call_claude_cli's native --allowedTools surface,
+        # narrowed to the two tools the falsifier needs. The per-chunk delivery
+        # turns above ran tool-less (chunk 0 created the session with Bash/Edit/
+        # Write disallowed); only this final --resume invocation carries tools.
+        cmd_final.extend(["--allowedTools", "Bash", "Read"])
 
-    _log(f"  [claude-cli] delivering final instruction (chunk {total}/{total})")
+    _log(f"  [claude-cli] delivering final instruction (chunk {total}/{total})"
+         f"{' [tools-on]' if enable_tools else ''}")
 
     try:
         result = subprocess.run(
@@ -794,8 +916,14 @@ def _decomposed_codex(
     cdsfl_directives: str,
     final_instruction: str,
     timeout: int,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
     """Decomposed delivery via Codex CLI — per-chunk independent calls.
+
+    enable_tools is accepted for signature consistency but intentionally
+    NOT acted on: codex exec runs here with mcp_servers={} and plugins={}
+    (tool surface disabled), so the synthesis stays tool-less regardless
+    of the flag.
 
     codex exec is single-shot (no session persistence), so true multi-turn
     is impossible. Instead of accumulating all chunks into one giant prompt
@@ -935,6 +1063,7 @@ def decomposed_dispatch(
     max_tokens: int = 32768,
     timeout: int = 600,
     cdsfl_directives: str | None = None,
+    enable_tools: bool = False,
 ) -> DecomposedResult:
     """Dispatch a decomposed payload to any supported API.
 
@@ -948,38 +1077,53 @@ def decomposed_dispatch(
         max_tokens: Max tokens for the final synthesis response.
         timeout: Per-call timeout in seconds.
         cdsfl_directives: Raw CDSFL text for Codex (which embeds it in prompt).
+        enable_tools: GATED, default OFF. When True, the FINAL synthesis turn
+            (only) gives the model the execute_python tool so it can run Python
+            during synthesis and attach runnable falsifiers — closing the
+            (a)-half of the falsifier gate on the decomposed (LARGE-target)
+            path. The per-chunk delivery turns ALWAYS stay tool-less so
+            decomposition (the Exp 39 quality-collapse fix) is preserved.
+            Wired for openrouter, deepseek, claude_cli (the Exp 42 routes);
+            threaded into gemini/codex for signature consistency but those two
+            stay tool-less (noted at their call sites). Default OFF =>
+            byte-identical to the prior decomposed path (no tools kwarg sent).
 
     Returns:
         DecomposedResult with the synthesis response and conversation history.
     """
     _log(f"  Decomposed dispatch: {api}/{model_id or 'codex'}, "
-         f"{len(chunks)} chunks, ~{sum(c.chars for c in chunks):,} chars")
+         f"{len(chunks)} chunks, ~{sum(c.chars for c in chunks):,} chars"
+         f"{' [tools-on synthesis]' if enable_tools else ''}")
 
     if api == "claude_cli":
         # Claude CLI is single-shot like Codex — use per-chunk independent calls
         return _decomposed_claude_cli(
             model_id or "opus", chunks, cdsfl_directives or system_prompt or "",
-            final_instruction, timeout,
+            final_instruction, timeout, enable_tools=enable_tools,
         )
     elif api == "google":
+        # Gemini: param threaded for signature consistency; synthesis stays
+        # tool-less (no OpenAI-compatible tool loop wired here).
         return _decomposed_gemini(
             model_id, system_prompt, chunks, final_instruction,
-            max_tokens, timeout,
+            max_tokens, timeout, enable_tools=enable_tools,
         )
     elif api == "openrouter":
         return _decomposed_openrouter(
             model_id, system_prompt, chunks, final_instruction,
-            max_tokens, timeout,
+            max_tokens, timeout, enable_tools=enable_tools,
         )
     elif api == "deepseek":
         return _decomposed_deepseek(
             model_id, system_prompt, chunks, final_instruction,
-            max_tokens, timeout,
+            max_tokens, timeout, enable_tools=enable_tools,
         )
     elif api == "codex_exec":
+        # Codex exec: param threaded for signature consistency; synthesis stays
+        # tool-less (codex exec runs with mcp_servers/plugins disabled here).
         return _decomposed_codex(
             chunks, cdsfl_directives or system_prompt or "",
-            final_instruction, timeout,
+            final_instruction, timeout, enable_tools=enable_tools,
         )
     else:
         raise ValueError(f"Unknown API: {api}")
