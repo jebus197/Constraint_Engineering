@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 23 May 2026 02:24 BST
+Last updated: 3 June 2026 02:56 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -85,6 +85,26 @@ context" regain had compressed five confer-round combined logs into a
 ---
 
 <!-- SV:PENDING_START -->
+## Current Pending Work (2026-06-02 → 03)
+
+**FOUNDATIONAL FINDING (2026-06-03) — the project diverged from its founding paradigm in two distinct ways. See `experimental_notes/Project_Divergence_Analysis_2026-06-03.md` (+ Plain_English + TTS `~/Desktop/CDSFL_tts/`). This is the most important output of the recent arc. Pending: panel-falsification of the thesis + a git/experiment timeline trace.**
+
+The founder asked where CDSFL drifted from its core vision (Popperian falsification; distributed compute at scale; the "Global Mind"). Solo forensic analysis of the founding record (PAPER §Part XIII; README §8/§9) found:
+- **Divergence 1 (vision conflation, foundational).** The founder's scaling framing ("1000 models faster than 5") is architecture **(B) distributed problem-DECOMPOSITION**, which the paper does NOT model and the system does NOT build. What is papered/built is **(A) heterogeneous review/falsification of one artefact** — PAPER §Part XIII explicitly predicts optimal n≈3–6 with steep diminishing returns. So "1000 reviewing one thing ≈ 5" is the model's own prediction, not a bug. (B) is achievable but unbuilt. NEEDS PANEL FALSIFICATION — §Part XIII is a *review*-coverage model and may be silent on (B), not refute it.
+- **Divergence 2 (implementation drift, fixable — and this is the 2026-06-02 verifier bug).** README §8 states "the system does not rely on model consensus to decide what is true — it relies on tools, and when tools cannot decide, on the HIL." But the experiment pipeline resolves findings by CONFIRM/CHALLENGE model VOTES (a committee) because the tool layer (passive post-hoc grounding of prose) fails to decide ("CT v2: 0 verdicts," "cannot ground in source"). The committee is the FALLBACK when tools can't ground — a betrayal of §8. PAPER §Part XIII property 4 also warns consensus-forcing raises ρ → monoculture collapse → D(n)≈D(1) = the observed "5 ≈ 1." The founder's anti-committee instinct IS the project's own founding rule.
+
+**Fixes (recommended, not yet started):** (1) restore "tools decide" — critical findings carry a runnable artefact; runner runs it; remove the voting committee (= the correct form of the layer-2 fix). (2) Stop forcing consensus (re-examine compelled convergence + voting/reconciliation vs §Part XIII property 4). (3) THEN deliberately design architecture (B), the real Global Mind, on a tool-settled falsification core.
+
+**VERIFIER STATUS (this is the concrete vehicle for fix 1).** Layer 1 (LLM classifier demoted code claims code_behavioral→logical → opinion-voting) FIXED + committed (`8f1c305`, local, code-path guard in `bench/immune_agents.py`, 155 tests pass). Layer 2 OPEN (task #7): `cytotoxic_t_cell_v2` (immune_agents.py:3508) runs claude-CLI falsifier ~270s but `_parse_ct_output` yields 0 verdicts; B-Cell v2 z3/SMT "cannot ground claim in source AST"; novel claims → UNCERTAIN → A4 HIL escalation (SAFE, no false convergence, but not adjudicating). Likely cause: CT agent `--output-format json` + `ct_verdict_schema.json` output not matching `_parse_ct_output` expectations.
+
+**EXP 42:** launched (exp42_composer, target composer.py, 5 models, hardened gate off, gamma telemetry-only, convergence = genuine-critical count + A4 fail-safe), round 0 confirmed layer-1 works + layer-2 remains, **STOPPED per the founder's "pause if CT yields 0 verdicts" gate** (clean SIGTERM). Run dir `bench/logs/exp42_composer_20260602T230020Z` preserved. CX2 (Codex CLI) wiring still deferred (routes through dispatch_to_model/ModelConfig; would confound the verifier-fix test).
+
+**HEAD `8f1c305` not yet pushed before this sv.** Chips 1 (stall-gamma termination off by default) + 2 (stale insect-brain budget test) + appendix C4 inverted-polarity correction all landed in `8f1c305`.
+
+**Resume:** founder reaction to the divergence thesis pending (last message before sv was the thesis presentation). Next: (a) panel-falsify the thesis; (b) timeline-trace the consensus-machinery accretion; (c) execute fix 1 (tools-decide / layer-2) as the concrete restoration. Method chosen by founder: solo analysis first, then panel-check to refute.
+
+---
+
 ## Current Pending Work (22–23 May 2026)
 
 **RESULT 2026-05-22 → 23 (autonomous, founder-directed return to first principles) — EXPERIMENT 41 CONVERGED CLEANLY. The founder's core question — can Exp 41 now converge honestly, replicating Exp 37 — is answered YES.**

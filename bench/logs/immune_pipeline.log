@@ -43182,3 +43182,658 @@
 2026-05-22T22:15:45 INFO Reconciliation locked 5 finding(s): CC2_UNSTRUCTURED, ChatGPT_F002, Codex_F002, DeepSeek_UNSTRUCTURED, Gemini_F001
 2026-05-22T22:15:45 INFO RT v2: depletion (not autoimmune) — removal rate 5/5 (100.0%), all duplicates, rejected=0
 2026-05-22T22:15:45 INFO RT v2 (v2): depletion — 100.0% removal rate (all duplicates)
+2026-05-23T22:18:57 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:18:57 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:18:57 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:18:57 INFO DC v2 (v2): 2/2 findings reclassified
+2026-05-23T22:18:57 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:19:05 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.78, threshold=0.70 cleared, 8.7s)
+2026-05-23T22:19:14 INFO LLM classifier OVERRIDE: f2 — regex=uncategorised → llm=code_behavioral (conf=0.85, threshold=0.70 cleared, 8.9s)
+2026-05-23T22:19:14 INFO LLM classifier: 0/2 agree with regex (0.0%), 2 overrides applied
+2026-05-23T22:19:14 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:19:15 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:19:52 INFO CT v2 (v2): 0 verdicts in 37.9s — none
+2026-05-23T22:20:34 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:20:34 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:20:34 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-05-23T22:20:34 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:20:35 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:20:35 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:20:35 INFO DC v2 (v2): 1/2 findings reclassified
+2026-05-23T22:20:35 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:20:48 INFO LLM classifier: f1 — regex=mathematical llm=logical (conf=0.70, BLOCKED by MATHEMATICAL guard, 13.7s)
+2026-05-23T22:21:00 INFO LLM classifier: f2 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 11.8s)
+2026-05-23T22:21:00 INFO LLM classifier: 0/2 agree with regex (0.0%), 0 overrides applied
+2026-05-23T22:21:00 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:21:10 INFO Layer 2 reclassification: f2 — UNCATEGORISED → code_behavioral (conf=0.70)
+2026-05-23T22:21:10 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-05-23T22:21:10 INFO   f1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-05-23T22:21:11 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:21:12 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-05-23T22:21:12 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:21:12 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:21:12 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-05-23T22:21:12 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:21:12 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-05-23T22:21:12 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-05-23T22:21:12 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:21:12 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:21:12 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:21:12 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:21:19 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 6.4s)
+2026-05-23T22:21:19 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-05-23T22:21:19 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:21:19 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:21:19 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:21:19 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:21:19 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-05-23T22:21:19 INFO Reconciliation locked 1 finding(s): f1
+2026-05-23T22:21:19 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:21:19 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:21:19 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:21:19 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:21:29 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-05-23T22:21:29 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:21:41 INFO Layer 2 reclassification: f1 — UNCATEGORISED → code_behavioral (conf=0.68)
+2026-05-23T22:21:41 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:21:41 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:21:41 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:21:41 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-05-23T22:21:41 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-05-23T22:21:41 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-05-23T22:21:41 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-05-23T22:21:41 INFO DC v2 (v2): 0/10 findings reclassified
+2026-05-23T22:21:41 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-05-23T22:22:52 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-05-23T22:22:52 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:22:52 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:22:52 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:22:52 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:22:52 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-05-23T22:22:52 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-05-23T22:22:52 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-05-23T22:22:52 INFO DC v2 (v2): 0/1 findings reclassified
+2026-05-23T22:22:52 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:22:52 INFO Layer 2 reclassification: f1 — UNCATEGORISED → logical (conf=0.75)
+2026-05-23T22:22:52 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:22:52 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM logical conf=0.30, below threshold 0.55)
+2026-05-23T22:22:52 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:22:52 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
+2026-05-23T22:22:52 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:24:58 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:24:58 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:24:58 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:24:58 INFO DC v2 (v2): 2/2 findings reclassified
+2026-05-23T22:24:58 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:25:08 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 10.4s)
+2026-05-23T22:25:20 INFO LLM classifier OVERRIDE: f2 — regex=uncategorised → llm=code_behavioral (conf=0.78, threshold=0.70 cleared, 11.1s)
+2026-05-23T22:25:20 INFO LLM classifier: 0/2 agree with regex (0.0%), 1 overrides applied
+2026-05-23T22:25:20 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:25:29 INFO Layer 2 reclassification: f1 — UNCATEGORISED → code_behavioral (conf=0.78)
+2026-05-23T22:25:29 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:25:30 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:25:51 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:25:51 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:25:51 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:25:51 INFO DC v2 (v2): 2/2 findings reclassified
+2026-05-23T22:25:51 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:26:02 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 11.3s)
+2026-05-23T22:26:11 INFO LLM classifier OVERRIDE: f2 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 8.5s)
+2026-05-23T22:26:11 INFO LLM classifier: 0/2 agree with regex (0.0%), 1 overrides applied
+2026-05-23T22:26:11 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:26:22 INFO Layer 2 reclassification: f1 — UNCATEGORISED → code_behavioral (conf=0.78)
+2026-05-23T22:26:22 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:26:22 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:27:06 INFO CT v2 (v2): 0 verdicts in 96.9s — none
+2026-05-23T22:27:06 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:27:06 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:27:06 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-05-23T22:27:06 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:27:07 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:27:07 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:27:07 INFO DC v2 (v2): 1/2 findings reclassified
+2026-05-23T22:27:07 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:27:29 INFO LLM classifier OVERRIDE: f2 — regex=uncategorised → llm=code_behavioral (conf=0.70, threshold=0.70 cleared, 14.0s)
+2026-05-23T22:27:29 INFO LLM classifier: 1/2 agree with regex (50.0%), 1 overrides applied
+2026-05-23T22:27:29 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-05-23T22:27:29 INFO   f1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-05-23T22:27:29 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:27:31 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-05-23T22:27:31 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:27:31 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:27:31 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-05-23T22:27:31 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:27:31 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-05-23T22:27:31 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-05-23T22:27:31 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:27:31 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:27:31 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:27:31 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:27:45 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 14.1s)
+2026-05-23T22:27:45 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-05-23T22:27:45 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:27:45 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:27:45 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:27:45 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:27:45 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-05-23T22:27:45 INFO Reconciliation locked 1 finding(s): f1
+2026-05-23T22:27:45 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:27:45 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:27:45 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:27:45 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:29:18 INFO CT v2 (v2): 0 verdicts in 175.9s — none
+2026-05-23T22:29:18 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:29:18 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:29:18 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-05-23T22:29:18 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:30:25 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-05-23T22:30:25 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:30:25 INFO DC v2 (v2): 1/2 findings reclassified
+2026-05-23T22:30:25 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-05-23T22:30:44 INFO LLM classifier: f2 — regex=uncategorised llm=code_behavioral (conf=0.65, below threshold 0.70, 10.9s)
+2026-05-23T22:30:44 INFO LLM classifier: 1/2 agree with regex (50.0%), 0 overrides applied
+2026-05-23T22:30:44 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:30:59 WARNING Active LLM classifier timeout/error for f2: Command '['/opt/homebrew/bin/claude', '-p', 'You are a claim type classifier for a code verification pipeline.\nClassify the following finding description into exactly ONE category.\n\nRespond with EXACTLY two lines:\nLine 1: the category name (one of the options below)\nLine 2: your confidence as a decimal between 0.0 and 1.0\n\nCategories:\n- MATHEMATICAL: equations, inequalities, bounds, numeric relationships verifiable symbolically.\n- LOGICAL: if/then claims, invariant assertions, reachability arguments about code paths.\n- STATISTICAL: distributions, p-values, confidence intervals, statistical significance.\n- CODE_STRUCTURAL: missing or incorrect code structure (decorators, class hierarchy, absent method).\n- CODE_BEHAVIORAL: runtime behaviour bugs, wrong return values, incorrect state transitions.\n- UNCATEGORISED: does not clearly fit any of the above.\n\nFinding description:\nBug in parser logic', '--model', 'haiku', '--output-format', 'text', '--max-turns', '1']' timed out after 15 seconds
+2026-05-23T22:30:59 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-05-23T22:30:59 INFO   f1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-05-23T22:31:00 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:31:02 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-05-23T22:31:02 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:31:02 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:31:02 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-05-23T22:31:02 INFO Reconciliation locked 1 finding(s): f2
+2026-05-23T22:31:02 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-05-23T22:31:02 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-05-23T22:31:02 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:31:02 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:31:02 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:31:02 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:31:12 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 10.3s)
+2026-05-23T22:31:12 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-05-23T22:31:12 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:31:12 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:31:12 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:31:12 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-05-23T22:31:12 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-05-23T22:31:12 INFO Reconciliation locked 1 finding(s): f1
+2026-05-23T22:31:12 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-05-23T22:31:12 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-05-23T22:31:12 INFO DC v2 (v2): 1/1 findings reclassified
+2026-05-23T22:31:12 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-05-23T22:31:22 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.55, below threshold 0.70, 9.5s)
+2026-05-23T22:31:22 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-05-23T22:31:22 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:31:28 INFO Layer 2 reclassification: f1 — UNCATEGORISED → code_behavioral (conf=0.60)
+2026-05-23T22:31:28 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:31:28 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:31:28 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:31:28 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-05-23T22:31:28 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-05-23T22:31:28 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-05-23T22:31:28 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-05-23T22:31:28 INFO DC v2 (v2): 0/10 findings reclassified
+2026-05-23T22:31:28 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-05-23T22:32:36 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-05-23T22:32:36 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-05-23T22:32:36 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-05-23T22:32:36 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-05-23T22:32:36 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-05-23T22:32:36 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-05-23T22:32:36 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-05-23T22:32:36 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-05-23T22:32:36 INFO DC v2 (v2): 0/1 findings reclassified
+2026-05-23T22:32:36 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:32:36 INFO Layer 2 reclassification: f1 — UNCATEGORISED → logical (conf=0.75)
+2026-05-23T22:32:36 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:32:36 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM logical conf=0.30, below threshold 0.55)
+2026-05-23T22:32:36 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-05-23T22:32:36 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
+2026-05-23T22:32:36 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:44:30 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-06-02T22:44:30 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T22:44:30 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T22:44:30 INFO DC v2 (v2): 2/2 findings reclassified
+2026-06-02T22:44:30 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-06-02T22:44:43 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.78, threshold=0.70 cleared, 13.3s)
+2026-06-02T22:45:04 INFO LLM classifier: f2 — regex=uncategorised llm=logical (conf=0.65, below threshold 0.70, 20.7s)
+2026-06-02T22:45:04 INFO LLM classifier: 0/2 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:45:04 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:45:14 INFO Layer 2 reclassification: f2 — UNCATEGORISED → code_behavioral (conf=0.88)
+2026-06-02T22:45:14 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T22:45:15 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:46:56 INFO CT v2 (v2): 0 verdicts in 101.7s — none
+2026-06-02T22:46:56 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:46:56 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-06-02T22:46:56 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.55, v2=0.55, max=0.55 >= 0.5)
+2026-06-02T22:46:56 INFO Reconciliation locked 1 finding(s): f2
+2026-06-02T22:46:56 INFO LLM classifier: DISABLED (claude CLI not available). 1 findings skipped.
+2026-06-02T22:46:56 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-06-02T22:46:56 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T22:46:56 INFO DC v2 (v2): 1/2 findings reclassified
+2026-06-02T22:46:56 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-06-02T22:47:18 INFO LLM classifier: f2 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 12.3s)
+2026-06-02T22:47:18 INFO LLM classifier: 1/2 agree with regex (50.0%), 0 overrides applied
+2026-06-02T22:47:18 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:47:30 INFO Layer 2 reclassification: f2 — UNCATEGORISED → code_behavioral (conf=0.78)
+2026-06-02T22:47:30 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:47:30 INFO   f1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:47:30 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:47:32 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-06-02T22:47:32 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:47:32 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-06-02T22:47:32 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-06-02T22:47:32 INFO Reconciliation locked 1 finding(s): f2
+2026-06-02T22:47:32 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-06-02T22:47:32 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:47:32 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:47:32 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T22:47:32 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T22:47:32 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:47:41 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.95, threshold=0.70 cleared, 9.6s)
+2026-06-02T22:47:41 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:47:41 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T22:47:41 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:47:41 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:47:41 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-06-02T22:47:41 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-06-02T22:47:41 INFO Reconciliation locked 1 finding(s): f1
+2026-06-02T22:47:41 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:47:41 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T22:47:41 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T22:47:41 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:47:56 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.65, below threshold 0.70, 14.2s)
+2026-06-02T22:47:56 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:47:56 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:48:10 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:48:10 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T22:48:10 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:48:10 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:48:10 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-06-02T22:48:10 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-06-02T22:48:10 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-06-02T22:48:10 INFO DC v2 (v2): 0/10 findings reclassified
+2026-06-02T22:48:10 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-06-02T22:49:35 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:49:35 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T22:49:35 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:49:35 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:49:35 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T22:49:35 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-06-02T22:49:35 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-06-02T22:49:35 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-06-02T22:49:35 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:49:35 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:49:35 INFO Layer 2 reclassification: f1 — UNCATEGORISED → logical (conf=0.75)
+2026-06-02T22:49:35 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:49:35 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM logical conf=0.30, below threshold 0.55)
+2026-06-02T22:49:35 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:49:35 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
+2026-06-02T22:49:35 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T22:54:28 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.68, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:54:28 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_structural → llm=code_behavioral (conf=0.85, threshold=0.70 cleared, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:54:28 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=uncategorised (conf=0.88, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:54:28 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:54:28 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.55, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:54:28 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:28 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:54:28 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:54:33 INFO Domain config loaded: mathematics (1 sections)
+2026-06-02T22:54:33 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:54:33 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:54:33 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:41 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:54:41 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:54:41 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:54:41 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:54:43 INFO B-Cell specialist (LIVE, domain=mathematics): 1 verdicts
+2026-06-02T22:54:43 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:54:43 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:54:43 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:54:43 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:54:43 INFO Domain config loaded: physics (1 sections)
+2026-06-02T22:54:43 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:54:43 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:54:43 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:54:50 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:54:50 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:54:50 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:54:50 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:54:54 INFO B-Cell specialist (shadow, domain=physics): 1 verdicts; detail=[{"finding_id": "mf1", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "astropy", "evidence": "astropy: ASTRO_NO_MATCH: no verifiable constant or conversion found"}]
+2026-06-02T22:54:54 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:54:54 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:54:54 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:54:54 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:54:54 INFO Domain config loaded: chemistry (1 sections)
+2026-06-02T22:54:54 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:54:54 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:54:54 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:55:01 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:55:01 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:55:01 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:55:01 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:55:07 INFO B-Cell specialist (shadow, domain=chemistry): 1 verdicts; detail=[{"finding_id": "mf1", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "pint", "evidence": "pint: DIM_PARSE_FAIL: could not parse any units: [('4', 'always')]"}]
+2026-06-02T22:55:07 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:55:07 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:55:07 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:55:07 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:55:07 INFO Domain config loaded: engineering (1 sections)
+2026-06-02T22:55:07 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:55:07 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:55:07 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:55:14 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:55:14 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:55:14 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:55:14 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:55:17 INFO B-Cell specialist (shadow, domain=engineering): 1 verdicts; detail=[{"finding_id": "mf1", "verdict": "UNCERTAIN", "confidence": 0.2, "tool_used": "pulp", "evidence": "pulp: LP_NO_STRUCTURE: no optimisation structure found in claim"}]
+2026-06-02T22:55:17 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:55:17 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:55:17 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:55:17 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:55:17 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:55:17 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:55:17 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:55:24 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:55:24 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:55:24 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:55:24 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:55:25 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:55:25 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:55:25 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:55:25 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:55:25 INFO Domain config loaded: mathematics (1 sections)
+2026-06-02T22:55:25 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:55:25 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:55:25 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:55:34 INFO LLM classifier: 1/1 agree with regex (100.0%), 0 overrides applied
+2026-06-02T22:55:34 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:55:34 INFO   mf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:55:34 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:55:36 INFO B-Cell specialist (LIVE, domain=mathematics): 1 verdicts
+2026-06-02T22:55:36 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:55:36 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:55:36 INFO UNCERTAIN-ESCALATED to HIL: mf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:55:36 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:55:46 INFO Domain config loaded: physics (1 sections)
+2026-06-02T22:55:46 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:55:46 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-06-02T22:55:46 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T22:55:46 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:55:55 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.88, threshold=0.70 cleared, 9.1s)
+2026-06-02T22:55:55 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:55:55 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:55:55 INFO   sf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:55:55 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:55:57 INFO B-Cell specialist (shadow, domain=physics): 1 verdicts; detail=[{"finding_id": "sf1", "verdict": "REJECTED", "confidence": 0.85, "tool_used": "pint", "evidence": "pint: DIM_INCONSISTENT: dimensions differ: ['dimensionless', '[length]'] [specialist:dimensional_analysis]"}]
+2026-06-02T22:55:57 INFO B-Cell specialist divergence: sf1 specialist=REJECTED generic=UNCERTAIN
+2026-06-02T22:55:57 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:55:57 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:55:57 INFO UNCERTAIN-ESCALATED to HIL: sf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:55:57 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:55:57 INFO Domain config loaded: chemistry (1 sections)
+2026-06-02T22:55:57 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:55:57 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T22:55:57 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:56:12 INFO LLM classifier: sf1 — regex=mathematical llm=code_behavioral (conf=0.88, BLOCKED by MATHEMATICAL guard, 15.3s)
+2026-06-02T22:56:12 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:56:12 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:56:12 INFO   sf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:56:12 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:56:14 INFO B-Cell specialist (shadow, domain=chemistry): 1 verdicts; detail=[{"finding_id": "sf1", "verdict": "CONFIRMED", "confidence": 0.85, "tool_used": "rdkit", "evidence": "rdkit: CHEM_VALID: SMILES=CCO formula=C2H6O matches claim [specialist:chemistry_structure]"}]
+2026-06-02T22:56:14 INFO B-Cell specialist divergence: sf1 specialist=CONFIRMED generic=UNCERTAIN
+2026-06-02T22:56:14 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:56:14 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:56:14 INFO UNCERTAIN-ESCALATED to HIL: sf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:56:14 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:56:14 INFO Domain config loaded: engineering (1 sections)
+2026-06-02T22:56:14 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T22:56:14 INFO DC v2 reclassification: sf1 — v1=mathematical → v2=uncategorised (conf=0.30)
+2026-06-02T22:56:14 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T22:56:14 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:56:24 INFO LLM classifier OVERRIDE: sf1 — regex=uncategorised → llm=mathematical (conf=0.98, threshold=0.70 cleared, 9.8s)
+2026-06-02T22:56:24 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:56:24 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T22:56:24 INFO   sf1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T22:56:24 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T22:56:26 INFO B-Cell specialist (shadow, domain=engineering): 1 verdicts; detail=[{"finding_id": "sf1", "verdict": "CONFIRMED", "confidence": 0.85, "tool_used": "pint", "evidence": "pint: DIM_CONSISTENT: all quantities share dimension [mass] / [length] / [time] ** 2 [specialist:dimensional_analysis]"}]
+2026-06-02T22:56:26 INFO B-Cell specialist divergence: sf1 specialist=CONFIRMED generic=UNCERTAIN
+2026-06-02T22:56:26 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T22:56:26 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T22:56:26 INFO UNCERTAIN-ESCALATED to HIL: sf1 (B-Cell cannot ground claim in source)
+2026-06-02T22:56:26 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T22:57:20 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.68, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:57:20 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_structural → llm=code_behavioral (conf=0.85, threshold=0.70 cleared, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:57:20 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=uncategorised (conf=0.88, llm=uncategorised: no valid reclass target, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:57:20 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:57:20 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.55, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:57:20 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:57:20 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:57:20 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.68, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_structural → llm=code_behavioral (conf=0.85, threshold=0.70 cleared, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=uncategorised (conf=0.88, llm=uncategorised: no valid reclass target, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=logical (conf=0.80, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=mathematical (conf=0.90, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.80, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_behavioral → llm=logical (conf=0.90, threshold=0.70 cleared, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.55, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T22:59:06 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T22:59:06 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T22:59:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:49:10 INFO Skin barrier (v2): 2 passed, 0 failed out of 2 findings
+2026-06-02T23:49:10 INFO DC v2 reclassification: f2 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T23:49:10 INFO DC v2 (v2): 1/2 findings reclassified
+2026-06-02T23:49:10 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 2 findings to classify.
+2026-06-02T23:49:32 INFO LLM classifier: f2 — regex=uncategorised llm=code_behavioral (conf=0.58, below threshold 0.70, 12.2s)
+2026-06-02T23:49:32 INFO LLM classifier: 1/2 agree with regex (50.0%), 0 overrides applied
+2026-06-02T23:49:32 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:49:46 INFO B Cell v2 (v2): 1 claims checked, 0 grounded proofs
+2026-06-02T23:49:46 INFO   f1: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-02T23:49:46 INFO NK v2 (v2): 1 verdicts (1 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T23:49:49 INFO Formalisation agent: f1 — 1 preconditions extracted, B-Cell verdict=UNCERTAIN. Z3 translatable=True
+2026-06-02T23:49:49 INFO Formalisation agent: 1 math/logic findings, 1 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T23:49:49 INFO Helper T v2 (v2): 2 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 1 DUPLICATE
+2026-06-02T23:49:49 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.52, v2=0.52, max=0.52 >= 0.5)
+2026-06-02T23:49:49 INFO Reconciliation locked 1 finding(s): f2
+2026-06-02T23:49:49 INFO UNCERTAIN-ESCALATED to HIL: f1 (B-Cell cannot ground claim in source)
+2026-06-02T23:49:49 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
+2026-06-02T23:49:49 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T23:49:49 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T23:49:49 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T23:49:49 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:49:59 INFO LLM classifier OVERRIDE: f1 — regex=uncategorised → llm=code_behavioral (conf=0.90, threshold=0.70 cleared, 9.8s)
+2026-06-02T23:49:59 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:49:59 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T23:49:59 INFO NK v2 (v2): 1 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T23:49:59 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T23:49:59 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 0 UNCERTAIN, 1 DUPLICATE
+2026-06-02T23:49:59 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.86, v2=0.86, max=0.86 >= 0.5)
+2026-06-02T23:49:59 INFO Reconciliation locked 1 finding(s): f1
+2026-06-02T23:49:59 INFO Skin barrier (v2): 1 passed, 0 failed out of 1 findings
+2026-06-02T23:49:59 INFO DC v2 reclassification: f1 — v1=code_behavioral → v2=uncategorised (conf=0.30)
+2026-06-02T23:49:59 INFO DC v2 (v2): 1/1 findings reclassified
+2026-06-02T23:49:59 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:50:06 INFO LLM classifier: f1 — regex=uncategorised llm=code_behavioral (conf=0.68, below threshold 0.70, 7.5s)
+2026-06-02T23:50:06 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:50:06 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:50:14 INFO NK v2 (v2): 0 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T23:50:14 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T23:50:14 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T23:50:14 INFO Helper T v2 (v2): 1 findings — 0 CONFIRMED, 0 REJECTED, 1 UNCERTAIN, 0 DUPLICATE
+2026-06-02T23:50:14 INFO VERIFICATION-GATE-ESCALATED to HIL: f1 (no tool-grounded cell produced a verdict)
+2026-06-02T23:50:14 INFO Hard verification gate: escalated 1 findings with no tool-grounded verdicts to HIL
+2026-06-02T23:50:14 INFO Skin barrier (v2): 10 passed, 0 failed out of 10 findings
+2026-06-02T23:50:14 INFO DC v2 (v2): 0/10 findings reclassified
+2026-06-02T23:50:14 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 10 findings to classify.
+2026-06-02T23:51:24 INFO LLM classifier: 10/10 agree with regex (100.0%), 0 overrides applied
+2026-06-02T23:51:24 INFO B Cell v2 (v2): 0 claims checked, 0 grounded proofs
+2026-06-02T23:51:24 INFO NK v2 (v2): 10 verdicts (0 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-02T23:51:24 INFO Formalisation agent: 0 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-02T23:51:24 INFO Helper T v2 (v2): 10 findings — 0 CONFIRMED, 10 REJECTED, 0 UNCERTAIN, 0 DUPLICATE
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f5 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f8 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f1 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f3 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f4 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f7 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f2 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f6 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f9 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation LOCKED: f0 — both pipelines REJECTED (v1=0.90, v2=0.63, max=0.90 >= 0.5)
+2026-06-02T23:51:24 INFO Reconciliation locked 10 finding(s): f0, f1, f2, f3, f4, f5, f6, f7, f8, f9
+2026-06-02T23:51:24 INFO RT v2 (v2): AUTOIMMUNE flagged — [RT_v2] Removal rate 10/10 (100.0%) exceeds threshold (50%) [rejected=10, duplicated=0]; [RT_v2] 10/10 (100%) findings from Codex removed — possible systematic bias
+2026-06-02T23:51:24 INFO Autoimmune override: resurrected 0 findings, kept 10 locked rejections
+2026-06-02T23:51:24 INFO DC v2 (v2): 0/1 findings reclassified
+2026-06-02T23:51:24 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:51:24 INFO Layer 2 reclassification: f1 — UNCATEGORISED → logical (conf=0.75)
+2026-06-02T23:51:24 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:51:24 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM logical conf=0.30, below threshold 0.55)
+2026-06-02T23:51:24 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:51:24 INFO Layer 2 fallback: f1 — UNCATEGORISED → CODE_BEHAVIORAL (LLM FAILED conf=0.00, below threshold 0.55)
+2026-06-02T23:51:24 INFO Layer 2 LLM classifier: 1 UNCATEGORISED findings to reclassify
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.68, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_structural → llm=code_behavioral (conf=0.85, threshold=0.70 cleared, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=uncategorised (conf=0.88, llm=uncategorised: no valid reclass target, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier: TestModel_F001 — regex=code_behavioral llm=logical (conf=0.80, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=mathematical (conf=0.90, BLOCKED by CODE-PATH guard — code claim stays on CT verifier, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.80, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=code_behavioral → llm=logical (conf=0.90, threshold=0.70 cleared, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier OVERRIDE: TestModel_F001 — regex=mathematical → llm=code_behavioral (conf=0.55, llm-primary [software]: threshold N/A, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 1 overrides applied
+2026-06-02T23:56:17 INFO LLM classifier: SEMI-ACTIVE (CLI Haiku, override_threshold=0.70). 1 findings to classify.
+2026-06-02T23:56:17 INFO LLM classifier: TestModel_F001 — regex=code_structural llm=code_behavioral (conf=0.50, below threshold 0.70, 0.0s)
+2026-06-02T23:56:17 INFO LLM classifier: 0/1 agree with regex (0.0%), 0 overrides applied
+2026-06-03T00:06:04 INFO Domain config loaded: software (1 sections)
+2026-06-03T00:06:04 INFO Skin barrier (v2): 14 passed, 0 failed out of 14 findings
+2026-06-03T00:06:04 INFO DC v2 reclassification: ChatGPT_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 reclassification: ChatGPT_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 reclassification: ChatGPT_F004 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 reclassification: Gemini_C0002 — v1=mathematical → v2=code_behavioral (conf=0.40)
+2026-06-03T00:06:04 INFO DC v2 reclassification: Codex_F001 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 reclassification: Codex_F002 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 reclassification: Codex_F003 — v1=mathematical → v2=code_behavioral (conf=0.65)
+2026-06-03T00:06:04 INFO DC v2 (v2): 7/14 findings reclassified
+2026-06-03T00:06:04 INFO LLM classifier: PRIMARY (CLI Haiku, override_threshold=0.70). 14 findings to classify.
+2026-06-03T00:06:27 INFO LLM classifier OVERRIDE: CC2_F002 — regex=mathematical → llm=code_behavioral (conf=0.98, llm-primary [software]: threshold N/A, 11.1s)
+2026-06-03T00:06:51 INFO LLM classifier OVERRIDE: ChatGPT_F002 — regex=mathematical → llm=code_behavioral (conf=0.85, llm-primary [software]: threshold N/A, 13.9s)
+2026-06-03T00:07:35 INFO LLM classifier OVERRIDE: Gemini_C0001 — regex=logical → llm=mathematical (conf=0.95, llm-primary [software]: threshold N/A, 11.0s)
+2026-06-03T00:07:50 INFO LLM classifier: Gemini_C0003 — regex=code_behavioral llm=uncategorised (conf=0.90, llm=uncategorised: no valid reclass target, 7.0s)
+2026-06-03T00:09:14 INFO LLM classifier OVERRIDE: Codex_F004 — regex=mathematical → llm=code_behavioral (conf=0.75, llm-primary [software]: threshold N/A, 14.8s)
+2026-06-03T00:09:23 INFO LLM classifier: 9/14 agree with regex (64.3%), 4 overrides applied
+2026-06-03T00:09:23 INFO B Cell v2 (v2): 3 claims checked, 0 grounded proofs
+2026-06-03T00:09:23 INFO   CC2_F001: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-03T00:09:23 INFO   Gemini_C0001: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-03T00:09:23 INFO   DeepSeek_F001: UNCERTAIN (0.15) — [B_v2] Cannot ground claim in source AST
+2026-06-03T00:09:32 INFO NK v2 (v2): 12 verdicts (12 intra-round dups, 0 bugs closed, 0 escalated to HIL)
+2026-06-03T00:13:53 INFO CT v2 (v2): 0 verdicts in 270.5s — none
+2026-06-03T00:13:53 INFO B-Cell specialist (LIVE, domain=software): 3 verdicts
+2026-06-03T00:13:53 INFO Formalisation agent: 1 math/logic findings, 0 with preconditions, 0 potential false rejections, 0 counter-verdicts
+2026-06-03T00:13:53 INFO Helper T v2 (v2): 14 findings — 0 CONFIRMED, 0 REJECTED, 2 UNCERTAIN, 12 DUPLICATE
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Gemini_C0003 — both pipelines REJECTED (v1=0.50, v2=0.50, max=0.50 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Codex_F002 — both pipelines REJECTED (v1=0.61, v2=0.61, max=0.61 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Codex_F001 — both pipelines REJECTED (v1=0.60, v2=0.60, max=0.60 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: ChatGPT_F001 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: ChatGPT_F003 — both pipelines REJECTED (v1=0.63, v2=0.63, max=0.63 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Gemini_C0001 — both pipelines REJECTED (v1=0.77, v2=0.77, max=0.77 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: ChatGPT_F002 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Gemini_C0002 — both pipelines REJECTED (v1=0.64, v2=0.64, max=0.64 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Codex_F003 — both pipelines REJECTED (v1=0.58, v2=0.58, max=0.58 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: ChatGPT_F004 — both pipelines REJECTED (v1=0.54, v2=0.54, max=0.54 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: DeepSeek_F001 — both pipelines REJECTED (v1=0.62, v2=0.62, max=0.62 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation LOCKED: Codex_F004 — both pipelines REJECTED (v1=0.75, v2=0.75, max=0.75 >= 0.5)
+2026-06-03T00:13:53 INFO Reconciliation locked 12 finding(s): ChatGPT_F001, ChatGPT_F002, ChatGPT_F003, ChatGPT_F004, Codex_F001, Codex_F002, Codex_F003, Codex_F004, DeepSeek_F001, Gemini_C0001, Gemini_C0002, Gemini_C0003
+2026-06-03T00:13:53 INFO RT v2: depletion (not autoimmune) — removal rate 12/14 (85.7%), all duplicates, rejected=0
+2026-06-03T00:13:53 INFO RT v2: ChatGPT at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-06-03T00:13:53 INFO RT v2: Gemini at 3/3 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-06-03T00:13:53 INFO RT v2: Codex at 4/4 (100% removed) — windowing (round 1/3 before AUTOIMMUNE)
+2026-06-03T00:13:53 INFO RT v2 (v2): depletion — 85.7% removal rate (all duplicates)
+2026-06-03T00:13:53 INFO Fix NOT verified: CC2_F001 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-06-03T00:13:53 INFO Fix NOT verified: CC2_F002 — verdict=UNEVALUABLE (Could not apply proposed fix to source)
+2026-06-03T00:13:53 INFO UNCERTAIN-ESCALATED to HIL: CC2_F001 (B-Cell cannot ground claim in source)
+2026-06-03T00:13:53 INFO Escalated 1 UNCERTAIN findings to HIL (B-Cell cannot verify)
