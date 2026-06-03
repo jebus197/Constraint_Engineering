@@ -40,6 +40,7 @@
   "prior_fix_summary_enabled": true,
   "windowed_context_enabled": true,
   "sk_enabled": true,
+  "falsifier_gate_enabled": true,
   "test_cmd": "python3 -m pytest bench/tests/test_dynamic_management.py -q --tb=line",
   "_test_cmd_note": "Software-verifier regression gate (runs in a sandbox against each proposed fix, 120s cap). bench/cdsfl_registry/composer.py has NO dedicated regression suite in bench/tests/. The dynamic-management suite is used as the available green-baseline regression guard. PRE-LAUNCH TODO (flagged 2026-05-23): add a composer-specific regression test (import + compose() smoke over the four-layer ordering + coherence-budget pruning) and point test_cmd at it so the verifier scores fixes against composer behaviour directly, not only the broader suite.",
   "sk_s_floor": 0.0,

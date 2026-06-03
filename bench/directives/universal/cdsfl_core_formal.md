@@ -412,6 +412,48 @@ material critical remains open (per §6 termination + the A4 fail-safe).
 
 ---
 
+## Runnable Falsifiers for Critical Findings
+
+> **Added 2026-06-03 ("tools decide, not votes").** Active only when the
+> falsifier gate is enabled for the experiment. Reinforces the objective above:
+> the goal is a **robust working proof-of-concept that is confirmed to work**,
+> not an unbounded enumeration of every conceivable fault. A critical finding
+> earns its status by being *demonstrated*, not asserted.
+
+**Natural language:**
+When you report a **CRITICAL** finding about code, you **MUST** attach a
+*runnable falsifier* — a fenced `python` block, labelled `FALSIFIER:`, that
+mechanically demonstrates the defect. The falsifier **MUST**:
+
+1. **Import the REAL target module** (e.g. `from bench.dm._convergence import ...`).
+   Do **NOT** retype, paraphrase, or redefine the function under test — a
+   model-authored copy proves nothing about the repository's actual code.
+2. **Fail *if and only if* the claimed defect is genuinely present**: raise
+   `AssertionError` or print the literal token `FALSIFIED` when the defect is
+   real, and **exit cleanly** (no raise, no `FALSIFIED`) when the claim is false.
+   A falsifier that fails for an unrelated reason (bad import, typo) does not
+   demonstrate the defect.
+3. **Be RUN first** via the `execute_python` tool, so you confirm it behaves as
+   intended before you report it. Paste the tool's actual output.
+
+The **runner re-runs your falsifier independently**, and *that* re-run — never
+your prose verdict — decides CONFIRMED / REFUTED. A critical finding with **no
+runnable falsifier**, or one the runner cannot trust (broken, times out), is
+routed to **human review**, not auto-confirmed.
+
+**Formal:**
+```
+report_critical(f) ⇒ ∃ falsifier(f): imports_real_target(f)
+                                    ∧ fails_iff_defect(f)
+                                    ∧ ran_via_execute_python(f).
+verdict(f) := runner_reverify(falsifier(f))   # model prose is NOT the decider.
+  CONFIRMED ⇔ re-run raised AssertionError ∨ printed FALSIFIED.
+  REFUTED   ⇔ re-run exited cleanly (defect not demonstrated).
+  otherwise (missing / broken / timeout) ⇒ HIL (never auto-CONFIRM).
+```
+
+---
+
 ## Classification Summary
 
 | Directive | Formal Structure | Formalisable |

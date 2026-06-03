@@ -1031,10 +1031,17 @@ def parse_findings(model_id: str, round_idx: int, response: str) -> List[Finding
 # Dispatch
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue):
-    """Worker function for multiprocessing watchdog."""
+def _dispatch_worker(model_config, prompt, cdsfl_text, result_queue,
+                     enable_tools=False):
+    """Worker function for multiprocessing watchdog.
+
+    ``enable_tools`` (GATED, default OFF) is forwarded to ``dispatch`` so the
+    OpenAI-compatible routes get the execute_python tool loop when the
+    falsifier gate is on. Default False keeps behaviour byte-identical.
+    """
     try:
-        response = dispatch(model_config, prompt, cdsfl_text)
+        response = dispatch(model_config, prompt, cdsfl_text,
+                            enable_tools=enable_tools)
         result_queue.put(("ok", response))
     except Exception as e:
         result_queue.put(("error", e))
@@ -1045,6 +1052,7 @@ def dispatch_to_model(
     prompt: str,
     cdsfl_text: str,
     wall_clock_limit: float = 0,
+    enable_tools: bool = False,
 ) -> tuple[str, float]:
     """Dispatch prompt to model, return (response_text, elapsed_seconds).
 
@@ -1054,6 +1062,13 @@ def dispatch_to_model(
     seconds, it is forcibly terminated. Catches stuck sockets, GIL-holding
     C-extension blocks, and any other failure that httpx timeouts miss.
     Default wall_clock_limit = model timeout * 2.
+
+    ``enable_tools`` (GATED, default OFF, 2026-06-03 "tools decide") is passed
+    through the mp watchdog worker to ``dispatch``; when True the
+    OpenAI-compatible routes run the execute_python tool loop. The nested
+    subprocess (the execute_python sandbox) therefore launches from INSIDE this
+    daemon worker process — the integration smoke test exercises exactly that
+    path. Default False => byte-identical to prior behaviour.
     """
     import multiprocessing as mp
 
@@ -1077,7 +1092,7 @@ def dispatch_to_model(
     result_queue = mp.Queue()
     proc = mp.Process(
         target=_dispatch_worker,
-        args=(model_config, prompt, cdsfl_text, result_queue),
+        args=(model_config, prompt, cdsfl_text, result_queue, enable_tools),
         daemon=True,
     )
     proc.start()

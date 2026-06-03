@@ -2600,7 +2600,13 @@ def _dispatch_single_model(
     mc: ModelConfig, mgr: DynamicManager, prompt: str,
     cdsfl_text: str, full_code: str, round_idx: int,
     pattern_name: str, domain: str, logs_dir: Path,
+    enable_tools: bool = False,
 ) -> Tuple[List[Finding], Optional[str]]:
+    # enable_tools (GATED, default OFF): when the falsifier gate is on, the
+    # primary dispatch gives OpenAI-compatible models the execute_python tool
+    # loop so they can attach runnable falsifiers. Threaded in by the dispatch-
+    # round callers from cfg.falsifier_gate_enabled (cfg is not in this scope).
+    # Default OFF => byte-identical to vote-based behaviour.
     try:
         composed = _compose_for_model(mc.label, pattern_name, domain)
         model_cdsfl = composed.rendered_text
@@ -2638,7 +2644,9 @@ def _dispatch_single_model(
 
     wall_limit = mc.timeout * 5 if mc.label == "CC2" else mc.timeout * 3
     try:
-        text, elapsed = dispatch_to_model(mc, prompt, model_cdsfl, wall_clock_limit=wall_limit)
+        text, elapsed = dispatch_to_model(
+            mc, prompt, model_cdsfl, wall_clock_limit=wall_limit,
+            enable_tools=enable_tools)
         _record_throughput(mc.label, len(prompt), elapsed)
         model_findings = parse_findings(mc.label, round_idx, text)
         model_findings, text, _reasked = _inround_reask(
@@ -2798,6 +2806,7 @@ def _dispatch_round_star(
             future_to_label[pool.submit(
                 _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
+                getattr(cfg, "falsifier_gate_enabled", False),
             )] = mc.label
 
         for future in as_completed(future_to_label):
@@ -2881,6 +2890,7 @@ def _dispatch_round_relay(
             future_to_label[pool.submit(
                 _dispatch_single_model, mc, mgr, prompt,
                 cdsfl_text, full_code, round_idx, cfg.pattern, cfg.domain, logs_dir,
+                getattr(cfg, "falsifier_gate_enabled", False),
             )] = mc.label
 
         for future in as_completed(future_to_label):

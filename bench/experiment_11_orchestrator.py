@@ -941,6 +941,7 @@ def dispatch(
     cdsfl_system_prompt: str,
     use_output_schema: bool = False,
     use_secondary: bool = False,
+    enable_tools: bool = False,
 ) -> str:
     """Dispatch a prompt to any model based on its config. Returns response text.
 
@@ -953,6 +954,15 @@ def dispatch(
             Used by the runner's in-round fallback path
             (2026-05-22, founder-directed: "every model has a
             secondary; no model misses a round").
+        enable_tools: GATED, default OFF (2026-06-03 "tools decide"
+            integration). When True, the OpenAI-compatible routes
+            (openrouter, deepseek) are given the execute_python tool +
+            sandboxed default_tool_executor so a reviewing model can run
+            Python during analysis and attach runnable falsifiers. The
+            runner sets this from cfg.falsifier_gate_enabled. claude_cli
+            already exposes tools natively (--allowedTools); codex_exec /
+            google branches are unchanged. When False the dispatch is
+            byte-identical to the pre-integration behaviour.
     """
     if use_secondary:
         if not (config.secondary_api and config.secondary_model_id):
@@ -995,6 +1005,8 @@ def dispatch(
             max_retries=config.max_retries,
             backoff_base=config.backoff_base,
             extra_body=config.extra_body,
+            tools=([EXECUTE_PYTHON_TOOL] if enable_tools else None),
+            tool_executor=(default_tool_executor if enable_tools else None),
         )
     elif config.api == "codex_exec":
         return call_codex(
@@ -1023,6 +1035,8 @@ def dispatch(
             timeout=config.timeout,
             max_retries=config.max_retries,
             backoff_base=config.backoff_base,
+            tools=([EXECUTE_PYTHON_TOOL] if enable_tools else None),
+            tool_executor=(default_tool_executor if enable_tools else None),
         )
     else:
         raise ValueError(f"Unknown API type: {config.api}")
