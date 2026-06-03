@@ -362,6 +362,13 @@ class RunnerConfig:
     verification_confidence_threshold: float = 0.7
     gamma_telemetry_only_until: int = 14
     gamma_soft_gate_until: int = 19
+    # "tools decide, not votes" gate (2026-06-03). When True, a finding's truth is
+    # set by the runner independently re-running the model-attached falsifier
+    # (apply_falsifier_verdicts), overriding the CONFIRM/CHALLENGE vote: CONFIRMED
+    # if the falsifier demonstrates the defect, REFUTED if not, HIL-escalated if
+    # un-toolable/broken — never auto-confirmed. Default OFF: byte-identical
+    # (vote-based) behaviour until an experiment opts in.
+    falsifier_gate_enabled: bool = False
     gamma_soft_threshold: float = 0.30
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
@@ -477,6 +484,10 @@ class FindingRegistry:
             "severity": finding.severity,
             "description": finding.description[:500],
             "proposed_fix": finding.proposed_fix[:5000] if finding.proposed_fix else "",
+            # "tools decide" gate: the model-attached runnable falsifier + the
+            # runner's independent re-run verdict (see apply_falsifier_verdicts).
+            "falsifier_code": getattr(finding, "falsifier_code", ""),
+            "falsifier_verdict": getattr(finding, "falsifier_verdict", ""),
             "status": "OPEN",
             "open_since_round": getattr(finding, "round_idx", 0),
             "last_status_change_round": getattr(finding, "round_idx", 0),
@@ -1270,6 +1281,70 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
             required = min(2, external_panel_size) if sev >= 0.7 else 1
             if independent_count >= required and not unresolved_challenges:
                 registry.resolve(canonical_id, "CONFIRMED", round_idx)
+
+
+def apply_falsifier_verdicts(
+    registry: FindingRegistry, round_idx: int,
+    cfg: Optional[RunnerConfig] = None, repo_root: Optional[str] = None,
+):
+    """GATED "tools decide, not votes" override (2026-06-03).
+
+    When ``cfg.falsifier_gate_enabled`` a finding's truth is set by the RUNNER
+    independently re-running the model-attached falsifier
+    (:func:`bench.falsifier_verify.reverify_falsifier`) — NOT by the
+    CONFIRM/CHALLENGE vote. Called AFTER ``_update_finding_statuses`` so the
+    falsifier verdict wins:
+
+      * falsifier CONFIRMED -> status CONFIRMED (verified=True);
+      * falsifier REFUTED   -> status REFUTED (the runner did not reproduce the
+                               defect, so the vote is not trusted);
+      * falsifier ERROR / UNTOOLABLE, OR a CRITICAL finding with NO falsifier ->
+                               escalated to HIL, and a vote-CONFIRMED critical
+                               with no/failed falsifier is demoted to UNCONFIRMED
+                               so an un-toolable claim is never counted as a
+                               genuine-confirmed critical.
+
+    Default-off no-op: when the flag is unset this returns immediately and
+    vote-based behaviour is byte-identical. Hard-terminal findings
+    (MERGED/CLOSED/DUPLICATE) are left untouched.
+    """
+    if not (cfg and getattr(cfg, "falsifier_gate_enabled", False)):
+        return
+    from bench.falsifier_verify import reverify_falsifier
+    _HARD_TERMINAL = {"MERGED", "CLOSED", "DUPLICATE"}
+    tally = {"CONFIRMED": 0, "REFUTED": 0, "HIL": 0}
+    for cid, e in list(registry.entries.items()):
+        if e.get("status") in _HARD_TERMINAL:
+            continue
+        fcode = (e.get("falsifier_code") or "").strip()
+        is_critical = (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+        if not fcode:
+            # No falsifier -> cannot be tool-decided. A critical claim goes to
+            # HIL and is never left standing as a vote-CONFIRMED genuine critical.
+            if is_critical:
+                e["falsifier_verdict"] = "UNTOOLABLE"
+                e["escalated"] = True
+                if e.get("status") == "CONFIRMED":
+                    registry.resolve(cid, "UNCONFIRMED", round_idx)
+                tally["HIL"] += 1
+            continue
+        verdict = reverify_falsifier(fcode, repo_root=repo_root)
+        e["falsifier_verdict"] = verdict
+        if verdict == "CONFIRMED":
+            registry.resolve(cid, "CONFIRMED", round_idx)
+            e["verified"] = True
+            tally["CONFIRMED"] += 1
+        elif verdict == "REFUTED":
+            registry.resolve(cid, "REFUTED", round_idx)
+            tally["REFUTED"] += 1
+        else:  # ERROR or UNTOOLABLE -> never auto-confirm; send to HIL
+            e["escalated"] = True
+            if e.get("status") == "CONFIRMED":
+                registry.resolve(cid, "UNCONFIRMED", round_idx)
+            tally["HIL"] += 1
+    if any(tally.values()):
+        _log(f"  falsifier gate (tools decide): {tally['CONFIRMED']} CONFIRMED, "
+             f"{tally['REFUTED']} REFUTED, {tally['HIL']} -> HIL")
 
 
 def _evaluate_gate_conditions(
@@ -5207,6 +5282,9 @@ def run_experiment(
 
         # Status transitions
         _update_finding_statuses(registry, round_idx, cfg=cfg)
+        # "tools decide" override (gated, default-off): the runner re-runs each
+        # model-attached falsifier and lets that verdict win over the vote.
+        apply_falsifier_verdicts(registry, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
         registry.auto_resolve_contested(round_idx)
 
         # A3: HIL escalation
