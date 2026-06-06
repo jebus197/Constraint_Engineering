@@ -3588,6 +3588,21 @@ def _verification_step(
 # S_k Solution Verification Pipeline
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _looks_like_fix_path(s: str) -> bool:
+    """True if `s` looks like a file path rather than a line of code. A path has
+    no whitespace AND either contains a directory separator or ends in a known
+    source extension. Used to detect when a model omitted the file path on a
+    '<<<< SEARCH' line (single-target review) and put code there instead."""
+    s = s.strip()
+    if not s or any(c.isspace() for c in s):
+        return False
+    if "/" in s or "\\" in s:
+        return True
+    return bool(re.search(
+        r"\.(py|md|json|toml|txt|ya?ml|cfg|ini|js|ts|c|h|cpp|rs|go|java)$",
+        s, re.IGNORECASE))
+
+
 def parse_search_replace_blocks(text: str) -> List[FixBlock]:
     """Parse <<<< SEARCH file_path ... ==== ... >>>> REPLACE blocks.
 
@@ -3609,17 +3624,29 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
         # Look for block start: <<<< SEARCH <filepath>
         if line.strip().startswith("<<<<") and "SEARCH" in line.upper():
             rest = line.strip()[4:].strip()
-            # Remove 'SEARCH' keyword
-            for prefix in ("SEARCH ", "SEARCH\t"):
-                if rest.upper().startswith(prefix.upper()):
-                    rest = rest[len(prefix):].strip()
-                    break
-            file_path = rest
+            # Remove the SEARCH keyword whether or not text follows on the line.
+            rest = re.sub(r'^SEARCH\b[ \t]*', '', rest, flags=re.IGNORECASE).strip()
+            # 2026-06-06: 'rest' is the file path ONLY if it looks like one. Some
+            # models omit the path on a single-target review and put the first
+            # search line right after SEARCH (e.g. "<<<< SEARCH _HARD_BLOCK = ("),
+            # which the old parser grabbed as the path -> false no_blocks_for_target
+            # AND a corrupted (first-line-missing) search. Treat a non-path 'rest'
+            # as the first search line and leave the path empty; apply_fix_blocks
+            # then defaults a path-less block to the single target.
+            _prefix_search = None
+            if rest and _looks_like_fix_path(rest):
+                file_path = rest
+            else:
+                file_path = ""
+                if rest:
+                    _prefix_search = rest
             i += 1
             # Collect search lines until ==== separator (with or without trailing text).
             # The parser in runner_core stores "==== REPLACE" while the prompt
             # specifies bare "====".  Accept both.  (Exp 39-0 confound fix.)
             search_lines: List[str] = []
+            if _prefix_search is not None:
+                search_lines.append(_prefix_search)
             while i < len(lines):
                 stripped = lines[i].rstrip()
                 if stripped == "====" or stripped.startswith("==== "):
@@ -3643,7 +3670,9 @@ def parse_search_replace_blocks(text: str) -> List[FixBlock]:
                 continue
             search = "\n".join(search_lines)
             replace = "\n".join(replace_lines)
-            if file_path and search:
+            # Path-less blocks (file_path == "") are kept: apply_fix_blocks defaults
+            # them to the single target. Only an empty search is rejected.
+            if search:
                 blocks.append(FixBlock(
                     file_path=file_path, search=search, replace=replace,
                 ))
@@ -3703,9 +3732,11 @@ def apply_fix_blocks(
     applied = 0
     matched = 0
     for block in blocks:
-        # Match by basename or full path
-        if not (block.file_path == target_path or
-                Path(block.file_path).name == Path(target_path).name):
+        # A path-less block (model omitted the path on a single-target review)
+        # defaults to the target; an explicit path must match (full or basename).
+        bp = (block.file_path or "").strip()
+        if bp and not (bp == target_path or
+                       Path(bp).name == Path(target_path).name):
             continue
         matched += 1
         if block.search not in modified:
