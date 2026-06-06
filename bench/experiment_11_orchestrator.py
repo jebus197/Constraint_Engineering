@@ -292,6 +292,73 @@ def default_tool_executor(name: str, args: dict) -> str:
     return f"[unknown tool: {name}]"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DeepSeek content-emitted tool-call recovery
+#
+# deepseek-v4-pro, when called through its direct OpenAI-compatible endpoint
+# (base_url https://api.deepseek.com) with the OpenAI tools/tool_choice="auto"
+# params, does NOT return its tool invocation in the structured
+# message.tool_calls field. Under the heavy CDSFL system prompt it instead
+# emits its native internal tool-call special tokens as plain message CONTENT.
+# The leaked markup uses U+FF5C (FULLWIDTH VERTICAL LINE, the character ｜,
+# NOT ASCII |) as the delimiter, in this exact shape:
+#   <｜｜DSML｜｜tool_calls>
+#     <｜｜DSML｜｜invoke name="execute_python">
+#       <｜｜DSML｜｜parameter name="code" string="true"> <python> </…parameter>
+#     </｜｜DSML｜｜invoke>
+#   </｜｜DSML｜｜tool_calls>
+# _run_openai_tool_loop reads only message.tool_calls; for DeepSeek that is
+# empty, so without recovery the loop returns the raw markup as the "final
+# answer" and never runs the model's intended falsifier. The fullwidth-pipe
+# sentinel cannot occur in genuine ASCII prose, so detection is false-positive
+# safe and the recovery only fires inside the gated tool loop.
+import re as _re  # noqa: E402
+
+_DSML_PIPE = "｜"  # U+FF5C FULLWIDTH VERTICAL LINE — DeepSeek special-token delimiter
+_DSML_SENTINEL = f"<{_DSML_PIPE * 2}DSML{_DSML_PIPE * 2}tool_calls>"
+_DSML_INVOKE_RE = _re.compile(
+    rf"<{_DSML_PIPE}{_DSML_PIPE}DSML{_DSML_PIPE}{_DSML_PIPE}invoke name=\"(?P<name>[^\"]+)\">"
+    rf"(?P<body>.*?)</{_DSML_PIPE}{_DSML_PIPE}DSML{_DSML_PIPE}{_DSML_PIPE}invoke>",
+    _re.DOTALL,
+)
+_DSML_PARAM_RE = _re.compile(
+    rf"<{_DSML_PIPE}{_DSML_PIPE}DSML{_DSML_PIPE}{_DSML_PIPE}parameter name=\"(?P<pname>[^\"]+)\""
+    rf"(?: string=\"[^\"]*\")?>(?P<pval>.*?)</{_DSML_PIPE}{_DSML_PIPE}DSML{_DSML_PIPE}{_DSML_PIPE}parameter>",
+    _re.DOTALL,
+)
+
+
+def _parse_deepseek_content_toolcalls(content: str):
+    """Return list[(name, args_dict)] if DeepSeek leaked tool-call markup into
+    content (U+FF5C-delimited DSML tokens), else None. Detection sentinel uses
+    the fullwidth pipe, which never appears in genuine ASCII prose answers.
+    """
+    if not content or _DSML_SENTINEL not in content:
+        return None
+    calls = []
+    for m in _DSML_INVOKE_RE.finditer(content):
+        args = {
+            pm.group("pname"): pm.group("pval").strip("\n")
+            for pm in _DSML_PARAM_RE.finditer(m.group("body"))
+        }
+        calls.append((m.group("name"), args))
+    return calls or None
+
+
+# Strip any DeepSeek DSML special-token tag (U+FF5C-delimited) from text,
+# leaving the underlying plain content. Used as a last-resort cleanup so raw
+# special-token markup is never returned to the caller as a "final answer"
+# when the model emitted markup on a turn the loop treats as terminal (the
+# structured parser handles the in-loop tool-execution case; this only cleans
+# residual delimiters out of a final string).
+_DSML_TAG_RE = _re.compile(rf"</?{_DSML_PIPE}{_DSML_PIPE}DSML{_DSML_PIPE}{_DSML_PIPE}[^>]*>")
+
+
+def _strip_dsml_markup(text: str) -> str:
+    """Remove DeepSeek DSML special-token tags, returning the inner content."""
+    return _DSML_TAG_RE.sub("", text)
+
+
 def _run_openai_tool_loop(
     client,
     model_id: str,
@@ -326,16 +393,74 @@ def _run_openai_tool_loop(
         )
         if extra_body:
             create_kwargs["extra_body"] = extra_body
-        resp = client.chat.completions.create(**create_kwargs)
-        if not resp.choices:
+        # Retry transient empty-choices (observed 2026-06-06: gemini-3.1 via
+        # OpenRouter returned no choices on ONE mid-loop iteration after 500s of
+        # healthy turns — an intermittent upstream blip, not a real failure). Retry
+        # the same request a couple of times before tripping the breaker, so a
+        # single flaky response cannot crap out a whole round.
+        resp = None
+        for _attempt in range(3):
+            resp = client.chat.completions.create(**create_kwargs)
+            if resp.choices:
+                break
+            time.sleep(2.0)
+        if not resp or not resp.choices:
             raise CircuitBreakerTripped(
                 "empty_response", model_id, "dispatch",
-                "API returned no choices during tool loop",
+                "API returned no choices during tool loop (after retries)",
             )
         msg = resp.choices[0].message
         tcs = getattr(msg, "tool_calls", None) or []
         if not tcs:
-            final = (msg.content or "").strip()
+            content = msg.content or ""
+            parsed = _parse_deepseek_content_toolcalls(content)
+            if parsed:
+                # DeepSeek leaked its tool call into content as DSML markup
+                # (no structured tool_calls). Run it through the same executor
+                # and continue the loop so the model gets results and can
+                # synthesise a real final answer. The result is fed as a user
+                # turn rather than a role:tool message because there is no valid
+                # tool_call_id to reference (the API never produced one).
+                messages.append({"role": "assistant", "content": content})
+                for name, args in parsed:
+                    result = tool_executor(name, args)
+                    messages.append({
+                        "role": "user",
+                        "content": f"[tool:{name} result]\n{(result or '')[:4000]}",
+                    })
+                continue
+            final = content.strip()
+            if not final:
+                # Empty visible content: a reasoning model (Gemini, DeepSeek) burned
+                # the whole output budget on chain-of-thought (finish_reason
+                # 'length'), leaving no room for the answer. Retry TOOL-LESS with a
+                # large budget so visible content has room, keeping the caller's
+                # reasoning config (only nudge one in if none was supplied). This
+                # MUST fire even when extra_body is set — Gemini ALWAYS sets
+                # reasoning.effort, and the prior `not extra_body` gate meant Gemini
+                # never got this retry, so its synthesis emptied intermittently on
+                # BOTH the whole and decomposed paths (2026-06-06 fix). Dropping
+                # tools forces a content answer rather than another tool call. A few
+                # transient empties (empty body) also resolve on a re-request.
+                bumped = dict(create_kwargs)
+                bumped["max_tokens"] = max(max_tokens, 65536)
+                bumped.pop("tools", None)
+                bumped.pop("tool_choice", None)
+                if not extra_body:
+                    bumped["extra_body"] = {"reasoning": {"effort": "medium"}}
+                for _retry in range(2):
+                    try:
+                        resp2 = client.chat.completions.create(**bumped)
+                    except Exception:  # noqa: BLE001
+                        resp2 = None
+                    if resp2 and resp2.choices:
+                        m2 = resp2.choices[0].message
+                        if not (getattr(m2, "tool_calls", None) or []):
+                            cand = (m2.content or "").strip()
+                            if cand:
+                                final = cand
+                                break
+                    time.sleep(2.0)
             break
         messages.append({
             "role": "assistant",
@@ -354,24 +479,63 @@ def _run_openai_tool_loop(
                 "content": (result or "")[:4000],
             })
     else:
-        # max_iters exhausted while the model was STILL requesting tools (e.g.
-        # stuck retrying a bad import). Force one final answer WITHOUT tools so
-        # the model returns its synthesis from what it has gathered rather than
-        # empty text — a model must never crap out a whole round to a runaway
-        # tool loop ("don't let models crap out"). The accumulated tool results
-        # remain in `messages`, so the model answers with full context.
+        # max_iters exhausted while the model was STILL requesting tools — either
+        # stuck retrying a bad import, OR (Gemini-3.1) a thorough reasoner that
+        # calls a tool every turn and never volunteers a final answer. Force one
+        # final answer WITHOUT tools so the model returns its synthesis rather
+        # than empty text — a model must never crap out a whole round to a
+        # runaway tool loop ("don't let models crap out"). Two requirements, both
+        # empirically established 2026-06-06 against gemini-3.1-pro-preview:
+        #   (1) an EXPLICIT stop-and-synthesise instruction — without it Gemini
+        #       does not emit its findings on the forced turn;
+        #   (2) a GENEROUS token budget — reasoning-heavy models burn ~20K+
+        #       reasoning tokens on the final synthesis, so a small max_tokens
+        #       leaves no room for visible content (the empty-response failure).
+        # With both, gemini produced a 16.5K-char synthesis incl. a runnable
+        # FALSIFIER at 6 tool exchanges. The accumulated tool results remain in
+        # `messages`, so the model answers with full context.
         try:
+            messages.append({
+                "role": "user",
+                "content": (
+                    "Tool-use budget reached. Stop calling tools now and write "
+                    "your COMPLETE findings as your final answer, in the required "
+                    "format — each critical finding with its runnable FALSIFIER "
+                    "python block."
+                ),
+            })
             final_kwargs = dict(
-                model=model_id, messages=messages, max_tokens=max_tokens,
-                temperature=0.0, timeout=timeout,
+                model=model_id, messages=messages,
+                max_tokens=max(max_tokens, 65536),
+                temperature=0.0, timeout=max(timeout, 300),
             )
             if extra_body:
                 final_kwargs["extra_body"] = extra_body
-            resp = client.chat.completions.create(**final_kwargs)
-            if resp.choices:
-                final = (resp.choices[0].message.content or "").strip()
+            # Retry the forced synthesis until it yields visible content — a
+            # transient empty body or a budget-starved first attempt must not crap
+            # out the round (2026-06-06).
+            for _retry in range(3):
+                resp = client.chat.completions.create(**final_kwargs)
+                if resp.choices:
+                    cand = (resp.choices[0].message.content or "").strip()
+                    if cand:
+                        final = cand
+                        break
+                time.sleep(2.0)
         except Exception:  # noqa: BLE001
             pass  # leave final as-is; the caller's empty-handling / re-ask covers it
+    # Residual-markup guard: DeepSeek can emit DSML tool-call markup as content
+    # on a turn the loop treats as final — either the forced-final tool-less call
+    # above, OR an in-loop turn whose markup the structured parser could not
+    # decompose into invoke/param pairs (sentinel present but no parseable call).
+    # Raw fullwidth-pipe special-token markup must NEVER be returned as the final
+    # answer: it is unparseable noise to the runner/scorer. If `final` still
+    # carries the DSML sentinel, strip the special-token wrapper so the caller
+    # receives the model's plain content (its prose/code) rather than the raw
+    # delimiters. Only fires when the fullwidth-pipe sentinel is present, so
+    # prose answers and native-tool_calls models are byte-identically unaffected.
+    if final and _DSML_SENTINEL in final:
+        final = _strip_dsml_markup(final).strip()
     return final
 
 
@@ -816,6 +980,15 @@ def call_deepseek(
     empty_response_count = 0
     current_max_tokens = max_tokens
 
+    # DeepSeek-v4-pro's OpenAI tool-translation is broken (it leaks tool calls as
+    # DSML markup, so the tool loop returns exploration code, not findings). Never
+    # run the tool loop for it: generate text-only and format-repair the result so
+    # its prose/ATTEMPT-style falsifiers become runnable blocks the runner re-runs
+    # (the (b) gate — self-execution was never required). 2026-06-06. Gate-off
+    # (tools is None) leaves this a no-op, byte-identical to before.
+    _ds_repair = bool(tools)
+    tools = None
+
     for attempt in range(1, max_retries + 1):
         if attempt > 1:
             _log(f"  [deepseek:{model_id}] retry {attempt}/{max_retries} "
@@ -900,6 +1073,13 @@ def call_deepseek(
                  f"{len(reasoning)} chars reasoning)")
 
             if text:
+                if _ds_repair:
+                    try:
+                        from decomposed_dispatch import _falsifier_format_repair
+                        text = _falsifier_format_repair(
+                            client, model_id, text, current_max_tokens, timeout)
+                    except Exception:  # noqa: BLE001
+                        pass
                 return text
 
             # Empty content — the model exhausted its token budget on CoT.

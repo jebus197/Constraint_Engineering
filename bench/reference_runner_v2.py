@@ -225,6 +225,40 @@ _OPERATIONAL_DIRECTIVE_TEXT = ""
 if _OPERATIONAL_DIRECTIVE_PATH.exists():
     _OPERATIONAL_DIRECTIVE_TEXT = _OPERATIONAL_DIRECTIVE_PATH.read_text(encoding="utf-8")
 
+
+# Gate-aware falsifier-format fix (2026-06-06). The operational directive's §2
+# defines FALSIFICATION as a PROSE triad ("FALSIFIER: the specific condition that
+# would disprove your claim / ATTEMPT / RESULT"). That prose definition dominates
+# the model and steered all five models to prose (or no) falsifiers on the first
+# live run — zero tool-testable findings (the 14-HIL failure). Redefining §2 to
+# require a RUNNABLE falsifier made cc2/cx/chatgpt/gemini produce real,
+# runner-CONFIRMED falsifiers (validated 2026-06-06; the adversarial audit found
+# the result genuine, not gamed). Applied ONLY when the falsifier gate is on, so
+# non-gate experiments keep the legacy prose FFAFP format byte-identically.
+_RUNNABLE_FALSIFIER_S2 = (
+    "FALSIFICATION: This section is mandatory. For every CRITICAL finding it MUST "
+    "contain a RUNNABLE falsifier, NOT prose. Write the literal line \"FALSIFIER:\" "
+    "on its own line, then a fenced python code block (```python ... ```) that "
+    "imports the REAL target module and raises AssertionError or prints the token "
+    "FALSIFIED if and only if the claimed defect is genuinely present (exit cleanly "
+    "otherwise). Run it with the execute_python tool first. The runner RE-RUNS this "
+    "exact python block and ITS result -- not your prose -- decides CONFIRMED or "
+    "REFUTED. A prose-only or missing FALSIFIER cannot be confirmed and is sent to "
+    "a human."
+)
+_S2_PROSE_RE = re.compile(
+    r"FALSIFICATION: This section is mandatory\. It must contain:.*?Did you test it\?",
+    re.DOTALL,
+)
+
+
+def _gate_falsifier_directive(directive_text: str) -> str:
+    """Redefine the operational §2 FALSIFICATION block (prose -> runnable) when the
+    falsifier gate is on. No-op if the §2 prose block is absent. Reversible: the
+    directive file is untouched; the substitution happens per-dispatch in memory."""
+    new, n = _S2_PROSE_RE.subn(_RUNNABLE_FALSIFIER_S2, directive_text)
+    return new if n else directive_text
+
 FINGERPRINT_DIR = REPO_ROOT / "bench" / "fingerprints"
 
 
@@ -2389,6 +2423,11 @@ def _multiturn_fallback(
             chunks=chunks, final_instruction=f"{pattern_text}\n\n{prompt}",
             max_tokens=mc.max_tokens, timeout=mc.timeout * 2,
             cdsfl_directives=cdsfl_text, enable_tools=enable_tools,
+            # Forward the reasoning config (e.g. Gemini reasoning.effort) so the
+            # decomposed Phase-1 chunk analysis gets adequate visible-content
+            # budget. Without this the runner passed None and Gemini's Phase-1
+            # emptied -> blind synthesis (2026-06-06 fix).
+            extra_body=getattr(mc, "extra_body", None),
         )
         save_decomposed_result(result, logs_dir, mc.label, round_idx)
         return result.text, result.elapsed_s
@@ -2622,6 +2661,10 @@ def _dispatch_single_model(
     # (Mirrors run_exp37_evidence.py lines 2195-2196)
     if _OPERATIONAL_DIRECTIVE_TEXT:
         model_cdsfl += "\n\n" + _OPERATIONAL_DIRECTIVE_TEXT
+    # I1 fix (gate-aware): when the falsifier gate is on, redefine §2 FALSIFICATION
+    # from prose to a runnable falsifier (the 14-HIL fix). Gate-off => unchanged.
+    if enable_tools:
+        model_cdsfl = _gate_falsifier_directive(model_cdsfl)
 
     pattern_text = INTERACTION_PATTERN_PRESETS[pattern_name][0]
 

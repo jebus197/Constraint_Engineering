@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """Decomposed Dispatch: multi-turn staged context loading for AI models.
 
 Implements the "tutor" pattern: split large payloads into ordered chunks,
@@ -31,9 +30,11 @@ Usage:
         max_tokens=32768,
     )
 """
+from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -56,12 +57,46 @@ from experiment_11_orchestrator import _log, CircuitBreakerTripped, CLAUDE_CLI
 # turns never touch this. Imported lazily so the non-tool decomposed paths
 # keep zero import-time dependency on the falsifier module.
 
+# Gated falsifier-format override (I1 fix, 2026-06-06). Appended to the
+# DECOMPOSED synthesis prompt ONLY when enable_tools is on, to overrule the
+# legacy prose "FALSIFICATION (FALSIFIER/ATTEMPT/RESULT)" triad that the live run
+# proved steers models to prose falsifiers (zero testable). Default-off: when
+# enable_tools is False this string is never appended, so behaviour is
+# byte-identical. Includes a worked example (panel/Gemini point: a few-shot
+# example beats abstract rules).
+_RUNNABLE_FALSIFIER_OVERRIDE = (
+    "\n\n=== CRITICAL FALSIFIER OVERRIDE (tools enabled) ===\n"
+    "This OVERRIDES the prose 'FALSIFICATION (FALSIFIER/ATTEMPT/RESULT)' format "
+    "named above. For EVERY finding you mark CRITICAL, the falsifier MUST be a "
+    "RUNNABLE code block, never prose. Write the literal line 'FALSIFIER:' on its "
+    "own line, then a fenced ```python block that:\n"
+    "  1. imports the REAL target module (e.g. 'from bench.cdsfl_registry.composer "
+    "import compose') -- never a retyped copy of the code under review;\n"
+    "  2. raises AssertionError, or prints the token FALSIFIED, IF AND ONLY IF the "
+    "claimed defect is genuinely present; exits cleanly if the claim is false.\n"
+    "Run it with the execute_python tool first to confirm it behaves. The runner "
+    "RE-RUNS this exact ```python block and ITS result decides the verdict -- your "
+    "prose does not. A prose-only or missing FALSIFIER cannot be confirmed and is "
+    "sent to a human. Required form (worked example):\n"
+    "FALSIFIER:\n"
+    "```python\n"
+    "from bench.dm._similarity import jaccard_similarity\n"
+    "from bench.dm._types import Finding\n"
+    "f = Finding('a', 'm', 0, 2, 0.8, 0.5, 'desc')\n"
+    "# claimed defect: self-similarity is not maximal\n"
+    "assert jaccard_similarity(f, f) < 1.0, 'defect present: self-sim < 1.0'\n"
+    "print('FALSIFIED: self-similarity is not 1.0')\n"
+    "```"
+)
+
+
 def _openai_synthesis_with_tools(
     client,
     model_id: str,
     synthesis_messages: list[dict],
     max_tokens: int,
     timeout: int,
+    extra_body: dict | None = None,
 ) -> str:
     """Run the synthesis turn with execute_python tool access and return the
     model's final (no-tool-call) text.
@@ -71,6 +106,11 @@ def _openai_synthesis_with_tools(
     ``default_tool_executor``). Used only when ``enable_tools=True`` on the
     OpenAI-compatible decomposed routes; the byte-identical default path never
     calls this.
+
+    ``extra_body`` (default None) is forwarded so the synthesis turn honours
+    the same reasoning.effort the rest of the dispatch path already passes via
+    dispatch(); previously it was silently dropped here, starving reasoning
+    models of visible-content budget on the synthesis turn.
     """
     from experiment_11_orchestrator import (
         EXECUTE_PYTHON_TOOL,
@@ -84,8 +124,12 @@ def _openai_synthesis_with_tools(
         tools=[EXECUTE_PYTHON_TOOL],
         tool_executor=default_tool_executor,
         max_iters=6,
-        max_tokens=max_tokens,
+        # Gate-on synthesis budget floor: this wrapper is enable_tools-only, so a
+        # reasoning model must not be starved of visible-content budget on the
+        # synthesis turn (DeepSeek/Gemini burn 18K-35K reasoning tokens).
+        max_tokens=max(max_tokens, _PHASE1_GATE_TOKENS),
         timeout=timeout,
+        extra_body=extra_body,
     )
 
 
@@ -206,6 +250,111 @@ def _is_waiting(response: str) -> bool:
 # the runner's CircuitBreakerTripped handler and engages ITC as the
 # protocol was designed to do.
 _PHASE1_MAX_TOKENS = 8192
+
+# Gate-on per-turn budget floor (2026-06-06). Reasoning models (Gemini-3.1-pro,
+# DeepSeek-v4-pro) burn 18K-35K tokens on private reasoning; at the 8192 default
+# their visible content truncates to empty (finish=length, content=0), which
+# blinds the synthesis turn. When the falsifier gate is ON, lift each turn's
+# budget (Phase-1 chunk analysis AND synthesis) to at least this floor so
+# reasoning models leave room for content. Gate OFF keeps the 8192 default
+# byte-identically, so existing non-gate experiments are unchanged.
+_PHASE1_GATE_TOKENS = 32768
+
+
+def _gate_turn_budget(max_tokens: int, enable_tools: bool) -> int:
+    """Per-turn output budget for a decomposed Phase-1 chunk analysis. Gate ON:
+    at least _PHASE1_GATE_TOKENS so reasoning models are not starved. Gate OFF:
+    the legacy _PHASE1_MAX_TOKENS (byte-identical to pre-2026-06-06)."""
+    return max(max_tokens, _PHASE1_GATE_TOKENS) if enable_tools else _PHASE1_MAX_TOKENS
+
+
+# Synthesis safety-net (2026-06-06): if a Phase-1 chunk analysis comes back empty
+# or too thin to be usable (reasoning-budget exhaustion, lost tool-call markup, a
+# transient empty), the synthesis turn would otherwise be blind to that section
+# and declare "no code provided" (the Gemini decomposed crap-out). When an
+# analysis is below this threshold, fall back to the chunk's RAW content so the
+# synthesis can assess the code directly. Bounded: only failed chunks carry raw
+# content, so a multi-chunk payload does not balloon to the full original size.
+_MIN_ANALYSIS_CHARS = 200
+
+
+def _synthesis_analyses_text(per_chunk_analyses: list[dict]) -> str:
+    """Build the synthesis prompt's analyses section, substituting raw chunk
+    content for any Phase-1 analysis that came back empty/thin so synthesis is
+    never blind. Each entry must carry 'label', 'analysis', and 'content'."""
+    blocks = []
+    for a in per_chunk_analyses:
+        label = a.get("label", "chunk")
+        analysis = (a.get("analysis") or "").strip()
+        if len(analysis) >= _MIN_ANALYSIS_CHARS:
+            blocks.append(f"=== YOUR ANALYSIS OF {label} ===\n{analysis}")
+        else:
+            blocks.append(
+                f"=== {label}: PHASE-1 ANALYSIS UNAVAILABLE — RAW SECTION FOLLOWS ===\n"
+                f"(Your per-section analysis was empty or incomplete. Analyse this "
+                f"section directly as part of your synthesis.)\n\n"
+                f"{a.get('content', '')}"
+            )
+    return "\n\n".join(blocks)
+
+
+# Gate-on falsifier format-repair (2026-06-06). A model can find real issues but
+# attach its falsifier in a non-runnable form — DeepSeek-v4-pro ignores the §2
+# runnable instruction and writes the legacy prose "FALSIFIER: <prose> / ATTEMPT:
+# ```python ...```" shape, so the runner's extractor finds no runnable block and
+# the finding cannot be tool-adjudicated. This re-prompts ONCE for the strict
+# runnable form. It fires only when a response HAS findings but NO extractable
+# runnable falsifier, so the tool-loop routes (which already emit runnable
+# falsifiers via execute_python) are untouched. The repair is accepted only if it
+# actually produced a runnable falsifier; otherwise the original is kept. The
+# prompt explicitly forbids inventing defects / inflating severity (no faking).
+_RUNNABLE_FALSIFIER_RE = re.compile(r"FALSIFIER:\s*\n?\s*```python", re.IGNORECASE)
+_FINDING_PRESENT_RE = re.compile(r"(?im)FINDING_ID|^###\s+Finding\b|^\**F\d{2,3}\b")
+_FORMAT_REPAIR_PROMPT = (
+    "Your prior review (below) found real issues but did NOT attach RUNNABLE "
+    "falsifiers — it used prose or an ATTEMPT/RESULT shape. Rewrite it so EACH "
+    "finding carries a runnable falsifier. Output each finding EXACTLY as:\n"
+    "FINDING_ID: Fxxx\nSEVERITY: <0.0-1.0, your HONEST rating — do not inflate>\n"
+    "FIND: <one line>\nFALSIFIER:\n```python\n"
+    "# standalone script: import the REAL target module, reproduce the defect,\n"
+    "# raise AssertionError or print FALSIFIED IF AND ONLY IF the defect is present;\n"
+    "# exit cleanly (returncode 0, no AssertionError, no FALSIFIED) otherwise.\n"
+    "```\n"
+    "Rules: the FALSIFIER section contains ONLY the fenced python block — no prose, "
+    "no ATTEMPT/RESULT. The python MUST import the real module and run as-is. Do NOT "
+    "invent defects and do NOT change your honest severities. Output ONLY the "
+    "findings.\n\n=== YOUR PRIOR REVIEW ===\n"
+)
+
+
+def _falsifier_format_repair(
+    client, model_id: str, response: str, max_tokens: int, timeout: int,
+    extra_body: dict | None = None,
+) -> str:
+    """Re-prompt ONCE for runnable falsifiers when a response has findings but no
+    extractable runnable falsifier block. No-op otherwise; original kept unless
+    the repair genuinely yields a runnable block. See module comment above."""
+    if not response:
+        return response
+    if _RUNNABLE_FALSIFIER_RE.search(response) or not _FINDING_PRESENT_RE.search(response):
+        return response
+    kwargs = dict(
+        model=model_id,
+        messages=[{"role": "user", "content": _FORMAT_REPAIR_PROMPT + response[:12000]}],
+        max_tokens=max_tokens, temperature=0.0, timeout=timeout,
+    )
+    if extra_body:
+        kwargs["extra_body"] = extra_body
+    try:
+        r = client.chat.completions.create(**kwargs)
+        repaired = (r.choices[0].message.content or "").strip() if r.choices else ""
+    except Exception:  # noqa: BLE001
+        return response
+    if repaired and _RUNNABLE_FALSIFIER_RE.search(repaired):
+        _log(f"  [{model_id}] falsifier format-repair applied "
+             f"({len(response):,} -> {len(repaired):,} chars)")
+        return repaired
+    return response
 
 
 def _extract_message_text(message) -> str:
@@ -339,6 +488,7 @@ def _decomposed_openrouter(
     max_tokens: int,
     timeout: int,
     enable_tools: bool = False,
+    extra_body: dict | None = None,
 ) -> DecomposedResult:
     """Independent-session decomposed delivery via OpenRouter.
 
@@ -422,13 +572,20 @@ def _decomposed_openrouter(
         _log(f"  [openrouter:{model_id}] independent session {n}/{len(chunks)}"
              f" ({chunk.chars:,} chars, {chunk.label or 'unlabelled'})")
 
-        response = client.chat.completions.create(
+        # Phase-1 budget fix (2026-06-06): gate-on, lift the chunk-analysis budget
+        # to the reasoning-aware floor so Gemini/DeepSeek leave room for visible
+        # content (otherwise content=0 -> blind synthesis). Forward any reasoning
+        # config (e.g. Gemini reasoning.effort) too. Gate-off keeps 8192.
+        _p1_kwargs = dict(
             model=model_id,
             messages=chunk_messages,
-            max_tokens=_PHASE1_MAX_TOKENS,
+            max_tokens=_gate_turn_budget(max_tokens, enable_tools),
             temperature=0.0,
             timeout=timeout,
         )
+        if extra_body:
+            _p1_kwargs["extra_body"] = extra_body
+        response = client.chat.completions.create(**_p1_kwargs)
         if not response.choices:
             raise CircuitBreakerTripped(
                 "empty_response", model_id, "dispatch",
@@ -444,6 +601,7 @@ def _decomposed_openrouter(
         per_chunk_analyses.append({
             "label": chunk.label or f"chunk_{n}",
             "analysis": resp_text,
+            "content": chunk.content,
         })
 
         _log(f"  [openrouter:{model_id}] section {n} analysis complete "
@@ -454,10 +612,7 @@ def _decomposed_openrouter(
     if system_prompt:
         synthesis_messages.append({"role": "system", "content": system_prompt})
 
-    analyses_text = "\n\n".join(
-        f"=== YOUR ANALYSIS OF {a['label']} ===\n{a['analysis']}"
-        for a in per_chunk_analyses
-    )
+    analyses_text = _synthesis_analyses_text(per_chunk_analyses)
 
     synthesis_prompt = (
         f"You have just reviewed {len(chunks)} code sections independently. "
@@ -476,6 +631,7 @@ def _decomposed_openrouter(
         f"Every finding MUST retain numerical R_k and structured "
         f"FALSIFICATION — do not reduce to qualitative labels.\n\n"
         f"{final_instruction}"
+        + (_RUNNABLE_FALSIFIER_OVERRIDE if enable_tools else "")
     )
     synthesis_messages.append({"role": "user", "content": synthesis_prompt})
 
@@ -490,16 +646,20 @@ def _decomposed_openrouter(
         # empty-choices response internally, mirroring the no-tools guard.
         result_text = (_openai_synthesis_with_tools(
             client, model_id, synthesis_messages, max_tokens, timeout,
+            extra_body=extra_body,
         ) or "").strip()
         elapsed = time.monotonic() - t0
     else:
-        response = client.chat.completions.create(
+        create_kwargs = dict(
             model=model_id,
             messages=synthesis_messages,
             max_tokens=max_tokens,
             temperature=0.0,
             timeout=timeout,
         )
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
+        response = client.chat.completions.create(**create_kwargs)
         if not response.choices:
             elapsed = time.monotonic() - t0
             raise CircuitBreakerTripped(
@@ -636,7 +796,10 @@ def _decomposed_deepseek(
         response = client.chat.completions.create(
             model=model_id,
             messages=chunk_messages,
-            max_tokens=_PHASE1_MAX_TOKENS,
+            # Gate-on reasoning-aware budget: DeepSeek-v4-pro is a reasoning model
+            # (burns ~35K reasoning tokens); at 8192 its Phase-1 content empties
+            # (finish=length, content=0). Gate-off keeps 8192 byte-identically.
+            max_tokens=_gate_turn_budget(max_tokens, enable_tools),
             timeout=timeout,
         )
         if not response.choices:
@@ -654,6 +817,7 @@ def _decomposed_deepseek(
         per_chunk_analyses.append({
             "label": chunk.label or f"chunk_{n}",
             "analysis": resp_text,
+            "content": chunk.content,
         })
 
         _log(f"  [deepseek:{model_id}] section {n} analysis complete "
@@ -664,10 +828,7 @@ def _decomposed_deepseek(
     if system_prompt:
         synthesis_messages.append({"role": "system", "content": system_prompt})
 
-    analyses_text = "\n\n".join(
-        f"=== YOUR ANALYSIS OF {a['label']} ===\n{a['analysis']}"
-        for a in per_chunk_analyses
-    )
+    analyses_text = _synthesis_analyses_text(per_chunk_analyses)
 
     synthesis_prompt = (
         f"You have just reviewed {len(chunks)} code sections independently. "
@@ -686,6 +847,7 @@ def _decomposed_deepseek(
         f"Every finding MUST retain numerical R_k and structured "
         f"FALSIFICATION — do not reduce to qualitative labels.\n\n"
         f"{final_instruction}"
+        + (_RUNNABLE_FALSIFIER_OVERRIDE if enable_tools else "")
     )
     synthesis_messages.append({"role": "user", "content": synthesis_prompt})
 
@@ -693,30 +855,42 @@ def _decomposed_deepseek(
          f"(chunk {total}/{total})"
          f"{' [tools-on]' if enable_tools else ''}")
 
-    if enable_tools:
-        # GATED synthesis-turn tool loop (see _decomposed_openrouter). Per-chunk
-        # turns above stayed tool-less. The loop raises CircuitBreakerTripped on
-        # an empty-choices response internally.
-        result_text = (_openai_synthesis_with_tools(
-            client, model_id, synthesis_messages, max_tokens, timeout,
-        ) or "").strip()
+    # DeepSeek text-only synthesis (2026-06-06). DeepSeek-v4-pro's OpenAI
+    # tool-translation is broken: it leaks tool calls as DSML markup and, inside
+    # the synthesis tool loop, emits exploration code instead of findings (260
+    # chars vs 12.8K text-only). The runner re-runs the written FALSIFIER block
+    # (the (b) gate), so DeepSeek never needs to execute its own falsifier — so it
+    # always synthesises TEXT-ONLY. Gate-on lifts the budget to the reasoning floor
+    # (DeepSeek burns ~35K reasoning tokens) and the prompt already carries the
+    # runnable-falsifier override; gate-off keeps max_tokens, byte-identical.
+    synth_tokens = max(max_tokens, _PHASE1_GATE_TOKENS) if enable_tools else max_tokens
+    response = client.chat.completions.create(
+        model=model_id,
+        messages=synthesis_messages,
+        max_tokens=synth_tokens,
+        timeout=timeout,
+    )
+    if not response.choices:
         elapsed = time.monotonic() - t0
-    else:
-        response = client.chat.completions.create(
-            model=model_id,
-            messages=synthesis_messages,
-            max_tokens=max_tokens,
-            timeout=timeout,
+        raise CircuitBreakerTripped(
+            "empty_response", model_id, "dispatch",
+            f"API returned no choices after {elapsed:.1f}s "
+            f"(possible upstream 500 error)"
         )
-        if not response.choices:
-            elapsed = time.monotonic() - t0
-            raise CircuitBreakerTripped(
-                "empty_response", model_id, "dispatch",
-                f"API returned no choices after {elapsed:.1f}s "
-                f"(possible upstream 500 error)"
-            )
-        result_text = (response.choices[0].message.content or "").strip()
-        elapsed = time.monotonic() - t0
+    result_text = (response.choices[0].message.content or "").strip()
+    if enable_tools and result_text:
+        # DeepSeek can leak DSML tool-call markup into content even tool-less;
+        # strip it so the runner/scorer receives plain findings (gate-on only,
+        # so gate-off stays byte-identical).
+        from experiment_11_orchestrator import _DSML_SENTINEL, _strip_dsml_markup
+        if _DSML_SENTINEL in result_text:
+            result_text = _strip_dsml_markup(result_text).strip()
+        # DeepSeek writes prose/ATTEMPT-style falsifiers ignoring the §2 runnable
+        # instruction; re-prompt once for the runnable form so its findings can be
+        # tool-adjudicated (the runner re-runs the block). No-op if already runnable.
+        result_text = _falsifier_format_repair(
+            client, model_id, result_text, synth_tokens, timeout)
+    elapsed = time.monotonic() - t0
 
     # 2026-05-20 (founder-directed): synthesis-layer chunk-analyses
     # reconstruction removed (see _decomposed_openrouter comment for
@@ -847,7 +1021,7 @@ def _decomposed_claude_cli(
     # Final instruction — trigger synthesis via --resume
     final_msg = _format_final(
         total, total, total_chars, "Synthesis instruction"
-    ) + final_instruction
+    ) + final_instruction + (_RUNNABLE_FALSIFIER_OVERRIDE if enable_tools else "")
 
     cmd_final = [
         cli, "-p",
@@ -1064,6 +1238,7 @@ def decomposed_dispatch(
     timeout: int = 600,
     cdsfl_directives: str | None = None,
     enable_tools: bool = False,
+    extra_body: dict | None = None,
 ) -> DecomposedResult:
     """Dispatch a decomposed payload to any supported API.
 
@@ -1087,6 +1262,11 @@ def decomposed_dispatch(
             threaded into gemini/codex for signature consistency but those two
             stay tool-less (noted at their call sites). Default OFF =>
             byte-identical to the prior decomposed path (no tools kwarg sent).
+        extra_body: GATED, default None. OpenAI-compatible extra_body (e.g.
+            {"reasoning": {"effort": "high"}}) forwarded to the OpenRouter
+            synthesis turn so reasoning models get adequate visible-content
+            budget. Previously dropped on the synthesis path. None => no extra
+            body sent (byte-identical to prior behaviour).
 
     Returns:
         DecomposedResult with the synthesis response and conversation history.
@@ -1112,6 +1292,7 @@ def decomposed_dispatch(
         return _decomposed_openrouter(
             model_id, system_prompt, chunks, final_instruction,
             max_tokens, timeout, enable_tools=enable_tools,
+            extra_body=extra_body,
         )
     elif api == "deepseek":
         return _decomposed_deepseek(

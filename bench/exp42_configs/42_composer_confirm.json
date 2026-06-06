@@ -1,0 +1,63 @@
+{
+  "_comment": "Exp 42 CONFIRMATION SMOKE (2026-06-06). Byte-for-byte identical to 42_composer.json EXCEPT max_rounds/extension_cap=2 and a tighter wall-clock cap. Purpose: prove the real runner end-to-end with the falsifier gate ON after the 2026-06-06 fix campaign (gemini/deepseek reasoning-budget floors, synthesis safety-net, deepseek text-only + format-repair, gemini empty-content retry, runner extra_body passthrough, gate-aware §2 directive in core). Confirms: all 5 panel models (incl. Codex, untested in the matrix) produce parseable findings via the decomposed path; each critical's runnable falsifier is independently RE-RUN by the runner (apply_falsifier_verdicts) to CONFIRMED/REFUTED; un-toolable/ERROR -> HIL, never false-confirmed; no empty/worthless responses. NOT the pre-registered run — does not converge in 2 rounds (gamma_alt_consecutive_zero_crit=3); the full 12-round 42_composer.json run follows once this is clean. No core edits; gate gated-on via this config only.",
+  "test_article": "bench/cdsfl_registry/composer.py",
+  "context_files": [],
+  "topology": "star",
+  "pattern": "four_layer",
+  "max_rounds": 2,
+  "extension_cap": 2,
+  "wall_clock_cap_s": 7200,
+  "earliest_stop_round": 3,
+  "models": [
+    "CC2",
+    "Codex",
+    "Gemini",
+    "DeepSeek",
+    "ChatGPT"
+  ],
+  "experiment_name": "exp42_composer_confirm",
+  "domain": "software",
+  "rho_threshold": 0.25,
+  "rho_rolling_window": 3,
+  "consecutive_rounds_required": 3,
+  "hardened_gate_enabled": false,
+  "gamma_telemetry_only_until": 14,
+  "stall_gamma_terminate": 1.01,
+  "stall_gamma_advisory": 1.01,
+  "gamma_alt_threshold": 0.30,
+  "gamma_alt_consecutive_zero_crit": 3,
+  "gamma_alt_earliest_round": 3,
+  "merge_arbitration_enabled": true,
+  "merge_arbitration_min_defer_count": 2,
+  "merge_arbitration_max_per_round": 3,
+  "merge_arbitration_tiebreaker_gamma": 0.05,
+  "inround_reask_enabled": true,
+  "inround_reask_min_markers": 2,
+  "apply_fixes_back_enabled": false,
+  "apply_fixes_back_seed": "",
+  "consolidation_rounds": 3,
+  "prior_fix_summary_enabled": true,
+  "windowed_context_enabled": true,
+  "sk_enabled": true,
+  "falsifier_gate_enabled": true,
+  "test_cmd": "python3 -m pytest bench/tests/test_dynamic_management.py -q --tb=line",
+  "sk_s_floor": 0.0,
+  "burst_mode": "off",
+  "_macrophage": {
+    "mode": "patrol"
+  },
+  "_directives_live": {
+    "section_17_feedback_channel": true,
+    "section_18_divergence_directive": true,
+    "section_10_compelled_convergence": true
+  },
+  "_specialist_cells": {
+    "live": [
+      "mathematics",
+      "statistics",
+      "biology",
+      "information_science",
+      "software"
+    ]
+  }
+}
