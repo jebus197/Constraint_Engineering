@@ -3698,19 +3698,26 @@ def _build_smt2_from_claim(
 
     Returns None if the claim cannot be translated.
     """
-    # Extract variable names and numeric comparisons from the claim
-    # Pattern: "VARIABLE OP VALUE" or "VALUE OP VARIABLE"
+    # 2026-06-06 fix: ground a claim ONLY when it references a KNOWN numeric
+    # source constant in a comparison (case-insensitive). The prior version
+    # extracted any word before an operator — "be" from "should be <= 0.5" — which
+    # never matched a real constant, so has_grounding stayed False and it grounded
+    # nothing on essentially every claim. Match against the actual constants
+    # instead (and skip non-constant tokens rather than emitting ungrounded
+    # abstract assertions, which only ever produced None at the end anyway).
+    numeric_consts = {
+        k: float(v) for k, v in constants.items()
+        if isinstance(v, (int, float)) and not isinstance(v, bool)
+    }
+    const_lower = {k.lower(): k for k in numeric_consts}
+
     comparisons = re.findall(
         r'(\w+)\s*(>=|<=|>|<|==|!=)\s*([-+]?\d*\.?\d+)', claim
     )
-    if not comparisons:
-        # Try reverse: "VALUE OP VARIABLE"
-        comparisons = re.findall(
-            r'([-+]?\d*\.?\d+)\s*(>=|<=|>|<|==|!=)\s*(\w+)', claim
-        )
-        # Swap to normalise: var op value
-        comparisons = [(c[2], _flip_op(c[1]), c[0]) for c in comparisons]
-
+    rev = re.findall(
+        r'([-+]?\d*\.?\d+)\s*(>=|<=|>|<|==|!=)\s*(\w+)', claim
+    )
+    comparisons += [(c[2], _flip_op(c[1]), c[0]) for c in rev]
     if not comparisons:
         return None
 
@@ -3720,42 +3727,28 @@ def _build_smt2_from_claim(
     has_grounding = False
 
     for var_name, op, value_str in comparisons:
+        ckey = const_lower.get(var_name.lower())
+        if ckey is None:
+            continue  # not a real source constant — do not ground garbage tokens
         try:
             value = float(value_str)
         except ValueError:
             continue
-
-        # Declare each variable only once (SMT-LIB rejects duplicates)
-        if var_name not in declared:
-            declarations.append(f"(declare-const {var_name} Real)")
-            declared.add(var_name)
-
         smt_op = {">=": ">=", "<=": "<=", ">": ">", "<": "<",
-                   "==": "=", "!=": "distinct"}[op]
+                  "==": "=", "!=": "distinct"}[op]
+        if ckey not in declared:
+            declarations.append(f"(declare-const {ckey} Real)")
+            declared.add(ckey)
+        grounding_assert = f"(assert (= {ckey} {numeric_consts[ckey]}))"
+        if grounding_assert not in assertions:
+            assertions.append(grounding_assert)
+        # Assert the negation of the claim (check the defect via UNSAT).
+        assertions.append(f"(assert (not ({smt_op} {ckey} {value})))")
+        has_grounding = True
 
-        # Check if this variable has a grounded value from the AST
-        if var_name in constants and isinstance(constants[var_name], (int, float)):
-            grounded = float(constants[var_name])
-            # Assert the grounded value (only once per variable)
-            grounding_assert = f"(assert (= {var_name} {grounded}))"
-            if grounding_assert not in assertions:
-                assertions.append(grounding_assert)
-            # Assert the negation of the claim (to check via UNSAT)
-            assertions.append(
-                f"(assert (not ({smt_op} {var_name} {value})))"
-            )
-            has_grounding = True
-        else:
-            # Ungrounded variable — can only build abstract proof
-            assertions.append(
-                f"(assert (not ({smt_op} {var_name} {value})))"
-            )
-
-    if not assertions:
+    if not has_grounding:
         return None
-
-    smt2 = "\n".join(declarations + assertions + ["(check-sat)"])
-    return smt2 if has_grounding else None  # Only return if grounded
+    return "\n".join(declarations + assertions + ["(check-sat)"])
 
 
 def _flip_op(op: str) -> str:
@@ -3787,10 +3780,22 @@ def _verify_z3_v2(
     smt2 = _build_smt2_from_claim(claim, all_constants)
 
     if smt2 is None:
+        # Honest, non-alarming messaging. Most findings are code-behavioral (the
+        # falsifier gate's domain), not numeric-constant assertions, so this SMT
+        # verifier legitimately does not apply — that is NOT a grounding failure.
+        # Distinguish it from a genuine numeric claim whose constant is absent.
+        had_numeric = bool(re.search(
+            r'(>=|<=|>|<|==|!=)\s*[-+]?\d*\.?\d+|[-+]?\d*\.?\d+\s*(>=|<=|>|<|==|!=)',
+            claim))
+        evidence = (
+            "[B_v2] numeric claim references no known source constant — not SMT-groundable"
+            if had_numeric else
+            "[B_v2] not a numeric/SMT-verifiable claim — deferred to falsifier gate / HIL"
+        )
         return CellVerdict(
             cell_type=CellType.B_CELL, finding_id="",
             verdict="UNCERTAIN", confidence=0.15,
-            evidence="[B_v2] Cannot ground claim in source AST",
+            evidence=evidence,
             tool_used="z3_v2_smt2",
         )
 
