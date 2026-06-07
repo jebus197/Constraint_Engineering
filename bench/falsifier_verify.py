@@ -48,7 +48,16 @@ def _sandbox_env(repo_root: str) -> dict:
     """
     env = dict(os.environ)
     existing = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = repo_root + (os.pathsep + existing if existing else "")
+    # 2026-06-07 harness hardening: put BOTH the repo root and bench/ on
+    # PYTHONPATH so a falsifier resolves `from bench.cdsfl_registry.X import`
+    # AND `from cdsfl_registry.X import`. Models frequently write a relative
+    # `sys.path.insert(0,'bench')` that breaks in the throwaway temp CWD; this
+    # makes that hack redundant rather than fatal. reverify runs only under the
+    # falsifier gate, so non-gate experiments are unaffected.
+    parts = [repo_root, os.path.join(repo_root, "bench")]
+    if existing:
+        parts.append(existing)
+    env["PYTHONPATH"] = os.pathsep.join(parts)
     return env
 
 
