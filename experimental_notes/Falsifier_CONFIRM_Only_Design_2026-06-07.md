@@ -39,17 +39,37 @@ Convergence has two gates; resolving the residuals touches only one.
 
 **So the system cannot fully auto-converge — and that is the no-faking floor, not a bug.** The 7 are real un-auto-confirmable criticals; trusting a clean exit to clear them is the exact masking just eliminated. They are the "exceptions where minimal HIL isn't possible." Path to genuine convergence: **HIL adjudicates the 7 exceptions → gate 1 clears; the panel quiets over a few rounds (helped by severity calibration, still pending) → gate 2 clears → Exp 42 converges, genuinely.**
 
-**Answer to "does resolving the residuals take Exp 42 over the line?":** it gets it *to* the line honestly (8 confirmed real defects, 7 escalated, zero faked); the HIL steps it over by adjudicating the 7. No single-step auto-convergence is possible without faking.
+**Answer to "does resolving the residuals take Exp 42 over the line?":** see §6 — the "7 → HIL" figure below was CORRECTED: the HIL floor on this target is **zero**.
 
-## 6. Remaining work
+## 6. CORRECTION (12:50 BST) — the 7 "HIL exceptions" are ALL resolvable; HIL floor is ZERO
 
-- **Wire the max-3 retry into the runner round loop** (validated out-of-band here; not yet in-runner).
-- **Severity calibration** (9/15 over-rated, prior note) to lower the new-critical rate → help gate 2.
-- **Optional:** a resume of Exp 42 with retry + calibration ON to observe gates 1+2 close live (will surface marginal new findings — diminishing returns per founder caution).
+The §4/§5 framing called 7 residuals "genuine exceptions" needing the HIL. **That was wrong, and was tested to destruction.** A 14-agent workflow (`wf_f046bc18`) had a capable writer investigate each of the 7 — read the real `composer.py`, write a correct falsifier, RUN it through `reverify_falsifier`, adversarially re-check — and **all 7 → CONFIRMED real defects, 0 genuinely un-resolvable** (re-run independently here: 7/7 CONFIRMED).
 
-## 7. Commits
+| residual | real defect | why the source model failed | category |
+|---|---|---|---|
+| C0028 | phenotype transform corrupts HARD situation packet (composer.py:1362) | DeepSeek compared a value `compose` mutates **in place** → false REFUTED | **duplicate** of CONFIRMED **C0003** (Codex) |
+| C0015 | `_prune_for_coherence` density math prunes all SOFT packets | DeepSeek imported a **hallucinated module** (`...policy`) | **duplicate** of CONFIRMED **C0001** |
+| C0040 | `_load_universal_directive` swaps full→minimal even for non-minimal models | ChatGPT wrote **no falsifier** (empty) | none_resolvable (capability) |
+| C0034 | fallback density calibration returns const ~0.057 | DeepSeek **hallucinated the API signature** → ERROR | none_resolvable |
+| C0036 | `resolve_layer_conflicts` knows only 4 hard-coded topics | **no falsifier** (self-asserted "VERIFIED") | none_resolvable |
+| C0054 | `_directive_topic_and_stance` returns only the first topic | **no falsifier** (empty) | none_resolvable |
+| C0063 | `_apply_phenotype_transform` destroys markdown code blocks | Gemini falsifier **truncated** at 97 chars | none_resolvable |
 
-`0a4d8ce` CONFIRM-only gate + test; `9381980` harness hardening + retry/correctness notes.
+**None falls into a legitimate HIL category** (0 genuinely_hard_to_falsify, 0 safety, 0 core_functionality, 0 uncertain, 0 contested). 2 are duplicates of already-CONFIRMED findings; 5 are model-capability gaps. Every one is deterministic synchronous data-flow — nothing resists falsification.
+
+**Why the earlier max-3 retry got 1/8 but this got 7/7:** the retry re-asked the **same weak source models** that already failed. The fix is **routing** — an un-confirmed critical must go to a **capable** falsifier-writer (strongest model / iterative agent), NOT the source model — plus **deduplication** so a residual whose defect is already CONFIRMED elsewhere is never escalated.
+
+**Corrected convergence answer:** gate 1 (no unverified critical pending) clears with **zero HIL** on this target once the retry routes to a capable writer + dedup runs. Gate 2 (quiescence) still needs severity calibration. The genuine-HIL categories are real but live in *other* targets (concurrency/timing, safety, authority), not these 7.
+
+## 7. Remaining work
+
+- **Retry routing fix:** re-dispatch un-confirmed criticals to a CAPABLE falsifier-writer (not the source model) + iterate. Validated out-of-band (7/7); wire into the runner round loop.
+- **Deduplication:** detect when a residual's defect is already CONFIRMED under another id (C0028↔C0003, C0015↔C0001) and never escalate it.
+- **Severity calibration** (9/15 over-rated) → help gate 2.
+
+## 8. Commits
+
+`0a4d8ce` CONFIRM-only gate + test; `9381980` harness hardening + retry/correctness notes; resolvability finding this section (workflow `wf_f046bc18`).
 
 ---
 *Written under CDSFL note standard v1.2 (14 May 2026). Plain-English: `Falsifier_CONFIRM_Only_Design_Plain_English_2026-06-07.md`; TTS: `~/Desktop/CDSFL_tts/Falsifier_CONFIRM_Only_Design_2026-06-07.txt`.*

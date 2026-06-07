@@ -2,6 +2,8 @@
 
 **2026-06-07 12:19 BST**
 
+> **Correction added 12:50 BST.** The section below ("So does this finally get Experiment 42 over the line?") concluded that seven findings were irreducible exceptions a human had to rule on. That was tested afterwards and proved wrong. A capable investigator, given each of the seven, wrote and ran a correct test for every one — all seven are real defects that confirm cleanly, none genuinely resists testing. Two were simply the same defect already confirmed under another name; the other five were cases where a weak model wrote a broken test or no test at all. The human workload for these seven is zero. The earlier retry failed only because it kept asking the same weak models that had already failed; routing the test-writing to a capable model resolves them. The genuine cases where a human is irreducible are real, but they live in other kinds of code (timing/concurrency, safety, authority calls), not in these seven.
+
 ## The problem, recapped
 
 The runner judges a claimed defect by running a little test the model wrote. A test that *raises an error* demonstrates the defect (a confirmation); a test that *exits cleanly* fails to demonstrate it (a refutation). An audit of Experiment 42 found these two outcomes are not equally trustworthy: every confirmation was correct, but a third of the refutations were wrong — real defects that a broken test waved through because the test exited cleanly for the wrong reason. A clean exit is cheap; a broken test produces one just as easily as a genuine non-defect does.
