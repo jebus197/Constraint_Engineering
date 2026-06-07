@@ -1,5 +1,7 @@
 # Falsifier Error-Correction Retry Test + Verdict-Correctness Audit
 
+> **SUPERSEDED IN PART (2026-06-07 12:19).** §5.3's "refutation scrutiny" recommendation was tested and FAILED (an independent strong model also refuted the real defects single-shot). The design that replaced it — **CONFIRM-only** — is documented in `Falsifier_CONFIRM_Only_Design_2026-06-07.md`. §1–4 below (the retry test + the verdict-correctness audit) remain valid and are the evidence base for that design.
+
 **2026-06-07 10:29 BST.** Tests whether feeding the Exp-42 residuals' errors back to their source models resolves them — and, critically, whether the resolutions are *correct*. Source: the 15 un-falsifiable criticals from `bench/logs/exp42_composer_20260606T202037Z`.
 
 ## 1. Setup
