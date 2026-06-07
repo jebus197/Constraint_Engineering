@@ -52,7 +52,8 @@ def _registry_with_cases():
     reg = FindingRegistry()
     ids = {
         "confirm": reg.register(_mk("f1", 0.8, "assert False, 'real'"), "m"),
-        "refute":  reg.register(_mk("f2", 0.8, "assert True"), "m"),
+        "refute":  reg.register(_mk("f2", 0.8, "assert True"), "m"),   # critical
+        "refute_minor": reg.register(_mk("f5", 0.5, "assert True"), "m"),  # non-crit
         "broken":  reg.register(_mk("f3", 0.8, "import nope_xyz"), "m"),
         "nofals":  reg.register(_mk("f4", 0.8, ""), "m"),
     }
@@ -75,8 +76,14 @@ def test_gated_on_tools_decide():
     # genuine defect -> CONFIRMED by the runner's re-run
     assert e[ids["confirm"]]["status"] == "CONFIRMED"
     assert e[ids["confirm"]]["falsifier_verdict"] == "CONFIRMED"
-    # clean run -> REFUTED (vote not trusted)
-    assert e[ids["refute"]]["status"] == "REFUTED"
+    # CONFIRM-only: a clean run on a CRITICAL is NOT trusted to drop it (a broken
+    # falsifier also clean-exits, so a false REFUTED would mask a real defect) -> the
+    # critical is escalated to HIL, never auto-REFUTED.
+    assert e[ids["refute"]]["falsifier_verdict"] == "REFUTED"
+    assert e[ids["refute"]]["status"] != "REFUTED"
+    assert e[ids["refute"]]["escalated"] is True
+    # a clean run on a NON-critical IS trusted to drop it (no masking risk).
+    assert e[ids["refute_minor"]]["status"] == "REFUTED"
     # broken falsifier -> HIL, NEVER auto-confirmed
     assert e[ids["broken"]]["status"] != "CONFIRMED"
     assert e[ids["broken"]]["escalated"] is True

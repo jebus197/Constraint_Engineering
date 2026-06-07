@@ -1330,13 +1330,21 @@ def apply_falsifier_verdicts(
     falsifier verdict wins:
 
       * falsifier CONFIRMED -> status CONFIRMED (verified=True);
-      * falsifier REFUTED   -> status REFUTED (the runner did not reproduce the
-                               defect, so the vote is not trusted);
-      * falsifier ERROR / UNTOOLABLE, OR a CRITICAL finding with NO falsifier ->
-                               escalated to HIL, and a vote-CONFIRMED critical
-                               with no/failed falsifier is demoted to UNCONFIRMED
-                               so an un-toolable claim is never counted as a
-                               genuine-confirmed critical.
+      * falsifier REFUTED on a NON-critical -> status REFUTED (trusted to drop a
+                               non-critical claim; no real-defect-masking risk);
+      * REFUTED on a CRITICAL, ERROR, UNTOOLABLE, or a CRITICAL with NO falsifier
+                               -> escalated to HIL; a vote-CONFIRMED critical is
+                               demoted to UNCONFIRMED. CONFIRM-only (2026-06-07):
+                               a critical is resolved ONLY by a CONFIRMED
+                               demonstration. A REFUTED critical is NOT trusted to
+                               drop the finding, because a logically-broken falsifier
+                               clean-exits and yields a FALSE REFUTED that masks a
+                               real defect (Exp 42 audit: 2/3 of REFUTED criticals
+                               were false vs 7/7 CONFIRMED correct). A CONFIRMED
+                               needs an active AssertionError/FALSIFIED demonstration
+                               (unfakeable); REFUTED is a passive clean exit. This
+                               removes the one place a real critical could be faked
+                               away.
 
     Default-off no-op: when the flag is unset this returns immediately and
     vote-based behaviour is byte-identical. Hard-terminal findings
@@ -1368,10 +1376,22 @@ def apply_falsifier_verdicts(
             registry.resolve(cid, "CONFIRMED", round_idx)
             e["verified"] = True
             tally["CONFIRMED"] += 1
-        elif verdict == "REFUTED":
+        elif verdict == "REFUTED" and not is_critical:
+            # A non-critical refutation is trusted to drop the finding — there is
+            # no real-defect-masking risk for a non-critical claim.
             registry.resolve(cid, "REFUTED", round_idx)
             tally["REFUTED"] += 1
-        else:  # ERROR or UNTOOLABLE -> never auto-confirm; send to HIL
+        else:
+            # CONFIRM-only for criticals (2026-06-07). A critical is resolved ONLY
+            # by a CONFIRMED demonstration. A REFUTED critical is NOT trusted to
+            # drop the finding: a logically-broken falsifier clean-exits, producing
+            # a FALSE REFUTED that silently masks a real defect (Exp 42 audit:
+            # C0028/C0040 were real defects, falsely REFUTED — 2/3 of the REFUTED
+            # criticals were wrong, vs 7/7 of the CONFIRMED being correct).
+            # CONFIRMED requires the active AssertionError/FALSIFIED demonstration,
+            # which is essentially unfakeable; REFUTED is a passive clean exit. So
+            # an un-demonstrated critical (REFUTED, ERROR, or UNTOOLABLE) is
+            # escalated, never dropped — eliminating the one place faking can occur.
             e["escalated"] = True
             if e.get("status") == "CONFIRMED":
                 registry.resolve(cid, "UNCONFIRMED", round_idx)
