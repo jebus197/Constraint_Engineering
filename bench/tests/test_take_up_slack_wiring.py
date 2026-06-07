@@ -59,7 +59,7 @@ def test_strong_writer_resolves_and_clears_hil(monkeypatch):
     assert e["falsifier_verdict"] == "CONFIRMED"
     assert e.get("verified") is True
     assert e["escalated"] is False
-    assert e["resolved_by_takeup"] == "CC2"  # routed to the strongest writer
+    assert e["resolved_by_takeup"] == "Codex"  # first rung (best falsifier-writer)
 
 
 def test_dedup_short_circuits_before_dispatch(monkeypatch):
