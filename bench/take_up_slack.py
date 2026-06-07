@@ -31,13 +31,14 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
 
 
-# Capability ordering for the FALSIFICATION task, strongest first. Mirrors the
-# 4-D capability fingerprints in runner_core.py (lower detection-decay = stronger)
-# AND the Exp-42 empirical confirm rates (Codex 90%/0 residuals, CC2 75%/0
-# residuals, ChatGPT 67%, Gemini 80%, DeepSeek 28%/10-of-15-residuals). The two
-# zero-residual writers lead; the primary offender (DeepSeek) is last and is never
-# asked to take up slack for anyone.
-DEFAULT_FALSIFIER_STRENGTH = ("CC2", "Codex", "ChatGPT", "Gemini", "DeepSeek")
+# Capability ordering for the FALSIFICATION task, strongest first. Ordered by the
+# Exp-42 EMPIRICAL falsifier-confirm rates, not generic capability: Codex 90% / 0
+# residuals (and fast — OpenRouter) leads, then CC2 75% / 0 residuals (strong but
+# claude_cli-slow), ChatGPT 67%, Gemini 80%-but-format-fragile, DeepSeek 28% /
+# 10-of-15-residuals last. Validated ladder: gpt-5.5 (Codex) resolved 6/7 of the
+# hardest residuals; CC2 picks up the 7th (the markdown-embedding trap). The
+# primary offender (DeepSeek) is last and is never asked to take up slack.
+DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")
 
 
 @dataclass

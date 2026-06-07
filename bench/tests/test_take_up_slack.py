@@ -16,7 +16,7 @@ def test_rank_strongest_first_and_excludes_source():
     avail = ["DeepSeek", "Gemini", "CC2", "ChatGPT", "Codex"]
     ranked = rank_falsifier_writers(avail, exclude=("DeepSeek",))
     # strongest-first by the falsifier-strength order, DeepSeek (the failed source) dropped
-    assert ranked == ["CC2", "Codex", "ChatGPT", "Gemini"]
+    assert ranked == ["Codex", "CC2", "ChatGPT", "Gemini"]
 
 
 def test_rank_appends_unknown_models_after_known_strong():

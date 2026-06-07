@@ -208,6 +208,8 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     # execute_python tool during review.
     if "falsifier_gate_enabled" in exp_cfg:
         kwargs["falsifier_gate_enabled"] = exp_cfg["falsifier_gate_enabled"]
+    if "take_up_slack_enabled" in exp_cfg:
+        kwargs["take_up_slack_enabled"] = exp_cfg["take_up_slack_enabled"]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}
