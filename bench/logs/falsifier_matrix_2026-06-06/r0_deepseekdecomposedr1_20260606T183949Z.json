@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekdecomposedr1",
+  "path": "decomposed",
+  "run": 1,
+  "ok": true,
+  "response": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: In `_prune_for_coherence()`, constraint density is computed using static policy constraint count, not actual directive block count, causing pruning to increase density and fail to meet coherence budget.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _prune_for_coherence, _count_constraints\nfrom bench.cdsfl_registry.directives import DirectivePacket\n\npackets = [\n    DirectivePacket(\"main\", \" \".join([\"soft\"] * 200), is_universal=False, category=\"soft\")\n]\npolicy = {\n    \"soft_constraints\": list(range(18)),\n    \"hard_constraints\": list(range(2)),\n}\nbudget = 0.01\n\ntotal_chars = sum(len(p.text) for p in packets)\ntoken_estimate = max(total_chars // 4, 1)\ninitial_density = _count_constraints(policy) / token_estimate\nassert initial_density > budget, \"Initial density must exceed budget for test\"\n\npruned_packets, _ = _prune_for_coherence(packets, policy, budget)\n\ntotal_chars_pruned = sum(len(p.text) for p in pruned_packets)\ntoken_estimate_pruned = max(total_chars_pruned // 4, 1)\ndensity_pruned = _count_constraints(policy) / token_estimate_pruned\n\nif density_pruned > budget:\n    print(\"FALSIFIED\")\n```",
+  "response_length": 1159,
+  "elapsed_s": 275.8
+}

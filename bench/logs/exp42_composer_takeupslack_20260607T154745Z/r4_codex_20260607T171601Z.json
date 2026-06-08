@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T171601Z",
+  "phase": "r4",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2454,
+  "response": "Codex_F008: WITHDRAW — prior submission was flagged DUPLICATE with ADMISSIBILITY failure. I am not resubmitting it unchanged. The registry already contains the same root-cause family, and the missing §15 admissibility evidence was not supplied in the prior round.\n\nMERGE Codex_F008 <- C0001/C0016 — same root cause family as global rendered-text truncation amputating HARD directives.\n\n## Registry check result\n\nNo new DISCOVERY findings are admissible from the supplied section without duplicating settled registry entries.\n\nThe five findings from the per-section analysis map to already-settled canonical entries:\n\n1. Silent global truncation of HARD directives → already covered by **C0001 / C0016**.\n2. `compose()` mutates caller-provided `situation` → already covered by **C0003 / C0009**.\n3. Coherence pruning density worsens because numerator is unchanged → already covered by **C0004 / C0008 / C0014**.\n4. CID ignores packet content → already covered by **C0002 / C0015**.\n5. HARD-vs-HARD conflict silently drops one side → already covered by **C0028**.\n\nUnder the Round 4 registry rule, re-reporting these would be duplicate compute waste. I am therefore not filing them as new findings.\n\n## Global P-pass\n\nPass 1: Compared each candidate finding against the registry. All five candidate issues collide with CLOSED/settled canonical findings.\n\nPass 2: Checked whether any candidate contains a distinct mechanism, distinct file, or distinct downstream consequence not already represented. None does; the mechanisms are the same implementation defects.\n\nPass 3: Looked for cross-finding interaction that would justify a new broader architectural issue. The shared theme is “rendered prompt can diverge from packet/provenance model,” but that is an abstraction over existing settled findings, not a new concrete bug with independent evidence.\n\nPass 4: Ran a tool check for a possible fresh issue where budget pruning removes the auto-built review target for `deepseek_v3`; this reproduced, but the root cause is already covered by settled coherence-pruning/situation-pruning findings, especially C0027/C0037 family. I am not filing it as novel.\n\nPass 5: No additional high/critical issue survived registry de-duplication.\n\nDefinitive stance: no admissible new CRITICAL/HIGH discoveries remain from this artifact slice in Round 4; the correct action is to avoid duplicate re-filing and focus closure effort on the remaining CONFIRMED registry items.",
+  "metadata": {
+    "round": 4,
+    "elapsed": 328.4,
+    "chars": 2454,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

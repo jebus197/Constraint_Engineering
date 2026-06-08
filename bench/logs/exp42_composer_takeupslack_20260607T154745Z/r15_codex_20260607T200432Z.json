@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T200432Z",
+  "phase": "r15",
+  "model_label": "Codex",
+  "prompt_length": 203,
+  "response_length": 2836,
+  "response": "MERGE C0002 <- F001 | Same root cause as prior independent Finding 1: `_compute_cid()` hashes `layer`, `name`, `len(text)`, and `model`, so different equal-length directive text can produce the same CID. Tool check confirmed current artifact still exhibits the collision, but registry marks C0002 CLOSED; I am not filing a duplicate DISCOVERY.\n\nMERGE C0003 <- F002 | Same root cause as prior independent Finding 2: `compose()` mutates caller-provided `situation.text` in place before appending it. Tool check confirmed mutation on current artifact, but registry marks C0003 CLOSED; I am not filing a duplicate DISCOVERY.\n\nMERGE C0001 <- F003 | Same root cause as prior independent Finding 3: final global rendered-text truncation can amputate HARD directive content despite the “HARD constraints are NEVER pruned” contract. Tool check confirmed truncation marker appears with an oversized HARD situation packet, but registry marks C0001 CLOSED; I am not filing a duplicate DISCOVERY.\n\nMERGE C0020 <- F004 | Same root cause as prior independent Finding 4: `_load_domain_directive()` accepts unvalidated `domain` / `variant` path components, permitting namespace/path traversal semantics. This is already represented by C0020 and marked CLOSED; I am not filing a duplicate DISCOVERY.\n\nMERGE C0004 <- F005 | Same root cause as prior independent Finding 5: `_prune_for_coherence()` tries to reduce `constraint_count / token_estimate` by deleting text while holding `constraint_count` fixed, which mathematically increases density. This is already represented by C0004 and marked CLOSED; I am not filing a duplicate DISCOVERY.\n\nGLOBAL P-PASS:\n- Pass 1: Compared all five independently reviewed findings against the Round 15 registry. All five are semantic duplicates of settled canonical findings.\n- Pass 2: Checked whether any of the five provide new mechanism, file, consequence, or fix evidence beyond the canonical entries. They do not; they restate the same root causes.\n- Pass 3: Checked whether any prior applied fix should be challenged. The current artifact text still contains the old code for several closed findings, but the registry explicitly states CLOSED findings are terminal unless reopened with evidence beyond the verification pipeline. The prompt also lists prior fixes as applied in the experiment state, so re-filing these would be duplicate compute.\n- Pass 4: Searched for cross-finding interaction worth filing separately. The CID/rendered-text mismatch from truncation is already downstream of C0001/C0002 and does not constitute a distinct root cause.\n- Pass 5: No new CRITICAL/HIGH issue survived novelty filtering.\n\nNo new DISCOVERY findings are submitted in this round. The correct convergence action is to merge/withdraw the five section-level findings into their canonical settled entries, not re-report them.",
+  "metadata": {
+    "round": 15,
+    "elapsed": 189.0,
+    "chars": 2836,
+    "findings_count": 0,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

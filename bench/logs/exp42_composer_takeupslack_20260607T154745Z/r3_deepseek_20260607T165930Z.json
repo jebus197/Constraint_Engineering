@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T165930Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2585,
+  "response": "FINDING_ID: F006\nSEVERITY: 0.85\nFIND: _count_constraints only inspects \"constraints\", \"verification\", and \"protocol\" top‑level keys, ignoring other policy sections such as \"divergence\", causing an undercount of active constraints.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _count_constraints\n\n# Construct a minimal merged policy that matches real structure.\n# Universal.toml + domain/model overlays produce sections like\n#   constraints, verification, protocol, divergence, feedback_channel,\n#   refinements, convergence, anti_deference, behaviour, ...\npolicy = {\n    \"constraints\": {\n        \"hard_soft_classification\": True,\n        \"fail_closed_unassessed\": True,\n        \"json_schema_required\": True,\n    },\n    \"verification\": {\n        \"sympy_sandbox\": True,\n        \"peer_support_min_families\": 2,       # not bool → not counted? original excludes numbers\n    },\n    \"protocol\": {\n        \"blind_first\": True,\n        \"max_rounds\": 5,\n    },\n    \"divergence\": {\n        \"enabled\": True,\n        \"min_alternatives\": 1,\n    },\n    \"feedback_channel\": {\n        \"enabled\": True,\n        \"max_chars_per_model\": 8000,\n    },\n    \"refinements\": {\n        \"independence_aware\": True,\n    },\n    \"convergence\": {\n        \"hard_veto\": True,\n        \"method\": \"non_compensatory\",\n    },\n}\n\ncount = _count_constraints(policy)\n\n# The true number of active leaf-constraint values (bool True + non‑empty str) is:\n#   constraints: 3\n#   verification: 1 (sympy_sandbox) – peer_support_min_families is int, not counted\n#   protocol: 1 (blind_first)\n#   divergence: 1 (enabled)\n#   feedback_channel: 1 (enabled)\n#   refinements: 1\n#   convergence: 1 (hard_veto)  → total ≥ 9\n# The original _count_constraints returns at most 3+1+1 = 5.\nif count < 8:\n    print(f\"FALSIFIED: undercounted constraints; got {count}, expected >= 8\")\nelse:\n    print(\"NOT FALSIFIED\")\n```\n\nFINDING_ID: F007\nSEVERITY: 0.45\nFIND: _starts_new_block treats any line ending with a colon as a block boundary, incorrectly merging distinct directives during phenotype transform step 5.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _starts_new_block\n\n# A full directive that ends with colon but should NOT be a block boundary.\nline_with_colon = \"Important: always do Y.\"\nassert not _starts_new_block(line_with_colon), (\n    \"FALSIFIED: line ending with colon treated as block boundary\"\n)\n\n# A proper label-only line should still trigger.\nline_label_only = \"Key point:\"\nassert _starts_new_block(line_label_only), \"label-only line not recognised as block boundary\"\n\nprint(\"NOT FALSIFIED\")\n```",
+  "metadata": {
+    "round": 3,
+    "elapsed": 363.4,
+    "chars": 2585,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

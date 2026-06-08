@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekdecomposedr3",
+  "path": "decomposed",
+  "run": 3,
+  "ok": true,
+  "response": "import inspect\nfrom bench.cdsfl_registry.composer import (\n    _prune_for_coherence, _prune_packet_directives,\n    _split_packet_directives, _block_is_hard, _count_constraints,\n    DirectivePacket, compose\n)\nimport math\n\n# Inspect DirectivePacket structure\nprint(\"=== DirectivePacket fields ===\")\ntry:\n    from dataclasses import fields\n    for f in fields(DirectivePacket):\n        print(f\"  {f.name}: {f.type}\")\nexcept:\n    print(dir(DirectivePacket))",
+  "response_length": 453,
+  "elapsed_s": 532.3
+}

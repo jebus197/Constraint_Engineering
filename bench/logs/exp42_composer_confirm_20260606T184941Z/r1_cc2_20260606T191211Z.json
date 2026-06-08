@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T191211Z",
+  "phase": "r1",
+  "model_label": "CC2",
+  "prompt_length": 203,
+  "response_length": 1496,
+  "response": "CC2_F005 falsifier confirmed.\n\n---\n\n## GLOBAL P-PASS (Extended Falsification)\n\n**Pass 1:** Cross-checking all findings for contradictions.\n\n- C0001 (pruning counterproductive) and C0004/C0018 (same root cause) are consistent. The fix for C0004/C0018 has been applied (`r=-1`). C0001 remains open — likely its proposed fix differs. No contradiction.\n- C0002 (situation mutation) is independent of all other findings. No interaction.\n- CC2_F005 (false positive HARD classification) interacts with C0008 (domain HARD language loaded as SOFT) — they are complementary not contradictory. C0008 says truly-HARD domain directives are loaded as SOFT at the packet level. CC2_F005 says `_block_is_hard` then re-classifies blocks as HARD using keyword heuristics, which produces false positives. Together they describe a misalignment: packet-level classification ignores content, while block-level classification over-compensates with unreliable heuristics.\n\n**Pass 2:** No new findings above consequence threshold. Two consecutive clean passes reached. Terminating.\n\n---\n\n## SUMMARY\n\n| Action | ID | Detail |\n|--------|----|--------|\n| CONFIRM | C0001 | Falsifier proves pruning increases density. R_k recalibrated to 0.32. |\n| CONFIRM | C0002 | Falsifier proves in-place mutation. R_k recalibrated to 0.29. |\n| MERGE | C0003 ← C0014 | Same root cause (CID uses length not content). Withdrawn as duplicate. |\n| DISCOVERY | CC2_F005 | `_block_is_hard` false positives on modal verbs. Falsifier confirmed. |",
+  "metadata": {
+    "round": 1,
+    "elapsed": 166.6,
+    "chars": 1496,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

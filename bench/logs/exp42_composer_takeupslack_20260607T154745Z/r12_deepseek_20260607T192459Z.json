@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T192459Z",
+  "phase": "r12",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1526,
+  "response": "FINDING_ID: F015\nSEVERITY: 0.85\nFIND: `_count_constraints` silently skips nested `policy.constraints` entries, undercounting total active constraints.\nFALSIFIER:\n```python\nimport sys\nfrom pathlib import Path\n\n# add bench/ to path so the real module can be imported\nbench_dir = Path(__file__).resolve().parent / \"bench\"\nif str(bench_dir) not in sys.path:\n    sys.path.insert(0, str(bench_dir))\n\nfrom cdsfl_registry.composer import _count_constraints\n\npolicy = {\n    \"constraints\": {\n        \"anti_deference\": {\n            \"agreement_requires_evidence\": True,\n            \"min_independent_observations\": 1,\n        },\n        \"convergence\": {\n            \"hard_coverage_threshold\": 1.0,\n        },\n        \"falsification_required\": True,\n    },\n    \"verification\": {\n        \"sympy_sandbox\": True,\n    },\n    \"protocol\": {\n        \"max_rounds\": 5,\n    },\n}\n\ncount = _count_constraints(policy)\n\ndef deep_count(d):\n    c = 0\n    for v in d.values():\n        if isinstance(v, dict):\n            c += deep_count(v)\n        elif isinstance(v, bool) and v:\n            c += 1\n        elif isinstance(v, str):\n            c += 1\n        elif v is not None and v is not False:\n            c += 1\n    return c\n\nexpected = (\n    deep_count(policy.get(\"constraints\", {})) +\n    deep_count(policy.get(\"verification\", {})) +\n    deep_count(policy.get(\"protocol\", {}))\n)\n\nif count < expected:\n    raise AssertionError(\n        f\"FALSIFIED: undercount {count} vs correct {expected}\"\n    )\n# if defect absent, script exits 0 with no output\n```",
+  "metadata": {
+    "round": 12,
+    "elapsed": 245.8,
+    "chars": 1526,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

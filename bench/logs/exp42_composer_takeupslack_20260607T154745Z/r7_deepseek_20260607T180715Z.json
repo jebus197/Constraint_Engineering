@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260607T180715Z",
+  "phase": "r7",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1630,
+  "response": "FINDING_ID: F010\nSEVERITY: 0.387\nFIND: packet text rebuilt with joined directives without newline separator\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import resolve_layer_conflicts, Directive, Packet\n\ndef test():\n    p = Packet()\n    p.text = \"TopicA: stanceA\\n\\nTopicB: stanceB\"\n    p.directives = [\n        Directive(tag=\"HARD\", text=\"TopicA: stanceA\"),\n        Directive(tag=\"HARD\", text=\"TopicB: stanceB\")\n    ]\n    resolve_layer_conflicts(p, layer=\"some_layer\")\n    if \"\\n\\n\" not in p.text and len(p.directives) >= 2:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    test()\n```\n\nFINDING_ID: F011\nSEVERITY: 0.374\nFIND: packet.text falls back to original unpruned text when all blocks removed\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _prune_packet_directives, Directive, Packet\n\ndef test():\n    p = Packet()\n    p.text = \"SOFT: directive1\\nSOFT: directive2\"\n    p.directives = [\n        Directive(tag=\"SOFT\", text=\"SOFT: directive1\"),\n        Directive(tag=\"SOFT\", text=\"SOFT: directive2\")\n    ]\n    _prune_packet_directives(p, soft_only=True)\n    if \"SOFT\" in p.text:\n        print(\"FALSIFIED\")\n\nif __name__ == \"__main__\":\n    test()\n```\n\nFINDING_ID: F100\nSEVERITY: 0.35\nFIND: directive regex fails to split lowercase-starting labels\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _split_packet_directives\n\ntest_text = (\n    \"Find the root cause.\\n\"\n    \"task: review the input validation.\\n\"\n    \"FIX: apply the patch.\"\n)\nblocks = _split_packet_directives(test_text)\nmerged = any(\"Find\" in b and \"task:\" in b for b in blocks)\nif merged:\n    print(\"FALSIFIED\")\n```",
+  "metadata": {
+    "round": 7,
+    "elapsed": 451.7,
+    "chars": 1630,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

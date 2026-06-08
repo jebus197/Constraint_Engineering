@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekwholer1",
+  "path": "whole",
+  "run": 1,
+  "ok": true,
+  "response": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: Incoherence pruning INCREASES constraint density because it holds constraint count fixed while reducing token estimate, inverting the intended budget enforcement.\nFALSIFIER:\n```python\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).resolve().parents[2]))\n\nfrom cdsfl_registry.composer import _prune_for_coherence, DirectivePacket, _count_constraints\n\npackets = [\n    DirectivePacket(layer=\"universal\", name=\"core\", text=\"HARD: always do X\", constraint_class=\"HARD\"),\n    DirectivePacket(layer=\"domain\", name=\"s1\", text=\"SOFT: maybe do Y\", constraint_class=\"SOFT\"),\n    DirectivePacket(layer=\"situation\", name=\"task\", text=\"SOFT: consider Z\", constraint_class=\"SOFT\"),\n]\npolicy = {\"constraints\": {\"a\": True, \"b\": True, \"c\": True}}   # 3 constraints\nbudget = 0.01\n\ninitial_chars = sum(len(p.text) for p in packets)\ninitial_tokens = max(initial_chars // 4, 1)\ninitial_density = _count_constraints(policy) / initial_tokens\n\npruned, _ = _prune_for_coherence(packets, policy, budget)\nfinal_chars = sum(len(p.text) for p in pruned)\nfinal_tokens = max(final_chars // 4, 1)\nfinal_density = _count_constraints(policy) / final_tokens\n\nif final_density >= initial_density:\n    raise AssertionError(f\"FALSIFIED: density increased or did not decrease ({initial_density:.6f} -> {final_density:.6f})\")\n```",
+  "response_length": 1353,
+  "elapsed_s": 252.7
+}

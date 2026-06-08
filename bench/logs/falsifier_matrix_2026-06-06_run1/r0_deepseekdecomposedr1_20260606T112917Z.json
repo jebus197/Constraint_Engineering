@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekdecomposedr1",
+  "path": "decomposed",
+  "run": 1,
+  "ok": true,
+  "response": "<\uff5c\uff5cDSML\uff5c\uff5ctool_calls>\n<\uff5c\uff5cDSML\uff5c\uff5cinvoke name=\"execute_python\">\n<\uff5c\uff5cDSML\uff5c\uff5cparameter name=\"code\" string=\"true\">\nimport inspect\nfrom bench.cdsfl_registry import composer\n\n# 1. Get _prune_for_coherence and _count_constraints\nprint(\"=== _count_constraints ===\")\nprint(inspect.getsource(composer._count_constraints))\n\nprint(\"\\n=== _prune_for_coherence ===\")\nprint(inspect.getsource(composer._prune_for_coherence))\n\nprint(\"\\n=== _compute_cid ===\")\nprint(inspect.getsource(composer._compute_cid))\n</\uff5c\uff5cDSML\uff5c\uff5cparameter>\n</\uff5c\uff5cDSML\uff5c\uff5cinvoke>\n</\uff5c\uff5cDSML\uff5c\uff5ctool_calls>",
+  "response_length": 545,
+  "elapsed_s": 197.8
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T211757Z",
+  "phase": "r3",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2422,
+  "response": "FINDING_ID: C0022\nSEVERITY: 0.80\nFIND: Over-splitting in `_split_packet_directives` treats metadata lines (e.g., `VERIFIED: TRUE`) as new directive starts, creating orphan blocks.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, \"bench\")\nfrom cdsfl_registry.composer import _split_packet_directives\n\ntest_text = (\n    \"FALSIFICATION (FALSIFIER/ATTEMPT/RESULT): Do this.\\n\"\n    \"VERIFIED: TRUE\\n\"\n    \"ADMISSIBILITY:\\n\"\n    \"  S_min: PASS\\n\"\n)\nblocks = _split_packet_directives(test_text)\nif any(b.startswith(\"VERIFIED:\") for b in blocks):\n    print(\"FALSIFIED: metadata line split into separate block\")\n    raise AssertionError(\"over-splitting detected\")\nprint(\"No over-splitting\")\n```\n\nFINDING_ID: DeepSeek_F008\nSEVERITY: 0.85\nFIND: False example‑block trigger on standalone `e.g.` drops subsequent directive lines.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, \"bench\")\nfrom cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\n\ndirective_text = (\n    \"behaviour.1=Push back on impossible requirements.\\n\"\n    \"e.g., this is an illustrative remark.\\n\"\n    \"behaviour.2=Default to the simplest sufficient solution.\"\n)\n\ntransform = PhenotypeTransform(strip_examples=True, format_style=\"concise\")\noutput = _apply_phenotype_transform(directive_text, transform)\n\nif \"behaviour.2\" not in output:\n    print(\"FALSIFIED\")\n    raise AssertionError(\"behaviour.2 incorrectly stripped by e.g. false trigger\")\nelse:\n    print(\"No false trigger\")\n```\n\nFINDING_ID: DeepSeek_F009\nSEVERITY: 0.70\nFIND: Fallback density calibration always returns ~0.057 regardless of input length, producing a bogus constant.\nFALSIFIER:\n```python\nimport sys\nsys.path.insert(0, \"bench\")\nfrom cdsfl_registry.composer import calibrate_coherence_thresholds\n\n# A minimal experiment list with missing constraint_count\nfake_experiments = [{\"chars\": 1000, \"threshold\": None}]\ntry:\n    result = calibrate_coherence_thresholds(fake_experiments, default_threshold=0.0)\n    density = result[\"calibrated_densities\"][0] if result else None\n    if density is not None and abs(density - 0.05714285714285714) < 1e-9:\n        print(\"FALSIFIED\")\n        raise AssertionError(\"fallback density is a near-constant ~0.057\")\nexcept Exception as e:\n    # If calibration fails, that is still a bug — but we expect the function to run\n    print(f\"Unexpected error: {e}\")\n    raise\nprint(\"No constant fallback defect (density varies with input)\")\n```",
+  "metadata": {
+    "round": 3,
+    "elapsed": 444.0,
+    "chars": 2422,
+    "findings_count": 3,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

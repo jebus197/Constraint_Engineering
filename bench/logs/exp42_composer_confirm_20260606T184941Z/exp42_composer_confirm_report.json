@@ -1,0 +1,2508 @@
+{
+  "experiment": "exp42_composer_confirm",
+  "topology": "star",
+  "relay_mode": null,
+  "start_time": "2026-06-06T18:49:42.073273+00:00",
+  "pattern": "four_layer",
+  "models": [
+    "CC2",
+    "ChatGPT",
+    "Codex",
+    "DeepSeek",
+    "Gemini"
+  ],
+  "target_file": "bench/cdsfl_registry/composer.py",
+  "context_files": [],
+  "max_rounds": 2,
+  "extension_cap": 2,
+  "domain": "software",
+  "convergence_config": {
+    "earliest_stop": 3,
+    "consecutive_required": 3,
+    "rho_threshold": 0.25,
+    "rho_rolling_window": 3
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "type": "blind",
+      "findings_count": 18,
+      "findings": [
+        {
+          "finding_id": "CC2_F001",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.9,
+          "description": "`_prune_for_coherence()` (line ~510) is counterproductive. It removes SOFT text to lower constraint density, but density = `_count_constraints(policy)` / `token_estimate`. `_count_constraints` counts from the TOML policy dict (fixed, independent of packet text). Removing text shrinks `token_estimate` while `constraint_count` stays constant, so density increases after every prune. The early-exit condition `if density <= budget` can never become true through pruning — the function always exhausts ",
+          "verified": false,
+          "escalated": true,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "CC2_F002",
+          "model_id": "CC2",
+          "flaw_class": 2,
+          "severity": 0.7,
+          "description": "`compose()` (line ~660) mutates the caller's `situation` DirectivePacket in-place via `situation.text = _apply_phenotype_transform(situation.text, transform)`. The docstring claims the function is \"Pure: no side effects, no state mutation.\" When the same situation packet is reused across multiple model dispatches (the primary multi-model confer use case), each subsequent call receives already-transformed text.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "CC2_F003",
+          "model_id": "CC2",
+          "flaw_class": 5,
+          "severity": 0.5,
+          "description": "`_compute_cid()` hashes `f\"{p.layer}:{p.name}:{len(p.text)}\"` — it uses text *length*, not text *content*. Two compositions with identical packet names and layers but completely different directive content produce the same CID if text lengths match. The CID is described as a \"deterministic composition identity hash\" for provenance attribution.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "DeepSeek_F001",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.75,
+          "description": "FINDING_ID: F001\nSEVERITY: 0.75\nFIND: `_prune_for_coherence()` uses a constant `constraint_count`, causing density to increase rather than decrease after pruning.\nFALSIFIER:\nimport sys\nfrom pathlib im",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.92,
+          "description": "Final global length cap raw-truncates rendered directive text after packet-level safety checks.\n\nLocation: `compose()`, final length cap:\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\nEvidence: this code slices the fully rendered string without checking packet boundaries or `DirectivePacket.constraint_class`. A HARD ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 1,
+          "severity": 0.88,
+          "description": "HARD-vs-HARD conflicts are silently resolved by priority instead of rejected.\n\nLocation: `resolve_layer_conflicts()` conflict loop:\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Codex_F003",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.78,
+          "description": "`_compute_cid()` is not content-addressed; equal-length directive text changes collide.\n\nLocation:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence: the CID preimage includes only layer, name, tex",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Codex_F004",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.9,
+          "description": "Domain directives containing HARD language are loaded as SOFT and can be whole-packet pruned.\n\nLocations:\n\n`_load_domain_directive()`:\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n`_prune_for_coherence()` whole-packet pruning:\n# Pass 2: whole-packet pruning if still over budget\n    keep_indices = set(range(len(mutable_packets)))\n    for id",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F001",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "`_prune_packet_directives` fails to prune fully-soft packets. When all directives in a packet are SOFT and removed to meet the budget, `pruned_text` becomes `\"\"`. The return statement `text=pruned_text if pruned_text else packet.text` evaluates to `packet.text`, restoring the packet to its full original length.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F002",
+          "model_id": "Gemini",
+          "flaw_class": 4,
+          "severity": 1.0,
+          "description": "`_count_constraints` severely undercounts constraints by only checking `constraints`, `verification`, and `protocol` sections of the policy, completely ignoring `anti_deference`, `convergence`, `divergence`, `feedback_channel`, and `refinements`.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F003",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "`resolve_layer_conflicts` reorders directives by priority. It rebuilds packets by iterating over `kept`, which is sorted by priority (HARD first, then SOFT).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F004",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "Phenotype transform swallows directives after examples. The `strip_examples` logic sets `skipping = True` and only stops on an empty line or a markdown header. If an example is immediately followed by the next numbered directive (no blank line), the next directive is swallowed.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F005",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "Phenotype transform leaves dangling rationale fragments. The `strip_rationale` logic only skips the specific line starting with \"why:\", \"rationale:\", etc. If the rationale spans multiple lines, the subsequent lines are kept.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F006",
+          "model_id": "Gemini",
+          "flaw_class": 5,
+          "severity": 1.0,
+          "description": "`_compute_cid` uses length instead of hash for text. It uses `len(p.text)` to represent the packet's content in the hash (`f\"{p.layer}:{p.name}:{len(p.text)}\"`).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F007",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "`_semantically_duplicate` falsely deduplicates short phrases. It drops short directives if their tokens happen to be contained in a long directive, regardless of the size disparity (`intersection / smaller >= 0.95`).",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.9,
+          "description": "`bench/cdsfl_registry/composer.py::compose()` violates the composer’s HARD-preservation, fail-loud, and purity contracts for situation packets.\n\nThere are two coupled mechanisms at the same layer boundary:\n\n1. Caller-provided `situation` packets are mutated and phenotype-transformed unconditionally:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\n2. The final rendered prompt is blindly truncated by raw character count:\n# Appl",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.75,
+          "description": "`bench/cdsfl_registry/composer.py::_compute_cid()` does not identify directive content. It hashes only packet layer, name, text length, and model:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence:",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.65,
+          "description": "`bench/cdsfl_registry/composer.py::_prune_for_coherence()` uses a density formula that pruning cannot improve under its current numerator.\n\nThe function computes:\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nThen, after pruning text, it recomputes:\nremaining_tokens = max(remaining_chars // 4, 1)\ndensity = constraint_count / remaining_tokens\nBut `constraint_count` is fixed from the TOML policy and is not reduced when SOFT packet text or SOFT directive ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        }
+      ],
+      "novel_this_round": 18,
+      "registry_total": 18,
+      "open_crit_high": 2,
+      "unverified_critical": 0,
+      "models_responded": [
+        "CC2",
+        "DeepSeek",
+        "Codex",
+        "Gemini",
+        "ChatGPT"
+      ],
+      "elapsed_s": 404.3,
+      "gamma": 0.0,
+      "gamma_all": 0.0,
+      "gamma_critical": 0.0,
+      "rho": 1.0,
+      "rho_avg": 1.0,
+      "verification": {
+        "skipped": true,
+        "reason": "round 0 < 6"
+      },
+      "sk_pipeline": {
+        "round": 0,
+        "evaluated": 17,
+        "admissible": 17,
+        "rejected": 0,
+        "escalated": 0,
+        "results": {
+          "C0001": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0002": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0005": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "6 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0006": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "6 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0007": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0008": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0009": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0010": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0011": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0012": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0013": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0014": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0015": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0016": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0017": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0018": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 0,
+        "open_ch": 2,
+        "contested": 0,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 0 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 38,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 18,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": {
+        "per_model_count": {
+          "Gemini": 49
+        },
+        "stats": {
+          "count": 49.0,
+          "pairs": 1176.0,
+          "mean_pairwise_jaccard": 0.4558,
+          "max_pairwise_jaccard": 1.0,
+          "template_collapse_risk": 0.0
+        },
+        "cross_model_only": {
+          "count": 1.0,
+          "pairs": 0.0,
+          "mean_pairwise_jaccard": 0.0,
+          "max_pairwise_jaccard": 0.0,
+          "template_collapse_risk": 0.0
+        }
+      },
+      "recidivism_hits": []
+    },
+    {
+      "round": 1,
+      "type": "adaptive",
+      "findings_count": 11,
+      "findings": [
+        {
+          "finding_id": "CC2_UNSTRUCTURED",
+          "model_id": "CC2",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "CC2_F005 falsifier confirmed.\n\n---\n\n## GLOBAL P-PASS (Extended Falsification)\n\nPass 1: Cross-checking all findings for contradictions.\n\n- C0001 (pruning counterproductive) and C0004/C0018 (same root cause) are consistent. The fix for C0004/C0018 has been applied (`r=-1`). C0001 remains open — likely its proposed fix differs. No contradiction.\n- C0002 (situation mutation) is independent of all other findings. No interaction.\n- CC2_F005 (false positive HARD classification) interacts with C0008 (do",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "DeepSeek_UNSTRUCTURED",
+          "model_id": "DeepSeek",
+          "flaw_class": 1,
+          "severity": 0.3,
+          "description": "### SCHEMA FEEDBACK RESPONSE\n\nDeepSeek_F001 (coherence budget density sign error)  \n- Schema flagged: DUPLICATE (cosine 0.73 to CC2_F001), ADMISSIBILITY FAIL (missing S_min, G‑completeness, d_tool, σ_measured, q_retest)  \n- Action: ADD_ADMISSIBILITY_OR_WITHDRAW  \n- Resolution: The finding has been settled as canonical C0004 (CONFIRMED, merged from multiple contributions). I withdraw the standalone DeepSeek_F001 and issue `MERGE DeepSeek_F001 <- C0004`. The missing admissibility blocks are now pr",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F003",
+          "model_id": "ChatGPT",
+          "flaw_class": 1,
+          "severity": 0.75,
+          "description": "FINDING_ID: ChatGPT_F003  \nSEVERITY: 0.75  \nFLAW_CLASS: 1  \nABSTRACTION_INDEX: 0.45  \n\n### FIND\n\nCONFIRM C0001 — `_prune_for_coherence()` is counterproductive under its own density metric.\n\nLocation: ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F001",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.7,
+          "description": "FINDING_ID: ChatGPT_F001  \nSEVERITY: 0.70  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.55  \n\n### FIND\n\nCONFIRM C0002 — `compose()` mutates caller-supplied `situation` packets in place and applies phenotype ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "ChatGPT_F002",
+          "model_id": "ChatGPT",
+          "flaw_class": 5,
+          "severity": 0.5,
+          "description": "FINDING_ID: ChatGPT_F002  \nSEVERITY: 0.50  \nFLAW_CLASS: 5  \nABSTRACTION_INDEX: 0.25  \n\n### FIND\n\nCONFIRM C0003 — `_compute_cid()` is not content-addressed. It hashes packet text length rather than pac",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": ""
+        },
+        {
+          "finding_id": "Codex_F001",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.9,
+          "description": "Canonical verdict: CONFIRM C0001.\n\nLocation: `bench/cdsfl_registry/composer.py::_prune_for_coherence()`.\n\nThe function tries to lower:\ndensity = constraint_count / token_estimate\nby pruning packet text. But `constraint_count` is computed from the TOML policy and is independent of packet text:\nconstraint_count = _count_constraints(policy)\nWhen pruning removes text, `token_estimate` decreases while `constraint_count` stays fixed. Therefore the ratio increases, not decreases.\n\nConcrete evidence fro",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Codex_F002",
+          "model_id": "Codex",
+          "flaw_class": 2,
+          "severity": 0.7,
+          "description": "Canonical verdict: CONFIRM C0002.\n\nLocation: `bench/cdsfl_registry/composer.py::compose()`, situation handling:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\nThe function mutates the caller-owned `DirectivePacket` passed as `situation`. This violates the function’s own public contract:\n- Pure: no side effects, no state mutation\nConcrete evidence from the real target module:\npacket.text before compose = \"Example:\\nthis shoul",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Codex_F003",
+          "model_id": "Codex",
+          "flaw_class": 5,
+          "severity": 0.5,
+          "description": "Canonical verdict: CONFIRM C0003.\n\nLocation: `bench/cdsfl_registry/composer.py::_compute_cid()`:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nThe CID uses only `layer`, `name`, text length, and model. ",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "bench/cdsfl_registry/composer.py"
+        },
+        {
+          "finding_id": "Gemini_F008",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "`_block_is_hard` fails to detect HARD markers if they are adjacent to punctuation. It pads the block with spaces and checks for exact substring matches like `\" MUST \"`. If the text is `\"You MUST: do this.\"`, the padded uppercase string is `\" YOU MUST: DO THIS. \"`, which does not contain `\" MUST \"` because of the colon.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "_HARD_BLOCK_MARKERS = ("
+        },
+        {
+          "finding_id": "Gemini_F009",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 0.8,
+          "description": "`_directive_topic_and_stance` checks for verbosity keywords (\"minimal\", \"concise\", etc.) but ignores negations (\"do not\", \"avoid\").",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):"
+        },
+        {
+          "finding_id": "Gemini_F010",
+          "model_id": "Gemini",
+          "flaw_class": 1,
+          "severity": 1.0,
+          "description": "`_apply_phenotype_transform` destroys all newlines in code extracts when `format_style` is \"concise\" or \"minimal\". In step 5 (Collapse multi-line directives), blocks starting with `===` (like `=== CODE EXTRACTS ===`) fall into the `else` branch, which joins all lines with spaces and strips whitespace.",
+          "verified": false,
+          "escalated": false,
+          "origin_type": "model",
+          "source_ref": "",
+          "target_file": "# --- 5. Collapse multi-line directives to single-line ---"
+        }
+      ],
+      "novel_this_round": 5,
+      "registry_total": 23,
+      "open_crit_high": 0,
+      "unverified_critical": 2,
+      "models_responded": [
+        "CC2",
+        "DeepSeek",
+        "ChatGPT",
+        "Codex",
+        "Gemini"
+      ],
+      "elapsed_s": 528.7,
+      "gamma": 0.0,
+      "gamma_all": 0.0,
+      "gamma_critical": 0.0,
+      "rho": 0.4545,
+      "rho_avg": 0.7273,
+      "verification": {
+        "skipped": true,
+        "reason": "round 1 < 6"
+      },
+      "sk_pipeline": {
+        "round": 1,
+        "evaluated": 4,
+        "admissible": 1,
+        "rejected": 3,
+        "escalated": 0,
+        "results": {
+          "C0003": {
+            "sk": 1.0,
+            "A": 1,
+            "E": 1.0,
+            "tristate": "ADMISSIBLE",
+            "blocks_parsed": 1,
+            "blocks_applied": 1,
+            "gate_details": {
+              "g1_ast": {
+                "score": 1,
+                "detail": "AST parse succeeded"
+              },
+              "g2_compile": {
+                "score": 1,
+                "detail": "py_compile succeeded"
+              },
+              "e2_regression": {
+                "score": 1.0,
+                "detail": "283/283 passed (sandbox)"
+              },
+              "e3_ruff": {
+                "score": 1.0,
+                "detail": "7 total, 0 new (baseline: 7)"
+              },
+              "e4_bandit": {
+                "score": 1.0,
+                "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+              }
+            },
+            "s_star": 0.0,
+            "passes_threshold": true,
+            "R_old": 0.5,
+            "R_new": 0.3666666666666667
+          },
+          "C0021": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 1,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no_blocks_for_target"
+            }
+          },
+          "C0022": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 1,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no_blocks_for_target"
+            }
+          },
+          "C0023": {
+            "sk": 0.0,
+            "A": 0.0,
+            "E": 0.0,
+            "tristate": "REJECTED",
+            "blocks_parsed": 1,
+            "blocks_applied": 0,
+            "gate_details": {
+              "error": "no_blocks_for_target"
+            }
+          }
+        }
+      },
+      "stall_detector": {
+        "round": 1,
+        "open_ch": 0,
+        "contested": 2,
+        "gamma": 0.0,
+        "stalled": false,
+        "tier": "none",
+        "terminate": false,
+        "reason": "round 1 < 15"
+      },
+      "shadow_cells": {
+        "macrophage": {
+          "observations": 0,
+          "anomalies": 0,
+          "pipeline_modified": false,
+          "mode": "patrol",
+          "verdicts_received": 25,
+          "observation_details": []
+        },
+        "stage6_calibration": {
+          "findings_assessed": 11,
+          "mean_nu_k_proxy": 0.5,
+          "mean_c_ext": 0.0,
+          "mean_delta": 0.0
+        }
+      },
+      "cross_model_diversity": null,
+      "recidivism_hits": []
+    }
+  ],
+  "budget_extended": true,
+  "total_findings": 29,
+  "total_rounds": 2,
+  "total_elapsed_s": 2162.3,
+  "end_time": "2026-06-06T19:25:44.035265+00:00",
+  "gamma_history": [
+    0.0,
+    0.0
+  ],
+  "gamma_all_history": [
+    0.0,
+    0.0
+  ],
+  "gamma_critical_history": [
+    0.0,
+    0.0
+  ],
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.9,
+        "description": "`_prune_for_coherence()` (line ~510) is counterproductive. It removes SOFT text to lower constraint density, but density = `_count_constraints(policy)` / `token_estimate`. `_count_constraints` counts from the TOML policy dict (fixed, independent of packet text). Removing text shrinks `token_estimate` while `constraint_count` stays constant, so density increases after every prune. The early-exit condition `if density <= budget` can never become true through pruning — the function always exhausts ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _count_directive_blocks(packets: list[DirectivePacket]) -> int:\n    \"\"\"Count directive blocks across all packets (text-based constraint count).\"\"\"\n    return sum(len(_split_packet_directives(p.text)) for p in packets)\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_prune_for_coherence()` is counterproductive under its own density metric."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_prune_for_coherence()` is counterproductive under the implemented density metric. Tool receipt: real module call produced `pruned=['soft']`, initial density `0.01`, post-prune density `0.04`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.7,
+        "description": "`compose()` (line ~660) mutates the caller's `situation` DirectivePacket in-place via `situation.text = _apply_phenotype_transform(situation.text, transform)`. The docstring claims the function is \"Pure: no side effects, no state mutation.\" When the same situation packet is reused across multiple model dispatches (the primary multi-model confer use case), each subsequent call receives already-transformed text.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation = replace(\n            situation,\n            text=_apply_phenotype_transform(situation.text, transform),\n            tags=set(situation.tags),\n        )\n        packets.append(situation)\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "UNTOOLABLE",
+        "status": "UNCONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`compose()` mutates caller-supplied `situation` packets in place and applies phenotype transforms to HARD situation packets."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`compose()` mutates caller-owned `situation` packets. Tool receipt: real `compose(\"software\", \"codex_5_3\", situation=packet)` changed `packet.text`."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": true,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.5,
+        "description": "`_compute_cid()` hashes `f\"{p.layer}:{p.name}:{len(p.text)}\"` — it uses text *length*, not text *content*. Two compositions with identical packet names and layers but completely different directive content produce the same CID if text lengths match. The CID is described as a \"deterministic composition identity hash\" for provenance attribution.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    h = hashlib.sha256()\n    for p in packets:\n        h.update(f\"{p.layer}:{p.name}:\".encode())\n        h.update(p.text.encode())\n        h.update(b\"|\")\n    h.update(f\"model:{model}\".encode())\n    return h.hexdigest()[:16]\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_compute_cid()` is not content-addressed. It hashes packet text length rather than packet text content."
+          },
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": "`_compute_cid()` is not content-addressed. Tool receipt: real `_compute_cid()` returned identical CIDs for `\"abc\"` and `\"xyz\"` with same layer/name/model."
+          },
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 0.75,
+        "description": "FINDING_ID: F001\nSEVERITY: 0.75\nFIND: `_prune_for_coherence()` uses a constant `constraint_count`, causing density to increase rather than decrease after pruning.\nFALSIFIER:\nimport sys\nfrom pathlib im",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))\nfrom bench.cdsfl_registry.composer import (\n    DirectivePacket,\n    _prune_for_coherence,\n    _count_constraints,\n)\n\npolicy = {\"constraints\": {f\"c{i}\": True for i in range(20)}}\n\npackets = [\n    DirectivePacket(\n        layer=\"universal\", name=\"core\", text=\"HARD TEXT \" * 100,\n        constraint_class=\"HARD\"\n    ),\n    DirectivePacket(\n        layer=\"domain\", name=\"domain_packet\", text=\"SOFT TEXT \" * 300,\n        constraint_class=\"SOFT\", domain=\"test\"\n    ),\n]\nbudget = 0.015\n\ninitial_chars = sum(len(p.text) for p in packets)\ninitial_density = _count_constraints(policy) / max(initial_chars // 4, 1)\n\npruned_packets, _ = _prune_for_coherence(packets, policy, budget)\n\npruned_chars = sum(len(p.text) for p in pruned_packets)\npost_density = _count_constraints(policy) / max(pruned_chars // 4, 1)\n\nif post_density > initial_density:\n    print(\"FALSIFIED: pruning increased constraint density\")\n    raise AssertionError(\"FALSIFIED\")\nelse:\n    sys.exit(0)",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.92,
+        "description": "Final global length cap raw-truncates rendered directive text after packet-level safety checks.\n\nLocation: `compose()`, final length cap:\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\nEvidence: this code slices the fully rendered string without checking packet boundaries or `DirectivePacket.constraint_class`. A HARD ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\n==== REPLACE\n# Apply global phenotype length cap without truncating HARD packets.\n    # Raw string slicing can cut a HARD directive mid-sentence, so only whole\n    # SOFT packets may be removed here. If HARD content alone cannot fit, fail\n    # loudly rather than silently weakening the directive set.\n    if len(rendered) > transform.max_directive_chars:\n        kept_packets = list(packets)\n\n        for idx in range(len(kept_packets) - 1, -1, -1):\n            packet = kept_packets[idx]\n            if packet.constraint_class == \"HARD\" or packet.layer == \"universal\":\n                continue\n\n            pruned_soft.append(packet.name)\n            del kept_packets[idx]\n            rendered = _render_directive_text(kept_packets)\n            if len(rendered) <= transform.max_directive_chars:\n                packets = kept_packets\n                break\n\n        if len(rendered) > transform.max_directive_chars:\n            hard_rendered = _render_directive_text(\n                [p for p in kept_packets if p.constraint_class == \"HARD\"]\n            )\n            if len(hard_rendered) > transform.max_directive_chars:\n                raise PolicyViolationError(\n                    \"HARD directive content exceeds phenotype length cap: \"\n                    f\"{len(hard_rendered)} > {transform.max_directive_chars}\"\n                )\n            raise PolicyViolationError(\n                \"Directive set exceeds phenotype length cap after all SOFT \"\n                f\"packets were removed: {len(rendered)} > \"\n                f\"{transform.max_directive_chars}\"\n            )\n>>>>",
+        "falsifier_code": "import bench.cdsfl_registry.composer as c\n\norig_load_universal = c._load_universal_directive\norig_load_domain = c._load_domain_directive\norig_check = c._check_monotonicity\norig_transform = c.PHENOTYPE_TRANSFORMS.get(\"falsifier_model\")\n\ntry:\n    c.PHENOTYPE_TRANSFORMS[\"falsifier_model\"] = c.PhenotypeTransform(\n        max_directive_chars=100,\n        format_style=\"full\",\n    )\n\n    c._load_universal_directive = lambda model=None: c.DirectivePacket(\n        layer=\"universal\",\n        name=\"u\",\n        text=\"U\" * 80,\n        constraint_class=\"HARD\",\n    )\n    c._load_domain_directive = lambda domain, variant=None: None\n    c._check_monotonicity = lambda policy, context: None\n\n    import bench.cdsfl_registry.registry as r\n    orig_policy = r.load_effective_policy\n    r.load_effective_policy = lambda domain, model: {\"constraints\": {}}\n\n    hard_situation = c.DirectivePacket(\n        layer=\"situation\",\n        name=\"hard_situation\",\n        text=\"HARD_SITUATION_START \" + (\"S\" * 200),\n        constraint_class=\"HARD\",\n    )\n\n    result = c.compose(\n        task_domain=\"software\",\n        model=\"falsifier_model\",\n        situation=hard_situation,\n    )\n\n    if \"[... truncated for model capacity]\" in result.rendered_text:\n        print(\"FALSIFIED: final rendered prompt was raw-truncated after composition\")\nfinally:\n    c._load_universal_directive = orig_load_universal\n    c._load_domain_directive = orig_load_domain\n    c._check_monotonicity = orig_check\n    if orig_transform is None:\n        c.PHENOTYPE_TRANSFORMS.pop(\"falsifier_model\", None)\n    else:\n        c.PHENOTYPE_TRANSFORMS[\"falsifier_model\"] = orig_transform\n    try:\n        r.load_effective_policy = orig_policy\n    except NameError:\n        pass",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "6 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.88,
+        "description": "HARD-vs-HARD conflicts are silently resolved by priority instead of rejected.\n\nLocation: `resolve_layer_conflicts()` conflict loop:\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins; else higher layer wins; \"\n                        \"same-layer tie goes to more specific packet.\"\n                    ),\n                ))\n                losing = True\n                break\n==== REPLACE\nfor winner in kept:\n            winner_topic, winner_stance = _directive_topic_and_stance(winner[\"text\"])\n            if winner_topic == topic and winner_stance != stance:\n                if winner[\"hard\"] and entry[\"hard\"]:\n                    raise PolicyViolationError(\n                        \"Unresolvable HARD/HARD directive conflict on \"\n                        f\"{topic!r}: {winner['id']} conflicts with \"\n                        f\"{entry['id']}\"\n                    )\n\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins over SOFT; SOFT conflicts are resolved by \"\n                        \"layer priority and specificity. HARD/HARD conflicts \"\n                        \"are rejected.\"\n                    ),\n                ))\n                losing = True\n                break\n>>>>",
+        "falsifier_code": "import bench.cdsfl_registry.composer as c\n\npackets = [\n    c.DirectivePacket(\n        layer=\"universal\",\n        name=\"hard_high\",\n        text=\"Provide detailed formal proof.\",\n        constraint_class=\"HARD\",\n    ),\n    c.DirectivePacket(\n        layer=\"situation\",\n        name=\"hard_low\",\n        text=\"Use minimal concise output.\",\n        constraint_class=\"HARD\",\n    ),\n]\n\nrendered = c._render_directive_text(packets)\ncomposed = c.ComposedDirectiveSet(\n    packets=packets,\n    rendered_text=rendered,\n    policy={\"constraints\": {}},\n    cid=\"x\",\n    constraint_count=0,\n    token_estimate=max(len(rendered) // 4, 1),\n    constraint_density=0.0,\n    coherence_budget=1.0,\n    pruned_soft=[],\n    manifest={\"model\": \"test\"},\n)\n\ntry:\n    resolved, conflicts = c.resolve_layer_conflicts(composed)\nexcept c.PolicyViolationError:\n    pass\nelse:\n    if conflicts and len(resolved.packets) < len(packets):\n        print(\"FALSIFIED: HARD/HARD conflict silently dropped one directive\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "6 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.78,
+        "description": "`_compute_cid()` is not content-addressed; equal-length directive text changes collide.\n\nLocation:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence: the CID preimage includes only layer, name, tex",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic content-addressed composition identity hash.\"\"\"\n    components = [\n        {\n            \"layer\": p.layer,\n            \"name\": p.name,\n            \"text\": p.text,\n            \"constraint_class\": p.constraint_class,\n            \"domain\": p.domain,\n            \"model\": p.model,\n            \"tags\": sorted(p.tags),\n        }\n        for p in packets\n    ]\n    raw = json.dumps(\n        {\"model\": model, \"packets\": components},\n        ensure_ascii=False,\n        sort_keys=True,\n        separators=(\",\", \":\"),\n    )\n    return hashlib.sha256(raw.encode(\"utf-8\")).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "import bench.cdsfl_registry.composer as c\n\np1 = c.DirectivePacket(\n    layer=\"domain\",\n    name=\"same\",\n    text=\"MUST use monotonic clocks.\",\n    constraint_class=\"HARD\",\n)\n\np2 = c.DirectivePacket(\n    layer=\"domain\",\n    name=\"same\",\n    text=\"MUST use nonmonotonic clk\",\n    constraint_class=\"HARD\",\n)\n\nif len(p1.text) != len(p2.text):\n    p2.text = p2.text[: len(p1.text)].ljust(len(p1.text), \".\")\n\ncid1 = c._compute_cid([p1], \"model\")\ncid2 = c._compute_cid([p2], \"model\")\n\nif p1.text != p2.text and len(p1.text) == len(p2.text) and cid1 == cid2:\n    print(\"FALSIFIED: CID ignores equal-length text changes\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Codex",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.9,
+        "description": "Domain directives containing HARD language are loaded as SOFT and can be whole-packet pruned.\n\nLocations:\n\n`_load_domain_directive()`:\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n`_prune_for_coherence()` whole-packet pruning:\n# Pass 2: whole-packet pruning if still over budget\n    keep_indices = set(range(len(mutable_packets)))\n    for id",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n==== REPLACE\ntext = path.read_text(encoding=\"utf-8\")\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=text,\n        constraint_class=\"HARD\" if _block_is_hard(text) else \"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n>>>>",
+        "falsifier_code": "import bench.cdsfl_registry.composer as c\n\nuniversal = c.DirectivePacket(\n    layer=\"universal\",\n    name=\"u\",\n    text=\"universal hard\",\n    constraint_class=\"HARD\",\n)\n\ndomain = c.DirectivePacket(\n    layer=\"domain\",\n    name=\"domain_with_hard_block\",\n    text=\"- Mutating endpoints MUST use idempotency keys.\",\n    constraint_class=\"SOFT\",\n)\n\npolicy = {\n    \"constraints\": {f\"c{i}\": True for i in range(20)},\n    \"verification\": {},\n    \"protocol\": {},\n}\n\npackets, pruned = c._prune_for_coherence(\n    [universal, domain],\n    policy,\n    budget=0.0001,\n)\n\nnames = [p.name for p in packets]\nif \"domain_with_hard_block\" not in names and \"domain_with_hard_block\" in pruned:\n    print(\"FALSIFIED: SOFT-classified packet containing MUST was whole-pruned\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 1.0,
+        "description": "`_prune_packet_directives` fails to prune fully-soft packets. When all directives in a packet are SOFT and removed to meet the budget, `pruned_text` becomes `\"\"`. The return statement `text=pruned_text if pruned_text else packet.text` evaluates to `packet.text`, restoring the packet to its full original length.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\npruned_text = \"\\n\\n\".join(b for b, _ in retained).strip()\n    return replace(\n        packet,\n        text=pruned_text if pruned_text else packet.text,\n        tags=set(packet.tags) | {\"intra_pruned\"},\n    )\n==== REPLACE\npruned_text = \"\\n\\n\".join(b for b, _ in retained).strip()\n    return replace(\n        packet,\n        text=pruned_text,\n        tags=set(packet.tags) | {\"intra_pruned\"},\n    )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_packet_directives\npacket = DirectivePacket(layer=\"domain\", name=\"test\", text=\"1. Soft one.\\n\\n2. Soft two.\", constraint_class=\"SOFT\")\npruned = _prune_packet_directives(packet, 5)\nassert pruned.text == \"1. Soft one.\\n\\n2. Soft two.\", \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 1.0,
+        "description": "`_count_constraints` severely undercounts constraints by only checking `constraints`, `verification`, and `protocol` sections of the policy, completely ignoring `anti_deference`, `convergence`, `divergence`, `feedback_channel`, and `refinements`.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    for section_data in policy.values():\n        if not isinstance(section_data, dict):\n            continue\n        for v in section_data.values():\n            if v is not False and v is not None:\n                count += 1\n    return count\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _count_constraints\npolicy = {\"constraints\": {\"a\": True}, \"divergence\": {\"enabled\": True}}\ncount = _count_constraints(policy)\nassert count == 1, \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 4,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 1.0,
+        "description": "`resolve_layer_conflicts` reorders directives by priority. It rebuilds packets by iterating over `kept`, which is sorted by priority (HARD first, then SOFT).",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Rebuild packets from kept directives\n    kept_ids = {e[\"id\"] for e in kept}\n    rebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        kept_texts = [\n            e[\"text\"] for e in kept\n            if e[\"packet_index\"] == packet_index and e[\"id\"] in kept_ids\n        ]\n        if not kept_texts:\n            continue\n        rebuilt_packets.append(DirectivePacket(\n==== REPLACE\n# Rebuild packets from kept directives\n    kept_ids = {e[\"id\"] for e in kept}\n    rebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        original_directives = _split_packet_directives(packet.text)\n        kept_texts = []\n        for directive_index, text in enumerate(original_directives):\n            if f\"{packet.layer}:{packet.name}:{directive_index}\" in kept_ids:\n                kept_texts.append(text)\n        \n        if not kept_texts:\n            continue\n        rebuilt_packets.append(DirectivePacket(\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, ComposedDirectiveSet, resolve_layer_conflicts\npacket = DirectivePacket(layer=\"domain\", name=\"test\", text=\"1. First soft.\\n\\n2. Second HARD constraint.\\n\\n3. Third soft.\", constraint_class=\"SOFT\")\ncomposed = ComposedDirectiveSet(packets=[packet], rendered_text=\"\", policy={}, cid=\"\", constraint_count=0, token_estimate=1, constraint_density=0, coherence_budget=1.0, pruned_soft=[], manifest={})\nresolved, _ = resolve_layer_conflicts(composed)\nassert resolved.packets[0].text == \"2. Second HARD constraint.\\n1. First soft.\\n3. Third soft.\", \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 1.0,
+        "description": "Phenotype transform swallows directives after examples. The `strip_examples` logic sets `skipping = True` and only stops on an empty line or a markdown header. If an example is immediately followed by the next numbered directive (no blank line), the next directive is swallowed.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif skipping and (\n                not line.strip()\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n            ):\n                skipping = False\n==== REPLACE\nif skipping and (\n                not line.strip()\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n                or _starts_new_block(line.strip())\n            ):\n                skipping = False\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\ntext = \"1. Rule one.\\nExample: foo\\n2. Rule two.\\n3. Rule three.\"\ntransform = PhenotypeTransform(strip_examples=True)\nresult = _apply_phenotype_transform(text, transform)\nassert \"2. Rule two.\" not in result, \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 1.0,
+        "description": "Phenotype transform leaves dangling rationale fragments. The `strip_rationale` logic only skips the specific line starting with \"why:\", \"rationale:\", etc. If the rationale spans multiple lines, the subsequent lines are kept.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# --- 2. Strip rationale ---\n    if transform.strip_rationale:\n        lines = text.split(\"\\n\")\n        filtered = []\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"why:\", \"rationale:\", \"motivation:\", \"reason:\")\n            ):\n                continue\n            filtered.append(line)\n        text = \"\\n\".join(filtered)\n==== REPLACE\n# --- 2. Strip rationale ---\n    if transform.strip_rationale:\n        lines = text.split(\"\\n\")\n        filtered = []\n        skipping = False\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"why:\", \"rationale:\", \"motivation:\", \"reason:\")\n            ):\n                skipping = True\n                continue\n            if skipping and (\n                not line.strip()\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n                or _starts_new_block(line.strip())\n            ):\n                skipping = False\n            if not skipping:\n                filtered.append(line)\n        text = \"\\n\".join(filtered)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\ntext = \"1. Rule one.\\nWhy: Because it is\\nbetter this way.\\n\\n2. Rule two.\"\ntransform = PhenotypeTransform(strip_rationale=True)\nresult = _apply_phenotype_transform(text, transform)\nassert \"better this way.\" in result, \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F006"
+        ],
+        "severity": 1.0,
+        "description": "`_compute_cid` uses length instead of hash for text. It uses `len(p.text)` to represent the packet's content in the hash (`f\"{p.layer}:{p.name}:{len(p.text)}\"`).",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{hashlib.sha256(p.text.encode()).hexdigest()[:8]}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _compute_cid\np1 = DirectivePacket(\"domain\", \"test\", \"abc\", \"SOFT\")\np2 = DirectivePacket(\"domain\", \"test\", \"def\", \"SOFT\")\ncid1 = _compute_cid([p1], \"model\")\ncid2 = _compute_cid([p2], \"model\")\nassert cid1 == cid2, \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F007"
+        ],
+        "severity": 1.0,
+        "description": "`_semantically_duplicate` falsely deduplicates short phrases. It drops short directives if their tokens happen to be contained in a long directive, regardless of the size disparity (`intersection / smaller >= 0.95`).",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Containment check: shorter contained in longer\n    smaller = min(len(left_tokens), len(right_tokens))\n    if smaller > 0 and intersection / smaller >= 0.95:\n        return True\n    return False\n==== REPLACE\n# Containment check: shorter contained in longer\n    smaller = min(len(left_tokens), len(right_tokens))\n    larger = max(len(left_tokens), len(right_tokens))\n    if smaller > 0 and intersection / smaller >= 0.95 and smaller / larger >= 0.4:\n        return True\n    return False\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _semantically_duplicate\nshort = \"Be concise.\"\nlong = \"Be concise when writing the documentation, ensuring that all examples are clear, well-formatted, and easy to understand for new developers.\"\nassert _semantically_duplicate(short, long) is True, \"Defect not present\"\nprint(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.9,
+        "description": "`bench/cdsfl_registry/composer.py::compose()` violates the composer’s HARD-preservation, fail-loud, and purity contracts for situation packets.\n\nThere are two coupled mechanisms at the same layer boundary:\n\n1. Caller-provided `situation` packets are mutated and phenotype-transformed unconditionally:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\n2. The final rendered prompt is blindly truncated by raw character count:\n# Appl",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Apply phenotype transform to domain packet text (NOT to universal — HARD).\n    for packet in packets:\n        if packet.layer == \"domain\":\n            packet.text = _apply_phenotype_transform(packet.text, transform)\n\n    # --- Layer 4: Situation (per-dispatch) ---\n    if situation is None and review_target:\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n    if situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\n# Apply phenotype transforms only to SOFT packet copies. HARD packets are\n    # preserved exactly, and caller-owned packets are never mutated.\n    transformed_packets: list[DirectivePacket] = []\n    for packet in packets:\n        if packet.layer == \"domain\" and packet.constraint_class != \"HARD\":\n            transformed_packets.append(\n                replace(packet, text=_apply_phenotype_transform(packet.text, transform))\n            )\n        else:\n            transformed_packets.append(replace(packet))\n    packets = transformed_packets\n\n    # --- Layer 4: Situation (per-dispatch) ---\n    if situation is None and review_target:\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n    if situation:\n        if situation.constraint_class == \"HARD\":\n            packets.append(replace(situation))\n        else:\n            packets.append(\n                replace(\n                    situation,\n                    text=_apply_phenotype_transform(situation.text, transform),\n                )\n            )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import compose, DirectivePacket, PolicyViolationError\n\n# Probe 1: a HARD situation packet must be preserved exactly and caller-owned input must not mutate.\nhard = DirectivePacket(\n    layer=\"situation\",\n    name=\"hard_situation_probe\",\n    text=\"Why: THIS HARD RATIONALE MUST REMAIN.\\nMUST keep this HARD directive exactly.\",\n    constraint_class=\"HARD\",\n)\noriginal = hard.text\nresult = compose(\"software\", \"deepseek_v3\", situation=hard)\nrendered_packet = next(p for p in result.packets if p.name == \"hard_situation_probe\")\nif hard.text != original or rendered_packet.text != original:\n    print(\"FALSIFIED: compose transformed or mutated a HARD situation packet\")\nelse:\n    # Probe 2: if HARD content alone exceeds the model cap, compose must fail loud;\n    # returning raw character truncation silently removes HARD constraints.\n    huge_hard = DirectivePacket(\n        layer=\"situation\",\n        name=\"huge_hard_probe\",\n        text=\"MUST preserve this HARD directive exactly.\\n\" * 5000,\n        constraint_class=\"HARD\",\n    )\n    try:\n        huge_result = compose(\"software\", \"deepseek_v3\", situation=huge_hard)\n    except PolicyViolationError:\n        pass\n    else:\n        if huge_result.rendered_text.endswith(\"[... truncated for model capacity]\"):\n            print(\"FALSIFIED: compose globally truncated HARD directive text instead of failing loud\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.75,
+        "description": "`bench/cdsfl_registry/composer.py::_compute_cid()` does not identify directive content. It hashes only packet layer, name, text length, and model:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nEvidence:",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\n\n    The CID identifies directive content, not just packet names and lengths.\n    Same-length text changes are included via a stable text digest.\n    \"\"\"\n    components = []\n    for packet in packets:\n        components.append({\n            \"layer\": packet.layer,\n            \"name\": packet.name,\n            \"constraint_class\": packet.constraint_class,\n            \"domain\": packet.domain,\n            \"model\": packet.model,\n            \"tags\": sorted(packet.tags),\n            \"text_len\": len(packet.text),\n            \"text_sha256\": hashlib.sha256(\n                packet.text.encode(\"utf-8\")\n            ).hexdigest(),\n        })\n    raw = json.dumps(\n        {\"model\": model, \"packets\": components},\n        ensure_ascii=False,\n        sort_keys=True,\n        separators=(\",\", \":\"),\n    )\n    return hashlib.sha256(raw.encode(\"utf-8\")).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _compute_cid\n\na = [DirectivePacket(layer=\"situation\", name=\"same_name\", text=\"Review A\", constraint_class=\"SOFT\")]\nb = [DirectivePacket(layer=\"situation\", name=\"same_name\", text=\"Review B\", constraint_class=\"SOFT\")]\nif _compute_cid(a, \"opus_4_6\") == _compute_cid(b, \"opus_4_6\"):\n    print(\"FALSIFIED: CID ignores same-length directive content changes\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.65,
+        "description": "`bench/cdsfl_registry/composer.py::_prune_for_coherence()` uses a density formula that pruning cannot improve under its current numerator.\n\nThe function computes:\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nThen, after pruning text, it recomputes:\nremaining_tokens = max(remaining_chars // 4, 1)\ndensity = constraint_count / remaining_tokens\nBut `constraint_count` is fixed from the TOML policy and is not reduced when SOFT packet text or SOFT directive ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _count_packet_constraints(packets: list[DirectivePacket]) -> int:\n    \"\"\"Estimate active rendered constraints from retained directive blocks.\n\n    Coherence pruning removes rendered SOFT blocks, so the density numerator\n    must be recomputed from the currently retained packets rather than held\n    constant from the policy alone.\n    \"\"\"\n    count = 0\n    for packet in packets:\n        blocks = _split_packet_directives(packet.text)\n        count += max(len(blocks), 1) if packet.text.strip() else 0\n    return count\n\n\ndef _effective_constraint_count(\n    policy: dict[str, Any],\n    packets: list[DirectivePacket],\n) -> int:\n    \"\"\"Count policy constraints plus currently rendered packet constraints.\"\"\"\n    return _count_constraints(policy) + _count_packet_constraints(packets)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_for_coherence, _count_constraints\n\npolicy = {\"constraints\": {f\"c{i}\": True for i in range(10)}}\npackets = [\n    DirectivePacket(layer=\"universal\", name=\"u\", text=\"HARD MUST stay \" * 40, constraint_class=\"HARD\"),\n    DirectivePacket(layer=\"situation\", name=\"s\", text=(\"soft directive line\\n\\n\" * 100), constraint_class=\"SOFT\"),\n]\nbudget = 0.0001\n\nbefore_tokens = max(sum(len(p.text) for p in packets) // 4, 1)\ncount = _count_constraints(policy)\nbefore_density = count / before_tokens\n\npruned, names = _prune_for_coherence(packets, policy, budget)\n\nafter_tokens = max(sum(len(p.text) for p in pruned) // 4, 1)\nafter_density = count / after_tokens\n\nif names and after_density > before_density:\n    print(\"FALSIFIED: coherence pruning removed text while increasing measured density\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 1,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "CC2_F005 falsifier confirmed.\n\n---\n\n## GLOBAL P-PASS (Extended Falsification)\n\nPass 1: Cross-checking all findings for contradictions.\n\n- C0001 (pruning counterproductive) and C0004/C0018 (same root cause) are consistent. The fix for C0004/C0018 has been applied (`r=-1`). C0001 remains open — likely its proposed fix differs. No contradiction.\n- C0002 (situation mutation) is independent of all other findings. No interaction.\n- CC2_F005 (false positive HARD classification) interacts with C0008 (do",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "### SCHEMA FEEDBACK RESPONSE\n\nDeepSeek_F001 (coherence budget density sign error)  \n- Schema flagged: DUPLICATE (cosine 0.73 to CC2_F001), ADMISSIBILITY FAIL (missing S_min, G‑completeness, d_tool, σ_measured, q_retest)  \n- Action: ADD_ADMISSIBILITY_OR_WITHDRAW  \n- Resolution: The finding has been settled as canonical C0004 (CONFIRMED, merged from multiple contributions). I withdraw the standalone DeepSeek_F001 and issue `MERGE DeepSeek_F001 <- C0004`. The missing admissibility blocks are now pr",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "UNCONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F008"
+        ],
+        "severity": 1.0,
+        "description": "`_block_is_hard` fails to detect HARD markers if they are adjacent to punctuation. It pads the block with spaces and checks for exact substring matches like `\" MUST \"`. If the text is `\"You MUST: do this.\"`, the padded uppercase string is `\" YOU MUST: DO THIS. \"`, which does not contain `\" MUST \"` because of the colon.",
+        "proposed_fix": "<<<< SEARCH _HARD_BLOCK_MARKERS = (\n\" HARD \", \" MUST \", \" NEVER \", \" REQUIRED \",\n    \" NON-NEGOTIABLE \", \" FORBIDDEN \", \" DO NOT \", \" ALWAYS \",\n)\n\n\ndef _block_is_hard(block: str) -> bool:\n    \"\"\"Determine if a directive block contains HARD constraint content.\"\"\"\n    upper = f\" {block.upper()} \"\n    return any(m in upper for m in _HARD_BLOCK_MARKERS)\n==== REPLACE\n_HARD_BLOCK_MARKERS_RE = re.compile(\n    r\"\\b(HARD|MUST|NEVER|REQUIRED|NON-NEGOTIABLE|FORBIDDEN|DO NOT|ALWAYS)\\b\",\n    re.IGNORECASE\n)\n\n\ndef _block_is_hard(block: str) -> bool:\n    \"\"\"Determine if a directive block contains HARD constraint content.\"\"\"\n    return bool(_HARD_BLOCK_MARKERS_RE.search(block))\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _block_is_hard\nif not _block_is_hard(\"You MUST: do this.\"):\n    print(\"FALSIFIED\")\nelse:\n    raise AssertionError(\"Bug not present\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no_blocks_for_target"
+          }
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F009"
+        ],
+        "severity": 0.8,
+        "description": "`_directive_topic_and_stance` checks for verbosity keywords (\"minimal\", \"concise\", etc.) but ignores negations (\"do not\", \"avoid\").",
+        "proposed_fix": "<<<< SEARCH if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\nreturn \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n==== REPLACE\nif any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"verbosity\", \"high\"\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"verbosity\", \"low\"\n        return \"verbosity\", \"high\"\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _directive_topic_and_stance\ntopic, stance = _directive_topic_and_stance(\"Do not use a concise format.\")\nif topic == \"verbosity\" and stance == \"low\":\n    print(\"FALSIFIED\")\nelse:\n    raise AssertionError(\"Bug not present\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no_blocks_for_target"
+          }
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F010"
+        ],
+        "severity": 1.0,
+        "description": "`_apply_phenotype_transform` destroys all newlines in code extracts when `format_style` is \"concise\" or \"minimal\". In step 5 (Collapse multi-line directives), blocks starting with `===` (like `=== CODE EXTRACTS ===`) fall into the `else` branch, which joins all lines with spaces and strips whitespace.",
+        "proposed_fix": "<<<< SEARCH # --- 5. Collapse multi-line directives to single-line ---\nif transform.format_style in (\"concise\", \"minimal\"):\n==== REPLACE\n# --- 5. Collapse multi-line directives to single-line ---\n    if transform.format_style in (\"concise\", \"minimal\") and not text.startswith(\"===\"):\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\ntext = \"=== CODE EXTRACTS ===\\ndef foo():\\n    pass\"\ntransform = PhenotypeTransform(format_style=\"concise\")\nresult = _apply_phenotype_transform(text, transform)\nif \"def foo(): pass\" in result:\n    print(\"FALSIFIED\")\nelse:\n    raise AssertionError(\"Bug not present\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 1,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no_blocks_for_target"
+          }
+        }
+      }
+    },
+    "next_id": 24,
+    "alias_map": {
+      "CC2:CC2_F001": "C0001",
+      "CC2:CC2_F002": "C0002",
+      "CC2:CC2_F003": "C0003",
+      "DeepSeek:DeepSeek_F001": "C0004",
+      "Codex:Codex_F001": "C0005",
+      "Codex:Codex_F002": "C0006",
+      "Codex:Codex_F003": "C0007",
+      "Codex:Codex_F004": "C0008",
+      "Gemini:Gemini_F001": "C0009",
+      "Gemini:Gemini_F002": "C0010",
+      "Gemini:Gemini_F003": "C0011",
+      "Gemini:Gemini_F004": "C0012",
+      "Gemini:Gemini_F005": "C0013",
+      "Gemini:Gemini_F006": "C0014",
+      "Gemini:Gemini_F007": "C0015",
+      "ChatGPT:ChatGPT_F001": "C0016",
+      "ChatGPT:ChatGPT_F002": "C0017",
+      "ChatGPT:ChatGPT_F003": "C0018",
+      "CC2:CC2_UNSTRUCTURED": "C0019",
+      "DeepSeek:DeepSeek_UNSTRUCTURED": "C0020",
+      "Gemini:Gemini_F008": "C0021",
+      "Gemini:Gemini_F009": "C0022",
+      "Gemini:Gemini_F010": "C0023"
+    }
+  },
+  "hil_flags": [],
+  "secondary_route_usage": [],
+  "persistent_empty_flags": []
+}

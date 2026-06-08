@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T221257Z",
+  "phase": "r7",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 615,
+  "response": "FINDING_ID: F016\nSEVERITY: 0.85\nFIND: Universal minimal packet lines not split by _split_packet_directives, causing incomplete cross-layer conflict resolution.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _split_packet_directives, _render_universal_minimal\n\ndef test():\n    minimal_text = _render_universal_minimal()\n    blocks = _split_packet_directives(minimal_text)\n    # Defect exists if the whole text becomes a single block\n    if len(blocks) <= 1:\n        raise AssertionError(\"DEFECT: universal minimal packet is not split into directive blocks\")\n\nif __name__ == \"__main__\":\n    test()\n```",
+  "metadata": {
+    "round": 7,
+    "elapsed": 330.1,
+    "chars": 615,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

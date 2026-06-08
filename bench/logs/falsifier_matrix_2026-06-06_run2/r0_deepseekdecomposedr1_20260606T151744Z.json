@@ -1,0 +1,9 @@
+{
+  "model_label": "deepseekdecomposedr1",
+  "path": "decomposed",
+  "run": 1,
+  "ok": true,
+  "response": "from bench.cdsfl_registry.composer import _extract_hard_behavioural_directives, HARD_BEHAVIOURAL_FALLBACK\n\n# Modified markdown where one of the five Non-Formalisable directives\n# has lost its \"- \" bullet prefix -- a realistic document-edit accident.\nmodified_text = \"\"\"## Non-Formalisable Directives (Prose Only)\n\n- **Push back** on impossible, contradictory, or ill-advised requirements.\n\n- **Default to the simplest sufficient solution.**\n\n- **Do not silently comply** with tangential requests.\n\n**End with a definitive stance** \u2014 what was done, what comes next.\n\n- **Communicate as you would with a serious engineering colleague.**\n\"\"\"\n\nextracted = _extract_hard_behavioural_directives(modified_text)\nfallback_count = len(HARD_BEHAVIOURAL_FALLBACK)\n\nprint(f\"Extracted: {len(extracted)} items\")\nprint(f\"Fallback:  {fallback_count} items\")\nfor i, item in enumerate(extracted):\n    print(f\"  [{i}]: {item[:100]}...\")\n\n# The defect: extraction returns != 5 directives because the bullet parser\n# absorbed the un-prefixed directive into the previous bullet. The regex\n# matched (non-empty section), so the static fallback was never triggered.\nassert len(extracted) != fallback_count, (\n    f\"extraction returned {len(extracted)}, expected {fallback_count}\"\n)\nprint(f\"FALSIFIED: extraction returned {len(extracted)}/{fallback_count} directives without triggering fallback\")",
+  "response_length": 1370,
+  "elapsed_s": 446.1
+}

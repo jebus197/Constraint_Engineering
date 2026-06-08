@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T202856Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 2091,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.90\nFIND: Example‑stripping blindly discards all subsequent lines after an example trigger until a blank line or header, losing non‑example continuation lines.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\n\ntransform = PhenotypeTransform(strip_examples=True)\ntest_input = (\n    \"## Step 1\\n\"\n    \"Example: do something like this\\n\"\n    \"Then you should do that.\\n\"\n)\noutput = _apply_phenotype_transform(test_input, transform)\nassert \"Then you should do that.\" in output, \"FALSIFIED: legitimate content removed\"\n```\n\nFINDING_ID: F002\nSEVERITY: 0.85\nFIND: Pruning logic uses a fixed constraint_count and decreasing token_estimate, making density monotonically increase and causing removal of all SOFT packets.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _prune_for_coherence, DirectivePacket\nfrom bench.cdsfl_registry.policy import DirectivePolicy\n\n# Create a policy with a high number of constraints so that initial density > budget\npolicy = DirectivePolicy()\nConstraint = type(\"Constraint\", (), {\"__init__\": lambda self, desc, cc=\"HARD\": (setattr(self, \"description\", desc), setattr(self, \"constraint_class\", cc))[-1]})\npolicy.constraints = [Constraint(f\"C{i}\") for i in range(100)]\n\n# Packets: one universal HARD, two SOFT packets with minimal text\nu_pkt = DirectivePacket(name=\"universal\", text=\"HARD\", constraint_class=\"HARD\", layer=\"universal\")\nd_pkt = DirectivePacket(name=\"domain\", text=\"SOFT\", constraint_class=\"SOFT\", layer=\"domain\")\ns_pkt = DirectivePacket(name=\"situation\", text=\"SOFT\", constraint_class=\"SOFT\", layer=\"situation\")\npackets = [u_pkt, d_pkt, s_pkt]\n\n# budget low enough so that density > budget even after token reduction\nresult, _ = _prune_for_coherence(packets, policy, budget=0.015)\n\n# Defect: all SOFT packets are pruned even though they could fit\nsoft_remaining = [p for p in result if p.constraint_class == \"SOFT\"]\nif not soft_remaining:\n    print(\"FALSIFIED\")\n    raise AssertionError(\"All SOFT packets removed due to incoherent density metric\")\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 497.6,
+    "chars": 2091,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

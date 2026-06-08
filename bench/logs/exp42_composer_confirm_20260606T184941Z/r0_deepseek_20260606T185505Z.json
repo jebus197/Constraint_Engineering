@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260606T185505Z",
+  "phase": "r0",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1251,
+  "response": "FINDING_ID: F001\nSEVERITY: 0.75\nFIND: `_prune_for_coherence()` uses a constant `constraint_count`, causing density to increase rather than decrease after pruning.\nFALSIFIER:\n```python\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))\nfrom bench.cdsfl_registry.composer import (\n    DirectivePacket,\n    _prune_for_coherence,\n    _count_constraints,\n)\n\npolicy = {\"constraints\": {f\"c{i}\": True for i in range(20)}}\n\npackets = [\n    DirectivePacket(\n        layer=\"universal\", name=\"core\", text=\"HARD TEXT \" * 100,\n        constraint_class=\"HARD\"\n    ),\n    DirectivePacket(\n        layer=\"domain\", name=\"domain_packet\", text=\"SOFT TEXT \" * 300,\n        constraint_class=\"SOFT\", domain=\"test\"\n    ),\n]\nbudget = 0.015\n\ninitial_chars = sum(len(p.text) for p in packets)\ninitial_density = _count_constraints(policy) / max(initial_chars // 4, 1)\n\npruned_packets, _ = _prune_for_coherence(packets, policy, budget)\n\npruned_chars = sum(len(p.text) for p in pruned_packets)\npost_density = _count_constraints(policy) / max(pruned_chars // 4, 1)\n\nif post_density > initial_density:\n    print(\"FALSIFIED: pruning increased constraint density\")\n    raise AssertionError(\"FALSIFIED\")\nelse:\n    sys.exit(0)\n```",
+  "metadata": {
+    "round": 0,
+    "elapsed": 323.3,
+    "chars": 1251,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}
