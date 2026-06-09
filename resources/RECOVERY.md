@@ -1,9 +1,29 @@
 # Recovery Protocol
 
-Last updated: 8 June 2026 13:40 BST
+Last updated: 9 June 2026 23:27 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
+
+## ★ CURRENT STATE (9 June 2026) — convergence LANDMARK achieved
+
+**Read FIRST:** `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md` — the
+master remediation program from the 2026-06-08/09 session, with a verification gate on
+every item.
+
+The chronic non-convergence is **SOLVED and proven live** (commit `375236d`, branch
+`exp39-experimental`): root cause was the cross-round novelty key (model-chosen finding-id →
+re-finds re-counted as new). Fix = key CRITICAL novelty by **code LOCATION** (target-file AST
+symbols), wired into the γ-alt gate behind `location_keyed_convergence` (default-off).
+**Live Exp 42 converged at round 6, series [10,1,5,1,0,0,0], ZERO residual HIL.** gamma is NOT
+demoted — it is the continuous decay-curve diagnostic; the zero-new-critical count is its
+threshold-free convergence endpoint (the same diminishing-returns principle). The fault was
+mechanical, as the founder always maintained.
+
+**Still open (in the program plan, each with a test gate):** ouroboros loop-close (papers→models;
+full-text chain + Sci-Hub already built), Stage-6 calibrator into the live equation, severity
+calibration (never built), directive-pruning panel, macrophage/load-balancer promote-or-retire,
+dm consolidation. The shadow-mode survey (which subsystems are live vs decoration) is in the plan.
 
 ## Minimum Recovery (2 minutes)
 

@@ -408,10 +408,32 @@ class RunnerConfig:
     # writer (with the execute_python tool loop) before the HIL is accepted.
     # Requires falsifier_gate_enabled. Default-off => byte-identical.
     take_up_slack_enabled: bool = False
+    # Code-location novelty SHADOW (2026-06-08). Telemetry-only: computes a per-round
+    # critical-novelty series keyed by target-file code location (the verified fix for the
+    # cross-round dedup failure) ALONGSIDE the live ID-proxy count, logging both. It NEVER
+    # feeds a convergence gate — live-gating promotion is conditional on the semantic-splitter
+    # + null/seeded calibration + a live confirmation run. Default-on (additive telemetry, no
+    # outcome change); set False for strict byte-identical reports.
+    location_shadow_enabled: bool = True
+    # Promote the code-location key from shadow telemetry to the ACTUAL convergence
+    # trigger (2026-06-09, gated default-off). When True, the γ-alt critical-quiescence
+    # gate reads the location-keyed novel-critical series instead of the ID-proxy one,
+    # so a re-found defect under a fresh model id no longer resets the zero-streak. This
+    # does NOT touch gamma: gamma remains the reported decay-curve measure on the same
+    # deduplicated stream; the count is simply the threshold-free detector of that curve's
+    # zero-slope (fully-decayed) endpoint for critical findings. Requires
+    # location_shadow_enabled (the series it consumes). Default-off => byte-identical.
+    location_keyed_convergence: bool = False
     gamma_soft_threshold: float = 0.30
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
     max_contested_rounds: int = 5
+    # Static-queue closure (2026-06-09): the automated loop may converge while handing a
+    # SMALL queue of ladder-exhausted irreducible criticals to the human. A queue larger
+    # than this is treated as a mechanical-failure ALARM (routing/dedup), not genuine
+    # irreducibility, and refuses convergence. For code review, genuinely-irreducible
+    # defects are rare, so the bound is small.
+    max_irreducible_queue: int = 2
     exhausted_round_threshold: int = 8  # rounds stalled before EXHAUSTED bypass
     multiturn_chunk_target: int = 30_000
 
@@ -609,9 +631,30 @@ class FindingRegistry:
         for e in self.entries.values():
             if e.get("status") != "UNCONFIRMED":
                 continue
+            # Static-queue closure (2026-06-09): a critical locked as irreducible AFTER
+            # the full routing ladder was exhausted (no model could write a runnable test)
+            # is HANDED OFF to the human, not "pending verification". It must NOT block the
+            # automated loop forever (else the run hits the round cap instead of converging).
+            # It is counted separately by irreducible_queue_count() and guarded by the
+            # small-queue alarm.
+            if e.get("irreducible_escalation"):
+                continue
             if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
                 count += 1
         return count
+
+    def irreducible_queue_count(self) -> int:
+        """Static HIL queue: criticals locked as irreducible AFTER the full routing
+        ladder was exhausted without any model producing a runnable test. These are
+        handed to the human outside the automated loop (the substrate-agnostic final
+        falsifier). They are excluded from the A4 'unverified pending' blocker so the
+        loop can close around them — BUT a LARGE such queue is a mechanical-failure
+        alarm (routing/dedup), not genuine irreducibility, and refuses convergence."""
+        return sum(
+            1 for e in self.entries.values()
+            if e.get("irreducible_escalation")
+            and (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD
+        )
 
     def contested_count(self, current_round: int, grace_period: int = 2) -> int:
         """Count actively contested non-terminal findings.
@@ -1517,7 +1560,17 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
         else:
-            tally["hil"] += 1  # genuinely-hard: stays escalated -> HIL
+            # Full routing ladder exhausted (no model wrote a runnable test). LOCK this
+            # critical as an irreducible HIL item: handed to the human (the final
+            # falsifier), excluded from the A4 convergence blocker so the loop can close
+            # around a SMALL such queue — guarded by the small-queue alarm.
+            e["irreducible_escalation"] = True
+            e["hil_escalated"] = True
+            e.setdefault(
+                "hil_reason",
+                "routing ladder exhausted (no model produced a runnable test) -> HIL static queue",
+            )
+            tally["hil"] += 1  # genuinely-hard: handed to the HIL static queue
     if any(tally.values()):
         _log(f"  take-up-slack: {tally['resolved']} resolved by strong writer, "
              f"{tally['dup']} dedup'd, {tally['hil']} -> HIL")
@@ -1617,6 +1670,7 @@ def _check_gamma_alt_convergence(
     unresolved_critical: int = 0,
     contested: int = 0,
     rho_churn: bool = False,
+    irreducible_queue: int = 0,
 ) -> Tuple[bool, str]:
     """Critical-quiescence convergence path (panel redesign 2026-05-23).
 
@@ -1685,6 +1739,20 @@ def _check_gamma_alt_convergence(
             f"(novel_crit_recent={recent_tail}). HIL review required."
         )
 
+    # Small-queue alarm (static-queue closure, 2026-06-09): the loop MAY close while
+    # handing a SMALL queue of ladder-exhausted irreducible criticals to the human. But
+    # genuinely-irreducible code defects are rare, so a queue larger than the bound is
+    # overwhelmingly a routing/dedup MECHANICAL FAILURE masquerading as irreducibility.
+    # Refuse convergence and raise the alarm instead of silently handing over a large pile.
+    if irreducible_queue > cfg.max_irreducible_queue:
+        return False, (
+            f"IRREDUCIBLE-QUEUE ALARM: {irreducible_queue} criticals locked as "
+            f"irreducible exceeds max_irreducible_queue ({cfg.max_irreducible_queue}) at "
+            f"round {round_idx}. A queue this large almost certainly signals a "
+            f"routing/dedup mechanical failure, NOT genuine irreducibility. Convergence "
+            f"refused; investigate the routing ladder."
+        )
+
     # Review-clean gates (c) not contested, (d) not churning. A clean
     # critical tail does not mean convergence while the panel is still
     # contesting findings or churning re-derivations.
@@ -1708,12 +1776,16 @@ def _check_gamma_alt_convergence(
             return True, (
                 f"CRITICAL_QUIESCENCE_CONVERGED: {window} consecutive "
                 f"rounds with zero novel CRITICAL (history tail={recent}) "
-                f"at round {round_idx} [gamma={gamma:.3f}, reported only]"
+                f"at round {round_idx} [gamma={gamma:.3f}: continuous decay-curve "
+                f"diagnostic; THIS zero-new-critical streak IS the decay curve's "
+                f"convergence endpoint, the threshold-free form of the same "
+                f"diminishing-returns measure — not a separate or competing trigger]"
             )
 
     return False, (
         f"critical-quiescence not met: novel_crit_recent={recent_tail} "
-        f"[gamma={gamma:.3f}, reported only]"
+        f"[gamma={gamma:.3f}: continuous decay-curve diagnostic; convergence = its "
+        f"zero-new-critical endpoint, not yet reached]"
     )
 
 
@@ -1760,6 +1832,44 @@ def _settled_novelty_series(
         if (e.get("severity") or 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
             crit_s[r] += 1
     return all_s, crit_s
+
+
+def _location_keyed_critical_series(registry, max_round, symbols) -> List[int]:
+    """SHADOW (telemetry-only, NEVER gates): per-round NEW critical count keyed by code
+    LOCATION — the target-file symbol(s) a finding names — instead of the model-chosen
+    finding-id used by the live path. A critical is NEW iff it names a code location not
+    previously flagged (conservative S3 rule; locations accumulate across all criticals).
+
+    Verified 2026-06-08 (four independent computations + adversarial workflow wf_88bbdd46-194)
+    to converge Exp 42 (~round 6) where the ID-proxy series never does. NOT trusted to gate:
+    the exact round is keying-dependent and location-only misses a 2nd distinct defect in an
+    already-flagged function — live promotion is gated on a semantic splitter + null/seeded
+    calibration. See experimental_notes/Convergence_Consolidation_Plan_2026-06-08.md.
+    """
+    from bench.convergence_location import finding_locations
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    vals = (list(entries.values()) if isinstance(entries, dict) else list(entries))
+
+    def _ord(e):
+        r = e.get("open_since_round")
+        return (r if r is not None else 1_000_000, str(e.get("canonical_id", "")))
+
+    seen: set = set()
+    series = [0] * (max_round + 1)
+    for e in sorted(vals, key=_ord):
+        r = e.get("open_since_round")
+        if r is None or r < 0 or r > max_round:
+            continue
+        if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+            continue
+        if (e.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+            continue
+        locs = finding_locations(e.get("description", "") or "", symbols)
+        key = set(locs) if locs else {"<generic>"}
+        if key - seen:
+            series[r] += 1
+        seen |= key
+    return series
 
 
 def _check_hardened_convergence(
@@ -4961,6 +5071,28 @@ def run_experiment(
     stall_history: List[Dict[str, int]] = []
     # Exp 40 fix 1A.3: track novel CRITICAL count per round for γ-alt gate.
     novel_critical_history: List[int] = []
+    # Code-location novelty SHADOW (2026-06-08): per-round critical-novelty keyed by target
+    # code location, computed alongside (never replacing) the ID-proxy series. Telemetry only.
+    location_crit_history: List[int] = []
+    try:
+        from bench.convergence_location import target_symbols as _loc_target_symbols
+        # Use the RAW target source (target_text), NOT full_code — full_code is the
+        # wrapped review prompt ("=== TARGET FILE ... ===\n<src>"), which is not valid
+        # Python and silently yielded zero symbols (the location key was inactive in every
+        # real run until this was caught, 2026-06-09). Fail LOUD, never silent.
+        _loc_symbols = _loc_target_symbols(target_text)
+        if not _loc_symbols:
+            _loc_symbols = _loc_target_symbols(str(target_path))  # path-mode fallback
+        if not _loc_symbols:
+            _log("  [location-key] WARNING: 0 symbols extracted from target — "
+                 "location-keyed convergence/shadow is INACTIVE this run")
+        else:
+            _log(f"  [location-key] {len(_loc_symbols)} target symbols extracted; "
+                 f"location_keyed_convergence={getattr(cfg, 'location_keyed_convergence', False)}")
+    except Exception as _ls_exc:
+        _loc_symbols = frozenset()
+        _log(f"  [location-key] WARNING: symbol extraction failed ({_ls_exc}) — "
+             "location-keyed convergence/shadow INACTIVE this run")
     consecutive_churn_rounds: int = 0  # D1: tracks sustained churn for phase transition
     # Exp 40 1D.3: per-model rho tracking for targeted ITC decisions.
     # Each list holds one entry per completed round for that model. Missing
@@ -5740,6 +5872,27 @@ def run_experiment(
                 _log(f"  novelty (settled/genuine): all={_settled_all[round_idx]} "
                      f"crit={_settled_crit[round_idx]} (raw all={_raw_novel})")
 
+        # Code-location novelty SHADOW (2026-06-08): telemetry-only, NEVER gates. Computes the
+        # critical-novelty series keyed by code location (the verified fix for the cross-round
+        # dedup failure) so the next live run shows it beside the ID-proxy count. Wrapped so a
+        # failure can never break a run. Live-gating is a separate, calibration-gated step.
+        try:
+            if getattr(cfg, "location_shadow_enabled", True) and _loc_symbols:
+                location_crit_history = _location_keyed_critical_series(
+                    registry, round_idx, _loc_symbols)
+                _loc_tail = location_crit_history[-cfg.gamma_alt_consecutive_zero_crit:]
+                _idprox = _settled_crit[round_idx] if round_idx < len(_settled_crit) else "NA"
+                _gates = getattr(cfg, "location_keyed_convergence", False)
+                if _gates and round_idx < len(location_crit_history) and novel_critical_history:
+                    # PROMOTED: the location-keyed count is the convergence trigger.
+                    novel_critical_history[-1] = location_crit_history[round_idx]
+                _log(f"  [{'GATE' if _gates else 'shadow'}] location-keyed novel-crit this "
+                     f"round={location_crit_history[round_idx]} (ID-proxy crit={_idprox}; "
+                     f"series tail={_loc_tail}; "
+                     f"{'FEEDS γ-alt convergence' if _gates else 'telemetry only, never gates'})")
+        except Exception as _loc_exc:  # telemetry/gate-feed must never break a run
+            _log(f"  [shadow] location-keyed novelty skipped: {_loc_exc}")
+
         # Gamma — REPORTED, NEVER a trigger or blocker (panel redesign
         # 2026-05-23). Telemetry-only in the state gate (config:
         # gamma_telemetry_only_until >= max_rounds) and deleted as a
@@ -5759,8 +5912,10 @@ def run_experiment(
         _log(f"  gamma_all: {gamma_all:.3f} ({gate_level}, "
              f"{'passed' if gamma_passed else 'BLOCKED'}) — "
              f"{_interpret_gamma(gamma_all)}")
-        _log(f"  gamma_critical: {gamma_critical:.3f} (reported only; "
-             f"~1.0 at clean critical convergence)")
+        _log(f"  gamma_critical: {gamma_critical:.3f} (continuous decay-curve "
+             f"diagnostic; the 3-round zero-new-critical count is its threshold-free "
+             f"convergence endpoint — same diminishing-returns principle, ~1.0 at "
+             f"clean critical convergence)")
         _log(f"  Round {round_idx}: {len(findings)} findings, {round_elapsed:.1f}s")
 
         # Convergence gate
@@ -5783,6 +5938,12 @@ def run_experiment(
             _log(f"  A4: {_unresolved_crit} unverified critical-severity "
                  f"candidate(s) (UNCONFIRMED, sev>=0.7) pending — "
                  f"zero-critical streak blocked, HIL review required")
+        # Static-queue closure: ladder-exhausted irreducible criticals handed to HIL.
+        _irreducible_q = registry.irreducible_queue_count()
+        if _irreducible_q > 0:
+            _log(f"  static HIL queue: {_irreducible_q} ladder-exhausted irreducible "
+                 f"critical(s) — excluded from the A4 blocker; convergence ALARM if "
+                 f"> {cfg.max_irreducible_queue}")
         if getattr(cfg, "hardened_gate_enabled", False):
             # F4/F6/conjunction hardened gate: settled-registry γ,
             # critical/structural conjunction, all-novelty γ as
@@ -5801,6 +5962,7 @@ def run_experiment(
                     unresolved_critical=_unresolved_crit,
                     contested=registry.contested_count(round_idx),
                     rho_churn=rho_churn,
+                    irreducible_queue=_irreducible_q,
                 )
             )
         if gamma_alt_converged and not converged:
@@ -5980,6 +6142,8 @@ def run_experiment(
             "gamma": round(gamma, 4),
             "gamma_all": round(gamma_all, 4),
             "gamma_critical": round(gamma_critical, 4),
+            "location_crit_shadow": (location_crit_history[round_idx]
+                                     if round_idx < len(location_crit_history) else 0),
             "rho": round(rho_current, 4),
             "rho_avg": round(rho_avg, 4),
             "verification": verification_stats,
@@ -6227,6 +6391,10 @@ def run_experiment(
     result["gamma_critical_history"] = [
         round(g, 4) for g in gamma_critical_history
     ]
+    # Code-location novelty SHADOW series (2026-06-08): telemetry only, never gated. The
+    # verified-direction fix for the cross-round dedup failure, reported beside the live
+    # ID-proxy counts for side-by-side comparison on the next run.
+    result["location_crit_shadow_history"] = location_crit_history
     result["registry"] = registry.to_dict()
     result["hil_flags"] = _itc_hil_flags[:]
     # Secondary-route fallback accumulators (2026-05-22). Surfaced in

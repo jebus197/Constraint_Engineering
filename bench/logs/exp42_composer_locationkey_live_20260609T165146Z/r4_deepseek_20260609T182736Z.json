@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260609T182736Z",
+  "phase": "r4",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 1671,
+  "response": "FINDING_ID: F200\nSEVERITY: 0.75\nFIND: _count_constraints omits major policy sections (convergence, anti_deference, etc.), causing undercount and under‑pruning\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _count_constraints\n\npolicy = {\n    \"constraints\": {\"anti_deference\": True, \"fail_closed_unassessed\": True},\n    \"verification\": {\"peer_support_min_families\": 2, \"sympy_sandbox\": True},\n    \"protocol\": {\"blind_first\": True, \"max_rounds\": 5},\n    \"convergence\": {\n        \"method\": \"non_compensatory\",\n        \"hard_veto\": True,\n        \"hard_coverage_threshold\": 1.0,\n    },\n    \"anti_deference\": {\n        \"agreement_requires_evidence\": True,\n        \"min_independent_observations\": 1,\n    },\n}\ncount = _count_constraints(policy)\nif count < 11:\n    print(\"FALSIFIED: constraint count is too low\")\n```\n\nFINDING_ID: F201\nSEVERITY: 0.80\nFIND: _directive_topic_and_stance returns only first dimension; multi‑dimension directives cause missed HARD conflicts allowing SOFT directives to survive\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _directive_topic_and_stance\n\ndirective = \"include examples, keep verbosity low\"\nresult = _directive_topic_and_stance(directive)\n# Buggy version returns a single (topic, stance) tuple even when the directive\n# contains multiple independent constraint dimensions (examples, verbosity).\n# A fix would return multiple pairs or a list; we detect the defect by checking\n# that only a single pair is returned despite both keywords being present.\nif isinstance(result, tuple) and len(result) == 2:\n    print(\"FALSIFIED: _directive_topic_and_stance returned single dimension for multi-topic directive\")\n```",
+  "metadata": {
+    "round": 4,
+    "elapsed": 733.0,
+    "chars": 1671,
+    "findings_count": 2,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

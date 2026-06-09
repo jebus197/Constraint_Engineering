@@ -1,0 +1,16 @@
+{
+  "timestamp": "20260609T173207Z",
+  "phase": "r1",
+  "model_label": "DeepSeek",
+  "prompt_length": 203,
+  "response_length": 412,
+  "response": "FINDING_ID: F100\nSEVERITY: 0.60\nFIND: line.startswith('[') in _starts_new_block treats inline markers like '[VERIFY:current]...' as block starts, disrupting block splitting for 'concise'/'minimal' format styles.\nFALSIFIER:\n```python\nfrom bench.cdsfl_registry.composer import _starts_new_block\n\nline = \"[VERIFY:current] The API key must rotate.\"\nassert not _starts_new_block(line), \"FALSIFIED: defect present\"\n```",
+  "metadata": {
+    "round": 1,
+    "elapsed": 528.9,
+    "chars": 412,
+    "findings_count": 1,
+    "decomposed": true,
+    "multiturn": true
+  }
+}

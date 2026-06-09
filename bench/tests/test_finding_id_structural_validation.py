@@ -49,7 +49,7 @@ from pathlib import Path
 import pytest
 
 from bench import runner_core
-from bench.runner_core import parse_findings
+from bench.runner_core import parse_findings, _structurally_valid_fid
 
 
 # ── Behavioural pins ────────────────────────────────────────────────
@@ -384,28 +384,38 @@ class TestASTPlacement:
     """Confirm the helper is wired into parse_findings."""
 
     def test_helper_called_inside_parse_findings(self):
+        # The validator must be wired into the parse PIPELINE. After the 2026-06
+        # refactor, parse_findings became a thin wrapper over _parse_findings_core,
+        # where the per-path _structurally_valid_fid calls now live. Assert the call
+        # exists somewhere in that pipeline (wrapper or core) rather than inside one
+        # fixed function — the earlier text-on-one-function assertion was brittle to
+        # this legitimate refactor (behaviour was never lost; see behavioural check
+        # below).
         src = Path(runner_core.__file__).read_text()
         tree = ast.parse(src)
-        target_fn = None
-        for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.FunctionDef)
-                and node.name == "parse_findings"
-            ):
-                target_fn = node
-                break
-        assert target_fn is not None, (
-            "parse_findings function must exist in runner_core.py"
-        )
-        # Get function source and verify the helper is called.
+        pipeline_fns = {"parse_findings", "_parse_findings_core"}
         src_lines = src.split("\n")
-        fn_src = "\n".join(
-            src_lines[target_fn.lineno - 1:target_fn.end_lineno]
+        found_in = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name in pipeline_fns:
+                fn_src = "\n".join(src_lines[node.lineno - 1:node.end_lineno])
+                if "_structurally_valid_fid" in fn_src:
+                    found_in.add(node.name)
+        assert found_in, (
+            "the parse pipeline (parse_findings / _parse_findings_core) must call "
+            "_structurally_valid_fid on every candidate finding_id."
         )
-        assert "_structurally_valid_fid" in fn_src, (
-            "parse_findings must call _structurally_valid_fid on every "
-            "candidate finding_id."
-        )
+
+        # Behavioural guarantee (the property that actually matters): a structurally
+        # invalid model-supplied id must never survive parsing — it is rejected to a
+        # runner-generated valid id.
+        bad = parse_findings(
+            "Codex", 0,
+            '```json\n[{"finding_id": "bad id `x` !", "severity": 0.9, '
+            '"description": "X breaks Y", "flaw_class": 5}]\n```')
+        assert bad, "parser must still return a finding for malformed-id input"
+        assert all(_structurally_valid_fid(f.finding_id) for f in bad), (
+            "parse_findings must sanitize/reject structurally-invalid finding ids")
 
 
 if __name__ == "__main__":

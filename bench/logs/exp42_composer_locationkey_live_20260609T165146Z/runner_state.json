@@ -1,0 +1,2508 @@
+{
+  "registry": {
+    "entries": {
+      "C0001": {
+        "canonical_id": "C0001",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F001"
+        ],
+        "severity": 0.95,
+        "description": "`_prune_for_coherence()` (line ~540-590) removes text to reduce constraint density, but density = `constraint_count / token_estimate` where `token_estimate = chars / 4`. Removing text reduces `chars` (denominator), which *increases* density. The function's pruning direction is mathematically inverted \u2014 every pruning step makes the metric worse, not better. The loop runs to exhaustion, removing ALL prunable SOFT content whenever pruning triggers, even if density is only marginally over budget.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _prune_for_coherence(\n    packets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT content if constraint density exceeds budget.\n\n    Two-pass strategy:\n    1. Intra-packet pruning: remove individual SOFT directives within packets\n    2. Whole-packet pruning: remove entire SOFT packets if still over budget\n\n    HARD packets are NEVER pruned. Universal is NEVER pruned.\n    \"\"\"\n    total_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\n\n    if density <= budget:\n        return packets, []\n\n    pruned_names: list[str] = []\n    mutable_packets = list(packets)\n\n    prunable = [\n        (i, p) for i, p in enumerate(mutable_packets)\n        if p.constraint_class == \"SOFT\" and p.layer != \"universal\"\n    ]\n    prune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}\n    prunable.sort(key=lambda x: prune_order.get(x[1].layer, 3))\n\n    # Pass 1: intra-packet pruning \u2014 trim SOFT directives within each packet\n    for idx, packet in prunable:\n        target_chars = max(int(len(packet.text) * 0.7), 1)\n        new_packet = _prune_packet_directives(packet, target_chars)\n        if len(new_packet.text) < len(packet.text):\n            mutable_packets[idx] = new_packet\n            pruned_names.append(f\"{packet.name}::intra\")\n\n        remaining_chars = sum(len(p.text) for p in mutable_packets)\n        remaining_tokens = max(remaining_chars // 4, 1)\n        density = constraint_count / remaining_tokens\n        if density <= budget:\n            return mutable_packets, pruned_names\n\n    # Pass 2: whole-packet pruning if still over budget\n    keep_indices = set(range(len(mutable_packets)))\n    for idx, packet in prunable:\n        keep_indices.discard(idx)\n        pruned_names.append(packet.name)\n\n        remaining = [mutable_packets[i] for i in sorted(keep_indices)]\n        remaining_chars = sum(len(p.text) for p in remaining)\n        remaining_tokens = max(remaining_chars // 4, 1)\n        density = constraint_count / remaining_tokens\n        if density <= budget:\n            return remaining, pruned_names\n\n    return [mutable_packets[i] for i in sorted(keep_indices)], pruned_names\n==== REPLACE\ndef _prune_for_coherence(\n    packets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT content if constraint density exceeds budget.\n\n    Two-pass strategy:\n    1. Intra-packet pruning: remove individual SOFT directives within packets\n    2. Whole-packet pruning: remove entire SOFT packets if still over budget\n\n    HARD packets are NEVER pruned. Universal is NEVER pruned.\n\n    Density = constraint_count / token_estimate. To reduce density we need\n    MORE tokens (longer text) or FEWER constraints. Since constraint_count\n    is fixed by policy, we compute the minimum token budget and prune only\n    enough SOFT text to stay within the directive-length cap implied by\n    (constraint_count / budget).\n    \"\"\"\n    total_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\n\n    if density <= budget:\n        return packets, []\n\n    # Compute target: the MAXIMUM total chars we should allow.\n    # density = constraint_count / (chars / 4) <= budget\n    # => chars >= 4 * constraint_count / budget\n    # We CANNOT fix over-density by removing text (that makes it worse).\n    # Instead, we cap total directive chars so the model isn't overwhelmed,\n    # pruning the LEAST important SOFT content first.\n    min_chars_for_budget = int(4 * constraint_count / budget) + 1\n    if total_chars <= min_chars_for_budget:\n        # Text is already short enough \u2014 density is inherently high due to\n        # many constraints in a small policy. Pruning text would only make\n        # it worse. Return as-is and let the budget warning in compose() fire.\n        return packets, []\n\n    target_chars = min_chars_for_budget\n    pruned_names: list[str] = []\n    mutable_packets = list(packets)\n\n    prunable = [\n        (i, p) for i, p in enumerate(mutable_packets)\n        if p.constraint_class == \"SOFT\" and p.layer != \"universal\"\n    ]\n    prune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}\n    prunable.sort(key=lambda x: prune_order.get(x[1].layer, 3))\n\n    def _current_chars() -> int:\n        return sum(len(p.text) for p in mutable_packets)\n\n    # Pass 1: intra-packet pruning \u2014 trim SOFT directives within each packet\n    for idx, packet in prunable:\n        if _current_chars() <= target_chars:\n            break\n        pkt_target = max(int(len(packet.text) * 0.7), 1)\n        new_packet = _prune_packet_directives(packet, pkt_target)\n        if len(new_packet.text) < len(packet.text):\n       ",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _prune_for_coherence, DirectivePacket\n\npackets = [\n    DirectivePacket(layer='universal', name='core', text='U' * 2000, constraint_class='HARD'),\n    DirectivePacket(layer='domain', name='domain_soft', text='D' * 4000, constraint_class='SOFT', domain='sw'),\n    DirectivePacket(layer='situation', name='sit_soft', text='S' * 2000, constraint_class='SOFT'),\n]\npolicy = {'constraints': {f'c{i}': True for i in range(16)}, 'verification': {}, 'protocol': {}}\n\nresult, pruned = _prune_for_coherence(packets, policy, budget=0.007)\npost_chars = sum(len(p.text) for p in result)\npre_chars = 8000\n# Density went UP (worse), and ALL soft content was removed for a marginal overshoot\npre_density = 16 / (pre_chars // 4)\npost_density = 16 / max(post_chars // 4, 1)\nassert post_density > pre_density, f'defect present: density {pre_density:.4f} -> {post_density:.4f}'\nassert len(pruned) >= 2, f'defect present: all SOFT content removed, pruned={pruned}'\nprint(f'FALSIFIED: pruning increased density from {pre_density:.4f} to {post_density:.4f}, removed all SOFT content')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "ESCALATE",
+          "blocks_parsed": 0,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "no SEARCH/REPLACE blocks found"
+          }
+        }
+      },
+      "C0002": {
+        "canonical_id": "C0002",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F002"
+        ],
+        "severity": 0.7,
+        "description": "`compose()` (line ~680-690) mutates the caller's `situation` parameter in-place via `situation.text = _apply_phenotype_transform(situation.text, transform)`. `DirectivePacket` is a mutable dataclass. The docstring claims the function is \"Pure: no side effects, no state mutation.\" If a caller reuses a situation packet across multiple `compose()` calls (e.g., dispatching the same review to five models), each call cumulatively transforms the text.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation = replace(situation, text=_apply_phenotype_transform(situation.text, transform))\n        packets.append(situation)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import compose, DirectivePacket\n\nsituation = DirectivePacket(\n    layer='situation', name='reuse_test',\n    text='## Review Target\\n\\nPlease review this code.\\n\\nExample: a simple function.\\n\\nWhy: to find bugs.',\n    constraint_class='SOFT',\n)\noriginal_text = situation.text\nresult1 = compose('software', 'opus_4_6', situation=situation)\nassert situation.text != original_text, f'defect present: compose() mutated situation.text'\nprint(f'FALSIFIED: situation.text changed from {len(original_text)} to {len(situation.text)} chars')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0003": {
+        "canonical_id": "C0003",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F003"
+        ],
+        "severity": 0.55,
+        "description": "`_block_is_hard()` uses keyword markers like `\" MUST \"`, `\" DO NOT \"`, `\" ALWAYS \"`, `\" NEVER \"` to classify directive blocks as HARD. These markers appear pervasively in SOFT interaction pattern presets (e.g., `_PRESET_FFF`: \"you MUST provide all three steps\", `_PRESET_META_STRUCTURED`: \"DO NOT conflate separate issues\"). This causes SOFT directive blocks to be misclassified as HARD in two places: (1) `_prune_packet_directives()` won't prune blocks it thinks are HARD, and (2) `resolve_layer_con",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n_HARD_BLOCK_MARKERS = (\n    \" HARD \", \" MUST \", \" NEVER \", \" REQUIRED \",\n    \" NON-NEGOTIABLE \", \" FORBIDDEN \", \" DO NOT \", \" ALWAYS \",\n)\n==== REPLACE\n_HARD_BLOCK_MARKERS = (\n    \" HARD \", \" NON-NEGOTIABLE \", \" FORBIDDEN \",\n    \" HARD CONSTRAINT \", \" [HARD] \",\n)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _block_is_hard\n\n# These SOFT instructional blocks should NOT be classified as HARD\nsoft_blocks = [\n    'For EVERY finding, you MUST provide all three steps:',\n    'DO NOT conflate separate issues.',\n    'ALWAYS consider how findings interact across the full system.',\n]\nfalse_positives = sum(1 for b in soft_blocks if _block_is_hard(b))\nassert false_positives > 0, f'defect present: {false_positives} SOFT blocks misclassified as HARD'\nprint(f'FALSIFIED: {false_positives} of {len(soft_blocks)} SOFT instructional blocks misclassified as HARD')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0004": {
+        "canonical_id": "C0004",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F001"
+        ],
+        "severity": 0.92,
+        "description": "Domain files containing HARD constraints are loaded as SOFT and can be pruned.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_load_domain_directive()`.\n\nCurrent code:\nreturn DirectivePacket(\n    layer=\"domain\",\n    name=path.stem,\n    text=path.read_text(encoding=\"utf-8\"),\n    constraint_class=\"SOFT\",\n    domain=domain,\n    tags={domain},\n)\nEvidence: The module contract states:\n\n> HARD constraints are NEVER pruned.\n\nBut every domain directive is assigned `constraint_class=\"SOFT\"`, even when th",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n==== REPLACE\ntext = path.read_text(encoding=\"utf-8\")\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=text,\n        constraint_class=\"HARD\" if _block_is_hard(text) else \"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_for_coherence\n\nhard_domain = DirectivePacket(\n    layer=\"domain\",\n    name=\"distributed_systems\",\n    text=\"[HARD constraints \u2014 non-negotiable]\\nAll mutating endpoints MUST accept idempotency keys.\",\n    constraint_class=\"SOFT\",\n    domain=\"distributed_systems\",\n)\n\npolicy = {\n    \"constraints\": {f\"c{i}\": True for i in range(20)},\n    \"verification\": {},\n    \"protocol\": {},\n}\n\nremaining, pruned = _prune_for_coherence([hard_domain], policy, budget=0.0001)\n\nif not remaining and \"distributed_systems\" in pruned:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0005": {
+        "canonical_id": "C0005",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F002"
+        ],
+        "severity": 0.94,
+        "description": "The final global length cap can truncate HARD directives after all packet-level \u201cdo not prune HARD\u201d protections have run.\n\nLocation: `bench/cdsfl_registry/composer.py`, `compose()`.\n\nCurrent code:\n# Apply global phenotype length cap\nif len(rendered) > transform.max_directive_chars:\n    rendered = (\n        rendered[: transform.max_directive_chars]\n        + \"\\n[... truncated for model capacity]\"\n    )\nThis slices the final rendered prompt by character offset. It does not respect packet boundarie",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\n==== REPLACE\n# Apply global phenotype length cap without truncating HARD content.\n    if len(rendered) > transform.max_directive_chars:\n        mutable_packets = list(packets)\n        cap_pruned: list[str] = []\n\n        for index in range(len(mutable_packets) - 1, -1, -1):\n            if len(_render_directive_text(mutable_packets)) <= transform.max_directive_chars:\n                break\n\n            packet = mutable_packets[index]\n            if packet.constraint_class == \"HARD\" or packet.layer == \"universal\":\n                continue\n\n            cap_pruned.append(packet.name)\n            mutable_packets.pop(index)\n\n        packets = mutable_packets\n        rendered = _render_directive_text(packets)\n        pruned_soft.extend(f\"{name}::length_cap\" for name in cap_pruned)\n\n        if len(rendered) > transform.max_directive_chars:\n            raise ValueError(\n                \"Composed HARD directive text exceeds model capacity: \"\n                f\"{len(rendered)} > {transform.max_directive_chars}\"\n            )\n>>>>",
+        "falsifier_code": "import inspect\nfrom bench.cdsfl_registry import composer\n\nsrc = inspect.getsource(composer.compose)\n\nif \"rendered[: transform.max_directive_chars]\" in src:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0006": {
+        "canonical_id": "C0006",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F003"
+        ],
+        "severity": 0.81,
+        "description": "Coherence pruning uses a density formula that pruning text cannot improve because the numerator is fixed while the denominator shrinks.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_prune_for_coherence()`.\n\nCurrent initial density calculation:\ntotal_chars = sum(len(p.text) for p in packets)\ntoken_estimate = max(total_chars // 4, 1)\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nAfter pruning, it recomputes only token length:\nremaining_chars = sum(len",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _count_packet_constraints(packets: list[DirectivePacket]) -> int:\n    \"\"\"Count rendered directive blocks after packet pruning/transforms.\"\"\"\n    return max(sum(len(_split_packet_directives(packet.text)) for packet in packets), 1)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_for_coherence, _count_constraints\n\npacket = DirectivePacket(\n    layer=\"situation\",\n    name=\"dense_soft\",\n    text=\"\\n\".join(f\"{i}. directive\" for i in range(10)),\n    constraint_class=\"SOFT\",\n)\n\npolicy = {\n    \"constraints\": {f\"c{i}\": True for i in range(20)},\n    \"verification\": {},\n    \"protocol\": {},\n}\n\ninitial_tokens = max(len(packet.text) // 4, 1)\ninitial_density = _count_constraints(policy) / initial_tokens\n\nremaining, _ = _prune_for_coherence([packet], policy, budget=0.0001)\nremaining_chars = sum(len(p.text) for p in remaining)\nremaining_tokens = max(remaining_chars // 4, 1)\nremaining_density = _count_constraints(policy) / remaining_tokens\n\nif remaining_density >= initial_density:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0007": {
+        "canonical_id": "C0007",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F004"
+        ],
+        "severity": 0.74,
+        "description": "CID hashes packet lengths, not packet content, so distinct directive content can receive the same composition identity.\n\nLocation: `bench/cdsfl_registry/composer.py`, `_compute_cid()`.\n\nCurrent code:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return ha",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        {\n            \"layer\": p.layer,\n            \"name\": p.name,\n            \"text\": p.text,\n            \"constraint_class\": p.constraint_class,\n            \"domain\": p.domain,\n            \"model\": p.model,\n            \"tags\": sorted(p.tags),\n        }\n        for p in packets\n    ]\n    payload = {\n        \"model\": model,\n        \"packets\": components,\n    }\n    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\"))\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _compute_cid\n\na = DirectivePacket(\n    layer=\"situation\",\n    name=\"x\",\n    text=\"AAAA\",\n    constraint_class=\"SOFT\",\n)\n\nb = DirectivePacket(\n    layer=\"situation\",\n    name=\"x\",\n    text=\"BBBB\",\n    constraint_class=\"SOFT\",\n)\n\nif _compute_cid([a], \"model\") == _compute_cid([b], \"model\"):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0008": {
+        "canonical_id": "C0008",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F005"
+        ],
+        "severity": 0.78,
+        "description": "`compose()` mutates caller-supplied `situation` packets, violating its documented purity contract and making composition order observable.\n\nLocation: `bench/cdsfl_registry/composer.py`, `compose()`.\n\nCurrent code:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\nThe function docstring says:\n- Pure: no side effects, no state mutation\nBut this assignment mutates a caller-owned `DirectivePacket`.\n\nConcrete trace:\ns = build_intera",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        transformed_situation = replace(\n            situation,\n            text=_apply_phenotype_transform(situation.text, transform),\n            tags=set(situation.tags),\n        )\n        packets.append(transformed_situation)\n>>>>",
+        "falsifier_code": "import inspect\nfrom bench.cdsfl_registry import composer\n\nsrc = inspect.getsource(composer.compose)\n\nif \"situation.text = _apply_phenotype_transform\" in src:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0009": {
+        "canonical_id": "C0009",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F006"
+        ],
+        "severity": 0.86,
+        "description": "HARD-vs-HARD conflicts are silently resolved by priority instead of failing loud.\n\nLocation: `bench/cdsfl_registry/composer.py`, `resolve_layer_conflicts()`.\n\nCurrent conflict handling:\nif winner_topic == topic and winner_stance != stance:\n    conflicts.append(ConflictRecord(\n        topic=topic,\n        winner_layer=winner[\"packet\"].layer,\n        winner_packet=winner[\"packet\"].name,\n        winner_text=winner[\"text\"][:100],\n        loser_layer=entry[\"packet\"].layer,\n        loser_packet=entry[",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif winner_topic == topic and winner_stance != stance:\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins; else higher layer wins; \"\n                        \"same-layer tie goes to more specific packet.\"\n                    ),\n                ))\n                losing = True\n                break\n==== REPLACE\nif winner_topic == topic and winner_stance != stance:\n                if winner[\"hard\"] and entry[\"hard\"]:\n                    raise PolicyViolationError(\n                        \"Conflicting HARD directives cannot be resolved silently: \"\n                        f\"{winner['id']} conflicts with {entry['id']} on {topic!r}\"\n                    )\n\n                conflicts.append(ConflictRecord(\n                    topic=topic,\n                    winner_layer=winner[\"packet\"].layer,\n                    winner_packet=winner[\"packet\"].name,\n                    winner_text=winner[\"text\"][:100],\n                    loser_layer=entry[\"packet\"].layer,\n                    loser_packet=entry[\"packet\"].name,\n                    loser_text=entry[\"text\"][:100],\n                    reason=(\n                        \"HARD wins; else higher layer wins; \"\n                        \"same-layer tie goes to more specific packet.\"\n                    ),\n                ))\n                losing = True\n                break\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import (\n    DirectivePacket,\n    ComposedDirectiveSet,\n    resolve_layer_conflicts,\n)\n\np1 = DirectivePacket(\n    layer=\"universal\",\n    name=\"a\",\n    text=\"Use detailed formal proof.\",\n    constraint_class=\"HARD\",\n)\n\np2 = DirectivePacket(\n    layer=\"situation\",\n    name=\"b\",\n    text=\"Use concise minimal format.\",\n    constraint_class=\"HARD\",\n)\n\ncomposed = ComposedDirectiveSet(\n    packets=[p1, p2],\n    rendered_text=\"\",\n    policy={},\n    cid=\"x\",\n    constraint_count=2,\n    token_estimate=10,\n    constraint_density=0.2,\n    coherence_budget=1.0,\n    pruned_soft=[],\n    manifest={\"model\": \"test\"},\n)\n\ntry:\n    resolved, conflicts = resolve_layer_conflicts(composed)\nexcept Exception:\n    raise SystemExit(0)\n\nif conflicts:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "6 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0010": {
+        "canonical_id": "C0010",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F001"
+        ],
+        "severity": 0.95,
+        "description": "`compose()` can silently truncate HARD directives after all packets are composed.\n\nLocation:\n# Apply global phenotype length cap\n    if len(rendered) > transform.max_directive_chars:\n        rendered = (\n            rendered[: transform.max_directive_chars]\n            + \"\\n[... truncated for model capacity]\"\n        )\nPremises:\n\n1. The module contract says: \u201cHARD constraints are NEVER pruned.\u201d\n2. `rendered` is the final text sent to the model.\n3. `rendered` can contain HARD universal packets an",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        if situation.constraint_class == \"HARD\":\n            if len(situation.text) > transform.max_directive_chars:\n                raise ValueError(\n                    f\"HARD situation packet {situation.name!r} exceeds \"\n                    f\"model cap {transform.max_directive_chars}; refusing to truncate\"\n                )\n            situation = replace(situation, tags=set(situation.tags))\n        else:\n            situation = replace(\n                situation,\n                text=_apply_phenotype_transform(situation.text, transform),\n                tags=set(situation.tags),\n            )\n        packets.append(situation)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, compose\n\ns = DirectivePacket(\n    layer=\"situation\",\n    name=\"oversized_hard\",\n    text=(\"HARD MUST preserve this directive.\\n\" * 300) + \"UNIQUE_HARD_TAIL_MUST_SURVIVE\",\n    constraint_class=\"HARD\",\n)\nr = compose(\"software\", \"deepseek_v3\", situation=s)\nif \"UNIQUE_HARD_TAIL_MUST_SURVIVE\" not in r.rendered_text:\n    print(\"FALSIFIED: HARD situation content was truncated from rendered_text\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0011": {
+        "canonical_id": "C0011",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F002"
+        ],
+        "severity": 0.85,
+        "description": "`_compute_cid()` is not content-addressed and collides for different prompts with equal packet metadata and text lengths.\n\nLocation:\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\nPremises:\n\n1. The CID i",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic content-addressed composition identity hash.\"\"\"\n    components = []\n    for packet in packets:\n        components.append({\n            \"layer\": packet.layer,\n            \"name\": packet.name,\n            \"constraint_class\": packet.constraint_class,\n            \"domain\": packet.domain,\n            \"model\": packet.model,\n            \"tags\": sorted(packet.tags),\n            \"text_sha256\": hashlib.sha256(\n                packet.text.encode(\"utf-8\")\n            ).hexdigest(),\n        })\n\n    raw = json.dumps(\n        {\"model\": model, \"packets\": components},\n        sort_keys=True,\n        ensure_ascii=False,\n        separators=(\",\", \":\"),\n    )\n    return hashlib.sha256(raw.encode(\"utf-8\")).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _compute_cid\n\np1 = DirectivePacket(\"situation\", \"same_name\", \"Review ABC\", \"SOFT\")\np2 = DirectivePacket(\"situation\", \"same_name\", \"Review XYZ\", \"SOFT\")\nassert len(p1.text) == len(p2.text)\nif _compute_cid([p1], \"opus_4_6\") == _compute_cid([p2], \"opus_4_6\"):\n    print(\"FALSIFIED: different same-length packet texts produce identical CID\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0012": {
+        "canonical_id": "C0012",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F003"
+        ],
+        "severity": 0.9,
+        "description": "Domain directive packets are always loaded as `SOFT`, even when the domain file contains HARD constraints, and can then be pruned wholesale.\n\nLocation:\nreturn DirectivePacket(\n    layer=\"domain\",\n    name=path.stem,\n    text=path.read_text(encoding=\"utf-8\"),\n    constraint_class=\"SOFT\",\n    domain=domain,\n    tags={domain},\n)\nand:\nprunable = [\n    (i, p) for i, p in enumerate(mutable_packets)\n    if p.constraint_class == \"SOFT\" and p.layer != \"universal\"\n]\nPremises:\n\n1. Domain files can contain ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nreturn DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n==== REPLACE\ntext = path.read_text(encoding=\"utf-8\")\n    constraint_class = \"HARD\" if _block_is_hard(text) else \"SOFT\"\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=text,\n        constraint_class=constraint_class,\n        domain=domain,\n        tags={domain},\n    )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_for_coherence\n\npacket = DirectivePacket(\n    layer=\"domain\",\n    name=\"hard_inside_soft_domain\",\n    text=\"[HARD constraints]\\nNetwork partitions WILL occur. MUST use monotonic clocks.\",\n    constraint_class=\"SOFT\",\n    domain=\"distributed_systems\",\n)\npolicy = {\"constraints\": {\"x\": True}}\npruned, names = _prune_for_coherence([packet], policy, budget=0.0)\nif not pruned and \"hard_inside_soft_domain\" in names:\n    print(\"FALSIFIED: a SOFT-classified packet containing HARD text was pruned wholesale\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0013": {
+        "canonical_id": "C0013",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F004"
+        ],
+        "severity": 0.72,
+        "description": "Coherence pruning uses a fixed policy-only `constraint_count`, so deleting text can increase the reported density and worsen the metric being optimized.\n\nLocation:\nconstraint_count = _count_constraints(policy)\ndensity = constraint_count / token_estimate\nand inside pruning:\nremaining_chars = sum(len(p.text) for p in mutable_packets)\nremaining_tokens = max(remaining_chars // 4, 1)\ndensity = constraint_count / remaining_tokens\nPremises:\n\n1. Density is computed as `constraint_count / token_estimate`",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n==== REPLACE\ndef _count_constraints(policy: dict[str, Any]) -> int:\n    \"\"\"Count active constraints in a merged policy.\"\"\"\n    count = 0\n    constraints = policy.get(\"constraints\", {})\n    for v in constraints.values():\n        if isinstance(v, bool) and v:\n            count += 1\n        elif isinstance(v, str):\n            count += 1\n    verification = policy.get(\"verification\", {})\n    for v in verification.values():\n        if v is not None and v is not False:\n            count += 1\n    protocol = policy.get(\"protocol\", {})\n    for v in protocol.values():\n        if v is not None and v is not False:\n            count += 1\n    return count\n\n\ndef _effective_constraint_count(\n    policy: dict[str, Any],\n    packets: list[DirectivePacket],\n) -> int:\n    \"\"\"Count active policy constraints plus rendered directive blocks.\"\"\"\n    packet_constraints = sum(\n        len(_split_packet_directives(packet.text))\n        for packet in packets\n        if packet.text.strip()\n    )\n    return _count_constraints(policy) + packet_constraints\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, _prune_for_coherence, _count_constraints\n\npolicy = {\"constraints\": {\"x\": True}}\npacket = DirectivePacket(\n    layer=\"situation\",\n    name=\"many_soft_blocks\",\n    text=\"\\n\\n\".join(f\"- soft directive {i} filler text\" for i in range(20)),\n    constraint_class=\"SOFT\",\n)\ninitial_tokens = max(len(packet.text) // 4, 1)\ninitial_density = _count_constraints(policy) / initial_tokens\npruned, names = _prune_for_coherence([packet], policy, budget=initial_density / 2)\nremaining_chars = sum(len(p.text) for p in pruned)\nremaining_tokens = max(remaining_chars // 4, 1)\nremaining_density = _count_constraints(policy) / remaining_tokens\nif names and remaining_density > initial_density:\n    print(\"FALSIFIED: pruning reduced text while fixed constraint_count increased reported density\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0014": {
+        "canonical_id": "C0014",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F005"
+        ],
+        "severity": 0.78,
+        "description": "`compose()` mutates caller-supplied `situation` packets, violating its stated purity contract.\n\nLocation:\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\nPremises:\n\n1. `compose()` docstring says: \u201cPure: no side effects, no state mutation.\u201d\n2. `situation` is supplied by the caller.\n3. The function assigns directly to `situation.text`.\n4. Therefore the caller\u2019s object is mutated.\n\nConcrete trace:\ns = DirectivePacket(\n  ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation = replace(\n            situation,\n            text=_apply_phenotype_transform(situation.text, transform),\n            tags=set(situation.tags),\n        )\n        packets.append(situation)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, compose\n\ns = DirectivePacket(\n    layer=\"situation\",\n    name=\"mutable_situation\",\n    text=\"Example:\\n\" + (\"remove me\\n\" * 10) + \"\\nMUST remain\",\n    constraint_class=\"SOFT\",\n)\nbefore = s.text\ncompose(\"software\", \"deepseek_v3\", situation=s)\nif s.text != before:\n    print(\"FALSIFIED: compose mutated the caller-supplied situation packet\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0015": {
+        "canonical_id": "C0015",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F001"
+        ],
+        "severity": 1.0,
+        "description": "FINDING_ID: F001\nSEVERITY: 1.0\nFIND: `_render_universal_minimal` raises ValueError when rendered text exceeds max_chars, causing crash in compose for small\u2011context models.\nFALSIFIER:\nimport sys\nsys.pa",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _render_universal_minimal\n\ndefect_present = False\ntry:\n    _render_universal_minimal(max_chars=100)\nexcept ValueError:\n    defect_present = True\n\nif defect_present:\n    print(\"FALSIFIED: _render_universal_minimal raised ValueError\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0016": {
+        "canonical_id": "C0016",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F002"
+        ],
+        "severity": 0.8,
+        "description": "FINDING_ID: F002\nSEVERITY: 0.8\nFIND: `_count_constraints` counts only boolean True and strings, skipping numeric/list/dict constraints, underestimating constraint count and affecting coherence density",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import _count_constraints\n\npolicy = {\n    \"constraints\": {\n        \"min_independent_observations\": 1,\n        \"hard_soft_classification\": True,\n        \"some_string_opt\": \"value\"\n    },\n    \"verification\": {},\n    \"protocol\": {}\n}\ncount = _count_constraints(policy)\nif count < 3:\n    print(\"FALSIFIED: count={}, expected at least 3\".format(count))",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0017": {
+        "canonical_id": "C0017",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F003"
+        ],
+        "severity": 0.8,
+        "description": "FINDING_ID: F003\nSEVERITY: 0.8\nFIND: Global truncation in compose removes HARD constraints from later layers (e.g., Situation) when total length exceeds max_directive_chars, violating non\u2011pruning guar",
+        "proposed_fix": "",
+        "falsifier_code": "import sys\nsys.path.insert(0, 'bench')\nfrom cdsfl_registry.composer import compose, DirectivePacket\n\nmarker = \"UNIQUEMARKERTHISISATEST\"\nlong_text = marker + \" \" + \"X \" * 2500  # > 4000 chars total\nsituation = DirectivePacket(\n    layer=\"situation\",\n    name=\"test_hard\",\n    text=long_text,\n    constraint_class=\"HARD\",\n)\nresult = compose(\"software\", \"deepseek_v3\", situation=situation)\nif result.rendered_text.endswith(\"[... truncated for model capacity]\") and marker not in result.rendered_text:\n    print(\"FALSIFIED: HARD Situation text truncated\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0018": {
+        "canonical_id": "C0018",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F001"
+        ],
+        "severity": 0.9,
+        "description": "In `_prune_for_coherence`, `constraint_count` is computed once using `_count_constraints(policy)`, which only counts TOML policy items. During the pruning loops, text is removed, decreasing `remaining_tokens`. Because `constraint_count` is constant and `remaining_tokens` decreases, the calculated `density` strictly INCREASES.",
+        "proposed_fix": "<<<< SEARCH def _prune_for_coherence(\npackets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT content if constraint density exceeds budget.\n\n    Two-pass strategy:\n    1. Intra-packet pruning: remove individual SOFT directives within packets\n    2. Whole-packet pruning: remove entire SOFT packets if still over budget\n\n    HARD packets are NEVER pruned. Universal is NEVER pruned.\n    \"\"\"\n    total_chars = sum(len(p.text) for p in packets)\n    token_estimate = max(total_chars // 4, 1)\n    constraint_count = _count_constraints(policy)\n    density = constraint_count / token_estimate\n\n    if density <= budget:\n        return packets, []\n==== REPLACE\ndef _get_density(policy: dict[str, Any], packets: list[DirectivePacket]) -> tuple[float, int]:\n    count = _count_constraints(policy)\n    for p in packets:\n        if p.layer != \"universal\":\n            count += len(_split_packet_directives(p.text))\n    tokens = max(sum(len(p.text) for p in packets) // 4, 1)\n    return count / tokens, count\n\ndef _prune_for_coherence(\n    packets: list[DirectivePacket],\n    policy: dict[str, Any],\n    budget: float,\n) -> tuple[list[DirectivePacket], list[str]]:\n    \"\"\"Prune SOFT content if constraint density exceeds budget.\n\n    Two-pass strategy:\n    1. Intra-packet pruning: remove individual SOFT directives within packets\n    2. Whole-packet pruning: remove entire SOFT packets if still over budget\n\n    HARD packets are NEVER pruned. Universal is NEVER pruned.\n    \"\"\"\n    density, constraint_count = _get_density(policy, packets)\n\n    if density <= budget:\n        return packets, []\n>>>>",
+        "falsifier_code": "#!/usr/bin/env python3\n\"\"\"\nFalsifier for the _prune_for_coherence density-pruning defect.\n\nIt fails only when the real implementation:\n  * reaches the pruning path,\n  * removes text,\n  * computes _count_constraints(policy) only once for the whole pruning run, and\n  * therefore makes policy-constraint density increase after pruning.\n\"\"\"\n\nimport inspect\n\nfrom bench.cdsfl_registry import composer as real\n\n\ndef main() -> None:\n    # Read the real source via inspect, as required.  The behavioral check below\n    # is what determines whether to falsify.\n    _ = inspect.getsource(real._prune_for_coherence)\n\n    policy = {\n        \"constraints\": {\n            \"one_active_toml_constraint\": True,\n        }\n    }\n\n    # One prunable SOFT packet with multiple removable blocks, plus one retained\n    # HARD universal packet so whole-packet pruning still leaves text behind.\n    soft_text = (\n        (\"alpha \" * 80).strip()\n        + \"\\n\\n\"\n        + (\"beta \" * 80).strip()\n        + \"\\n\\n\"\n        + (\"gamma \" * 80).strip()\n    )\n    hard_text = (\"H \" * 400).strip()\n\n    packets = [\n        real.DirectivePacket(\n            layer=\"domain\",\n            name=\"prunable_soft_packet\",\n            text=soft_text,\n            constraint_class=\"SOFT\",\n        ),\n        real.DirectivePacket(\n            layer=\"universal\",\n            name=\"retained_hard_universal_packet\",\n            text=hard_text,\n            constraint_class=\"HARD\",\n        ),\n    ]\n\n    # Snapshot values before calling the pruning routine, which mutates its\n    # internal working list and returns pruned packet text.\n    initial_chars = sum(len(p.text) for p in packets)\n    initial_tokens = max(initial_chars // 4, 1)\n    initial_constraint_count = real._count_constraints(policy)\n    initial_density = initial_constraint_count / initial_tokens\n\n    if initial_constraint_count <= 0:\n        return\n\n    # Choose a budget just below the initial density, guaranteeing that the real\n    # pruning path is entered if the function is still implemented as reviewed.\n    budget = initial_density * 0.90\n\n    count_constraint_calls = 0\n    original_count_constraints = real._count_constraints\n\n    def counting_count_constraints(p):\n        nonlocal count_constraint_calls\n        count_constraint_calls += 1\n        return original_count_constraints(p)\n\n    real._count_constraints = counting_count_constraints\n    try:\n        pruned_packets, pruned_names = real._prune_for_coherence(\n            packets,\n            policy,\n            budget,\n        )\n    finally:\n        real._count_constraints = original_count_constraints\n\n    final_chars = sum(len(p.text) for p in pruned_packets)\n    final_tokens = max(final_chars // 4, 1)\n    final_density_using_same_policy_count = initial_constraint_count / final_tokens\n\n    pruning_path_reached = bool(pruned_names)\n    text_was_removed = final_chars < initial_chars\n    density_strictly_increased = final_density_using_same_policy_count > initial_density\n    still_over_budget = final_density_using_same_policy_count > budget\n    constraint_count_was_constant = count_constraint_calls == 1\n\n    if (\n        pruning_path_reached\n        and text_was_removed\n        and constraint_count_was_constant\n        and density_strictly_increased\n        and still_over_budget\n    ):\n        print(\"FALSIFIED: _prune_for_coherence removes text while keeping constraint_count constant.\")\n        print(f\"initial_chars={initial_chars}, final_chars={final_chars}\")\n        print(f\"initial_tokens={initial_tokens}, final_tokens={final_tokens}\")\n        print(f\"constraint_count_calls={count_constraint_calls}\")\n        print(f\"initial_density={initial_density:.12g}\")\n        print(f\"final_density={final_density_using_same_policy_count:.12g}\")\n        print(f\"budget={budget:.12g}\")\n        print(f\"pruned_names={pruned_names!r}\")\n        raise AssertionError(\n            \"Pruning decreased remaining_tokens while constraint_count stayed constant, \"\n            \"so density increased instead of decreasing.\"\n        )\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0019": {
+        "canonical_id": "C0019",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F002"
+        ],
+        "severity": 0.8,
+        "description": "In `resolve_layer_conflicts`, `kept_texts` is built by iterating over `kept`, which was previously sorted by priority (`entries.sort(key=lambda e: e[\"priority\"], reverse=True)`). This causes the rebuilt packets to have their directives reordered (e.g., all HARD directives moved to the top, SOFT to the bottom).",
+        "proposed_fix": "<<<< SEARCH # Rebuild packets from kept directives\nkept_ids = {e[\"id\"] for e in kept}\n    rebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        kept_texts = [\n            e[\"text\"] for e in kept\n            if e[\"packet_index\"] == packet_index and e[\"id\"] in kept_ids\n        ]\n        if not kept_texts:\n            continue\n==== REPLACE\n# Rebuild packets from kept directives\n    kept_ids = {e[\"id\"] for e in kept}\n    rebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        original_directives = _split_packet_directives(packet.text)\n        kept_texts = [\n            text for directive_index, text in enumerate(original_directives)\n            if f\"{packet.layer}:{packet.name}:{directive_index}\" in kept_ids\n        ]\n        if not kept_texts:\n            continue\n>>>>",
+        "falsifier_code": "#!/usr/bin/env python3\n\"\"\"\nFalsifier for resolve_layer_conflicts directive reordering.\n\nThis imports the real target module by absolute package path, constructs a packet\nwhose original directive order is SOFT-like block followed by HARD-marked block,\nthen calls the real resolve_layer_conflicts path. If the bug is present, the\nrebuilt packet preserves all directives but reorders them by priority, moving the\nHARD-marked directive before the earlier SOFT directive.\n\"\"\"\n\nfrom bench.cdsfl_registry.composer import (\n    ComposedDirectiveSet,\n    DirectivePacket,\n    resolve_layer_conflicts,\n    _split_packet_directives,\n)\n\n\ndef main() -> None:\n    packet = DirectivePacket(\n        layer=\"domain\",\n        name=\"mixed_priority_same_packet\",\n        text=(\n            \"- alpha guidance: prefer blue widgets\\n\\n\"\n            \"- beta guidance: MUST keep green widgets\"\n        ),\n        constraint_class=\"SOFT\",\n        domain=\"demo\",\n    )\n\n    # Snapshot before the call under test.  The implementation sorts its local\n    # entries in-place before rebuilding packets; this snapshot is the required\n    # original intra-packet directive order.\n    original_packet_text = packet.text\n    original_blocks = list(_split_packet_directives(original_packet_text))\n\n    # Preconditions: exactly two independent directives, with the second having\n    # higher priority only because it contains a HARD marker.  They intentionally\n    # avoid conflict keywords so both should be kept.\n    if len(original_blocks) != 2:\n        return\n    if \"MUST\" in original_blocks[0].upper() or \"MUST\" not in original_blocks[1].upper():\n        return\n\n    composed = ComposedDirectiveSet(\n        packets=[packet],\n        rendered_text=packet.text,\n        policy={},\n        cid=\"pre-resolution\",\n        constraint_count=len(original_blocks),\n        token_estimate=max(len(packet.text) // 4, 1),\n        constraint_density=len(original_blocks) / max(len(packet.text) // 4, 1),\n        coherence_budget=1.0,\n        pruned_soft=[],\n        manifest={\"model\": \"falsifier\"},\n    )\n\n    resolved, conflicts = resolve_layer_conflicts(composed)\n\n    # If a different behavior occurred, do not report this specific defect.\n    if conflicts:\n        return\n    if len(resolved.packets) != 1:\n        return\n\n    resolved_blocks = _split_packet_directives(resolved.packets[0].text)\n\n    # Falsify only when all original directives are preserved but their order is\n    # changed.  This is the reviewed defect: kept_texts is rebuilt by iterating\n    # over priority-sorted kept entries rather than original directive order.\n    if sorted(resolved_blocks) == sorted(original_blocks) and resolved_blocks != original_blocks:\n        print(\"FALSIFIED: resolve_layer_conflicts reordered directives within a packet\")\n        print(f\"original order: {original_blocks!r}\")\n        print(f\"resolved order: {resolved_blocks!r}\")\n        raise AssertionError(\n            \"resolve_layer_conflicts preserved directives but reordered them by \"\n            \"priority during packet rebuild\"\n        )\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0020": {
+        "canonical_id": "C0020",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F003"
+        ],
+        "severity": 0.7,
+        "description": "In `_prune_packet_directives`, if all blocks are pruned (e.g., all are SOFT and budget is 0), `pruned_text` becomes `\"\"`. The return statement uses `text=pruned_text if pruned_text else packet.text`, which evaluates to `packet.text` because `\"\"` is falsy.",
+        "proposed_fix": "<<<< SEARCH pruned_text = \"\\n\\n\".join(b for b, _ in retained).strip()\nreturn replace(\n        packet,\n        text=pruned_text if pruned_text else packet.text,\n        tags=set(packet.tags) | {\"intra_pruned\"},\n    )\n==== REPLACE\npruned_text = \"\\n\\n\".join(b for b, _ in retained).strip()\n    return replace(\n        packet,\n        text=pruned_text,\n        tags=set(packet.tags) | {\"intra_pruned\"},\n    )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry import composer\n\n\ndef main() -> None:\n    packet = composer.DirectivePacket(\n        layer=\"situation\",\n        name=\"all_soft_budget_zero\",\n        text=\"Consider being concise.\\n\\nPrefer examples.\",\n        constraint_class=\"SOFT\",\n        tags={\"soft\"},\n    )\n    max_chars = 0\n\n    # Preconditions: force the real pruning path and ensure every block is SOFT.\n    assert packet.constraint_class != \"HARD\"\n    assert len(packet.text) > max_chars\n\n    blocks = composer._split_packet_directives(packet.text)\n    assert blocks, \"test setup must produce at least one directive block\"\n    assert all(\n        not composer._block_is_hard(block) for block in blocks\n    ), f\"test setup accidentally included a HARD block: {blocks!r}\"\n\n    # Snapshot values before calling the real function, whose pruning loop mutates\n    # its internal retained list in-place via pop().\n    original_text = packet.text\n    original_tags = set(packet.tags)\n\n    result = composer._prune_packet_directives(packet, max_chars)\n\n    # Verify the input packet itself was not mutated; comparisons below use snapshots.\n    assert packet.text == original_text\n    assert packet.tags == original_tags\n\n    # With all-SOFT blocks and a zero budget, the real pruning loop removes every\n    # block, so the correct pruned text is the empty string. The reviewed defect is\n    # specifically present when that empty string is replaced by the original text.\n    expected_pruned_text = \"\"\n\n    if result.text == original_text and expected_pruned_text == \"\":\n        print(\n            \"FALSIFIED: all SOFT blocks were pruned to empty text, but \"\n            \"_prune_packet_directives returned the original packet.text\"\n        )\n        raise AssertionError(\n            \"_prune_packet_directives uses packet.text when pruned_text is empty\"\n        )\n\n    # If the implementation has been fixed, this exits cleanly.\n    assert result.text == expected_pruned_text\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0021": {
+        "canonical_id": "C0021",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F004"
+        ],
+        "severity": 0.8,
+        "description": "In `_compute_cid`, the hash components are `f\"{p.layer}:{p.name}:{len(p.text)}\"`. If the text content changes but the length remains the same (e.g., fixing a typo, swapping words), the CID will not change.",
+        "proposed_fix": "<<<< SEARCH def _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n\"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{len(p.text)}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n==== REPLACE\ndef _compute_cid(packets: list[DirectivePacket], model: str) -> str:\n    \"\"\"Compute a deterministic composition identity hash.\"\"\"\n    components = [\n        f\"{p.layer}:{p.name}:{hashlib.sha256(p.text.encode()).hexdigest()[:8]}\" for p in packets\n    ]\n    components.append(f\"model:{model}\")\n    raw = \"|\".join(components)\n    return hashlib.sha256(raw.encode()).hexdigest()[:16]\n>>>>",
+        "falsifier_code": "#!/usr/bin/env python3\n\"\"\"\nFalsifier for cdsfl_registry.composer._compute_cid ignoring packet text content.\n\nIt raises AssertionError / prints FALSIFIED iff two DirectivePackets with different\ntext content but identical text length produce the same CID for the same model.\n\"\"\"\n\nimport importlib\nimport sys\n\n\ndef main() -> None:\n    # Absolute import from the real package/module under test.\n    composer = importlib.import_module(\"bench.cdsfl_registry.composer\")\n\n    compute_cid = getattr(composer, \"_compute_cid\", None)\n    DirectivePacket = getattr(composer, \"DirectivePacket\", None)\n\n    # If the implementation/API no longer has the reviewed private function or\n    # packet type, this specific defect cannot be demonstrated here.\n    if compute_cid is None or DirectivePacket is None:\n        return\n\n    packet = DirectivePacket(\n        layer=\"universal\",\n        name=\"same-name\",\n        text=\"Fix typo: teh value must be checked.\",\n        constraint_class=\"HARD\",\n        domain=None,\n        model=None,\n        tags=set(),\n    )\n    packets = [packet]\n    model = \"test-model\"\n\n    before_text_snapshot = packet.text\n    before_cid = compute_cid(packets, model)\n\n    # In-place mutation of the real packet object: different content, same length.\n    after_text = \"Fix typo: the value must be checked.\"\n    assert after_text != before_text_snapshot\n    assert len(after_text) == len(before_text_snapshot)\n\n    packet.text = after_text\n\n    # Preconditions still hold after mutation.\n    assert packet.text != before_text_snapshot\n    assert len(packet.text) == len(before_text_snapshot)\n\n    after_cid = compute_cid(packets, model)\n\n    if before_cid == after_cid:\n        print(\n            \"FALSIFIED: _compute_cid did not change when packet.text content \"\n            \"changed while length/layer/name/model stayed the same.\"\n        )\n        raise AssertionError(\n            \"CID collision for same-length different text content: \"\n            f\"{before_cid!r} == {after_cid!r}\"\n        )\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 0,
+        "last_status_change_round": 1,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0022": {
+        "canonical_id": "C0022",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F005"
+        ],
+        "severity": 0.8,
+        "description": "In `_apply_phenotype_transform`, `strip_examples` and `strip_rationale` fail to correctly strip multi-line blocks. `strip_examples` stops skipping if it encounters a blank line (`not line.strip()`), leaving the rest of the example orphaned. `strip_rationale` only skips the exact line starting with \"why:\", leaving the entire rationale body orphaned.",
+        "proposed_fix": "<<<< SEARCH # --- 1. Strip examples ---\nif transform.strip_examples:\n        lines = text.split(\"\\n\")\n        filtered: list[str] = []\n        skipping = False\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"example:\", \"examples:\", \"e.g.,\", \"e.g.\", \"for example:\")\n            ):\n                skipping = True\n                continue\n            if skipping and (\n                not line.strip()\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n            ):\n                skipping = False\n            if not skipping:\n                filtered.append(line)\n        text = \"\\n\".join(filtered)\n\n    # --- 2. Strip rationale ---\n    if transform.strip_rationale:\n        lines = text.split(\"\\n\")\n        filtered = []\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"why:\", \"rationale:\", \"motivation:\", \"reason:\")\n            ):\n                continue\n            filtered.append(line)\n        text = \"\\n\".join(filtered)\n==== REPLACE\n# --- 1. Strip examples ---\n    if transform.strip_examples:\n        lines = text.split(\"\\n\")\n        filtered: list[str] = []\n        skipping = False\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"example:\", \"examples:\", \"e.g.,\", \"e.g.\", \"for example:\")\n            ):\n                skipping = True\n                continue\n            if skipping and (\n                _starts_new_block(line.strip())\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n            ):\n                skipping = False\n            if not skipping:\n                filtered.append(line)\n        text = \"\\n\".join(filtered)\n\n    # --- 2. Strip rationale ---\n    if transform.strip_rationale:\n        lines = text.split(\"\\n\")\n        filtered = []\n        skipping = False\n        for line in lines:\n            stripped_lower = line.strip().lower()\n            if stripped_lower.startswith(\n                (\"why:\", \"rationale:\", \"motivation:\", \"reason:\")\n            ):\n                skipping = True\n                continue\n            if skipping and (\n                _starts_new_block(line.strip())\n                or re.match(r\"^(#{1,6}\\s+|\\[[^\\]]+\\]|===|---)\", line.strip())\n            ):\n                skipping = False\n            if not skipping:\n                filtered.append(line)\n        text = \"\\n\".join(filtered)\n>>>>",
+        "falsifier_code": "\"\"\"\nFalsifier for bench.cdsfl_registry.composer._apply_phenotype_transform.\n\nIt triggers the reviewed paths:\n- strip_examples=True with an Example: block containing a blank line before\n  more example content.\n- strip_rationale=True with a Why: heading followed by rationale body lines.\n\nIf the defect is present, orphaned sentinel lines remain in the transformed\noutput; this script prints FALSIFIED and raises AssertionError. If the defect\nhas been fixed, it exits cleanly.\n\"\"\"\n\nfrom dataclasses import asdict\n\nfrom bench.cdsfl_registry.composer import (\n    PhenotypeTransform,\n    _apply_phenotype_transform,\n)\n\n\ndef main() -> None:\n    transform = PhenotypeTransform(\n        strip_examples=True,\n        strip_rationale=True,\n        simplify_language=False,\n        compress_tables=False,\n        format_style=\"full\",\n        max_directive_chars=10000,\n    )\n\n    directive = \"\"\"HARD: keep this directive.\n\nExample:\n  first example line that should be removed\n\n  EXAMPLE_ORPHAN_SENTINEL should also be removed as part of the same example block.\n\nWhy:\n  RATIONALE_ORPHAN_SENTINEL should be removed as the rationale body.\n  More rationale body that should also be removed.\n\nHARD: keep this later directive.\n\"\"\"\n\n    # Snapshot inputs before calling the real target. The target is expected to\n    # return transformed text, not rely on caller-visible mutation.\n    directive_before = directive[:]\n    transform_before = asdict(transform)\n\n    rendered = _apply_phenotype_transform(directive, transform)\n\n    # Preserve the precondition sanity check without conflating it with the\n    # reviewed defect.\n    if directive != directive_before or asdict(transform) != transform_before:\n        raise RuntimeError(\"Unexpected input mutation while running falsifier\")\n\n    leaked = []\n    if \"EXAMPLE_ORPHAN_SENTINEL\" in rendered:\n        leaked.append(\"multi-line example content after a blank line\")\n    if \"RATIONALE_ORPHAN_SENTINEL\" in rendered:\n        leaked.append(\"rationale body following a Why: line\")\n\n    if leaked:\n        print(\"FALSIFIED: _apply_phenotype_transform left orphaned stripped-block content.\")\n        print(\"Leaked:\", \", \".join(leaked))\n        print(\"--- transformed output ---\")\n        print(rendered)\n        raise AssertionError(\n            \"_apply_phenotype_transform failed to fully strip: \"\n            + \", \".join(leaked)\n        )\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 0,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          },
+          {
+            "model": "CC2",
+            "verdict": "REOPEN",
+            "round": 3,
+            "evidence": "The `strip_examples` skipping-state bug persists in the current code. When an `Example:` line is followed by non-example content WITHOUT a blank line separator, `skipping=True` persists and silently d"
+          }
+        ],
+        "verified": true,
+        "escalated": true,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 0.0,
+          "A": 0.0,
+          "E": 0.0,
+          "tristate": "REJECTED",
+          "blocks_parsed": 1,
+          "blocks_applied": 0,
+          "gate_details": {
+            "error": "search_not_found"
+          }
+        }
+      },
+      "C0023": {
+        "canonical_id": "C0023",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F007"
+        ],
+        "severity": 0.88,
+        "description": "`compose()` applies phenotype transformation to caller-supplied HARD situation packets, and `_apply_phenotype_transform()` can delete mandatory text before the packet enters pruning/conflict-resolution/rendering.\n\nLocation: `bench/cdsfl_registry/composer.py`, `compose()`, situation handling:\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\nEvidence / premises:\n\n1. `build_interaction_pattern(\"four_layer\")` can produce a",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        if situation.constraint_class == \"HARD\":\n            packets.append(replace(situation, tags=set(situation.tags)))\n        else:\n            packets.append(replace(\n                situation,\n                text=_apply_phenotype_transform(situation.text, transform),\n                tags=set(situation.tags),\n            ))\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry import composer\nfrom bench.cdsfl_registry.composer import DirectivePacket\n\noriginal_universal = composer._load_universal_directive\noriginal_domain = composer._load_domain_directive\noriginal_check = composer._check_monotonicity\n\ntry:\n    composer._load_universal_directive = lambda model=None: DirectivePacket(\n        layer=\"universal\",\n        name=\"u\",\n        text=\"UNIVERSAL\",\n        constraint_class=\"HARD\",\n    )\n    composer._load_domain_directive = lambda *a, **k: None\n    composer._check_monotonicity = lambda *a, **k: None\n\n    import bench.cdsfl_registry.registry as registry\n    original_policy = registry.load_effective_policy\n    registry.load_effective_policy = lambda *a, **k: {\n        \"constraints\": {},\n        \"verification\": {},\n        \"protocol\": {},\n    }\n\n    situation = DirectivePacket(\n        layer=\"situation\",\n        name=\"hard_situation\",\n        text=(\n            \"MUST keep the next example as a mandatory test vector.\\n\\n\"\n            \"Example:\\n\"\n            \"MUST_SHOW_SENTINEL\"\n        ),\n        constraint_class=\"HARD\",\n    )\n\n    result = composer.compose(\"software\", \"deepseek_v3\", situation=situation)\n\n    if \"MUST_SHOW_SENTINEL\" not in result.rendered_text:\n        print(\"FALSIFIED\")\nfinally:\n    composer._load_universal_directive = original_universal\n    composer._load_domain_directive = original_domain\n    composer._check_monotonicity = original_check\n    try:\n        registry.load_effective_policy = original_policy\n    except NameError:\n        pass",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0024": {
+        "canonical_id": "C0024",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F006"
+        ],
+        "severity": 0.95,
+        "description": "`_semantically_duplicate` falsely deduplicates short directives if their tokens are fully contained in a longer, unrelated directive.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Containment check: shorter contained in longer\n    smaller = min(len(left_tokens), len(right_tokens))\n    if smaller > 0 and intersection / smaller >= 0.95:\n        return True\n    return False\n==== REPLACE\n# Containment check: shorter contained in longer\n    smaller = min(len(left_tokens), len(right_tokens))\n    larger = max(len(left_tokens), len(right_tokens))\n    if smaller > 0 and intersection / smaller >= 0.95 and smaller / larger >= 0.4:\n        return True\n    return False\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _semantically_duplicate\n\nshort = \"Use concise code.\"\nlong = \"When writing the documentation, ensure the code examples are concise and clear.\"\nif _semantically_duplicate(short, long):\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0025": {
+        "canonical_id": "C0025",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F007"
+        ],
+        "severity": 0.85,
+        "description": "`_directive_topic_and_stance` ignores negations for verbosity, causing opposite directives to be seen as agreeing, and agreeing directives to be seen as conflicting.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n==== REPLACE\nif any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"not\", \"never\", \"without\")):\n            return \"verbosity\", \"high\"\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"not\", \"never\", \"without\")):\n            return \"verbosity\", \"low\"\n        return \"verbosity\", \"high\"\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _directive_topic_and_stance\n\ntopic, stance = _directive_topic_and_stance(\"Do not use a simple format.\")\nif topic == \"verbosity\" and stance == \"low\":\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0026": {
+        "canonical_id": "C0026",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F008"
+        ],
+        "severity": 0.9,
+        "description": "`_split_packet_directives` incorrectly splits sub-list items into independent blocks because `_DIRECTIVE_START_RE` matches any bullet point, regardless of indentation or context.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif current and _DIRECTIVE_START_RE.match(stripped):\n            blocks.append(\"\\n\".join(current).strip())\n            current = [stripped]\n            continue\n==== REPLACE\nis_indented = len(line) - len(stripped) > 0\n        if current and not is_indented and _DIRECTIVE_START_RE.match(stripped):\n            blocks.append(\"\\n\".join(current).strip())\n            current = [stripped]\n            continue\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _split_packet_directives\n\ntext = \"1. You MUST do:\\n - A\\n - B\"\nblocks = _split_packet_directives(text)\nif len(blocks) == 3:\n    print(\"FALSIFIED\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [
+          {
+            "model": "Gemini",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0027": {
+        "canonical_id": "C0027",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F006"
+        ],
+        "severity": 0.93,
+        "description": "`compose()` applies lossy phenotype transforms to caller-provided HARD situation packets, allowing HARD situation directives to be removed.\n\nLocation: `bench/cdsfl_registry/composer.py`, function `compose()`:\nif situation:\n    situation.text = _apply_phenotype_transform(situation.text, transform)\n    packets.append(situation)\nPremises:\n\n1. `build_interaction_pattern(\"four_layer\")`, `build_interaction_pattern(\"fff\")`, and caller-created packets may have `constraint_class=\"HARD\"`.\n2. `_apply_pheno",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation:\n        situation.text = _apply_phenotype_transform(situation.text, transform)\n        packets.append(situation)\n==== REPLACE\nif situation:\n        situation_packet = replace(situation)\n        if situation_packet.constraint_class != \"HARD\":\n            situation_packet.text = _apply_phenotype_transform(\n                situation_packet.text, transform\n            )\n        packets.append(situation_packet)\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import DirectivePacket, compose\n\ntoken = \"MUST_INCLUDE_UNIQUE_TOKEN_ABC\"\nsituation = DirectivePacket(\n    layer=\"situation\",\n    name=\"hard_reason\",\n    text=f\"Reason: {token}\",\n    constraint_class=\"HARD\",\n)\nresult = compose(\"software\", \"deepseek_v3\", situation=situation)\nif token not in result.rendered_text:\n    print(\"FALSIFIED: HARD situation text was removed by phenotype transform\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0028": {
+        "canonical_id": "C0028",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F007"
+        ],
+        "severity": 0.82,
+        "description": "`compose()` silently ignores `code_extracts`, `verified_facts`, `explicit_unknowns`, `adversarial_brief`, and `interaction_surface` unless `review_target` is non-empty.\n\nLocation: `bench/cdsfl_registry/composer.py`, function `compose()`:\nif situation is None and review_target:\n    situation = _build_situation_packet(\n        review_target=review_target,\n        code_extracts=code_extracts,",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif situation is None and review_target:\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n==== REPLACE\nif situation is None and any(\n        (\n            review_target,\n            code_extracts,\n            verified_facts,\n            explicit_unknowns,\n            adversarial_brief,\n            interaction_surface,\n        )\n    ):\n        situation = _build_situation_packet(\n            review_target=review_target,\n            code_extracts=code_extracts,\n            verified_facts=verified_facts,\n            explicit_unknowns=explicit_unknowns,\n            adversarial_brief=adversarial_brief,\n            interaction_surface=interaction_surface,\n        )\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import compose\n\ntoken = \"UNIQUE_VERIFIED_FACT_TOKEN_ABC\"\nresult = compose(\"software\", \"opus_4_6\", verified_facts=token)\nif token not in result.rendered_text:\n    print(\"FALSIFIED: non-review_target situation kwargs are ignored\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 2,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0029": {
+        "canonical_id": "C0029",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F008"
+        ],
+        "severity": 0.48,
+        "description": "`calibrate_coherence_thresholds()` crashes when a log entry has non-dict `metadata`.\n\nLocation: `bench/cdsfl_registry/composer.py`, function `calibrate_coherence_thresholds()`:\nval = entry.get(key) or entry.get(\"metadata\", {}).get(key)\nPremises:\n\n1. The function reads arbitrary experiment JSON logs.\n2. It catches malformed JSON and OS errors, suggesting log ingestion should be tolerant.\n3. JSON permits `metadata` to be any type, including a string, list, number, or null.\n4. The code assumes `ent",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nfindings_count = 0\n            for key in (\"findings_count\", \"N\"):\n                val = entry.get(key) or entry.get(\"metadata\", {}).get(key)\n                if isinstance(val, int) and val > 0:\n                    findings_count = val\n                    break\n==== REPLACE\nfindings_count = 0\n            metadata = entry.get(\"metadata\", {})\n            if not isinstance(metadata, dict):\n                metadata = {}\n            for key in (\"findings_count\", \"N\"):\n                val = entry.get(key) or metadata.get(key)\n                if isinstance(val, int) and val > 0:\n                    findings_count = val\n                    break\n>>>>",
+        "falsifier_code": "import json\nimport tempfile\nfrom pathlib import Path\nfrom bench.cdsfl_registry.composer import calibrate_coherence_thresholds\n\nwith tempfile.TemporaryDirectory() as tmp:\n    path = Path(tmp) / \"log.json\"\n    path.write_text(json.dumps({\n        \"model\": \"opus_4_6\",\n        \"constraint_density\": 0.01,\n        \"response\": \"finding text \" * 20,\n        \"metadata\": \"not-a-dict\"\n    }), encoding=\"utf-8\")\n    try:\n        calibrate_coherence_thresholds(tmp, min_points_per_model=1)\n    except AttributeError as exc:\n        if \"get\" in str(exc):\n            print(\"FALSIFIED: calibrator crashes when metadata is not a dict\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 6,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0030": {
+        "canonical_id": "C0030",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F100"
+        ],
+        "severity": 0.6,
+        "description": "FINDING_ID: F100\nSEVERITY: 0.60\nFIND: line.startswith('[') in _starts_new_block treats inline markers like '[VERIFY:current]...' as block starts, disrupting block splitting for 'concise'/'minimal' for",
+        "proposed_fix": "",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _starts_new_block\n\nline = \"[VERIFY:current] The API key must rotate.\"\nassert not _starts_new_block(line), \"FALSIFIED: defect present\"",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0031": {
+        "canonical_id": "C0031",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F004"
+        ],
+        "severity": 0.65,
+        "description": "`_semantically_duplicate()` (line ~260) uses a containment check `intersection / min(|left|, |right|) >= 0.95`. When either token set has 1-2 tokens (after stopword/synonym normalization), ANY other string sharing those tokens triggers false-positive duplicate detection. This is exploited by step 4 (header flattening): `## Proof` \u2192 `\"Proof:\"` \u2192 tokens `{\"proof\"}`. Step 6 (dedup) then drops every subsequent line containing \"proof\", including semantically distinct directives like \"Provide formal p",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\n# Containment check: shorter contained in longer\n    smaller = min(len(left_tokens), len(right_tokens))\n    if smaller > 0 and intersection / smaller >= 0.95:\n        return True\n==== REPLACE\n# Containment check: shorter contained in longer\n    # Require minimum 3 tokens in smaller set to avoid false positives\n    # from short labels (e.g. \"Proof:\") matching any line containing \"proof\"\n    smaller = min(len(left_tokens), len(right_tokens))\n    if smaller >= 3 and intersection / smaller >= 0.95:\n        return True\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _apply_phenotype_transform, PhenotypeTransform\n\ntransform = PhenotypeTransform(format_style='concise')\ntext = '## Proof\\n\\nProvide formal proof for all mathematical claims and derive conclusions explicitly.\\n\\n## Verification\\n\\nVerify all claims using symbolic tools before presenting results.'\nresult = _apply_phenotype_transform(text, transform)\nassert 'formal proof' not in result and 'Proof:' in result, \\\n    f'defect present: directive containing \"formal proof\" was dropped but header \"Proof:\" was kept'\nprint('FALSIFIED: containment check false-positive drops legitimate directive')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0032": {
+        "canonical_id": "C0032",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F005"
+        ],
+        "severity": 0.6,
+        "description": "`resolve_layer_conflicts()` (line ~620) rebuilds packet text with `\"\\n\".join(kept_texts)` but the original packets use `\"\\n\\n\"` (double newlines) between directive blocks. This collapses block separators, causing `_split_packet_directives()` to merge formerly-separate blocks into a single block. A SOFT block adjacent to a HARD block merges into a single block classified HARD by `_block_is_hard()` (because the HARD markers from the HARD block propagate to the merged block). This makes the SOFT co",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nrebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        kept_texts = [\n            e[\"text\"] for e in kept\n            if e[\"packet_index\"] == packet_index and e[\"id\"] in kept_ids\n        ]\n        if not kept_texts:\n            continue\n        rebuilt_packets.append(DirectivePacket(\n            layer=packet.layer,\n            name=packet.name,\n            text=\"\\n\".join(kept_texts),\n            constraint_class=packet.constraint_class,\n            domain=packet.domain,\n            model=packet.model,\n            tags=set(packet.tags),\n        ))\n==== REPLACE\nrebuilt_packets: list[DirectivePacket] = []\n    for packet_index, packet in enumerate(composed.packets):\n        kept_texts = [\n            e[\"text\"] for e in kept\n            if e[\"packet_index\"] == packet_index and e[\"id\"] in kept_ids\n        ]\n        if not kept_texts:\n            continue\n        rebuilt_packets.append(DirectivePacket(\n            layer=packet.layer,\n            name=packet.name,\n            text=\"\\n\\n\".join(kept_texts),\n            constraint_class=packet.constraint_class,\n            domain=packet.domain,\n            model=packet.model,\n            tags=set(packet.tags),\n        ))\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import (\n    resolve_layer_conflicts, _split_packet_directives,\n    ComposedDirectiveSet, DirectivePacket\n)\n\npacket = DirectivePacket(\n    layer='domain', name='test',\n    text='Block one about examples.\\n\\nBlock two about verification.\\n\\nBlock three about tables.',\n    constraint_class='SOFT', tags=set(),\n)\ncomposed = ComposedDirectiveSet(\n    packets=[packet], rendered_text=packet.text,\n    policy={'constraints': {'a': True}}, cid='test',\n    constraint_count=1, token_estimate=100,\n    constraint_density=0.01, coherence_budget=0.015,\n    pruned_soft=[], manifest={'model': 'opus_4_6'},\n)\nresolved, _ = resolve_layer_conflicts(composed)\nrebuilt_text = resolved.packets[0].text\nrebuilt_blocks = _split_packet_directives(rebuilt_text)\noriginal_blocks = _split_packet_directives(packet.text)\nassert len(rebuilt_blocks) < len(original_blocks), \\\n    f'defect present: {len(original_blocks)} blocks collapsed to {len(rebuilt_blocks)}'\nprint(f'FALSIFIED: {len(original_blocks)} blocks collapsed to {len(rebuilt_blocks)} due to separator collapse')",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 1,
+        "last_status_change_round": 2,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0033": {
+        "canonical_id": "C0033",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_F009"
+        ],
+        "severity": 0.62,
+        "description": "`bench/cdsfl_registry/composer.py`, function `_directive_topic_and_stance()`, misclassifies explicit table-prohibition directives as table-inclusion directives.\n\nCurrent code:\nif \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\nThis branch does not recognise the same exclusion terms used for examples and rationale, such as `\"do not\"`, `\"avoid\"`, `\"st",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nif \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n==== REPLACE\nif \"table\" in lower or \"tabular\" in lower:\n        table_exclusion_patterns = (\n            r\"\\b(?:avoid|strip|remove|omit)\\b[^.]*\\b(?:tables?|tabular)\\b\",\n            r\"\\b(?:do not|don't|no)\\b[^.]*\\b(?:use|include|emit|output|render|create)\\b[^.]*\\b(?:tables?|tabular)\\b\",\n            r\"\\bwithout\\b[^.]*\\b(?:tables?|tabular)\\b\",\n            r\"\\b(?:tables?|tabular)\\b[^.]*\\b(?:inline|plain text|compress|without)\\b\",\n        )\n        if any(re.search(pattern, lower) for pattern in table_exclusion_patterns):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _directive_topic_and_stance\n\ncases = {\n    \"Do not use tables.\": (\"table\", \"include\"),\n    \"Avoid tabular output.\": (\"table\", \"include\"),\n    \"Remove tables from prompt.\": (\"table\", \"include\"),\n}\n\ndefect_cases = {\n    text: _directive_topic_and_stance(text)\n    for text in cases\n}\n\nif defect_cases == cases:\n    print(\"FALSIFIED: explicit table-prohibition directives are classified as table inclusion\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0034": {
+        "canonical_id": "C0034",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F006"
+        ],
+        "severity": 0.55,
+        "description": "`_directive_topic_and_stance()` returns at most ONE (topic, stance) pair per directive, using first-match-wins across its keyword checks. A directive containing keywords from multiple conflict dimensions (e.g., \"detailed\" AND \"examples\") is classified under only the FIRST matching dimension. The function checks verbosity before examples before rationale before tables. A directive like `\"Provide detailed examples for all claims\"` returns `(\"verbosity\", \"high\")` \u2014 the \"examples\" dimension is never",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n\n    if \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"examples\", \"exclude\"\n        return \"examples\", \"include\"\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"rationale\", \"exclude\"\n        return \"rationale\", \"include\"\n\n    if \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n\n    return None, None\n==== REPLACE\ndef _directive_topic_and_stance(text: str) -> list[tuple[str, str]]:\n    \"\"\"Extract ALL semantic topics and stances from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n    results: list[tuple[str, str]] = []\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        results.append((\"verbosity\", \"low\"))\n    elif any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        results.append((\"verbosity\", \"high\"))\n\n    if \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            results.append((\"examples\", \"exclude\"))\n        else:\n            results.append((\"examples\", \"include\"))\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            results.append((\"rationale\", \"exclude\"))\n        else:\n            results.append((\"rationale\", \"include\"))\n\n    if \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            results.append((\"table\", \"exclude\"))\n        else:\n            results.append((\"table\", \"include\"))\n\n    return results\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`_directive_topic_and_stance()` is first-match-wins and can only return one `(topic, stance)` for directives containing multiple conflict dimensions."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0035": {
+        "canonical_id": "C0035",
+        "source_model": "CC2",
+        "source_aliases": [
+          "CC2_F007"
+        ],
+        "severity": 0.6,
+        "description": "`_prune_for_coherence()` prunes situation packets BEFORE domain packets. The sort key `prune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}` assigns lower priority (pruned first) to situation packets. Situation packets contain the task-specific context: review target, code extracts, verified facts, explicit unknowns, and adversarial brief. Domain packets contain generic guidelines (e.g., \"software review best practices\"). Under coherence budget pressure, the function removes the most task",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nprune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}\n==== REPLACE\nprune_order = {\"domain\": 0, \"situation\": 1, \"phenotype\": 2}\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "CONFIRMED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "CC2",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "but with a caveat: this is a design judgment call, not a clear correctness bug. The current prune order (situation first, domain second) is defensible if domain constraints are considered more valuabl"
+          },
+          {
+            "model": "ChatGPT",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": "`_prune_for_coherence()` currently sorts prunable packets with `{\"situation\": 0, \"domain\": 1, \"phenotype\": 2}`, so situation packets are pruned before domain packets."
+          }
+        ],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0036": {
+        "canonical_id": "C0036",
+        "source_model": "ChatGPT",
+        "source_aliases": [
+          "ChatGPT_F009"
+        ],
+        "severity": 0.86,
+        "description": "`_build_situation_packet()` marks user/task payloads as `task_specific`, but `resolve_layer_conflicts()` still treats their contents as conflict-resolvable directives and can silently delete the review target/code extract.\n\nLocation:\n\n- `bench/cdsfl_registry/composer.py`, `_build_situation_packet()`:\nreturn DirectivePacket(\n        layer=\"situation\",\n        name=\"confer_packet\",\n        text=\"\\n\\n\".join(sections),\n        constraint_class=\"SOFT\",\n        tags={\"situation\", \"task_specific\"},\n   ",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nentries: list[dict[str, Any]] = []\n    for packet_index, packet in enumerate(composed.packets):\n        for directive_index, directive_text in enumerate(\n            _split_packet_directives(packet.text)\n        ):\n            entries.append({\n                \"id\": f\"{packet.layer}:{packet.name}:{directive_index}\",\n                \"packet_index\": packet_index,\n                \"packet\": packet,\n                \"text\": directive_text,\n                \"hard\": packet.constraint_class == \"HARD\" or _block_is_hard(directive_text),\n                \"priority\": (\n                    1 if (packet.constraint_class == \"HARD\" or _block_is_hard(directive_text)) else 0,\n                    _LAYER_PRIORITY.get(packet.layer, 0),\n                    _specificity_score(packet),\n                    -packet_index,\n                    -directive_index,\n                ),\n            })\n==== REPLACE\nentries: list[dict[str, Any]] = []\n    for packet_index, packet in enumerate(composed.packets):\n        if \"task_specific\" in packet.tags:\n            entries.append({\n                \"id\": f\"{packet.layer}:{packet.name}:task_specific\",\n                \"packet_index\": packet_index,\n                \"packet\": packet,\n                \"text\": packet.text,\n                \"hard\": packet.constraint_class == \"HARD\",\n                \"protected\": True,\n                \"priority\": (\n                    1 if packet.constraint_class == \"HARD\" else 0,\n                    _LAYER_PRIORITY.get(packet.layer, 0),\n                    _specificity_score(packet),\n                    -packet_index,\n                    0,\n                ),\n            })\n            continue\n\n        for directive_index, directive_text in enumerate(\n            _split_packet_directives(packet.text)\n        ):\n            entries.append({\n                \"id\": f\"{packet.layer}:{packet.name}:{directive_index}\",\n                \"packet_index\": packet_index,\n                \"packet\": packet,\n                \"text\": directive_text,\n                \"hard\": packet.constraint_class == \"HARD\" or _block_is_hard(directive_text),\n                \"protected\": False,\n                \"priority\": (\n                    1 if (packet.constraint_class == \"HARD\" or _block_is_hard(directive_text)) else 0,\n                    _LAYER_PRIORITY.get(packet.layer, 0),\n                    _specificity_score(packet),\n                    -packet_index,\n                    -directive_index,\n                ),\n            })\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import (\n    DirectivePacket,\n    ComposedDirectiveSet,\n    resolve_layer_conflicts,\n    _render_directive_text,\n)\n\nuniversal = DirectivePacket(\n    layer=\"universal\",\n    name=\"u\",\n    text=\"Do not include examples in the answer.\",\n    constraint_class=\"HARD\",\n)\n\ntask_payload = DirectivePacket(\n    layer=\"situation\",\n    name=\"confer_packet\",\n    text=\"=== CODE EXTRACTS ===\\n# file: examples.py\\ndef f():\\n    return 1\",\n    constraint_class=\"SOFT\",\n    tags={\"situation\", \"task_specific\"},\n)\n\npackets = [universal, task_payload]\nrendered = _render_directive_text(packets)\ncomposed = ComposedDirectiveSet(\n    packets=packets,\n    rendered_text=rendered,\n    policy={},\n    cid=\"test\",\n    constraint_count=0,\n    token_estimate=1,\n    constraint_density=0.0,\n    coherence_budget=1.0,\n    pruned_soft=[],\n    manifest={\"model\": \"test_model\"},\n)\n\nresolved, conflicts = resolve_layer_conflicts(composed)\nresolved_text = _render_directive_text(resolved.packets)\n\nif \"examples.py\" not in resolved_text or \"def f()\" not in resolved_text:\n    raise AssertionError(\n        \"FALSIFIED: task_specific code payload was removed by directive conflict resolution\"\n    )\n\nprint(\"clean: task_specific payload preserved\")",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0037": {
+        "canonical_id": "C0037",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F101"
+        ],
+        "severity": 0.95,
+        "description": "FINDING_ID: F101\nSEVERITY: 0.95 (CRITICAL \u2014 remote file read, confidentiality breach)  \nFLAW_CLASS: 5 (correctness \u2014 missing input sanitisation)  \nABSTRACTION_INDEX: 0.20 (surface, single function)\n\nF",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _load_domain_directive(\n    domain: str, variant: str | None = None\n) -> DirectivePacket | None:\n    \"\"\"Load a domain-specific directive (Layer 2).\"\"\"\n    domain_dir = DIRECTIVES_DIR / domain\n    if not domain_dir.exists():\n        return None\n\n    if variant:\n        path = domain_dir / f\"{domain}_{variant}.txt\"\n    else:\n        txt_files = sorted(domain_dir.glob(\"*.txt\"))\n        if not txt_files:\n            return None\n        path = txt_files[0]\n\n    if not path.exists():\n        return None\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n==== REPLACE\n_VALID_DOMAIN_RE = re.compile(r\"^[a-zA-Z0-9_\\-]+$\")\n\ndef _load_domain_directive(\n    domain: str, variant: str | None = None\n) -> DirectivePacket | None:\n    \"\"\"Load a domain-specific directive (Layer 2).\"\"\"\n    if not _VALID_DOMAIN_RE.match(domain):\n        raise ValueError(f\"Invalid domain name: {domain!r}\")\n    if variant is not None and not _VALID_DOMAIN_RE.match(variant):\n        raise ValueError(f\"Invalid domain variant: {variant!r}\")\n\n    domain_dir = DIRECTIVES_DIR / domain\n    if not domain_dir.exists():\n        return None\n\n    if variant:\n        path = domain_dir / f\"{domain}_{variant}.txt\"\n    else:\n        txt_files = sorted(domain_dir.glob(\"*.txt\"))\n        if not txt_files:\n            return None\n        path = txt_files[0]\n\n    if not path.exists():\n        return None\n\n    return DirectivePacket(\n        layer=\"domain\",\n        name=path.stem,\n        text=path.read_text(encoding=\"utf-8\"),\n        constraint_class=\"SOFT\",\n        domain=domain,\n        tags={domain},\n    )\n>>>>",
+        "falsifier_code": "import tempfile, os, shutil\nfrom pathlib import Path\nfrom unittest import mock\nfrom bench.cdsfl_registry.composer import _load_domain_directive, DIRECTIVES_DIR\n\n# Set up a safe directory and a sibling \"attacker\" directory with a secret file\nwith tempfile.TemporaryDirectory() as tmp:\n    safe_dir = Path(tmp) / \"safe\"\n    safe_dir.mkdir()\n    attack_dir = Path(tmp) / \"attack\"\n    attack_dir.mkdir()\n    secret = attack_dir / \"secret.txt\"\n    secret.write_text(\"stolen data\")\n\n    # Monkey-patch DIRECTIVES_DIR to safe_dir\n    with mock.patch(\"bench.cdsfl_registry.composer.DIRECTIVES_DIR\", safe_dir):\n        # The fix should raise ValueError for traversal attempt\n        try:\n            _load_domain_directive(\"../attack\")\n        except ValueError:\n            pass  # fix works\n        else:\n            assert False, \"FALSIFIED: traversal succeeded\"",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CLOSED",
+        "open_since_round": 2,
+        "last_status_change_round": 3,
+        "verdicts": [
+          {
+            "model": "DeepSeek",
+            "verdict": "CONFIRM",
+            "round": 3,
+            "evidence": ""
+          }
+        ],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0038": {
+        "canonical_id": "C0038",
+        "source_model": "Codex",
+        "source_aliases": [
+          "Codex_UNSTRUCTURED"
+        ],
+        "severity": 0.3,
+        "description": "WITHDRAW Codex_F009 \u2014 prior-round item is a DUPLICATE of existing registry content and failed `\u03c3_measured`. I am not resubmitting it. No counter-receipts exist.\n\n## Registry actions\n\n### CONFIRM C0034\n\n`_directive_topic_and_stance()` reports only one `(topic, stance)` pair even when a directive contains multiple independently conflicting dimensions.\n\nEvidence run: `_directive_topic_and_stance(\"Use concise examples in table format with rationale.\")` returns only `('verbosity', 'low')`; it does no",
+        "proposed_fix": "",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0039": {
+        "canonical_id": "C0039",
+        "source_model": "DeepSeek",
+        "source_aliases": [
+          "DeepSeek_F102"
+        ],
+        "severity": 0.65,
+        "description": "FINDING_ID: F102  \nSEVERITY: 0.65 (HIGH \u2014 silently wrong constraint classification)  \nFLAW_CLASS: 1 (logic \u2014 incorrect stance inference)  \nABSTRACTION_INDEX: 0.15 (surface string\u2011matching flaw)\n\n### F",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n\n    if \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"examples\", \"exclude\"\n        return \"examples\", \"include\"\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"rationale\", \"exclude\"\n        return \"rationale\", \"include\"\n\n    if \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n\n    return None, None\n==== REPLACE\n_NEGATION_TERMS = {\"do not\", \"avoid\", \"strip\", \"remove\", \"without\"}\n\ndef _has_scoped_negation(lower: str, topic_word: str) -> bool:\n    \"\"\"Return True if a negation term appears near `topic_word` in `lower`.\"\"\"\n    # Find the first occurrence of topic_word\n    idx = lower.find(topic_word)\n    if idx == -1:\n        return False\n    # Look at the 10 words preceding the topic word\n    prefix = lower[max(0, idx - 80) : idx]  # ~80 chars window\n    words_before = prefix.split()\n    check_terms = words_before[-5:] if len(words_before) > 5 else words_before\n    return any(nt in \" \".join(check_terms) for nt in _NEGATION_TERMS)\n\n\ndef _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n\n    if \"example\" in lower:\n        if _has_scoped_negation(lower, \"example\"):\n            return \"examples\", \"exclude\"\n        return \"examples\", \"include\"\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        for w in (\"rationale\", \"reason\", \"motivation\", \"why\"):\n            if w in lower:\n                if _has_scoped_negation(lower, w):\n                    return \"rationale\", \"exclude\"\n                else:\n                    break\n        # Fallthrough: no scoped negation found\n        return \"rationale\", \"include\"\n\n    if \"table\" in lower or \"tabular\" in lower:\n        target = \"table\" if \"table\" in lower else \"tabular\"\n        # For tables, \"inline\", \"plain text\", \"compress\" also indicate exclude\n        # in addition to standard negation terms\n        if _has_scoped_negation(lower, target) or any(\n            kw in lower for kw in (\"inline\", \"plain text\", \"compress\")\n        ):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n\n    return None, None\n>>>>",
+        "falsifier_code": "",
+        "falsifier_verdict": "",
+        "status": "OPEN",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0040": {
+        "canonical_id": "C0040",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0035"
+        ],
+        "severity": 0.6,
+        "description": "`_prune_for_coherence()` prunes situation packets BEFORE domain packets. The sort key `prune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}` assigns the lowest value (0) to `situation`, meaning it gets pruned first.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nprune_order = {\"situation\": 0, \"domain\": 1, \"phenotype\": 2}\n==== REPLACE\nprune_order = {\"domain\": 0, \"phenotype\": 1, \"situation\": 2}\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _prune_for_coherence, DirectivePacket\npackets = [\n    DirectivePacket(layer=\"situation\", name=\"sit\", text=\"A\"*1000, constraint_class=\"SOFT\"),\n    DirectivePacket(layer=\"domain\", name=\"dom\", text=\"B\"*1000, constraint_class=\"SOFT\")\n]\npolicy = {\"constraints\": {\"c1\": True, \"c2\": True, \"c3\": True, \"c4\": True, \"c5\": True}}\npruned, names = _prune_for_coherence(packets, policy, budget=0.001)\nassert \"sit::intra\" in names or \"sit\" in names, \"defect present: situation pruned before domain\"",
+        "falsifier_verdict": "REFUTED",
+        "status": "REFUTED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0041": {
+        "canonical_id": "C0041",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_C0034"
+        ],
+        "severity": 0.55,
+        "description": "`_directive_topic_and_stance()` returns at most ONE (topic, stance) pair per directive, using first-match-wins across its if-statements.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        return \"verbosity\", \"low\"\n    if any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        return \"verbosity\", \"high\"\n\n    if \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"examples\", \"exclude\"\n        return \"examples\", \"include\"\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            return \"rationale\", \"exclude\"\n        return \"rationale\", \"include\"\n\n    if \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\")):\n            return \"table\", \"exclude\"\n        return \"table\", \"include\"\n\n    return None, None\n==== REPLACE\ndef _directive_topic_and_stance(text: str) -> list[tuple[str, str]]:\n    \"\"\"Extract semantic topic and stance from a directive for conflict detection.\"\"\"\n    lower = text.lower()\n    stances = []\n\n    if any(w in lower for w in (\"minimal\", \"concise\", \"brief\", \"simple format\")):\n        stances.append((\"verbosity\", \"low\"))\n    elif any(w in lower for w in (\"detailed\", \"exhaustive\", \"full proof\", \"formal proof\")):\n        stances.append((\"verbosity\", \"high\"))\n\n    if \"example\" in lower:\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            stances.append((\"examples\", \"exclude\"))\n        else:\n            stances.append((\"examples\", \"include\"))\n\n    if any(w in lower for w in (\"rationale\", \"reason\", \"motivation\", \"why\")):\n        if any(w in lower for w in (\"do not\", \"avoid\", \"strip\", \"remove\", \"without\")):\n            stances.append((\"rationale\", \"exclude\"))\n        else:\n            stances.append((\"rationale\", \"include\"))\n\n    if \"table\" in lower or \"tabular\" in lower:\n        if any(w in lower for w in (\"inline\", \"plain text\", \"compress\", \"without\", \"do not\", \"avoid\", \"strip\", \"remove\")):\n            stances.append((\"table\", \"exclude\"))\n        else:\n            stances.append((\"table\", \"include\"))\n\n    return stances\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _directive_topic_and_stance\nstances = _directive_topic_and_stance(\"Keep it concise and do not use examples.\")\nassert isinstance(stances, tuple) and stances[0] == \"verbosity\", \"defect present: returned only verbosity\"",
+        "falsifier_verdict": "REFUTED",
+        "status": "REFUTED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": false,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0
+      },
+      "C0042": {
+        "canonical_id": "C0042",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F009"
+        ],
+        "severity": 0.8,
+        "description": "`resolve_layer_conflicts` processes all packets, including `situation` packets tagged with `task_specific`. It extracts topics and stances from user code and adversarial briefs. If user code contains comments like `# Do not use examples`, it is treated as a directive and can override or conflict with actual system directives. The prior fix for C0036 was either reverted or incomplete.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\nentries: list[dict[str, Any]] = []\n    for packet_index, packet in enumerate(composed.packets):\n        for directive_index, directive_text in enumerate(\n            _split_packet_directives(packet.text)\n        ):\n            entries.append({\n==== REPLACE\nentries: list[dict[str, Any]] = []\n    for packet_index, packet in enumerate(composed.packets):\n        if \"task_specific\" in packet.tags:\n            continue\n        for directive_index, directive_text in enumerate(\n            _split_packet_directives(packet.text)\n        ):\n            entries.append({\n>>>>",
+        "falsifier_code": "#!/usr/bin/env python3\n\"\"\"\nFalsifier for: resolve_layer_conflicts treats task_specific situation content\n(user code / adversarial material) as directives.\n\nThis exits cleanly if the defect is absent. It prints FALSIFIED and raises\nAssertionError iff a task_specific situation packet containing a code comment\nlike \"# Do not use examples\" is parsed as an examples/exclude directive and\nmade to conflict with a real higher-layer directive.\n\"\"\"\n\nfrom bench.cdsfl_registry import composer\nfrom bench.cdsfl_registry.composer import DirectivePacket, ComposedDirectiveSet\n\n\ndef main() -> None:\n    # Real higher-layer directive. This is the only actual directive in the test.\n    system_packet = DirectivePacket(\n        layer=\"universal\",\n        name=\"system_examples_policy\",\n        text=\"Include examples when they clarify the answer.\",\n        constraint_class=\"SOFT\",\n        tags={\"system\"},\n    )\n\n    # Task-specific situation content that represents user-supplied code, not a\n    # directive. The comment must not participate in layer-conflict resolution.\n    situation_packet = DirectivePacket(\n        layer=\"situation\",\n        name=\"confer_packet\",\n        text=(\n            \"=== CODE EXTRACTS ===\\n\"\n            \"def helper():\\n\"\n            \"    # Do not use examples\\n\"\n            \"    return 42\\n\"\n        ),\n        constraint_class=\"SOFT\",\n        tags={\"situation\", \"task_specific\"},\n    )\n\n    composed = ComposedDirectiveSet(\n        packets=[system_packet, situation_packet],\n        rendered_text=system_packet.text + \"\\n\\n\" + situation_packet.text,\n        policy={},\n        cid=\"pre\",\n        constraint_count=2,\n        token_estimate=1,\n        constraint_density=2.0,\n        coherence_budget=1.0,\n        pruned_soft=[],\n        manifest={\"model\": \"falsifier\"},\n    )\n\n    # Snapshot values before calling the real resolver, so the assertion is not\n    # fooled by any in-place mutation or rebuilt packet aliasing.\n    original_situation_text = situation_packet.text\n    original_packet_texts = [p.text for p in composed.packets]\n\n    resolved, conflicts = composer.resolve_layer_conflicts(composed)\n\n    # Sanity check: this falsifier is testing the intended precondition.\n    assert original_situation_text == original_packet_texts[1]\n    assert \"task_specific\" in situation_packet.tags\n    assert \"# Do not use examples\" in original_situation_text\n\n    # Defect signal: the resolver extracted a directive stance from code inside a\n    # task_specific situation packet and recorded/dropped it as a layer conflict.\n    bogus_conflicts = [\n        c for c in conflicts\n        if c.topic == \"examples\"\n        and c.loser_layer == \"situation\"\n        and c.loser_packet == \"confer_packet\"\n        and (\n            \"Do not use examples\" in c.loser_text\n            or \"CODE EXTRACTS\" in c.loser_text\n        )\n    ]\n\n    resolved_text = \"\\n\\n\".join(p.text for p in resolved.packets)\n    situation_code_was_pruned = original_situation_text not in resolved_text\n\n    if bogus_conflicts or situation_code_was_pruned:\n        print(\"FALSIFIED: task_specific situation code was treated as a directive during conflict resolution\")\n        print(\"conflicts:\", conflicts)\n        print(\"resolved_text:\", resolved_text)\n        raise AssertionError(\n            \"resolve_layer_conflicts must not extract directive topics/stances \"\n            \"from task_specific situation code/adversarial content\"\n        )\n\n\nif __name__ == \"__main__\":\n    main()",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 1,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "resolved_by_takeup": "Codex",
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      },
+      "C0043": {
+        "canonical_id": "C0043",
+        "source_model": "Gemini",
+        "source_aliases": [
+          "Gemini_F010"
+        ],
+        "severity": 0.95,
+        "description": "`_load_domain_directive` constructs file paths using user-provided `domain` and `variant` strings without path traversal protection. An attacker can supply `domain=\"../../../etc\"` to read arbitrary `.txt` files on the host filesystem. The prior fix for C0037 was either reverted or incomplete.",
+        "proposed_fix": "<<<< SEARCH bench/cdsfl_registry/composer.py\ndef _load_domain_directive(\n    domain: str, variant: str | None = None\n) -> DirectivePacket | None:\n    \"\"\"Load a domain-specific directive (Layer 2).\"\"\"\n    domain_dir = DIRECTIVES_DIR / domain\n    if not domain_dir.exists():\n        return None\n\n    if variant:\n        path = domain_dir / f\"{domain}_{variant}.txt\"\n==== REPLACE\ndef _load_domain_directive(\n    domain: str, variant: str | None = None\n) -> DirectivePacket | None:\n    \"\"\"Load a domain-specific directive (Layer 2).\"\"\"\n    # Prevent path traversal\n    if \"/\" in domain or \"\\\\\" in domain or \"..\" in domain:\n        return None\n    if variant and (\"/\" in variant or \"\\\\\" in variant or \"..\" in variant):\n        return None\n\n    domain_dir = DIRECTIVES_DIR / domain\n    if not domain_dir.exists():\n        return None\n\n    if variant:\n        path = domain_dir / f\"{domain}_{variant}.txt\"\n>>>>",
+        "falsifier_code": "from bench.cdsfl_registry.composer import _load_domain_directive\nimport os\nfrom pathlib import Path\ntest_dir = Path(\"/tmp/cdsfl_test_dir\")\ntest_dir.mkdir(parents=True, exist_ok=True)\n(test_dir / \"test_variant.txt\").write_text(\"secret\")\ndepth = len(Path(__file__).resolve().parts) + 5\ntraversal = \"../\" * depth + \"tmp/cdsfl_test_dir/test\"\npacket = _load_domain_directive(traversal, \"variant\")\nassert packet is not None and packet.text == \"secret\", \"defect present: traversal succeeded\"",
+        "falsifier_verdict": "CONFIRMED",
+        "status": "CONFIRMED",
+        "open_since_round": 3,
+        "last_status_change_round": 3,
+        "verdicts": [],
+        "verified": true,
+        "escalated": false,
+        "flaw_class": 5,
+        "origin_type": "model",
+        "source_ref": "",
+        "retrieval_query": "",
+        "retrieved_at": "",
+        "source_hash": "",
+        "source_diversity": 0.0,
+        "exhausted": false,
+        "sk_result": {
+          "sk": 1.0,
+          "A": 1,
+          "E": 1.0,
+          "tristate": "ADMISSIBLE",
+          "blocks_parsed": 1,
+          "blocks_applied": 1,
+          "gate_details": {
+            "g1_ast": {
+              "score": 1,
+              "detail": "AST parse succeeded"
+            },
+            "g2_compile": {
+              "score": 1,
+              "detail": "py_compile succeeded"
+            },
+            "e2_regression": {
+              "score": 1.0,
+              "detail": "283/283 passed (sandbox)"
+            },
+            "e3_ruff": {
+              "score": 1.0,
+              "detail": "7 total, 0 new (baseline: 7)"
+            },
+            "e4_bandit": {
+              "score": 1.0,
+              "detail": "0 HIGH/0 MEDIUM (baseline: 0H/0M, new: 0H/0M)"
+            }
+          },
+          "s_star": 0.0,
+          "passes_threshold": true,
+          "R_old": 0.5,
+          "R_new": 0.3666666666666667
+        }
+      }
+    },
+    "next_id": 44,
+    "alias_map": {
+      "CC2:CC2_F001": "C0001",
+      "CC2:CC2_F002": "C0002",
+      "CC2:CC2_F003": "C0003",
+      "ChatGPT:ChatGPT_F001": "C0004",
+      "ChatGPT:ChatGPT_F002": "C0005",
+      "ChatGPT:ChatGPT_F003": "C0006",
+      "ChatGPT:ChatGPT_F004": "C0007",
+      "ChatGPT:ChatGPT_F005": "C0008",
+      "ChatGPT:ChatGPT_F006": "C0009",
+      "Codex:Codex_F001": "C0010",
+      "Codex:Codex_F002": "C0011",
+      "Codex:Codex_F003": "C0012",
+      "Codex:Codex_F004": "C0013",
+      "Codex:Codex_F005": "C0014",
+      "DeepSeek:DeepSeek_F001": "C0015",
+      "DeepSeek:DeepSeek_F002": "C0016",
+      "DeepSeek:DeepSeek_F003": "C0017",
+      "Gemini:Gemini_F001": "C0018",
+      "Gemini:Gemini_F002": "C0019",
+      "Gemini:Gemini_F003": "C0020",
+      "Gemini:Gemini_F004": "C0021",
+      "Gemini:Gemini_F005": "C0022",
+      "ChatGPT:ChatGPT_F007": "C0023",
+      "Gemini:Gemini_F006": "C0024",
+      "Gemini:Gemini_F007": "C0025",
+      "Gemini:Gemini_F008": "C0026",
+      "Codex:Codex_F006": "C0027",
+      "Codex:Codex_F007": "C0028",
+      "Codex:Codex_F008": "C0029",
+      "DeepSeek:DeepSeek_F100": "C0030",
+      "CC2:CC2_F004": "C0031",
+      "CC2:CC2_F005": "C0032",
+      "Codex:Codex_F009": "C0033",
+      "CC2:CC2_F006": "C0034",
+      "CC2:CC2_F007": "C0035",
+      "ChatGPT:ChatGPT_F009": "C0036",
+      "DeepSeek:DeepSeek_F101": "C0037",
+      "Codex:Codex_UNSTRUCTURED": "C0038",
+      "DeepSeek:DeepSeek_F102": "C0039",
+      "Gemini:Gemini_C0035": "C0040",
+      "Gemini:Gemini_C0034": "C0041",
+      "Gemini:Gemini_F009": "C0042",
+      "Gemini:Gemini_F010": "C0043"
+    }
+  },
+  "novelty_counts": [
+    22,
+    10,
+    5,
+    4
+  ],
+  "raw_counts": [
+    22,
+    10,
+    5,
+    15
+  ],
+  "novelty_counts_per_model": {
+    "Gemini": [
+      5,
+      3,
+      0,
+      4
+    ],
+    "ChatGPT": [
+      6,
+      1,
+      1,
+      0
+    ],
+    "CC2": [
+      3,
+      2,
+      2,
+      0
+    ],
+    "DeepSeek": [
+      3,
+      1,
+      1,
+      1
+    ],
+    "Codex": [
+      5,
+      3,
+      1,
+      1
+    ]
+  },
+  "raw_counts_per_model": {
+    "Gemini": [
+      5,
+      3,
+      0,
+      9
+    ],
+    "ChatGPT": [
+      6,
+      1,
+      1,
+      2
+    ],
+    "CC2": [
+      3,
+      2,
+      2,
+      1
+    ],
+    "DeepSeek": [
+      3,
+      1,
+      1,
+      2
+    ],
+    "Codex": [
+      5,
+      3,
+      1,
+      1
+    ]
+  },
+  "rho_history": [
+    1.0,
+    1.0,
+    1.0,
+    0.4
+  ],
+  "gamma_history": [
+    0.0,
+    0.0,
+    0.519536,
+    0.549428
+  ],
+  "gate_history": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "open_ch_history": [
+    0
+  ],
+  "stall_history": [
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    },
+    {
+      "open_ch": 0,
+      "contested": 0
+    }
+  ],
+  "novel_critical_history": [
+    21,
+    6,
+    2,
+    2
+  ],
+  "cumulative_context_chars": 301630,
+  "consecutive_churn_rounds": 0,
+  "itc_model_state": {
+    "Gemini": {
+      "history": [
+        {
+          "round": 2,
+          "classification": "TRANSIENT_FAILURE",
+          "suppressed": null,
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "ChatGPT": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        2.0
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "CC2": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0,
+        0.6666666666666666
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "DeepSeek": {
+      "history": [
+        {
+          "round": 3,
+          "classification": null,
+          "suppressed": "DEGRADATION",
+          "findings": 0
+        }
+      ],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        0.6666666666666666
+      ],
+      "last_adaptive_threshold": 0.5
+    },
+    "Codex": {
+      "history": [],
+      "adaptation": null,
+      "retry_count": 0,
+      "escalation_level": 0,
+      "parse_yield_history": [
+        1.0,
+        1.0
+      ],
+      "last_adaptive_threshold": 0.5
+    }
+  },
+  "itc_hil_flags": [],
+  "burst_state": null
+}

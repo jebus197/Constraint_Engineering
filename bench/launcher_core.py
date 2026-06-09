@@ -210,6 +210,12 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
         kwargs["falsifier_gate_enabled"] = exp_cfg["falsifier_gate_enabled"]
     if "take_up_slack_enabled" in exp_cfg:
         kwargs["take_up_slack_enabled"] = exp_cfg["take_up_slack_enabled"]
+    # Code-location convergence (2026-06-09): shadow telemetry (default True) and the
+    # promotion of the location-keyed count to the actual γ-alt convergence trigger.
+    if "location_shadow_enabled" in exp_cfg:
+        kwargs["location_shadow_enabled"] = exp_cfg["location_shadow_enabled"]
+    if "location_keyed_convergence" in exp_cfg:
+        kwargs["location_keyed_convergence"] = exp_cfg["location_keyed_convergence"]
 
     # Shadow cell passthrough
     shadow: dict[str, Any] = {}

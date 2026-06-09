@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 8 June 2026 13:40 BST
+Last updated: 9 June 2026 23:27 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,37 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **EXP 42 — ★ CONVERGENCE LANDMARK: code-location novelty key, proven LIVE (2026-06-08/09, autonomous, founder-directed):**
+
+  The chronic non-convergence root cause was finally pinned and fixed. Novelty was keyed on
+  the **model-chosen finding-id**, so a re-found defect under a fresh label re-counted as new
+  and the zero-critical streak never formed. Fix = key CRITICAL novelty by **code LOCATION**
+  (target-file AST symbols) — `bench/convergence_location.py`, wired into the γ-alt gate behind
+  `location_keyed_convergence` (default-off; the per-round count source). **Live Exp 42
+  (`exp42_composer_locationkey_live`) CONVERGED at round 6** — location-keyed critical series
+  `[10,1,5,1,0,0,0]`, three consecutive zeros, **ZERO residual HIL** (0 hil_flags, 0 irreducible
+  queue, 0 unconfirmed criticals); 52 findings, 5 confirmed criticals all resolved by routing/
+  gate. The ID-proxy path never converges on the same panel. **Commit `375236d`**, branch
+  `exp39-experimental`. Convergence was **natural** (no mid-run intervention; the only repair was
+  pre-run, a silent symbol-extraction bug caught by cy monitoring). Verified 4 ways + adversarial
+  panel; 39 new/changed tests pass.
+
+  **Gamma is NOT demoted** (founder clarification 9 June, consistent with the `4b97be0` load-bearing
+  ruling): gamma is the continuous decay-curve diagnostic; the zero-new-critical count IS its
+  threshold-free convergence endpoint — the same diminishing-returns principle, the strict form.
+  The misleading "reported only" log wording was corrected in-code. The fault was MECHANICAL (the
+  dedup key), as the founder always maintained — the maths model was never shown wrong.
+
+  **Also built+tested:** static-queue closure + small-queue ALARM (loop closes around a small
+  ladder-exhausted HIL queue; alarms on a large one); ouroboros made functional (hard timeout +
+  OpenAlex fallback + Unpaywall→Sci-Hub full-text, cite-original + Semantic Scholar key wired from
+  `.env`, 95.7s→1.8s); `pytest.ini` global timeout + network marker; stale finding-id test fixed.
+  **Adversarially-verified shadow-mode survey** mapped which subsystems are live vs decoration.
+  **STILL OPEN (program plan `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md`):**
+  ouroboros loop-close (papers→models), Stage-6 calibrator into the live equation, severity
+  calibration (never built), directive-pruning panel, macrophage/load-balancer promote-or-retire,
+  dm consolidation — each with an integration-test gate. Lesson: unit-green ≠ integration-live.
+
 - **EXP 41 — CLEAN, HONEST CONVERGENCE ON THE FIXED DETECTOR (2026-05-22 → 23, autonomous, founder-directed return to first principles):**
 
   Exp 41 was the controlled re-run testing whether convergence is now both

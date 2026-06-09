@@ -156,9 +156,19 @@ class OuroborosCell:
         self,
         shadow: bool = True,
         allowed_sources: Optional[List[str]] = None,
+        *,
+        contact_email: str = "cdsfl-ouroboros@constraint-engineering.local",
+        enable_scihub_fallback: bool = False,
+        scihub_mirror: str = "",
     ) -> None:
         self.shadow = shadow  # MUST be True for Exp 39
-        self.allowed_sources = allowed_sources or ["arxiv", "semantic_scholar"]
+        # OpenAlex added (free, no key, domain-general) as the reliable default fallback.
+        self.allowed_sources = allowed_sources or ["arxiv", "semantic_scholar", "openalex"]
+        # Full-text resolution config (off by default). enable_scihub_fallback flips on the
+        # silent last-resort retrieval path; scihub_mirror overrides the mirror (config/env).
+        self.contact_email = contact_email
+        self.enable_scihub_fallback = enable_scihub_fallback
+        self.scihub_mirror = scihub_mirror
         self._claim_counter = 0
         self._round_logs: List[OuroborosShadowLog] = []
 
@@ -373,16 +383,32 @@ class OuroborosCell:
             fetched_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
             try:
-                if source == "arxiv":
-                    papers = self._query_arxiv(query_text, max_results=3)
-                elif source == "semantic_scholar":
-                    papers = self._query_semantic_scholar(query_text, max_results=3)
-                else:
-                    papers = []
+                fetchers = {
+                    "arxiv": self._query_arxiv,
+                    "semantic_scholar": self._query_semantic_scholar,
+                    "openalex": self._query_openalex,
+                }
+                fetch = fetchers.get(source)
+                # Hard-capped primary attempt (libraries' own timeouts are unreliable).
+                papers = (self._run_with_timeout(
+                    fetch, query_text, timeout_s=20.0, max_results=3) if fetch else [])
+                fetched_via = source if papers else None
+                # Fallback chain: if the requested source timed out / returned nothing,
+                # try a proven-fast source so the cell is never silently empty when an
+                # alternate can do the job (OpenAlex: free, no key, domain-general).
+                for alt in ("openalex", "arxiv"):
+                    if papers or alt == source:
+                        continue
+                    papers = self._run_with_timeout(
+                        fetchers[alt], query_text, timeout_s=20.0, max_results=3)
+                    if papers:
+                        fetched_via = f"{alt} (fallback from {source})"
+                        break
 
                 result = {
                     "query": query_text,
                     "source": source,
+                    "fetched_via": fetched_via,
                     "status": "live" if papers else "live_empty",
                     "results_count": len(papers),
                     "papers": papers,
@@ -431,10 +457,17 @@ class OuroborosCell:
     def _query_semantic_scholar(
         query_text: str, max_results: int = 3,
     ) -> List[Dict[str, str]]:
-        """Query Semantic Scholar API. Returns list of paper metadata."""
+        """Query Semantic Scholar API. Returns list of paper metadata.
+
+        Uses SEMANTIC_SCHOLAR_API_KEY (from .env / environment) when present — the
+        authenticated key removes the unauthenticated throttling that made this source
+        take ~95s (2026-06-09). Unauthenticated still works (slower); the hard-timeout
+        wrapper + OpenAlex fallback bound it either way."""
+        import os
         from semanticscholar import SemanticScholar
 
-        sch = SemanticScholar(timeout=15)
+        _s2_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY") or None
+        sch = SemanticScholar(api_key=_s2_key, timeout=15)
         results = sch.search_paper(
             query_text,
             limit=max_results,
@@ -456,6 +489,121 @@ class OuroborosCell:
                 "citations": str(p.citationCount) if p.citationCount else "0",
             })
         return papers
+
+    @staticmethod
+    def _run_with_timeout(fn, *args, timeout_s: float = 20.0, **kwargs):
+        """Hard wall-clock cap on an external call. The source libraries' own
+        timeouts are unreliable (Semantic Scholar's ``timeout=15`` was measured at
+        95s on 2026-06-09), so this enforces a real ceiling: the call runs in a
+        daemon thread; if it overruns, return [] (best-effort) and let the daemon
+        die with the process. Never blocks the caller beyond ``timeout_s``."""
+        import threading
+        box: Dict[str, Any] = {}
+
+        def _w():
+            try:
+                box["r"] = fn(*args, **kwargs)
+            except Exception as exc:  # noqa: BLE001 — surfaced to caller below
+                box["e"] = exc
+
+        t = threading.Thread(target=_w, daemon=True)
+        t.start()
+        t.join(timeout_s)
+        if t.is_alive():
+            return []  # timed out — best-effort empty
+        if "e" in box:
+            raise box["e"]
+        return box.get("r", [])
+
+    @staticmethod
+    def _query_openalex(query_text: str, max_results: int = 3) -> List[Dict[str, str]]:
+        """Query OpenAlex (free, NO API key, fast, domain-general — works across
+        physics, biology, CS, etc.). The reliable default fallback source.
+        Returns the same metadata shape as the other fetchers."""
+        import json as _json
+        import urllib.parse
+        import urllib.request
+
+        url = (
+            "https://api.openalex.org/works?search="
+            + urllib.parse.quote(query_text)
+            + f"&per_page={max_results}&mailto=cdsfl-ouroboros@constraint-engineering.local"
+        )
+        req = urllib.request.Request(url, headers={"User-Agent": "CDSFL-ouroboros/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310 — fixed host
+            data = _json.loads(resp.read().decode("utf-8"))
+        papers: List[Dict[str, str]] = []
+        for w in data.get("results", [])[:max_results]:
+            authors = ", ".join(
+                ((a.get("author") or {}).get("display_name", ""))
+                for a in (w.get("authorships") or [])[:3]
+            )
+            inv = w.get("abstract_inverted_index")
+            abstract = ""
+            if inv:
+                pos: Dict[int, str] = {}
+                for word, idxs in inv.items():
+                    for i in idxs:
+                        pos[i] = word
+                abstract = " ".join(pos[i] for i in sorted(pos))[:500]
+            papers.append({
+                "title": w.get("title") or w.get("display_name") or "",
+                "authors": authors,
+                "abstract": abstract,
+                "url": w.get("doi") or w.get("id") or "",
+                "year": str(w.get("publication_year") or ""),
+                "citations": str(w.get("cited_by_count") or 0),
+            })
+        return papers
+
+    # --- Full-text resolution (for the loop-close: feed real papers to the models) ---
+    # Chain: Unpaywall (free, legal open-access) FIRST; Sci-Hub (configurable, OFF by
+    # default, best-effort) LAST. The citation/attribution is ALWAYS the original DOI /
+    # publisher — Sci-Hub is only ever a retrieval path, never a cited source. Restores
+    # the originally-envisaged ouroboros source list (arXiv + Semantic Scholar + Unpaywall
+    # + CORE + OpenAlex, planned 14 April 2026) and the founder's silent-Sci-Hub fallback.
+
+    @staticmethod
+    def _normalise_doi(url_or_doi: str) -> str:
+        """Extract a bare DOI from a DOI URL or raw DOI; '' if not a DOI."""
+        s = (url_or_doi or "").strip()
+        for pre in ("https://doi.org/", "http://doi.org/", "doi:"):
+            if s.lower().startswith(pre):
+                s = s[len(pre):]
+        return s if s.startswith("10.") else ""
+
+    @staticmethod
+    def _unpaywall_oa_pdf(doi: str, email: str, timeout_s: float = 12.0) -> str:
+        """Legal open-access PDF URL for a DOI via Unpaywall, or '' if none."""
+        import json as _json
+        import urllib.parse
+        import urllib.request
+        url = f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi)}?email={email}"
+        req = urllib.request.Request(url, headers={"User-Agent": "CDSFL-ouroboros/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310
+            data = _json.loads(resp.read().decode("utf-8"))
+        if not data.get("is_oa"):
+            return ""
+        loc = data.get("best_oa_location") or {}
+        return loc.get("url_for_pdf") or loc.get("url") or ""
+
+    def full_text_for_doi(self, doi_or_url: str) -> Dict[str, str]:
+        """Resolve a full-text URL for a DOI. Returns {url, via, doi}; via is the retrieval
+        path ('unpaywall' / 'scihub'), doi is ALWAYS the original (the cited source).
+        Unpaywall first (legal OA); Sci-Hub only if ``enable_scihub_fallback`` is on. Empty
+        url on failure (best-effort; never blocks > timeout)."""
+        doi = self._normalise_doi(doi_or_url)
+        if not doi:
+            return {"url": "", "via": "", "doi": ""}
+        email = getattr(self, "contact_email", "cdsfl-ouroboros@constraint-engineering.local")
+        url = self._run_with_timeout(self._unpaywall_oa_pdf, doi, email, timeout_s=15.0)
+        if url:
+            return {"url": url, "via": "unpaywall", "doi": doi}
+        # Configurable, off-by-default, silent last resort. Cite the original DOI only.
+        if getattr(self, "enable_scihub_fallback", False):
+            mirror = getattr(self, "scihub_mirror", "") or "https://sci-hub.se"
+            return {"url": f"{mirror.rstrip('/')}/{doi}", "via": "scihub", "doi": doi}
+        return {"url": "", "via": "none", "doi": doi}
 
     def _generate_candidates(
         self,
