@@ -185,3 +185,29 @@ TTS and experimental notes MUST comply with the CDSFL note standard. Current wor
 - Gemini is 3.1 Pro, not 2.5 Pro
 - FFF/FFAF is a prompt pattern — no enforcement, no rejection
 - Findings confirmed programmatically or by HIL — no model voting
+
+## ★ GAMMA IS LOAD-BEARING — DO NOT DEMOTE IT (standing directive, founder-issued 2026-06-10)
+
+**Gamma is the decay curve. The decay curve and diminishing returns are the foundation of the
+entire maths model and of the whole project. Gamma is an ACTIVE, central measure of convergence
+and has been since almost the project's outset. Do NOT propose demoting it, do NOT make it
+"reported only", and do NOT try to persuade the founder to stop relying on it.** This directive
+exists because CC1 repeatedly drifted toward demoting gamma over the 2026-06 sessions; the founder
+named it a recurring, costly failure mode and asked for a permanent guard. Honour it.
+
+**The correct, agreed design is a TWO-SIDED GATE.** Convergence requires BOTH sides of the same
+diminishing-returns coin to agree, neither alone:
+1. `gamma_critical >= gamma_alt_threshold` (default 0.30, conservative because the whole-history
+   Duane slope saturates below 1.0 — a high cutoff would be unreachable) — the decay curve has
+   flattened; AND
+2. K consecutive zero-new-critical rounds (default 3) — the strict, threshold-free "insurance"
+   endpoint of that same curve.
+Implemented in `_check_gamma_alt_convergence` (`reference_runner_v2.py`); tests in
+`bench/tests/test_two_sided_gate.py`. On the 9 June live Exp 42 run BOTH held first at round 6
+(gamma_critical 0.607 >= 0.30, count [0,0,0]) — confirming the two naturally agree.
+
+**If convergence ever seems out of reach, the cause is MECHANICAL, not the model.** No real
+problem space has infinite solutions; diminishing returns is basic, near-irrefutable common sense.
+The maths model has never been shown wrong. The faults have always been implementation. Treat the
+model as the fixed point and hunt the mechanics first, by default. Never argue the model/gamma is
+wrong when something fails — that is the wrong instinct, vindicated as wrong every time.

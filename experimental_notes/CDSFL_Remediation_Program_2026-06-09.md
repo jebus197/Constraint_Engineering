@@ -58,7 +58,47 @@ reaches and changes a live decision. Panel review (pr: cc2,cx,ge,cgpt,ds) for de
 items (directive pruning; macrophage/load-balancer promote-vs-retire). cy monitoring on every run.
 
 ---
+## ★★ POST-COMPACTION: READ THIS FIRST ★★ (2026-06-10)
+
+**GAMMA IS RESTORED AND LOAD-BEARING. Do NOT demote it.** Standing directive now in
+`.claude/CLAUDE.md` (§ "GAMMA IS LOAD-BEARING"). Convergence is a **TWO-SIDED GATE**:
+`gamma_critical >= gamma_alt_threshold` (0.30, decay curve flattened) **AND** 3 consecutive
+zero-new-critical rounds (the strict insurance endpoint). BOTH must agree. Implemented in
+`_check_gamma_alt_convergence` (`reference_runner_v2.py`), tests `bench/tests/test_two_sided_gate.py`.
+Verified on the 9 June live run: both held first at round 6 (gamma_critical 0.607 >= 0.30, count
+[0,0,0]) — identical to the count-only result; gamma worked, depletion was reachable. The founder's
+"two sides of the same coin" was correct. Faults are MECHANICAL, never the model.
+
+**Immediate next tasks (in order), each integration-test-gated:**
+1. **`sy` + `f` the Exp 42 findings** (this run + earlier Exp-42 runs — CAREFUL: Exp 42 was a
+   moving target, much may be stale). Fold genuinely-relevant fixes into the runner / project.
+2. **Commit the two-sided gate** (done this turn if you see it in git log; else commit).
+3. Build the 7 shadow/dormant items (section B below): ouroboros loop-close, Stage-6→live equation,
+   severity calibration, directive-pruning panel, macrophage/load-balancer decision, dm consolidation.
+4. **Exp 43 target review + experiment documentation** (see § "Experiment programme" below).
+
+## Experiment programme — what each experiment STUDIES (documentation gap, flagged by founder 2026-06-10)
+
+CDSFL is being validated by breaking the schema into per-experiment chunks, each targeting a real
+software/STEM artefact. **The notes have NOT been recording what each studies — fix this in every
+future note so the work is reproducible.** Known so far: **Exp 41 = the maths model** (`dm/_convergence.py`);
+**Exp 42 = the composer** (`bench/cdsfl_registry/composer.py` — the four-layer directive assembler,
+domain=software); **Exp 43 = the macrophage cell** (slated). Full per-experiment target matrix lives
+in `experimental_notes/CDSFL_Agent_Operational_Plan.md` (Exp 40–54). **OPEN DECISION (founder):** if
+the Exp 43 macrophage target is large, pick a SMALLER outstanding-experiment target and rebadge it
+Exp 43 (and vice-versa) so we surface problems faster — review the target sizes before launching.
+NOTE: the operational plan's "demoting gamma was CORRECT" line (7 June) is **SUPERSEDED** by the
+two-sided-gate ruling above.
+
 Status log (append-only):
+- 2026-06-10 ~00:30 BST — **GAMMA TWO-SIDED GATE implemented + tested.** Founder ruling: gamma was
+  never to be demoted; restore it as the active first side of a 2-part gate. Verified the live run
+  would converge at round 6 under it (gamma_critical 0.607 >= 0.30 AND 3 zeros — both first at R6).
+  Code: `_check_gamma_alt_convergence` now requires gamma_critical >= threshold AND the count; the
+  call site passes `gamma_critical`; the misleading "reported only" wording is gone. Tests
+  `test_two_sided_gate.py` (2) + existing convergence tests pass. **Standing directive added to
+  `.claude/CLAUDE.md`** so this stops recurring. gamma depletion was REACHABLE; gamma worked; the
+  count was the binding (later) condition; the two naturally agree. Mechanical, not theoretical.
 - 2026-06-09 ~22:12 BST — **★ LANDMARK ACHIEVED ★ Live Exp 42 CONVERGED at round 6, ZERO residual
   HIL.** location_keyed_convergence + routing + CONFIRM-only gate, all genuinely active (the silent
   symbol-extraction bug was caught + fixed first). Location-keyed critical series `[10,1,5,1,0,0,0]`

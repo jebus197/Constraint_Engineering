@@ -1671,8 +1671,10 @@ def _check_gamma_alt_convergence(
     contested: int = 0,
     rho_churn: bool = False,
     irreducible_queue: int = 0,
+    gamma_critical: float = 1.0,
 ) -> Tuple[bool, str]:
-    """Critical-quiescence convergence path (panel redesign 2026-05-23).
+    """Critical-quiescence convergence path (panel redesign 2026-05-23; TWO-SIDED gate
+    2026-06-10).
 
     Documented in Exp 39 sub-experiment configs as an alternative pass
     condition. The Exp 39-0 post-mortem flagged the main gate's
@@ -1773,19 +1775,34 @@ def _check_gamma_alt_convergence(
     if len(novel_critical_history) >= window:
         recent = novel_critical_history[-window:]
         if all(n == 0 for n in recent):
+            # TWO-SIDED GATE (founder ruling 2026-06-10). Convergence requires BOTH sides of
+            # the same diminishing-returns coin to AGREE, neither alone:
+            #   (1) gamma_critical >= gamma_alt_threshold  — the decay curve has flattened
+            #       (gamma is an ACTIVE convergence condition, NOT merely "reported"); AND
+            #   (2) window consecutive zero-new-critical rounds — the strict, threshold-free
+            #       'insurance' endpoint of that same curve.
+            # The threshold is conservative (the whole-history Duane slope saturates below 1.0,
+            # so a high cutoff would be unreachable); the count supplies the precision. On the
+            # 9 June live run both held first at round 6 (gamma_critical 0.607 >= 0.30, count
+            # [0,0,0]) — identical to the count-only result, confirming the two naturally agree.
+            theta = cfg.gamma_alt_threshold
+            if gamma_critical < theta:
+                return False, (
+                    f"two-sided gate: {window} zero-new-critical rounds met, but "
+                    f"gamma_critical={gamma_critical:.3f} < threshold {theta} — the decay curve "
+                    f"has not yet flattened. BOTH sides of the gate must agree."
+                )
             return True, (
-                f"CRITICAL_QUIESCENCE_CONVERGED: {window} consecutive "
-                f"rounds with zero novel CRITICAL (history tail={recent}) "
-                f"at round {round_idx} [gamma={gamma:.3f}: continuous decay-curve "
-                f"diagnostic; THIS zero-new-critical streak IS the decay curve's "
-                f"convergence endpoint, the threshold-free form of the same "
-                f"diminishing-returns measure — not a separate or competing trigger]"
+                f"CRITICAL_QUIESCENCE_CONVERGED (two-sided gate): gamma_critical="
+                f"{gamma_critical:.3f} >= {theta} (decay curve flattened) AND {window} "
+                f"consecutive zero-new-critical rounds (history tail={recent}) at round "
+                f"{round_idx} — the two sides of the same diminishing-returns measure agree"
             )
 
     return False, (
-        f"critical-quiescence not met: novel_crit_recent={recent_tail} "
-        f"[gamma={gamma:.3f}: continuous decay-curve diagnostic; convergence = its "
-        f"zero-new-critical endpoint, not yet reached]"
+        f"two-sided gate not met: novel_crit_recent={recent_tail}, "
+        f"gamma_critical={gamma_critical:.3f} (convergence needs gamma_critical >= "
+        f"{cfg.gamma_alt_threshold} AND {window} consecutive zero-new-critical rounds)"
     )
 
 
@@ -5963,6 +5980,7 @@ def run_experiment(
                     contested=registry.contested_count(round_idx),
                     rho_churn=rho_churn,
                     irreducible_queue=_irreducible_q,
+                    gamma_critical=gamma_critical,  # TWO-SIDED gate: gamma is an ACTIVE condition
                 )
             )
         if gamma_alt_converged and not converged:
