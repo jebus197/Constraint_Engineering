@@ -112,7 +112,7 @@ Status legend: FIXED (specific, stable, ready) | PROVISIONAL (specified, scope T
 | 40 | §17 feedback directive (base for Gate A, first live exercise) | `bench/dm/_feedback.py` | FIXED | Pre-launch F1–F4 closed. Gate C preflight wiring pending. Founder launch approval pending. |
 | 41 | Bounded mathematics module | `bench/dm/_convergence.py` (or `_suppression.py`; size confirmed post-Exp-40) | FIXED (conditional size) | Mathematics calibration target. |
 | 42 | Expert encodings S_k | `bench/cdsfl_registry/composer.py` | FIXED | S_k admissibility across vendor encodings. |
-| 43 | Macrophage admissibility (bounded ~20K char unit) | `bench/immune_agents.py` macrophage section | FIXED | Verdict-wiring confirmation under live load. |
+| 43 | Macrophage admissibility (bounded ~20K char unit) | `bench/macrophage_cell.py` (whole file, 547 lines / ~22K, 15 AST symbols, self-contained stdlib-only) | FIXED | Verdict-wiring confirmation under live load. **CORRECTED 2026-06-10:** macrophage lives in `macrophage_cell.py`, NOT `immune_agents.py` (which has 0 macrophage code). Config: `bench/exp43_configs/43_macrophage_locationkey_live.json` (wiring pre-flight-verified; gated on model API keys). |
 | 44 | Composition test (no new target) | Synthetic, combines Exp 41 + 42 + 43 outputs | FIXED | Mechanical interface check. |
 | 45 | Statistics specialist | `bench/dm/_memory.py` (beta-binomial memory + CUSUM) | FIXED (conditional size) | `statsmodels + scipy + uncertainty_propagation` per `domains/immune/statistics.toml`. |
 | 46 | §18 divergence directive | `bench/dm/_divergence.py` | FIXED | §18 live since Exp 39; module is also the test article (self-referential). |

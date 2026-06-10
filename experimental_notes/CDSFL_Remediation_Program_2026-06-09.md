@@ -69,13 +69,31 @@ Verified on the 9 June live run: both held first at round 6 (gamma_critical 0.60
 [0,0,0]) — identical to the count-only result; gamma worked, depletion was reachable. The founder's
 "two sides of the same coin" was correct. Faults are MECHANICAL, never the model.
 
+**OVERNIGHT 2026-06-10 PROGRESS (detail in the status log). DONE + pushed:** gamma-test regression
+fixed (`633b4c6` — the two-sided gate had left 3 tests red; both landmarks tool-verified clearing the
+0.30 gate: exp41c gamma_critical=1.0, exp42=0.69); **severity calibration BUILT + 17 tests** (`050f17c`,
+gated default-off, byte-identical-off, INERT without a latent-tagger — fail-safe); **Exp 43 macrophage
+config built + ALL pre-flight checks verified** (`1b5d148`). **BLOCKED tonight:** the live Exp 43 run AND
+the full `pr` panel — no model API keys in `.env` (only SEMANTIC_SCHOLAR) + codex CLI rate-limited to
+11 June. Investigations complete (severity spec, directive measurement+correction, macrophage/
+load-balancer/dm decisions). The 7-June "demoting gamma was CORRECT" line is SUPERSEDED.
+
 **Immediate next tasks (in order), each integration-test-gated:**
-1. **`sy` + `f` the Exp 42 findings** (this run + earlier Exp-42 runs — CAREFUL: Exp 42 was a
-   moving target, much may be stale). Fold genuinely-relevant fixes into the runner / project.
-2. **Commit the two-sided gate** (done this turn if you see it in git log; else commit).
-3. Build the 7 shadow/dormant items (section B below): ouroboros loop-close, Stage-6→live equation,
-   severity calibration, directive-pruning panel, macrophage/load-balancer decision, dm consolidation.
-4. **Exp 43 target review + experiment documentation** (see § "Experiment programme" below).
+1. **ADD MODEL KEYS** to `.env` (`OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`; see
+   `docs/REPRODUCING.md:39-41`) → **launch the Exp 43 generalisation run**:
+   `python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"`
+   → cy-monitor → does the location-keyed two-sided gate GENERALISE to a 2nd module? (config + wiring
+   already verified: 15 symbols extracted from source, all gate flags survive into RunnerConfig.)
+2. **`sy` + `f` the Exp 42 findings** (this run + earlier — CAREFUL: moving target). Fold forward.
+3. Remaining shadow/dormant builds: the latent-tagger that makes severity calibration LIVE; ouroboros
+   loop-close; Stage-6→live equation; dm consolidation (Step 0 DONE = gamma-test pin; Steps 2-6 behind
+   `go`); directive-pruning EXECUTION (run the full `pr` panel first — deferred on keys/quota).
+4. **DECISIONS for founder (investigated tonight):** macrophage = retire-as-cosmetic OR minimal-promote
+   (HIL-flag on a high-severity anomaly — it runs but reaches no live decision); load-balancer = KEEP
+   dormant (DISTINCT from take_up_slack, NOT subsumed; wire only for Bench-Run-2 differential
+   allocation); routing rename (take_up_slack→routing). **Matrix CORRECTED:** Exp 43 target is
+   `bench/macrophage_cell.py` (the "immune_agents.py macrophage section" pointer was WRONG — 0
+   macrophage code there).
 
 ## Experiment programme — what each experiment STUDIES (documentation gap, flagged by founder 2026-06-10)
 
@@ -91,6 +109,45 @@ NOTE: the operational plan's "demoting gamma was CORRECT" line (7 June) is **SUP
 two-sided-gate ruling above.
 
 Status log (append-only):
+- 2026-06-10 ~01:00–04:00 BST — **OVERNIGHT AUTONOMOUS RUN (founder asleep, reviews in AM; rs done).**
+  Goal: build/test the outstanding items + the Exp 43 generalisation test. Architecture: 4 parallel
+  read-only investigation sub-agents (protect main context), I verify + apply + commit each. **WORK
+  BANKED (all pushed to exp39-experimental):**
+  - **`633b4c6` — fixed my own regression.** The two-sided-gate commit (`71b190b`) changed
+    `_check_gamma_alt_convergence` reason strings but left 3 tests red in `test_gamma_alt_convergence.py`
+    (committed with a red suite — surfaced independently by 2 investigations). Rewrote them to the TRUE
+    two-sided semantics: `TestGammaIsReportedNeverTriggers` (a name asserting the very demotion the
+    directive forbids) → `TestLegacyGammaParamIsInert` + NEW `TestGammaCriticalIsActiveCondition`
+    (gamma_critical<θ BLOCKS even with a zero tail). **HARD-constraint check (gate must break NEITHER
+    landmark), tool-verified via `_estimate_gamma`: exp41c [3,0,0,0,0,0,0]→gamma_critical=1.000;
+    exp42 [10,1,5,1,0,0,0]→0.687; both ≥0.30.** The "0.240" in the record was the ALL-FINDINGS gamma,
+    NOT the gate input. The count is the binding side; gamma is the early-flattening curve — they agree.
+  - **`050f17c` — severity calibration BUILT (T6, NEVER-BUILT gap closed).** Gated
+    `severity_calibration_enabled` (default off, byte-identical). Demotes a falsifier-CONFIRMED-real BUT
+    explicitly-latent critical below 0.7 (recording original+reason, never deleting), so it stops
+    re-blocking convergence; NEVER demotes safety/core/security/data_loss. 17 tests + 72 convergence/gate
+    tests green. **HONEST: inert until a latent-tagger sets `entry["latent"]` — the verified building
+    block, not yet live.**
+  - **`1b5d148` — Exp 43 macrophage config, pre-flight VERIFIED.** Target `bench/macrophage_cell.py`
+    (22K, 15 symbols, self-contained). All gate flags survive launcher→RunnerConfig; `target_symbols(raw
+    source)=15` (the silent-0-symbol bug pre-empted). Pre-registration written to the two-sided semantics.
+  - **BLOCKED:** the live Exp 43 run + the full `pr` panel — `.env` has only SEMANTIC_SCHOLAR_API_KEY;
+    Codex/ChatGPT/Gemini/DeepSeek need keys (exp42 used shell-exported ones, not visible to non-interactive
+    tools); codex CLI hit its usage limit (resets 11 June). Not launched (a keyless run fails at round 0).
+  - **INVESTIGATIONS (4 sub-agents, file:line-referenced):** (a) **severity** — spec applied above;
+    (b) **directive measurement — CORRECTION:** the "~60K directive" is a CONFLATION — 60,416 chars is the
+    TARGET ARTICLE (composer.py in the USER prompt), NOT the directive. The real dispatched system directive
+    is ~50K, of which 43,667 (`cdsfl_operational.md`, 18 §) is appended UNPRUNED at `reference_runner_v2.py:2932`
+    OUTSIDE the prune path; the composer pruner reaches only ~6% (the domain packet). Full §-by-§ breakdown +
+    a draft pruning recommendation (trim to ~27K) produced — the `pr` panel on it is DEFERRED (keys/quota);
+    a local P-pass stands in. (c) **macrophage** — only in `bench/macrophage_cell.py` (immune_agents.py has
+    0 macrophage code → matrix pointer WRONG); wired into the runner (L3438/3544) but reaches NO live decision
+    (shadow→shadow via ouroboros). DECISION: retire-as-cosmetic OR minimal-promote (HIL-flag on a ≥0.9 anomaly).
+    (d) **load-balancer** — `dm/_load_balancer.py`, dormant-in-practice (DynamicManager.process_round never
+    called by the runner). DISTINCT from take_up_slack (planning-time allocator vs reactive falsifier
+    re-router), NOT subsumed → KEEP, wire only for BR2 differential allocation. (e) **dm consolidation** —
+    Strangler-Fig dm→runner; Step 0 (the gamma-test pin) DONE; Steps 2-6 deferred behind `go` (the landmark
+    is fragile; a blind ConvergenceDetector swap is refuted). All four notes' specs preserved in the agents.
 - 2026-06-10 ~00:30 BST — **GAMMA TWO-SIDED GATE implemented + tested.** Founder ruling: gamma was
   never to be demoted; restore it as the active first side of a 2-part gate. Verified the live run
   would converge at round 6 under it (gamma_critical 0.607 >= 0.30 AND 3 zeros — both first at R6).
