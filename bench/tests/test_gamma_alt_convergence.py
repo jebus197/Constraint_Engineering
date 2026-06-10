@@ -1,10 +1,18 @@
 """Tests for the critical-quiescence convergence path in reference_runner_v2.
 
-Originally the γ-alternative path (Item 1A.3, Exp 40). Redesigned by panel
-ruling 2026-05-23: γ is REPORTED, NEVER a convergence trigger. The former
-γ-threshold trigger is DELETED. Convergence on this path now rests SOLELY on
-K consecutive rounds with zero novel CRITICAL (severity >= 0.7) on the
-SETTLED/genuine series.
+Originally the γ-alternative path (Item 1A.3, Exp 40). The convergence gate is
+now a TWO-SIDED GATE (founder ruling 2026-06-10): convergence requires BOTH
+  (1) gamma_critical >= cfg.gamma_alt_threshold (0.30) — the critical decay
+      curve has flattened (γ is an ACTIVE convergence condition, load-bearing,
+      NOT merely "reported"); AND
+  (2) K consecutive rounds with zero novel CRITICAL (severity >= 0.7) on the
+      SETTLED/genuine series — the strict threshold-free endpoint.
+Both are sides of the same diminishing-returns measure; they naturally agree
+(verified: exp41c gamma_critical=1.0 and exp42=0.69 both clear 0.30, while the
+binding constraint is the count). The legacy ``gamma`` parameter (the
+all-findings slope) is NOT in the condition — only ``gamma_critical`` is — and
+is accepted purely for backward compatibility. The active two-sided behaviour
+is also pinned in ``bench/tests/test_two_sided_gate.py``.
 
 A4 VERIFIER FAIL-SAFE: an UNVERIFIED critical-severity candidate (status
 UNCONFIRMED, severity >= 0.7) must NOT silently count as "zero new critical."
@@ -58,12 +66,17 @@ class TestEarliestRound:
         assert "CRITICAL_QUIESCENCE_CONVERGED" in reason
 
 
-class TestGammaIsReportedNeverTriggers:
-    """γ must NOT trigger convergence (panel ruling 2026-05-23)."""
+class TestLegacyGammaParamIsInert:
+    """The LEGACY ``gamma`` parameter (all-findings slope) is neither a trigger
+    nor a blocker — only ``gamma_critical`` is an active condition (two-sided
+    gate). These cases pass only the legacy ``gamma`` and leave ``gamma_critical``
+    at its default, proving the legacy param cannot drive the decision either
+    way. The ACTIVE gamma_critical behaviour is pinned in
+    ``TestGammaCriticalIsActiveCondition`` below and in ``test_two_sided_gate.py``."""
 
-    def test_high_gamma_does_not_fire_without_zero_critical_tail(self):
-        """Former condition 1 (γ >= threshold) is DELETED. A high γ with a
-        non-zero critical tail must NOT converge."""
+    def test_high_legacy_gamma_does_not_fire_without_zero_critical_tail(self):
+        """A high legacy γ with a non-zero critical tail must NOT converge: the
+        count side is unmet."""
         cfg = _default_cfg(
             gamma_alt_threshold=0.30, gamma_alt_consecutive_zero_crit=3,
         )
@@ -73,32 +86,59 @@ class TestGammaIsReportedNeverTriggers:
         assert converged is False
         assert "not met" in reason
 
-    def test_gamma_at_or_above_old_threshold_does_not_fire(self):
+    def test_legacy_gamma_does_not_substitute_for_the_count(self):
+        """The legacy γ never substitutes for the count: a non-zero tail blocks
+        regardless of the legacy γ value."""
         cfg = _default_cfg(gamma_alt_threshold=0.30)
         for g in (0.30, 0.461, 1.0):
             converged, _ = _check_gamma_alt_convergence(
                 round_idx=5, gamma=g, novel_critical_history=[1, 1, 1], cfg=cfg,
             )
-            assert converged is False, f"γ={g} must not trigger convergence"
+            assert converged is False, f"legacy γ={g} must not trigger convergence"
 
-    def test_gamma_value_reported_in_reason(self):
-        """γ appears in the reason string (reported), even though it does
-        not affect the decision."""
+    def test_gamma_critical_value_reported_in_reason(self):
+        """The ACTIVE gamma_critical appears in the reason string."""
         cfg = _default_cfg()
         _, reason = _check_gamma_alt_convergence(
             round_idx=5, gamma=0.123, novel_critical_history=[0, 0, 0], cfg=cfg,
+            gamma_critical=0.55,
         )
-        assert "gamma=0.123" in reason
-        assert "reported only" in reason
+        assert "gamma_critical=0.550" in reason
 
-    def test_low_gamma_does_not_block_zero_critical_convergence(self):
-        """A low γ must NOT prevent convergence when the critical tail is
-        all-zero (γ is not a blocker either)."""
+    def test_low_legacy_gamma_does_not_block_zero_critical_convergence(self):
+        """A low legacy γ must NOT prevent convergence when the critical tail is
+        all-zero and gamma_critical (default 1.0) clears the threshold."""
         cfg = _default_cfg(gamma_alt_consecutive_zero_crit=3)
         converged, _ = _check_gamma_alt_convergence(
             round_idx=5, gamma=0.001, novel_critical_history=[0, 0, 0], cfg=cfg,
         )
         assert converged is True
+
+
+class TestGammaCriticalIsActiveCondition:
+    """gamma_critical is an ACTIVE, load-bearing condition (two-sided gate,
+    founder ruling 2026-06-10): below threshold it BLOCKS convergence even when
+    the zero-critical count is satisfied; above threshold with a clean count it
+    fires. This is the test-level embodiment of "gamma is load-bearing — do not
+    demote it." The full two-sided matrix is in test_two_sided_gate.py."""
+
+    def test_gamma_critical_below_threshold_blocks_despite_zero_tail(self):
+        cfg = _default_cfg(gamma_alt_threshold=0.30)
+        converged, reason = _check_gamma_alt_convergence(
+            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
+            gamma_critical=0.20,  # below 0.30 — decay curve not yet flattened
+        )
+        assert converged is False
+        assert "gamma_critical" in reason
+
+    def test_gamma_critical_above_threshold_with_zero_tail_converges(self):
+        cfg = _default_cfg(gamma_alt_threshold=0.30)
+        converged, reason = _check_gamma_alt_convergence(
+            round_idx=6, gamma=0.10, novel_critical_history=[0, 0, 0], cfg=cfg,
+            gamma_critical=0.45,  # >= 0.30 — curve flattened, count clean
+        )
+        assert converged is True
+        assert "CRITICAL_QUIESCENCE_CONVERGED" in reason
 
 
 class TestZeroNovelCriticalCondition:
@@ -109,7 +149,7 @@ class TestZeroNovelCriticalCondition:
         )
         assert converged is True
         assert "consecutive" in reason
-        assert "zero novel CRITICAL" in reason
+        assert "zero-new-critical" in reason
 
     def test_three_zeros_at_tail_of_longer_history_fires(self):
         """Only the last `window` entries matter."""
@@ -287,10 +327,14 @@ class TestReviewCleanGates:
 class TestExp41cAnchor:
     """Non-negotiable: exp41c must converge at round 6 under the new gate.
 
-    Recorded run: settled critical series [3,0,0,0,0,0,0]; at round 6
-    gamma=0.2397 (< the deleted 0.30 trigger, so the deletion is inert
-    here), zero UNCONFIRMED criticals at check time, zero contested, and
-    rho_avg=0.4667 > rho_threshold (not churning).
+    Recorded run: settled critical series [3,0,0,0,0,0,0]; at round 6 the
+    critical decay curve is flat, so gamma_critical = 1.0 (>= the 0.30
+    threshold) AND the zero-critical count is satisfied — both sides of the
+    two-sided gate agree. (The ALL-FINDINGS gamma was 0.2397, below 0.30, but
+    that legacy series is NOT the gate input; gamma_critical on the CRITICAL
+    series is — verified via _estimate_gamma([3,0,0,0,0,0,0]) == 1.0.) Zero
+    UNCONFIRMED criticals at check time, zero contested, and rho_avg=0.4667 >
+    rho_threshold (not churning).
     """
 
     def test_exp41c_converges_at_round_6(self):
@@ -307,6 +351,7 @@ class TestExp41cAnchor:
             unresolved_critical=0,
             contested=0,
             rho_churn=False,
+            gamma_critical=1.0,  # real value: critical series [3,0,...] is flat
         )
         assert converged is True
         assert "CRITICAL_QUIESCENCE_CONVERGED" in reason
@@ -324,6 +369,7 @@ class TestReasonFormatting:
         cfg = _default_cfg()
         _, reason = _check_gamma_alt_convergence(
             round_idx=7, gamma=0.10, novel_critical_history=[2, 1, 3], cfg=cfg,
+            gamma_critical=0.10,
         )
         assert "novel_crit_recent=" in reason
-        assert "gamma=0.100" in reason
+        assert "gamma_critical=0.100" in reason
