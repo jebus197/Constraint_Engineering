@@ -424,6 +424,18 @@ class RunnerConfig:
     # zero-slope (fully-decayed) endpoint for critical findings. Requires
     # location_shadow_enabled (the series it consumes). Default-off => byte-identical.
     location_keyed_convergence: bool = False
+    # Severity calibration (over-production bounding, 2026-06-10, gated default-off).
+    # Lowers the EFFECTIVE severity of a finding that the falsifier gate CONFIRMED
+    # as a REAL defect but that is explicitly flagged LATENT/conditional (it needs a
+    # trigger absent from the usage contract) to just below the critical threshold,
+    # so it stops perpetually re-blocking convergence / piling up in HIL — WITHOUT
+    # being deleted (original severity + reason recorded on the entry). NEVER demotes
+    # a safety/core-functionality finding. Default OFF => byte-identical (no entry is
+    # mutated). NOTE: inert without an upstream producer that tags entries
+    # `latent`/`finding_category`; the flag alone is a safe no-op (fail-safe).
+    severity_calibration_enabled: bool = False
+    # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
+    severity_calibration_floor: float = 0.69
     gamma_soft_threshold: float = 0.30
     gamma_hard_threshold: float = 0.35
     min_rounds_for_gamma: int = 3
@@ -1813,6 +1825,111 @@ def _check_gamma_alt_convergence(
 # `0.7` critical-severity literals remain a tracked migration item; the
 # hardened gate uses this named constant.
 CRITICAL_SEVERITY_THRESHOLD = 0.7
+
+# ── Severity calibration (over-production bounding, 2026-06-10, gated default-off) ──
+# Markers a finding must carry to be ELIGIBLE for demotion, and markers that make it
+# INELIGIBLE no matter what. Read off the registry dict, so no Finding-dataclass change.
+# A reconciliation/panel step (or a future severity-classifier cell) sets `latent=True`
+# and/or `finding_category`; absent those keys NOTHING is ever demoted (fail-safe).
+_SEVERITY_CALIB_NEVER_DEMOTE_CATEGORIES = frozenset(
+    {"safety", "core", "core_functionality", "security", "data_loss"}
+)
+
+
+def _is_demotion_eligible(entry: Dict[str, Any]) -> bool:
+    """Conservative, principled criterion for lowering an over-rated finding.
+
+    Demotion-eligible iff ALL hold:
+      (1) currently critical: severity >= CRITICAL_SEVERITY_THRESHOLD;
+      (2) a REAL defect by independent demonstration: falsifier_verdict ==
+          "CONFIRMED" (the unfakeable active-demonstration signal — a finding
+          without it is NEVER demoted: a broken/absent falsifier could have
+          masked a real, non-latent defect);
+      (3) explicitly flagged LATENT/conditional: entry["latent"] truthy (the
+          defect is genuine but requires a trigger absent from the usage contract);
+      (4) NOT in a never-demote category (safety / core-functionality / security /
+          data_loss).
+    The conjunction (2) AND (3) — proven-real AND explicitly-conditional — is the
+    safeguard the brief requires. Safety/core defects are categorically excluded.
+    """
+    if (entry.get("severity") or 0.0) < CRITICAL_SEVERITY_THRESHOLD:
+        return False
+    if entry.get("falsifier_verdict") != "CONFIRMED":
+        return False
+    if not entry.get("latent"):
+        return False
+    category = str(entry.get("finding_category") or "").strip().lower()
+    if category in _SEVERITY_CALIB_NEVER_DEMOTE_CATEGORIES:
+        return False
+    return True
+
+
+def _calibrate_finding_severity(
+    entry: Dict[str, Any], floor: float, round_idx: int,
+) -> bool:
+    """Lower one over-rated-but-genuine finding's severity below critical.
+
+    Records the calibration on the entry (never deletes it): severity_calibrated,
+    severity_original, severity (= floor, clamped < threshold), calibration_reason,
+    calibration_round. Idempotent: a re-sweep on a later round never double-lowers
+    or overwrites the original. Returns True iff this call performed the demotion.
+    """
+    if entry.get("severity_calibrated"):
+        return False
+    original = entry.get("severity") or 0.0
+    safe_floor = min(floor, CRITICAL_SEVERITY_THRESHOLD - 0.01)
+    entry["severity_original"] = original
+    entry["severity"] = safe_floor
+    entry["severity_calibrated"] = True
+    entry["calibration_round"] = round_idx
+    entry["calibration_reason"] = (
+        f"severity calibrated {original:.2f} -> {safe_floor:.2f}: falsifier-CONFIRMED "
+        f"REAL defect flagged LATENT/conditional (requires a trigger absent from the "
+        f"usage contract). Retained in registry; no longer a convergence-blocking "
+        f"critical. Calibrated at round {round_idx}."
+    )
+    return True
+
+
+def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -> int:
+    """GATED sweep: demote every demotion-eligible over-rated critical.
+
+    Default-off no-op (byte-identical): returns 0 and mutates nothing when
+    cfg.severity_calibration_enabled is False. When on, demotes each eligible
+    entry. Because every critical-counting channel (_settled_novelty_series,
+    unverified_critical_count, open_crit_high_count) reads entry["severity"]
+    against CRITICAL_SEVERITY_THRESHOLD at call-time, running this sweep BEFORE
+    those reads removes each demoted finding from the critical counts with no
+    per-channel change. Hard-terminal entries are skipped. Returns the number
+    demoted this round (0 when the gate is off).
+    """
+    if not getattr(cfg, "severity_calibration_enabled", False):
+        return 0
+    floor = getattr(cfg, "severity_calibration_floor", 0.69)
+    _terminal = {"MERGED", "CLOSED", "DUPLICATE", "REFUTED"}
+    demoted = 0
+    entries = registry.entries if hasattr(registry, "entries") else {}
+    for cid, e in list(entries.items()):
+        if e.get("status") in _terminal:
+            continue
+        if not _is_demotion_eligible(e):
+            continue
+        if _calibrate_finding_severity(e, floor, round_idx):
+            demoted += 1
+            _log(
+                f"  severity-calibration: {cid} demoted "
+                f"{e['severity_original']:.2f} -> {e['severity']:.2f} "
+                f"(falsifier-CONFIRMED real, flagged latent) — retained, "
+                f"no longer a blocking critical"
+            )
+    if demoted:
+        _log(
+            f"  severity-calibration: {demoted} over-rated-but-genuine critical(s) "
+            f"demoted below {CRITICAL_SEVERITY_THRESHOLD} this round (retained with "
+            f"reason; convergence no longer blocked by them)"
+        )
+    return demoted
+
 
 # F4: post-reconciliation statuses that are NOT genuine novelty —
 # stripped before γ sees them (mirrors the runner's existing per-round
@@ -5861,6 +5978,21 @@ def run_experiment(
             for label, text in responses.items():
                 if text:
                     brain.extract_directed_messages(label, text, round_idx)
+
+        # Severity calibration (over-production bounding, 2026-06-10, gated
+        # default-off). Demote any over-rated-but-genuine critical — a
+        # falsifier-CONFIRMED REAL defect explicitly flagged LATENT/conditional and
+        # NOT in a safety/core/security category — to just below the critical
+        # threshold, recording the original severity + reason on the entry. MUST run
+        # here: AFTER the falsifier gate has set falsifier_verdict (apply_falsifier_
+        # verdicts, earlier this round) and BEFORE the settled-novelty recompute and
+        # the unverified/open critical counts below, so the demoted finding drops out
+        # of every critical-counting channel this same round while staying in the
+        # registry. No-op (mutates nothing) when the flag is off.
+        _sev_calib_n = _apply_severity_calibration(registry, cfg, round_idx)
+        if _sev_calib_n:
+            _log(f"  severity-calibration: {_sev_calib_n} finding(s) recalibrated "
+                 f"this round (retained, no longer blocking)")
 
         # Step 3 return-to-first-principles (founder-directed 2026-05-22):
         # the gate AND the gamma diagnostic must see GENUINE novelty, not raw
