@@ -1,39 +1,26 @@
 # CDSFL Current State
 
-Generated: 9 June 2026 23:27 BST (2026-06-09T23:27:34+01:00)
+Generated: 11 June 2026 02:49 BST (2026-06-11T02:49:06+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `375236d` Convergence landmark: code-location novelty trigger — Exp 42 converges live at R6, 0 residual HIL
-- **Committed:** 2026-06-09 22:14:05 +0100
-- **Remote:** ahead by 162
+- **Last commit:** `053e873` Overnight run record: durable plan update + matrix correction + report
+- **Committed:** 2026-06-10 04:17:43 +0100
+- **Remote:** ahead by 169
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M bench/fingerprints/CC2.json`
-- `M bench/fingerprints/ChatGPT.json`
-- `M bench/fingerprints/Codex.json`
-- `M bench/fingerprints/DeepSeek.json`
-- `M bench/fingerprints/Gemini.json`
-- `M bench/launcher_core.py`
-- `M bench/logs/immune_pipeline.log`
-- `M bench/ouroboros_cell.py`
-- `M bench/reference_runner_v2.py`
-- `M bench/tests/test_finding_id_structural_validation.py`
 - `M resources/ONBOARDING.md`
 - `M resources/RECOVERY.md`
-- `?? bench/convergence_location.py`
-- `?? bench/exp42_configs/42_composer_locationkey_live.json`
-- `?? bench/logs/exp42_composer_locationkey_live_20260609T165146Z/`
 
 ---
 
 ## Tests
 
-**1575 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
+**1596 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
 
 ---
 
@@ -59,13 +46,13 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `053e873 Overnight run record: durable plan update + matrix correction + report`
+- `1b5d148 Exp 43 macrophage config — generalisation test, wiring VERIFIED, gated on keys`
+- `050f17c Build severity calibration — over-production bounding (T6, gated default-off)`
+- `633b4c6 Fix stale gamma-alt tests left red by the two-sided gate (71b190b)`
+- `71b190b Restore gamma as ACTIVE convergence condition — TWO-SIDED GATE (founder ruling)`
+- `c865bd9 Add pytest.ini (global 300s test timeout + network marker) — closes the hanging-test bug`
+- `6817227 sv: convergence LANDMARK — code-location novelty key proven live (Exp 42 converges R6, 0 residual HIL); gamma clarified as central/non-demoted (decay-curve diagnostic; count = its threshold-free endpoint); gamma 'reported only' log wording corrected; ouroboros functional (timeout+OpenAlex+Unpaywall/Sci-Hub full-text+SS key); static-queue closure + small-queue alarm; shadow-mode survey; remediation program plan`
 - `375236d Convergence landmark: code-location novelty trigger — Exp 42 converges live at R6, 0 residual HIL`
 - `00dc15f sv: Exp 42 clean rerun (routing wired+live, 0 HIL) + DEFINITIVE non-convergence root cause = cross-round dedup failure + active-vs-dormant audit + complete session ledger + LaunchPad install. Next gated: fix dedup, re-run.`
 - `2aedf39 ledger: capture tool capability-awareness / graceful-degradation directive + LaunchPad install`
-- `f15ea87 session audit: complete ~17h ledger (done/established/active-vs-dormant/outstanding/corrections)`
-- `c9dcf51 tracker: DEFINITIVE Exp-42 non-convergence root cause = cross-round dedup failure + pr`
-- `a9b2366 tracker: Exp 42 clean-rerun verdict + audit-first post-pause plan`
-- `041faaa fix take-up-slack wiring test: first rung is Codex (ordering change), not CC2`
-- `d134e8f wire take-up-slack into runner round loop + clean-rerun config`
-- `ec7f3c7 notes + tracker: capability-aware falsifier routing design, validation, resume pointer`
-- `d383a6e take-up-slack: capability-aware falsifier routing (validated, unit-tested)`

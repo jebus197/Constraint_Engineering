@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 9 June 2026 23:27 BST
+Last updated: 11 June 2026 02:49 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -57,7 +57,6 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 | §18 Divergence Channel directive | `bench/dm/_divergence.py` + `bench/directives/universal/cdsfl_operational.md` §18 | Exp 39 (2026-04-13) |
 | F1 SymPy sandbox allow-list | `bench/immune_agents.py:977` | 2026-04-21 |
 | F2 1E.10 wrapper activation (`compute_rk_with_eta_channel` in identity mode) | `bench/reference_runner_v2.py:3510` plus config flag `eta_int_modulator_wired_into_compute_rk=true` in `bench/exp40_configs/40_gate.json` | 2026-04-21 |
-| B-Cell macrophage specialist | `bench/immune_agents.py` macrophage section | Exp 36 era |
 | B-Cell mathematics specialist | dispatch via `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `bench/cdsfl_registry/domains/immune/mathematics.toml` | Exp 36 era |
 | B-Cell statistics specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/statistics.toml` | Exp 36 era |
 | B-Cell biology specialist | `LIVE_SPECIALIST_DOMAINS` at `bench/immune_agents.py:334`, route per `domains/immune/biology.toml` | Exp 36 era |
@@ -72,6 +71,7 @@ Closure of residual (d) from the 22 April 2026 founder oversight Q&A. Every runn
 
 | Component | Location | Shadow since | Flip trigger |
 |---|---|---|---|
+| Macrophage cell (patrol/self-check anomaly monitor) | `bench/macrophage_cell.py` (instantiated `bench/reference_runner_v2.py:3438`, observed `:3544`) — **re-tiered + location corrected 2026-06-10**: tool-verified that `immune_agents.py` contains no macrophage code and the cell's output reaches no live decision (advisory-only, `pipeline_modified=False` hard-set; flows only into shadow telemetry + the shadow ouroboros). Previously mis-indexed live_operational at "`immune_agents.py` macrophage section". | Exp 36 era (mis-labelled until 2026-06-10) | Exp 43 (it is the Exp 43 TARGET) + founder decision: minimal-promote (HIL-flag on a high-severity anomaly) or formally retire-as-cosmetic |
 | K/L/M shadow-audit logging | `bench/immune_agents.py:5400-5428` (fix at lines 5411-5421 on 2026-04-22) | 2026-04-21 (corrected 2026-04-22) | Exp 51 (K), Exp 52 (L), Exp 53 (M); per-domain non-distortion check against `bench/exp40_configs/40_gate.json` `pass_condition` across Exp 40–50 rounds |
 | Stage 6 query-quality calibrator | `bench/dm/_shadow_stage6.py` | 2026-04-14 | Exp 50 (Stage 6 self-referential calibration experiment) |
 | B-Cell physics specialist (K, shadow) | dispatch entry pending in `LIVE_SPECIALIST_DOMAINS`; tools routed per `domains/immune/physics.toml` | Exp 36 tranche | Exp 51 |
@@ -93,6 +93,33 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **TWO-SIDED GATE + overnight build run (2026-06-10, founder-directed; gamma standing directive):**
+
+  **Gamma restored as an ACTIVE convergence condition** (founder ruling; standing directive
+  "GAMMA IS LOAD-BEARING — DO NOT DEMOTE IT" added to `.claude/CLAUDE.md`). Convergence is now a
+  **two-sided gate** (`71b190b`): `gamma_critical >= 0.30` (decay curve flattened) **AND** 3
+  consecutive zero-new-critical rounds — two sides of the same diminishing-returns coin, required
+  to agree. Tool-verified against both landmarks: exp41c `gamma_critical=1.000`, exp42 `=0.687`
+  (the recorded "0.240" was the all-findings gamma, not the gate input). The gate change had left
+  3 tests red; caught + fixed (`633b4c6`), 434-test sweep green.
+
+  **Severity calibration BUILT** (`050f17c` — the never-built over-production bound): gated
+  default-off; demotes a falsifier-CONFIRMED-real but explicitly-LATENT critical below 0.7
+  (recording original + reason, never deleting); never demotes safety/core/security/data-loss.
+  17 tests. Honest boundary: inert until a latent-tagger sets `entry["latent"]`.
+
+  **Exp 43 (macrophage) fully prepared, NOT launched** (`1b5d148`): target corrected to
+  `bench/macrophage_cell.py` (the operational-plan "immune_agents.py macrophage section" pointer
+  was wrong — zero macrophage code there); config `bench/exp43_configs/43_macrophage_locationkey_live.json`
+  pre-flight verified end-to-end (gate flags survive into RunnerConfig; 15 AST symbols extract from
+  raw source). **Blocked on model API keys**: `.env` holds only `SEMANTIC_SCHOLAR_API_KEY`; the
+  OpenRouter/Gemini/DeepSeek keys must be added (`docs/REPRODUCING.md:39-41`) before launch. The
+  full `pr` panel was equally blocked (keys + codex CLI usage limit to 2026-06-11 ~19:00).
+  **Directive-measurement correction:** the dispatched system directive is ~50K chars, of which
+  43,667 (`cdsfl_operational.md`) is appended UNPRUNED outside the composer prune path — the
+  "~60K directive" figure was a conflation with the target article (60,416 chars of composer.py in
+  the user prompt). Session record: `experimental_notes/Overnight_Run_Report_2026-06-10.md`.
+
 - **EXP 42 — ★ CONVERGENCE LANDMARK: code-location novelty key, proven LIVE (2026-06-08/09, autonomous, founder-directed):**
 
   The chronic non-convergence root cause was finally pinned and fixed. Novelty was keyed on

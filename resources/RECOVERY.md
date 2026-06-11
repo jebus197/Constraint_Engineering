@@ -1,29 +1,51 @@
 # Recovery Protocol
 
-Last updated: 9 June 2026 23:27 BST
+Last updated: 11 June 2026 02:49 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
-## ★ CURRENT STATE (9 June 2026) — convergence LANDMARK achieved
+## ★ CURRENT STATE (11 June 2026) — landmark held; TWO-SIDED GATE live; Exp 43 ready, gated on API keys
 
 **Read FIRST:** `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md` — the
-master remediation program from the 2026-06-08/09 session, with a verification gate on
-every item.
+master remediation program (POST-COMPACTION block at the top names the exact resume point),
+then `experimental_notes/Overnight_Run_Report_2026-06-10.md` for the latest session.
 
 The chronic non-convergence is **SOLVED and proven live** (commit `375236d`, branch
 `exp39-experimental`): root cause was the cross-round novelty key (model-chosen finding-id →
 re-finds re-counted as new). Fix = key CRITICAL novelty by **code LOCATION** (target-file AST
-symbols), wired into the γ-alt gate behind `location_keyed_convergence` (default-off).
-**Live Exp 42 converged at round 6, series [10,1,5,1,0,0,0], ZERO residual HIL.** gamma is NOT
-demoted — it is the continuous decay-curve diagnostic; the zero-new-critical count is its
-threshold-free convergence endpoint (the same diminishing-returns principle). The fault was
-mechanical, as the founder always maintained.
+symbols). **Live Exp 42 converged at round 6, series [10,1,5,1,0,0,0], ZERO residual HIL.**
 
-**Still open (in the program plan, each with a test gate):** ouroboros loop-close (papers→models;
-full-text chain + Sci-Hub already built), Stage-6 calibrator into the live equation, severity
-calibration (never built), directive-pruning panel, macrophage/load-balancer promote-or-retire,
-dm consolidation. The shadow-mode survey (which subsystems are live vs decoration) is in the plan.
+**GAMMA IS LOAD-BEARING (standing directive, `.claude/CLAUDE.md`).** Convergence is the
+**TWO-SIDED GATE** (founder ruling 2026-06-10, commit `71b190b`): `gamma_critical >= 0.30`
+(decay curve flattened — gamma is an ACTIVE condition, never "reported only") **AND** 3
+consecutive zero-new-critical rounds. Both landmarks clear it (tool-verified: exp41c
+gamma_critical=1.000, exp42=0.687; the recorded "0.240" was the all-findings gamma, NOT the
+gate input). Never demote gamma; non-convergence is MECHANICAL by default.
+
+**Overnight run 2026-06-10 (~01:00–04:00 BST, 4 commits pushed, 434 tests green):**
+`633b4c6` fixed the 3 gamma tests left red by the gate change (regression caught + corrected);
+`050f17c` BUILT severity calibration (T6, gated default-off, 17 tests — **inert until a
+latent-tagger sets `entry["latent"]`**, fail-safe by design); `1b5d148` Exp 43 macrophage
+config with ALL pre-flight wiring verified; `053e873` the records. Exp 43 target CORRECTED
+to `bench/macrophage_cell.py` (the matrix's `immune_agents.py` pointer was wrong — 0
+macrophage code there).
+
+**IMMEDIATE NEXT ACTION — gated on the founder:** add `OPENROUTER_API_KEY`,
+`GEMINI_API_KEY`, `DEEPSEEK_API_KEY` to the gitignored `.env` (see `docs/REPRODUCING.md:39-41`;
+only `SEMANTIC_SCHOLAR_API_KEY` is present — the exp42 run used shell-exported keys), then:
+`python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"`
+under cy monitoring. This is the GENERALISATION test: does the location-keyed two-sided gate
+converge a SECOND module? Codex CLI is rate-limited until ~19:00 on 11 June (blocks `pr`/`c`).
+
+**Still open (in the program plan, each with a test gate):** the latent-tagger that makes
+severity calibration live; ouroboros loop-close (papers→models; full-text chain + Sci-Hub built);
+Stage-6 calibrator into the live equation; directive-pruning EXECUTION (the measurement found the
+real dispatched directive is ~50K with 43.7K appended UNPRUNED outside the prune path — the
+"60K directive" was a conflation with the target article; trim-to-27K draft awaits the deferred
+`pr` panel); macrophage promote-or-retire (it reaches NO live decision today); load-balancer =
+KEEP dormant (distinct from take_up_slack, wire only for BR2); dm consolidation Steps 2–6
+(Step 0/1 baseline pin done) behind founder `go`; routing rename.
 
 ## Minimum Recovery (2 minutes)
 
