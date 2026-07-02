@@ -1,6 +1,6 @@
 # CDSFL Full State Assessment
 
-2026-07-02 15:10 BST · branch `exp39-experimental` · HEAD `6ed0adf` (clean, in sync with origin)
+2026-07-02 23:35 BST · branch `exp39-experimental` · HEAD `6ed0adf` (clean, in sync with origin)
 
 A complete state-of-the-project assessment, written after a roughly three-week pause in active work (11 June to 2 July 2026) and a full state recovery. It consolidates what the project has proven, what is built, what is dormant, what remains, and what gates the next step. It is written to stand alone: a reader with no session context should be able to reconstruct the project's position from this document plus the referenced records.
 
