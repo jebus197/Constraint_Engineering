@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 11 June 2026 02:49 BST
+Last updated: 3 July 2026 00:24 BST
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -93,6 +93,22 @@ The index is updated when a component changes tier. The Stage 6 calibrator and t
 ## Current State (update after each major milestone)
 
 <!-- SV:LATEST_EXP_START -->
+- **STATE VERIFICATION + FULL ASSESSMENT (2026-07-02/03, after a ~3-week pause):**
+
+  A full-contract `rs` (recover script, git, OB/IM, MEMORY.md from disk in full, the
+  operational tracker end-to-end, RECOVERY.md from disk) confirmed the repository untouched
+  across the 11 June → 2 July gap (HEAD `6ed0adf`); the 62-test convergence/gate subset
+  re-verified green. A comprehensive stand-alone state assessment was written:
+  `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` (+ plain-English companion +
+  Desktop TTS) — the recommended first read for any new instance or reviewer. Corrections
+  landed: the operational tracker's resume pointer (stale at 7 June) advanced to current with
+  the 10–11 June window logged retroactively; its note-standard reference updated v1→v1.2.
+  Known issue: MEMORY.md exceeds the ~24.4KB session-load limit (tail truncates at load);
+  restructure proposed, awaiting founder. Blockers unchanged: `OPENROUTER_API_KEY`/
+  `GEMINI_API_KEY`/`DEEPSEEK_API_KEY` absent from `.env` (gates Exp 43 + the full `pr`
+  panel); codex CLI restored. Commits `39af565`, `ab62cc9`. Next: keys → launch Exp 43
+  (the generalisation test of the location-keyed two-sided gate).
+
 - **TWO-SIDED GATE + overnight build run (2026-06-10, founder-directed; gamma standing directive):**
 
   **Gamma restored as an ACTIVE convergence condition** (founder ruling; standing directive

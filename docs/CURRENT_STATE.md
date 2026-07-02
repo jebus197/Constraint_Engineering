@@ -1,15 +1,15 @@
 # CDSFL Current State
 
-Generated: 11 June 2026 02:49 BST (2026-06-11T02:49:06+01:00)
+Generated: 3 July 2026 00:24 BST (2026-07-03T00:24:23+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `053e873` Overnight run record: durable plan update + matrix correction + report
-- **Committed:** 2026-06-10 04:17:43 +0100
-- **Remote:** ahead by 169
+- **Last commit:** `ab62cc9` Correct record timestamps to actual write time (23:35 BST, not mid-afternoon) — session ran 14:42 to 23:37
+- **Committed:** 2026-07-02 23:38:20 +0100
+- **Remote:** ahead by 172
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
@@ -46,6 +46,9 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `ab62cc9 Correct record timestamps to actual write time (23:35 BST, not mid-afternoon) — session ran 14:42 to 23:37`
+- `39af565 Full rs (2 July) + full state assessment + tracker resume-pointer advance`
+- `6ed0adf sv: gamma two-sided gate live + overnight build banked (severity calibration built; Exp 43 macrophage config pre-flight-verified, gated on model API keys; gamma-test regression fixed; matrix + closure-index macrophage corrections; 434 tests green)`
 - `053e873 Overnight run record: durable plan update + matrix correction + report`
 - `1b5d148 Exp 43 macrophage config — generalisation test, wiring VERIFIED, gated on keys`
 - `050f17c Build severity calibration — over-production bounding (T6, gated default-off)`
@@ -53,6 +56,3 @@ Uncommitted files:
 - `71b190b Restore gamma as ACTIVE convergence condition — TWO-SIDED GATE (founder ruling)`
 - `c865bd9 Add pytest.ini (global 300s test timeout + network marker) — closes the hanging-test bug`
 - `6817227 sv: convergence LANDMARK — code-location novelty key proven live (Exp 42 converges R6, 0 residual HIL); gamma clarified as central/non-demoted (decay-curve diagnostic; count = its threshold-free endpoint); gamma 'reported only' log wording corrected; ouroboros functional (timeout+OpenAlex+Unpaywall/Sci-Hub full-text+SS key); static-queue closure + small-queue alarm; shadow-mode survey; remediation program plan`
-- `375236d Convergence landmark: code-location novelty trigger — Exp 42 converges live at R6, 0 residual HIL`
-- `00dc15f sv: Exp 42 clean rerun (routing wired+live, 0 HIL) + DEFINITIVE non-convergence root cause = cross-round dedup failure + active-vs-dormant audit + complete session ledger + LaunchPad install. Next gated: fix dedup, re-run.`
-- `2aedf39 ledger: capture tool capability-awareness / graceful-degradation directive + LaunchPad install`

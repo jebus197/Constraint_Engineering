@@ -1,15 +1,26 @@
 # Recovery Protocol
 
-Last updated: 11 June 2026 02:49 BST
+Last updated: 3 July 2026 00:24 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
-## ★ CURRENT STATE (11 June 2026) — landmark held; TWO-SIDED GATE live; Exp 43 ready, gated on API keys
+## ★ CURRENT STATE (3 July 2026) — landmark held; TWO-SIDED GATE live; Exp 43 ready, gated on API keys
 
-**Read FIRST:** `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md` — the
-master remediation program (POST-COMPACTION block at the top names the exact resume point),
-then `experimental_notes/Overnight_Run_Report_2026-06-10.md` for the latest session.
+**Read FIRST:** `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` — the
+comprehensive stand-alone state of the project (+ plain-English companion + TTS on the Desktop),
+written 2 July after a full `rs`. Then the operational tracker (resume pointer current as of
+2 July), then `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md` (POST-COMPACTION
+block) for per-item detail, and `Overnight_Run_Report_2026-06-10.md` for the 10 June session.
+
+**2 July session (full `rs` + assessment; commits `39af565`, `ab62cc9`):** after a ~3-week
+founder hiatus (11 June → 2 July, external model turbulence), a full-contract `rs` confirmed
+the repository untouched across the gap; the operational tracker was read end-to-end (its
+resume pointer had been left stale at 7 June — advanced to current, the 10–11 June window
+logged retroactively); MEMORY.md read from disk in full (NOTE: it exceeds the ~24.4KB
+session-load limit so its tail truncates at load — restructure proposed, awaiting founder);
+62-test gate suite re-verified green. Blockers unchanged: model API keys still absent; codex
+CLI restored (June quota block long expired). Founder resumes 3 July with several cleared days.
 
 The chronic non-convergence is **SOLVED and proven live** (commit `375236d`, branch
 `exp39-experimental`): root cause was the cross-round novelty key (model-chosen finding-id →
@@ -36,7 +47,8 @@ macrophage code there).
 only `SEMANTIC_SCHOLAR_API_KEY` is present — the exp42 run used shell-exported keys), then:
 `python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"`
 under cy monitoring. This is the GENERALISATION test: does the location-keyed two-sided gate
-converge a SECOND module? Codex CLI is rate-limited until ~19:00 on 11 June (blocks `pr`/`c`).
+converge a SECOND module? (Codex CLI is restored as of 2 July — its June rate-limit expired —
+so `pr`/`c` are blocked only by the same missing OpenRouter/Gemini/DeepSeek keys.)
 
 **Still open (in the program plan, each with a test gate):** the latent-tagger that makes
 severity calibration live; ouroboros loop-close (papers→models; full-text chain + Sci-Hub built);
