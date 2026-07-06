@@ -109,6 +109,7 @@ NOTE: the operational plan's "demoting gamma was CORRECT" line (7 June) is **SUP
 two-sided-gate ruling above.
 
 Status log (append-only):
+- 2026-07-06 ~01:30 BST — **API-KEY INCIDENT RESOLVED TO ROOT CAUSE (founder challenge vindicated) + FOUNDER DECISION REGISTER issued.** The "missing keys / shell-exported" account was WRONG: `.env` (born 28 March, the key store all along) was last modified 9 June 20:55 BST — the SEMANTIC_SCHOLAR write — and holds only that key since. The landmark run launched 19:36 (pre-write) with all routes working. Conclusion: **the 9 June write replaced `.env` instead of appending, destroying the model keys.** Retraction recorded. Prevention built: `scripts/check_model_keys.py` (preflight, values never shown, blocks launch on missing required keys) + `.env.example` + APPEND-ONLY convention for `.env`. Required now: OPENROUTER_API_KEY + DEEPSEEK_API_KEY only (Gemini rides OpenRouter since 2026-05-10; GEMINI/GOOGLE keys = legacy fallback). All open items renumbered as founder decisions D1–D12 in `experimental_notes/CDSFL_Founder_Decision_Register_2026-07-06.md` (+ Desktop TTS) — the register supersedes this plan's next-tasks list for sequencing; this plan remains the per-item detail.
 - 2026-06-10 ~01:00–04:00 BST — **OVERNIGHT AUTONOMOUS RUN (founder asleep, reviews in AM; rs done).**
   Goal: build/test the outstanding items + the Exp 43 generalisation test. Architecture: 4 parallel
   read-only investigation sub-agents (protect main context), I verify + apply + commit each. **WORK
