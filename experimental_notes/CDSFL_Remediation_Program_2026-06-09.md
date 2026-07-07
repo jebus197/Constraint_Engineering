@@ -109,6 +109,20 @@ NOTE: the operational plan's "demoting gamma was CORRECT" line (7 June) is **SUP
 two-sided-gate ruling above.
 
 Status log (append-only):
+- 2026-07-08 ~00:15 BST — **★ THE 07-06 KEY-INCIDENT ENTRY BELOW IS FALSE — KEYS WERE NEVER LOST.**
+  Founder incredulity ("deletions should be physically impossible... incredulous if they really
+  were deleted") prompted a direct masked read of `.env`: ALL original keys present in `export
+  KEY=value` shell format (OPENAI/GOOGLE/GEMINI/GITHUB/GROQ/WOLFRAM/DEEPSEEK/OPENROUTER) + the
+  SS key cleanly APPENDED 9 June. 11 lines, 843 bytes, born 28 March, one modification (the
+  append). **Root cause of the false incident: the verification instruments themselves** — the
+  grep pattern and `check_model_keys.py` matched only bare `KEY=` line starts, so every
+  `export`-prefixed line was invisible; python-dotenv (the runners' loader) parses `export` fine,
+  which is why every live run worked. Fixed the preflight parser; corrected preflight = all
+  PRESENT; **live pings HTTP 200 on OpenRouter + DeepSeek (keys VALID)**. D1 void — no founder
+  action needed; **Exp 43 + full `pr` panel were NEVER key-blocked.** Two successive false
+  accounts retracted (shell-exported story; overwrite-destroyed story). STANDING LESSON: validate
+  a verification instrument against the real consumer it stands in for before trusting its
+  verdicts. Correction appended to `CDSFL_Founder_Decision_Register_2026-07-06.md`.
 - 2026-07-06 ~01:30 BST — **API-KEY INCIDENT RESOLVED TO ROOT CAUSE (founder challenge vindicated) + FOUNDER DECISION REGISTER issued.** The "missing keys / shell-exported" account was WRONG: `.env` (born 28 March, the key store all along) was last modified 9 June 20:55 BST — the SEMANTIC_SCHOLAR write — and holds only that key since. The landmark run launched 19:36 (pre-write) with all routes working. Conclusion: **the 9 June write replaced `.env` instead of appending, destroying the model keys.** Retraction recorded. Prevention built: `scripts/check_model_keys.py` (preflight, values never shown, blocks launch on missing required keys) + `.env.example` + APPEND-ONLY convention for `.env`. Required now: OPENROUTER_API_KEY + DEEPSEEK_API_KEY only (Gemini rides OpenRouter since 2026-05-10; GEMINI/GOOGLE keys = legacy fallback). All open items renumbered as founder decisions D1–D12 in `experimental_notes/CDSFL_Founder_Decision_Register_2026-07-06.md` (+ Desktop TTS) — the register supersedes this plan's next-tasks list for sequencing; this plan remains the per-item detail.
 - 2026-06-10 ~01:00–04:00 BST — **OVERNIGHT AUTONOMOUS RUN (founder asleep, reviews in AM; rs done).**
   Goal: build/test the outstanding items + the Exp 43 generalisation test. Architecture: 4 parallel

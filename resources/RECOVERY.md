@@ -19,8 +19,10 @@ the repository untouched across the gap; the operational tracker was read end-to
 resume pointer had been left stale at 7 June — advanced to current, the 10–11 June window
 logged retroactively); MEMORY.md read from disk in full (NOTE: it exceeds the ~24.4KB
 session-load limit so its tail truncates at load — restructure proposed, awaiting founder);
-62-test gate suite re-verified green. Blockers unchanged: model API keys still absent; codex
-CLI restored (June quota block long expired). Founder resumes 3 July with several cleared days.
+62-test gate suite re-verified green. Blockers: NONE — the "missing keys" claim was FALSE (2026-07-08 correction: all keys were
+present in `.env` all along in `export KEY=value` format; the checkers ignored the `export`
+prefix; live pings HTTP 200 on OpenRouter + DeepSeek). Codex CLI restored. Exp 43 + full `pr`
+are launch-ready on founder `y`.
 
 The chronic non-convergence is **SOLVED and proven live** (commit `375236d`, branch
 `exp39-experimental`): root cause was the cross-round novelty key (model-chosen finding-id →
@@ -42,9 +44,9 @@ config with ALL pre-flight wiring verified; `053e873` the records. Exp 43 target
 to `bench/macrophage_cell.py` (the matrix's `immune_agents.py` pointer was wrong — 0
 macrophage code there).
 
-**IMMEDIATE NEXT ACTION — gated on the founder:** add `OPENROUTER_API_KEY`,
-`GEMINI_API_KEY`, `DEEPSEEK_API_KEY` to the gitignored `.env` (see `docs/REPRODUCING.md:39-41`;
-only `SEMANTIC_SCHOLAR_API_KEY` is present — the exp42 run used shell-exported keys), then:
+**IMMEDIATE NEXT ACTION — gated only on founder `y` (2026-07-08 correction: keys were NEVER
+missing — all present + live-valid in `.env`; the earlier "absent" readings were a checker
+parser bug that ignored the `export ` line prefix):**
 `python3 bench/launch_exp42.py --config "$(pwd)/bench/exp43_configs/43_macrophage_locationkey_live.json"`
 under cy monitoring. This is the GENERALISATION test: does the location-keyed two-sided gate
 converge a SECOND module? (Codex CLI is restored as of 2 July — its June rate-limit expired —

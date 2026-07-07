@@ -27,10 +27,21 @@ OPTIONAL = {
 }
 
 def _env_file_names(path: Path) -> set:
+    # Handles BOTH formats present in the project's .env:
+    #   KEY=value           (plain dotenv style)
+    #   export KEY=value    (shell style — the file's original 28 March format)
+    # CORRECTION 2026-07-08: the first version ignored the `export ` prefix,
+    # reported every original key ABSENT, and thereby manufactured the false
+    # "keys were destroyed" incident. The keys were present and loading
+    # (python-dotenv parses `export` lines) the entire time. A parser bug in a
+    # verification instrument is itself a verification failure — instruments
+    # must be cross-checked against the consumer they stand in for (dotenv).
     names = set()
     if path.is_file():
         for line in path.read_text().splitlines():
             line = line.strip()
+            if line.startswith("export "):
+                line = line[len("export "):].lstrip()
             if line and not line.startswith("#") and "=" in line:
                 key, _, val = line.partition("=")
                 if val.strip():

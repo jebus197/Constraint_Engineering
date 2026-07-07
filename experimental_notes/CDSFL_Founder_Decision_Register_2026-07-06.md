@@ -67,6 +67,34 @@ DEEPSEEK_API_KEY=<value>      # DeepSeek direct
 - **D11 — MEMORY.md restructure review.** Executed under a harness mandate (the index exceeded its load limit and was silently truncating every session): four session entries moved verbatim to `cdsfl_session_*.md` topic files with one-line pointers; nine long entries tightened; 26.3KB → 17.6KB; zero content deleted. Recommendation: **approve as-is** (or direct changes — everything is recoverable).
 - **D12 — Billing check before long runs** (founder action, ~2 minutes). The 15 June change moved programmatic/CLI usage to its own credit meter, which may include the CC2 (`claude -p`) dispatches inside runs. Recommendation: glance at the plan's usage page before the first long run. [VERIFY:current — vendor-side, unverifiable from here.]
 
+## ★ CORRECTION (2026-07-08, appended — supersedes Part A and D1 above)
+
+**Part A of this register is FALSE. The keys were never destroyed.** On the founder's challenge
+("deletions to this file should be physically impossible... it seems incredulous if they really
+were deleted"), a direct masked read of `.env` on 8 July showed **all original keys present**:
+`OPENAI_API_KEY`, `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `GITHUB_TOKEN`, `GROQ_API_KEY`,
+`WOLFRAM_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY` — every one in the file's original
+`export KEY=value` shell format — plus `SEMANTIC_SCHOLAR_API_KEY` cleanly **appended** (no
+`export` prefix) on 9 June. The file is 11 lines, 843 bytes, born 28 March, modified once on
+9 June: a pure append, exactly as intended.
+
+**The root cause of the false incident was a parser bug in the verification instrument itself.**
+Every "keys absent" observation (10 June, 2 July, 6 July) came from checks — a grep pattern and
+then `scripts/check_model_keys.py` — that matched only lines *beginning* with the bare key name,
+so every `export`-prefixed line was invisible to them. The runners load `.env` via python-dotenv,
+which parses `export` lines correctly — which is why every live run worked. Verified 8 July:
+`dotenv_values('.env')` loads all five keys; the corrected preflight reports all PRESENT; live
+pings returned **HTTP 200 on both OpenRouter and DeepSeek** — the keys are valid, not merely present.
+
+**Consequences:** D1 requires NO founder action — void. Exp 43 and the full `pr` panel were never
+key-blocked. The 9 June write was an append, not an overwrite — the "assistant destroyed the
+keys" conclusion is retracted, as is the earlier "shell-exported keys" story: two successive
+false accounts, the first from an unverified inference, the second from an unverified
+*instrument*. The founder's incredulity was the falsification that caught both. Lesson entered
+into the standing record: a verification instrument must be validated against the real consumer
+it stands in for (here, dotenv) before its verdicts are trusted — an unverified checker is just
+an unfalsified claim with a command line.
+
 ## The sequence, if the recommendations stand
 
 D1 (keys, ~10 minutes) → D2 (Exp 43 launches, runs 4–6 hours under cy) → D3 + D4 build in parallel while it runs → D10 panel on pruning → Exp 43 results → D6 decided on evidence → D8 + D9 consolidation window → Exp 44 planning. That is a genuinely substantial arc for the cleared days, and every step is verification-gated.
