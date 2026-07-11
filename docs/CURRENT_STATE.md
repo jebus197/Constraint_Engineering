@@ -1,19 +1,19 @@
 # CDSFL Current State
 
-Generated: 3 July 2026 00:24 BST (2026-07-03T00:24:23+01:00)
+Generated: 11 July 2026 23:42 BST (2026-07-11T23:42:31+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `ab62cc9` Correct record timestamps to actual write time (23:35 BST, not mid-afternoon) — session ran 14:42 to 23:37
-- **Committed:** 2026-07-02 23:38:20 +0100
-- **Remote:** ahead by 172
+- **Last commit:** `f15bfe4` Close discussion phase: founder corrections + agreed action list (Phase 1/2/3)
+- **Committed:** 2026-07-11 23:15:45 +0100
+- **Remote:** ahead by 177
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
-- `M resources/ONBOARDING.md`
+- `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
 - `M resources/RECOVERY.md`
 
 ---
@@ -46,13 +46,13 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `f15bfe4 Close discussion phase: founder corrections + agreed action list (Phase 1/2/3)`
+- `5b7a76f Ouroboros + self-improvement assessment (founder-ordered, pre-Exp-43)`
+- `cc71be5 ★ RETRACTION: the API keys were NEVER lost — the checker itself was the bug`
+- `de709a2 API-key incident root-caused + founder decision register D1-D12 + key preflight`
+- `d522e66 sv: pre-restart save (3 July 00:25) — recovery docs current to the full-rs + assessment session; MEMORY.md compacted 26.3K->17.6K (session entries -> topic files, zero loss); resume = keys -> Exp 43`
 - `ab62cc9 Correct record timestamps to actual write time (23:35 BST, not mid-afternoon) — session ran 14:42 to 23:37`
 - `39af565 Full rs (2 July) + full state assessment + tracker resume-pointer advance`
 - `6ed0adf sv: gamma two-sided gate live + overnight build banked (severity calibration built; Exp 43 macrophage config pre-flight-verified, gated on model API keys; gamma-test regression fixed; matrix + closure-index macrophage corrections; 434 tests green)`
 - `053e873 Overnight run record: durable plan update + matrix correction + report`
 - `1b5d148 Exp 43 macrophage config — generalisation test, wiring VERIFIED, gated on keys`
-- `050f17c Build severity calibration — over-production bounding (T6, gated default-off)`
-- `633b4c6 Fix stale gamma-alt tests left red by the two-sided gate (71b190b)`
-- `71b190b Restore gamma as ACTIVE convergence condition — TWO-SIDED GATE (founder ruling)`
-- `c865bd9 Add pytest.ini (global 300s test timeout + network marker) — closes the hanging-test bug`
-- `6817227 sv: convergence LANDMARK — code-location novelty key proven live (Exp 42 converges R6, 0 residual HIL); gamma clarified as central/non-demoted (decay-curve diagnostic; count = its threshold-free endpoint); gamma 'reported only' log wording corrected; ouroboros functional (timeout+OpenAlex+Unpaywall/Sci-Hub full-text+SS key); static-queue closure + small-queue alarm; shadow-mode survey; remediation program plan`

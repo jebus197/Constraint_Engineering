@@ -1,13 +1,17 @@
 # Recovery Protocol
 
-Last updated: 3 July 2026 00:24 BST
+Last updated: 11 July 2026 23:42 BST
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
 
-## ★ CURRENT STATE (3 July 2026) — landmark held; TWO-SIDED GATE live; Exp 43 ready, gated on API keys
+## ★ CURRENT STATE (8 July 2026) — discussion phase CLOSED; pre-Exp-43 verification done; ACTION LIST agreed
 
-**Read FIRST:** `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` — the
+**FIRST READ on recovery:** the operational tracker (`experimental_notes/CDSFL_Agent_Operational_Plan.md` or Desktop copy) — its 8-July RESUME POINTER holds the **agreed Phase 1/2/3 action list**. Then this block.
+
+**8 July session (pre-Exp-43 verification + founder decision-register close):** keys confirmed present + live-valid (the whole "missing keys" saga was a checker parser-bug, retracted; `.env` now `chflags uchg` immutable — unlock with `chflags nouchg .env`). All flagged mechanisms tool-verified GREEN (250 tests): falsifier gate (CONFIRM-only, voting removed), routing (`take_up_slack`, wired `reference_runner_v2.py:5787`), §17/§18, merge-arb, immune. Ouroboros audited = HOLLOW (fetches 500-char abstracts, discards them, wires to nothing, `c_ext` hardcoded 0); assessment + fix proposal in `CDSFL_Ouroboros_and_Self_Improvement_Assessment_2026-07-08.md`. **Founder rulings 8 July:** (a) goal = the CALCULATOR ANALOGY (reliable answers, HIL for genuine residuals only), NOT removing the human; self-improvement = emergent bonus, not core. (b) **RETIRE compelled convergence §10** (a hack; now redundant under the falsifier gate) — run Exp 43 WITHOUT it. (c) rename `take_up_slack`→`routing` now (trivial). (d) run pruning `pr` panel + ouroboros SHADOW-real-work build in parallel, then Exp 43. **AGREED NEXT (Phase 1, fresh session):** A1 pruning panel (hard-constraint-guarded vs the gamma-disaster) + A2 ouroboros shadow-work (cheap reader Haiku/DeepSeek) + A3 rename + A4 retire §10 → then B1 Exp 43 under cy.
+
+**Read next:** `experimental_notes/CDSFL_Full_State_Assessment_2026-07-02.md` — the
 comprehensive stand-alone state of the project (+ plain-English companion + TTS on the Desktop),
 written 2 July after a full `rs`. Then the operational tracker (resume pointer current as of
 2 July), then `experimental_notes/CDSFL_Remediation_Program_2026-06-09.md` (POST-COMPACTION
