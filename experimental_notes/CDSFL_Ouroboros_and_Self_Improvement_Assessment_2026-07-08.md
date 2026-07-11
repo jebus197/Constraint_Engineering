@@ -67,4 +67,14 @@ Honest framing first: this makes the review **better-informed** (external-litera
 
 These are flagged, not fixed — canonical/maths docs await founder direction before edit.
 
+## 9. Founder correction (appended 2026-07-08, supersedes the framing of Parts 5 and the conclusion)
+
+The founder corrected two framings in this assessment, and the corrections are load-bearing:
+
+1. **The goal was never to remove or "discount" the HIL.** This document's "dream of discounting the human" language overstates — CC1 inflated the founder's stated terms ("critical mass", "walk in the park") into "first light / singularity" framing the founder never used, then argued against the inflated version. The founder's actual objective is the **calculator analogy**: a system that reliably returns a viable, real solution for what it *should* be able to resolve, so the human is not forced to check *everything* — only genuine residuals (safety / critical-functionality / ethical / legal + true uncertainty). That goal is modest, reachable, and largely already built; the gap this document dramatised existed only in the framing, not between the aspiration and the architecture.
+
+2. **Self-improvement is one possibly-emergent property, not the core objective.** The core of CDSFL is testing whether Popperian falsification can make LLM output reliable, and reducing false-positive HIL burden. Self-improvement / ouroboros is a potential emergent bonus, not the point. The Part 5 "first light" analysis remains factually correct about the record, but it answered a more grandiose question than the founder was asking.
+
+The rest of the assessment (Parts 1–4, 6–8: the ouroboros current-state findings, the three generations, apply_fixes_back state, the (A)/(B) fork, the staged fix proposal, the doc divergences) the founder fully endorses.
+
 Written under CDSFL note standard v1.2 (14 May 2026).
