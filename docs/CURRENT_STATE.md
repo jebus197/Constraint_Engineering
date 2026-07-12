@@ -1,26 +1,28 @@
 # CDSFL Current State
 
-Generated: 11 July 2026 23:42 BST (2026-07-11T23:42:31+01:00)
+Generated: 12 July 2026 02:19 BST (2026-07-12T02:19:37+01:00)
 
 ---
 
 ## Git
 
 - **Branch:** exp39-experimental
-- **Last commit:** `f15bfe4` Close discussion phase: founder corrections + agreed action list (Phase 1/2/3)
-- **Committed:** 2026-07-11 23:15:45 +0100
-- **Remote:** ahead by 177
+- **Last commit:** `b656549` Fix 5 findings from the A2/A3 adversarial verification pass
+- **Committed:** 2026-07-12 02:12:15 +0100
+- **Remote:** ahead by 182
 - **Working tree:** DIRTY — uncommitted changes present
 
 Uncommitted files:
 - `M experimental_notes/CDSFL_Agent_Operational_Plan.md`
 - `M resources/RECOVERY.md`
+- `?? experimental_notes/CDSFL_Overnight_Phase1_2026-07-12.md`
+- `?? experimental_notes/CDSFL_Overnight_Phase1_Plain_English_2026-07-12.md`
 
 ---
 
 ## Tests
 
-**1596 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
+**1605 tests collected** (`python3 -m pytest bench/tests/ --co -q`)
 
 ---
 
@@ -46,13 +48,13 @@ Uncommitted files:
 
 ## Recent Commits
 
+- `b656549 Fix 5 findings from the A2/A3 adversarial verification pass`
+- `349951f A3: rename take_up_slack -> routing (code-only; behaviour byte-identical)`
+- `ef1fe7b A1: guarded directive-pruning panel (pr) — script + 4/5 model responses`
+- `df18201 A2: ouroboros shadow real-work loop — fetch+parse+read+brief real OA papers`
+- `dfc475d sv: discussion phase closed + agreed action list; founder rulings (retire compelled-convergence §10, rename routing now, calculator-analogy goal); pre-Exp-43 verification 250 tests green; .env locked. Phase 1 = pruning panel + ouroboros shadow build (parallel) + rename + §10 retire -> Exp 43`
 - `f15bfe4 Close discussion phase: founder corrections + agreed action list (Phase 1/2/3)`
 - `5b7a76f Ouroboros + self-improvement assessment (founder-ordered, pre-Exp-43)`
 - `cc71be5 ★ RETRACTION: the API keys were NEVER lost — the checker itself was the bug`
 - `de709a2 API-key incident root-caused + founder decision register D1-D12 + key preflight`
 - `d522e66 sv: pre-restart save (3 July 00:25) — recovery docs current to the full-rs + assessment session; MEMORY.md compacted 26.3K->17.6K (session entries -> topic files, zero loss); resume = keys -> Exp 43`
-- `ab62cc9 Correct record timestamps to actual write time (23:35 BST, not mid-afternoon) — session ran 14:42 to 23:37`
-- `39af565 Full rs (2 July) + full state assessment + tracker resume-pointer advance`
-- `6ed0adf sv: gamma two-sided gate live + overnight build banked (severity calibration built; Exp 43 macrophage config pre-flight-verified, gated on model API keys; gamma-test regression fixed; matrix + closure-index macrophage corrections; 434 tests green)`
-- `053e873 Overnight run record: durable plan update + matrix correction + report`
-- `1b5d148 Exp 43 macrophage config — generalisation test, wiring VERIFIED, gated on keys`
