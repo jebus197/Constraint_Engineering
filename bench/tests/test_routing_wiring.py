@@ -80,3 +80,20 @@ def test_dedup_short_circuits_before_dispatch(monkeypatch):
     e = reg.entries[cid]
     assert e["status"] == "MERGED" and e.get("routing_duplicate_of") == twin
     assert dispatched == []  # dedup caught it before any model dispatch
+
+
+def test_legacy_config_key_alias_on_runner_from_dict():
+    """Regression (adversarial-pass finding, 2026-07-12): the runner's OWN --config path
+    RunnerConfig.from_dict must honour the legacy take_up_slack_enabled key -> routing_enabled,
+    exactly like launcher_core.build_runner_config_from_dict. Without this, launching Exp 43 via
+    the runner CLI (rather than launch_exp42.py) would silently run with routing OFF, diverging
+    from the Exp 42 landmark. Uses the real Exp 43 config (still carries the legacy key)."""
+    import json
+    import pathlib
+    cfg = json.loads(pathlib.Path(
+        "bench/exp43_configs/43_macrophage_locationkey_live.json").read_text())
+    assert cfg.get("take_up_slack_enabled") is True and "routing_enabled" not in cfg
+    assert rr.RunnerConfig.from_dict(cfg).routing_enabled is True   # alias honoured
+    # explicit new key wins if both are present
+    assert rr.RunnerConfig.from_dict(
+        {**cfg, "routing_enabled": False}).routing_enabled is False

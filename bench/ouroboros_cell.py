@@ -694,13 +694,33 @@ class OuroborosCell:
                 headers={"User-Agent": "CDSFL-ouroboros/1.0 (research)"},
                 stream=True)
             ctype = r.headers.get("Content-Type", "").lower()
-            clen = int(r.headers.get("Content-Length", 0) or 0)
+            try:
+                clen = int(r.headers.get("Content-Length", 0) or 0)
+            except (TypeError, ValueError):
+                clen = 0
             if clen > self.MAX_PDF_BYTES:
                 return {"skip": f"too-large:{clen}"}
-            body = r.content[: self.MAX_PDF_BYTES + 1]
-            return {"ctype": ctype, "body": body, "status": r.status_code}
+            # Stream with a RUNNING byte cap so MAX_PDF_BYTES bounds the actual download
+            # even when Content-Length is absent/understated — r.content would otherwise
+            # buffer the whole body into memory before any slice (OOM risk on a lying server).
+            chunks, total = [], 0
+            for chunk in r.iter_content(chunk_size=65536):
+                if not chunk:
+                    continue
+                total += len(chunk)
+                if total > self.MAX_PDF_BYTES:
+                    return {"skip": f"too-large-stream:{total}"}
+                chunks.append(chunk)
+            return {"ctype": ctype, "body": b"".join(chunks), "status": r.status_code}
 
-        got = self._run_with_timeout(_get, timeout_s=timeout_s)   # reused daemon cap
+        # _run_with_timeout re-raises any exception the worker hit; catch it here so
+        # _download_and_extract honours its "Never raises" contract and degrades to an
+        # error field (per-paper), rather than propagating and wiping the whole round's briefs.
+        try:
+            got = self._run_with_timeout(_get, timeout_s=timeout_s)   # reused daemon cap
+        except Exception as e:  # noqa: BLE001 — best-effort fetch, never fatal
+            out["error"] = f"download:{type(e).__name__}"
+            return out
         if not got or "skip" in (got or {}):
             out["error"] = (got or {}).get("skip", "timeout") if isinstance(got, dict) else "timeout"
             return out
@@ -835,28 +855,34 @@ class OuroborosCell:
                    "brief": "", "reader_model": "", "raw_reader_response": "",
                    "elapsed_s": 0.0, "error": ""}
             body = ""
-            if self.enable_fulltext and fetches < self.MAX_FULLTEXT_FETCHES_PER_ROUND:
-                res = self.resolve_fulltext_url(paper)
-                if res["url"]:
-                    fetches += 1
-                    dl = self._download_and_extract(res["url"])
-                    if dl["chars"]:
-                        body = dl["text"]
-                        rec["via"] = res["via"]
-                        rec["fulltext_chars"] = dl["chars"]
-                        rec["source_ref"] = res["source_ref"] or rec["source_ref"]
-                        rec["source_hash"] = hashlib.sha256(
-                            body.encode("utf-8", "ignore")).hexdigest()
-                    else:
-                        rec["error"] = f"fetch:{dl['error']}"
-            if reads < self.MAX_READER_CALLS_PER_ROUND:
-                reads += 1
-                r = self._cheap_reader_read(target, paper, body)
-                rec.update({k: r[k] for k in
-                            ("relevance", "brief", "reader_model", "elapsed_s")})
-                rec["raw_reader_response"] = r["raw"]
-                if r["error"]:
-                    rec["error"] = (rec["error"] + "; " + r["error"]).strip("; ")
+            # One paper's failure must degrade to THAT paper's error field, never lose the
+            # round's other briefs. (Belt-and-braces: _download_and_extract/_cheap_reader_read
+            # are already non-raising, but this keeps the per-paper contract even if that changes.)
+            try:
+                if self.enable_fulltext and fetches < self.MAX_FULLTEXT_FETCHES_PER_ROUND:
+                    res = self.resolve_fulltext_url(paper)
+                    if res["url"]:
+                        fetches += 1
+                        dl = self._download_and_extract(res["url"])
+                        if dl["chars"]:
+                            body = dl["text"]
+                            rec["via"] = res["via"]
+                            rec["fulltext_chars"] = dl["chars"]
+                            rec["source_ref"] = res["source_ref"] or rec["source_ref"]
+                            rec["source_hash"] = hashlib.sha256(
+                                body.encode("utf-8", "ignore")).hexdigest()
+                        else:
+                            rec["error"] = f"fetch:{dl['error']}"
+                if reads < self.MAX_READER_CALLS_PER_ROUND:
+                    reads += 1
+                    r = self._cheap_reader_read(target, paper, body)
+                    rec.update({k: r[k] for k in
+                                ("relevance", "brief", "reader_model", "elapsed_s")})
+                    rec["raw_reader_response"] = r["raw"]
+                    if r["error"]:
+                        rec["error"] = (rec["error"] + "; " + r["error"]).strip("; ")
+            except Exception as e:  # noqa: BLE001 — per-paper best-effort, never fatal
+                rec["error"] = (rec["error"] + f"; paper:{type(e).__name__}").strip("; ")
             briefs.append(rec)
         return briefs
 

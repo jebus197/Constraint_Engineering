@@ -488,6 +488,14 @@ class RunnerConfig:
     def from_dict(cls, d: Dict[str, Any]) -> "RunnerConfig":
         """Build config from a JSON-compatible dict (ignores unknown keys)."""
         valid = {f.name for f in cls.__dataclass_fields__.values()}
+        # Back-compat alias (routing rename 2026-07-12): the legacy config key
+        # take_up_slack_enabled maps to the renamed field routing_enabled. Applied on
+        # BOTH config-ingestion boundaries — here (the runner's own --config CLI) and
+        # launcher_core.build_runner_config_from_dict — so the unchanged Exp 42/43
+        # configs (which still carry take_up_slack_enabled) stay byte-identical in
+        # behaviour regardless of launch path. New key wins if both are present.
+        if "take_up_slack_enabled" in d and "routing_enabled" not in d:
+            d = {**d, "routing_enabled": d["take_up_slack_enabled"]}
         kwargs = {k: v for k, v in d.items() if k in valid}
         # Capture shadow cell config from underscore-prefixed sections
         shadow = {}
