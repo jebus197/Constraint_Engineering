@@ -1,12 +1,12 @@
-"""Take-up-slack falsifier resolution — capability-aware routing for falsification.
+"""Routing — capability-aware falsifier resolution for falsification.
 
 When the falsifier gate leaves a CRITICAL finding un-confirmed (a weak model wrote
 a broken or missing falsifier), the system should NOT immediately escalate to a
 human, and should NOT endlessly re-ask the weak model to do work it has
 demonstrably failed. Instead, route the falsification to progressively STRONGER
 models (ordered by capability fingerprint) with the execute_python tool loop —
-"the stronger models take up the slack" — and only escalate to HIL if even the
-strongest writer cannot resolve it (a genuinely-hard, e.g. nondeterministic,
+the stronger models take over the falsification — and only escalate to HIL if even
+the strongest writer cannot resolve it (a genuinely-hard, e.g. nondeterministic,
 defect). This restores the capability-aware routing that the flat parallel
 dispatch had collapsed into identical treatment: weak models find, strong models
 adjudicate.
@@ -37,13 +37,13 @@ from typing import Callable, Optional, Sequence
 # claude_cli-slow), ChatGPT 67%, Gemini 80%-but-format-fragile, DeepSeek 28% /
 # 10-of-15-residuals last. Validated ladder: gpt-5.5 (Codex) resolved 6/7 of the
 # hardest residuals; CC2 picks up the 7th (the markdown-embedding trap). The
-# primary offender (DeepSeek) is last and is never asked to take up slack.
+# primary offender (DeepSeek) is last and is never asked to take over routing.
 DEFAULT_FALSIFIER_STRENGTH = ("Codex", "CC2", "ChatGPT", "Gemini", "DeepSeek")
 
 
 @dataclass
-class TakeupResult:
-    """Outcome of a take-up-slack attempt on one un-confirmed critical."""
+class RoutingResult:
+    """Outcome of a routing attempt on one un-confirmed critical."""
     finding_id: str
     verdict: str                      # CONFIRMED / REFUTED / ERROR / UNTOOLABLE / DUPLICATE
     resolved: bool                    # True iff a strong writer CONFIRMED it
@@ -93,13 +93,13 @@ def confirmed_duplicate(
     return best_id
 
 
-def resolve_via_takeup(
+def resolve_via_routing(
     finding: dict,
     rungs: Sequence[str],
     resolve_fn: Callable[[str, dict], str],
     reverify_fn: Callable[[str], str],
     max_rungs: int = 2,
-) -> TakeupResult:
+) -> RoutingResult:
     """Climb the capability ladder until a strong writer CONFIRMS the finding.
 
     ``rungs``       — model labels, strongest first (from ``rank_falsifier_writers``).
@@ -110,7 +110,7 @@ def resolve_via_takeup(
                       (falsifier_verify.reverify_falsifier). It, never the model,
                       decides the verdict — "tools decide".
 
-    Returns a TakeupResult. ``resolved`` is True only on a CONFIRMED from the
+    Returns a RoutingResult. ``resolved`` is True only on a CONFIRMED from the
     decider; otherwise the caller escalates to HIL with the diagnosis intact.
     A REFUTED here is NOT trusted to drop the critical (CONFIRM-only still holds):
     it just means this rung did not demonstrate it; we try the next rung, then HIL.
@@ -128,12 +128,12 @@ def resolve_via_takeup(
         verdict = reverify_fn(code)
         last_verdict = verdict
         if verdict == "CONFIRMED":
-            return TakeupResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried)
+            return RoutingResult(fid, "CONFIRMED", True, model, code, rungs_tried=tried)
     # No rung confirmed -> caller escalates to HIL (genuinely-hard until proven otherwise)
-    return TakeupResult(fid, last_verdict, False, last_model, last_code, rungs_tried=tried)
+    return RoutingResult(fid, last_verdict, False, last_model, last_code, rungs_tried=tried)
 
 
-def take_up_slack(
+def route(
     finding: dict,
     available_models: Sequence[str],
     confirmed_findings: Sequence[dict],
@@ -144,8 +144,8 @@ def take_up_slack(
     strength_order: Sequence[str] = DEFAULT_FALSIFIER_STRENGTH,
     max_rungs: int = 2,
     dup_threshold: float = 0.85,
-) -> TakeupResult:
-    """Full take-up-slack pass for ONE un-confirmed critical finding.
+) -> RoutingResult:
+    """Full routing pass for ONE un-confirmed critical finding.
 
     Order of operations:
       1. Dedup — if the defect is already CONFIRMED under another id, resolve as a
@@ -158,11 +158,11 @@ def take_up_slack(
 
     dup = confirmed_duplicate(finding, confirmed_findings, similarity_fn, dup_threshold)
     if dup is not None:
-        return TakeupResult(fid, "DUPLICATE", True, None, "", duplicate_of=dup, rungs_tried=0)
+        return RoutingResult(fid, "DUPLICATE", True, None, "", duplicate_of=dup, rungs_tried=0)
 
     source = finding.get("source_model")
     rungs = rank_falsifier_writers(
         available_models, strength_order=strength_order,
         exclude=(source,) if source else (),
     )
-    return resolve_via_takeup(finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs)
+    return resolve_via_routing(finding, rungs, resolve_fn, reverify_fn, max_rungs=max_rungs)

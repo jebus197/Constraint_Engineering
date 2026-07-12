@@ -403,11 +403,12 @@ class RunnerConfig:
     # un-toolable/broken — never auto-confirmed. Default OFF: byte-identical
     # (vote-based) behaviour until an experiment opts in.
     falsifier_gate_enabled: bool = False
-    # Capability-aware take-up-slack routing (2026-06-07, gated). When True, an
-    # un-confirmed CRITICAL escalated by the falsifier gate is routed to a stronger
-    # writer (with the execute_python tool loop) before the HIL is accepted.
-    # Requires falsifier_gate_enabled. Default-off => byte-identical.
-    take_up_slack_enabled: bool = False
+    # Capability-aware routing (2026-06-07, gated; renamed from take_up_slack 2026-07-12).
+    # When True, an un-confirmed CRITICAL escalated by the falsifier gate is routed to a
+    # stronger writer (with the execute_python tool loop) before the HIL is accepted.
+    # Requires falsifier_gate_enabled. Default-off => byte-identical. The legacy config key
+    # ``take_up_slack_enabled`` is still accepted (launcher_core back-compat alias).
+    routing_enabled: bool = False
     # Code-location novelty SHADOW (2026-06-08). Telemetry-only: computes a per-round
     # critical-novelty series keyed by target-file code location (the verified fix for the
     # cross-round dedup failure) ALONGSIDE the live ID-proxy count, logging both. It NEVER
@@ -1461,13 +1462,14 @@ def apply_falsifier_verdicts(
              f"{tally['REFUTED']} REFUTED, {tally['HIL']} -> HIL")
 
 
-# ── Take-up-slack: capability-aware falsifier routing (2026-06-07, gated) ──
+# ── Routing: capability-aware falsifier routing (2026-06-07, gated; renamed from
+# take_up_slack 2026-07-12) ──
 # When the falsifier gate escalates an un-confirmed CRITICAL to HIL (a weak model
 # wrote a broken/missing falsifier), route falsification to a STRONGER writer with
 # the execute_python tool loop before accepting the HIL. Validated out-of-band on
 # the 7 hardest Exp-42 residuals (weak source 0/7; strong+tool-loop 6/7; 2-rung
 # ladder 7/7). Default-off => byte-identical when disabled.
-_TAKEUP_SYSTEM = (
+_ROUTING_SYSTEM = (
     "You are a senior engineer resolving a code-review finding by writing a "
     "runnable falsifier. Use the execute_python tool to read the real source "
     "(import inspect; from bench.cdsfl_registry import <mod>; "
@@ -1476,7 +1478,7 @@ _TAKEUP_SYSTEM = (
 )
 
 
-def _takeup_resolve_prompt(finding: dict) -> str:
+def _routing_resolve_prompt(finding: dict) -> str:
     desc = (finding.get("description") or "")[:1200]
     return (
         f"A code-review finding against the target module:\n\n{desc}\n\n"
@@ -1491,7 +1493,7 @@ def _takeup_resolve_prompt(finding: dict) -> str:
     )
 
 
-def _extract_takeup_falsifier(text: str) -> str:
+def _extract_routing_falsifier(text: str) -> str:
     import re as _re
     blocks = (_re.findall(r"```python\s*\n(.*?)```", text or "", _re.S)
               or _re.findall(r"```\s*\n(.*?)```", text or "", _re.S))
@@ -1499,7 +1501,7 @@ def _extract_takeup_falsifier(text: str) -> str:
     return cand[-1] if cand else ""
 
 
-def _takeup_similarity(a: dict, b: dict) -> float:
+def _routing_similarity(a: dict, b: dict) -> float:
     ta = set((a.get("description", "") or "").lower().split())
     tb = set((b.get("description", "") or "").lower().split())
     if not ta or not tb:
@@ -1507,8 +1509,8 @@ def _takeup_similarity(a: dict, b: dict) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
-def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=None):
-    """GATED capability-aware take-up-slack routing for un-confirmed criticals.
+def _apply_routing(registry, round_idx, exp_config, cfg=None, repo_root=None):
+    """GATED capability-aware routing for un-confirmed criticals (was _apply_take_up_slack).
 
     Runs AFTER ``apply_falsifier_verdicts``. For each critical the gate escalated
     to HIL (escalated=True, not CONFIRMED), route falsification up a ladder of
@@ -1516,9 +1518,9 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
     execute_python tool loop; the runner's ``reverify_falsifier`` decides. Dedup
     against already-CONFIRMED findings first. CONFIRMED resolves it; otherwise it
     stays HIL (genuinely-hard). Default-off no-op => byte-identical."""
-    if not (cfg and getattr(cfg, "take_up_slack_enabled", False)):
+    if not (cfg and getattr(cfg, "routing_enabled", False)):
         return
-    from bench.take_up_slack import take_up_slack
+    from bench.routing import route
     from bench.falsifier_verify import reverify_falsifier
 
     models = [mc.label for mc in exp_config.models]
@@ -1535,12 +1537,12 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
             return ""
         try:
             resp, _ = dispatch_to_model(
-                mc, _takeup_resolve_prompt(finding), _TAKEUP_SYSTEM,
+                mc, _routing_resolve_prompt(finding), _ROUTING_SYSTEM,
                 enable_tools=True,
             )
         except Exception:  # noqa: BLE001 — a failed rung just advances the ladder
             return ""
-        return _extract_takeup_falsifier(resp)
+        return _extract_routing_falsifier(resp)
 
     tally = {"resolved": 0, "dup": 0, "hil": 0}
     for cid, e in list(registry.entries.items()):
@@ -1554,12 +1556,12 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
             "id": cid, "description": e.get("description", ""),
             "source_model": e.get("source_model"), "severity": e.get("severity"),
         }
-        result = take_up_slack(
+        result = route(
             finding, models, confirmed, resolve_fn, reverify_falsifier,
-            _takeup_similarity,
+            _routing_similarity,
         )
         if result.verdict == "DUPLICATE":
-            e["takeup_duplicate_of"] = result.duplicate_of
+            e["routing_duplicate_of"] = result.duplicate_of
             e["escalated"] = False
             registry.resolve(cid, "MERGED", round_idx, merged_into=result.duplicate_of)
             tally["dup"] += 1
@@ -1568,7 +1570,7 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
             e["falsifier_verdict"] = "CONFIRMED"
             e["verified"] = True
             e["escalated"] = False
-            e["resolved_by_takeup"] = result.model_used
+            e["resolved_by_routing"] = result.model_used
             registry.resolve(cid, "CONFIRMED", round_idx)
             tally["resolved"] += 1
         else:
@@ -1584,7 +1586,7 @@ def _apply_take_up_slack(registry, round_idx, exp_config, cfg=None, repo_root=No
             )
             tally["hil"] += 1  # genuinely-hard: handed to the HIL static queue
     if any(tally.values()):
-        _log(f"  take-up-slack: {tally['resolved']} resolved by strong writer, "
+        _log(f"  routing: {tally['resolved']} resolved by strong writer, "
              f"{tally['dup']} dedup'd, {tally['hil']} -> HIL")
 
 
@@ -5782,10 +5784,10 @@ def run_experiment(
         # "tools decide" override (gated, default-off): the runner re-runs each
         # model-attached falsifier and lets that verdict win over the vote.
         apply_falsifier_verdicts(registry, round_idx, cfg=cfg, repo_root=str(REPO_ROOT))
-        # Capability-aware take-up-slack (gated, default-off): route the criticals
+        # Capability-aware routing (gated, default-off): route the criticals
         # the gate escalated to HIL to a stronger writer before accepting the HIL.
-        _apply_take_up_slack(registry, round_idx, exp_config, cfg=cfg,
-                             repo_root=str(REPO_ROOT))
+        _apply_routing(registry, round_idx, exp_config, cfg=cfg,
+                       repo_root=str(REPO_ROOT))
         registry.auto_resolve_contested(round_idx)
 
         # A3: HIL escalation

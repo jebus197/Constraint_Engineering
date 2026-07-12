@@ -208,8 +208,13 @@ def build_runner_config_from_dict(exp_cfg: dict[str, Any], args) -> Any:
     # execute_python tool during review.
     if "falsifier_gate_enabled" in exp_cfg:
         kwargs["falsifier_gate_enabled"] = exp_cfg["falsifier_gate_enabled"]
-    if "take_up_slack_enabled" in exp_cfg:
-        kwargs["take_up_slack_enabled"] = exp_cfg["take_up_slack_enabled"]
+    # Routing (renamed from take_up_slack, 2026-07-12). Accept the new key; fall back
+    # to the legacy key as a back-compat alias so existing configs (incl. the frozen
+    # Exp 42/43 pre-registrations) keep mapping to RunnerConfig(routing_enabled=...).
+    if "routing_enabled" in exp_cfg:
+        kwargs["routing_enabled"] = exp_cfg["routing_enabled"]
+    elif "take_up_slack_enabled" in exp_cfg:
+        kwargs["routing_enabled"] = exp_cfg["take_up_slack_enabled"]
     # Code-location convergence (2026-06-09): shadow telemetry (default True) and the
     # promotion of the location-keyed count to the actual γ-alt convergence trigger.
     if "location_shadow_enabled" in exp_cfg:

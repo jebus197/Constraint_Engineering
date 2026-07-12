@@ -1,6 +1,6 @@
-"""In-loop wiring tests for _apply_take_up_slack (gated, mocked dispatch).
+"""In-loop wiring tests for _apply_routing (gated, mocked dispatch).
 
-Pins the runner-side wiring (not the module logic, which test_take_up_slack covers):
+Pins the runner-side wiring (not the module logic, which test_routing covers):
 gated-off is a no-op; a strong-writer CONFIRMED resolves an escalated critical and
 clears the HIL; a duplicate of an already-CONFIRMED finding short-circuits before
 any dispatch.
@@ -37,8 +37,8 @@ def _exp_config():
 
 def test_gated_off_is_noop():
     reg, cid = _escalated_registry()
-    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, take_up_slack_enabled=False)
-    rr._apply_take_up_slack(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
+    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, routing_enabled=False)
+    rr._apply_routing(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
     assert reg.entries[cid]["status"] == "UNCONFIRMED"
     assert reg.entries[cid]["escalated"] is True
 
@@ -52,14 +52,14 @@ def test_strong_writer_resolves_and_clears_hil(monkeypatch):
         lambda mc, p, s, enable_tools=False: (
             "```python\nimport bench.cdsfl_registry.composer  # noqa\n"
             "raise AssertionError('demonstrated defect')\n```", 0.1))
-    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, take_up_slack_enabled=True)
-    rr._apply_take_up_slack(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
+    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, routing_enabled=True)
+    rr._apply_routing(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
     e = reg.entries[cid]
     assert e["status"] == "CONFIRMED"
     assert e["falsifier_verdict"] == "CONFIRMED"
     assert e.get("verified") is True
     assert e["escalated"] is False
-    assert e["resolved_by_takeup"] == "Codex"  # first rung (best falsifier-writer)
+    assert e["resolved_by_routing"] == "Codex"  # first rung (best falsifier-writer)
 
 
 def test_dedup_short_circuits_before_dispatch(monkeypatch):
@@ -75,8 +75,8 @@ def test_dedup_short_circuits_before_dispatch(monkeypatch):
     dispatched = []
     monkeypatch.setattr(rr, "dispatch_to_model",
                         lambda *a, **k: dispatched.append(1) or ("", 0.0))
-    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, take_up_slack_enabled=True)
-    rr._apply_take_up_slack(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
+    cfg = rr.RunnerConfig(falsifier_gate_enabled=True, routing_enabled=True)
+    rr._apply_routing(reg, 1, _exp_config(), cfg=cfg, repo_root=".")
     e = reg.entries[cid]
-    assert e["status"] == "MERGED" and e.get("takeup_duplicate_of") == twin
+    assert e["status"] == "MERGED" and e.get("routing_duplicate_of") == twin
     assert dispatched == []  # dedup caught it before any model dispatch

@@ -1,14 +1,14 @@
-"""Unit tests for the take-up-slack capability-aware falsifier routing."""
+"""Unit tests for the routing (capability-aware falsifier routing) module."""
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from take_up_slack import (  # noqa: E402
+from routing import (  # noqa: E402
     rank_falsifier_writers,
     confirmed_duplicate,
-    resolve_via_takeup,
-    take_up_slack,
+    resolve_via_routing,
+    route,
 )
 
 
@@ -44,7 +44,7 @@ def test_ladder_confirms_on_first_strong_rung():
     # first rung (CC2) writes a code that the decider CONFIRMS
     resolve = lambda model, f: "GOOD" if model == "CC2" else "BAD"  # noqa: E731
     reverify = lambda code: "CONFIRMED" if code == "GOOD" else "ERROR"  # noqa: E731
-    r = resolve_via_takeup(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
+    r = resolve_via_routing(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
     assert r.resolved and r.verdict == "CONFIRMED" and r.model_used == "CC2" and r.rungs_tried == 1
 
 
@@ -52,7 +52,7 @@ def test_ladder_climbs_to_second_rung():
     finding = {"id": "C0063"}  # the string-embedding trap: rung 1 fails, rung 2 resolves
     resolve = lambda model, f: "GOOD" if model == "Codex" else "BROKEN"  # noqa: E731
     reverify = lambda code: "CONFIRMED" if code == "GOOD" else "ERROR"  # noqa: E731
-    r = resolve_via_takeup(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
+    r = resolve_via_routing(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
     assert r.resolved and r.model_used == "Codex" and r.rungs_tried == 2
 
 
@@ -60,7 +60,7 @@ def test_ladder_exhausts_then_reports_unresolved_for_hil():
     finding = {"id": "Cxxxx"}  # genuinely hard: no rung confirms -> caller escalates to HIL
     resolve = lambda model, f: "BAD"  # noqa: E731
     reverify = lambda code: "REFUTED"  # noqa: E731
-    r = resolve_via_takeup(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
+    r = resolve_via_routing(finding, ["CC2", "Codex"], resolve, reverify, max_rungs=2)
     assert not r.resolved and r.rungs_tried == 2 and r.verdict == "REFUTED"
 
 
@@ -69,29 +69,29 @@ def test_ladder_respects_max_rungs():
     calls = []
     resolve = lambda model, f: calls.append(model) or "BAD"  # noqa: E731
     reverify = lambda code: "ERROR"  # noqa: E731
-    resolve_via_takeup(finding, ["CC2", "Codex", "ChatGPT"], resolve, reverify, max_rungs=2)
+    resolve_via_routing(finding, ["CC2", "Codex", "ChatGPT"], resolve, reverify, max_rungs=2)
     assert calls == ["CC2", "Codex"]  # never tried the 3rd rung
 
 
-def test_take_up_slack_dedup_short_circuits_before_dispatch():
+def test_route_dedup_short_circuits_before_dispatch():
     finding = {"id": "C0028", "source_model": "DeepSeek", "target": "t"}
     confirmed = [{"id": "C0003", "target": "t"}]
     dispatched = []
     resolve = lambda model, f: dispatched.append(model) or "GOOD"  # noqa: E731
     reverify = lambda code: "CONFIRMED"  # noqa: E731
     sim = lambda a, b: 0.95  # noqa: E731
-    r = take_up_slack(finding, ["CC2", "DeepSeek"], confirmed, resolve, reverify, sim)
+    r = route(finding, ["CC2", "DeepSeek"], confirmed, resolve, reverify, sim)
     assert r.verdict == "DUPLICATE" and r.duplicate_of == "C0003" and r.resolved
     assert dispatched == []  # no model was dispatched — dedup caught it first
 
 
-def test_take_up_slack_excludes_source_then_ladders():
+def test_route_excludes_source_then_ladders():
     finding = {"id": "C0040", "source_model": "ChatGPT", "target": "t"}
     confirmed = [{"id": "C0003", "target": "other"}]
     used = []
     resolve = lambda model, f: used.append(model) or ("GOOD" if model == "CC2" else "BAD")  # noqa: E731
     reverify = lambda code: "CONFIRMED" if code == "GOOD" else "ERROR"  # noqa: E731
     sim = lambda a, b: 0.0  # noqa: E731
-    r = take_up_slack(finding, ["CC2", "Codex", "ChatGPT"], confirmed, resolve, reverify, sim)
+    r = route(finding, ["CC2", "Codex", "ChatGPT"], confirmed, resolve, reverify, sim)
     assert r.resolved and r.model_used == "CC2"
     assert "ChatGPT" not in used  # the failed source model is never re-asked
