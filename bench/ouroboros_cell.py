@@ -36,7 +36,6 @@ monitor). This file is the NEW external research cell.
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import re
 import time
@@ -113,6 +112,10 @@ class OuroborosShadowLog:
     queries_issued: List[Dict[str, str]] = field(default_factory=list)
     metadata_retrieved: List[Dict[str, Any]] = field(default_factory=list)
     candidate_claims: List[OuroborosCandidateClaim] = field(default_factory=list)
+    # Real read+brief records for the shadow full-text loop (added 2026-07-12). Each
+    # entry carries: target, source_ref (cited DOI/arXiv id), via, fulltext_chars,
+    # source_hash, relevance, brief, reader_model, raw_reader_response, elapsed_s, error.
+    briefs: List[Dict[str, Any]] = field(default_factory=list)
     would_have_injected: bool = False
     timestamp: float = field(default_factory=time.time)
 
@@ -123,6 +126,7 @@ class OuroborosShadowLog:
             "queries_issued": self.queries_issued,
             "metadata_retrieved": self.metadata_retrieved,
             "candidate_claims": [c.to_dict() for c in self.candidate_claims],
+            "briefs": self.briefs,
             "would_have_injected": self.would_have_injected,
             "timestamp": str(self.timestamp),
         }
@@ -151,6 +155,13 @@ class OuroborosCell:
     # Hard caps for Exp 39
     MAX_QUERIES_PER_ROUND: int = 3
     MAX_CANDIDATE_CLAIMS: int = 2
+    # Real-work caps (added 2026-07-12 for the shadow full-text loop). Network+parse
+    # and LLM reads are expensive, so both are hard-bounded per round; the reader is
+    # handed at most MAX_FULLTEXT_CHARS of extracted text.
+    MAX_FULLTEXT_FETCHES_PER_ROUND: int = 2   # network+parse is expensive
+    MAX_READER_CALLS_PER_ROUND: int = 2       # one LLM read per fetched paper
+    MAX_FULLTEXT_CHARS: int = 24000           # cap text handed to the reader
+    MAX_PDF_BYTES: int = 20 * 1024 * 1024     # mirror run_round_robin.py download cap
 
     def __init__(
         self,
@@ -160,6 +171,9 @@ class OuroborosCell:
         contact_email: str = "cdsfl-ouroboros@constraint-engineering.local",
         enable_scihub_fallback: bool = False,
         scihub_mirror: str = "",
+        reader_backend: str = "haiku",   # "haiku" | "deepseek" | "none"
+        reader_model: str = "",          # override; default per backend
+        enable_fulltext: bool = True,    # download+parse OA full text before reading
     ) -> None:
         self.shadow = shadow  # MUST be True for Exp 39
         # OpenAlex added (free, no key, domain-general) as the reliable default fallback.
@@ -169,6 +183,12 @@ class OuroborosCell:
         self.contact_email = contact_email
         self.enable_scihub_fallback = enable_scihub_fallback
         self.scihub_mirror = scihub_mirror
+        # Cheap-reader (librarian) config for the shadow full-text loop. reader_backend
+        # picks the dispatch route; "none" forces the deterministic extractive brief
+        # (used by CI so the test never hard-depends on an LLM backend being reachable).
+        self.reader_backend = reader_backend
+        self.reader_model = reader_model
+        self.enable_fulltext = enable_fulltext
         self._claim_counter = 0
         self._round_logs: List[OuroborosShadowLog] = []
 
@@ -219,9 +239,20 @@ class OuroborosCell:
         )
         shadow_log.metadata_retrieved = metadata
 
-        # Step 3: Candidate claim generation
+        # Step 2.5 (SHADOW real work): resolve OA full text, download, read, brief.
+        # Briefs are logged only — never injected into a model prompt, never touch the
+        # maths. Wrapped so any fetch/reader failure degrades to error fields, not a crash.
+        try:
+            shadow_log.briefs = self._read_and_brief(
+                shadow_log.queries_issued, metadata,
+            )
+        except Exception as exc:  # noqa: BLE001 — shadow work is strictly non-fatal
+            logger.warning("Ouroboros read+brief failed (round %d): %s", round_idx, exc)
+            shadow_log.briefs = []
+
+        # Step 3: Candidate claim generation — built from the REAL briefs
         candidates = self._generate_candidates(
-            targets, metadata, round_idx,
+            targets, metadata, round_idx, shadow_log.briefs,
         )
         shadow_log.candidate_claims = candidates[:self.MAX_CANDIDATE_CLAIMS]
         shadow_log.would_have_injected = len(candidates) > 0
@@ -605,37 +636,266 @@ class OuroborosCell:
             return {"url": f"{mirror.rstrip('/')}/{doi}", "via": "scihub", "doi": doi}
         return {"url": "", "via": "none", "doi": doi}
 
+    # --- Real full-text loop: resolve OA URL -> download -> extract -> read -> brief ---
+    # Added 2026-07-12. Runs SHADOW-only: briefs are logged, never injected into a model
+    # prompt and never touch c_ext / nu_k / gamma. Exp 43 stays a clean generalisation test.
+
+    @staticmethod
+    def _arxiv_pdf_url(url: str) -> str:
+        """arXiv abs/pdf/entry URL -> direct PDF URL; '' if not arXiv.
+
+        arXiv is fully open-access and is the dominant metadata source in live logs,
+        so resolving it directly (before Unpaywall) materially raises fetch success.
+        """
+        raw = (url or "").strip()
+        m = re.search(r"arxiv\.org/(?:abs|pdf)/([\w.\-/]+?)(?:v\d+)?/?$", raw)
+        if not m:
+            return ""
+        vm = re.search(r"(v\d+)/?$", raw)   # preserve an explicit version if present
+        ver = vm.group(1) if vm else ""
+        return f"https://arxiv.org/pdf/{m.group(1)}{ver}"
+
+    def resolve_fulltext_url(self, paper: Dict[str, str]) -> Dict[str, str]:
+        """Resolve a fetchable full-text URL for a fetched paper.
+
+        Order: arXiv-direct (OA) -> Unpaywall (OA) -> Sci-Hub (only if enabled).
+        Returns {url, via, source_ref}; source_ref is the DOI/arXiv id we cite.
+        """
+        raw = paper.get("url", "") or ""
+        ax = self._arxiv_pdf_url(raw)
+        if ax:
+            return {"url": ax, "via": "arxiv", "source_ref": raw}
+        ft = self.full_text_for_doi(raw)          # existing resolver, unchanged
+        if ft["url"]:
+            return {"url": ft["url"], "via": ft["via"], "source_ref": ft["doi"]}
+        return {"url": "", "via": "none", "source_ref": raw}
+
+    def _download_and_extract(self, url: str, timeout_s: float = 20.0) -> Dict[str, Any]:
+        """Download an OA URL and extract text. PDF via pypdf(->pdfplumber); HTML via
+        BeautifulSoup. Best-effort, hard-capped, http(s)-only. Never raises.
+
+        The URL originates from Unpaywall/arXiv metadata, never from model output, so
+        this is not acting on injected instructions (SSRF guard: scheme + size + timeout).
+        """
+        import io
+        out = {"text": "", "chars": 0, "content_type": "", "error": ""}
+        if not url or not url.lower().startswith(("http://", "https://")):
+            out["error"] = "bad-scheme"
+            return out
+        try:
+            import requests
+        except ImportError:
+            out["error"] = "requests-missing"
+            return out
+
+        def _get():
+            r = requests.get(
+                url, timeout=timeout_s,
+                headers={"User-Agent": "CDSFL-ouroboros/1.0 (research)"},
+                stream=True)
+            ctype = r.headers.get("Content-Type", "").lower()
+            clen = int(r.headers.get("Content-Length", 0) or 0)
+            if clen > self.MAX_PDF_BYTES:
+                return {"skip": f"too-large:{clen}"}
+            body = r.content[: self.MAX_PDF_BYTES + 1]
+            return {"ctype": ctype, "body": body, "status": r.status_code}
+
+        got = self._run_with_timeout(_get, timeout_s=timeout_s)   # reused daemon cap
+        if not got or "skip" in (got or {}):
+            out["error"] = (got or {}).get("skip", "timeout") if isinstance(got, dict) else "timeout"
+            return out
+        if got["status"] != 200 or len(got["body"]) < 1000:
+            out["error"] = f"http-{got['status']}-or-tiny"
+            return out
+
+        ctype, body = got["ctype"], got["body"]
+        out["content_type"] = ctype
+        is_pdf = "pdf" in ctype or body[:5] == b"%PDF-"
+        out["text"] = (self._pdf_to_text(io.BytesIO(body)) if is_pdf
+                       else self._html_to_text(body))
+        out["text"] = out["text"][: self.MAX_FULLTEXT_CHARS]
+        out["chars"] = len(out["text"])
+        if not out["text"].strip():
+            out["error"] = "no-text-extracted"
+        return out
+
+    @staticmethod
+    def _pdf_to_text(fp, max_pages: int = 15) -> str:
+        """Extract text from a PDF byte stream. pypdf primary, pdfplumber fallback.
+        (PyPDF2 is NOT installed here; pypdf is its supported successor.)"""
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(fp)
+            parts = [(reader.pages[i].extract_text() or "")
+                     for i in range(min(max_pages, len(reader.pages)))]
+            txt = "\n\n".join(p for p in parts if p)
+            if txt.strip():
+                return txt
+        except Exception:
+            pass
+        try:
+            import pdfplumber
+            fp.seek(0)
+            with pdfplumber.open(fp) as pdf:
+                parts = [(pdf.pages[i].extract_text() or "")
+                         for i in range(min(max_pages, len(pdf.pages)))]
+            return "\n\n".join(p for p in parts if p)
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _html_to_text(body: bytes) -> str:
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(body, "lxml")
+            for tag in soup(["script", "style", "nav", "footer", "header"]):
+                tag.decompose()
+            return re.sub(r"\n{3,}", "\n\n", soup.get_text("\n")).strip()
+        except Exception:
+            return ""
+
+    _READER_PROMPT = (
+        "You are a research librarian. Read the paper text below and assess how "
+        "relevant it is to the RESEARCH TARGET. Do not evaluate the target's truth; "
+        "only judge whether this paper bears on it, and distil what it says.\n\n"
+        "RESEARCH TARGET:\n{target}\n\n"
+        "PAPER TITLE: {title}\nPAPER TEXT (may be truncated):\n{body}\n\n"
+        "Respond with EXACTLY two lines:\n"
+        "RELEVANCE: <HIGH|MEDIUM|LOW|NONE>\n"
+        "BRIEF: <=120 words distilling the paper's bearing on the target; "
+        "if NONE, say why in one clause"
+    )
+
+    def _cheap_reader_read(self, target: str, paper: Dict[str, str],
+                           body: str) -> Dict[str, Any]:
+        """Dispatch the librarian read to Haiku (primary) or DeepSeek (fallback).
+        Deterministic extractive fallback if no backend is reachable. Never raises."""
+        prompt = self._READER_PROMPT.format(
+            target=(target or "")[:800], title=(paper.get("title", "") or "")[:300],
+            body=(body or paper.get("abstract", ""))[: self.MAX_FULLTEXT_CHARS])
+        model_used, raw, err, elapsed = "", "", "", 0.0
+
+        if self.reader_backend == "haiku":
+            try:
+                from bench.cc2_manager import _dispatch_cli, HAIKU_MODEL
+                model_used = self.reader_model or HAIKU_MODEL
+                raw, elapsed = self._run_with_timeout(
+                    _dispatch_cli, model_used, prompt, 60, timeout_s=75.0) or ("", 0.0)
+            except Exception as e:  # noqa: BLE001 — degrade to extractive brief
+                err = f"haiku:{type(e).__name__}:{str(e)[:80]}"
+        elif self.reader_backend == "deepseek":
+            try:
+                from bench.experiment_11_orchestrator import call_deepseek
+                model_used = self.reader_model or "deepseek-chat"
+                raw = self._run_with_timeout(
+                    call_deepseek, model_used, None, prompt, timeout_s=75.0) or ""
+            except Exception as e:  # noqa: BLE001 — degrade to extractive brief
+                err = f"deepseek:{type(e).__name__}:{str(e)[:80]}"
+
+        if not raw:  # deterministic extractive fallback — keeps the brief real
+            rel, brief = self._extractive_brief(target, body or paper.get("abstract", ""))
+            return {"relevance": rel, "brief": brief, "raw": "",
+                    "reader_model": model_used or "extractive_fallback",
+                    "elapsed_s": round(elapsed, 1), "error": err or "no-backend"}
+
+        rel_m = re.search(r"RELEVANCE:\s*(HIGH|MEDIUM|LOW|NONE)", raw, re.I)
+        br_m = re.search(r"BRIEF:\s*(.+)", raw, re.I | re.S)
+        return {
+            "relevance": (rel_m.group(1).upper() if rel_m else "LOW"),
+            "brief": (br_m.group(1).strip()[:1200] if br_m else raw.strip()[:1200]),
+            "raw": raw[:4000], "reader_model": model_used,
+            "elapsed_s": round(elapsed, 1), "error": err,
+        }
+
+    @staticmethod
+    def _extractive_brief(target: str, text: str):
+        """No-LLM fallback: pick the sentences with most target-term overlap."""
+        terms = {w.lower() for w in re.findall(r"[a-zA-Z]{4,}", target or "")}
+        sents = re.split(r"(?<=[.!?])\s+", text or "")
+        scored = sorted(sents, key=lambda s: -len(terms & {w.lower()
+                        for w in re.findall(r"[a-zA-Z]{4,}", s)}))
+        top = " ".join(scored[:3]).strip()
+        overlap = len(terms & {w.lower() for w in re.findall(r"[a-zA-Z]{4,}", text or '')})
+        rel = "MEDIUM" if overlap >= 3 else ("LOW" if overlap else "NONE")
+        return rel, (top[:600] or "(no extractable overlap with target)")
+
+    def _read_and_brief(self, queries, metadata) -> List[Dict[str, Any]]:
+        """For each query's top paper: resolve OA -> download -> extract -> read.
+        Returns brief records for the shadow log. Bounded + best-effort; never raises."""
+        briefs, fetches, reads = [], 0, 0
+        for q, mres in zip(queries, metadata):
+            target = q.get("target", "")
+            papers = (mres.get("papers", []) or []) if isinstance(mres, dict) else []
+            if not papers:
+                continue
+            paper = papers[0]
+            rec = {"target": target, "source_ref": paper.get("url", ""),
+                   "title": paper.get("title", ""), "via": "abstract_only",
+                   "fulltext_chars": 0, "source_hash": "", "relevance": "",
+                   "brief": "", "reader_model": "", "raw_reader_response": "",
+                   "elapsed_s": 0.0, "error": ""}
+            body = ""
+            if self.enable_fulltext and fetches < self.MAX_FULLTEXT_FETCHES_PER_ROUND:
+                res = self.resolve_fulltext_url(paper)
+                if res["url"]:
+                    fetches += 1
+                    dl = self._download_and_extract(res["url"])
+                    if dl["chars"]:
+                        body = dl["text"]
+                        rec["via"] = res["via"]
+                        rec["fulltext_chars"] = dl["chars"]
+                        rec["source_ref"] = res["source_ref"] or rec["source_ref"]
+                        rec["source_hash"] = hashlib.sha256(
+                            body.encode("utf-8", "ignore")).hexdigest()
+                    else:
+                        rec["error"] = f"fetch:{dl['error']}"
+            if reads < self.MAX_READER_CALLS_PER_ROUND:
+                reads += 1
+                r = self._cheap_reader_read(target, paper, body)
+                rec.update({k: r[k] for k in
+                            ("relevance", "brief", "reader_model", "elapsed_s")})
+                rec["raw_reader_response"] = r["raw"]
+                if r["error"]:
+                    rec["error"] = (rec["error"] + "; " + r["error"]).strip("; ")
+            briefs.append(rec)
+        return briefs
+
     def _generate_candidates(
         self,
         targets: List[str],
         metadata: List[Dict[str, Any]],
         round_idx: int,
+        briefs: Optional[List[Dict[str, Any]]] = None,
     ) -> List[OuroborosCandidateClaim]:
-        """Generate candidate claims from retrieved metadata.
+        """Build candidate claims from REAL briefs (was a placeholder before 2026-07-12).
 
-        For Exp 39: generates shadow candidates based on targets.
-        Real implementation will parse paper metadata and extract claims.
+        Each candidate's description is the distilled librarian brief, not a synthetic
+        stub; provenance carries the cited source_ref, content hash, and a real
+        source_diversity (1.0 iff full text was actually parsed). Falls back to nothing
+        when no relevant brief exists — it never re-emits the old placeholder string.
         """
-        candidates = []
-
-        for target in targets[:self.MAX_CANDIDATE_CLAIMS]:
+        briefs = briefs or []
+        candidates: List[OuroborosCandidateClaim] = []
+        rel_map = {"HIGH": 0.9, "MEDIUM": 0.6, "LOW": 0.3}
+        for rec in briefs[: self.MAX_CANDIDATE_CLAIMS]:
+            if rec.get("relevance") in ("", "NONE"):
+                continue
             provenance = ProvenancePacket(
                 origin_type="external_ouroboros",
-                retrieval_query=self._target_to_query(target),
+                source_ref=rec.get("source_ref", ""),
+                retrieval_query=self._target_to_query(rec.get("target", "")),
                 retrieved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                source_diversity=0.0,  # No real sources in shadow mode
+                source_hash=rec.get("source_hash", ""),
+                source_diversity=1.0 if rec.get("fulltext_chars", 0) else 0.0,
             )
-
-            candidate = OuroborosCandidateClaim(
+            candidates.append(OuroborosCandidateClaim(
                 claim_id=self._next_claim_id(),
-                description=f"Shadow candidate for target: {target}",
+                description=(rec.get("brief") or "")[:800],
                 provenance=provenance,
-                relevance_score=0.5,
+                relevance_score=rel_map.get(rec.get("relevance", "LOW"), 0.3),
                 falsification_debt="high",
                 round_observed=round_idx,
-            )
-            candidates.append(candidate)
-
+            ))
         return candidates
 
     def get_activity_metrics(self) -> Dict[str, Any]:
